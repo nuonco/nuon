@@ -1,4 +1,3 @@
-import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallsTable } from '@/components/installs/InstallsTable'

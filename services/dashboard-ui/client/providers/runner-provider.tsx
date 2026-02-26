@@ -1,13 +1,13 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getRunner } from '@/lib'
 import type { TRunner } from '@/types'
 
 type RunnerContextValue = {
   runner: TRunner | null
   isLoading: boolean
-  error: any
-  refresh: () => void
+  error: unknown
 }
 
 export const RunnerContext = createContext<RunnerContextValue | undefined>(
@@ -16,36 +16,30 @@ export const RunnerContext = createContext<RunnerContextValue | undefined>(
 
 export function RunnerProvider({
   children,
-  initRunner,
+  runnerId,
   pollInterval = 20000,
   shouldPoll = false,
 }: {
   children: ReactNode
-  initRunner: TRunner
-} & IPollingProps) {
+  runnerId: string
+  shouldPoll?: boolean
+  pollInterval?: number
+}) {
   const { org } = useOrg()
 
-  const {
-    data: runner,
-    error,
-    isLoading,
-  } = usePolling<TRunner>({
-    dependencies: [initRunner],
-    initData: initRunner,
-    path: `/api/orgs/${org.id}/runners/${initRunner.id}`,
-    pollInterval,
-    shouldPoll,
+  const { data: runner, isLoading, error } = useQuery({
+    queryKey: ['runner', org?.id, runnerId],
+    queryFn: () => getRunner({ orgId: org.id, runnerId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!runnerId,
   })
 
   return (
     <RunnerContext.Provider
       value={{
-        runner,
+        runner: runner ?? null,
         isLoading,
         error,
-        refresh: () => {
-          // Placeholder for manual refresh if needed
-        },
       }}
     >
       {children}
