@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -8,11 +10,17 @@ import (
 
 	"github.com/pkg/errors"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 //go:embed fake_helm_plan.json
@@ -21,32 +29,22 @@ var FakeHelmPlanJSON string
 //go:embed fake_helm_plan_display.json
 var FakeHelmPlanDisplayJSON string
 
-func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) {
+func (p *Planner) createHelmDeployPlan(
+	ctx workflow.Context,
+	req *CreateDeployPlanRequest,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	state *state.State,
+	installDeploy *app.InstallDeploy,
+) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
+	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
-	}
-
-	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
+		return nil, errors.Wrap(err, "unable to get org")
 	}
 
 	stateData, err := state.WorkflowSafeAsMap(ctx)
@@ -116,6 +114,68 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		})
 	}
 
+	// Perform role selection for component deploys
+	var awsAuth *awscredentials.Config
+	var azureAuth *azurecredentials.Config
+
+	if !org.SandboxMode {
+		// Determine operation type based on deploy type
+		var operation app.OperationType
+		switch installDeploy.Type {
+		case app.InstallDeployTypeApply:
+			operation = app.OperationDeploy
+		case app.InstallDeployTypeTeardown:
+			operation = app.OperationTeardown
+		default:
+			operation = app.OperationDeploy
+		}
+
+		// Get default role from app permissions config
+		// Components use MaintenanceRole for deploy and teardown operations
+		defaultRole := appCfg.PermissionsConfig.MaintenanceRole.Name
+
+		// Build selection context
+		// TODO: Add component-specific operation roles when available
+		selectionCtx := &operationroles.SelectionContext{
+			Operation:     operation,
+			PrincipalType: principal.TypeComponent,
+			RuntimeRole:   installDeploy.Role,
+			EntityRoles:   nil, // Components don't currently have entity-specific operation roles
+			MatrixRules:   appCfg.OperationRoleConfig.Rules,
+			DefaultRole:   defaultRole,
+			AppConfig:     appCfg,
+			StackOutputs:  &stack.InstallStackOutputs,
+			InstallState:  state,
+		}
+
+		// Select role using operation roles engine
+		roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to select role for deploy")
+		}
+
+		l.Info("selected role for component deploy",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+			zap.String("source", string(roleSelection.Source)),
+		)
+
+		// Create auth configuration with selected role
+		awsAuth = &awscredentials.Config{
+			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+				RoleARN:     roleSelection.RoleARN,
+			},
+		}
+
+		// Set auth on cluster info if present
+		if clusterInfo != nil {
+			clusterInfo.WithAWSAuth(awsAuth)
+			clusterInfo.WithAzureAuth(azureAuth)
+		}
+	}
+
 	return &plantypes.HelmDeployPlan{
 		Name:            cfg.ChartName,
 		Namespace:       renderedNamespace,
@@ -127,6 +187,8 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		TakeOwnership:   cfg.TakeOwnership,
 
 		ClusterInfo: clusterInfo,
+		AWSAuth:     awsAuth,
+		AzureAuth:   azureAuth,
 	}, nil
 }
 

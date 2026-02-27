@@ -1,6 +1,8 @@
 package plantypes
 
 import (
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
@@ -12,6 +14,10 @@ type HelmValue struct {
 
 type HelmDeployPlan struct {
 	ClusterInfo *kube.ClusterInfo `json:"cluster_info,block"`
+
+	// Auth for cloud providers
+	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
+	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
 
 	// NOTE(jm): these fields should probably just come from the app config, however we keep them around for
 	// debuggability

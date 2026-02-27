@@ -15,11 +15,14 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
@@ -115,6 +118,17 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	gitSource, err := activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get sandbox run git source")
+	}
+
+	l.Info("getting auth with role selection")
+	awsAuth, azureAuth, err := p.getAuth(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get sandbox run auth")
+	}
+
+	runAuth := &awscredentials.Config{}
+	if awsAuth != nil {
+		runAuth = awsAuth
 	}
 
 	plan := &plantypes.SandboxRunPlan{
@@ -254,23 +268,88 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	return vars, nil
 }
 
-func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
-	switch {
-	case outputs.AWSStackOutputs != nil:
-		awsOutputs := outputs.AWSStackOutputs
-		roleARN := awsOutputs.ProvisionIAMRoleARN
-		switch run.RunType {
-		case app.SandboxRunTypeReprovision:
-			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
-		case app.SandboxRunTypeDeprovision:
-			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
+func (p *Planner) getAuth(
+	ctx workflow.Context,
+	outputs app.InstallStackOutputs,
+	run *app.InstallSandboxRun,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*awscredentials.Config, *azurecredentials.Config, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Determine operation type based on run type
+	var operation app.OperationType
+	switch run.RunType {
+	case app.SandboxRunTypeProvision:
+		operation = app.OperationProvision
+	case app.SandboxRunTypeReprovision:
+		operation = app.OperationReprovision
+	case app.SandboxRunTypeDeprovision:
+		operation = app.OperationDeprovision
+	default:
+		operation = app.OperationProvision
+	}
+
+	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
+	if operation == app.OperationDeprovision {
+		defaultRole = appCfg.PermissionsConfig.DeprovisionRole.Name
+	}
+
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:     operation,
+		PrincipalType: principal.TypeSandbox,
+		PrincipalName: "", // Sandboxes don't have names
+		RuntimeRole:   run.Role,
+		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
+			appCfg.SandboxConfig.OperationRoles,
+		),
+		MatrixRules:  appCfg.OperationRoleConfig.Rules,
+		DefaultRole:  defaultRole,
+		AppConfig:    appCfg,
+		StackOutputs: &stack.InstallStackOutputs,
+		InstallState: installState,
+	}
+
+	// Select role using operation roles engine
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+	if err != nil {
+		l.Warn("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			return nil, nil, fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 
+		l.Warn("using default role for sandbox",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
+	}
+
+	l.Info("selected role for sandbox run plan",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(operation)),
+		zap.String("run_type", string(run.RunType)),
+	)
+
+	// Create auth configuration using selected role
+	switch {
+	case outputs.AWSStackOutputs != nil:
 		return &awscredentials.Config{
 			Region: outputs.AWSStackOutputs.Region,
 			AssumeRole: &awscredentials.AssumeRoleConfig{
 				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
-				RoleARN:     roleARN,
+				RoleARN:     roleSelection.RoleARN,
 			},
 		}, nil, nil
 	case outputs.AzureStackOutputs != nil:
@@ -284,7 +363,6 @@ func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandb
 		}, nil
 	case outputs.GCPStackOutputs != nil:
 		// GCP runner uses attached service account on GCE instance — no explicit credentials needed
-		return nil, nil, nil
 	}
 
 	return nil, nil, errors.New("unable to get auth data from stack outputs")
