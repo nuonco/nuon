@@ -42,7 +42,7 @@ const PanelBase = ({
   const { removePanel, panels } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
-    removePanel(panels?.at(-1)?.id)
+    removePanel(panels?.at(-1)?.id, panelKey)
   }
   const panelRef = useRef<HTMLDivElement>(null)
   // auto focus panel when in view
