@@ -31,13 +31,18 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 		return err
 	}
 
-	err = w.Deprovision(ctx, sreq)
-	if err != nil {
-		if !sreq.ForceDelete {
-			return err
-		}
+	// Skip deprovision if org is already deprovisioned
+	if org.Status != app.OrgStatusDeprovisioned {
+		err = w.Deprovision(ctx, sreq)
+		if err != nil {
+			if !sreq.ForceDelete {
+				return err
+			}
 
-		l.Error("unable to deprovision org, continuing anyway", zap.Error(err))
+			l.Error("unable to deprovision org, continuing anyway", zap.Error(err))
+		}
+	} else {
+		l.Info("skipping deprovision, org already deprovisioned", zap.String("org_id", org.ID))
 	}
 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
