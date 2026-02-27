@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
-import { RunnerRecentActivitySkeleton } from './RunnerRecentActivitySkeleton'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { getRunnerJobs } from '@/lib'
@@ -59,7 +60,12 @@ export const RunnerRecentActivity = ({
   })
 
   if (isLoading) {
-    return <RunnerRecentActivitySkeleton />
+    return (
+      <>
+        <Skeleton height="24px" width="110px" />
+        <TimelineSkeleton eventCount={10} />
+      </>
+    )
   }
 
   const visibleJobs = (result?.data ?? [])
