@@ -121,8 +121,6 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
-		AzureAuth:   nil,
-		AWSAuth:     nil,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,
