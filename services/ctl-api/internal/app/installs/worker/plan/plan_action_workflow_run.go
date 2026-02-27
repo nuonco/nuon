@@ -8,6 +8,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -125,6 +127,64 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
+
+	// Perform role selection for action workflow runs
+	var awsAuth *awscredentials.Config
+	var azureAuth *azurecredentials.Config
+
+	if !org.SandboxMode {
+		// Action workflows always use Trigger operation
+		operation := app.OperationTrigger
+
+		// Get default role from app permissions config
+		// Actions use MaintenanceRole for trigger operations
+		defaultRole := appCfg.PermissionsConfig.MaintenanceRole.Name
+
+		// Build selection context
+		// TODO: Add action-specific operation roles when available
+		selectionCtx := &operationroles.SelectionContext{
+			Operation:     operation,
+			PrincipalType: principal.TypeAction,
+			RuntimeRole:   run.Role,
+			EntityRoles:   nil, // Actions don't currently have entity-specific operation roles
+			MatrixRules:   appCfg.OperationRoleConfig.Rules,
+			DefaultRole:   defaultRole,
+			AppConfig:     appCfg,
+			StackOutputs:  &stack.InstallStackOutputs,
+			InstallState:  state,
+		}
+
+		// Select role using operation roles engine
+		roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to select role for action workflow")
+		}
+
+		l.Info("selected role for action workflow run",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+			zap.String("source", string(roleSelection.Source)),
+		)
+
+		// Create auth configuration with selected role
+		awsAuth = &awscredentials.Config{
+			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("action-workflow-%s", run.ID),
+				RoleARN:     roleSelection.RoleARN,
+			},
+		}
+
+		// Set auth on cluster info if present
+		if plan.ClusterInfo != nil {
+			plan.ClusterInfo.WithAWSAuth(awsAuth)
+			plan.ClusterInfo.WithAzureAuth(azureAuth)
+		}
+	}
+
+	// Set auth on the plan
+	plan.AWSAuth = awsAuth
+	plan.AzureAuth = azureAuth
 
 	if org.SandboxMode {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)

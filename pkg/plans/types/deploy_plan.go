@@ -1,6 +1,8 @@
 package plantypes
 
 import (
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
@@ -10,6 +12,10 @@ type DeployPlan struct {
 	AppConfigID   string `json:"app_config_id"`
 	ComponentID   string `json:"component_id"`
 	ComponentName string `json:"component_name"`
+
+	// Auth for cloud providers
+	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
+	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
 
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`
 	SrcTag string                         `json:"src_tag" validate:"required"`
