@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -18,29 +19,42 @@ const (
 	defaultPollTimeout time.Duration = time.Second * 10
 )
 
-func (w *Workflows) pollAppsDeprovisioned(ctx workflow.Context, orgID string) error {
-	for {
-		org, err := activities.AwaitGetByOrgID(ctx, orgID)
-		if err != nil {
-			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
-			return fmt.Errorf("unable to get org: %w", err)
-		}
-
-		if len(org.Apps) < 1 {
-			return nil
-		}
-		workflow.Sleep(ctx, defaultPollTimeout)
-	}
-}
+// Commented out polling logic - validation now happens at endpoint level
+// func (w *Workflows) pollAppsDeprovisioned(ctx workflow.Context, orgID string) error {
+// 	for {
+// 		org, err := activities.AwaitGetByOrgID(ctx, orgID)
+// 		if err != nil {
+// 			w.updateStatus(ctx, orgID, app.OrgStatusError, "unable to get org from database")
+// 			return fmt.Errorf("unable to get org: %w", err)
+// 		}
+//
+// 		if len(org.Apps) < 1 {
+// 			return nil
+// 		}
+// 		workflow.Sleep(ctx, defaultPollTimeout)
+// 	}
+// }
 
 // @temporal-gen workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
-	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "ensuring all apps are deleted before deprovisioning")
-	if err := w.pollAppsDeprovisioned(ctx, sreq.ID); err != nil {
-		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "error polling apps being deprovisioned")
-		return fmt.Errorf("unable to poll for deleted apps: %w", err)
+	w.updateStatus(ctx, sreq.ID, app.OrgStatusActive, "checking that all apps are deleted before deprovisioning")
+
+	// Check if any apps still exist - return non-retryable error if so
+	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
+	if err != nil {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "unable to get org from database")
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+
+	if len(org.Apps) > 0 {
+		w.updateStatus(ctx, sreq.ID, app.OrgStatusError, "cannot deprovision org with active apps")
+		return temporal.NewNonRetryableApplicationError(
+			fmt.Sprintf("organization has %d app(s) that must be deleted before deprovisioning", len(org.Apps)),
+			"AppsStillPresent",
+			nil,
+		)
 	}
 
 	return w.deprovisionOrg(ctx, sreq.ID, sreq.SandboxMode)
@@ -77,11 +91,13 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 	}
 
 	if len(org.RunnerGroup.Runners) < 1 {
+		w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 		return nil
 	}
 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
+	w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil
 }

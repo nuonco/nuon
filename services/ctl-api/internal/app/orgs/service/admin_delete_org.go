@@ -48,6 +48,21 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		return
 	}
 
+	// Validate that all apps have been deprovisioned before allowing org deletion
+	var orgWithApps app.Org
+	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to check org apps: %w", err))
+		return
+	}
+
+	if len(orgWithApps.Apps) > 0 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("cannot delete org with active apps"),
+			Description: fmt.Sprintf("organization has %d app(s) that must be deleted before the organization can be deleted", len(orgWithApps.Apps)),
+		})
+		return
+	}
+
 	if org.OrgType == app.OrgTypeIntegration {
 		err := s.helpers.HardDelete(ctx, org.ID)
 		if err != nil {
