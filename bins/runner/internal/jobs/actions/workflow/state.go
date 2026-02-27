@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
@@ -16,5 +17,5 @@ type handlerState struct {
 	// state that must be reset before each run
 	workspace workspace.Workspace
 
-	auth *plantypes.PlanAuth
+	auth *pkgplantypes.PlanAuth
 }
