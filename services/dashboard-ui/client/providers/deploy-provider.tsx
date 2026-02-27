@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getDeploy } from '@/lib'
 import type { TDeploy } from '@/types'
 
 type DeployContextValue = {
@@ -15,30 +16,33 @@ export const DeployContext = createContext<DeployContextValue | undefined>(
 
 export function DeployProvider({
   children,
-  initDeploy,
+  deployId,
+  installId,
   pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
-  initDeploy: TDeploy
-} & IPollingProps) {
+  deployId: string
+  installId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
   const {
     data: deploy,
     error,
     isLoading,
-  } = usePolling<TDeploy>({
-    dependencies: [initDeploy],
-    initData: initDeploy,
-    path: `/api/orgs/${org.id}/installs/${initDeploy?.install_id}/deploys/${initDeploy.id}`,
-    pollInterval,
-    shouldPoll,
+  } = useQuery({
+    queryKey: ['deploy', org?.id, installId, deployId],
+    queryFn: () => getDeploy({ orgId: org.id, installId, deployId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!installId && !!deployId,
   })
 
   return (
     <DeployContext.Provider
       value={{
-        deploy,
+        deploy: deploy ?? null,
         isLoading,
         error,
       }}

@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getInstallSandboxRun } from '@/lib'
 import type { TSandboxRun } from '@/types'
 
 type SandboxRunContextValue = {
@@ -15,30 +16,31 @@ export const SandboxRunContext = createContext<SandboxRunContextValue | undefine
 
 export function SandboxRunProvider({
   children,
-  initSandboxRun,
+  runId,
   pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
-  initSandboxRun: TSandboxRun
-} & IPollingProps) {
+  runId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
   const {
     data: sandboxRun,
     error,
     isLoading,
-  } = usePolling<TSandboxRun>({
-    dependencies: [initSandboxRun],
-    initData: initSandboxRun,
-    path: `/api/orgs/${org.id}/installs/${initSandboxRun?.install_id}/sandbox/runs/${initSandboxRun.id}`,
-    pollInterval,
-    shouldPoll,
+  } = useQuery({
+    queryKey: ['sandbox-run', org?.id, runId],
+    queryFn: () => getInstallSandboxRun({ orgId: org.id, runId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!runId,
   })
 
   return (
     <SandboxRunContext.Provider
       value={{
-        sandboxRun,
+        sandboxRun: sandboxRun ?? null,
         isLoading,
         error,
       }}

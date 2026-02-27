@@ -1,8 +1,9 @@
 import { createContext, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { getAPIHealth } from '@/lib'
 import type { TAPIHealth } from '@/types'
 
 type APIHealthContextValue = {
@@ -21,16 +22,18 @@ export function APIHealthProvider({
   shouldPoll = false,
 }: {
   children: ReactNode
-} & IPollingProps) {
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { isLoading: isUserLoading, isAdmin } = useAuth()
   const {
     data: health,
     error,
     isLoading,
-  } = usePolling<TAPIHealth>({
-    path: `/api/livez`,
-    pollInterval,
-    shouldPoll,
+  } = useQuery({
+    queryKey: ['api-health'],
+    queryFn: getAPIHealth,
+    refetchInterval: shouldPoll ? pollInterval : false,
   })
 
   return (

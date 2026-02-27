@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getComponentBuild } from '@/lib'
 import type { TBuild } from '@/types'
 
 type BuildContextValue = {
@@ -15,30 +16,33 @@ export const BuildContext = createContext<BuildContextValue | undefined>(
 
 export function BuildProvider({
   children,
-  initBuild,
+  buildId,
+  componentId,
   pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
-  initBuild: TBuild
-} & IPollingProps) {
+  buildId: string
+  componentId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
   const {
     data: build,
     error,
     isLoading,
-  } = usePolling<TBuild>({
-    dependencies: [initBuild],
-    initData: initBuild,
-    path: `/api/orgs/${org.id}/components/${initBuild?.component_id}/builds/${initBuild.id}`,
-    pollInterval,
-    shouldPoll,
+  } = useQuery({
+    queryKey: ['build', org?.id, componentId, buildId],
+    queryFn: () => getComponentBuild({ orgId: org.id, componentId, buildId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!componentId && !!buildId,
   })
 
   return (
     <BuildContext.Provider
       value={{
-        build,
+        build: build ?? null,
         isLoading,
         error,
       }}

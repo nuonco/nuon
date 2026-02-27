@@ -1,7 +1,8 @@
 import { createContext, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { getInstallActionRun } from '@/lib'
 import type { TInstallActionRun } from '@/types'
 
 type InstallActionRunContextValue = {
@@ -17,35 +18,36 @@ export const InstallActionRunContext = createContext<
 
 export function InstallActionRunProvider({
   children,
-  initInstallActionRun,
+  runId,
   pollInterval = 3000,
   shouldPoll = false,
 }: {
   children: ReactNode
-  initInstallActionRun: TInstallActionRun
-} & IPollingProps) {
+  runId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
   const { install } = useInstall()
   const {
     data: installActionRun,
     error,
     isLoading,
-  } = usePolling<TInstallActionRun>({
-    initData: initInstallActionRun,
-    path: `/api/orgs/${org.id}/installs/${install.id}/actions/runs/${initInstallActionRun.id}`,
-    pollInterval,
-    shouldPoll,
+    refetch,
+  } = useQuery({
+    queryKey: ['install-action-run', org?.id, install?.id, runId],
+    queryFn: () => getInstallActionRun({ orgId: org.id, installId: install.id, runId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!install?.id && !!runId,
   })
 
   return (
     <InstallActionRunContext.Provider
       value={{
-        installActionRun,
+        installActionRun: installActionRun ?? null,
         isLoading,
         error,
-        refresh: () => {
-          /* implement if needed */
-        },
+        refresh: refetch,
       }}
     >
       {children}

@@ -1,6 +1,7 @@
-import { createContext, useEffect, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { createContext, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { getLogStream } from '@/lib'
 import type { TLogStream } from '@/types'
 
 type LogStreamContextValue = {
@@ -16,37 +17,35 @@ export const LogStreamContext = createContext<
 
 export function LogStreamProvider({
   children,
-  initLogStream,
+  logStreamId,
   pollInterval = 20000,
   shouldPoll = false,
 }: {
   children: ReactNode
-  initLogStream: TLogStream
-} & IPollingProps) {
+  logStreamId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
   const { org } = useOrg()
   const {
     data: logStream,
     error,
     isLoading,
-  } = usePolling<TLogStream>({
-    initData: initLogStream,
-    path: `/api/orgs/${org.id}/log-streams/${initLogStream?.id}`,
-    pollInterval,
-    shouldPoll,
+    refetch,
+  } = useQuery({
+    queryKey: ['log-stream', org?.id, logStreamId],
+    queryFn: () => getLogStream({ orgId: org.id, logStreamId }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!logStreamId,
   })
-
-  // Removed: useEffect that stopped polling when stream closed
-  // SSE server now controls completion via 'complete' event
 
   return (
     <LogStreamContext.Provider
       value={{
-        logStream,
+        logStream: logStream ?? null,
         isLoading,
         error,
-        refresh: () => {
-          /* implement if needed */
-        },
+        refresh: refetch,
       }}
     >
       {children}

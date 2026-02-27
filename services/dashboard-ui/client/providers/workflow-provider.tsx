@@ -1,7 +1,8 @@
-import { createContext, type ReactNode } from 'react'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { createContext, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
+import { getWorkflow } from '@/lib'
 import type { TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
@@ -9,7 +10,6 @@ interface WorkflowContextValue {
   isLoading: boolean
   error?: any
   stopPolling: () => void
-  // Workflow metrics
   workflowSteps: any[]
   hasApprovals: boolean
   failedSteps: any[]
@@ -25,26 +25,27 @@ interface WorkflowContextValue {
   policyViolationsCount: number
 }
 
-interface WorkflowProviderProps extends Partial<IPollingProps> {
-  children: ReactNode
-  initWorkflow: TWorkflow
-}
-
 export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
 
 export const WorkflowProvider = ({
   children,
-  initWorkflow,
+  workflowId,
   pollInterval = 10000,
   shouldPoll = false,
-}: WorkflowProviderProps) => {
+}: {
+  children: ReactNode
+  workflowId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) => {
   const { org } = useOrg()
-  
-  const { data: workflow, isLoading, error, stopPolling } = usePolling<TWorkflow>({
-    initData: initWorkflow,
-    path: `/api/orgs/${org.id}/workflows/${initWorkflow.id}`,
-    pollInterval,
-    shouldPoll,
+  const [pollingEnabled, setPollingEnabled] = useState(shouldPoll)
+
+  const { data: workflow, isLoading, error } = useQuery({
+    queryKey: ['workflow', org?.id, workflowId],
+    queryFn: () => getWorkflow({ orgId: org.id, workflowId }),
+    refetchInterval: pollingEnabled ? pollInterval : false,
+    enabled: !!org?.id && !!workflowId,
   })
 
   const metrics = useWorkflowMetrics(workflow)
@@ -53,7 +54,7 @@ export const WorkflowProvider = ({
     workflow,
     isLoading,
     error,
-    stopPolling,
+    stopPolling: () => setPollingEnabled(false),
     ...metrics,
   }
 
