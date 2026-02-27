@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -66,6 +68,24 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
+		return
+	}
+
+	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, false)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app config: %w", err))
+		return
+	}
+
+	state, err := s.helpers.GetInstallState(ctx, installID, false, false)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
+		return
+	}
+
 	installStack, err := s.getInstallStack(ctx, installID, org.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
@@ -77,19 +97,28 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	roles := buildAvailableRoles(installStack.InstallStackOutputs.AWSStackOutputs, operationType)
+	roles, err := buildAvailableRoles(installStack.InstallStackOutputs.AWSStackOutputs, appCfg, state, operationType)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
+		return
+	}
 
 	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
 }
 
-func buildAvailableRoles(aws *app.AWSStackOutputs, operationType string) []AvailableRole {
+func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
 	roles := []AvailableRole{}
 
-	if aws == nil {
-		return roles
+	if installStackOutput == nil {
+		return roles, nil
 	}
 
-	for name, arn := range aws.CustomRoleARNs {
+	stateMap, err := state.AsMap()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install state map: %w", err)
+	}
+
+	for name, arn := range installStackOutput.CustomRoleARNs {
 		roles = append(roles, AvailableRole{
 			Name:     name,
 			ARN:      arn,
@@ -97,7 +126,7 @@ func buildAvailableRoles(aws *app.AWSStackOutputs, operationType string) []Avail
 		})
 	}
 
-	for name, arn := range aws.BreakGlassRoleARNs {
+	for name, arn := range installStackOutput.BreakGlassRoleARNs {
 		roles = append(roles, AvailableRole{
 			Name:     name,
 			ARN:      arn,
@@ -107,40 +136,56 @@ func buildAvailableRoles(aws *app.AWSStackOutputs, operationType string) []Avail
 
 	switch operationType {
 	case "provision", "reprovision":
-		if aws.ProvisionIAMRoleARN != "" {
+		if installStackOutput.ProvisionIAMRoleARN != "" {
+			rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("unable to render provision role name", err)
+			}
 			roles = append(roles, AvailableRole{
-				Name:     "provision",
-				ARN:      aws.ProvisionIAMRoleARN,
+				Name:     rendered,
+				ARN:      installStackOutput.ProvisionIAMRoleARN,
 				RoleType: "provision",
 			})
 		}
 	case "deprovision":
-		if aws.DeprovisionIAMRoleARN != "" {
+		if installStackOutput.DeprovisionIAMRoleARN != "" {
+			rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("unable to render provision role name", err)
+			}
 			roles = append(roles, AvailableRole{
-				Name:     "deprovision",
-				ARN:      aws.DeprovisionIAMRoleARN,
+				Name:     rendered,
+				ARN:      installStackOutput.DeprovisionIAMRoleARN,
 				RoleType: "deprovision",
 			})
 		}
 	case "deploy", "teardown":
-		if aws.MaintenanceIAMRoleARN != "" {
+		if installStackOutput.MaintenanceIAMRoleARN != "" {
+			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("unable to render provision role name", err)
+			}
 			roles = append(roles, AvailableRole{
-				Name:     "maintenance",
-				ARN:      aws.MaintenanceIAMRoleARN,
+				Name:     rendered,
+				ARN:      installStackOutput.MaintenanceIAMRoleARN,
 				RoleType: "maintenance",
 			})
 		}
 	case "trigger":
-		if aws.MaintenanceIAMRoleARN != "" {
+		if installStackOutput.MaintenanceIAMRoleARN != "" {
+			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("unable to render provision role name", err)
+			}
 			roles = append(roles, AvailableRole{
-				Name:     "maintenance",
-				ARN:      aws.MaintenanceIAMRoleARN,
+				Name:     rendered,
+				ARN:      installStackOutput.MaintenanceIAMRoleARN,
 				RoleType: "maintenance",
 			})
 		}
 	}
 
-	return roles
+	return roles, nil
 }
 
 func validatePrincipalType(principalType string) error {
