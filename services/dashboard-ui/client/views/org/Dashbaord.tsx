@@ -13,11 +13,7 @@ export const Dashboard = () => {
           {
             path: `/${org.id}`,
             text: org?.name,
-          },
-          {
-            path: `/${org.id}/installs`,
-            text: 'Installs',
-          },
+          }          
         ]}
       />
       <span>Org dashboard</span>

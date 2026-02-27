@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, type ReactNode } from 'react'
-import { setPageSidebarCookie } from '@/actions/layout/page-sidebar-cookie'
+import { getPageSidebarOpen, setPageSidebarOpen } from '@/lib/cookies'
 
 interface IPageSidebarContext {
   isPageSidebarOpen?: boolean
@@ -12,36 +12,30 @@ export const PageSidebarContext = createContext<IPageSidebarContext>({})
 
 export const PageSidebarProvider = ({
   children,
-  initIsPageSidebarOpen = true,
 }: {
   children: ReactNode
-  initIsPageSidebarOpen?: boolean
 }) => {
   const [isPageSidebarOpen, setIsPageSidebarOpen] = useState(
-    initIsPageSidebarOpen
+    () => getPageSidebarOpen()
   )
 
   function closePageSidebar() {
-    setPageSidebarCookie(false)
+    setPageSidebarOpen(false)
     setIsPageSidebarOpen(false)
   }
 
   function openPageSidebar() {
-    setPageSidebarCookie(true)
+    setPageSidebarOpen(true)
     setIsPageSidebarOpen(true)
   }
 
   function togglePageSidebar() {
-    setPageSidebarCookie(!isPageSidebarOpen)
+    setPageSidebarOpen(!isPageSidebarOpen)
     setIsPageSidebarOpen((prev) => !prev)
   }
 
-  // Add keyboard shortcut for Alt/Option+Shift+S to toggle sidebar (cross-platform)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Cross-platform Alt/Option + Shift + S (no Ctrl/Meta)
-      // e.altKey works for Alt (Win/Linux) and Option (Mac)
-      // e.metaKey = Command (Mac)
       if (
         e.altKey &&
         e.shiftKey &&

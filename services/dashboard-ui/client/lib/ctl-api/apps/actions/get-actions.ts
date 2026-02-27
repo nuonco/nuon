@@ -18,5 +18,6 @@ export async function getActions({
   return api<TAction[]>({
     orgId,
     path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q })}`,
+    paginated: true,
   })
 }

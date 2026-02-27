@@ -15,27 +15,27 @@ export const AppContext = createContext<AppContextValue | undefined>(undefined)
 
 export function AppProvider({
   children,
-  initApp,
+  appId,
   pollInterval = 20000,
   shouldPoll = false,
 }: {
   children: ReactNode
-  initApp: TApp
+  appId: string
   pollInterval?: number
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const { data: app = initApp, error, isLoading, refetch } = useQuery({
-    queryKey: ['app', org.id, initApp.id],
-    queryFn: () => getApp({ orgId: org.id, appId: initApp.id }),
-    initialData: initApp,
+  const { data: app, error, isLoading, refetch } = useQuery({
+    queryKey: ['app', org?.id, appId],
+    queryFn: () => getApp({ orgId: org.id, appId }),
     refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!appId,
   })
 
   return (
     <AppContext.Provider
       value={{
-        app,
+        app: app ?? null,
         isLoading,
         error,
         refresh: refetch,

@@ -1,17 +1,15 @@
 import { useSearchParams } from 'react-router'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
-import { type IPagination } from '@/components/common/Pagination'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
 import { getActions } from '@/lib'
 import type { TActionConfigTriggerType, TAction } from '@/types'
 import { ActionTriggerType } from './ActionTriggerType'
@@ -104,36 +102,41 @@ const columns: ColumnDef<TActionRow>[] = [
   },
 ]
 
+const LIMIT = 20
+
 export const ActionsTable = ({
-  pagination,
   pollInterval = 20000,
-  shouldPoll,
+  shouldPoll = true,
 }: {
-  pagination: IPagination
   pollInterval?: number
   shouldPoll?: boolean
-}) => {
+} = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { app } = useApp()
-  const queryParams = useQueryParams({
-    offset: pagination?.offset,
-    limit: pagination?.limit,
-    q: searchParams.get('q'),
-  })
-  const { data: actions = [] } = useQuery({
-    queryKey: ['actions', org?.id, app?.id, queryParams],
+  const offset = Number(searchParams.get('offset') ?? 0)
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ['actions', org?.id, app?.id, offset, searchParams.get('q')],
     queryFn: () =>
       getActions({
         orgId: org.id,
         appId: app.id,
-        limit: pagination?.limit,
-        offset: pagination?.offset,
+        offset,
+        limit: LIMIT + 1,
         q: searchParams.get('q') || undefined,
-      }).then((r) => r.data ?? []),
+      }),
+    placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!app?.id,
   })
+
+  if (isLoading) {
+    return <ActionsTableSkeleton />
+  }
+
+  const actions = (result?.data ?? []).slice(0, LIMIT)
+  const hasNext = (result?.data?.length ?? 0) > LIMIT
 
   return (
     <Table<TActionRow>
@@ -149,8 +152,8 @@ export const ActionsTable = ({
           </Link>
         ),
       }}
-      pagination={pagination}
-      searchPlaceholder="Search component name..."
+      pagination={{ hasNext, offset, limit: LIMIT }}
+      searchPlaceholder="Search action name..."
     />
   )
 }

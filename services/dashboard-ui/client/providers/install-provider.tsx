@@ -17,27 +17,27 @@ export const InstallContext = createContext<InstallContextValue | undefined>(
 
 export function InstallProvider({
   children,
-  initInstall,
+  installId,
   pollInterval = 20000,
   shouldPoll = false,
 }: {
   children: ReactNode
-  initInstall: TInstall
+  installId: string
   pollInterval?: number
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const { data: install = initInstall, error, isLoading, refetch } = useQuery({
-    queryKey: ['install', org.id, initInstall.id],
-    queryFn: () => getInstall({ orgId: org.id, installId: initInstall.id }),
-    initialData: initInstall,
+  const { data: install, error, isLoading, refetch } = useQuery({
+    queryKey: ['install', org?.id, installId],
+    queryFn: () => getInstall({ orgId: org.id, installId }),
     refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!installId,
   })
 
   return (
     <InstallContext.Provider
       value={{
-        install,
+        install: install ?? null,
         isLoading,
         error,
         refresh: refetch,

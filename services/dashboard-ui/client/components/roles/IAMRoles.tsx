@@ -16,7 +16,7 @@ import { Modal } from '@/components/surfaces/Modal'
 import type { TAppConfig } from '@/types'
 import { decodeAsString } from '@/utils/data-utils'
 
-export const IAMRoles = async ({ appConfig }: { appConfig: TAppConfig }) => {
+export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
   return (
     <div className="flex flex-col divide-y gap-6">
       {appConfig?.permissions?.aws_iam_roles?.map((role) => (
