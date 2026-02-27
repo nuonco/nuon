@@ -43,13 +43,14 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 	}
 
 	// Validate that all apps have been deprovisioned before allowing org deprovision
+	// Force flag does NOT bypass this check - apps must always be deleted first
 	var orgWithApps app.Org
 	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to check org apps: %w", err))
 		return
 	}
 
-	if len(orgWithApps.Apps) > 0 && !req.Force {
+	if len(orgWithApps.Apps) > 0 {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("cannot deprovision org with active apps"),
 			Description: fmt.Sprintf("organization has %d app(s) that must be deleted before the organization can be deprovisioned", len(orgWithApps.Apps)),
