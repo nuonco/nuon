@@ -1,10 +1,67 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { BuildHeader } from '@/components/builds/BuildHeader'
+import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useApp } from '@/hooks/use-app'
+import { useBuild } from '@/hooks/use-build'
 import { useOrg } from '@/hooks/use-org'
-import { getComponent, getComponentBuild } from '@/lib'
+import { getComponent } from '@/lib'
+import { BuildProvider } from '@/providers/build-provider'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
+import type { TComponent } from '@/types'
+
+const CONTAINER_ID = 'build-detail-page'
+
+const BuildDetailInner = ({ component }: { component: TComponent | undefined }) => {
+  const { build } = useBuild()
+
+  if (!build) return null
+
+  return (
+    <>
+      <BuildHeader component={component as TComponent} />
+      <PageSection id={CONTAINER_ID} isScrollable>
+        {build?.log_stream ? (
+          <LogStreamProvider
+            logStreamId={build.log_stream.id}
+            shouldPoll={build.log_stream.open}
+          >
+            <UnifiedLogsProvider>
+              <LogViewerProvider>
+                <SSELogs />
+              </LogViewerProvider>
+            </UnifiedLogsProvider>
+          </LogStreamProvider>
+        ) : (
+          <div className="flex flex-col items-center gap-4 p-12">
+            <Text variant="base" weight="strong">
+              Waiting on log stream
+            </Text>
+            <Text variant="body" theme="neutral">
+              Logs will appear here once the build runner starts.
+            </Text>
+            <Button
+              variant="ghost"
+              onClick={() => window.location.reload()}
+            >
+              <Icon variant="ArrowClockwiseIcon" />
+              Refresh Page
+            </Button>
+          </div>
+        )}
+        <BackToTop containerId={CONTAINER_ID} />
+      </PageSection>
+    </>
+  )
+}
 
 export const BuildDetail = () => {
   const { componentId, buildId } = useParams()
@@ -17,14 +74,8 @@ export const BuildDetail = () => {
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 
-  const { data: build } = useQuery({
-    queryKey: ['component-build', org?.id, componentId, buildId],
-    queryFn: () => getComponentBuild({ orgId: org.id, componentId: componentId!, buildId: buildId! }),
-    enabled: !!org?.id && !!componentId && !!buildId,
-  })
-
   return (
-    <PageSection isScrollable>
+    <div className="flex flex-col flex-1 overflow-hidden">
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -32,9 +83,12 @@ export const BuildDetail = () => {
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           { path: `/${org?.id}/apps/${app?.id}/components`, text: 'Components' },
           { path: `/${org?.id}/apps/${app?.id}/components/${componentId}`, text: component?.name },
-          { path: `/${org?.id}/apps/${app?.id}/components/${componentId}/builds/${buildId}`, text: build?.id },
+          { path: `/${org?.id}/apps/${app?.id}/components/${componentId}/builds/${buildId}`, text: 'Build' },
         ]}
       />
-    </PageSection>
+      <BuildProvider buildId={buildId!} componentId={componentId!} shouldPoll>
+        <BuildDetailInner component={component} />
+      </BuildProvider>
+    </div>
   )
 }

@@ -14,13 +14,11 @@ import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 const LIMIT = 10
 
 interface ISandboxRunsTimeline {
-  initRuns?: TSandboxRun[]
   pollInterval?: number
   shouldPoll?: boolean
 }
 
 export const SandboxRunsTimeline = ({
-  initRuns = [],
   shouldPoll = false,
   pollInterval = 20000,
 }: ISandboxRunsTimeline) => {
@@ -38,9 +36,7 @@ export const SandboxRunsTimeline = ({
         limit: LIMIT,
         offset,
       }),
-    initialData: initRuns.length > 0
-      ? { data: initRuns, pagination: { hasNext: false, offset, limit: LIMIT } }
-      : undefined,
+    refetchOnMount: 'always',
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })

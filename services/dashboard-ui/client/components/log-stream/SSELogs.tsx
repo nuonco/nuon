@@ -19,7 +19,7 @@ export const LogsSkeleton = () => {
 
 // demo sse logs
 export const SSELogs = ({
-  filterClassName = '-top-2',
+  filterClassName = '-top-6',
 }: {
   filterClassName?: string
 }) => {
@@ -93,7 +93,7 @@ interface ILogLine {
 }
 
 const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
-  const searchParams = useSearchParams()
+  const [searchParams] = useSearchParams()
 
   useEffect(() => {
     if (log.id && log.id === searchParams?.get('panel')) {

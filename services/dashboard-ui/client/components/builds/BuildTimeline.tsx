@@ -1,21 +1,21 @@
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Timeline, type ITimeline } from '@/components/common/Timeline'
+import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { Text } from '@/components/common/Text'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
 import { getComponentBuilds } from '@/lib'
 import type { TBuild } from '@/types'
 
-interface IBuildTimeline
-  extends Omit<ITimeline<TBuild>, 'events' | 'renderEvent'> {
+const LIMIT = 10
+
+interface IBuildTimeline {
   componentName: string
   componentId: string
-  initBuilds?: TBuild[]
   pollInterval?: number
   shouldPoll?: boolean
 }
@@ -23,31 +23,32 @@ interface IBuildTimeline
 export const BuildTimeline = ({
   componentName,
   componentId,
-  initBuilds = [],
-  pagination,
-  pollInterval = 20000,
+  pollInterval = 10000,
   shouldPoll = false,
 }: IBuildTimeline) => {
   const { app } = useApp()
   const { org } = useOrg()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
 
-  const queryParams = useQueryParams({
-    offset: pagination.offset,
-    limit: 10,
-  })
-  const { data: builds } = useQuery<TBuild[]>({
-    queryKey: ['component-builds', org?.id, componentId, queryParams],
+  const { data: result } = useQuery({
+    queryKey: ['component-builds', org?.id, componentId, offset],
     queryFn: () =>
       getComponentBuilds({
         orgId: org.id,
         componentId,
-        limit: 10,
-        offset: pagination?.offset,
-      }).then((r) => r.data ?? []),
-    initialData: initBuilds,
+        limit: LIMIT,
+        offset,
+      }),
+    refetchOnMount: 'always',
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!componentId,
   })
+
+  const builds = result?.data ?? []
+  const pagination = result?.pagination
+    ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
+    : { hasNext: false, offset, limit: LIMIT }
 
   return (
     <Timeline<TBuild>
@@ -82,7 +83,7 @@ export const BuildTimeline = ({
 
                 {build?.vcs_connection_commit?.message &&
                 build?.vcs_connection_commit?.sha ? (
-                  <span className="">
+                  <span>
                     <Text
                       className="truncate !flex w-full"
                       variant="label"
