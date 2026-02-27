@@ -34,6 +34,7 @@ const (
 	OrgStatusProvisioning   OrgStatus = "provisioning"
 	OrgStatusDeleting       OrgStatus = "deleting"
 	OrgStatusDeprovisioning OrgStatus = "deprovisioning"
+	OrgStatusDeprovisioned  OrgStatus = "deprovisioned"
 )
 
 // org feature flags

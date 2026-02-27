@@ -91,11 +91,13 @@ func (w *Workflows) deprovisionOrg(ctx workflow.Context, orgID string, sandboxMo
 	}
 
 	if len(org.RunnerGroup.Runners) < 1 {
+		w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 		return nil
 	}
 
 	w.ev.Send(ctx, org.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
 		Type: runnersignals.OperationDeprovision,
 	})
+	w.updateStatus(ctx, orgID, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil
 }

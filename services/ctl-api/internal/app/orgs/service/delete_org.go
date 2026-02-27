@@ -38,10 +38,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 	// Validate that all apps have been deprovisioned before allowing org deletion
 	var orgWithApps app.Org
 	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
-		ctx.Error(stderr.ErrInternal{
-			Err:         err,
-			Description: "unable to check org apps",
-		})
+		ctx.Error(fmt.Errorf("unable to check org apps: %w", err))
 		return
 	}
 
