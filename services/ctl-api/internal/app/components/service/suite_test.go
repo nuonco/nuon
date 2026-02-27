@@ -82,11 +82,6 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	s.fxApp = fxtest.New(s.T(), options...)
 	s.fxApp.RequireStart()
 
-	// Mock external calls
-	s.componentsService.getLatestTerraformVersion = func() (string, error) {
-		return "1.12.0", nil
-	}
-
 	// Store DB reference for automatic truncation
 	s.SetDB(s.deps.DB)
 }
