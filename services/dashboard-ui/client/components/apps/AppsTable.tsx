@@ -130,7 +130,7 @@ export const AppsTable = ({
     queryFn: () => getApps({
       orgId: org.id,
       offset,
-      limit: LIMIT + 1,
+      limit: LIMIT,
       q: searchParams.get('q') || undefined,
     }),
     placeholderData: keepPreviousData,
@@ -141,15 +141,14 @@ export const AppsTable = ({
     return <AppsTableSkeleton />
   }
 
-  const apps = (result?.data ?? []).slice(0, LIMIT)
-  const hasNext = (result?.data?.length ?? 0) > LIMIT
+  const apps = result?.data ?? []
 
   return (
     <Table<TAppRow>
       data={parseAppsToTableData(apps, org.id)}
       columns={columns}
       emptyMessage="No applications found"
-      pagination={{ hasNext, offset, limit: LIMIT }}
+      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
       searchPlaceholder="Search app name..."
     />
   )

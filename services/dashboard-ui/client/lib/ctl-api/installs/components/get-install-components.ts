@@ -18,5 +18,6 @@ export async function getInstallComponents({
   return api<TInstallComponent[]>({
     orgId,
     path: `installs/${installId}/components${buildQueryParams({ limit, offset, q, types })}`,
+    paginated: true,
   })
 }

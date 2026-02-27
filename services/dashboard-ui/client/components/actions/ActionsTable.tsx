@@ -123,7 +123,7 @@ export const ActionsTable = ({
         orgId: org.id,
         appId: app.id,
         offset,
-        limit: LIMIT + 1,
+        limit: LIMIT,
         q: searchParams.get('q') || undefined,
       }),
     placeholderData: keepPreviousData,
@@ -135,8 +135,7 @@ export const ActionsTable = ({
     return <ActionsTableSkeleton />
   }
 
-  const actions = (result?.data ?? []).slice(0, LIMIT)
-  const hasNext = (result?.data?.length ?? 0) > LIMIT
+  const actions = result?.data ?? []
 
   return (
     <Table<TActionRow>
@@ -152,7 +151,7 @@ export const ActionsTable = ({
           </Link>
         ),
       }}
-      pagination={{ hasNext, offset, limit: LIMIT }}
+      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
       searchPlaceholder="Search action name..."
     />
   )

@@ -167,7 +167,7 @@ export const InstallActionsTable = ({
       getInstallActionsLatestRuns({
         orgId: org.id,
         installId: install.id,
-        limit: LIMIT + 1,
+        limit: LIMIT,
         offset,
         q: searchParams.get('q') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
@@ -176,10 +176,8 @@ export const InstallActionsTable = ({
     enabled: !!org?.id && !!install?.id,
   })
 
-  const allActions = result ?? []
-  const hasNext = allActions.length > LIMIT
-  const actions = allActions.slice(0, LIMIT)
-  const pagination = { hasNext, offset, limit: LIMIT }
+  const actions = result?.data ?? []
+  const pagination = { hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }
 
   return (
     <Table<InstallActionRow>

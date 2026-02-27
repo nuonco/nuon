@@ -196,7 +196,7 @@ export const InstallsTable = ({
     queryFn: () => getInstalls({
       orgId: org.id,
       offset,
-      limit: LIMIT + 1,
+      limit: LIMIT,
       q: searchParams.get('q') || undefined,
     }),
     placeholderData: keepPreviousData,
@@ -207,8 +207,7 @@ export const InstallsTable = ({
     return <InstallsTableSkeleton />
   }
 
-  const installs = (result?.data ?? []).slice(0, LIMIT)
-  const hasNext = (result?.data?.length ?? 0) > LIMIT
+  const installs = result?.data ?? []
 
   return (
     <Table<InstallRow>
@@ -226,7 +225,7 @@ export const InstallsTable = ({
           variant="primary"
         />
       }
-      pagination={{ hasNext, offset, limit: LIMIT }}
+      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
       searchPlaceholder="Search install name..."
     />
   )

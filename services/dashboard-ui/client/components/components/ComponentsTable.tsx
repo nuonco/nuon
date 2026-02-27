@@ -155,7 +155,7 @@ export const ComponentsTable = ({
       orgId: org.id,
       appId: app.id,
       offset,
-      limit: LIMIT + 1,
+      limit: LIMIT,
       q: searchParams.get('q') || undefined,
       types: searchParams.get('types') || undefined,
     }),
@@ -167,8 +167,7 @@ export const ComponentsTable = ({
     return <ComponentsTableSkeleton />
   }
 
-  const components = (result?.data ?? []).slice(0, LIMIT)
-  const hasNext = (result?.data?.length ?? 0) > LIMIT
+  const components = result?.data ?? []
 
   return (
     <Table<TComponentRow>
@@ -184,7 +183,7 @@ export const ComponentsTable = ({
         emptyMessage: 'No components found or configured.',
         emptyTitle: 'No components',
       }}
-      pagination={{ hasNext, offset, limit: LIMIT }}
+      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
       searchPlaceholder="Search component name..."
     />
   )

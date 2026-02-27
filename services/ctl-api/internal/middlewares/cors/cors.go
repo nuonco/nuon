@@ -39,7 +39,13 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			"Sec-Ch-Ua-Mobile",
 			"Sec-Ch-Ua-Platform",
 		},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"X-Nuon-Page-Next",
+			"X-Nuon-Page-Offset",
+			"X-Nuon-Page-Limit",
+			"X-Nuon-Page-Number",
+		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	})

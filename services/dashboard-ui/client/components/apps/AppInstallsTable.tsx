@@ -129,7 +129,7 @@ export const AppInstallsTable = ({
       orgId: org.id,
       appId,
       offset,
-      limit: LIMIT + 1,
+      limit: LIMIT,
       q: searchParams.get('q') || undefined,
     }),
     placeholderData: keepPreviousData,
@@ -141,8 +141,7 @@ export const AppInstallsTable = ({
     return <AppInstallsTableSkeleton />
   }
 
-  const installs = (result?.data ?? []).slice(0, LIMIT)
-  const hasNext = (result?.data?.length ?? 0) > LIMIT
+  const installs = result?.data ?? []
 
   return (
     <Table<InstallRow>
@@ -154,7 +153,7 @@ export const AppInstallsTable = ({
         emptyTitle: 'No installs created',
         action: <CreateInstallButton />,
       }}
-      pagination={{ hasNext, offset, limit: LIMIT }}
+      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
       searchPlaceholder="Search install name..."
     />
   )

@@ -182,7 +182,7 @@ export const InstallComponentsTable = ({
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
-        limit: LIMIT + 1,
+        limit: LIMIT,
         offset,
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
@@ -210,10 +210,8 @@ export const InstallComponentsTable = ({
     enabled: !!org?.id && !!install?.app_config_id,
   })
 
-  const allComponents = componentsResult ?? []
-  const hasNext = allComponents.length > LIMIT
-  const components = allComponents.slice(0, LIMIT)
-  const pagination = { hasNext, offset, limit: LIMIT }
+  const components = componentsResult?.data ?? []
+  const pagination = { hasNext: componentsResult?.pagination?.hasNext ?? false, offset, limit: LIMIT }
 
   const deps: TComponentDeps[] = components.map((ic) => ({
     id: ic?.id,

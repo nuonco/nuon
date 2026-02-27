@@ -25,4 +25,5 @@ export const getRunnerJobs = ({
   api<TRunnerJob[]>({
     path: `runners/${runnerId}/jobs${buildQueryParams({ limit, offset, group, groups, status, statuses })}`,
     orgId,
+    paginated: true,
   })

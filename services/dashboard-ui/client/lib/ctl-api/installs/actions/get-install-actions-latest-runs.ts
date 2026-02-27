@@ -18,4 +18,5 @@ export const getInstallActionsLatestRuns = ({
   api<TInstallAction[]>({
     path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types })}`,
     orgId,
+    paginated: true,
   })
