@@ -33,6 +33,11 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
+	if h.state.plan.ClusterInfo != nil {
+		h.state.plan.ClusterInfo.WithAWSAuth(h.state.plan.AWSAuth)
+		h.state.plan.ClusterInfo.WithAzureAuth(h.state.plan.AzureAuth)
+	}
+
 	l.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
 	return nil
 }
