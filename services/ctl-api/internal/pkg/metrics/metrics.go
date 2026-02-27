@@ -27,10 +27,12 @@ func New(v *validator.Validate, l *zap.Logger, cfg *internal.Config) (metrics.Wr
 		return nil, fmt.Errorf("unable to create new metrics writer: %w", err)
 	}
 
-	tracer.Start(
-		tracer.WithRuntimeMetrics(),
-		tracer.WithDogstatsdAddr(fmt.Sprintf("%s:8125", os.Getenv("HOST_IP"))),
-	)
+	if !cfg.DisableMetrics {
+		tracer.Start(
+			tracer.WithRuntimeMetrics(),
+			tracer.WithDogstatsdAddr(fmt.Sprintf("%s:8125", os.Getenv("HOST_IP"))),
+		)
+	}
 
 	return mw, nil
 }
