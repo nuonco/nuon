@@ -6,7 +6,6 @@ import { Timeline, type ITimeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
 import { getInstallSandboxRuns } from '@/lib'
 import type { TSandboxRun } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
@@ -35,7 +34,7 @@ export const SandboxRunsTimeline = ({
         installId: install.id,
         limit: 10,
         offset: pagination?.offset,
-      }).then((r) => r.data ?? []),
+      }),
     initialData: initRuns,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,

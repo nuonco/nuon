@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -11,19 +11,17 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
-import { type IPagination } from '@/components/common/Pagination'
-import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { ComponentType } from '@/components/components/ComponentType'
+import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
-import { getInstallComponents } from '@/lib'
+import { getInstallComponents, getAppConfig } from '@/lib'
 import type { TInstallComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
-import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 
-// NOTE: old stuff
-import { ComponentTypeFilterDropdown } from '@/components/old/Components/NewComponentTypeFilter'
+const LIMIT = 10
 
 type TComponentDeps = {
   id: string
@@ -160,29 +158,23 @@ const columns: ColumnDef<InstallComponentRow>[] = [
 ]
 
 export const InstallComponentsTable = ({
-  components: initComponents,
-  deps,
-  pagination,
   pollInterval = 20000,
   shouldPoll,
 }: {
-  components: TInstallComponent[]
-  deps: TComponentDeps[]
-  pagination: IPagination
   pollInterval?: number
   shouldPoll?: boolean
 }) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { install } = useInstall()
+  const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: components } = useQuery<TInstallComponent[]>({
+  const { data: componentsResult, isLoading } = useQuery({
     queryKey: [
       'install-components',
       org?.id,
       install?.id,
-      pagination?.offset,
-      pagination?.limit,
+      offset,
       searchParams.get('q'),
       searchParams.get('types'),
     ],
@@ -190,15 +182,48 @@ export const InstallComponentsTable = ({
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
-        offset: pagination?.offset,
-        limit: pagination?.limit,
-        q: searchParams.get('q') ?? undefined,
-        types: searchParams.get('types') ?? undefined,
-      }).then((r) => r.data ?? []),
-    initialData: initComponents,
+        limit: LIMIT + 1,
+        offset,
+        q: searchParams.get('q') || undefined,
+        types: searchParams.get('types') || undefined,
+      }),
+    placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
+
+  const { data: configResult } = useQuery({
+    queryKey: [
+      'app-config',
+      org?.id,
+      install?.app_id,
+      install?.app_config_id,
+      'recurse',
+    ],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: install.app_config_id,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!install?.app_config_id,
+  })
+
+  const allComponents = componentsResult ?? []
+  const hasNext = allComponents.length > LIMIT
+  const components = allComponents.slice(0, LIMIT)
+  const pagination = { hasNext, offset, limit: LIMIT }
+
+  const deps: TComponentDeps[] = components.map((ic) => ({
+    id: ic?.id,
+    component_id: ic?.component_id,
+    dependencies: configResult?.component_config_connections?.find(
+      (c) => c?.component_id === ic?.component_id
+    )?.component_dependency_ids,
+  }))
+
+  if (isLoading) return <InstallComponentsTableSkeleton />
 
   return (
     <Table<InstallComponentRow>
@@ -206,8 +231,8 @@ export const InstallComponentsTable = ({
       data={parseInstallComponentSummaryToTableData(
         components,
         deps,
-        org.id,
-        install.id
+        org?.id ?? '',
+        install?.id ?? ''
       )}
       filterActions={
         <div className="flex items-center gap-3">

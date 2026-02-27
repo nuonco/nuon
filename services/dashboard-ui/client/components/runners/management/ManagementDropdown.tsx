@@ -21,6 +21,7 @@ export const ManagementDropdown = ({
   settings: TRunnerSettings
 }) => {
   const { runner } = useRunner()
+  if (!runner) return null
   return (
     <Dropdown
       id={`runner-${runner.id}-mgmt`}

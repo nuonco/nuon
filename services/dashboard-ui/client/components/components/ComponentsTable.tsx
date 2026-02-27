@@ -13,6 +13,7 @@ import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentType } from '@/components/components/ComponentType'
+import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { ManagementDropdown } from '@/components/components/management/ManagementDropdown'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
@@ -175,6 +176,7 @@ export const ComponentsTable = ({
       data={parseComponentToTableData(components, org.id, app.id)}
       filterActions={
         <div className="flex items-center gap-3">
+          <ComponentTypeFilterDropdown />
           <ManagementDropdown />
         </div>
       }

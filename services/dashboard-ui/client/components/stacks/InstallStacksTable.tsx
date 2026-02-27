@@ -9,12 +9,13 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { type IPagination } from '@/components/common/Pagination'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallStack } from '@/lib'
 import type { TInstallStack } from '@/types'
 import { StackVersionDetails } from './StackVersionDetails'
+
+const LIMIT = 10
 
 export type TInstallStackRow = {
   versionId: string
@@ -88,7 +89,6 @@ const columns: ColumnDef<TInstallStackRow>[] = [
     ),
     enableSorting: true,
   },
-
   {
     accessorKey: 'more',
     header: '',
@@ -99,13 +99,9 @@ const columns: ColumnDef<TInstallStackRow>[] = [
 ]
 
 export const InstallStacksTable = ({
-  stack: initStack,
-  pagination,
   pollInterval = 20000,
   shouldPoll,
 }: {
-  stack: TInstallStack
-  pagination: IPagination
   pollInterval?: number
   shouldPoll?: boolean
 }) => {
@@ -113,17 +109,18 @@ export const InstallStacksTable = ({
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: stack } = useQuery<TInstallStack>({
-    queryKey: ['install-stack', org?.id, install?.id, pagination?.offset, pagination?.limit, searchParams.get('q')],
-    queryFn: () =>
-      getInstallStack({
-        orgId: org.id,
-        installId: install.id,
-      }).then((r) => r.data ?? initStack),
-    initialData: initStack,
+  const { data: response, isLoading } = useQuery({
+    queryKey: ['install-stack', org?.id, install?.id, searchParams.get('q')],
+    queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
+
+  const stack = response
+  const pagination = { hasNext: false, offset: 0, limit: LIMIT }
+
+  if (isLoading) return <InstallStacksTableSkeleton />
+  if (!stack) return null
 
   return (
     <Table<TInstallStackRow>

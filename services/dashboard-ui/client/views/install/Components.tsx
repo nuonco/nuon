@@ -1,5 +1,6 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { InstallComponentsTable } from '@/components/install-components/InstallComponentsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
@@ -26,9 +27,12 @@ export const Components = () => {
         <Text variant="base" weight="strong">
           Install components
         </Text>
+        <Text theme="neutral">
+          View and manage all components for this install.
+        </Text>
       </HeadingGroup>
 
-      {/* install components content here */}
+      <InstallComponentsTable shouldPoll />
     </PageSection>
   )
 }

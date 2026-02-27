@@ -12,16 +12,16 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { type IPagination } from '@/components/common/Pagination'
 import { RunAdhocActionButton } from "@/components/installs/management/RunAdhocAction"
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
 import { getInstallActionsLatestRuns } from '@/lib'
 import type { TActionConfigTriggerType, TInstallAction } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { ActionTriggerType } from './ActionTriggerType'
 import { TriggeredByFilter } from './TriggeredByFilter'
+
+const LIMIT = 20
 
 export type InstallActionRow = {
   actionId: string
@@ -143,45 +143,51 @@ const columns: ColumnDef<InstallActionRow>[] = [
 ]
 
 export const InstallActionsTable = ({
-  pagination,
   pollInterval = 20000,
   shouldPoll,
 }: {
-  pagination: IPagination
   pollInterval?: number
   shouldPoll?: boolean
 }) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { install } = useInstall()
-  const queryParams = useQueryParams({
-    offset: pagination?.offset,
-    limit: pagination?.limit,
-    q: searchParams.get('q'),
-    trigger_types: searchParams.get('trigger_types'),
-  })
-  const { data: actions = [] } = useQuery({
-    queryKey: ['install-actions', org?.id, install?.id, queryParams],
+  const offset = Number(searchParams.get('offset') ?? 0)
+
+  const { data: result } = useQuery({
+    queryKey: [
+      'install-actions',
+      org?.id,
+      install?.id,
+      offset,
+      searchParams.get('q'),
+      searchParams.get('trigger_types'),
+    ],
     queryFn: () =>
       getInstallActionsLatestRuns({
         orgId: org.id,
         installId: install.id,
-        limit: pagination?.limit,
-        offset: pagination?.offset,
+        limit: LIMIT + 1,
+        offset,
         q: searchParams.get('q') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
-      }).then((r) => r.data ?? []),
+      }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
+
+  const allActions = result ?? []
+  const hasNext = allActions.length > LIMIT
+  const actions = allActions.slice(0, LIMIT)
+  const pagination = { hasNext, offset, limit: LIMIT }
 
   return (
     <Table<InstallActionRow>
       columns={columns}
       data={parseInstallActionsLatestRunsToTableData(
         actions,
-        org.id,
-        install.id
+        org?.id ?? '',
+        install?.id ?? ''
       )}
       filterActions={
         <div className="flex items-center gap-4">

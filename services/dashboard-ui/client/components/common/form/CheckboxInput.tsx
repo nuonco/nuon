@@ -77,7 +77,9 @@ export const CheckboxInputWithButton = ({
         variant="ghost"
         size="sm"
         {...buttonProps}
-      ></Button>
+      >
+        {children}
+      </Button>
     </div>
   )
 }

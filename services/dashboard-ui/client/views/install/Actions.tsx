@@ -1,5 +1,6 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { InstallActionsTable } from '@/components/actions/InstallActionsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
@@ -24,11 +25,14 @@ export const Actions = () => {
       />
       <HeadingGroup>
         <Text variant="base" weight="strong">
-          Install actions
+          Actions
+        </Text>
+        <Text theme="neutral">
+          View and manage all actions for this install.
         </Text>
       </HeadingGroup>
 
-      {/* install actions content here */}
+      <InstallActionsTable shouldPoll />
     </PageSection>
   )
 }
