@@ -33,6 +33,7 @@ type AppAWSIAMPolicyConfig struct {
 	Name                    string   `json:"name" features:"template,omitzero" temporaljson:"name,omitzero,omitempty"`
 	Contents                []byte   `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"contents,omitzero,omitempty"`
 	GCPPermissions          []string `json:"gcp_permissions,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"gcp_permissions,omitzero,omitempty"`
+	GCPPredefinedRole       string   `json:"gcp_predefined_role,omitzero" gorm:"default:''" temporaljson:"gcp_predefined_role,omitzero,omitempty"`
 	CloudFormationStackName string   `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 }
 

@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,6 +55,16 @@ func testInputWithBreakGlass() *stacks.TemplateInput {
 	return inp
 }
 
+// extractTfvars parses the JSON envelope and returns the tfvars string.
+func extractTfvars(t *testing.T, out []byte) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	tfvars, ok := envelope["tfvars"]
+	require.True(t, ok, "envelope must contain 'tfvars' key")
+	return tfvars
+}
+
 func TestRenderValidJSON(t *testing.T) {
 	out, checksum, err := Render(testInput())
 	require.NoError(t, err)
@@ -63,132 +74,138 @@ func TestRenderValidJSON(t *testing.T) {
 	require.NoError(t, json.Unmarshal(out, &parsed), "rendered template must be valid JSON")
 }
 
-func TestRenderCustomRoles(t *testing.T) {
+func TestRenderStandardVars(t *testing.T) {
+	out, _, err := Render(testInput())
+	require.NoError(t, err)
+
+	tfvars := extractTfvars(t, out)
+
+	expected := map[string]string{
+		"nuon_install_id":        `"instabcdefghijklmnopqrstuv"`,
+		"nuon_org_id":            `"orgabcdefghijklmnopqrstuvw"`,
+		"nuon_app_id":            `"appabcdefghijklmnopqrstuvw"`,
+		"runner_api_url":         `"https://runner.nuon.co"`,
+		"runner_api_token":       `"test-token"`,
+		"runner_id":              `"runnerabcdefghijklmnopqrstu"`,
+		"runner_init_script_url": `"https://example.com/init.sh"`,
+		"phone_home_url":         `"https://example.com/phone-home"`,
+	}
+	for key, val := range expected {
+		assert.Contains(t, tfvars, key+" ", "tfvars should contain %s", key)
+		assert.Contains(t, tfvars, val, "tfvars should contain value %s for %s", val, key)
+	}
+}
+
+func TestRenderPermissions(t *testing.T) {
 	t.Run("without break glass", func(t *testing.T) {
 		out, _, err := Render(testInput())
 		require.NoError(t, err)
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+		tfvars := extractTfvars(t, out)
 
-		resources := parsed["resource"].(map[string]any)
-		customRoles := resources["google_project_iam_custom_role"].(map[string]any)
-
-		for _, role := range []string{"provision", "maintenance", "deprovision"} {
-			assert.Contains(t, customRoles, role)
+		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions"} {
+			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
-		assert.NotContains(t, customRoles, "break_glass")
+		assert.Contains(t, tfvars, "has_break_glass          = false")
+		assert.NotContains(t, tfvars, "break_glass_permissions")
 	})
 
 	t.Run("with break glass", func(t *testing.T) {
 		out, _, err := Render(testInputWithBreakGlass())
 		require.NoError(t, err)
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+		tfvars := extractTfvars(t, out)
 
-		resources := parsed["resource"].(map[string]any)
-		customRoles := resources["google_project_iam_custom_role"].(map[string]any)
+		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions", "break_glass_permissions"} {
+			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
+		}
+		assert.Contains(t, tfvars, "has_break_glass          = true")
+		assert.Contains(t, tfvars, `["iam.roles.get"]`)
+	})
+}
 
-		for _, role := range []string{"provision", "maintenance", "deprovision", "break_glass"} {
-			assert.Contains(t, customRoles, role)
+func TestRenderPredefinedRoles(t *testing.T) {
+	t.Run("without break glass", func(t *testing.T) {
+		out, _, err := Render(testInput())
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+
+		for _, v := range []string{"provision_predefined_role", "maintenance_predefined_role", "deprovision_predefined_role"} {
+			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
+		}
+		assert.NotContains(t, tfvars, "break_glass_predefined_role")
+	})
+
+	t.Run("with break glass", func(t *testing.T) {
+		out, _, err := Render(testInputWithBreakGlass())
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+
+		for _, v := range []string{"provision_predefined_role", "maintenance_predefined_role", "deprovision_predefined_role", "break_glass_predefined_role"} {
+			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
 	})
 }
 
-func TestRenderServiceAccounts(t *testing.T) {
-	t.Run("without break glass", func(t *testing.T) {
+func TestRenderBreakGlassConditional(t *testing.T) {
+	t.Run("without break glass omits break glass vars", func(t *testing.T) {
 		out, _, err := Render(testInput())
 		require.NoError(t, err)
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+		tfvars := extractTfvars(t, out)
 
-		resources := parsed["resource"].(map[string]any)
-		sas := resources["google_service_account"].(map[string]any)
-
-		for _, sa := range []string{"runner", "provision", "maintenance", "deprovision"} {
-			assert.Contains(t, sas, sa)
-		}
-		assert.NotContains(t, sas, "break_glass")
+		assert.Contains(t, tfvars, "has_break_glass          = false")
+		assert.NotContains(t, tfvars, "break_glass_permissions")
+		assert.NotContains(t, tfvars, "break_glass_predefined_role")
 	})
 
-	t.Run("with break glass", func(t *testing.T) {
+	t.Run("with break glass includes break glass vars", func(t *testing.T) {
 		out, _, err := Render(testInputWithBreakGlass())
 		require.NoError(t, err)
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+		tfvars := extractTfvars(t, out)
 
-		resources := parsed["resource"].(map[string]any)
-		sas := resources["google_service_account"].(map[string]any)
-
-		for _, sa := range []string{"runner", "provision", "maintenance", "deprovision", "break_glass"} {
-			assert.Contains(t, sas, sa)
-		}
+		assert.Contains(t, tfvars, "has_break_glass          = true")
+		assert.Contains(t, tfvars, "break_glass_permissions")
+		assert.Contains(t, tfvars, "break_glass_predefined_role")
 	})
 }
 
-func TestRenderTokenCreatorGrants(t *testing.T) {
-	t.Run("without break glass", func(t *testing.T) {
-		out, _, err := Render(testInput())
-		require.NoError(t, err)
+func TestRenderChecksumDiffers(t *testing.T) {
+	_, checksum1, err := Render(testInput())
+	require.NoError(t, err)
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+	_, checksum2, err := Render(testInputWithBreakGlass())
+	require.NoError(t, err)
 
-		resources := parsed["resource"].(map[string]any)
-		iamMembers := resources["google_service_account_iam_member"].(map[string]any)
-
-		for _, grant := range []string{"provision_token_creator", "maintenance_token_creator", "deprovision_token_creator"} {
-			assert.Contains(t, iamMembers, grant)
-		}
-		assert.NotContains(t, iamMembers, "break_glass_token_creator")
-	})
-
-	t.Run("with break glass", func(t *testing.T) {
-		out, _, err := Render(testInputWithBreakGlass())
-		require.NoError(t, err)
-
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
-
-		resources := parsed["resource"].(map[string]any)
-		iamMembers := resources["google_service_account_iam_member"].(map[string]any)
-
-		for _, grant := range []string{"provision_token_creator", "maintenance_token_creator", "deprovision_token_creator", "break_glass_token_creator"} {
-			assert.Contains(t, iamMembers, grant)
-		}
-	})
+	assert.NotEqual(t, checksum1, checksum2, "different inputs should produce different checksums")
 }
 
-func TestRenderOutputs(t *testing.T) {
-	t.Run("without break glass", func(t *testing.T) {
-		out, _, err := Render(testInput())
-		require.NoError(t, err)
+func TestRenderPredefinedRoleValues(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
+		Roles: []app.AppAWSIAMRoleConfig{
+			{
+				CloudPlatform: "gcp",
+				Type:          app.AWSIAMRoleTypeRunnerProvision,
+				Policies: []app.AppAWSIAMPolicyConfig{
+					{GCPPredefinedRole: "roles/editor"},
+				},
+			},
+		},
+	}
 
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
+	out, _, err := Render(inp)
+	require.NoError(t, err)
 
-		outputs := parsed["output"].(map[string]any)
+	tfvars := extractTfvars(t, out)
 
-		for _, output := range []string{"provision_sa_email", "maintenance_sa_email", "deprovision_sa_email", "runner_service_account_email"} {
-			assert.Contains(t, outputs, output)
+	// Find the line with provision_predefined_role and verify value.
+	for _, line := range strings.Split(tfvars, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "provision_predefined_role") {
+			assert.Contains(t, line, `"roles/editor"`)
 		}
-		assert.NotContains(t, outputs, "break_glass_sa_email")
-	})
-
-	t.Run("with break glass", func(t *testing.T) {
-		out, _, err := Render(testInputWithBreakGlass())
-		require.NoError(t, err)
-
-		var parsed map[string]any
-		require.NoError(t, json.Unmarshal(out, &parsed))
-
-		outputs := parsed["output"].(map[string]any)
-
-		for _, output := range []string{"provision_sa_email", "maintenance_sa_email", "deprovision_sa_email", "break_glass_sa_email", "runner_service_account_email"} {
-			assert.Contains(t, outputs, output)
-		}
-	})
+	}
 }

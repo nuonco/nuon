@@ -21,6 +21,11 @@ type GCPTemplateInput struct {
 	DeprovisionPermissions string
 	BreakGlassPermissions  string
 	HasBreakGlass          bool
+
+	ProvisionPredefinedRole   string
+	MaintenancePredefinedRole string
+	DeprovisionPredefinedRole string
+	BreakGlassPredefinedRole  string
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
@@ -29,14 +34,18 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", errors.Wrap(err, "unable to parse gcp template")
 	}
 
-	prov, maint, deprov, bg := extractGCPPermissions(inputs.AppCfg)
+	prov, maint, deprov, bg, provPredefined, maintPredefined, deprovPredefined, bgPredefined := extractGCPPermissions(inputs.AppCfg)
 	gcpInputs := &GCPTemplateInput{
-		TemplateInput:          inputs,
-		ProvisionPermissions:   prov,
-		MaintenancePermissions: maint,
-		DeprovisionPermissions: deprov,
-		BreakGlassPermissions:  bg,
-		HasBreakGlass:          bg != "[]",
+		TemplateInput:             inputs,
+		ProvisionPermissions:      prov,
+		MaintenancePermissions:    maint,
+		DeprovisionPermissions:    deprov,
+		BreakGlassPermissions:     bg,
+		HasBreakGlass:             bg != "[]",
+		ProvisionPredefinedRole:   provPredefined,
+		MaintenancePredefinedRole: maintPredefined,
+		DeprovisionPredefinedRole: deprovPredefined,
+		BreakGlassPredefinedRole:  bgPredefined,
 	}
 
 	var buf bytes.Buffer
@@ -61,11 +70,15 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 
 // extractGCPPermissions reads GCP IAM permissions from the app config for each role type.
 // Returns empty arrays for any role type that has no GCP permissions configured.
-func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, breakGlass string) {
+func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, breakGlass, provPredefined, maintPredefined, deprovPredefined, bgPredefined string) {
 	provision = "[]"
 	maintenance = "[]"
 	deprovision = "[]"
 	breakGlass = "[]"
+	provPredefined = ""
+	maintPredefined = ""
+	deprovPredefined = ""
+	bgPredefined = ""
 
 	if appCfg == nil {
 		return
@@ -78,27 +91,44 @@ func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, depro
 		}
 
 		var perms []string
+		var predefinedRole string
 		for _, policy := range role.Policies {
 			perms = append(perms, policy.GCPPermissions...)
+			if policy.GCPPredefinedRole != "" {
+				predefinedRole = policy.GCPPredefinedRole
+			}
 		}
-		if len(perms) == 0 {
+		if len(perms) == 0 && predefinedRole == "" {
 			continue
 		}
 
-		b, err := json.Marshal(perms)
-		if err != nil {
-			continue
+		if len(perms) > 0 {
+			b, err := json.Marshal(perms)
+			if err != nil {
+				continue
+			}
+
+			switch role.Type {
+			case app.AWSIAMRoleTypeRunnerProvision:
+				provision = string(b)
+			case app.AWSIAMRoleTypeRunnerMaintenance:
+				maintenance = string(b)
+			case app.AWSIAMRoleTypeRunnerDeprovision:
+				deprovision = string(b)
+			case app.AWSIAMRoleTypeBreakGlass, app.AWSIAMRoleTypeRunnerBreakGlass:
+				breakGlass = string(b)
+			}
 		}
 
 		switch role.Type {
 		case app.AWSIAMRoleTypeRunnerProvision:
-			provision = string(b)
+			provPredefined = predefinedRole
 		case app.AWSIAMRoleTypeRunnerMaintenance:
-			maintenance = string(b)
+			maintPredefined = predefinedRole
 		case app.AWSIAMRoleTypeRunnerDeprovision:
-			deprovision = string(b)
+			deprovPredefined = predefinedRole
 		case app.AWSIAMRoleTypeBreakGlass, app.AWSIAMRoleTypeRunnerBreakGlass:
-			breakGlass = string(b)
+			bgPredefined = predefinedRole
 		}
 	}
 

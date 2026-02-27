@@ -45,6 +45,7 @@ func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPoli
 			Name:              policy.Name,
 			Contents:          generics.ToJSON(policy.Contents),
 			GCPPermissions:    policy.GCPPermissions,
+			GCPPredefinedRole: policy.GCPPredefinedRole,
 		})
 	}
 
@@ -54,9 +55,10 @@ func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPoli
 type AppAWSIAMPolicyConfig struct {
 	ManagedPolicyName string `json:"managed_policy_name"`
 
-	Name           string   `json:"name"`
-	Contents       string   `json:"contents" swaggertype:"string" validate:"optional_json"`
-	GCPPermissions []string `json:"gcp_permissions,omitempty"`
+	Name              string   `json:"name"`
+	Contents          string   `json:"contents" swaggertype:"string" validate:"optional_json"`
+	GCPPermissions    []string `json:"gcp_permissions,omitempty"`
+	GCPPredefinedRole string   `json:"gcp_predefined_role,omitempty"`
 }
 
 func (c *CreateAppPermissionsConfigRequest) Validate(v *validator.Validate) error {

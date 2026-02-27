@@ -194,6 +194,8 @@ type ClientService interface {
 
 	CreateOrgInvite(params *CreateOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgInviteCreated, error)
 
+	CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error)
+
 	CreateTerraformModuleComponentConfig(params *CreateTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformModuleComponentConfigCreated, error)
 
 	CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceCreated, error)
@@ -3220,6 +3222,50 @@ func (a *Client) CreateOrgInvite(params *CreateOrgInviteParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateRunnerBootstrapToken creates a bootstrap token for an install s runner
+*/
+func (a *Client) CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunnerBootstrapTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunnerBootstrapToken",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/runner-bootstrap-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunnerBootstrapTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunnerBootstrapTokenCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunnerBootstrapToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
