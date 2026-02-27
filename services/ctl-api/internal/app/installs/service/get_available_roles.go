@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -139,7 +140,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		if installStackOutput.ProvisionIAMRoleARN != "" {
 			rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
 			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name", err)
+				return nil, fmt.Errorf("unable to render provision role name: %w", err)
 			}
 			roles = append(roles, AvailableRole{
 				Name:     rendered,
@@ -151,7 +152,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		if installStackOutput.DeprovisionIAMRoleARN != "" {
 			rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
 			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name", err)
+				return nil, fmt.Errorf("unable to render provision role name: %w", err)
 			}
 			roles = append(roles, AvailableRole{
 				Name:     rendered,
@@ -163,7 +164,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		if installStackOutput.MaintenanceIAMRoleARN != "" {
 			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
 			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name", err)
+				return nil, fmt.Errorf("unable to render provision role name: %s", err)
 			}
 			roles = append(roles, AvailableRole{
 				Name:     rendered,
@@ -175,7 +176,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		if installStackOutput.MaintenanceIAMRoleARN != "" {
 			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
 			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name", err)
+				return nil, fmt.Errorf("unable to render provision role name: %w", err)
 			}
 			roles = append(roles, AvailableRole{
 				Name:     rendered,
@@ -190,7 +191,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 
 func validatePrincipalType(principalType string) error {
 	if principalType == "" {
-		return fmt.Errorf("principal_type query parameter is required")
+		return errors.New("principal_type query parameter is required")
 	}
 
 	for _, validType := range principal.ValidTypes {
@@ -204,7 +205,7 @@ func validatePrincipalType(principalType string) error {
 
 func validateOperationType(operationType string) error {
 	if operationType == "" {
-		return fmt.Errorf("operation_type query parameter is required")
+		return errors.New("operation_type query parameter is required")
 	}
 
 	for _, validOp := range app.ValidOperations {
