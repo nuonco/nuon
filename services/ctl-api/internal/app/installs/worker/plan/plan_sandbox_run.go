@@ -36,11 +36,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get install stack")
 	}
 
-	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install sandbox run")
-	}
-
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
