@@ -40,6 +40,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -52,6 +53,7 @@ type TestMocks struct {
 	MockEv eventloop.Client
 	MockTC temporalclient.Client
 	MockGH vcshelpers.GithubClient
+	MockTF terraform.Client
 }
 
 // TestOpts configures the FX options for integration tests.
@@ -172,6 +174,12 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 	if opts.Mocks != nil && opts.Mocks.MockGH != nil {
 		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockGH, fx.As(new(vcshelpers.GithubClient)))))
+	}
+
+	if opts.Mocks != nil && opts.Mocks.MockTF != nil {
+		options = append(options, fx.Supply(fx.Annotate(opts.Mocks.MockTF, fx.As(new(terraform.Client)))))
+	} else {
+		options = append(options, fx.Supply(fx.Annotate(terraform.NewFakeClient(), fx.As(new(terraform.Client)))))
 	}
 
 	return options

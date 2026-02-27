@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -64,6 +65,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(notifications.New),
 	fx.Provide(eventloop.New),
 	fx.Provide(teventloop.New),
+	fx.Provide(terraform.New),
 	fx.Provide(authz.New),
 	fx.Provide(features.New),
 	fx.Provide(account.New),
