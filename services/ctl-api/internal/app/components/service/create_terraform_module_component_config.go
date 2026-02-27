@@ -2,12 +2,9 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/gin-gonic/gin"
@@ -40,11 +37,6 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Checksum       string                        `json:"checksum"`
 	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
-}
-
-type LatestTerraformVersion struct {
-	Version   string
-	Timestamp time.Time
 }
 
 const MinTerraformVersion = "1.8.0"
@@ -165,7 +157,7 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	latestVersion, err := s.getLatestTerraformVersion()
+	latestVersion, err := s.tfClient.GetLatestVersion()
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to fetch latest terraform version: %w", err))
 		return
@@ -264,47 +256,4 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 	}
 
 	return &cfg, nil
-}
-
-type GitHubRelease struct {
-	TagName    string `json:"tag_name"`
-	Name       string `json:"name"`
-	Draft      bool   `json:"draft"`
-	Prerelease bool   `json:"prerelease"`
-}
-
-var latestTerraformVersion = LatestTerraformVersion{}
-
-func getLatestTerraformVersion() (string, error) {
-	fiveMinutes := 5 * time.Minute
-	if latestTerraformVersion.Version != "" && time.Since(latestTerraformVersion.Timestamp) < fiveMinutes {
-		return latestTerraformVersion.Version, nil // 🎯 Cache hit - no API call
-	}
-
-	url := "https://api.github.com/repos/hashicorp/terraform/releases/latest"
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch release info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("API request failed with status: %d", resp.StatusCode)
-	}
-
-	var release GitHubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", fmt.Errorf("failed to decode JSON: %w", err)
-	}
-
-	// Remove 'v' prefix if present
-	version := strings.TrimPrefix(release.TagName, "v")
-
-	latestTerraformVersion = LatestTerraformVersion{
-		Version:   version,
-		Timestamp: time.Now(),
-	}
-
-	return version, nil
 }

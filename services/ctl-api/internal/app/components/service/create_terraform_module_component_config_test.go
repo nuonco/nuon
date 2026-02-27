@@ -47,8 +47,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppTerraformModuleConfigSuccess()
 		require.NoError(s.T(), err)
 
 		assert.NotNil(s.T(), response.PublicGitVCSConfig)
-		// Version should be auto-populated from mock (1.12.0)
-		assert.Equal(s.T(), "1.12.0", response.Version)
+		assert.Equal(s.T(), "1.14.6", response.Version)
 	})
 }
 
