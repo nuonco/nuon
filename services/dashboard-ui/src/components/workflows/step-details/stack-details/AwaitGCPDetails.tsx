@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
+import { createRunnerBootstrapToken } from '@/actions/installs/create-runner-bootstrap-token'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -11,6 +12,8 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useServerAction } from '@/hooks/use-server-action'
+import type { TBootstrapTokenResponse } from '@/lib/ctl-api/installs/create-runner-bootstrap-token'
 import type { IStackDetails } from './types'
 
 function parseTfvars(contents: unknown): string {
@@ -40,42 +43,24 @@ export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
   const { org } = useOrg()
   const [tokenVisible, setTokenVisible] = useState(false)
-  const [runnerApiToken, setRunnerApiToken] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [tokenError, setTokenError] = useState('')
+
+  const {
+    data: tokenData,
+    error: tokenError,
+    isLoading: isGenerating,
+    execute: generateToken,
+  } = useServerAction<
+    [{ installId: string; orgId: string }],
+    TBootstrapTokenResponse
+  >({
+    action: createRunnerBootstrapToken,
+  })
+
+  const runnerApiToken = tokenData?.token ?? ''
+  const expiresAt = tokenData?.expires_at ?? ''
 
   const version = stack?.versions?.at(0)
   const tfvarsContent = useMemo(() => parseTfvars(version?.contents), [version?.contents])
-
-  const generateToken = useCallback(async () => {
-    if (!org?.id || !install?.id) return
-
-    setIsGenerating(true)
-    setTokenError('')
-    try {
-      const response = await fetch(
-        `/api/orgs/${org.id}/installs/${install.id}/runner-bootstrap-token`,
-        { method: 'POST' }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to generate token')
-      }
-
-      const result = await response.json()
-      if (result.data) {
-        setRunnerApiToken(result.data.token)
-        setExpiresAt(result.data.expires_at)
-      } else if (result.error) {
-        setTokenError(result.error.error || 'Failed to generate token')
-      }
-    } catch {
-      setTokenError('Failed to generate token')
-    } finally {
-      setIsGenerating(false)
-    }
-  }, [org?.id, install?.id])
 
   const maskedToken = runnerApiToken
     ? `${runnerApiToken.slice(0, 8)}${'•'.repeat(24)}`
@@ -173,24 +158,29 @@ cd install-stacks/gcp`
             <span className="flex items-center gap-1">
               {runnerApiToken && (
                 <>
-                  <span
+                  <button
+                    type="button"
                     className="hover:bg-black/10 dark:hover:bg-white/5 flex items-center cursor-pointer border rounded-md p-1"
                     onClick={() => setTokenVisible((v) => !v)}
-                    title={tokenVisible ? 'Hide token' : 'Reveal token'}
+                    aria-label={tokenVisible ? 'Hide token' : 'Reveal token'}
                   >
                     <Icon
                       variant={tokenVisible ? 'EyeSlash' : 'Eye'}
                       size="16"
                     />
-                  </span>
+                  </button>
                   <ClickToCopyButton textToCopy={runnerApiToken} />
                 </>
               )}
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={generateToken}
-                disabled={isGenerating}
+                onClick={() => {
+                  if (org?.id && install?.id) {
+                    generateToken({ installId: install.id, orgId: org.id })
+                  }
+                }}
+                disabled={isGenerating || !org?.id || !install?.id}
               >
                 {isGenerating
                   ? 'Generating...'
@@ -202,7 +192,9 @@ cd install-stacks/gcp`
           </span>
 
           {tokenError && (
-            <Text variant="subtext">{tokenError}</Text>
+            <Text variant="subtext">
+              {tokenError.error || 'Failed to generate token'}
+            </Text>
           )}
 
           {runnerApiToken && (
