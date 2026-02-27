@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import {

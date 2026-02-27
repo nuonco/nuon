@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { ChangeEvent, useCallback } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'

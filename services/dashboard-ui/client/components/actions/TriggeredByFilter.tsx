@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router'
 import { ChangeEvent, useCallback, useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'

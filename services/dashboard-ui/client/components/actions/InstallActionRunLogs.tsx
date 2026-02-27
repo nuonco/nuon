@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'

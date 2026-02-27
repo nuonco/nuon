@@ -4,8 +4,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { ConfigProvider } from '@/providers/config-provider'
 import { AuthProvider } from '@/providers/auth-provider'
-import { OrgLayout } from '@/views/org/OrgLayout'
 import { Login } from '@/views/Login'
+import { AppLayout } from '@/views/app/AppLayout'
+import { OrgLayout } from '@/views/org/OrgLayout'
 import { Dashboard } from '@/views/org/Dashbaord'
 import { Apps } from '@/views/org/Apps'
 import { Installs } from '@/views/org/Installs'
@@ -23,15 +24,6 @@ const queryClient = new QueryClient({
 
 const Onboarding = () => {
   return <>Onboarding</>
-}
-
-const AppLayout = () => {
-  return (
-    <div className="flex flex-col gap-4">
-      <span>App layout</span>
-      <Outlet />
-    </div>
-  )
 }
 
 export const App = () => {
@@ -59,6 +51,31 @@ export const App = () => {
                     <Route
                       path=":orgId/apps/:appId/components"
                       element={<>App components</>}
+                    />
+
+                    <Route
+                      path=":orgId/apps/:appId/actions"
+                      element={<>App actions</>}
+                    />
+
+                    <Route
+                      path=":orgId/apps/:appId/roles"
+                      element={<>App roles</>}
+                    />
+
+                    <Route
+                      path=":orgId/apps/:appId/policies"
+                      element={<>App Policies</>}
+                    />
+
+                    <Route
+                      path=":orgId/apps/:appId/installs"
+                      element={<>App installs</>}
+                    />
+
+                    <Route
+                      path=":orgId/apps/:appId/readme"
+                      element={<>App README</>}
                     />
                   </Route>
                 </Route>

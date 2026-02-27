@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams } from 'react-router'
 import { useAuth } from '@/hooks/use-auth'
 import { AdminOrgSection } from './sections/AdminOrgSection'
 import { AdminAppSection } from './sections/AdminAppSection'

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import React, { useRef, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'

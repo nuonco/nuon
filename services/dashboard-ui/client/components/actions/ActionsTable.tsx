@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router'
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQuery } from '@tanstack/react-query'

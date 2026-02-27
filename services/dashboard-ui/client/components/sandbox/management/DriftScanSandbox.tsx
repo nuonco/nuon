@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
