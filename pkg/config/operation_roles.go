@@ -22,6 +22,7 @@ const (
 	PrincipalTypeComponent PrincipalType = principal.TypeComponent
 	PrincipalTypeSandbox   PrincipalType = principal.TypeSandbox
 	PrincipalTypeAction    PrincipalType = principal.TypeAction
+	PrincipalTypeSecret    PrincipalType = principal.TypeSecret
 )
 
 type OperationType string
@@ -36,6 +37,8 @@ const (
 	OperationTeardown OperationType = "teardown"
 	// for actions
 	OperationTrigger OperationType = "trigger"
+	// for secrets
+	OperationSync OperationType = "sync"
 )
 
 type ValidOperations []OperationType
@@ -55,6 +58,7 @@ var validOperations ValidOperations = []OperationType{
 	OperationDeploy,
 	OperationTeardown,
 	OperationTrigger,
+	OperationSync,
 }
 
 // OperationRolesConfig defines role assignments for operations at the app level
@@ -68,7 +72,7 @@ func (c OperationRolesConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("type").Short("configuration type").
 		Long("Type of operation roles configuration. Must be 'matrix' for rule-based role assignment").
 		Field("rules").Short("operation role rules").
-		Long("Array of rules that map principals (components, sandboxes, actions) and operations to IAM roles")
+		Long("Array of rules that map principals (components, sandboxes, actions, secrets) and operations to IAM roles")
 }
 
 func (c *OperationRolesConfig) Parse() error {
@@ -171,7 +175,7 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 					return fmt.Errorf("rule at index %d: action %q does not exist in app config", i, principalName)
 				}
 
-			case PrincipalTypeSandbox:
+			case PrincipalTypeSandbox, PrincipalTypeSecret:
 				continue
 
 			default:
@@ -200,9 +204,9 @@ type OperationRoleRule struct {
 func (r OperationRoleRule) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("principal").Short("principal identifier").
-		Long("Identifier for the entity: 'nuon::component:name', 'nuon::sandbox', or 'nuon::action:name'. Supports wildcards like 'nuon::component:*'").
+		Long("Identifier for the entity: 'nuon::component:name', 'nuon::sandbox', 'nuon::action:name', or 'nuon::secret'. Supports wildcards like 'nuon::component:*'").
 		Field("operation").Short("operation type").
-		Long("Type of operation: provision, deprovision, update, reprovision, or trigger").
+		Long("Type of operation: provision, deprovision, update, reprovision, trigger, or sync").
 		Field("role").Short("IAM role name").
 		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs")
 }
@@ -237,7 +241,7 @@ func (r *OperationRoleRule) ValidatePrincipal() error {
 		return err
 	}
 
-	validTypes := []PrincipalType{PrincipalTypeComponent, PrincipalTypeSandbox, PrincipalTypeAction}
+	validTypes := []PrincipalType{PrincipalTypeComponent, PrincipalTypeSandbox, PrincipalTypeAction, PrincipalTypeSecret}
 	if !slices.Contains(validTypes, PrincipalType(principalType)) {
 		validTypeStrings := make([]string, len(validTypes))
 		for i, t := range validTypes {
@@ -246,8 +250,9 @@ func (r *OperationRoleRule) ValidatePrincipal() error {
 		return fmt.Errorf("principal type must be one of: %s", strings.Join(validTypeStrings, ", "))
 	}
 
-	if PrincipalType(principalType) == PrincipalTypeSandbox && principalName != "" {
-		return errors.New("sandbox principal should not have a name (use 'nuon::sandbox')")
+	if (PrincipalType(principalType) == PrincipalTypeSandbox ||
+		PrincipalType(principalType) == PrincipalTypeSecret) && principalName != "" {
+		return fmt.Errorf("%s principal should not have a name (use 'nuon::%s')", principalType, principalType)
 	}
 
 	if (PrincipalType(principalType) == PrincipalTypeComponent ||

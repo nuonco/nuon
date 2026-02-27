@@ -21,5 +21,6 @@ type handlerState struct {
 	jobExecutionID string
 	jobID          string
 	plan           *plantypes.SyncSecretsPlan
+	auth           *plantypes.PlanAuth
 	outputs        outputs.SyncSecretsOutput
 }

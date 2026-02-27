@@ -28,6 +28,7 @@ type AppSecretsConfig struct {
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 
 	Secrets []AppSecretConfig `json:"secrets,omitzero" temporaljson:"secrets,omitzero,omitempty"`
+	Role    string            `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
 }
 
 func (a *AppSecretsConfig) Indexes(db *gorm.DB) []migrations.Index {

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
@@ -29,10 +30,26 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	// parse the plan
 	var plan plantypes.SyncSecretsPlan
 	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return errors.Wrap(err, "unable to parse sandbox workflow run plan")
+		return errors.Wrap(err, "unable to parse sync secrets plan")
 	}
 	h.state.plan = &plan
 
-	l.Info("setting sandbox operation timeout", zap.String("duration", h.state.timeout.String()))
+	l.Info("fetching composite plan for the job")
+	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job composite plan")
+	}
+
+	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
+	if err != nil {
+		return errors.Wrap(err, "unable to build plan auth for job")
+	}
+
+	if h.state.plan.ClusterInfo != nil {
+		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+	}
+
+	l.Info("setting sync secrets operation timeout", zap.String("duration", h.state.timeout.String()))
 	return nil
 }

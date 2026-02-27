@@ -18,6 +18,7 @@ const (
 	OperationTeardown    OperationType = "teardown"
 	OperationReprovision OperationType = "reprovision"
 	OperationTrigger     OperationType = "trigger"
+	OperationSync        OperationType = "sync"
 )
 
 var ValidOperations = []OperationType{
@@ -27,6 +28,7 @@ var ValidOperations = []OperationType{
 	OperationDeploy,
 	OperationTeardown,
 	OperationTrigger,
+	OperationSync,
 }
 
 // AppOperationRoleRule represents a single rule mapping principal + operation -> role

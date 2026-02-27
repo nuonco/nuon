@@ -13,12 +13,14 @@ const (
 	TypeComponent Type = "component"
 	TypeSandbox   Type = "sandbox"
 	TypeAction    Type = "action"
+	TypeSecret    Type = "secret"
 )
 
 var ValidTypes = []Type{
 	TypeComponent,
 	TypeSandbox,
 	TypeAction,
+	TypeSecret,
 }
 
 type Principal struct {
@@ -49,7 +51,7 @@ func ParsePrincipal(principalStr string) (*Principal, error) {
 	}
 
 	if principalType == "" {
-		return nil, fmt.Errorf("principalType cannot be empty, should be either component, action or sandbox")
+		return nil, fmt.Errorf("principalType cannot be empty, should be either component, action, sandbox or secret")
 	}
 
 	return &Principal{

@@ -8,12 +8,15 @@ import (
 
 type SecretsConfig struct {
 	Secrets []*AppSecret `mapstructure:"secret,omitempty" toml:"secret,omitempty"`
+	Role    string       `mapstructure:"role,omitempty" toml:"role,omitempty"`
 }
 
 func (a SecretsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("secret").Short("list of secrets").
-		Long("Array of secret definitions that customers can provide during installation or that are auto-generated")
+		Long("Array of secret definitions that customers can provide during installation or that are auto-generated").
+		Field("role").Short("IAM role name for secret sync").
+		Long("Name of the IAM role to use when syncing secrets. Overrides the default maintenance role. Role must exist in install stack outputs")
 }
 
 func (a *SecretsConfig) parse() error {

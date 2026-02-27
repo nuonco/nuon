@@ -114,6 +114,11 @@ type SandboxSubSignal struct {
 	Role string
 }
 
+type SyncSecretsSubSignal struct {
+	// Role override for this sync secrets operation
+	Role string `json:"role,omitempty"`
+}
+
 type SkipStepSubSignal struct {
 	Reason string
 }
@@ -147,6 +152,7 @@ type Signal struct {
 	ExecuteTeardownComponentSubSignal TeardownComponentSubSignal            `json:"teardown_component_sub_signal"`
 	ExecuteSkipStepSubSignal          SkipStepSubSignal                     `json:"skip_step_sub_signal"`
 	SandboxSubSignal                  SandboxSubSignal                      `json:"sandbox_sub_signal"`
+	SyncSecretsSubSignal              SyncSecretsSubSignal                  `json:"sync_secrets_sub_signal"`
 
 	// used for executing an install workflow
 	WorkflowStepID   string `json:"install_workflow_step_id"`

@@ -17,6 +17,7 @@ type CreateAppSecretsConfigRequest struct {
 	AppConfigID string `json:"app_config_id" validate:"required"`
 
 	Secrets []AppSecretConfig `json:"secrets" validate:"dive"`
+	Role    string            `json:"role,omitempty"`
 }
 
 func (c *CreateAppSecretsConfigRequest) Validate(v *validator.Validate) error {
@@ -109,6 +110,7 @@ func (s *service) createAppSecretsConfig(ctx context.Context, appID string, req 
 		AppID:       appID,
 		AppConfigID: req.AppConfigID,
 		Secrets:     req.getSecrets(appID, req.AppConfigID),
+		Role:        req.Role,
 	}
 
 	res := s.db.WithContext(ctx).Create(&obj)

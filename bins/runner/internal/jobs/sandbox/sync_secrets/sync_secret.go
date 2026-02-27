@@ -52,7 +52,7 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 }
 
 func (p *handler) fetchSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, error) {
-	cfg, err := awscredentials.Fetch(ctx, p.state.plan.AWSAuth)
+	cfg, err := awscredentials.Fetch(ctx, p.state.auth.AWSAuth)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "unable to get aws credentials")
 	}

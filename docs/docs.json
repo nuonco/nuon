@@ -49,6 +49,7 @@
                     "pages": [
                       "config-ref/inputs",
                       "config-ref/metadata",
+                      "config-ref/operation-roles",
                       "config-ref/permissions",
                       "config-ref/policies",
                       "config-ref/secrets"
@@ -140,7 +141,8 @@
           "concepts/runners",
           "concepts/app-inputs",
           "concepts/app-variables",
-          "concepts/app-secrets"
+          "concepts/app-secrets",
+          "concepts/operation-roles"
         ]
       },
       {
@@ -178,7 +180,8 @@
               "guides/sandbox-orgs",
               "guides/team-management",
               "guides/runner-management-mode",
-              "guides/custom-nested-stacks"
+              "guides/custom-nested-stacks",
+              "guides/operation-roles"
             ]
           },
           {

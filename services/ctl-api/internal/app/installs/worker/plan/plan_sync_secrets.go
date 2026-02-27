@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -79,14 +78,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 	}
 
 	plan := &plantypes.SyncSecretsPlan{
-		ClusterInfo: clusterInfo,
-		AWSAuth: &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
-				RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
-			},
-		},
+		ClusterInfo:       clusterInfo,
 		KubernetesSecrets: secrets,
 	}
 

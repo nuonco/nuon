@@ -32,6 +32,9 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	sg.nextGroup() // sync secrets
 	step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationSyncSecrets,
+		SyncSecretsSubSignal: signals.SyncSecretsSubSignal{
+			Role: flw.Role,
+		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

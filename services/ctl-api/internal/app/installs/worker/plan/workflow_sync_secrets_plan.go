@@ -10,6 +10,9 @@ type CreateSyncSecretsPlanRequest struct {
 	InstallID string
 
 	WorkflowID string
+
+	// RuntimeRole is an optional role override from the API request
+	RuntimeRole string
 }
 
 // @temporal-gen workflow

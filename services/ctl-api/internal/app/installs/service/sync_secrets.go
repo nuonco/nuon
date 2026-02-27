@@ -13,7 +13,8 @@ import (
 )
 
 type SyncSecretsRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	PlanOnly bool   `json:"plan_only"`
+	Role     string `json:"role,omitempty"`
 }
 
 // @ID						SyncSecrets
@@ -48,11 +49,12 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		installID,
 		app.WorkflowTypeSyncSecrets,
 		map[string]string{},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

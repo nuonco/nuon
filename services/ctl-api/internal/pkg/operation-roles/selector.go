@@ -248,7 +248,7 @@ func findMatrixRole(
 			if rule.PrincipalName == principalName || rule.PrincipalName == "*" {
 				return rule.Role, true
 			}
-		case principal.TypeSandbox:
+		case principal.TypeSandbox, principal.TypeSecret:
 			if rule.PrincipalName == "" {
 				return rule.Role, true
 			}
