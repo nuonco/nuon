@@ -11,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -36,11 +34,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install sandbox run")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
@@ -122,16 +115,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get sandbox run git source")
 	}
 
-	l.Info("getting auth")
-	awsAuth, azureAuth, err := p.getAuth(stack.InstallStackOutputs, run)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run auth")
-	}
-
-	runAuth := &awscredentials.Config{}
-	if awsAuth != nil {
-		runAuth = awsAuth
-	}
 	plan := &plantypes.SandboxRunPlan{
 		AppID:       install.AppID,
 		AppConfigID: install.AppConfigID,
@@ -150,13 +133,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
 		},
 
-		AzureAuth: azureAuth,
-		AWSAuth:   awsAuth,
-		// TODO(ja): provide both auth types to hooks
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: true,
 			EnvVars: envVars,
-			RunAuth: *runAuth,
 		},
 	}
 
@@ -256,38 +235,38 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	return vars, nil
 }
 
-func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
-	switch {
-	case outputs.AWSStackOutputs != nil:
-		awsOutputs := outputs.AWSStackOutputs
-		roleARN := awsOutputs.ProvisionIAMRoleARN
-		switch run.RunType {
-		case app.SandboxRunTypeReprovision:
-			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
-		case app.SandboxRunTypeDeprovision:
-			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
-		}
-
-		return &awscredentials.Config{
-			Region: outputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
-				RoleARN:     roleARN,
-			},
-		}, nil, nil
-	case outputs.AzureStackOutputs != nil:
-		azureOutputs := outputs.AzureStackOutputs
-		return nil, &azurecredentials.Config{
-			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-				SubscriptionID:       azureOutputs.SubscriptionID,
-				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
-			},
-			UseDefault: true,
-		}, nil
-	}
-
-	return nil, nil, errors.New("unable to get auth data from stack outputs")
-}
+// func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
+// 	switch {
+// 	case outputs.AWSStackOutputs != nil:
+// 		awsOutputs := outputs.AWSStackOutputs
+// 		roleARN := awsOutputs.ProvisionIAMRoleARN
+// 		switch run.RunType {
+// 		case app.SandboxRunTypeReprovision:
+// 			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
+// 		case app.SandboxRunTypeDeprovision:
+// 			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
+// 		}
+//
+// 		return &awscredentials.Config{
+// 			Region: outputs.AWSStackOutputs.Region,
+// 			AssumeRole: &awscredentials.AssumeRoleConfig{
+// 				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
+// 				RoleARN:     roleARN,
+// 			},
+// 		}, nil, nil
+// 	case outputs.AzureStackOutputs != nil:
+// 		azureOutputs := outputs.AzureStackOutputs
+// 		return nil, &azurecredentials.Config{
+// 			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+// 				SubscriptionID:       azureOutputs.SubscriptionID,
+// 				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
+// 			},
+// 			UseDefault: true,
+// 		}, nil
+// 	}
+//
+// 	return nil, nil, errors.New("unable to get auth data from stack outputs")
+// }
 
 // TODO(ja): flesh out sandbox mode for azure
 func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallStack) map[string]any {
