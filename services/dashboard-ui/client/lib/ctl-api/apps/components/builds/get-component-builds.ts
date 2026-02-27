@@ -16,5 +16,6 @@ export async function getComponentBuilds({
   return api<TBuild[]>({
     orgId,
     path: `builds${buildQueryParams({ limit, offset, component_id: componentId })}`,
+    paginated: true,
   })
 }

@@ -7,7 +7,7 @@ import { Time } from '@/components/common/Time'
 import { LogSeverity } from '@/components/log-stream/LogSeverity'
 import { LogFilters } from '@/components/log-stream/log-filters/LogFilters'
 import { LogLineSkeleton } from '@/components/log-stream/LogLine'
-import { useUnifiedLogData, useLogViewer } from '@/hooks/use-logs-temp'
+import { useUnifiedLogData, useLogViewer } from '@/hooks/use-logs'
 import type { TOTELLog, TActionConfig } from '@/types'
 import { cn } from '@/utils/classnames'
 

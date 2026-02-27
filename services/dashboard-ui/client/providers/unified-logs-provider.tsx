@@ -1,15 +1,14 @@
 import { createContext, useEffect, useState, useRef, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useLogStream } from '@/hooks/use-log-stream'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
-import { usePolling } from '@/hooks/use-polling'
-import { useQuery } from '@/hooks/use-query'
+import { getLogStreamLogsWithMeta } from '@/lib'
 import type { TOTELLog, TAPIError } from '@/types'
 
-const useUnifiedLogData = ({ 
-  initLogs 
-}: { 
-  initLogs: TOTELLog[] | null 
+const useUnifiedLogData = ({
+  initLogs,
+}: {
+  initLogs?: TOTELLog[]
 }) => {
   const { org } = useOrg()
   const { logStream } = useLogStream()
@@ -28,7 +27,6 @@ const useUnifiedLogData = ({
   const [reconnectAttempt, setReconnectAttempt] = useState(0)
 
   const isStreamOpen = logStream?.open || false
-  const params = useQueryParams({ order: isStreamOpen ? 'asc' : 'desc' })
 
   const connectSSE = () => {
     if (!logStream?.id || eventSourceRef.current) return
@@ -120,97 +118,73 @@ const useUnifiedLogData = ({
     }
   }
 
-  const pollingResults = usePolling<TOTELLog[]>({
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
-    dependencies: [offset],
-    headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
-    initData: initLogs,
-    pollInterval: 2000,
-    shouldPoll: false,
+  const { data: staticResult, isLoading: staticIsLoading } = useQuery({
+    queryKey: ['log-stream-logs-static', logStream?.id, org.id, offset, staticTrigger],
+    queryFn: () => getLogStreamLogsWithMeta({ logStreamId: logStream!.id, orgId: org.id, offset, order: 'desc' }),
+    enabled: staticEnabled && !isStreamOpen && !!logStream?.id,
   })
 
-  const staticResults = useQuery<TOTELLog[]>({
-    dependencies: [staticTrigger],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
-    headers: offset ? { 'X-Nuon-API-Offset': offset } : {},
-    initData: initLogs,
-    initIsLoading: false,
-    enabled: staticEnabled && !isStreamOpen,
+  const { data: paginationCheckResult } = useQuery({
+    queryKey: ['log-stream-logs-pagination-check', logStream?.id, org.id, needsPaginationCheck],
+    queryFn: () => getLogStreamLogsWithMeta({
+      logStreamId: logStream!.id,
+      orgId: org.id,
+      offset: logs.length > 0 ? String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000) : undefined,
+      order: 'desc',
+    }),
+    enabled: needsPaginationCheck && !isStreamOpen && !!logStream?.id,
   })
 
-  const paginationCheckResults = useQuery<TOTELLog[]>({
-    dependencies: [needsPaginationCheck],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs${params}`,
-    headers: logs.length > 0 ? {
-      'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
-    } : {},
-    initData: [],
-    initIsLoading: false,
-    enabled: needsPaginationCheck && !isStreamOpen,
-  })
-
-  const finalFetchResults = useQuery<TOTELLog[]>({
-    dependencies: [needsFinalFetch],
-    path: `/api/orgs/${org.id}/log-streams/${logStream?.id}/logs`,
-    headers: logs.length > 0 ? {
-      'X-Nuon-API-Offset': String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000)
-    } : {},
-    initData: [],
-    initIsLoading: false,
-    enabled: needsFinalFetch && !isStreamOpen,
+  const { data: finalFetchResult } = useQuery({
+    queryKey: ['log-stream-logs-final', logStream?.id, org.id, needsFinalFetch],
+    queryFn: () => getLogStreamLogsWithMeta({
+      logStreamId: logStream!.id,
+      orgId: org.id,
+      offset: logs.length > 0 ? String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000) : undefined,
+    }),
+    enabled: needsFinalFetch && !isStreamOpen && !!logStream?.id,
   })
 
   useEffect(() => {
-    if (!isStreamOpen && staticResults?.data) {
+    if (!isStreamOpen && staticResult?.data) {
       setLogs((prev) => {
         const logMap = new Map(prev.map((log) => [log.id, log]))
-        staticResults.data.forEach((log) => logMap.set(log.id, log))
+        staticResult.data.forEach((log) => logMap.set(log.id, log))
         return Array.from(logMap.values())
       })
-
-      if (staticResults?.headers) {
-        const logOffset = staticResults?.headers?.['x-nuon-api-next']
-        setOffset(logOffset)
-        setHasMore(!!logOffset)
-      }
+      setOffset(staticResult.nextOffset ?? undefined)
+      setHasMore(!!staticResult.nextOffset)
     }
-  }, [staticResults?.data, staticResults?.headers, isStreamOpen])
+  }, [staticResult, isStreamOpen])
 
   useEffect(() => {
-    if (!isStreamOpen && finalFetchResults?.data && needsFinalFetch) {
-      if (finalFetchResults.data.length > 0) {
+    if (!isStreamOpen && finalFetchResult?.data && needsFinalFetch) {
+      if (finalFetchResult.data.length > 0) {
         setLogs((prev) => {
           const logMap = new Map(prev.map((log) => [log.id, log]))
-          finalFetchResults.data.forEach((log) => logMap.set(log.id, log))
+          finalFetchResult.data.forEach((log) => logMap.set(log.id, log))
           return Array.from(logMap.values())
         })
       }
-
-      if (finalFetchResults?.headers) {
-        const nextOffset = finalFetchResults?.headers?.['x-nuon-api-next']
-        const hasMoreLogs = !!nextOffset
-        setHasMore(hasMoreLogs)
-        if (hasMoreLogs && nextOffset) {
-          setOffset(nextOffset)
-        }
-      } else {
-        setHasMore(false)
+      const hasMoreLogs = !!finalFetchResult.nextOffset
+      setHasMore(hasMoreLogs)
+      if (finalFetchResult.nextOffset) {
+        setOffset(finalFetchResult.nextOffset)
       }
       setNeedsFinalFetch(false)
     }
-  }, [finalFetchResults?.data, finalFetchResults?.headers, needsFinalFetch, isStreamOpen])
+  }, [finalFetchResult, needsFinalFetch, isStreamOpen])
 
   useEffect(() => {
-    if (paginationCheckResults?.headers && needsPaginationCheck) {
-      const nextOffset = paginationCheckResults?.headers?.['x-nuon-api-next']
-      const hasMoreLogs = !!nextOffset && paginationCheckResults.data.length > 0
+    if (paginationCheckResult && needsPaginationCheck) {
+      const hasMoreLogs = !!paginationCheckResult.nextOffset && paginationCheckResult.data.length > 0
       setHasMore(hasMoreLogs)
-      if (hasMoreLogs && nextOffset) {
-        setOffset(nextOffset)
+      if (hasMoreLogs && paginationCheckResult.nextOffset) {
+        setOffset(paginationCheckResult.nextOffset)
       }
       setNeedsPaginationCheck(false)
     }
-  }, [paginationCheckResults?.headers, paginationCheckResults?.data, needsPaginationCheck])
+  }, [paginationCheckResult, needsPaginationCheck])
 
   const hasConnectedSSE = useRef(false)
   const prevIsStreamOpen = useRef(isStreamOpen)
@@ -250,11 +224,11 @@ const useUnifiedLogData = ({
     }
   }, [isStreamOpen])
 
-  const isLoading = isStreamOpen 
+  const isLoading = isStreamOpen
     ? connectionState === 'connecting' || connectionState === 'reconnecting'
-    : staticResults?.isLoading || false
-    
-  const currentError = isStreamOpen ? error : staticResults?.error || null
+    : staticIsLoading || false
+
+  const currentError = isStreamOpen ? error : null
 
   return {
     logs,
@@ -284,7 +258,7 @@ export function UnifiedLogsProvider({
   initLogs,
 }: {
   children: ReactNode
-  initLogs: TOTELLog[]
+  initLogs?: TOTELLog[]
 }) {
   const logData = useUnifiedLogData({ initLogs })
 

@@ -3,18 +3,8 @@ import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'
 import { useLogFilters, type TLogFiltersProps } from '@/hooks/use-log-filters'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { UnifiedLogsContext } from '@/providers/unified-logs-provider-temp'
+import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
 import type { TOTELLog } from '@/types'
-
-/**
- * TEMP VERSION - Log viewer provider for active log management and filtering
- * 
- * - Handles active log selection and state management
- * - Manages keyboard navigation (arrow keys)
- * - Integrates with surfaces for log panels
- * - Uses useLogFilters for filtering
- * - Independent of data source (works with SSE, HTTP, or any log array)
- */
 
 type LogViewerContextValue = {
   activeLog?: TOTELLog
@@ -30,12 +20,11 @@ interface LogViewerProviderProps {
 }
 
 export function LogViewerProvider({ children }: LogViewerProviderProps) {
-  // Get live logs from UnifiedLogsProvider
   const unifiedLogsContext = useContext(UnifiedLogsContext)
   if (!unifiedLogsContext) {
     throw new Error('LogViewerProvider must be used within a UnifiedLogsProvider')
   }
-  
+
   const { logs } = unifiedLogsContext
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
   const filters = useLogFilters(logs || [])
@@ -45,7 +34,6 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
     setActiveLog(id ? filters.filteredLogs?.find((l) => l.id === id) : undefined)
   }
 
-  // Keyboard navigation
   useArrowKeys({
     onDownArrow() {
       if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
@@ -72,7 +60,6 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
     },
   })
 
-  // Manage log panels
   useEffect(() => {
     if (activeLog) {
       addPanel(
@@ -102,7 +89,6 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
   )
 }
 
-// Hook for consuming the log viewer context
 export const useLogViewer = () => {
   const context = useContext(LogViewerContext)
   if (context === undefined) {

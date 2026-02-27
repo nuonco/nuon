@@ -14,4 +14,5 @@ export const getInstallSandboxRuns = ({
   api<TSandboxRun[]>({
     path: `installs/${installId}/sandbox-runs${buildQueryParams({ limit, offset })}`,
     orgId,
+    paginated: true,
   })

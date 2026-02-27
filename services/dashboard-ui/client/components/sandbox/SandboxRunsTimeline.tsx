@@ -1,8 +1,9 @@
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Timeline, type ITimeline } from '@/components/common/Timeline'
+import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -10,35 +11,44 @@ import { getInstallSandboxRuns } from '@/lib'
 import type { TSandboxRun } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 
-interface ISandboxRunsTimeline
-  extends Omit<ITimeline<TSandboxRun>, 'events' | 'renderEvent'> {
-  initRuns: Array<TSandboxRun>
+const LIMIT = 10
+
+interface ISandboxRunsTimeline {
+  initRuns?: TSandboxRun[]
   pollInterval?: number
   shouldPoll?: boolean
 }
 
 export const SandboxRunsTimeline = ({
-  initRuns,
-  pagination,
+  initRuns = [],
   shouldPoll = false,
   pollInterval = 20000,
 }: ISandboxRunsTimeline) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: runs } = useQuery<TSandboxRun[]>({
-    queryKey: ['install-sandbox-runs', org?.id, install?.id, pagination?.offset],
+  const { data: result } = useQuery({
+    queryKey: ['install-sandbox-runs', org?.id, install?.id, offset],
     queryFn: () =>
       getInstallSandboxRuns({
         orgId: org.id,
         installId: install.id,
-        limit: 10,
-        offset: pagination?.offset,
+        limit: LIMIT,
+        offset,
       }),
-    initialData: initRuns,
+    initialData: initRuns.length > 0
+      ? { data: initRuns, pagination: { hasNext: false, offset, limit: LIMIT } }
+      : undefined,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
+
+  const runs = result?.data ?? []
+  const pagination = result?.pagination
+    ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
+    : { hasNext: false, offset, limit: LIMIT }
 
   return (
     <Timeline<TSandboxRun>

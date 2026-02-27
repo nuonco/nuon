@@ -15,7 +15,7 @@ interface IBuildTimeline
   extends Omit<ITimeline<TBuild>, 'events' | 'renderEvent'> {
   componentName: string
   componentId: string
-  initBuilds: TBuild[]
+  initBuilds?: TBuild[]
   pollInterval?: number
   shouldPoll?: boolean
 }
@@ -23,7 +23,7 @@ interface IBuildTimeline
 export const BuildTimeline = ({
   componentName,
   componentId,
-  initBuilds,
+  initBuilds = [],
   pagination,
   pollInterval = 20000,
   shouldPoll = false,

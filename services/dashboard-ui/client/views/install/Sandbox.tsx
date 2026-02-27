@@ -1,4 +1,3 @@
-import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -9,15 +8,11 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig, getInstallSandboxRuns } from '@/lib'
-
-const LIMIT = 10
+import { getAppConfig } from '@/lib'
 
 export const Sandbox = () => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const [searchParams] = useSearchParams()
-  const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: configResult } = useQuery({
     queryKey: [
@@ -36,23 +31,6 @@ export const Sandbox = () => {
       }),
     enabled: !!org?.id && !!install?.app_config_id,
   })
-
-  const { data: runsResult } = useQuery({
-    queryKey: ['install-sandbox-runs', org?.id, install?.id, offset],
-    queryFn: () =>
-      getInstallSandboxRuns({
-        orgId: org.id,
-        installId: install.id,
-        limit: LIMIT + 1,
-        offset,
-      }),
-    enabled: !!org?.id && !!install?.id,
-  })
-
-  const allRuns = runsResult ?? []
-  const hasNext = allRuns.length > LIMIT
-  const runs = allRuns.slice(0, LIMIT)
-  const pagination = { hasNext, offset, limit: LIMIT }
 
   const sandboxConfig = configResult?.sandbox
 
@@ -95,11 +73,7 @@ export const Sandbox = () => {
             <Text variant="base" weight="strong">
               Sandbox history
             </Text>
-            <SandboxRunsTimeline
-              initRuns={runs}
-              pagination={pagination}
-              shouldPoll
-            />
+            <SandboxRunsTimeline shouldPoll />
           </div>
         </div>
       </div>

@@ -12,6 +12,11 @@ export type TPaginatedResult<T> = {
   pagination: TPaginationMeta
 }
 
+export type TWithMetaResult<T> = {
+  data: T
+  nextOffset: string | null
+}
+
 interface IAPIData {
   abortTimeout?: number
   headers?: Record<string, unknown>
@@ -21,10 +26,12 @@ interface IAPIData {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: any
   paginated?: boolean
+  withMeta?: boolean
 }
 
 export async function api<T>(opts: IAPIData & { paginated: true }): Promise<TPaginatedResult<T>>
-export async function api<T>(opts: IAPIData & { paginated?: false }): Promise<T>
+export async function api<T>(opts: IAPIData & { withMeta: true }): Promise<TWithMetaResult<T>>
+export async function api<T>(opts: IAPIData & { paginated?: false; withMeta?: false }): Promise<T>
 export async function api<T>({
   abortTimeout = 10000,
   headers = {},
@@ -34,7 +41,8 @@ export async function api<T>({
   method = 'GET',
   body,
   paginated,
-}: IAPIData): Promise<T | TPaginatedResult<T>> {
+  withMeta,
+}: IAPIData): Promise<T | TPaginatedResult<T> | TWithMetaResult<T>> {
   let response: Response | undefined
   try {
     const fetchOpts: RequestInit = {
@@ -101,6 +109,9 @@ export async function api<T>({
             limit: Number(response.headers.get('X-Nuon-Page-Limit') ?? 20),
           },
         }
+      }
+      if (withMeta) {
+        return { data: data as T, nextOffset: response.headers.get('x-nuon-api-next') }
       }
       return data as T
     } else {
