@@ -77,6 +77,20 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		ComponentID:   installDeploy.ComponentID,
 	}
 
+	// Get install stack for role selection
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install stack")
+	}
+
+	// Get install state for role selection
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install state")
+	}
+
 	switch build.ComponentConfigConnection.Type {
 	case app.ComponentTypeDockerBuild, app.ComponentTypeExternalImage:
 		l.Info("generating noop plan")
@@ -89,6 +103,9 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
+		// Set auth on top-level plan from terraform plan
+		plan.AWSAuth = tfPlan.AWSAuth
+		plan.AzureAuth = tfPlan.AzureAuth
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
@@ -97,6 +114,9 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
+		// Set auth on top-level plan from helm plan
+		plan.AWSAuth = helmPlan.AWSAuth
+		plan.AzureAuth = helmPlan.AzureAuth
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
 		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
@@ -105,6 +125,9 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
+		// Set auth on top-level plan from kubernetes manifest plan
+		plan.AWSAuth = kubernetesManifestPlan.AWSAuth
+		plan.AzureAuth = kubernetesManifestPlan.AzureAuth
 	}
 
 	// the following section is for sandbox mode only
