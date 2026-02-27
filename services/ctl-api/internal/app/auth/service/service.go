@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -13,6 +14,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	awsidentity "github.com/nuonco/nuon/pkg/identity/aws"
+	azureidentity "github.com/nuonco/nuon/pkg/identity/azure"
+	gcpidentity "github.com/nuonco/nuon/pkg/identity/gcp"
+	"github.com/nuonco/nuon/pkg/identity/jwks"
+	localidentity "github.com/nuonco/nuon/pkg/identity/local"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -51,6 +57,13 @@ type service struct {
 
 	domain         string   // domain the service is served at
 	allowedDomains []string // email domains that are allowed to use this service for auth
+
+	// Identity validators for runner authentication (using pkg/identity)
+	jwksCache      *jwks.Cache
+	awsValidator   *IdentityValidator
+	gcpValidator   *IdentityValidator
+	azureValidator *IdentityValidator
+	localValidator *IdentityValidator
 }
 
 var _ api.Service = (*service)(nil)
@@ -61,6 +74,11 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	auth := api.Group("/v1/runner-auth")
+	{
+		auth.POST("/aws", s.RunnerAuthAWS)   // Existing presigned auth (backward compatibility)
+		auth.POST("/oidc", s.RunnerAuthOIDC) // New OIDC auth endpoint
+	}
 	return nil
 }
 
@@ -99,6 +117,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 }
 
 func New(params Params) (*service, error) {
+	// Initialize JWKS cache for OIDC token validation (5-minute TTL)
+	jwksCache := jwks.NewCache(5 * time.Minute)
+
 	s := &service{
 		cfg:        params.Cfg,
 		l:          params.L,
@@ -106,7 +127,29 @@ func New(params Params) (*service, error) {
 		db:         params.DB,
 		mw:         params.MW,
 		acctClient: params.AcctClient,
+		jwksCache:  jwksCache,
 	}
+
+	// Initialize identity validators for runner authentication
+	audience := params.Cfg.RunnerAPIURL
+	if audience == "" {
+		audience = "https://api.nuon.co" // Default audience
+	}
+
+	// Create pkg/identity validators
+	awsValidator := awsidentity.NewValidator(params.L, jwksCache)
+	gcpValidator := gcpidentity.NewValidator(params.L, jwksCache, audience)
+	azureValidator := azureidentity.NewValidator(params.L, jwksCache, audience)
+	localValidator := localidentity.NewValidator(&localidentity.ValidatorConfig{
+		Logger:   params.L,
+		AllowAny: false, // Don't allow any token in production
+	})
+
+	// Wrap with install-specific validation
+	s.awsValidator = NewIdentityValidator(params.L, params.DB, awsValidator)
+	s.gcpValidator = NewIdentityValidator(params.L, params.DB, gcpValidator)
+	s.azureValidator = NewIdentityValidator(params.L, params.DB, azureValidator)
+	s.localValidator = NewIdentityValidator(params.L, params.DB, localValidator)
 
 	// Validate required configs
 	if s.cfg.RootDomain == "" {

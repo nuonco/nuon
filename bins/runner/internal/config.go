@@ -18,14 +18,24 @@ func init() {
 	config.RegisterDefault("registry_port", "5001")
 	config.RegisterDefault("sandbox_job_duration", "5s")
 	config.RegisterDefault("sandbox_control_port", "9095")
+	
+	// Auth configuration defaults
+	config.RegisterDefault("auth_method", "presigned")     // backward compatibility
+	config.RegisterDefault("auth_provider", "")            // auto-detect
+	config.RegisterDefault("auth_audience", "")            // defaults to runner_api_url
 }
 
 type Config struct {
 	GitRef string `config:"git_ref" validate:"required"`
 
 	RunnerAPIURL   string `config:"runner_api_url" validate:"required"`
-	RunnerAPIToken string `config:"runner_api_token" validate:"required"`
+	RunnerAPIToken string `config:"runner_api_token"`
 	RunnerID       string `config:"runner_id" validate:"required"`
+
+	// Authentication configuration
+	AuthMethod   string `config:"auth_method"`   // oidc, presigned, or auto
+	AuthProvider string `config:"auth_provider"` // aws, gcp, azure (optional, auto-detected)
+	AuthAudience string `config:"auth_audience"` // OIDC audience (defaults to runner_api_url)
 
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`

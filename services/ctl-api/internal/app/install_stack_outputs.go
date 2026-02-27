@@ -36,6 +36,7 @@ type InstallStackOutputs struct {
 
 	AWSStackOutputs   *AWSStackOutputs   `json:"aws,omitzero" gorm:"-" temporaljson:"aws_stack_outputs,omitzero,omitempty"`
 	AzureStackOutputs *AzureStackOutputs `json:"azure,omitzero" gorm:"-" temporaljson:"azure_stack_outputs,omitzero,omitempty"`
+	GCPStackOutputs   *GCPStackOutputs   `json:"gcp,omitzero" gorm:"-" temporaljson:"gcp_stack_outputs,omitzero,omitempty"`
 }
 
 type AWSStackOutputs struct {
@@ -75,6 +76,17 @@ type AzureStackOutputs struct {
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
 }
 
+type GCPStackOutputs struct {
+	ProjectID            string   `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
+	Region               string   `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
+	NetworkName          string   `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
+	SubnetName           string   `json:"subnet_name,omitzero" mapstructure:"subnet_name" temporaljson:"subnet_name,omitzero,omitempty"`
+	RunnerServiceAccount string   `json:"runner_service_account,omitzero" mapstructure:"runner_service_account" temporaljson:"runner_service_account,omitzero,omitempty"`
+	WorkloadIdentityPool string   `json:"workload_identity_pool,omitzero" mapstructure:"workload_identity_pool" temporaljson:"workload_identity_pool,omitzero,omitempty"`
+	PublicSubnets        []string `json:"public_subnets,omitzero" mapstructure:"public_subnets" temporaljson:"public_subnets,omitzero,omitempty"`
+	PrivateSubnets       []string `json:"private_subnets,omitzero" mapstructure:"private_subnets" temporaljson:"private_subnets,omitzero,omitempty"`
+}
+
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
@@ -91,8 +103,10 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	// TODO(ja): what have i become
+	// Detect provider type based on unique keys
 	_, isAzure := a.Data["resource_group_id"]
+	_, isGCP := a.Data["project_id"]
+
 	if isAzure {
 		var azureOutputs AzureStackOutputs
 		azureDecoderConfig := &mapstructure.DecoderConfig{
@@ -111,6 +125,24 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 			return errors.Wrap(err, "unable to parse azure outputs")
 		}
 		a.AzureStackOutputs = &azureOutputs
+	} else if isGCP {
+		var gcpOutputs GCPStackOutputs
+		gcpDecoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToSliceHookFunc(","),
+				mapstructure.StringToTimeDurationHookFunc(),
+			),
+			WeaklyTypedInput: true,
+			Result:           &gcpOutputs,
+		}
+		gcpDecoder, err := mapstructure.NewDecoder(gcpDecoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create gcp decoder")
+		}
+		if err := gcpDecoder.Decode(a.Data); err != nil {
+			return errors.Wrap(err, "unable to parse gcp outputs")
+		}
+		a.GCPStackOutputs = &gcpOutputs
 	} else {
 		// parsing pgtype.Hstore into map[string]interface{}
 		outputData, err := stacks.DecodeAWSStackOutputData(a.Data)
