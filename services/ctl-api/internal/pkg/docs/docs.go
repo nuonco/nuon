@@ -43,14 +43,14 @@ func getOverrideSwaggerHTML(title string) string {
             window.ui = SwaggerUIBundle({
                 url: '/oapi/v2',
                 dom_id: '#swagger-ui',
-                deepLinking: false,
+                deepLinking: true,
                 displayRequestDuration: true,
                 docExpansion: 'none',
                 defaultModelsExpandDepth: -1,
                 defaultModelExpandDepth: 0,
                 filter: true,
                 syntaxHighlight: false,
-                tryItOutEnabled: false,
+                tryItOutEnabled: true,
                 persistAuthorization: true,
                 presets: [
                     SwaggerUIBundle.presets.apis,
