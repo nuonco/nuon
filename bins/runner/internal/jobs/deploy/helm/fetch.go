@@ -34,10 +34,10 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	// Auth is now stored in the plan itself, not the composite plan
+	// Auth is now stored in the nested plan, not the top-level DeployPlan
 	h.state.auth = &pkgplantypes.PlanAuth{
-		AWSAuth:   plan.AWSAuth,
-		AzureAuth: plan.AzureAuth,
+		AWSAuth:   plan.HelmDeployPlan.AWSAuth,
+		AzureAuth: plan.HelmDeployPlan.AzureAuth,
 	}
 
 	if h.state.plan.HelmDeployPlan.ClusterInfo != nil {

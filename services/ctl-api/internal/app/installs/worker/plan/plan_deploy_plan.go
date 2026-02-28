@@ -86,9 +86,6 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
-		// Set auth on top-level plan from terraform plan
-		plan.AWSAuth = tfPlan.AWSAuth
-		plan.AzureAuth = tfPlan.AzureAuth
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
@@ -97,9 +94,6 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
-		// Set auth on top-level plan from helm plan
-		plan.AWSAuth = helmPlan.AWSAuth
-		plan.AzureAuth = helmPlan.AzureAuth
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
 		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
@@ -108,9 +102,6 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
-		// Set auth on top-level plan from kubernetes manifest plan
-		plan.AWSAuth = kubernetesManifestPlan.AWSAuth
-		plan.AzureAuth = kubernetesManifestPlan.AzureAuth
 	}
 
 	// the following section is for sandbox mode only
