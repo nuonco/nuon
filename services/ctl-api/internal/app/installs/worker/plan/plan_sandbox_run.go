@@ -13,6 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
@@ -44,6 +46,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
 	l.Info("configuring environment variables to execute terraform run as")
@@ -126,11 +133,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
 
-	runAuth := &awscredentials.Config{}
-	if awsAuth != nil {
-		runAuth = awsAuth
-	}
-
 	plan := &plantypes.SandboxRunPlan{
 		AppID:       install.AppID,
 		AppConfigID: install.AppConfigID,
@@ -148,6 +150,9 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
 		},
+
+		AWSAuth:   awsAuth,
+		AzureAuth: azureAuth,
 
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: true,

@@ -1,6 +1,10 @@
 package plantypes
 
-import "github.com/nuonco/nuon/pkg/plugins/configs"
+import (
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+)
 
 type SyncOCIPlan struct {
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`
@@ -8,6 +12,10 @@ type SyncOCIPlan struct {
 
 	Dst    *configs.OCIRegistryRepository `json:"dst_registry" validate:"required"`
 	DstTag string                         `json:"dst_tag" validate:"required"`
+
+	// Auth for cloud providers
+	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
+	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
 
 	MinSandboxMode
 }

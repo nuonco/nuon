@@ -9,12 +9,15 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSecretsPlanRequest) (*plantypes.SyncSecretsPlan, error) {
@@ -80,21 +83,78 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
-	if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
-		err := fmt.Errorf("provision role not enabled in install stack")
-		l.Error("provision role not enabled in install stack", zap.Error(err))
-		return nil, err
+	// Perform role selection for secret sync
+	// Secret sync is part of provisioning/deployment, so use OperationDeploy
+	operation := app.OperationDeploy
+	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
+
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:     operation,
+		PrincipalType: principal.TypeSandbox, // Secrets are synced at install level, use sandbox type
+		PrincipalName: "",                    // No specific principal name for secret sync
+		RuntimeRole:   "",                    // No runtime role for secret sync
+		EntityRoles:   nil,                   // No entity-specific operation roles for secrets
+		MatrixRules:   appCfg.OperationRoleConfig.Rules,
+		DefaultRole:   defaultRole,
+		AppConfig:     appCfg,
+		StackOutputs:  &stack.InstallStackOutputs,
+		InstallState:  state,
 	}
 
-	plan := &plantypes.SyncSecretsPlan{
-		ClusterInfo: clusterInfo,
-		AWSAuth: &awscredentials.Config{
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+	if err != nil {
+		l.Warn("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			return nil, fmt.Errorf("unable to get default role: %w", fallbackErr)
+		}
+
+		l.Warn("using default role for secret sync",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
+	}
+
+	l.Info("selected role for secret sync plan",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(operation)),
+	)
+
+	// Create auth configuration using selected role
+	var awsAuth *awscredentials.Config
+	var azureAuth *azurecredentials.Config
+
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		awsAuth = &awscredentials.Config{
 			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
 			AssumeRole: &awscredentials.AssumeRoleConfig{
 				SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
-				RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
+				RoleARN:     roleSelection.RoleARN,
 			},
-		},
+		}
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		azureOutputs := stack.InstallStackOutputs.AzureStackOutputs
+		azureAuth = &azurecredentials.Config{
+			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+				SubscriptionID:       azureOutputs.SubscriptionID,
+				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
+			},
+			UseDefault: true,
+		}
+	}
+
+	plan := &plantypes.SyncSecretsPlan{
+		ClusterInfo:       clusterInfo,
+		AWSAuth:           awsAuth,
+		AzureAuth:         azureAuth,
 		KubernetesSecrets: secrets,
 	}
 
