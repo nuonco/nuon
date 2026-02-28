@@ -28,6 +28,13 @@ The problems concentrate in steps 2 and 3:
 
 **AutoMigrate is a black box.** GORM inspects every struct, compares it to the live schema, and issues `ALTER TABLE` statements at deploy time. There is no review step, no dry-run, and no way to know what DDL will execute in production before it runs. A developer adding a `gorm:"notnull"` tag can unknowingly trigger a full-table rewrite on a million-row table.
 
+**AutoMigrate is additive-only.** By design, GORM AutoMigrate will **never** drop columns, drop tables, rename columns, or change column types. If you remove a field from a struct, the column stays in the database forever. Rename a field and you get a new column while the old one becomes a ghost. This means:
+- Schema drift accumulates over time (live DB has columns the code doesn't know about)
+- Destructive migrations (dropping unused columns, renaming) are impossible without manual SQL
+- There is no way to generate a complete diff — AutoMigrate can only tell you what to *add*, not what to remove or change
+
+This is the core reason GORM itself cannot serve as a migration diffing tool. Atlas, which compares two full schemas and generates both `ADD` and `DROP`/`ALTER` statements, fills this gap.
+
 **Runtime index diffing is fragile.** The `Indexes()` interface requires every model to declare its expected indexes in Go. On each deploy the system queries `pg_indexes`, diffs expected vs actual, and issues `CREATE INDEX` / `DROP INDEX` statements live. This couples deploy-time behavior to runtime introspection and makes index changes invisible in code review.
 
 **No migration history for schema changes.** Unlike the custom data migrations in `all.go` (which are tracked in a `migrations` table), AutoMigrate and index changes leave no audit trail. There is no way to correlate a schema change to a specific deploy or commit.
