@@ -11,20 +11,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-type UpdateWorkflowValidateRequest struct {
-	Namespace  string
-	UpdateID   string
-	WorkflowID string
-}
-
-// @temporal-gen activity
-func (a *Activities) UpdateWorkflowValidate(ctx context.Context, req *UpdateWorkflowValidateRequest) (*handler.ValidateResponse, error) {
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+// @as-wrapper
+// @wrapper-prefix HandlerInternal
+// @by-field WorkflowID
+func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string) (*handler.ValidateResponse, error) {
 	info := activity.GetInfo(ctx)
 
 	rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
 		tclient.UpdateWorkflowOptions{
-			WorkflowID:   req.WorkflowID,
+			WorkflowID:   workflowID,
 			UpdateName:   handler.ValidateUpdateName,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		})
