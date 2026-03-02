@@ -9,9 +9,32 @@ title: 'Inputs'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `input` | `array` | No | list of inputs Array of input definitions that customers can configure during installation | - | - |
-| `group` | `array` | No | list of input groups Array of input group definitions that organize related inputs in the installer UI | - | - |
-| `sources` | `array` | No | - | - | - |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`input`**<br/>[array](#input) | list of inputs Array of input definitions that customers can configure during installation | **Optional** | - |
+| **`group`**<br/>[array](#group) | list of input groups Array of input group definitions that organize related inputs in the installer UI | **Optional** | - |
+| **`sources`**<br/>array | external input source files Array of paths to external files containing additional input definitions. Each file is loaded and merged into the inputs configuration. Supports YAML, JSON, and TOML for... | **Optional** | - |
+
+### `input`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`display_name`**<br/>string | display name of the input Human-readable name shown in the installer UI to customers | **✅ Required** | `"API Token"`, `"Database URL"` |
+| **`description`**<br/>string | input description Detailed explanation of what this input is for, rendered in the installer to guide users | **✅ Required** | `"The API token for authenticating with the external service"`, `"Connection string for the PostgreSQL database"` |
+| **`group`**<br/>string | input group name Name of the input group this field belongs to. Must match a defined group in the inputs section | **✅ Required** | `"database"`, `"integrations"` |
+| **`name`**<br/>string | input name Used to reference the input via variable templating (e.g., \{\{.nuon.inputs.input_name\}\}) | **Optional** | `"api_token"`, `"database_url"` |
+| **`default`**<br/>object | default value for the input Default value used if customer does not provide one. Type must match the input type | **Optional** | `"production"`, `"5432"` |
+| **`required`**<br/>boolean | whether input is required If true, customer must provide a value during installation. If false, can be skipped | **Optional** | - |
+| **`sensitive`**<br/>boolean | whether input is sensitive If true, the value will be masked/hidden in the UI and logs after the install is created. Use for passwords, tokens, and API keys | **Optional** | - |
+| **`type`**<br/>string | input type Data type for the input. Supported types: string, number, list, json, bool | **Optional** | `"string"`, `"number"`, `"json"`, `"bool"` |
+| **`internal`**<br/>boolean | whether input is internal-only If true, input is only settable via the admin panel and not shown to regular users | **Optional** | - |
+| **`user_configurable`**<br/>boolean | whether input is user configurable If true, input can be modified by end users after installation | **Optional** | - |
+
+### `group`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | Group name, which must be referenced by each input. | **✅ Required** | `"database"`, `"compute"` |
+| **`description`**<br/>string | Human readable description which is rendered in the installer. | **✅ Required** | `"Database configuration options"`, `"How many nodes to provision to support environments"` |
+| **`display_name`**<br/>string | Human readable name which is rendered in the installer. | **Optional** | `"Database Settings"`, `"Kubernetes Nodes"` |
 

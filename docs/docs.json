@@ -36,7 +36,6 @@
                   {
                     "group": "Component Types",
                     "pages": [
-                      "config-ref/component-root",
                       "config-ref/container-image",
                       "config-ref/docker-build",
                       "config-ref/helm",
@@ -49,7 +48,6 @@
                     "pages": [
                       "config-ref/inputs",
                       "config-ref/metadata",
-                      "config-ref/operation-roles",
                       "config-ref/permissions",
                       "config-ref/policies",
                       "config-ref/secrets"
@@ -60,7 +58,6 @@
                     "pages": [
                       "config-ref/action",
                       "config-ref/break-glass",
-                      "config-ref/full",
                       "config-ref/input",
                       "config-ref/input-group",
                       "config-ref/install",

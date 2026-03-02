@@ -102,6 +102,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("name").Short("name of the install").Required().
 		Long("Unique identifier for this install configuration").
+		Example("production").
+		Example("staging").
+		Example("customer-acme").
 		Field("approval_option").Short("approval option for the install").
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
 		Example("approve-all").

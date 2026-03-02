@@ -9,143 +9,40 @@ title: 'Docker Build'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
-| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
-| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
-| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
-| `operation_roles` | `array` | No | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | - | - |
-| `dockerfile` | `string` | ✅ Yes | path to the Dockerfile Path to the Dockerfile to build. Supports external file sources: HTTP(S) URLs (https://example.com/Dockerfile), git repositories (git::https://github.com/org/repo//Dockerfile... | - | `"Dockerfile"` |
-| `env_vars` | `object` | No | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | - | `"GOLANG_VERSION"` |
-| `public_repo` | `PublicRepoConfig` | No | public repository containing Dockerfile Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | - | - |
-| `connected_repo` | `ConnectedRepoConfig` | No | connected repository containing Dockerfile Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | - | - |
-| `build_timeout` | `string` | No | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). | - | `"30m"` |
-| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"` |
+| **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
+| **`dockerfile`**<br/>string | path to the Dockerfile Path to the Dockerfile to build. Supports external file sources: HTTP(S) URLs (https://example.com/Dockerfile), git repositories (git::https://github.com/org/repo//Dockerfile... | **✅ Required** | `"Dockerfile"`, `"docker/Dockerfile.prod"`, `"https://github.com/myorg/myrepo/raw/main/Dockerfile"` |
+| **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
+| **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
+| **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`env_vars`**<br/>object | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | **Optional** | `"GOLANG_VERSION"`, `"NODE_ENV"` |
+| **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository containing Dockerfile Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |
+| **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository containing Dockerfile Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). | **Optional** | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | **Optional** | `"30m"`, `"1h"` |
 
-### Property Details
+### `operation_roles`
 
-#### `type`
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
+| **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
 
-**Examples:**
+### `public_repo`
 
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository URL HTTPS URL to the public Git repository | **✅ Required** | `"https://github.com/user/repo.git"`, `"https://github.com/user/terraform-modules.git"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
-```yaml
-"terraform_module"
-```
+### `connected_repo`
 
-```yaml
-"helm_chart"
-```
-
-```yaml
-"docker_build"
-```
-
-```yaml
-"container_image"
-```
-
-```yaml
-"kubernetes_manifest"
-```
-
-#### `name`
-
-**Examples:**
-
-
-```yaml
-"database"
-```
-
-```yaml
-"api-server"
-```
-
-```yaml
-"frontend"
-```
-
-#### `var_name`
-
-**Examples:**
-
-
-```yaml
-"db_endpoint"
-```
-
-```yaml
-"api_host"
-```
-
-#### `dependencies`
-
-**Examples:**
-
-
-```yaml
-"database"
-```
-
-```yaml
-"infrastructure"
-```
-
-#### `dockerfile`
-
-**Examples:**
-
-
-```yaml
-"Dockerfile"
-```
-
-```yaml
-"docker/Dockerfile.prod"
-```
-
-```yaml
-"https://github.com/myorg/myrepo/raw/main/Dockerfile"
-```
-
-#### `env_vars`
-
-**Examples:**
-
-
-```yaml
-"GOLANG_VERSION"
-```
-
-```yaml
-"NODE_ENV"
-```
-
-#### `build_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
-
-#### `deploy_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository identifier Identifier of the connected repository configured in the Nuon platform | **✅ Required** | `"my-repo"`, `"production-infrastructure"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
