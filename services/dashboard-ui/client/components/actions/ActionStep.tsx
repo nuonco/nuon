@@ -26,7 +26,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
     >
       <div className="flex flex-col gap-8 p-4 border-t">
         {step.inline_contents?.length ? (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Text weight="strong">
               Inline contents
             </Text>
@@ -35,7 +35,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
         ) : null}
 
         {step.command?.length ? (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Text weight="strong">
               Command
             </Text>
@@ -44,7 +44,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
         ) : null}
 
         {step.connected_github_vcs_config ? (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Text weight="strong">
               GitHub VCS
             </Text>
@@ -53,7 +53,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
         ) : null}
 
         {step.public_git_vcs_config ? (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Text weight="strong">
               Git VCS
             </Text>
@@ -62,7 +62,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
         ) : null}
 
         {step.env_vars && Object.keys(step.env_vars).length ? (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             <Text weight="strong">
               Environment variables
             </Text>

@@ -1,3 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+@font-face {
+  font-family: 'Hack';
+  src: url('/fonts/hack-regular.woff2') format('woff2'),
+       url('/fonts/hack-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -130,6 +141,9 @@
 }
 
 :root {
+  --font-inter: 'Inter', sans-serif;
+  --font-hack: 'Hack', monospace;
+
   --background: var(--color-white);
   --background-neutral: var(--color-cool-grey-100);
   --foreground: var(--color-dark-grey-900);
