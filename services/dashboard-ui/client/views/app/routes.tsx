@@ -5,6 +5,7 @@ import { Components } from './Components'
 import { ComponentDetail } from './ComponentDetail'
 import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
+import { ActionDetail } from './ActionDetail'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
 import { Installs } from './Installs'
@@ -23,6 +24,7 @@ export const appRoutes: RouteObject[] = [
       },
       { path: ':orgId/apps/:appId/components/:componentId/builds/:buildId', element: <BuildDetail /> },
       { path: ':orgId/apps/:appId/actions', element: <Actions /> },
+      { path: ':orgId/apps/:appId/actions/:actionId', element: <ActionDetail /> },
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
       { path: ':orgId/apps/:appId/policies', element: <Policies /> },
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },

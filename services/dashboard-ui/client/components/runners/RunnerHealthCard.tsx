@@ -146,7 +146,7 @@ export const RunnerHealthEmptyCard = ({
   caption?: string
 }) => {
   return (
-    <Card className="min-w-1/2">
+    <Card className="min-w-1/2 flex-auto">
       <Text variant="base" weight="strong">
         Health status
       </Text>
