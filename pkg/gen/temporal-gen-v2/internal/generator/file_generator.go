@@ -25,8 +25,10 @@ func GenerateForFile(f *file.File) error {
 	hasTemplate := false
 	hasActivityWrapper := false
 	hasClient := false
+	hasNamespacedActivity := false
 
 	hasTemporal := false
+	namespacedActivities := []ActivityData{}
 
 	filename := filepath.Base(f.Path)
 	fileExt := filepath.Ext(filename)
@@ -100,17 +102,29 @@ func GenerateForFile(f *file.File) error {
 				}
 			}
 
+			qualifiedName := fn.Decl.Name.Name
+			if fn.Annotation.ActivityOpts.Namespace != "" {
+				qualifiedName = fn.Annotation.ActivityOpts.Namespace + "." + fn.Decl.Name.Name
+			}
+
 			data := ActivityData{
-				Name:         fn.Decl.Name.Name,
-				OriginalName: fn.Decl.Name.Name,
-				InputType:    inputType,
-				OutputType:   outputType,
-				Options:      fn.Annotation.ActivityOpts,
-				Params:       params,
-				Receiver:     receiver,
-				ByFieldType:  byFieldType,
+				Name:          fn.Decl.Name.Name,
+				OriginalName:  fn.Decl.Name.Name,
+				QualifiedName: qualifiedName,
+				InputType:     inputType,
+				OutputType:    outputType,
+				Options:       fn.Annotation.ActivityOpts,
+				Params:        params,
+				Receiver:      receiver,
+				ByFieldType:   byFieldType,
 			}
 			code, err = GenerateActivity(data)
+
+			// Track namespaced activities for registration generation
+			if fn.Annotation.ActivityOpts.Namespace != "" {
+				hasNamespacedActivity = true
+				namespacedActivities = append(namespacedActivities, data)
+			}
 		} else if fn.Annotation.Type == "workflow" {
 			hasWorkflow = true
 			if fn.Annotation.WorkflowOpts.ExecutionTimeout > 0 || fn.Annotation.WorkflowOpts.TaskTimeout > 0 {
@@ -208,6 +222,10 @@ func GenerateForFile(f *file.File) error {
 	if hasTemporal {
 		out.WriteString("\t\"go.temporal.io/sdk/temporal\"\n")
 	}
+	if hasNamespacedActivity {
+		out.WriteString("\t\"go.temporal.io/sdk/activity\"\n")
+		out.WriteString("\t\"go.temporal.io/sdk/worker\"\n")
+	}
 	out.WriteString(")\n\n")
 
 	// If we have a client, generate the client struct and options
@@ -223,6 +241,18 @@ func GenerateForFile(f *file.File) error {
 	}
 
 	out.Write(body.Bytes())
+
+	// Generate registration helpers for namespaced activities
+	if hasNamespacedActivity {
+		for _, actData := range namespacedActivities {
+			regCode, err := GenerateActivityRegistration(actData)
+			if err != nil {
+				return fmt.Errorf("failed to generate registration for %s: %w", actData.Name, err)
+			}
+			out.Write(regCode)
+			out.WriteString("\n")
+		}
+	}
 
 	// Write to file
 	ext := filepath.Ext(f.Path)
