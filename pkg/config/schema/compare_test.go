@@ -339,7 +339,7 @@ func TestFetchRemoteSchema_Error(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchRemoteSchema(ctx, server.URL, "full")
+	_, err := FetchRemoteSchema(ctx, server.URL, "stack")
 
 	if err == nil {
 		t.Error("expected error for 500 response")
