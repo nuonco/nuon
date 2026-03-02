@@ -44,7 +44,7 @@ export const DeployTimeline = ({
         componentId,
         limit: 10,
         offset: pagination?.offset,
-      }).then((r) => r.data ?? []),
+      }),
     initialData: initDeploys,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,

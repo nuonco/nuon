@@ -152,7 +152,7 @@ export const SandboxConfigContextTooltip = ({
         appId,
         appConfigId,
         recurse: true,
-      }).then((r) => r.data),
+      }),
     enabled: !!org?.id && !!appId && !!appConfigId,
   })
 

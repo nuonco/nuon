@@ -1,18 +1,16 @@
-'use client'
-
-import { usePathname } from 'next/navigation'
-import { cancelWorkflow } from '@/actions/workflows/cancel-workflow'
+import { useMutation } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { useServerAction } from '@/hooks/use-server-action'
-import { useServerActionToast } from '@/hooks/use-server-action-toast'
+import { useToast } from '@/hooks/use-toast'
 import { useWorkflowActions } from '@/hooks/use-workflow-actions'
-import type { TWorkflow } from '@/types'
+import { cancelWorkflow } from '@/lib'
+import type { TAPIError, TWorkflow } from '@/types'
 
 interface ICancelWorkflow {
   workflow: TWorkflow
@@ -22,31 +20,31 @@ export const CancelWorkflowModal = ({
   workflow,
   ...props
 }: ICancelWorkflow & IModal) => {
-  const path = usePathname()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
-  const { data, error, isLoading, execute } = useServerAction({
-    action: cancelWorkflow,
-  })
+  const { addToast } = useToast()
 
-  useServerActionToast({
-    data,
-    error,
-    errorContent: (
-      <>
-        <Text>
-          There was an error while trying to cancel {workflow.type} workflow{' '}
-          {workflow.id}.
-        </Text>
-        <Text>{error?.error || 'Unknown error occurred.'}</Text>
-      </>
-    ),
-    errorHeading: `${workflow.name} was not cancelled.`,
+  const { mutate: execute, isPending: isLoading, error } = useMutation<unknown, TAPIError>({
+    mutationFn: () => cancelWorkflow({ orgId: org.id, workflowId: workflow.id }),
     onSuccess: () => {
+      addToast(
+        <Toast heading={`${workflow.name} was cancelled.`} theme="success">
+          <Text>Cancelled the {workflow.type} workflow.</Text>
+        </Toast>
+      )
       removeModal(props.modalId)
     },
-    successContent: <Text>Cancelled the {workflow.type} workflow.</Text>,
-    successHeading: `${workflow.name} was cancelled.`,
+    onError: (err) => {
+      addToast(
+        <Toast heading={`${workflow.name} was not cancelled.`} theme="error">
+          <Text>
+            There was an error while trying to cancel {workflow.type} workflow{' '}
+            {workflow.id}.
+          </Text>
+          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        </Toast>
+      )
+    },
   })
 
   return (
@@ -71,9 +69,7 @@ export const CancelWorkflowModal = ({
           'Cancel workflow'
         ),
         disabled: isLoading,
-        onClick: () => {
-          execute({ orgId: org.id, path, workflowId: workflow.id })
-        },
+        onClick: () => execute(),
         variant: 'primary',
       }}
       {...props}
@@ -81,8 +77,7 @@ export const CancelWorkflowModal = ({
       <div className="flex flex-col gap-1">
         {error ? (
           <Banner theme="error">
-            {error?.error ||
-              'An error happned, please refresh the page and try again.'}
+            {error.error || 'An error happened, please refresh the page and try again.'}
           </Banner>
         ) : null}
         <Text variant="base" weight="strong">

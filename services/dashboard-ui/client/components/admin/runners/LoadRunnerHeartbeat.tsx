@@ -18,13 +18,13 @@ export const LoadRunnerHeartbeat = ({ runnerId }: LoadRunnerHeartbeatProps) => {
 
   const { data, error: queryError, isLoading } = useQuery<{ build?: TRunnerHeartbeat; install?: TRunnerHeartbeat }>({
     queryKey: ['runner-heartbeat', orgId, runnerId],
-    queryFn: () => getRunnerLatestHeartbeat({ orgId, runnerId }).then((r) => r.data),
+    queryFn: () => getRunnerLatestHeartbeat({ orgId, runnerId }),
     enabled: !!orgId && !!runnerId,
   })
 
   const { data: settings, isLoading: isSettingsLoading } = useQuery<TRunnerGroupSettings>({
     queryKey: ['runner-settings', orgId, runnerId],
-    queryFn: () => getRunnerSettings({ orgId, runnerId }).then((r) => r.data),
+    queryFn: () => getRunnerSettings({ orgId, runnerId }),
     enabled: !!orgId && !!runnerId,
   })
 

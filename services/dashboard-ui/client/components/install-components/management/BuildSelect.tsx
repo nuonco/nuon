@@ -48,7 +48,7 @@ export const BuildSelect = ({
         componentId,
         offset: currentPage * limit,
         limit,
-      }).then((r) => r.data ?? []),
+      }),
     enabled: !!org?.id && !!componentId,
   })
 

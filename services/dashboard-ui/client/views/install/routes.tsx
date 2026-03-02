@@ -10,6 +10,11 @@ import { Sandbox } from './Sandbox'
 import { Stacks } from './Stacks'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
+import { InstallComponentDetail } from './ComponentDetail'
+import { ActionDetail } from './ActionDetail'
+import { ActionRunLayout } from './ActionRunLayout'
+import { ActionRunDetail } from './ActionRunDetail'
+import { ActionRunLogsPage } from './ActionRunLogs'
 
 export const installRoutes: RouteObject[] = [
   {
@@ -25,6 +30,16 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
+      { path: ':orgId/installs/:installId/components/:componentId', element: <InstallComponentDetail /> },
+      { path: ':orgId/installs/:installId/actions/:actionId', element: <ActionDetail /> },
+      {
+        path: ':orgId/installs/:installId/actions/:actionId/runs/:actionRunId',
+        element: <ActionRunLayout />,
+        children: [
+          { index: true, element: <ActionRunDetail /> },
+          { path: 'logs', element: <ActionRunLogsPage /> },
+        ],
+      },
     ],
   },
 ]

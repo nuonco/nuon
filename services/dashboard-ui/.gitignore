@@ -43,3 +43,4 @@ analyze.js
 /dist
 config.yml
 config.json
+.planning/

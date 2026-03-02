@@ -17,7 +17,7 @@ export const LoadRunnerCard = ({ runnerId, installId }: LoadRunnerCardProps) => 
 
   const { data: runner, error: queryError, isLoading, refetch } = useQuery<TRunner>({
     queryKey: ['runner', orgId, runnerId],
-    queryFn: () => getRunner({ orgId, runnerId }).then((r) => r.data),
+    queryFn: () => getRunner({ orgId, runnerId }),
     enabled: !!orgId && !!runnerId,
   })
 

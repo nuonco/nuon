@@ -32,7 +32,7 @@ export const LoadRunnerJob = ({
         groups,
         statuses,
         limit: 1,
-      }).then((r) => r.data ?? []),
+      }),
     enabled: !!orgId && !!runnerId,
   })
 

@@ -39,7 +39,7 @@ export const InstallComponentHeader = ({
         orgId: org.id,
         installId: install.id,
         deployId: initDeploy?.id,
-      }).then((r) => r.data ?? initDeploy),
+      }),
     initialData: initDeploy,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id && !!initDeploy?.id,
