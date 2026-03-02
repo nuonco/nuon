@@ -362,7 +362,7 @@ func TestFetchRemoteSchema_InvalidJSON(t *testing.T) {
 
 func TestCheckSchemaCompatibility_NoAPI(t *testing.T) {
 	ctx := context.Background()
-	diff, err := CheckSchemaCompatibility(ctx, "http://localhost:99999", "full")
+	diff, err := CheckSchemaCompatibility(ctx, "http://localhost:99999", "stack")
 
 	if err != nil {
 		t.Errorf("expected nil error when API is unreachable, got: %v", err)
