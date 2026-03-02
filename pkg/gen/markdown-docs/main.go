@@ -221,32 +221,16 @@ func generateIndexPage(schemaNames []string, outputDir, format string) error {
 	doc.AddParagraph("This section provides detailed JSON Schema references for all Nuon configuration types.")
 	doc.AddHeading(2, "Available Configurations")
 
-	// Categorize schemas
-	categories := categorizeSchemas(schemaNames)
-
-	// Add category sections
-	for _, category := range []string{"Component Types", "Configuration Types", "Other Types"} {
-		schemas, ok := categories[category]
-		if !ok || len(schemas) == 0 {
-			continue
+	if format == "mintlify" {
+		doc.AddRaw("<CardGroup cols={2}>\n")
+		for _, name := range schemaNames {
+			doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"file\" href=\"%s\"></Card>\n",
+				formatTitle(name), name))
 		}
-
-		doc.AddHeading(3, category)
-
-		if format == "mintlify" {
-			// Use Mintlify CardGroup
-			doc.AddRaw("<CardGroup cols={2}>\n")
-			for _, name := range schemas {
-				icon := categoryIcon(category)
-				doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"%s\" href=\"%s\"></Card>\n",
-					formatTitle(name), icon, name))
-			}
-			doc.AddRaw("</CardGroup>\n\n")
-		} else {
-			// Use markdown list
-			for _, name := range schemas {
-				doc.AddListItem(fmt.Sprintf("[%s](%s.mdx)", formatTitle(name), name))
-			}
+		doc.AddRaw("</CardGroup>\n\n")
+	} else {
+		for _, name := range schemaNames {
+			doc.AddListItem(fmt.Sprintf("[%s](%s.mdx)", formatTitle(name), name))
 		}
 	}
 
@@ -557,39 +541,6 @@ func formatExample(prop *jsonschema.Schema) string {
 	}
 
 	return "-"
-}
-
-func categorizeSchemas(schemaNames []string) map[string][]string {
-	categories := map[string][]string{
-		"Component Types":     {},
-		"Configuration Types": {},
-		"Other Types":         {},
-	}
-
-	for _, name := range schemaNames {
-		if strings.Contains(name, "component") || name == "helm" || name == "docker-build" ||
-			name == "container-image" || name == "terraform" || name == "kubernetes-manifest" {
-			categories["Component Types"] = append(categories["Component Types"], name)
-		} else if strings.Contains(name, "config") || name == "inputs" || name == "secrets" ||
-			name == "policies" || name == "metadata" || name == "permissions" {
-			categories["Configuration Types"] = append(categories["Configuration Types"], name)
-		} else {
-			categories["Other Types"] = append(categories["Other Types"], name)
-		}
-	}
-
-	return categories
-}
-
-func categoryIcon(category string) string {
-	switch category {
-	case "Component Types":
-		return "cube"
-	case "Configuration Types":
-		return "gear"
-	default:
-		return "file"
-	}
 }
 
 func formatTitle(schemaName string) string {
