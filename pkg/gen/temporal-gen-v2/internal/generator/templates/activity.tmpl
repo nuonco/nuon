@@ -12,8 +12,8 @@ type {{$reqType}} struct {
 {{- end}}
 }
 
-// {{.Name | ToPascal}} is a wrapper for the {{.OriginalName}} activity
-func (a {{.Receiver}}) {{.Name | ToPascal}}(ctx context.Context, req {{$reqType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+// {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}} is a wrapper for the {{.OriginalName}} activity
+func (a {{.Receiver}}) {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}(ctx context.Context, req {{$reqType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
 	return a.{{.OriginalName}}(ctx, {{range .Params}}req.{{.ExportedName}}, {{end}})
 }
 {{- end}}
@@ -21,37 +21,36 @@ func (a {{.Receiver}}) {{.Name | ToPascal}}(ctx context.Context, req {{$reqType}
 // Await{{.Name | ToPascal}} is a wrapper for the {{.Name | ToPascal}} activity
 func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByFieldOnly}}{{.ByFieldType}}{{else}}{{$reqType}}{{end}}, opts ...*workflow.ActivityOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
 	{{if .OutputType}}var result {{.OutputType}}{{end}}
-	options := workflow.ActivityOptions{
-		{{- if .Options.TaskQueue}}
-		TaskQueue: "{{.Options.TaskQueue}}",
-		{{- end}}
-		{{- if .Options.ScheduleToCloseTimeout}}
-		ScheduleToCloseTimeout: time.Duration({{.Options.ScheduleToCloseTimeout | durationToNs}}),
-		{{- end}}
-		{{- if .Options.ScheduleToStartTimeout}}
-		ScheduleToStartTimeout: time.Duration({{.Options.ScheduleToStartTimeout | durationToNs}}),
-		{{- end}}
-		{{- if .Options.StartToCloseTimeout}}
-		StartToCloseTimeout: time.Duration({{.Options.StartToCloseTimeout | durationToNs}}),
-		{{- end}}
-		{{- if .Options.HeartbeatTimeout}}
-		HeartbeatTimeout: time.Duration({{.Options.HeartbeatTimeout | durationToNs}}),
-		{{- end}}
-		{{- if .Options.WaitForCancellation}}
-		WaitForCancellation: {{.Options.WaitForCancellation}},
-		{{- end}}
-		{{- if .Options.ActivityID}}
-		ActivityID: "{{.Options.ActivityID}}",
-		{{- end}}
-		{{- if .Options.DisableEagerExecution}}
-		DisableEagerExecution: {{.Options.DisableEagerExecution}},
-		{{- end}}
-		{{- if .Options.MaxRetries}}
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: int32({{.Options.MaxRetries}}),
-		},
-		{{- end}}
+	options := workflow.GetActivityOptions(ctx)
+	{{- if .Options.TaskQueue}}
+	options.TaskQueue = "{{.Options.TaskQueue}}"
+	{{- end}}
+	{{- if .Options.ScheduleToCloseTimeout}}
+	options.ScheduleToCloseTimeout = time.Duration({{.Options.ScheduleToCloseTimeout | durationToNs}})
+	{{- end}}
+	{{- if .Options.ScheduleToStartTimeout}}
+	options.ScheduleToStartTimeout = time.Duration({{.Options.ScheduleToStartTimeout | durationToNs}})
+	{{- end}}
+	{{- if .Options.StartToCloseTimeout}}
+	options.StartToCloseTimeout = time.Duration({{.Options.StartToCloseTimeout | durationToNs}})
+	{{- end}}
+	{{- if .Options.HeartbeatTimeout}}
+	options.HeartbeatTimeout = time.Duration({{.Options.HeartbeatTimeout | durationToNs}})
+	{{- end}}
+	{{- if .Options.WaitForCancellation}}
+	options.WaitForCancellation = {{.Options.WaitForCancellation}}
+	{{- end}}
+	{{- if .Options.ActivityID}}
+	options.ActivityID = "{{.Options.ActivityID}}"
+	{{- end}}
+	{{- if .Options.DisableEagerExecution}}
+	options.DisableEagerExecution = {{.Options.DisableEagerExecution}}
+	{{- end}}
+	{{- if .Options.MaxRetries}}
+	options.RetryPolicy = &temporal.RetryPolicy{
+		MaximumAttempts: int32({{.Options.MaxRetries}}),
 	}
+	{{- end}}
 	{{- if .Options.OptionsCallback}}
 	// Apply options from callback
 	if cbOpts := {{.Options.OptionsCallback}}(input); cbOpts != nil {
@@ -105,9 +104,17 @@ func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByField
 	req := {{$reqType}}{
 		{{.Options.ByField}}: input,
 	}
-	err := workflow.ExecuteActivity(ctx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, req).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- if .Options.Namespace}}
+	err := workflow.ExecuteActivity(ctx, "{{.QualifiedName}}", req).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
 	{{- else}}
-	err := workflow.ExecuteActivity(ctx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, input).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	err := workflow.ExecuteActivity(ctx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, req).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- end}}
+	{{- else}}
+	{{- if .Options.Namespace}}
+	err := workflow.ExecuteActivity(ctx, "{{.QualifiedName}}", input).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- else}}
+	err := workflow.ExecuteActivity(ctx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, input).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- end}}
 	{{- end}}
 	return {{if .OutputType}}result, {{end}}err
 }

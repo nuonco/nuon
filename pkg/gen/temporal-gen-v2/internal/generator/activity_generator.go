@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
 )
 
-//go:embed templates/activity.tmpl
+//go:embed templates/activity.tmpl templates/activity_registration.tmpl
 var activityTemplateFS embed.FS
 
 type Param struct {
@@ -22,14 +22,15 @@ type Param struct {
 }
 
 type ActivityData struct {
-	Name         string
-	OriginalName string
-	InputType    string
-	OutputType   string
-	Options      *parser.ActivityOptions
-	Params       []Param
-	Receiver     string
-	ByFieldType  string
+	Name          string
+	OriginalName  string
+	QualifiedName string
+	InputType     string
+	OutputType    string
+	Options       *parser.ActivityOptions
+	Params        []Param
+	Receiver      string
+	ByFieldType   string
 }
 
 func GenerateActivity(data ActivityData) ([]byte, error) {
@@ -63,6 +64,39 @@ func GenerateActivity(data ActivityData) ([]byte, error) {
 	if err != nil {
 		// Return unformatted code for debugging if formatting fails
 		return buf.Bytes(), fmt.Errorf("failed to format source: %w", err)
+	}
+
+	return formatted, nil
+}
+
+func GenerateActivityRegistration(data ActivityData) ([]byte, error) {
+	tmplContent, err := activityTemplateFS.ReadFile("templates/activity_registration.tmpl")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read registration template: %w", err)
+	}
+
+	tmpl, err := template.New("activity_registration").Funcs(template.FuncMap{
+		"ToPascal": func(s string) string {
+			if s == "" {
+				return ""
+			}
+			return strings.ToUpper(s[:1]) + s[1:]
+		},
+	}).Parse(string(tmplContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse registration template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("failed to execute registration template: %w", err)
+	}
+
+	// Format the generated code
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		// Return unformatted code for debugging if formatting fails
+		return buf.Bytes(), fmt.Errorf("failed to format registration source: %w", err)
 	}
 
 	return formatted, nil
