@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, type ICard } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Text } from '@/components/common/Text'

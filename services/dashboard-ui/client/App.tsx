@@ -2,8 +2,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthLayout } from '@/components/layout/AuthLayout'
-import { ConfigProvider } from '@/providers/config-provider'
+import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
+import { ConfigProvider } from '@/providers/config-provider'
 import { Login } from '@/views/Login'
 import { orgRoutes } from '@/views/org/routes'
 
@@ -24,10 +25,7 @@ const router = createBrowserRouter([
   { index: true, element: <Login /> },
   {
     element: <AuthLayout />,
-    children: [
-      { path: '/onboarding', element: <Onboarding /> },
-      ...orgRoutes,
-    ],
+    children: [{ path: '/onboarding', element: <Onboarding /> }, ...orgRoutes],
   },
 ])
 
@@ -36,7 +34,9 @@ export const App = () => {
     <ConfigProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <APIHealthProvider shouldPoll>
+            <RouterProvider router={router} />
+          </APIHealthProvider>
         </AuthProvider>
         <ReactQueryDevtools />
       </QueryClientProvider>
