@@ -1,21 +1,21 @@
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Timeline, type ITimeline } from '@/components/common/Timeline'
+import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
 import { getComponentDeploys } from '@/lib'
 import type { TDeploy } from '@/types'
 
-interface IDeployTimeline
-  extends Omit<ITimeline<TDeploy>, 'events' | 'renderEvent'> {
+const LIMIT = 10
+
+interface IDeployTimeline {
   componentName: string
   componentId: string
-  initDeploys: TDeploy[]
   pollInterval?: number
   shouldPoll?: boolean
 }
@@ -23,32 +23,33 @@ interface IDeployTimeline
 export const DeployTimeline = ({
   componentName,
   componentId,
-  initDeploys,
-  pagination,
   pollInterval = 20000,
   shouldPoll = false,
 }: IDeployTimeline) => {
   const { install } = useInstall()
   const { org } = useOrg()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
 
-  const queryParams = useQueryParams({
-    offset: pagination.offset,
-    limit: 10,
-  })
-  const { data: deploys } = useQuery<TDeploy[]>({
-    queryKey: ['component-deploys', org?.id, install?.id, componentId, queryParams],
+  const { data: result } = useQuery({
+    queryKey: ['component-deploys', org?.id, install?.id, componentId, offset],
     queryFn: () =>
       getComponentDeploys({
         orgId: org.id,
         installId: install.id,
         componentId,
-        limit: 10,
-        offset: pagination?.offset,
+        limit: LIMIT,
+        offset,
       }),
-    initialData: initDeploys,
+    refetchOnMount: 'always',
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!install?.id,
+    enabled: !!org?.id && !!install?.id && !!componentId,
   })
+
+  const deploys = result?.data ?? []
+  const pagination = result?.pagination
+    ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
+    : { hasNext: false, offset, limit: LIMIT }
 
   return (
     <Timeline<TDeploy>

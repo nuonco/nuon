@@ -1,16 +1,17 @@
-import { useParams, useSearchParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
-import { InstallComponentBuildCard } from '@/components/install-components/InstallComponentBuildCard'
+import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import {
   InstallComponentConfigCard,
   InstallComponentConfigCardSkeleton,
 } from '@/components/install-components/InstallComponentConfigCard'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -25,7 +26,7 @@ export const InstallComponentDetail = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: installComponent, isLoading, error } = useQuery({
+  const { data: installComponent, isLoading } = useQuery({
     queryKey: ['install-component', org?.id, install?.id, componentId],
     queryFn: () =>
       getInstallComponent({
@@ -37,8 +38,7 @@ export const InstallComponentDetail = () => {
   })
 
   const component = installComponent?.component
-
-  console.log(installComponent, componentId)
+  const latestDeploy = installComponent?.install_deploys?.[0]
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
@@ -69,6 +69,16 @@ export const InstallComponentDetail = () => {
           </span>
           {component?.id ? <ID>{component.id}</ID> : null}
         </HeadingGroup>
+
+        {component && (
+          <div className="flex items-center gap-4">
+            <ManagementDropdown
+              component={component}
+              currentBuildId={latestDeploy?.build_id}
+              currentDeployStatus={latestDeploy?.status_v2?.status}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
@@ -80,7 +90,7 @@ export const InstallComponentDetail = () => {
           ) : null}
 
           {component?.dependencies?.length ? (
-            <InstallComponentDependencies installComponent={installComponent} />
+            <InstallComponentDependencies deps={component.dependencies} />
           ) : null}
         </PageSection>
 
@@ -88,8 +98,12 @@ export const InstallComponentDetail = () => {
           <Text variant="base" weight="strong">
             Deploy history
           </Text>
-          {installComponent ? (
-            <InstallComponentBuildCard installComponent={installComponent} shouldPoll />
+          {component ? (
+            <DeployTimeline
+              componentId={componentId!}
+              componentName={component.name}
+              shouldPoll
+            />
           ) : null}
         </PageSection>
       </div>

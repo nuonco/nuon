@@ -11,6 +11,7 @@ import { Stacks } from './Stacks'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
+import { DeployDetail } from './DeployDetail'
 import { ActionDetail } from './ActionDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
@@ -31,6 +32,7 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       { path: ':orgId/installs/:installId/components/:componentId', element: <InstallComponentDetail /> },
+      { path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId', element: <DeployDetail /> },
       { path: ':orgId/installs/:installId/actions/:actionId', element: <ActionDetail /> },
       {
         path: ':orgId/installs/:installId/actions/:actionId/runs/:actionRunId',

@@ -9,7 +9,7 @@ import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
-import { getWorkflow } from '@/lib'
+import { getWorkflow, getInstallAction } from '@/lib'
 
 const CONTAINER_ID = 'action-run-page'
 
@@ -19,14 +19,29 @@ const ActionRunLayoutInner = () => {
   const { install } = useInstall()
   const { installActionRun } = useInstallActionRun()
 
-  const actionName = installActionRun?.install_action_workflow?.action_workflow?.name
   const basePath = `/${org?.id}/installs/${install?.id}/actions/${actionId}/runs/${actionRunId}`
+  const { data: action } = useQuery({
+    queryKey: ['action', org?.id, installActionRun?.install_action_workflow_id],
+    queryFn: () =>
+      getInstallAction({
+        orgId: org.id,
+        installId: install?.id,
+        actionId: actionId,
+      }),
+    enabled: !!org?.id && !!installActionRun?.install_workflow_id,
+  })
 
   const { data: workflow } = useQuery({
     queryKey: ['workflow', org?.id, installActionRun?.install_workflow_id],
-    queryFn: () => getWorkflow({ orgId: org.id, workflowId: installActionRun.install_workflow_id }),
+    queryFn: () =>
+      getWorkflow({
+        orgId: org.id,
+        workflowId: installActionRun.install_workflow_id,
+      }),
     enabled: !!org?.id && !!installActionRun?.install_workflow_id,
   })
+
+  const actionName = action?.action_workflow?.name
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
@@ -35,14 +50,19 @@ const ActionRunLayoutInner = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-          { path: `/${org?.id}/installs/${install?.id}/actions`, text: 'Actions' },
+          {
+            path: `/${org?.id}/installs/${install?.id}/actions`,
+            text: 'Actions',
+          },
           {
             path: `/${org?.id}/installs/${install?.id}/actions/${actionId}`,
             text: actionName || 'Action',
           },
           {
             path: basePath,
-            text: installActionRun?.trigger_type ? `${installActionRun.trigger_type} run` : 'Run',
+            text: installActionRun?.trigger_type
+              ? `${installActionRun.trigger_type} run`
+              : 'Run',
           },
         ]}
       />

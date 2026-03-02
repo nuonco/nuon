@@ -18,4 +18,5 @@ export const getComponentDeploys = ({
   api<TDeploy[]>({
     path: `installs/${installId}/components/${componentId}/deploys${buildQueryParams({ limit, offset, q })}`,
     orgId,
+    paginated: true,
   })

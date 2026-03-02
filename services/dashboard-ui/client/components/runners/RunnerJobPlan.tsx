@@ -3,7 +3,7 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
-import { JSONViewer } from "@/components/common/JSONViewer"
+import { JSONViewer } from '@/components/common/JSONViewer'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -47,7 +47,8 @@ export const RunnerJobPlanModal = ({
           {headingText}
         </Text>
       }
-      className="!max-w-5xl"
+      className="!max-w-5xl !max-h-[80vh]"
+      childrenClassName="flex-auto overflow-y-auto"
       {...props}
     >
       <div className="flex flex-col gap-4">

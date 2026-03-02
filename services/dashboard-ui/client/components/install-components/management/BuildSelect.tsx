@@ -37,10 +37,10 @@ export const BuildSelect = ({
   const limit = 5
 
   const {
-    data: builds,
+    data: buildsResult,
     isLoading,
     error,
-  } = useQuery<TBuild[]>({
+  } = useQuery({
     queryKey: ['component-builds-select', org?.id, componentId, currentPage],
     queryFn: () =>
       getComponentBuilds({
@@ -54,12 +54,11 @@ export const BuildSelect = ({
 
   // Update accumulated builds when new data comes in
   useEffect(() => {
-    if (builds) {
+    if (buildsResult) {
+      const builds = buildsResult.data
       if (currentPage === 0) {
-        // First page or search reset
         setAllBuilds(builds)
       } else {
-        // Append to existing builds, but deduplicate by ID
         setAllBuilds((prev) => {
           const existingIds = new Set(prev.map((build) => build.id))
           const newBuilds = builds.filter((build) => !existingIds.has(build.id))
@@ -67,15 +66,14 @@ export const BuildSelect = ({
         })
       }
 
-      // Check if we have more pages
-      setHasMorePages(builds.length === limit)
+      setHasMorePages(buildsResult.pagination?.hasNext ?? false)
 
       // Add a delay to ensure loading state is visible
       if (isLoadingMore) {
         setTimeout(() => setIsLoadingMore(false), 800)
       }
     }
-  }, [builds, currentPage, isLoadingMore])
+  }, [buildsResult, currentPage, isLoadingMore])
 
   // Auto-select most recent active build on first load
   useEffect(() => {
