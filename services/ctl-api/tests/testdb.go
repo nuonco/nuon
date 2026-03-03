@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -65,29 +64,17 @@ func CreateTestDatabase() error {
 	// Update env so FX/GORM connections use the per-process DB
 	os.Setenv("DB_NAME", cfg.DBName)
 
-	if err := recreateAndMigrateDatabaseWithLock(cfg); err != nil {
+	if err := createAndMigrateDatabase(cfg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// recreateAndMigrateDatabaseWithLock drops, recreates, and migrates the test database atomically
-func recreateAndMigrateDatabaseWithLock(cfg dbConfig) error {
-	// Use file lock to coordinate database recreation across processes
-	lockFile, err := os.OpenFile("/tmp/ctl-api-test-db.lock", os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		return fmt.Errorf("failed to create lock file: %w", err)
-	}
-	defer lockFile.Close()
-
-	// Acquire exclusive file lock (blocks until available)
-	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
-		return fmt.Errorf("failed to acquire file lock: %w", err)
-	}
-	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
-
-	// Connect to the default 'postgres' database to drop/create test database
+// createAndMigrateDatabase creates the per-process test database and runs migrations.
+// Each process gets its own database (PID suffix), so no locking is needed.
+func createAndMigrateDatabase(cfg dbConfig) error {
+	// Connect to the default 'postgres' database to create test database
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
 
@@ -104,18 +91,23 @@ func recreateAndMigrateDatabaseWithLock(cfg dbConfig) error {
 	}
 	defer sqlDB.Close()
 
-	// Check if database already exists
-	var dbExists bool
-	err = db.Raw("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = ?)", cfg.DBName).Scan(&dbExists).Error
+	// Drop all old per-process test databases matching the base name pattern
+	var oldDBs []string
+	baseName := strings.TrimSuffix(cfg.DBName, fmt.Sprintf("_%d", os.Getpid()))
+	err = db.Raw("SELECT datname FROM pg_database WHERE datname LIKE ?", baseName+"_%").Scan(&oldDBs).Error
 	if err != nil {
-		return fmt.Errorf("failed to check database existence: %w", err)
+		return fmt.Errorf("failed to list old test databases: %w", err)
 	}
 
-	if !dbExists {
-		// Database doesn't exist - create it fresh
-		if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName)).Error; err != nil {
-			return fmt.Errorf("failed to create test database: %w", err)
+	for _, oldDB := range oldDBs {
+		if err := db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", oldDB)).Error; err != nil {
+			return fmt.Errorf("failed to drop old test database %s: %w", oldDB, err)
 		}
+	}
+
+	// Create fresh per-process database
+	if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName)).Error; err != nil {
+		return fmt.Errorf("failed to create test database: %w", err)
 	}
 
 	// Always run migrations (they're idempotent and will skip already-applied migrations)
