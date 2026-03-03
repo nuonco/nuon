@@ -2,11 +2,11 @@ package testseed
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -15,9 +15,10 @@ import (
 // BuildOrg creates an app.Org with fake defaults.
 func BuildOrg() *app.Org {
 	acct := BuildAccount()
+	id := domains.NewOrgID()
 	return &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        generics.GetFakeObj[string](),
+		ID:          id,
+		Name:        fmt.Sprintf("org-%s", id),
 		OrgType:     app.OrgTypeSandbox,
 		Status:      app.OrgStatusActive,
 		SandboxMode: true,

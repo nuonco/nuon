@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
@@ -23,11 +22,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-var createCHDBOnce sync.Once
-
-// chConfig holds the ClickHouse connection fields.
+// CHConfig holds the ClickHouse connection fields.
 // Uses the same config tags as internal.Config so it picks up the registered defaults.
-type chConfig struct {
+type CHConfig struct {
 	Host     string `config:"clickhouse_db_host"`
 	Port     string `config:"clickhouse_db_port"`
 	User     string `config:"clickhouse_db_user"`
@@ -40,18 +37,21 @@ type chConfig struct {
 	DialTimeout  time.Duration `config:"clickhouse_db_dial_timeout"`
 }
 
-// CreateTestClickHouseDatabase creates the ClickHouse test database if it doesn't exist and runs migrations.
-// Uses the same config system as the service to get connection parameters.
-func CreateTestClickHouseDatabase() error {
-	var chCfg chConfig
-	if err := config.LoadInto(nil, &chCfg); err != nil {
-		return fmt.Errorf("failed to load clickhouse config: %w", err)
+// LoadCHConfig loads the ClickHouse config from environment variables.
+func LoadCHConfig() (CHConfig, error) {
+	var cfg CHConfig
+	if err := config.LoadInto(nil, &cfg); err != nil {
+		return cfg, fmt.Errorf("failed to load clickhouse config: %w", err)
 	}
-
-	if chCfg.Name == "" {
-		return fmt.Errorf("CLICKHOUSE_DB_NAME must be set in the environment")
+	if cfg.Name == "" {
+		return cfg, fmt.Errorf("CLICKHOUSE_DB_NAME must be set in the environment")
 	}
+	return cfg, nil
+}
 
+// CreateAndMigrateCHDatabase drops and recreates the ClickHouse test database, then runs migrations.
+// Called by the testsetup binary before tests run.
+func CreateAndMigrateCHDatabase(chCfg CHConfig) error {
 	// Connect to the default database to create our test database
 	defaultOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
@@ -84,22 +84,24 @@ func CreateTestClickHouseDatabase() error {
 	}
 	defer sqlDB.Close()
 
-	// Create the test database if it doesn't exist
-	if err := defaultDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s ON CLUSTER simple", chCfg.Name)).Error; err != nil {
+	// Drop and recreate database
+	defaultDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s ON CLUSTER simple", chCfg.Name))
+
+	if err := defaultDB.Exec(fmt.Sprintf("CREATE DATABASE %s ON CLUSTER simple", chCfg.Name)).Error; err != nil {
 		return fmt.Errorf("failed to create clickhouse test database: %w", err)
 	}
 
-	// Run migrations on the test database
-	if err := migrateTestClickHouseDatabase(chCfg); err != nil {
+	// Run migrations
+	if err := MigrateTestCHDatabase(chCfg); err != nil {
 		return fmt.Errorf("failed to migrate clickhouse test database: %w", err)
 	}
 
 	return nil
 }
 
-// migrateTestClickHouseDatabase connects to the ClickHouse test database and runs migrations.
+// MigrateTestCHDatabase connects to the ClickHouse test database and runs migrations.
 // CH migration state is tracked in PostgreSQL, so we need both connections.
-func migrateTestClickHouseDatabase(chCfg chConfig) error {
+func MigrateTestCHDatabase(chCfg CHConfig) error {
 	// Connect to ClickHouse target database
 	chOpts := &clickhousecore.Options{
 		Addr: []string{fmt.Sprintf("%s:%s", chCfg.Host, chCfg.Port)},
@@ -138,7 +140,7 @@ func migrateTestClickHouseDatabase(chCfg chConfig) error {
 	defer chSqlDB.Close()
 
 	// Connect to PostgreSQL for migration tracking
-	var psqlCfg dbConfig
+	var psqlCfg DBConfig
 	if err := config.LoadInto(nil, &psqlCfg); err != nil {
 		return fmt.Errorf("failed to load psql config for CH migration tracking: %w", err)
 	}
@@ -211,36 +213,6 @@ func runCHMigrator(ctx context.Context, chDB, psqlDB *gorm.DB) error {
 
 	if err := migrator.Exec(ctx); err != nil {
 		return fmt.Errorf("failed to execute clickhouse migrations: %w", err)
-	}
-
-	return nil
-}
-
-// TruncateAllCHTables truncates all ClickHouse tables.
-func TruncateAllCHTables(ctx context.Context, db *gorm.DB) error {
-	models := ch.AllModels()
-
-	for _, model := range models {
-		stmt := &gorm.Statement{DB: db}
-		if err := stmt.Parse(model); err != nil {
-			return fmt.Errorf("failed to parse CH model: %w", err)
-		}
-
-		sql := fmt.Sprintf("TRUNCATE TABLE IF EXISTS %s ON CLUSTER simple", stmt.Schema.Table)
-		if err := db.WithContext(ctx).Exec(sql).Error; err != nil {
-			return fmt.Errorf("failed to truncate CH table %s: %w", stmt.Schema.Table, err)
-		}
-	}
-
-	// Truncate migration-created tables not in AllModels()
-	extraTables := []string{
-		"latest_runner_heart_beats",
-	}
-	for _, table := range extraTables {
-		sql := fmt.Sprintf("TRUNCATE TABLE IF EXISTS %s ON CLUSTER simple", table)
-		if err := db.WithContext(ctx).Exec(sql).Error; err != nil {
-			return fmt.Errorf("failed to truncate CH table %s: %w", table, err)
-		}
 	}
 
 	return nil

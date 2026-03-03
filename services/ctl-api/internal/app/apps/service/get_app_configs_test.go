@@ -79,10 +79,11 @@ func (s *AppConfigsTestSuite) TearDownSuite() {
 }
 
 func (s *AppConfigsTestSuite) setupTestData() {
+	accID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
+		ID:          accID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
+		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -91,9 +92,10 @@ func (s *AppConfigsTestSuite) setupTestData() {
 
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org-" + domains.NewOrgID(),
+		ID:          orgID,
+		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",

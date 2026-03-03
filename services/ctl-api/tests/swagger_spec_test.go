@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"encoding/json"
@@ -410,12 +410,12 @@ func TestSwaggerParamNamesConsistency(t *testing.T) {
 // TestSwaggerSpecsExist validates that all required swagger spec files exist
 func TestSwaggerSpecsExist(t *testing.T) {
 	specs := []string{
-		"docs/public/swagger.json",
-		"docs/public/docs.go",
-		"docs/admin/admin_swagger.json",
-		"docs/admin/admin_docs.go",
-		"docs/runner/runner_swagger.json",
-		"docs/runner/runner_docs.go",
+		"../docs/public/swagger.json",
+		"../docs/public/docs.go",
+		"../docs/admin/admin_swagger.json",
+		"../docs/admin/admin_docs.go",
+		"../docs/runner/runner_swagger.json",
+		"../docs/runner/runner_docs.go",
 	}
 
 	for _, spec := range specs {

@@ -254,10 +254,11 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			name: "only returns user accessible orgs",
 			setupFunc: func() []string {
 				// Create second account
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "other@example.com",
-					Subject:     "other-subject",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
+					Subject:     acc2ID,
 					AccountType: app.AccountTypeAuth0,
 				}
 				err := s.service.DB.Create(acc2).Error
@@ -273,9 +274,10 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				ctx2 := context.Background()
 				ctx2 = cctx.SetAccountContext(ctx2, acc2)
 
+				myOrgID := domains.NewOrgID()
 				myOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "my-org",
+					ID:          myOrgID,
+					Name:        fmt.Sprintf("my-org-%s", myOrgID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -287,9 +289,10 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", myOrg.ID)
 				})
 
+				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          otherOrgID,
+					Name:        fmt.Sprintf("other-org-%s", otherOrgID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -307,7 +310,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			queryParams:   "",
 			expectedCount: 1,
 			validateFunc: func(orgs []app.Org) {
-				require.Equal(s.T(), "my-org", orgs[0].Name)
+				require.Contains(s.T(), orgs[0].Name, "my-org-")
 			},
 		},
 	}

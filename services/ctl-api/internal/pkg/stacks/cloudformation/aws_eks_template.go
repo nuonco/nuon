@@ -77,6 +77,8 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		maps.Copy(tmpl.Resources, secrets)
 		secretParams := t.getSecretsParameters(inp)
 		maps.Copy(tmpl.Parameters, secretParams)
+		secretConditions := t.getSecretsConditions(inp)
+		maps.Copy(tmpl.Conditions, secretConditions)
 		secretParamLabels := t.getSecretsParamLabels(inp)
 		maps.Copy(paramlabels, secretParamLabels)
 	}

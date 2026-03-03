@@ -2,8 +2,11 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/avast/retry-go"
 	"github.com/go-playground/validator/v10"
@@ -70,6 +73,21 @@ func (s *baseIntegrationTestSuite) SetupSuite() {
 	s.githubInstallID = intUser.GithubInstallID
 }
 
+// uniqueName generates a unique name for test resources to enable parallel execution.
+// Format: prefix-timestamp-random6chars (e.g., "test-org-1709123456-a3f5k2")
+func (s *baseIntegrationTestSuite) uniqueName(prefix string) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 6)
+	for i := range b {
+		b[i] = charset[rnd.Intn(len(charset))]
+	}
+
+	timestamp := time.Now().Unix()
+	return fmt.Sprintf("%s-%d-%s", prefix, timestamp, string(b))
+}
+
 func (s *baseIntegrationTestSuite) fakeOrgRequest() *models.ServiceCreateOrgRequest {
 	orgReq := generics.GetFakeObj[*models.ServiceCreateOrgRequest]()
 	orgReq.UseSandboxMode = true
@@ -78,6 +96,8 @@ func (s *baseIntegrationTestSuite) fakeOrgRequest() *models.ServiceCreateOrgRequ
 
 func (s *baseIntegrationTestSuite) createOrg() *models.AppOrg {
 	orgReq := s.fakeOrgRequest()
+	name := s.uniqueName("test-org")
+	orgReq.Name = &name
 
 	org, err := s.apiClient.CreateOrg(s.ctx, orgReq)
 	require.NoError(s.T(), err)
@@ -110,7 +130,8 @@ func (s *baseIntegrationTestSuite) fakeInstallInputsForApp(appID string) map[str
 
 func (s *baseIntegrationTestSuite) createAppWithInputs() *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
+	name := s.formatInterpolatedString(*appReq.Name)
+	appReq.Name = generics.ToPtr(s.uniqueName(name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -148,7 +169,8 @@ func (s *baseIntegrationTestSuite) createAppRunnerConfig(appID string) {
 
 func (s *baseIntegrationTestSuite) createApp() *models.AppApp {
 	appReq := generics.GetFakeObj[*models.ServiceCreateAppRequest]()
-	appReq.Name = generics.ToPtr(s.formatInterpolatedString(*appReq.Name))
+	name := s.formatInterpolatedString(*appReq.Name)
+	appReq.Name = generics.ToPtr(s.uniqueName(name))
 	app, err := s.apiClient.CreateApp(s.ctx, appReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), app)
@@ -188,7 +210,8 @@ func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppIn
 
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
 	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	compReq.Name = generics.ToPtr(s.formatInterpolatedString(*compReq.Name))
+	name := s.formatInterpolatedString(*compReq.Name)
+	compReq.Name = generics.ToPtr(s.uniqueName(name))
 	compReq.VarName = s.formatInterpolatedString(compReq.VarName)
 	compReq.Dependencies = []string{}
 
@@ -211,8 +234,9 @@ func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstal
 }
 
 func (s *baseIntegrationTestSuite) deleteOrg(orgID string) {
-	disabled := os.Getenv("INTEGRATION_NO_CLEANUP")
-	if disabled != "" {
+	// Skip cleanup in CI or when explicitly disabled
+	// CI databases are ephemeral and unique names prevent collisions
+	if os.Getenv("CI") != "" || os.Getenv("INTEGRATION_NO_CLEANUP") != "" {
 		return
 	}
 
