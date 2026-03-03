@@ -3,7 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
+	"syscall"
 	"time"
 
 	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
@@ -41,8 +43,21 @@ type chConfig struct {
 }
 
 // CreateTestClickHouseDatabase creates the ClickHouse test database if it doesn't exist and runs migrations.
-// Uses the same config system as the service to get connection parameters.
+// Uses file locks to prevent concurrent migrations across test processes.
 func CreateTestClickHouseDatabase() error {
+	// Use file lock to coordinate ClickHouse database recreation across processes
+	lockFile, err := os.OpenFile("/tmp/ctl-api-test-ch.lock", os.O_CREATE|os.O_RDWR, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to create lock file: %w", err)
+	}
+	defer lockFile.Close()
+
+	// Acquire exclusive file lock (blocks until available)
+	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
+		return fmt.Errorf("failed to acquire file lock: %w", err)
+	}
+	defer syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+
 	var chCfg chConfig
 	if err := config.LoadInto(nil, &chCfg); err != nil {
 		return fmt.Errorf("failed to load clickhouse config: %w", err)
@@ -51,6 +66,12 @@ func CreateTestClickHouseDatabase() error {
 	if chCfg.Name == "" {
 		return fmt.Errorf("CLICKHOUSE_DB_NAME must be set in the environment")
 	}
+
+	// Give each process its own ClickHouse database using PID suffix
+	chCfg.Name = fmt.Sprintf("%s_%d", chCfg.Name, os.Getpid())
+
+	// Update env so FX/GORM connections use the per-process DB
+	os.Setenv("CLICKHOUSE_DB_NAME", chCfg.Name)
 
 	// Connect to the default database to create our test database
 	defaultOpts := &clickhousecore.Options{
@@ -84,16 +105,22 @@ func CreateTestClickHouseDatabase() error {
 	}
 	defer sqlDB.Close()
 
-	// Create the test database if it doesn't exist
-	if err := defaultDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s ON CLUSTER simple", chCfg.Name)).Error; err != nil {
-		return fmt.Errorf("failed to create clickhouse test database: %w", err)
+	// Check if database already exists
+	var dbExists int64
+	err = defaultDB.Raw(fmt.Sprintf("SELECT count() FROM system.databases WHERE name = '%s'", chCfg.Name)).Scan(&dbExists).Error
+	if err != nil || dbExists == 0 {
+		// Database doesn't exist - create it fresh
+		if err := defaultDB.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s ON CLUSTER simple", chCfg.Name)).Error; err != nil {
+			return fmt.Errorf("failed to create clickhouse test database: %w", err)
+		}
 	}
 
-	// Run migrations on the test database
+	// Always run migrations (they're idempotent and will skip already-applied migrations)
 	if err := migrateTestClickHouseDatabase(chCfg); err != nil {
 		return fmt.Errorf("failed to migrate clickhouse test database: %w", err)
 	}
 
+	// Lock released here by defer
 	return nil
 }
 
