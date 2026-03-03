@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=gobase-apt \
     jq && rm -rf /var/lib/apt/lists/*
 
 # Get golangci-lint from the official image
-FROM golangci/golangci-lint:latest AS golangci
+FROM golangci/golangci-lint:v2.10.1 AS golangci
 
 # Back to main build
 FROM build-base AS build

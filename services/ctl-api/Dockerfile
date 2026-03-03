@@ -26,16 +26,8 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 
-FROM code AS unit-test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
-    go test -v ./...
-
-FROM code AS lint
-
+FROM code AS testing
 COPY .golangci.yml .
-
-RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
-    golangci-lint run -c .golangci.yml  -v
 
 # Use the provided runtime image
 FROM ${RUNTIME_IMAGE} AS final
