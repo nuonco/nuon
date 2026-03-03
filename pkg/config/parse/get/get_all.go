@@ -17,7 +17,30 @@ func (g *get) GetAll(ctx context.Context) error {
 	return g.walkFields(ctx, g.dst, "")
 }
 
+type sourceFileGetter interface {
+	GetSourceFile() string
+}
+
+func nextSubdir(current, fieldName string) string {
+	switch fieldName {
+	case "Components":
+		return "components"
+	case "Actions":
+		return "actions"
+	case "Permissions":
+		return "permissions"
+	case "BreakGlass":
+		return "permissions"
+	case "Installs":
+		return "installs"
+	default:
+		return current
+	}
+}
+
 func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) error {
+	subdir = g.nextSourceFileSubdir(v, subdir)
+
 	val := reflect.ValueOf(v)
 
 	// If it's not a pointer, we need to get a pointer to make it settable
@@ -40,6 +63,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := typ.Field(i)
+		fieldSubdir := nextSubdir(subdir, fieldType.Name)
 
 		// if the record is nested, recurse
 		switch field.Kind() {
@@ -49,60 +73,15 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 				continue
 			}
 
-			if fieldType.Name == "Components" {
-				subdir = "components"
-			}
-
-			if fieldType.Name == "Actions" {
-				subdir = "actions"
-			}
-			if fieldType.Name == "Permissions" {
-				subdir = "permissions"
-			}
-			if fieldType.Name == "Policies" {
-				subdir = "policies"
-			}
-			if fieldType.Name == "Installs" {
-				subdir = "installs"
-			}
-
 			// Recurse with the dereferenced pointer
-			if err := g.walkFields(ctx, field.Interface(), subdir); err != nil {
+			if err := g.walkFields(ctx, field.Interface(), fieldSubdir); err != nil {
 				return err
 			}
 		case reflect.Struct:
-			if fieldType.Name == "Components" {
-				subdir = "components"
-			}
-
-			if fieldType.Name == "Actions" {
-				subdir = "actions"
-			}
-			if fieldType.Name == "Permissions" {
-				subdir = "permissions"
-			}
-			if fieldType.Name == "Policies" {
-				subdir = "policies"
-			}
-			if fieldType.Name == "Installs" {
-				subdir = "installs"
-			}
-
-			if err := g.walkFields(ctx, field.Interface(), subdir); err != nil {
+			if err := g.walkFields(ctx, field.Interface(), fieldSubdir); err != nil {
 				return err
 			}
 		case reflect.Slice:
-			if fieldType.Name == "Components" {
-				subdir = "components"
-			}
-
-			if fieldType.Name == "Actions" {
-				subdir = "actions"
-			}
-			if fieldType.Name == "Installs" {
-				subdir = "installs"
-			}
-
 			// Handle slices of structs
 			for i := 0; i < field.Len(); i++ {
 				elem := field.Index(i)
@@ -111,7 +90,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 					// Create a pointer to make it settable
 					ptr := reflect.New(elem.Type())
 					ptr.Elem().Set(elem)
-					if err := g.walkFields(ctx, ptr.Interface(), subdir); err != nil {
+					if err := g.walkFields(ctx, ptr.Interface(), fieldSubdir); err != nil {
 						return err
 					}
 					// Update the slice element with potentially modified value
@@ -124,7 +103,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 					}
 
 					if elem.Elem().Kind() == reflect.Struct {
-						if err := g.walkFields(ctx, elem.Interface(), subdir); err != nil {
+						if err := g.walkFields(ctx, elem.Interface(), fieldSubdir); err != nil {
 							return err
 						}
 					}
@@ -146,7 +125,7 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 		if field.Kind() == reflect.String {
 			strValue := field.String()
 
-			val, err := g.processField(ctx, strValue, subdir)
+			val, err := g.processField(ctx, strValue, fieldSubdir)
 			if err != nil {
 				return errors.Wrap(err, "unable to fetch field value")
 			}
@@ -174,6 +153,30 @@ func (g *get) walkFields(ctx context.Context, v interface{}, subdir string) erro
 	return nil
 }
 
+func (g *get) nextSourceFileSubdir(v interface{}, current string) string {
+	getter, ok := v.(sourceFileGetter)
+	if !ok {
+		return current
+	}
+
+	sourceFile := getter.GetSourceFile()
+	if sourceFile == "" {
+		return current
+	}
+
+	sourceDir := filepath.Dir(sourceFile)
+	if sourceDir == "." {
+		return current
+	}
+
+	sourceDirPath := filepath.Join(g.opts.RootDir, sourceDir)
+	if stat, err := os.Stat(sourceDirPath); err == nil && stat.IsDir() {
+		return sourceDir
+	}
+
+	return current
+}
+
 func (g *get) processField(ctx context.Context, inputVal string, subdir string) (string, error) {
 	prefixes := []string{
 		"http",
@@ -196,7 +199,13 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		return inputVal, nil
 	}
 
-	pwd := filepath.Join(g.opts.RootDir, subdir)
+	pwd := g.opts.RootDir
+	if subdir != "" {
+		subdirPath := filepath.Join(g.opts.RootDir, subdir)
+		if stat, err := os.Stat(subdirPath); err == nil && stat.IsDir() {
+			pwd = subdirPath
+		}
+	}
 
 	if _, err := getter.Detect(inputVal, pwd, GetDetectors()); err != nil {
 		return inputVal, nil
