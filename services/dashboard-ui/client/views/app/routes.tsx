@@ -8,6 +8,7 @@ import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
+import { PolicyDetail } from './PolicyDetail'
 import { Installs } from './Installs'
 import { Readme } from './Readme'
 
@@ -27,6 +28,7 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/actions/:actionId', element: <ActionDetail /> },
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
       { path: ':orgId/apps/:appId/policies', element: <Policies /> },
+      { path: ':orgId/apps/:appId/policies/:policyId', element: <PolicyDetail /> },
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },
       { path: ':orgId/apps/:appId/readme', element: <Readme /> },
     ],
