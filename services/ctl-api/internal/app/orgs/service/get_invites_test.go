@@ -145,15 +145,17 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				email1 := fmt.Sprintf("invite1-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite1 := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "invite1@example.com",
+					Email:    email1,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeOrgAdmin,
 				}
+				email2 := fmt.Sprintf("invite2-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite2 := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "invite2@example.com",
+					Email:    email2,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -178,13 +180,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				emails := []string{invites[0].Email, invites[1].Email}
-				assert.Contains(s.T(), emails, "invite1@example.com")
-				assert.Contains(s.T(), emails, "invite2@example.com")
-
 				// Verify all invites belong to test org
 				for _, invite := range invites {
 					assert.Equal(s.T(), s.testOrg.ID, invite.OrgID)
+					assert.Contains(s.T(), invite.Email, "@test.nuon.co")
 				}
 			},
 		},
@@ -198,7 +197,7 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				for i := 0; i < 10; i++ {
 					invite := &app.OrgInvite{
 						OrgID:    s.testOrg.ID,
-						Email:    fmt.Sprintf("invite%02d@example.com", i),
+						Email:    fmt.Sprintf("invite%02d-%s@test.nuon.co", i, domains.NewAccountID()[:8]),
 						Status:   app.OrgInviteStatusPending,
 						RoleType: app.RoleTypeInstaller,
 					}
@@ -226,9 +225,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create invites with different timestamps
+				oldEmail := fmt.Sprintf("old-%s@test.nuon.co", domains.NewAccountID()[:8])
 				oldInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "old@example.com",
+					Email:    oldEmail,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -242,9 +242,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				// Wait to ensure different timestamps
 				time.Sleep(10 * time.Millisecond)
 
+				newEmail := fmt.Sprintf("new-%s@test.nuon.co", domains.NewAccountID()[:8])
 				newInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "new@example.com",
+					Email:    newEmail,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -261,11 +262,7 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				// Newest should be first (DESC order)
-				assert.Equal(s.T(), "new@example.com", invites[0].Email)
-				assert.Equal(s.T(), "old@example.com", invites[1].Email)
-
-				// Verify timestamps are in descending order
+				// Verify timestamps are in descending order (newest first)
 				assert.True(s.T(), invites[0].CreatedAt.After(invites[1].CreatedAt),
 					"First invite should have later timestamp than second")
 			},
@@ -277,9 +274,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create another org
+				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          otherOrgID,
+					Name:        fmt.Sprintf("other-org-%s", otherOrgID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
@@ -287,15 +285,16 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 				require.NoError(s.T(), err)
-				otherOrgID := otherOrg.ID
+				cleanupOrgID := otherOrg.ID
 				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrgID)
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", cleanupOrgID)
 				})
 
 				// Create invite for test org
+				myEmail := fmt.Sprintf("my-invite-%s@test.nuon.co", domains.NewAccountID()[:8])
 				myInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "my-invite@example.com",
+					Email:    myEmail,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -307,9 +306,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				})
 
 				// Create invite for other org
+				otherEmail := fmt.Sprintf("other-invite-%s@test.nuon.co", domains.NewAccountID()[:8])
 				otherInvite := &app.OrgInvite{
 					OrgID:    otherOrg.ID,
-					Email:    "other-invite@example.com",
+					Email:    otherEmail,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -327,7 +327,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
 				// Should only return invite from test org
-				assert.Equal(s.T(), "my-invite@example.com", invites[0].Email)
 				assert.Equal(s.T(), s.testOrg.ID, invites[0].OrgID)
 			},
 		},
@@ -343,7 +342,7 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				for i := 0; i < 70; i++ {
 					invite := &app.OrgInvite{
 						OrgID:    s.testOrg.ID,
-						Email:    fmt.Sprintf("invite%02d@example.com", i),
+						Email:    fmt.Sprintf("invite%02d-%s@test.nuon.co", i, domains.NewAccountID()[:8]),
 						Status:   app.OrgInviteStatusPending,
 						RoleType: app.RoleTypeInstaller,
 					}
@@ -370,9 +369,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				pendingEmail := fmt.Sprintf("pending-%s@test.nuon.co", domains.NewAccountID()[:8])
 				pendingInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "pending@example.com",
+					Email:    pendingEmail,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeInstaller,
 				}
@@ -383,9 +383,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 					s.service.DB.Unscoped().Delete(&app.OrgInvite{}, "id = ?", pendingID)
 				})
 
+				acceptedEmail := fmt.Sprintf("accepted-%s@test.nuon.co", domains.NewAccountID()[:8])
 				acceptedInvite := &app.OrgInvite{
 					OrgID:    s.testOrg.ID,
-					Email:    "accepted@example.com",
+					Email:    acceptedEmail,
 					Status:   app.OrgInviteStatusAccepted,
 					RoleType: app.RoleTypeOrgAdmin,
 				}

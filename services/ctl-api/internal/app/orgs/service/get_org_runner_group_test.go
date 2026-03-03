@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -394,10 +395,11 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroupOwnershipIsolation() {
 				ctx := context.Background()
 
 				// Create second account and org
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "other@example.com",
-					Subject:     "other-subject",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
+					Subject:     acc2ID,
 					AccountType: app.AccountTypeAuth0,
 				}
 				err := s.service.DB.Create(acc2).Error
@@ -407,9 +409,10 @@ func (s *GetOrgRunnerGroupTestSuite) TestGetOrgRunnerGroupOwnershipIsolation() {
 				})
 
 				ctx2 := cctx.SetAccountContext(ctx, acc2)
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",

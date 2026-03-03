@@ -74,8 +74,9 @@ func (s *AdminExtendRunnerServiceAccountTokenTestSuite) SetupTest() {
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
