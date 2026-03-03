@@ -17,16 +17,14 @@ COPY internal ./internal/
 COPY sdks ./sdks/
 COPY main.go .
 COPY generate.sh .
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-runner \
     go generate ./...
 
 FROM code AS build
 
 ARG tag=
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-runner \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
@@ -34,7 +32,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     -o /bin/runner
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-runner \
     go test -v ./...
 
 FROM code AS lint
@@ -89,8 +87,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -101,8 +98,7 @@ FROM code AS build-darwin-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -113,8 +109,7 @@ FROM code AS build-linux-arm
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -125,8 +120,7 @@ FROM code AS build-linux-arm64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -137,8 +131,7 @@ FROM code AS build-linux-386
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -149,8 +142,7 @@ FROM code AS build-linux-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
@@ -208,8 +200,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-runner \
     GOOS=linux \
     GOARCH=amd64 \
     go build \

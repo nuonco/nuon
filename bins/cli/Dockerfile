@@ -17,18 +17,16 @@ COPY internal ./internal/
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 COPY main.go .
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     go generate ./...
 
 FROM code AS build
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/${BIN_NAME}
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     go test -v ./...
 
 FROM code AS lint
@@ -51,8 +49,7 @@ FROM code AS build-darwin-arm64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -63,8 +60,7 @@ FROM code AS build-darwin-amd64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -75,8 +71,7 @@ FROM code AS build-linux-arm
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -87,8 +82,7 @@ FROM code AS build-linux-arm64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -99,8 +93,7 @@ FROM code AS build-linux-386
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -111,8 +104,7 @@ FROM code AS build-linux-amd64
 ARG BIN_NAME=nuon
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=amd64 \
     go build \

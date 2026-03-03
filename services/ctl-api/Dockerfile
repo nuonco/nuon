@@ -16,18 +16,16 @@ COPY internal ./internal/
 COPY docs ./docs/
 COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-ctl-api \
     go generate ./...
 
 FROM code AS build
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-ctl-api \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 
 FROM code AS unit-test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-ctl-api \
+RUN --mount=type=cache,target=/go-cache,id=gobuild-ctl-api \
     go test -v ./...
 
 FROM code AS lint
