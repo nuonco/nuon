@@ -173,6 +173,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      
       if (workflowId) {
         navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
       } else {
