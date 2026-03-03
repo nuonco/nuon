@@ -13,8 +13,8 @@ type HelmValue struct {
 
 func (h HelmValue) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("name").Short("helm value name").
-		Field("value").Short("helm value")
+		Field("name").Short("helm value name").Example("replicaCount").Example("image.tag").
+		Field("value").Short("helm value").Example("3").Example("{{.nuon.install.id}}")
 }
 
 type HelmValuesFile struct {
@@ -26,8 +26,8 @@ type HelmValuesFile struct {
 func (h HelmValuesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("source").Deprecated("use 'path' instead").OneOfRequired("source").
-		Field("path").Short("Path to the values file.").OneOfRequired("path").
-		Field("contents").Short("Contents of the values file.").OneOfRequired("contents")
+		Field("path").Short("Path to the values file.").Example("./values/clickhouse-operator.yaml").Example("./values/coder.yaml").OneOfRequired("path").
+		Field("contents").Short("Contents of the values file.").Example("./values/whoami.yaml").OneOfRequired("contents")
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
@@ -57,23 +57,46 @@ type HelmChartComponentConfig struct {
 
 func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("storage_driver").Short("which helm storage driver to use (defaults to configmap)").Enum("configmap", "secret").
-		Field("namespace").Short("namespace to deploy into. Defaults to {{.nuon.install.id}} and supports templating.").
-		Field("chart_name").Short("chart name").Required().
-		Field("value").Short("array of helm values (not recommended)").
-		Field("values").Short("map of helm values").
-		Field("public_repo").Short("public repo with the helm chart").OneOfRequired("public_repo").
-		Field("connected_repo").Short("connected repo with the helm chart").OneOfRequired("connected_repo").
-		Field("helm_repo").Short("helm repo config").OneOfRequired("helm_repo").
+		Field("chart_name").Short("Helm chart name").Required().
+		Long("Name of the Helm chart to deploy. Must match the chart name in the repository or Helm repo").
+		Example("karpenter-nodepools").
+		Example("prometheus").
+		Example("cert-manager").
+		Field("values").Short("inline Helm values").
+		Long("Map of Helm values as key-value pairs. These are passed to helm install/upgrade as --set arguments. Supports Nuon templating").
+		Field("values_file").Short("Helm values files").
+		Long("Array of external Helm values files to load. Each entry can specify a path to a local file or inline contents. Supports Nuon templating and external file sources").
+		Field("public_repo").Short("public repository with the Helm chart").
+		Long("Configuration for a public Git repository containing the Helm chart source. Mutually exclusive with connected_repo and helm_repo").
+		OneOfRequired("public_repo").
+		Field("connected_repo").Short("connected repository with the Helm chart").
+		Long("Configuration for a Nuon-connected private repository containing the Helm chart source. Mutually exclusive with public_repo and helm_repo").
+		OneOfRequired("connected_repo").
+		Field("helm_repo").Short("Helm chart repository").
+		Long("Configuration for pulling a chart from a Helm repository (e.g., a public chart registry). Mutually exclusive with public_repo and connected_repo").
+		OneOfRequired("helm_repo").
+		Field("namespace").Short("Kubernetes namespace to deploy into").
+		Long("Kubernetes namespace where the Helm release will be installed. Defaults to {{.nuon.install.id}}. Supports Nuon templating").
+		Example("clickhouse").
+		Example("monitoring").
+		Example("{{.nuon.install.id}}").
+		Field("storage_driver").Short("Helm storage driver").
+		Long("Backend storage driver for Helm release metadata. Defaults to configmap").
+		Enum("configmap", "secret").
+		Example("configmap").
+		Field("take_ownership").Short("adopt existing Helm releases").
+		Long("If true, Nuon will adopt an existing Helm release with the same name and namespace that was not originally managed by Nuon. Useful when migrating existing deployments to Nuon").
+		Field("value").Short("deprecated: use values map instead").
+		Long("Deprecated: Array of name/value pairs for Helm values. Use the values map instead").
 		Field("drift_schedule").Short("drift detection schedule").
-		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled.").
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled").
 		Example("0 2 * * *").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
 		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
-		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
 		Example("1h")
 }

@@ -32,46 +32,27 @@
               {
                 "group": "Config Reference",
                 "pages": [
-                  "config-ref/index",
-                  {
-                    "group": "Component Types",
-                    "pages": [
-                      "config-ref/component-root",
-                      "config-ref/container-image",
-                      "config-ref/docker-build",
-                      "config-ref/helm",
-                      "config-ref/kubernetes-manifest",
-                      "config-ref/terraform"
-                    ]
-                  },
-                  {
-                    "group": "Configuration Types",
-                    "pages": [
-                      "config-ref/inputs",
-                      "config-ref/metadata",
-                      "config-ref/operation-roles",
-                      "config-ref/permissions",
-                      "config-ref/policies",
-                      "config-ref/secrets"
-                    ]
-                  },
-                  {
-                    "group": "Other Types",
-                    "pages": [
-                      "config-ref/action",
-                      "config-ref/break-glass",
-                      "config-ref/full",
-                      "config-ref/input",
-                      "config-ref/input-group",
-                      "config-ref/install",
-                      "config-ref/installer",
-                      "config-ref/policy",
-                      "config-ref/runner",
-                      "config-ref/sandbox",
-                      "config-ref/secret",
-                      "config-ref/stack"
-                    ]
-                  }
+                  "config-ref/action",
+                  "config-ref/break-glass",
+                  "config-ref/container-image",
+                  "config-ref/docker-build",
+                  "config-ref/helm",
+                  "config-ref/input",
+                  "config-ref/input-group",
+                  "config-ref/inputs",
+                  "config-ref/install",
+                  "config-ref/installer",
+                  "config-ref/kubernetes-manifest",
+                  "config-ref/metadata",
+                  "config-ref/permissions",
+                  "config-ref/policies",
+                  "config-ref/policy",
+                  "config-ref/runner",
+                  "config-ref/sandbox",
+                  "config-ref/secret",
+                  "config-ref/secrets",
+                  "config-ref/stack",
+                  "config-ref/terraform"
                 ]
               }
             ]
