@@ -133,8 +133,9 @@ jobs:
       - check_labels
       - tag
       - build_base_images
-    # Run if there are service changes AND base images succeeded or were skipped
-    if: ${{ !cancelled() && (needs.build_base_images.result == 'success' || needs.build_base_images.result == 'skipped') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+      - pkg_lint
+    # Run if there are service changes AND base images + pkg_lint succeeded or were skipped
+    if: ${{ !cancelled() && (needs.build_base_images.result == 'success' || needs.build_base_images.result == 'skipped') && (needs.pkg_lint.result == 'success' || needs.pkg_lint.result == 'skipped') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
