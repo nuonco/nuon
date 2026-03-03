@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	clickhousecore "github.com/ClickHouse/clickhouse-go/v2"
@@ -98,6 +100,16 @@ func CreateTestClickHouseDatabase() error {
 	err = defaultDB.Raw(fmt.Sprintf("SELECT name FROM system.databases WHERE name LIKE '%s_%%'", baseName)).Scan(&oldDBs).Error
 	if err == nil {
 		for _, oldDB := range oldDBs {
+			// Extract PID from database name (format: baseName_PID) and only drop if process is dead
+			parts := strings.Split(oldDB.Name, "_")
+			if len(parts) > 0 {
+				if pid, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+					if syscall.Kill(pid, 0) == nil {
+						// Process still alive, skip
+						continue
+					}
+				}
+			}
 			defaultDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s ON CLUSTER simple", oldDB.Name))
 		}
 	}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -100,9 +102,17 @@ func createAndMigrateDatabase(cfg dbConfig) error {
 	}
 
 	for _, oldDB := range oldDBs {
-		if err := db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", oldDB)).Error; err != nil {
-			return fmt.Errorf("failed to drop old test database %s: %w", oldDB, err)
+		// Extract PID from database name (format: baseName_PID) and only drop if process is dead
+		parts := strings.Split(oldDB, "_")
+		if len(parts) > 0 {
+			if pid, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+				if syscall.Kill(pid, 0) == nil {
+					// Process still alive, skip
+					continue
+				}
+			}
 		}
+		db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", oldDB))
 	}
 
 	// Create fresh per-process database
