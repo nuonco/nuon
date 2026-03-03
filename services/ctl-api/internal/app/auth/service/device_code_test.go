@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -96,10 +97,11 @@ func (s *DeviceCodePageTestSuite) TearDownSuite() {
 func (s *DeviceCodePageTestSuite) setupTestData() {
 	ctx := context.Background()
 
+	accID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
+		ID:          accID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
+		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -107,9 +109,10 @@ func (s *DeviceCodePageTestSuite) setupTestData() {
 	s.testAcc = testAcc
 
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -360,10 +363,11 @@ func (s *DeviceCodeApproveTestSuite) TearDownSuite() {
 func (s *DeviceCodeApproveTestSuite) setupTestData() {
 	ctx := context.Background()
 
+	accID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
+		ID:          accID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
+		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -371,9 +375,10 @@ func (s *DeviceCodeApproveTestSuite) setupTestData() {
 	s.testAcc = testAcc
 
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -498,6 +503,12 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApprove() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			// Cleanup device codes created by this test case
+			code := tc.code
+			s.T().Cleanup(func() {
+				s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+			})
+
 			var authToken string
 			if tc.withToken {
 				authToken = s.createTestToken()
@@ -552,7 +563,12 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveWithExpiredToken() {
 
 func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveConsumedCode() {
 	authToken := s.createTestToken()
-	code := "CONS-UMED"
+	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+	code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
+
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+	})
 
 	// Create a device code that's already consumed
 	deviceCode := &app.DeviceCode{
@@ -573,7 +589,12 @@ func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveConsumedCode() {
 
 func (s *DeviceCodeApproveTestSuite) TestDeviceCodeApproveExpiredCode() {
 	authToken := s.createTestToken()
-	code := "EXPR-IRED"
+	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+	code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
+
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+	})
 
 	// Create a device code that's already expired
 	deviceCode := &app.DeviceCode{
@@ -660,10 +681,11 @@ func (s *DeviceCodeTokenTestSuite) TearDownSuite() {
 func (s *DeviceCodeTokenTestSuite) setupTestData() {
 	ctx := context.Background()
 
+	accID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
+		ID:          accID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
+		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -671,9 +693,10 @@ func (s *DeviceCodeTokenTestSuite) setupTestData() {
 	s.testAcc = testAcc
 
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -726,9 +749,14 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 		},
 		{
 			name: "authorization pending - code not approved yet",
-			code: "PEND-ING1",
+			code: "",
 			setupFunc: func() string {
-				return "PEND-ING1"
+				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+				code := strings.ToUpper(fmt.Sprintf("PEND-%s", domains.NewAccountID()[:4]))
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+				})
+				return code
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(rr *httptest.ResponseRecorder, code string) {
@@ -741,9 +769,13 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 		},
 		{
 			name: "expired device code",
-			code: "EXPR-IRED",
+			code: "",
 			setupFunc: func() string {
-				code := "EXPR-IRED"
+				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+				code := strings.ToUpper(fmt.Sprintf("EXPR-%s", domains.NewAccountID()[:4]))
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+				})
 				deviceCode := &app.DeviceCode{
 					Code:      code,
 					AccountID: s.testAcc.ID,
@@ -764,9 +796,13 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 		},
 		{
 			name: "already consumed device code",
-			code: "CONS-UMED",
+			code: "",
 			setupFunc: func() string {
-				code := "CONS-UMED"
+				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+				code := strings.ToUpper(fmt.Sprintf("CONS-%s", domains.NewAccountID()[:4]))
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+				})
 				deviceCode := &app.DeviceCode{
 					Code:      code,
 					AccountID: s.testAcc.ID,
@@ -788,9 +824,13 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 		},
 		{
 			name: "successful token issuance",
-			code: "SUCC-ESS1",
+			code: "",
 			setupFunc: func() string {
-				code := "SUCC-ESS1"
+				// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+				code := strings.ToUpper(fmt.Sprintf("SUCC-%s", domains.NewAccountID()[:4]))
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+				})
 				deviceCode := &app.DeviceCode{
 					Code:      code,
 					AccountID: s.testAcc.ID,
@@ -858,7 +898,12 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeToken() {
 }
 
 func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
-	code := "POLL-TEST"
+	// Use unique code per test run to avoid collisions (format: XXXX-XXXX, uppercase)
+	code := strings.ToUpper(fmt.Sprintf("POLL-%s", domains.NewAccountID()[:4]))
+
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.DeviceCode{}, "code = ?", code)
+	})
 
 	// Poll before approval - should get authorization_pending
 	rr1 := s.makeRequest("GET", "/device/token?code="+code)

@@ -296,9 +296,10 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create second org
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
