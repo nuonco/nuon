@@ -133,46 +133,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	var azureAuth *azurecredentials.Config
 
 	if !org.SandboxMode {
-		// Action workflows always use Trigger operation
-		operation := app.OperationTrigger
-
-		// Get default role from app permissions config
-		// Actions use MaintenanceRole for trigger operations
-		defaultRole := appCfg.PermissionsConfig.MaintenanceRole.Name
-
-		// Build selection context
-		// TODO: Add action-specific operation roles when available
-		selectionCtx := &operationroles.SelectionContext{
-			Operation:     operation,
-			PrincipalType: principal.TypeAction,
-			RuntimeRole:   run.Role,
-			EntityRoles:   nil, // Actions don't currently have entity-specific operation roles
-			MatrixRules:   appCfg.OperationRoleConfig.Rules,
-			DefaultRole:   defaultRole,
-			AppConfig:     appCfg,
-			StackOutputs:  &stack.InstallStackOutputs,
-			InstallState:  state,
-		}
-
-		// Select role using operation roles engine
-		roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+		awsAuth, azureAuth, err = p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to select role for action workflow")
-		}
-
-		l.Info("selected role for action workflow run",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-			zap.String("source", string(roleSelection.Source)),
-		)
-
-		// Create auth configuration with selected role
-		awsAuth = &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("action-workflow-%s", run.ID),
-				RoleARN:     roleSelection.RoleARN,
-			},
+			return nil, errors.Wrap(err, "unable to get auth for action workflow run")
 		}
 
 		// Set auth on cluster info if present
