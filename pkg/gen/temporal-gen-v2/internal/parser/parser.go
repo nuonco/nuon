@@ -11,6 +11,7 @@ import (
 )
 
 type ActivityOptions struct {
+	Namespace              string
 	TaskQueue              string
 	ScheduleToCloseTimeout time.Duration
 	ScheduleToStartTimeout time.Duration
@@ -25,6 +26,7 @@ type ActivityOptions struct {
 	ByField                string
 	ByFieldOnly            bool
 	GenerateWrapper        bool
+	WrapperPrefix          string // Prefix to add to generated wrapper function name
 }
 
 type WorkflowOptions struct {
@@ -59,6 +61,9 @@ func (a *Annotation) Validate() error {
 	if a.ActivityOpts != nil {
 		if a.ActivityOpts.ByFieldOnly && a.ActivityOpts.ByField == "" {
 			return fmt.Errorf("@by-field-only requires @by-field to be specified")
+		}
+		if a.ActivityOpts.WrapperPrefix != "" && !a.ActivityOpts.GenerateWrapper {
+			return fmt.Errorf("@wrapper-prefix requires @as-wrapper to be specified")
 		}
 	}
 	if a.WorkflowOpts != nil {
@@ -127,6 +132,15 @@ func Parse(comments []string) (*Annotation, error) {
 			// TODO: Add other types that might support @id if needed
 
 		// Activity Arguments
+		case "@namespace":
+			if annotation.Type != "activity" {
+				continue
+			}
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("missing value for @namespace")
+			}
+			annotation.ActivityOpts.Namespace = strings.Trim(parts[1], "\"")
+
 		case "@task-queue":
 			if annotation.Type != "activity" {
 				continue
@@ -291,6 +305,15 @@ func Parse(comments []string) (*Annotation, error) {
 				continue
 			}
 			annotation.ActivityOpts.GenerateWrapper = true
+
+		case "@wrapper-prefix":
+			if annotation.Type != "activity" {
+				continue
+			}
+			if len(parts) < 2 {
+				return nil, fmt.Errorf("missing value for @wrapper-prefix")
+			}
+			annotation.ActivityOpts.WrapperPrefix = strings.Trim(parts[1], "\"")
 
 		// Workflow Arguments
 		case "@execution-timeout":

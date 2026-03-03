@@ -1,20 +1,33 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "almond",
   "name": "Nuon documentation",
+  "description": "Deploy your software into customer cloud accounts without cross-account access. Nuon is the BYOC platform for software vendors.",
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude"]
+    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
   },
   "colors": {
-    "primary": "#8040BF",
-    "light": "#C494F4",
-    "dark": "#8040BF"
+    "primary": "#256A7F",
+    "light": "#4CC9F0",
+    "dark": "#256A7F"
+  },
+  "background": {
+    "color": {
+      "light": "#FAFAFA"
+    }
   },
   "favicon": "/favicon.svg",
+  "custom": {
+    "css": "/style.css"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
+        "icon": "book-open",
         "groups": [
           {
             "group": "Get Started",
@@ -89,6 +102,7 @@
       },
       {
         "tab": "Changelog",
+        "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
           "updates/031-operation-roles",
@@ -126,10 +140,12 @@
       },
       {
         "tab": "Architecture",
+        "icon": "sitemap",
         "pages": ["runner-architecture"]
       },
       {
         "tab": "Concepts",
+        "icon": "lightbulb",
         "pages": [
           "concepts/overview",
           "concepts/apps",
@@ -148,6 +164,7 @@
       },
       {
         "tab": "Guides",
+        "icon": "map",
         "groups": [
           {
             "group": "Configuration",
@@ -164,7 +181,9 @@
               "guides/component-dependencies",
               "guides/actions",
               "guides/operation-roles",
-              "guides/ai-and-apps"
+              "guides/ai-and-apps",
+              "guides/app-init",
+              "guides/bring-your-own-network"
             ]
           },
           {
@@ -187,16 +206,13 @@
           },
           {
             "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions"]
+            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
           }
         ]
       },
       {
-        "tab": "Support",
-        "pages": ["support/support"]
-      },
-      {
         "tab": "Knowledge Base",
+        "icon": "graduation-cap",
         "href": "https://support.nuon.co"
       }
     ],
@@ -222,7 +238,8 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "/get-started/introduction"
   },
   "navbar": {
     "primary": {
@@ -237,7 +254,7 @@
   "footer": {
     "socials": {
       "website": "https://www.nuon.co",
-      "twitter": "https://twitter.com/nuoninc",
+      "x": "https://twitter.com/nuoninc",
       "linkedin": "https://www.linkedin.com/company/nuonco/"
     }
   },
