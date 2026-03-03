@@ -76,9 +76,16 @@ type AppInputGroup struct {
 }
 
 func (a AppInputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "name", "Group name, which must be referenced by each input.")
-	addDescription(schema, "description", "Human readable description which is rendered in the installer.")
-	addDescription(schema, "display_name", "Human readable name which is rendered in the installer.")
+	NewSchemaBuilder(schema).
+		Field("name").Short("Group name, which must be referenced by each input.").Required().
+		Example("database").
+		Example("compute").
+		Field("description").Short("Human readable description which is rendered in the installer.").Required().
+		Example("Database configuration options").
+		Example("How many nodes to provision to support environments").
+		Field("display_name").Short("Human readable name which is rendered in the installer.").
+		Example("Database Settings").
+		Example("Kubernetes Nodes")
 }
 
 type AppInputConfig struct {
@@ -94,7 +101,9 @@ func (a AppInputConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("input").Short("list of inputs").
 		Long("Array of input definitions that customers can configure during installation").
 		Field("group").Short("list of input groups").
-		Long("Array of input group definitions that organize related inputs in the installer UI")
+		Long("Array of input group definitions that organize related inputs in the installer UI").
+		Field("sources").Short("external input source files").
+		Long("Array of paths to external files containing additional input definitions. Each file is loaded and merged into the inputs configuration. Supports YAML, JSON, and TOML formats")
 }
 
 func (a *AppInputConfig) parse() error {

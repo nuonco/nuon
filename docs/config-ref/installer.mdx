@@ -9,36 +9,21 @@ title: 'Installer'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `name` | `string` | No | installer name Human-readable name for the installer | - | `"My SaaS Installer"` |
-| `description` | `string` | No | installer description Detailed description of what this installer does | - | `"Complete installer for My SaaS application"` |
-| `slug` | `string` | No | URL-safe slug URL-friendly identifier for the installer | - | `"my-saas-installer"` |
-| `apps` | `array` | No | list of app names Array of app names to include in this installer | - | `"api"` |
-| `documentation_url` | `string` | No | documentation URL Link to the application documentation | - | `"https://docs.example.com"` |
-| `community_url` | `string` | No | community URL Link to community resources or forum | - | `"https://community.example.com"` |
-| `homepage_url` | `string` | No | homepage URL Link to the application homepage | - | `"https://example.com"` |
-| `github_url` | `string` | No | GitHub repository URL Link to the GitHub repository | - | `"https://github.com/example/repo"` |
-| `logo_url` | `string` | No | logo URL URL to the application logo image | - | `"https://example.com/logo.png"` |
-| `favicon_url` | `string` | No | favicon URL URL to the favicon image | - | `"https://example.com/favicon.ico"` |
-| `og_image_url` | `string` | No | OpenGraph image URL URL to the image displayed when sharing the installer on social media | - | `"https://example.com/og-image.png"` |
-| `demo_url` | `string` | No | demo URL Link to a live demo of the application | - | `"https://demo.example.com"` |
-| `post_install_markdown` | `string` | No | post-install markdown Markdown content displayed to users after successful installation | - | - |
-| `copyright_markdown` | `string` | No | copyright markdown Markdown content for copyright information | - | - |
-| `footer_markdown` | `string` | No | footer markdown Markdown content displayed in the installer footer | - | - |
-
-### Property Details
-
-#### `apps`
-
-**Examples:**
-
-
-```yaml
-"api"
-```
-
-```yaml
-"web-ui"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | installer name Human-readable name for the installer | **Optional** | `"My SaaS Installer"` |
+| **`description`**<br/>string | installer description Detailed description of what this installer does | **Optional** | `"Complete installer for My SaaS application"` |
+| **`slug`**<br/>string | URL-safe slug URL-friendly identifier for the installer | **Optional** | `"my-saas-installer"` |
+| **`apps`**<br/>array | list of app names Array of app names to include in this installer | **Optional** | `"api"`, `"web-ui"` |
+| **`documentation_url`**<br/>string | documentation URL Link to the application documentation | **Optional** | `"https://docs.example.com"` |
+| **`community_url`**<br/>string | community URL Link to community resources or forum | **Optional** | `"https://community.example.com"` |
+| **`homepage_url`**<br/>string | homepage URL Link to the application homepage | **Optional** | `"https://example.com"` |
+| **`github_url`**<br/>string | GitHub repository URL Link to the GitHub repository | **Optional** | `"https://github.com/example/repo"` |
+| **`logo_url`**<br/>string | logo URL URL to the application logo image | **Optional** | `"https://example.com/logo.png"` |
+| **`favicon_url`**<br/>string | favicon URL URL to the favicon image | **Optional** | `"https://example.com/favicon.ico"` |
+| **`og_image_url`**<br/>string | OpenGraph image URL URL to the image displayed when sharing the installer on social media | **Optional** | `"https://example.com/og-image.png"` |
+| **`demo_url`**<br/>string | demo URL Link to a live demo of the application | **Optional** | `"https://demo.example.com"` |
+| **`post_install_markdown`**<br/>string | post-install markdown Markdown content displayed to users after successful installation | **Optional** | `"## Next Steps\n\nYour application is now installed!"` |
+| **`copyright_markdown`**<br/>string | copyright markdown Markdown content for copyright information | **Optional** | `"© 2025 Acme Inc. All rights reserved."` |
+| **`footer_markdown`**<br/>string | footer markdown Markdown content displayed in the installer footer | **Optional** | `"[Documentation](https://docs.example.com) | [Support](https://support.example.com)"` |
 

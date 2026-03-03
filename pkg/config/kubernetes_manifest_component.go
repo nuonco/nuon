@@ -44,36 +44,44 @@ func (k KustomizeConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("path").Short("kustomization directory path").
 		Long("Path to the kustomization directory, relative to the source root.").
+		Example("overlays/production").Example(".").
 		Field("patches").Short("additional patch files").
 		Long("Additional patch files to apply after kustomize build.").
+		Example("patches/namespace.yaml").
 		Field("enable_helm").Short("enable Helm chart inflation").
 		Long("Enable Helm chart inflation during kustomize build.").
 		Field("load_restrictor").Short("file load restrictor").
-		Long("Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly.")
+		Long("Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly.").
+		Example("rootOnly").Example("none")
 }
 
 func (k KubernetesManifestComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("manifest").Short("Kubernetes manifest").
-		Long("YAML manifest content for Kubernetes resources. Supports templating with variables like {{.nuon.install.id}}").
-		Example("apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  env: production").
+		Long("Path to a YAML manifest file or inline manifest content for Kubernetes resources. Supports templating with variables like {{.nuon.install.id}}. Mutually exclusive with kustomize").
+		Example("./manifests/deployment.yaml").
 		OneOfRequired("manifest_source").
-		Field("kustomize").Short("Kustomize configuration (mutually exclusive with manifest)").
-		Long("Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest.").
+		Field("kustomize").Short("Kustomize configuration").
+		Long("Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. Requires either public_repo or connected_repo").
 		OneOfRequired("manifest_source").
+		Field("public_repo").Short("public repository with kustomize source").
+		Long("Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests").
+		Field("connected_repo").Short("connected repository with kustomize source").
+		Long("Configuration for a Nuon-connected private repository containing kustomize overlays. Only valid when using kustomize, not inline manifests").
 		Field("namespace").Short("Kubernetes namespace").
-		Long("Kubernetes namespace where the manifest will be deployed. Supports template variables.").
+		Long("Kubernetes namespace where the manifest will be deployed. Supports template variables").
 		Example("default").
-		Example("production").
+		Example("clickhouse").
 		Example("{{.nuon.install.id}}").
 		Field("drift_schedule").Short("drift detection schedule").
-		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled.").Example("0 2 * * *").
+		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled").
+		Example("0 2 * * *").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
 		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
-		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
 		Example("1h")
 }

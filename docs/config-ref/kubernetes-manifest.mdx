@@ -9,132 +9,51 @@ title: 'Kubernetes Manifest'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
-| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
-| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
-| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
-| `operation_roles` | `array` | No | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | - | - |
-| `manifest` | `string` | No | Kubernetes manifest YAML manifest content for Kubernetes resources. Supports templating with variables like \{\{.nuon.install.id\}\} | - | `"apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-config\ndata:\n  env: production"` |
-| `kustomize` | `KustomizeConfig` | No | Kustomize configuration (mutually exclusive with manifest) Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. | - | - |
-| `public_repo` | `PublicRepoConfig` | No | - | - | - |
-| `connected_repo` | `ConnectedRepoConfig` | No | - | - | - |
-| `namespace` | `string` | ✅ Yes | Kubernetes namespace Kubernetes namespace where the manifest will be deployed. Supports template variables. | - | `"default"` |
-| `drift_schedule` | `string` | No | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. | - | `"0 2 * * *"` |
-| `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
-| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"` |
+| **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
+| **`namespace`**<br/>string | Kubernetes namespace Kubernetes namespace where the manifest will be deployed. Supports template variables | **✅ Required** | `"default"`, `"clickhouse"`, `"{{.nuon.install.id}}"` |
+| **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
+| **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
+| **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`manifest`**<br/>string | Kubernetes manifest Path to a YAML manifest file or inline manifest content for Kubernetes resources. Supports templating with variables like \{\{.nuon.install.id\}\}. Mutually exclusive with kusto... | **Optional** | `"./manifests/deployment.yaml"` |
+| **`kustomize`**<br/>[KustomizeConfig](#kustomize) | Kustomize configuration Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. Requires either public_repo or connected_repo | **Optional** | - |
+| **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository with kustomize source Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |
+| **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository with kustomize source Configuration for a Nuon-connected private repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |
+| **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
 
-### Property Details
+### `operation_roles`
 
-#### `type`
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
+| **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
 
-**Examples:**
+### `kustomize`
 
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`path`**<br/>string | kustomization directory path Path to the kustomization directory, relative to the source root. | **✅ Required** | `"overlays/production"`, `"."` |
+| **`patches`**<br/>array | additional patch files Additional patch files to apply after kustomize build. | **Optional** | `"patches/namespace.yaml"` |
+| **`enable_helm`**<br/>boolean | enable Helm chart inflation Enable Helm chart inflation during kustomize build. | **Optional** | - |
+| **`load_restrictor`**<br/>string | file load restrictor Controls how kustomize loads files. Options: none, rootOnly. Default: rootOnly. | **Optional** | `"rootOnly"`, `"none"` |
 
-```yaml
-"terraform_module"
-```
+### `public_repo`
 
-```yaml
-"helm_chart"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository URL HTTPS URL to the public Git repository | **✅ Required** | `"https://github.com/user/repo.git"`, `"https://github.com/user/terraform-modules.git"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
-```yaml
-"docker_build"
-```
+### `connected_repo`
 
-```yaml
-"container_image"
-```
-
-```yaml
-"kubernetes_manifest"
-```
-
-#### `name`
-
-**Examples:**
-
-
-```yaml
-"database"
-```
-
-```yaml
-"api-server"
-```
-
-```yaml
-"frontend"
-```
-
-#### `var_name`
-
-**Examples:**
-
-
-```yaml
-"db_endpoint"
-```
-
-```yaml
-"api_host"
-```
-
-#### `dependencies`
-
-**Examples:**
-
-
-```yaml
-"database"
-```
-
-```yaml
-"infrastructure"
-```
-
-#### `namespace`
-
-**Examples:**
-
-
-```yaml
-"default"
-```
-
-```yaml
-"production"
-```
-
-```yaml
-"{{.nuon.install.id}}"
-```
-
-#### `build_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
-
-#### `deploy_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository identifier Identifier of the connected repository configured in the Nuon platform | **✅ Required** | `"my-repo"`, `"production-infrastructure"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 

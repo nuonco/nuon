@@ -74,10 +74,13 @@ func (a InstallerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://demo.example.com").
 		Field("post_install_markdown").Short("post-install markdown").
 		Long("Markdown content displayed to users after successful installation").
+		Example("## Next Steps\n\nYour application is now installed!").
 		Field("copyright_markdown").Short("copyright markdown").
 		Long("Markdown content for copyright information").
+		Example("© 2025 Acme Inc. All rights reserved.").
 		Field("footer_markdown").Short("footer markdown").
-		Long("Markdown content displayed in the installer footer")
+		Long("Markdown content displayed in the installer footer").
+		Example("[Documentation](https://docs.example.com) | [Support](https://support.example.com)")
 }
 
 func (a *InstallerConfig) Validate() error {

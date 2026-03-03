@@ -203,13 +203,21 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 			string(AppPolicyTypeContainerImage),
 			string(AppPolicyTypeSandbox),
 		).
+		Example("kubernetes_cluster").
+		Example("terraform_module").
 		Field("engine").Short("policy engine").
 		Long("The policy engine used to evaluate the policy. Must be compatible with the policy type.").
 		Enum(string(AppPolicyEngineKyverno), string(AppPolicyEngineOPA)).
+		Example("kyverno").
+		Example("opa").
 		Field("name").Short("policy name").
 		Long("Human-readable name for the policy. If not specified, will be derived from the source filename when parsing from a policies/ directory.").
+		Example("disallow-ingress-nginx-custom-snippets").
+		Example("set-karpenter-non-cpu-limits").
 		Field("contents").Short("policy document").
 		Long("Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https://github.com/org/repo//policy.json), file paths (file:///path/to/policy.json), and relative paths (./policy.json)").
+		Example("./disallow-ingress-nginx-custom-snippets.yaml").
+		Example("./block-mutable-tags.rego").
 		Field("components").Short("target components").
 		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type. If empty, doesn't apply to any component. Ignored when type is 'sandbox'.").
 		Example("*").
