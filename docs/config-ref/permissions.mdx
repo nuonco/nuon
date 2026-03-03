@@ -9,11 +9,22 @@ title: 'Permissions'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `provision_role` | `AppAWSIAMRole` | No | provisioning IAM role IAM role used during initial provisioning of the install with permissions to set up resources | - | - |
-| `deprovision_role` | `AppAWSIAMRole` | No | deprovisioning IAM role IAM role used for tearing down the install and cleaning up resources | - | - |
-| `maintenance_role` | `AppAWSIAMRole` | No | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks | - | - |
-| `custom_roles` | `array` | No | - | - | - |
-| `roles` | `array` | No | list of permission roles Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, or deprovision) | - | - |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`provision_role`**<br/>[AppAWSIAMRole](#provision_role) | provisioning IAM role IAM role used during initial provisioning of the install with permissions to set up resources | **Optional** | - |
+| **`deprovision_role`**<br/>AppAWSIAMRole | deprovisioning IAM role IAM role used for tearing down the install and cleaning up resources | **Optional** | - |
+| **`maintenance_role`**<br/>AppAWSIAMRole | maintenance IAM role IAM role used for day-to-day maintenance, updates, and operational tasks | **Optional** | - |
+| **`custom_roles`**<br/>array | custom IAM roles Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom' | **Optional** | - |
+| **`roles`**<br/>array | list of permission roles Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom) | **Optional** | - |
+
+### `provision_role`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | name of the IAM role Name used for the role in AWS. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
+| **`description`**<br/>string | description of the role Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating | **✅ Required** | `"Provides S3 bucket access for the application"`, `"Database migration role with elevated permissions"` |
+| **`policies`**<br/>array | policy definitions for the role List of IAM policies to attach to the role. Each policy defines specific AWS permissions | **✅ Required** | - |
+| **`type`**<br/>string | role type in permission directory Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating | **Optional** | `"provision"`, `"maintenance"`, `"deprovision"` |
+| **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
+| **`permissions_boundary`**<br/>string | permissions boundary policy Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://exa... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 

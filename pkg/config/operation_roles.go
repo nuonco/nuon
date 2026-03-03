@@ -201,10 +201,13 @@ func (r OperationRoleRule) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("principal").Short("principal identifier").
 		Long("Identifier for the entity: 'nuon::component:name', 'nuon::sandbox', or 'nuon::action:name'. Supports wildcards like 'nuon::component:*'").
+		Examples("nuon::component:database", "nuon::sandbox", "nuon::action:healthcheck").
 		Field("operation").Short("operation type").
 		Long("Type of operation: provision, deprovision, update, reprovision, or trigger").
+		Examples("deploy", "provision", "deprovision").
 		Field("role").Short("IAM role name").
-		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs")
+		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs").
+		Example("{{.nuon.install.id}}-maintenance")
 }
 
 func (r *OperationRoleRule) Validate() error {
@@ -286,8 +289,10 @@ func (e EntityOperationRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("operation").Short("operation type").
 		Long("Type of operation: provision, deprovision, update, reprovision, or trigger").
+		Examples("provision", "deploy", "deprovision").
 		Field("role").Short("IAM role name").
-		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs")
+		Long("Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs").
+		Examples("{{.nuon.install.id}}-maintenance", "{{.nuon.install.id}}-provision")
 }
 
 func (e *EntityOperationRole) Validate() error {

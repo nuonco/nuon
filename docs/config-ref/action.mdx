@@ -9,58 +9,33 @@ title: 'Action'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `name` | `string` | ✅ Yes | name of the action The action name is displayed in the Actions tab of the Nuon dashboard | - | `"http_healthcheck"` |
-| `timeout` | `string` | ✅ Yes | timeout for action execution Maximum time the action can run. Maximum allowed is 30 minutes. Must be a valid Go duration string (e.g., 30s, 5m, 30m) | - | `"15s"` |
-| `triggers` | `array` | ✅ Yes | triggers that execute this action Actions can be triggered manually, on a cron schedule, or by install lifecycle events (provision, deploy, teardown, etc). Define multiple triggers if needed | - | - |
-| `steps` | `array` | ✅ Yes | steps to execute in this action Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories | - | - |
-| `dependencies` | `array` | No | component dependencies referenced in this action Automatically extracted from template references in steps (e.g., \{\{.component.component_name\}\}) | - | - |
-| `break_glass_role` | `string` | No | IAM role for break-glass access to this action When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudForma... | - | `"bucket-operations-break-glass"` |
-| `role` | `string` | No | IAM role name for action execution Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specif... | - | - |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | name of the action The action name is displayed in the Actions tab of the Nuon dashboard | **✅ Required** | `"http_healthcheck"`, `"database_migration"` |
+| **`timeout`**<br/>string | timeout for action execution Maximum time the action can run. Maximum allowed is 30 minutes. Must be a valid Go duration string (e.g., 30s, 5m, 30m) | **✅ Required** | `"15s"`, `"5m"`, `"30m"` |
+| **`triggers`**<br/>[array](#triggers) | triggers that execute this action Actions can be triggered manually, on a cron schedule, or by install lifecycle events (provision, deploy, teardown, etc). Define multiple triggers if needed | **✅ Required** | - |
+| **`steps`**<br/>[array](#steps) | steps to execute in this action Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories | **✅ Required** | - |
+| **`dependencies`**<br/>array | component dependencies referenced in this action Automatically extracted from template references in steps (e.g., \{\{.component.component_name\}\}) | **Optional** | `"database"`, `"api-server"` |
+| **`break_glass_role`**<br/>string | IAM role for break-glass access to this action When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudForma... | **Optional** | `"bucket-operations-break-glass"`, `"database-migration-break-glass"` |
+| **`role`**<br/>string | IAM role name for action execution Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specif... | **Optional** | `"{{.nuon.install.id}}-maintenance"` |
 
-### Property Details
+### `triggers`
 
-#### `name`
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | type of trigger Supported trigger types: manual, cron, pre-provision, post-provision, pre-reprovision, post-reprovision, pre-deprovision, post-deprovision, pre-deploy-all-components, post-deploy-al... | **✅ Required** | `"manual"`, `"cron"`, `"post-provision"` |
+| **`index`**<br/>integer | index for manual trigger Used to differentiate multiple manual triggers in the same action | **Optional** | `"0"`, `"1"` |
+| **`cron_schedule`**<br/>string | cron schedule expression for scheduled triggers Standard cron format (minute hour day month weekday). For example, '*/5 * * * *' runs every 5 minutes | **Optional** | `"*/5 * * * *"`, `"0 */4 * * *"` |
+| **`component_name`**<br/>string | component name for component-specific triggers Required for pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component triggers | **Optional** | `"database"`, `"api-server"` |
 
-**Examples:**
+### `steps`
 
-
-```yaml
-"http_healthcheck"
-```
-
-```yaml
-"database_migration"
-```
-
-#### `timeout`
-
-**Examples:**
-
-
-```yaml
-"15s"
-```
-
-```yaml
-"5m"
-```
-
-```yaml
-"30m"
-```
-
-#### `break_glass_role`
-
-**Examples:**
-
-
-```yaml
-"bucket-operations-break-glass"
-```
-
-```yaml
-"database-migration-break-glass"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | name of the step Displayed in action logs and the Nuon dashboard | **✅ Required** | `"healthcheck"`, `"database_migration"` |
+| **`env_vars`**<br/>object | environment variables to pass to the step Map of environment variables that will be available to the command. Supports Go templating for values | **Optional** | - |
+| **`public_repo`**<br/>PublicRepoConfig | public repository containing the step script Clone a public GitHub repository to load scripts from. Requires 'repo', 'branch', and optionally 'directory' fields | **Optional** | - |
+| **`connected_repo`**<br/>ConnectedRepoConfig | connected repository containing the step script Use a Nuon-connected repository to load scripts from. Requires 'repo', 'branch', and optionally 'directory' fields | **Optional** | - |
+| **`command`**<br/>string | command to execute Required field. Supports Go templating (e.g., \{\{.nuon.install.id\}\}). The command is executed in the runner environment | **Optional** | `"./healthcheck"`, `"bash -c 'curl https://example.com'"` |
+| **`inline_contents`**<br/>string | inline script contents Embed script contents directly in the config file. Supports Go templating and external URLs: HTTP(S) (https://example.com/script.sh), git repositories (git::https://github.co... | **Optional** | `"./src/healthcheck.sh"`, `"#!/usr/bin/env sh\nkubectl get pods -n default"` |
 
