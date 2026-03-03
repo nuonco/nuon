@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/admin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/auth"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/chaos"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/cors"
@@ -40,6 +41,7 @@ var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(public.New)),
 	fx.Provide(middlewares.AsMiddleware(pagination.New)),
 	fx.Provide(middlewares.AsMiddleware(cors.New)),
+	fx.Provide(middlewares.AsMiddleware(blob.New)),
 	fx.Provide(middlewares.AsMiddleware(config.New)),
 	fx.Provide(middlewares.AsMiddleware(patcher.New)),
 	fx.Provide(middlewares.AsMiddleware(invites.New)),
