@@ -9,129 +9,70 @@ title: 'Helm'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `type` | `string` | ✅ Yes | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | - | `"terraform_module"` |
-| `name` | `string` | ✅ Yes | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | - | `"database"` |
-| `var_name` | `string` | No | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | - | `"db_endpoint"` |
-| `dependencies` | `array` | No | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | - | `"database"` |
-| `operation_roles` | `array` | No | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | - | - |
-| `chart_name` | `string` | ✅ Yes | chart name | - | - |
-| `values` | `object` | No | map of helm values | - | - |
-| `values_file` | `array` | No | - | - | - |
-| `public_repo` | `PublicRepoConfig` | No | public repo with the helm chart | - | - |
-| `connected_repo` | `ConnectedRepoConfig` | No | connected repo with the helm chart | - | - |
-| `helm_repo` | `HelmRepoConfig` | No | helm repo config | - | - |
-| `namespace` | `string` | No | namespace to deploy into. Defaults to \{\{.nuon.install.id\}\} and supports templating. | - | - |
-| `storage_driver` | `string` | No | which helm storage driver to use (defaults to configmap) | - | `"configmap"` |
-| `take_ownership` | `boolean` | No | - | - | - |
-| `drift_schedule` | `string` | No | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. | - | `"0 2 * * *"` |
-| `build_timeout` | `string` | No | build operation timeout Duration string for build operations (e.g., "30m", "1h"). | - | `"30m"` |
-| `deploy_timeout` | `string` | No | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | - | `"30m"` |
-| `value` | `array` | No | array of helm values (not recommended) | - | - |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"` |
+| **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
+| **`chart_name`**<br/>string | Helm chart name Name of the Helm chart to deploy. Must match the chart name in the repository or Helm repo | **✅ Required** | `"karpenter-nodepools"`, `"prometheus"`, `"cert-manager"` |
+| **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
+| **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
+| **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`values`**<br/>object | inline Helm values Map of Helm values as key-value pairs. These are passed to helm install/upgrade as --set arguments. Supports Nuon templating | **Optional** | - |
+| **`values_file`**<br/>[array](#values_file) | Helm values files Array of external Helm values files to load. Each entry can specify a path to a local file or inline contents. Supports Nuon templating and external file sources | **Optional** | - |
+| **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository with the Helm chart Configuration for a public Git repository containing the Helm chart source. Mutually exclusive with connected_repo and helm_repo | **Optional** | - |
+| **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository with the Helm chart Configuration for a Nuon-connected private repository containing the Helm chart source. Mutually exclusive with public_repo and helm_repo | **Optional** | - |
+| **`helm_repo`**<br/>[HelmRepoConfig](#helm_repo) | Helm chart repository Configuration for pulling a chart from a Helm repository (e.g., a public chart registry). Mutually exclusive with public_repo and connected_repo | **Optional** | - |
+| **`namespace`**<br/>string | Kubernetes namespace to deploy into Kubernetes namespace where the Helm release will be installed. Defaults to \{\{.nuon.install.id\}\}. Supports Nuon templating | **Optional** | `"clickhouse"`, `"monitoring"`, `"{{.nuon.install.id}}"` |
+| **`storage_driver`**<br/>string | Helm storage driver Backend storage driver for Helm release metadata. Defaults to configmap | **Optional**<br/>`"configmap"`, `"secret"` | `"configmap"` |
+| **`take_ownership`**<br/>boolean | adopt existing Helm releases If true, Nuon will adopt an existing Helm release with the same name and namespace that was not originally managed by Nuon. Useful when migrating existing deployments t... | **Optional** | - |
+| **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`value`**<br/>[array](#value) | deprecated: use values map instead Deprecated: Array of name/value pairs for Helm values. Use the values map instead | **Optional** | - |
 
-### Property Details
+### `operation_roles`
 
-#### `type`
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
+| **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
 
-**Examples:**
+### `values_file`
 
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`source`**<br/>string | [DEPRECATED: use 'path' instead] | **Optional** | - |
+| **`contents`**<br/>string | Contents of the values file. | **Optional** | `"./values/whoami.yaml"` |
+| **`path`**<br/>string | Path to the values file. | **Optional** | `"./values/clickhouse-operator.yaml"`, `"./values/coder.yaml"` |
 
-```yaml
-"terraform_module"
-```
+### `public_repo`
 
-```yaml
-"helm_chart"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository URL HTTPS URL to the public Git repository | **✅ Required** | `"https://github.com/user/repo.git"`, `"https://github.com/user/terraform-modules.git"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
-```yaml
-"docker_build"
-```
+### `connected_repo`
 
-```yaml
-"container_image"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo`**<br/>string | repository identifier Identifier of the connected repository configured in the Nuon platform | **✅ Required** | `"my-repo"`, `"production-infrastructure"` |
+| **`directory`**<br/>string | directory path Path within the repository to the configuration files | **✅ Required** | `"terraform"`, `"infra/terraform"` |
+| **`branch`**<br/>string | Git branch Git branch to checkout and use for deployments | **✅ Required** | `"main"`, `"develop"`, `"production"` |
 
-```yaml
-"kubernetes_manifest"
-```
+### `helm_repo`
 
-#### `name`
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`repo_url`**<br/>string | URL of the helm chart repository | **✅ Required** | `"https://prometheus-community.github.io/helm-charts"` |
+| **`chart`**<br/>string | name of the chart in the repository | **✅ Required** | `"kube-prometheus-stack"` |
+| **`version`**<br/>string | version of the chart to use | **Optional** | `"79.4.1"` |
 
-**Examples:**
+### `value`
 
-
-```yaml
-"database"
-```
-
-```yaml
-"api-server"
-```
-
-```yaml
-"frontend"
-```
-
-#### `var_name`
-
-**Examples:**
-
-
-```yaml
-"db_endpoint"
-```
-
-```yaml
-"api_host"
-```
-
-#### `dependencies`
-
-**Examples:**
-
-
-```yaml
-"database"
-```
-
-```yaml
-"infrastructure"
-```
-
-#### `storage_driver`
-
-**Allowed values:**
-
-
-- `"configmap"`
-- `"secret"`
-
-
-#### `build_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
-
-#### `deploy_timeout`
-
-**Examples:**
-
-
-```yaml
-"30m"
-```
-
-```yaml
-"1h"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | helm value name | **Optional** | `"replicaCount"`, `"image.tag"` |
+| **`value`**<br/>string | helm value | **Optional** | `"3"`, `"{{.nuon.install.id}}"` |
 
