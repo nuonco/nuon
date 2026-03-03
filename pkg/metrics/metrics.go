@@ -16,7 +16,6 @@ const (
 	defaultStatsdHostEnvVar string = "HOST_IP"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_writer.go -source=metrics.go -package=metrics
 type Writer interface {
 	// dogstatsd metrics

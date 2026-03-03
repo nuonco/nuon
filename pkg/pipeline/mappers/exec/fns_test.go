@@ -8,7 +8,6 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=fns_mock_test.go -source=fns_test.go -package=exec
 type hcLog interface {
 	hclog.Logger

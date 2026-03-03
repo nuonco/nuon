@@ -19,7 +19,6 @@ func (g *gh) ClonePath(ctx context.Context) (string, error) {
 }
 
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=installation_token_mock_test.go -source=installation_token.go -package=github
 func (g *gh) InstallationToken(ctx context.Context) (string, error) {
 	sg, err := secret.New(g.v,

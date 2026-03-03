@@ -10,7 +10,6 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=client_mock_test.go -source=client.go -package=workspace
 
 func (w *workspace) getClient(ctx context.Context, log hclog.Logger) (Terraform, error) {

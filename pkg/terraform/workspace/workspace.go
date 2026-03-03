@@ -16,7 +16,6 @@ import (
 // Workspace exposes an interface for interacting with terraform and uses inputs to fetch source files, configure the
 // backend, the binary and more.
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=interface_mock.go -source=interface.go -package=workspace
 var _ Workspace = (*workspace)(nil)
 

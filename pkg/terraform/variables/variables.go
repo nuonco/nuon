@@ -10,7 +10,6 @@ type VarFile struct {
 // Variables configures a way to set up a terraform workspace with appropriate variables, that can come from either
 // settings in a file, or the environment.
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=variables_mock.go -source=variables.go -package=variables
 type Variables interface {
 	Init(context.Context) error

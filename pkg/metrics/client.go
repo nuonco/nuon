@@ -10,7 +10,6 @@ const (
 	maxBytesPerPayload int = 8192
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_client.go -source=client.go -package=metrics
 type dogstatsdClient interface {
 	statsd.ClientInterface

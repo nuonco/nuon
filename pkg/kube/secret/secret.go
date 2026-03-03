@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=secret_mock.go -source=secret.go -package=secret
 type Manager interface {
 	Get(context.Context) ([]byte, error)

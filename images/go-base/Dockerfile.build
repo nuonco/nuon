@@ -37,14 +37,16 @@ COPY sdks ./sdks/
 RUN go mod download
 
 # Pre-install code generation tools so service builds don't re-download them.
-# swag is already in go.sum (v1.16.6) so this uses the pinned version.
+# Versions are pinned via go.sum.
 RUN --mount=type=cache,target=/go-cache,id=gobase-build \
-    go install github.com/swaggo/swag/cmd/swag
+    go install github.com/swaggo/swag/cmd/swag && \
+    go install github.com/golang/mock/mockgen
 
-# Copy and generate package code (common code generation)
+# Copy and generate package code (common code generation).
+# SKIP_DOCS=1 skips markdown-docs generation (docs-only output, not needed for builds).
 COPY pkg pkg
 RUN --mount=type=cache,target=/go-cache,id=gobase-build \
-    cd pkg && go generate ./...
+    cd pkg && SKIP_DOCS=1 go generate ./...
 
 # Test target for pkg directory
 FROM build AS pkg-test

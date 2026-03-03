@@ -7,7 +7,6 @@ import (
 
 // Archive package exposes methods for loading a workspace archive
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=archive_mock.go -source=archive.go -package=archive
 type Archive interface {
 	// Init should be used for fetching things from s3, or setting up credentials

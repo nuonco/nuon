@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/analytics/events"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock_writer.go -source=writer.go -package=analytics
 type Writer interface {
 	Identify(context.Context)

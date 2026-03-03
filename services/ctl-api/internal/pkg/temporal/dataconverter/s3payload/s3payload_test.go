@@ -19,7 +19,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=s3payload_mock_test.go -source=s3payload_test.go -package=s3payload
 
 // MockBlobService is the interface for mocking blobstore operations

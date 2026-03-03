@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=deleter_mock.go -source=deleter.go -package=s3downloader
 type Deleter interface {
 	DeleteBlobs(context.Context, s3.DeleteObjectsInput) (s3.DeleteObjectOutput, error)

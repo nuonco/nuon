@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=pipeline_mock_test.go -source=pipeline_test.go -package=pipeline
 type hcLog interface {
 	hclog.Logger

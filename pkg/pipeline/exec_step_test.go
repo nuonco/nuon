@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=exec_step_mock_test.go -source=exec_step_test.go -package=pipeline
 type testStepFunctions interface {
 	ValidExecFn(context.Context, hclog.Logger) ([]byte, error)

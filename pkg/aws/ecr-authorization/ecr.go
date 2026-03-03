@@ -9,7 +9,6 @@ import (
 )
 
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=mock..go -source=ecr.go -package=ecr
 type Client interface {
 	GetAuthorization(context.Context) (*Authorization, error)

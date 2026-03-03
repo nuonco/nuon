@@ -15,7 +15,6 @@ import (
 //nolint:gosec
 const appKeySecretKeyKey string = "github_app_key"
 
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=github_mock.go -source=github.go -package=github
 type CloneTokenGetter interface {
 	InstallationToken(context.Context) (string, error)

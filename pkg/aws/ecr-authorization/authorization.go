@@ -11,7 +11,6 @@ import (
 )
 
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=authorization_mock_test.go -source=authorization.go -package=ecr
 type Authorization struct {
 	RegistryToken string `validate:"required"`

@@ -18,7 +18,6 @@ type S3Object struct {
 
 // ListPrefix assumes a role and returns a list of all the files in the s3 prefix
 //
-//go:generate -command mockgen go run github.com/golang/mock/mockgen
 //go:generate mockgen -destination=list_mock_test.go -source=list.go -package=s3downloader
 func (s *s3Downloader) ListPrefix(ctx context.Context, key string) ([]string, error) {
 	client, err := s.getClient(ctx)
