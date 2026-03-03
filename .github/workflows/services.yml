@@ -60,7 +60,9 @@ jobs:
 
       - name: Set git_ref output
         id: git_ref
-        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "git_ref=${SHA::7}" >> $GITHUB_OUTPUT
 
   check_labels:
     name: Check for labels

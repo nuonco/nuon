@@ -59,7 +59,7 @@ jobs:
 
       - name: Set git_ref output
         id: git_ref
-        run: echo "git_ref=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "git_ref=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Determine next version
         id: semver
@@ -76,7 +76,6 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
         env:
@@ -140,7 +139,6 @@ jobs:
       - merged_pr
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
       - uses: martialonline/workflow-status@v4.2
         id: check
       - name: Slack Notification
