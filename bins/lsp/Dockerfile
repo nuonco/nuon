@@ -17,8 +17,6 @@ COPY models ./models/
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 COPY main.go .
-RUN --mount=type=cache,target=/go-cache,id=gobuild-lsp \
-    go generate ./...
 
 FROM code AS build
 

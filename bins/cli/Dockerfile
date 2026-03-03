@@ -17,8 +17,6 @@ COPY internal ./internal/
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 COPY main.go .
-RUN --mount=type=cache,target=/go-cache,id=gobuild-cli \
-    go generate ./...
 
 FROM code AS build
 

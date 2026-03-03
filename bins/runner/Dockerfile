@@ -16,9 +16,6 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY sdks ./sdks/
 COPY main.go .
-COPY generate.sh .
-RUN --mount=type=cache,target=/go-cache,id=gobuild-runner \
-    go generate ./...
 
 FROM code AS build
 
