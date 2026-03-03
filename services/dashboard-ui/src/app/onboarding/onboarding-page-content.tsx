@@ -25,7 +25,6 @@ const OnboardingNavigation: FC<{
   onSkip: () => void
   canNavigateBack: boolean
   canNavigateForward: boolean
-  canSkip: boolean
   firstIncompleteStepIndex: number
 }> = ({
   currentStepIndex,
@@ -36,21 +35,18 @@ const OnboardingNavigation: FC<{
   onSkip,
   canNavigateBack,
   canNavigateForward,
-  canSkip,
   firstIncompleteStepIndex,
 }) => {
   return (
     <div className="border-b flex items-center justify-between p-4 md:p-6 bg-white/95 dark:bg-dark-grey-900/95 backdrop-blur-sm z-10 transition-all duration-200">
       <div className="flex-1">
-        {canSkip && (
-          <Button
-            variant="secondary"
-            onClick={onSkip}
-            className="transition-all duration-200 hover:scale-105"
-          >
-            Close
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          onClick={onSkip}
+          className="transition-all duration-200 hover:scale-105"
+        >
+          Close
+        </Button>
       </div>
 
       <div className="flex items-center justify-center gap-3">
@@ -277,7 +273,8 @@ export const OnboardingPageContent: FC = () => {
   const canNavigateBack = displayStepIndex > 0
   const canNavigateForward =
     displayStepIndex < allJourneySteps.length - 1 &&
-    (firstIncompleteStepIndex === -1 || displayStepIndex < firstIncompleteStepIndex)
+    (firstIncompleteStepIndex === -1 ||
+      displayStepIndex < firstIncompleteStepIndex)
 
   return (
     <div className="h-screen bg-white dark:bg-dark-grey-900 overflow-hidden transition-all duration-300 ease-out flex flex-col">
@@ -290,7 +287,6 @@ export const OnboardingPageContent: FC = () => {
         onSkip={handleComplete}
         canNavigateBack={canNavigateBack}
         canNavigateForward={canNavigateForward}
-        canSkip={!!orgId}
         firstIncompleteStepIndex={firstIncompleteStepIndex}
       />
 
@@ -353,7 +349,10 @@ export const OnboardingPageContent: FC = () => {
                       variant="primary"
                       onClick={handleAdvanceToNextStep}
                       className="px-3 py-1 text-sm"
-                      disabled={displayStep?.name !== 'account_created' && !displayStep?.complete}
+                      disabled={
+                        displayStep?.name !== 'account_created' &&
+                        !displayStep?.complete
+                      }
                     >
                       <Text>{getAdvanceButtonText(nextStepName)}</Text>
                     </Button>
