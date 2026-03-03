@@ -38,6 +38,9 @@ type AppAppAWSIAMPolicyConfig struct {
 	// gcp permissions
 	GcpPermissions []string `json:"gcp_permissions"`
 
+	// gcp predefined role
+	GcpPredefinedRole string `json:"gcp_predefined_role,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 

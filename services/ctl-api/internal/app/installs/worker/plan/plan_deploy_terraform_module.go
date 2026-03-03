@@ -3,7 +3,10 @@ package plan
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -101,6 +104,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 	}
 
 	envVars := generics.ToStringMap(cfg.EnvVars)
+	var awsAuth *awscredentials.Config
+	var azureAuth *azurecredentials.Config
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
 		roleARN := stack.InstallStackOutputs.AWSStackOutputs.MaintenanceIAMRoleARN
@@ -136,6 +141,8 @@ func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDep
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
+		AzureAuth:   azureAuth,
+		AWSAuth:     awsAuth,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,
