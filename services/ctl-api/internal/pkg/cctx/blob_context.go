@@ -1,6 +1,7 @@
 package cctx
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -22,4 +23,17 @@ func BlobServiceFromGinContext(ctx *gin.Context) (blobstore.Service, error) {
 
 func SetBlobServiceGinContext(ctx *gin.Context, svc blobstore.Service) {
 	ctx.Set(keys.BlobServiceCtxKey, svc)
+}
+
+func BlobServiceFromContext(ctx context.Context) (blobstore.Service, error) {
+	svc := ctx.Value(keys.BlobServiceCtxKey)
+	if svc == nil {
+		return nil, ErrBlobServiceContextNotFound
+	}
+
+	return svc.(blobstore.Service), nil
+}
+
+func SetBlobServiceContext(ctx context.Context, svc blobstore.Service) context.Context {
+	return context.WithValue(ctx, keys.BlobServiceCtxKey, svc)
 }
