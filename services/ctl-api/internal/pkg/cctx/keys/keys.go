@@ -10,6 +10,7 @@ import "context"
 const (
 	AccountCtxKey         string = "account"
 	AccountIDCtxKey       string = "account_id"
+	BlobServiceCtxKey     string = "blob_service"
 	CfgCtxKey             string = "config"
 	IsGlobalKey           string = "is_global"
 	InstallWorkflowCtxKey string = "workflow"
