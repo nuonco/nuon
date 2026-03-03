@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -102,9 +103,10 @@ func (s *AdminAddTagsTestSuite) TearDownSuite() {
 
 func (s *AdminAddTagsTestSuite) setupTestData() {
 	// Create test account
+	testAccID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "admin-add-tags-test@example.com",
+		ID:          testAccID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", testAccID),
 		Subject:     "admin-add-tags-test-subject",
 		AccountType: app.AccountTypeAuth0,
 	}
@@ -433,9 +435,10 @@ func (s *AdminRemoveTagsTestSuite) TearDownSuite() {
 
 func (s *AdminRemoveTagsTestSuite) setupTestData() {
 	// Create test account
+	testAccID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "admin-remove-tags-test@example.com",
+		ID:          testAccID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", testAccID),
 		Subject:     "admin-remove-tags-test-subject",
 		AccountType: app.AccountTypeAuth0,
 	}

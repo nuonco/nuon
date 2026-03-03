@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -210,9 +211,10 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create a second org
+				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          otherOrgID,
+					Name:        fmt.Sprintf("other-org-%s", otherOrgID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
@@ -237,11 +239,11 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "updated-current-org", currentOrg.Name)
 
-				// Verify other org was NOT updated
+				// Verify other org was NOT updated (still has its original name)
 				var otherOrg app.Org
-				err = s.service.DB.Where("name = ?", "other-org").First(&otherOrg).Error
+				err = s.service.DB.Where("name LIKE ?", "other-org-%").First(&otherOrg).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "other-org", otherOrg.Name, "other org should not be affected")
+				assert.Contains(s.T(), otherOrg.Name, "other-org-", "other org should not be affected")
 			},
 		},
 		{

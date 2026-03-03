@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -263,9 +264,10 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	// Create second org
+	org2ID := domains.NewOrgID()
 	org2 := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "other-org",
+		ID:          org2ID,
+		Name:        fmt.Sprintf("other-org-%s", org2ID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/other",

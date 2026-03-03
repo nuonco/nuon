@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -293,9 +294,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 
 func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 	// Create service account
+	serviceAccID := domains.NewAccountID()
 	serviceAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "service@example.com",
+		ID:          serviceAccID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", serviceAccID),
 		Subject:     "service-subject",
 		AccountType: app.AccountTypeService,
 	}
@@ -402,9 +404,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 
 func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	// Create integration account
+	integrationAccID := domains.NewAccountID()
 	integrationAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "integration@example.com",
+		ID:          integrationAccID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", integrationAccID),
 		Subject:     "integration-subject",
 		AccountType: app.AccountTypeIntegration,
 	}
