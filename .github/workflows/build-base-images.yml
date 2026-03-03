@@ -42,3 +42,10 @@ jobs:
         run: |
          CI=true nuonctl builds base \
            ${{inputs.service}}
+
+      - name: 🔍 Lint pkg
+        run: |
+          docker buildx build \
+            --target pkg-lint \
+            -f images/go-base/Dockerfile.build \
+            .
