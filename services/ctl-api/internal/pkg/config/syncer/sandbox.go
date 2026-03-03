@@ -44,9 +44,9 @@ func (s *syncer) syncAppSandbox(ctx context.Context) error {
 
 	if s.cfg.Sandbox.ConnectedRepo != nil {
 		githubVCSConfig, err = vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
-			Repo:      &s.cfg.Sandbox.ConnectedRepo.Repo,
+			Repo:      s.cfg.Sandbox.ConnectedRepo.Repo,
 			Branch:    s.cfg.Sandbox.ConnectedRepo.Branch,
-			Directory: &s.cfg.Sandbox.ConnectedRepo.Directory,
+			Directory: s.cfg.Sandbox.ConnectedRepo.Directory,
 		}, parentApp.Org)
 		if err != nil {
 			return sync.SyncInternalErr{
@@ -58,9 +58,9 @@ func (s *syncer) syncAppSandbox(ctx context.Context) error {
 
 	if s.cfg.Sandbox.PublicRepo != nil {
 		publicGitConfig, err = vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
-			Repo:      &s.cfg.Sandbox.PublicRepo.Repo,
-			Branch:    &s.cfg.Sandbox.PublicRepo.Branch,
-			Directory: &s.cfg.Sandbox.PublicRepo.Directory,
+			Repo:      s.cfg.Sandbox.PublicRepo.Repo,
+			Branch:    s.cfg.Sandbox.PublicRepo.Branch,
+			Directory: s.cfg.Sandbox.PublicRepo.Directory,
 		})
 		if err != nil {
 			return sync.SyncInternalErr{
