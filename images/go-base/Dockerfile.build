@@ -40,7 +40,8 @@ RUN go mod download
 # Versions are pinned via go.sum.
 RUN --mount=type=cache,target=/go-cache,id=gobase-build \
     go install github.com/swaggo/swag/cmd/swag && \
-    go install github.com/golang/mock/mockgen
+    go install github.com/golang/mock/mockgen && \
+    go install github.com/a-h/templ/cmd/templ
 
 # Copy and generate package code (common code generation).
 # SKIP_DOCS=1 skips markdown-docs generation (docs-only output, not needed for builds).
@@ -67,6 +68,8 @@ ENV GOMODCACHE=/go-mod-cache
 
 # Copy the binaries and any other necessary files from the build stage
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
+# Copy pre-installed codegen tools (swag, mockgen, templ) into PATH
+COPY --from=build /go/bin/ /go/bin/
 COPY --from=build /src/ /src/
 # Include pre-downloaded modules so service builds don't re-download on cold nodes
 COPY --from=build /go-mod-cache /go-mod-cache
