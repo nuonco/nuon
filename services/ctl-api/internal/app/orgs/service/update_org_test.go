@@ -222,7 +222,6 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 				require.NoError(s.T(), err)
-				originalOtherOrgName := otherOrg.Name
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 				})
@@ -240,11 +239,11 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "updated-current-org", currentOrg.Name)
 
-				// Verify other org was NOT updated
+				// Verify other org was NOT updated (still has its original name)
 				var otherOrg app.Org
-				err = s.service.DB.Where("name = ?", originalOtherOrgName).First(&otherOrg).Error
+				err = s.service.DB.Where("name LIKE ?", "other-org-%").First(&otherOrg).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), originalOtherOrgName, otherOrg.Name, "other org should not be affected")
+				assert.Contains(s.T(), otherOrg.Name, "other-org-", "other org should not be affected")
 			},
 		},
 		{

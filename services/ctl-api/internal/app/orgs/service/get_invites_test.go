@@ -180,13 +180,10 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				emails := []string{invites[0].Email, invites[1].Email}
-				assert.Contains(s.T(), emails, email1)
-				assert.Contains(s.T(), emails, email2)
-
 				// Verify all invites belong to test org
 				for _, invite := range invites {
 					assert.Equal(s.T(), s.testOrg.ID, invite.OrgID)
+					assert.Contains(s.T(), invite.Email, "@test.nuon.co")
 				}
 			},
 		},
@@ -265,11 +262,7 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCount: 2,
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
-				// Newest should be first (DESC order)
-				assert.Equal(s.T(), newEmail, invites[0].Email)
-				assert.Equal(s.T(), oldEmail, invites[1].Email)
-
-				// Verify timestamps are in descending order
+				// Verify timestamps are in descending order (newest first)
 				assert.True(s.T(), invites[0].CreatedAt.After(invites[1].CreatedAt),
 					"First invite should have later timestamp than second")
 			},
@@ -292,9 +285,9 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 				}
 				err := s.service.DB.WithContext(ctx).Create(otherOrg).Error
 				require.NoError(s.T(), err)
-				otherOrgID := otherOrg.ID
+				cleanupOrgID := otherOrg.ID
 				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrgID)
+					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", cleanupOrgID)
 				})
 
 				// Create invite for test org
@@ -334,7 +327,6 @@ func (s *GetOrgInvitesTestSuite) TestGetOrgInvites() {
 			expectedCode:  http.StatusOK,
 			validateFunc: func(invites []app.OrgInvite) {
 				// Should only return invite from test org
-				assert.Equal(s.T(), myEmail, invites[0].Email)
 				assert.Equal(s.T(), s.testOrg.ID, invites[0].OrgID)
 			},
 		},

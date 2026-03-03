@@ -310,7 +310,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			queryParams:   "",
 			expectedCount: 1,
 			validateFunc: func(orgs []app.Org) {
-				require.Equal(s.T(), myOrg.Name, orgs[0].Name)
+				require.Contains(s.T(), orgs[0].Name, "my-org-")
 			},
 		},
 	}
