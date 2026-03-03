@@ -29,7 +29,7 @@ type VCSConnectionCommit struct {
 
 	// Optional VCS connection reference (nullable for public repos)
 	VCSConnection   *VCSConnection `json:"-" temporaljson:"vcs_connection,omitzero,omitempty"`
-	VCSConnectionID *string        `json:"vcs_connection_id,omitzero" gorm:"null" temporaljson:"vcs_connection_id,omitzero,omitempty"`
+	VCSConnectionID *string        `json:"vcs_connection_id,omitzero" gorm:"default:null" temporaljson:"vcs_connection_id,omitzero,omitempty"`
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 

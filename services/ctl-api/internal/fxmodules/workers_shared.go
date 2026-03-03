@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors"
+	cctxinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/cctx"
 	metricsinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/metrics"
 	validateinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/validate"
 	queue "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
@@ -25,6 +26,7 @@ import (
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.
 var WorkerInterceptorsModule = fx.Module("worker-interceptors",
+	fx.Provide(interceptors.AsInterceptor(cctxinterceptor.New)),
 	fx.Provide(interceptors.AsInterceptor(metricsinterceptor.New)),
 	fx.Provide(interceptors.AsInterceptor(validateinterceptor.New)),
 )
