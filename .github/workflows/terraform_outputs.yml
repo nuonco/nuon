@@ -65,7 +65,7 @@ jobs:
 
       - name: Set TF workspace
         if: ${{ !inputs.static_workspace }}
-        run: echo TF_WORKSPACE=${{ inputs.workspace }} > $GITHUB_ENV
+        run: echo TF_WORKSPACE=${{ inputs.workspace }} >> $GITHUB_ENV
 
       - name: Init terraform
         working-directory: ${{ inputs.dir }}
