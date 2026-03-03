@@ -19,18 +19,22 @@ export async function createOrg({
   const session = await getSession()
 
   if (SF_TRIAL_ACCESS_ENDPOINT) {
+    const firstName = session?.user?.given_name || session?.user?.name
+    const lastName = session?.user?.family_name || ''
+    const requestBody = JSON.stringify({
+      firstName,
+      lastName,
+      email: session?.user?.email,
+      companyName: `${body?.companyName || 'N/A'} | ${body?.name}`,
+      jobTitle: body?.jobTitle || 'N/A',
+      notes: body?.notes || 'N/A',
+      subject: 'trial-signup',
+    })
+
     await fetch(SF_TRIAL_ACCESS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName: session?.user?.given_name,
-        lastName: session?.user?.family_name,
-        email: session?.user?.email,
-        companyName: `${body?.companyName || 'N/A'} | ${body?.name}`,
-        jobTitle: body?.jobTitle || 'N/A',
-        notes: body?.notes || 'N/A',
-        subject: 'trial-signup',
-      }),
+      body: requestBody,
     }).catch((err) => {
       console.error('error posting to salesforce api:', err)
     })
