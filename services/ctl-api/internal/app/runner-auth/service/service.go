@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
@@ -14,6 +15,7 @@ import (
 type Params struct {
 	fx.In
 
+	Cfg        *internal.Config
 	V          *validator.Validate
 	DB         *gorm.DB `name:"psql"`
 	L          *zap.Logger
@@ -21,6 +23,7 @@ type Params struct {
 }
 
 type service struct {
+	cfg        *internal.Config
 	v          *validator.Validate
 	l          *zap.Logger
 	db         *gorm.DB
@@ -31,6 +34,7 @@ var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
+		cfg:        params.Cfg,
 		v:          params.V,
 		l:          params.L,
 		db:         params.DB,

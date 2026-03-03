@@ -20,6 +20,9 @@ import (
 // swagger:model github_com_nuonco_nuon_services_ctl-api_internal_app_runner-auth_service.RunnerAuthAWSRequest
 type GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest struct {
 
+	// spiffe jwt svid
+	SPIFFEJWTSVID string `json:"spiffe_jwt_svid,omitempty"`
+
 	// sts
 	// Required: true
 	Sts *AwsPresignedRequest `json:"sts"`
@@ -31,6 +34,13 @@ type GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSR
 
 // Validate validates this github com nuonco nuon services ctl api internal app runner auth service runner auth a w s request
 func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) Validate(formats strfmt.Registry) error {
+	if m.SPIFFEJWTSVID != "" {
+		if m.Sts != nil || m.Tags != nil {
+			return errors.New(400, "spiffe_jwt_svid cannot be combined with sts/tags")
+		}
+		return nil
+	}
+
 	var res []error
 
 	if err := m.validateSts(formats); err != nil {
@@ -97,6 +107,13 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 
 // ContextValidate validate this github com nuonco nuon services ctl api internal app runner auth service runner auth a w s request based on the context it is used
 func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	if m.SPIFFEJWTSVID != "" {
+		if m.Sts != nil || m.Tags != nil {
+			return errors.New(400, "spiffe_jwt_svid cannot be combined with sts/tags")
+		}
+		return nil
+	}
+
 	var res []error
 
 	if err := m.contextValidateSts(ctx, formats); err != nil {

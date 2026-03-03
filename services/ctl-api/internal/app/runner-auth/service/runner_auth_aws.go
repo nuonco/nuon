@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spiffe/go-spiffe/v2/spiffeid"
+	"github.com/spiffe/go-spiffe/v2/workloadapi"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -29,12 +31,16 @@ const (
 
 	presignedRequestTimeout  = 10 * time.Second
 	maxPresignedResponseSize = 64 * 1024
+
+	runnerAuthModePresigned = "presigned"
+	runnerAuthModeSPIFFE    = "spiffe"
 )
 
 var (
 	awsSTSHostPattern    = regexp.MustCompile(`^sts(\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d))?\.amazonaws\.com$`)
 	awsEC2HostPattern    = regexp.MustCompile(`^ec2\.([a-z]{2}-[a-z]+-\d|us-gov-[a-z]+-\d|cn-[a-z]+-\d)\.amazonaws\.com$`)
 	ec2InstanceIDPattern = regexp.MustCompile(`^i-[0-9a-f]{8}([0-9a-f]{9})?$`)
+	awsAccountIDPattern  = regexp.MustCompile(`^\d{12}$`)
 
 	allowedPresignedHeaders = map[string]struct{}{
 		"host":                 {},
@@ -63,8 +69,9 @@ var (
 )
 
 type RunnerAuthAWSRequest struct {
-	STSRequest  *awstypes.PresignedRequest `json:"sts" validate:"required"`
-	TagsRequest *awstypes.PresignedRequest `json:"tags" validate:"required"`
+	STSRequest    *awstypes.PresignedRequest `json:"sts,omitempty"`
+	TagsRequest   *awstypes.PresignedRequest `json:"tags,omitempty"`
+	SPIFFEJWTSVID string                     `json:"spiffe_jwt_svid,omitempty"`
 }
 
 type RunnerAuthAWSResponse struct {
@@ -97,6 +104,13 @@ type DescribeTagsItem struct {
 	Value        string `xml:"value"`
 	ResourceId   string `xml:"resourceId"`
 	ResourceType string `xml:"resourceType"`
+}
+
+type spiffeAWSIdentity struct {
+	RunnerID   string
+	AccountID  string
+	InstanceID string
+	SPIFFEID   string
 }
 
 func validateTagResponse(items []DescribeTagsItem) (instanceID string, tags map[string]string, err error) {
@@ -141,10 +155,33 @@ func extractInstanceIDFromSTSUserId(userId string) string {
 	return ""
 }
 
+func validateRunnerAuthAWSRequest(req RunnerAuthAWSRequest) (string, error) {
+	hasSTS := req.STSRequest != nil
+	hasTags := req.TagsRequest != nil
+	hasSPIFFE := strings.TrimSpace(req.SPIFFEJWTSVID) != ""
+
+	if hasSPIFFE {
+		if hasSTS || hasTags {
+			return "", errors.New("spiffe_jwt_svid cannot be combined with sts/tags")
+		}
+		return runnerAuthModeSPIFFE, nil
+	}
+
+	if hasSTS && hasTags {
+		return runnerAuthModePresigned, nil
+	}
+
+	if hasSTS || hasTags {
+		return "", errors.New("both sts and tags are required for presigned mode")
+	}
+
+	return "", errors.New("either sts/tags or spiffe_jwt_svid must be provided")
+}
+
 // @ID						RunnerAuthAWS
-// @Summary				Authenticate a runner using AWS presigned requests
-// @Description			Validates runner identity by executing presigned AWS STS and EC2 requests
-// @Param					req	body	RunnerAuthAWSRequest	true	"Presigned AWS requests"
+// @Summary                             Authenticate a runner using AWS presigned requests or SPIFFE JWT-SVID
+// @Description                 Validates runner identity via presigned AWS calls or SPIFFE/SPIRE JWT-SVIDs
+// @Param                                       req     body    RunnerAuthAWSRequest    true    "Presigned AWS requests or SPIFFE JWT-SVID"
 // @Tags					runners/auth
 // @Accept					json
 // @Produce				json
@@ -162,15 +199,25 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.v.Struct(req); err != nil {
+	authMode, err := validateRunnerAuthAWSRequest(req)
+	if err != nil {
 		s.l.Warn("runner auth: request validation failed", zap.Error(err))
-		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid request: missing required fields")))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		ctx.Abort()
 		return
 	}
 
 	reqCtx := ctx.Request.Context()
 
+	switch authMode {
+	case runnerAuthModeSPIFFE:
+		s.runnerAuthAWSSPIFFE(ctx, reqCtx, strings.TrimSpace(req.SPIFFEJWTSVID))
+	default:
+		s.runnerAuthAWSPresigned(ctx, reqCtx, req)
+	}
+}
+
+func (s *service) runnerAuthAWSPresigned(ctx *gin.Context, reqCtx context.Context, req RunnerAuthAWSRequest) {
 	stsResponse, err := s.executePresignedRequest(reqCtx, req.STSRequest, presignedRequestTypeSTS)
 	if err != nil {
 		s.l.Warn("runner auth: STS request failed", zap.Error(err))
@@ -293,6 +340,7 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	}
 
 	s.l.Info("runner auth: authentication successful",
+		zap.String("auth_mode", runnerAuthModePresigned),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", instanceID),
 		zap.String("account_id", callerIdentity.Result.Account))
@@ -302,6 +350,75 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		AccountID:     callerIdentity.Result.Account,
 		ARN:           callerIdentity.Result.Arn,
 		InstanceID:    instanceID,
+		RunnerID:      runner.ID,
+		Token:         token,
+	})
+}
+
+func (s *service) runnerAuthAWSSPIFFE(ctx *gin.Context, reqCtx context.Context, jwtSVID string) {
+	identity, err := s.validateSPIFFEAWSIdentity(reqCtx, jwtSVID)
+	if err != nil {
+		s.l.Warn("runner auth: SPIFFE JWT-SVID validation failed", zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "failed to verify SPIFFE identity",
+		})
+		ctx.Abort()
+		return
+	}
+
+	runner, err := s.getRunnerWithGroup(reqCtx, identity.RunnerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			s.l.Warn("runner auth: runner not found", zap.String("runner_id", identity.RunnerID))
+		} else {
+			s.l.Error("runner auth: failed to get runner", zap.String("runner_id", identity.RunnerID), zap.Error(err))
+		}
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not recognized",
+		})
+		ctx.Abort()
+		return
+	}
+
+	if err := s.validateRunnerAWSAccountID(reqCtx, runner, identity.AccountID); err != nil {
+		s.l.Warn("runner auth: AWS account validation failed",
+			zap.String("runner_id", identity.RunnerID),
+			zap.String("caller_account", identity.AccountID),
+			zap.String("spiffe_id", identity.SPIFFEID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthorization{
+			Err:         errors.New("authorization failed"),
+			Description: "runner identity does not match expected configuration",
+		})
+		ctx.Abort()
+		return
+	}
+
+	token, err := s.createRunnerToken(reqCtx, runner.ID)
+	if err != nil {
+		s.l.Error("runner auth: failed to create token", zap.String("runner_id", identity.RunnerID), zap.Error(err))
+		ctx.Error(stderr.ErrSystem{
+			Err:         errors.New("internal error"),
+			Description: "failed to issue authentication token",
+		})
+		ctx.Abort()
+		return
+	}
+
+	s.l.Info("runner auth: authentication successful",
+		zap.String("auth_mode", runnerAuthModeSPIFFE),
+		zap.String("runner_id", runner.ID),
+		zap.String("instance_id", identity.InstanceID),
+		zap.String("account_id", identity.AccountID),
+		zap.String("spiffe_id", identity.SPIFFEID))
+
+	ctx.JSON(http.StatusOK, RunnerAuthAWSResponse{
+		Authenticated: true,
+		AccountID:     identity.AccountID,
+		ARN:           identity.SPIFFEID,
+		InstanceID:    identity.InstanceID,
 		RunnerID:      runner.ID,
 		Token:         token,
 	})
@@ -419,6 +536,109 @@ func (s *service) executePresignedRequest(ctx context.Context, presignedReq *aws
 	return body, nil
 }
 
+func (s *service) runnerAuthAWSSPIFFEAudience() string {
+	if s.cfg != nil && strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFEAudience) != "" {
+		return strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFEAudience)
+	}
+
+	return "nuon-runner-auth-aws"
+}
+
+func (s *service) runnerAuthAWSSPIFFEPathPrefix() string {
+	if s.cfg != nil && strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFEPathPrefix) != "" {
+		return strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFEPathPrefix)
+	}
+
+	return "/nuon/runner/aws"
+}
+
+func (s *service) workloadAPIClientOptions() []workloadapi.ClientOption {
+	if s.cfg == nil {
+		return nil
+	}
+
+	if strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFESocketPath) == "" {
+		return nil
+	}
+
+	return []workloadapi.ClientOption{workloadapi.WithAddr(strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFESocketPath))}
+}
+
+func (s *service) validateSPIFFEAWSIdentity(ctx context.Context, token string) (*spiffeAWSIdentity, error) {
+	audience := s.runnerAuthAWSSPIFFEAudience()
+	jwtSVID, err := workloadapi.ValidateJWTSVID(ctx, token, audience, s.workloadAPIClientOptions()...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to validate JWT-SVID for audience %q: %w", audience, err)
+	}
+
+	if s.cfg != nil && strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFETrustDomain) != "" {
+		expectedTrustDomain, err := spiffeid.TrustDomainFromString(strings.TrimSpace(s.cfg.RunnerAuthAWSSPIFFETrustDomain))
+		if err != nil {
+			return nil, fmt.Errorf("invalid runner_auth_aws_spiffe_trust_domain configuration: %w", err)
+		}
+
+		if !jwtSVID.ID.MemberOf(expectedTrustDomain) {
+			return nil, fmt.Errorf("unexpected trust domain %q (expected %q)", jwtSVID.ID.TrustDomain().String(), expectedTrustDomain.String())
+		}
+	}
+
+	return s.parseSPIFFEAWSIdentity(jwtSVID.ID)
+}
+
+// parseSPIFFEAWSIdentity expects SPIFFE IDs shaped as:
+// <prefix>/account/<aws-account-id>/instance/<ec2-instance-id>/runner/<runner-id>
+func (s *service) parseSPIFFEAWSIdentity(id spiffeid.ID) (*spiffeAWSIdentity, error) {
+	pathSegments := splitPathSegments(id.Path())
+	prefixSegments := splitPathSegments(s.runnerAuthAWSSPIFFEPathPrefix())
+
+	if len(pathSegments) != len(prefixSegments)+6 {
+		return nil, fmt.Errorf("unexpected SPIFFE ID path format: %s", id.Path())
+	}
+
+	for i, expectedSegment := range prefixSegments {
+		if pathSegments[i] != expectedSegment {
+			return nil, fmt.Errorf("SPIFFE ID path %q does not match configured prefix %q", id.Path(), s.runnerAuthAWSSPIFFEPathPrefix())
+		}
+	}
+
+	offset := len(prefixSegments)
+	if pathSegments[offset] != "account" || pathSegments[offset+2] != "instance" || pathSegments[offset+4] != "runner" {
+		return nil, fmt.Errorf("SPIFFE ID path %q does not include required account/instance/runner segments", id.Path())
+	}
+
+	accountID := pathSegments[offset+1]
+	instanceID := pathSegments[offset+3]
+	runnerID := pathSegments[offset+5]
+
+	if !awsAccountIDPattern.MatchString(accountID) {
+		return nil, fmt.Errorf("invalid AWS account ID in SPIFFE ID path: %s", accountID)
+	}
+
+	if !ec2InstanceIDPattern.MatchString(instanceID) {
+		return nil, fmt.Errorf("invalid EC2 instance ID in SPIFFE ID path: %s", instanceID)
+	}
+
+	if strings.TrimSpace(runnerID) == "" {
+		return nil, errors.New("runner ID is empty in SPIFFE ID path")
+	}
+
+	return &spiffeAWSIdentity{
+		RunnerID:   runnerID,
+		AccountID:  accountID,
+		InstanceID: instanceID,
+		SPIFFEID:   id.String(),
+	}, nil
+}
+
+func splitPathSegments(path string) []string {
+	trimmed := strings.Trim(path, "/")
+	if trimmed == "" {
+		return nil
+	}
+
+	return strings.Split(trimmed, "/")
+}
+
 func (s *service) getRunnerWithGroup(ctx context.Context, runnerID string) (*app.Runner, error) {
 	var runner app.Runner
 	res := s.db.WithContext(ctx).
@@ -445,26 +665,51 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 	return &install, nil
 }
 
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerARN string) error {
+func (s *service) getRunnerAWSStackOutputs(ctx context.Context, runner *app.Runner) (*app.AWSStackOutputs, error) {
 	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
 	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
+		return nil, fmt.Errorf("failed to get install for runner: %w", err)
 	}
 
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
+		return nil, fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
 	}
 
 	if installStack.InstallStackOutputs.AWSStackOutputs == nil {
-		return fmt.Errorf("install %s does not have AWS stack outputs configured", install.ID)
+		return nil, fmt.Errorf("install %s does not have AWS stack outputs configured", install.ID)
 	}
 
-	awsOutputs := installStack.InstallStackOutputs.AWSStackOutputs
+	return installStack.InstallStackOutputs.AWSStackOutputs, nil
+}
+
+func (s *service) validateRunnerAWSAccountID(ctx context.Context, runner *app.Runner, callerAccountID string) error {
+	awsOutputs, err := s.getRunnerAWSStackOutputs(ctx, runner)
+	if err != nil {
+		return err
+	}
 
 	expectedAccountID := awsOutputs.AccountID
 	if expectedAccountID == "" {
-		return fmt.Errorf("install %s does not have an AWS account ID in stack outputs", install.ID)
+		return errors.New("install does not have an AWS account ID in stack outputs")
+	}
+
+	if callerAccountID != expectedAccountID {
+		return fmt.Errorf("AWS account ID mismatch: got %s, expected %s", callerAccountID, expectedAccountID)
+	}
+
+	return nil
+}
+
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerARN string) error {
+	awsOutputs, err := s.getRunnerAWSStackOutputs(ctx, runner)
+	if err != nil {
+		return err
+	}
+
+	expectedAccountID := awsOutputs.AccountID
+	if expectedAccountID == "" {
+		return errors.New("install does not have an AWS account ID in stack outputs")
 	}
 
 	if callerAccountID != expectedAccountID {
@@ -473,7 +718,7 @@ func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Run
 
 	expectedRunnerRoleARN := awsOutputs.RunnerIAMRoleARN
 	if expectedRunnerRoleARN == "" {
-		return fmt.Errorf("install %s does not have a runner IAM role ARN in stack outputs", install.ID)
+		return errors.New("install does not have a runner IAM role ARN in stack outputs")
 	}
 
 	callerRoleName, err := extractRoleNameFromAssumedRoleARN(callerARN)

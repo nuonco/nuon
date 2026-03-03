@@ -34,7 +34,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("exec", zap.String("job_type", "fetch_token"))
 
-	l.Info("authenticating with AWS presigned requests")
+	l.Info("authenticating runner with AWS identity")
 	result, err := FetchAndStoreToken(ctx, h.apiClient)
 	if err != nil {
 		return err

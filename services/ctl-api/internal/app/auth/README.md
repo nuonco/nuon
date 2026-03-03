@@ -195,13 +195,14 @@ SCIM support will be built into this service.
 
 #### Runner Auth
 
-We have a method to identify the runner via a presigned sts get caller identity call.
+Runner authentication for AWS supports two modes:
 
-1. Runner creates a presigned STS GetCallerIdentity request (doesn't send it)
-2. Runner sends the presigned request details to your service
-3. Your service makes the actual STS call using those headers
-4. AWS validates the signature and returns the caller identity
-5. Your service validates the identity matches expected runner
+1. **Presigned AWS requests** (`sts` + `tags`) for backward compatibility.
+2. **SPIFFE/SPIRE JWT-SVID** (`spiffe_jwt_svid`) for workload identity-based auth.
+
+In both modes, ctl-api validates the runner identity against expected install/runner configuration and then issues a runner service-account token.
+
+Detailed architecture and validation sequence: see the internal README at `services/ctl-api/internal/app/runner-auth/README.md`.
 
 ### Additional Claims
 

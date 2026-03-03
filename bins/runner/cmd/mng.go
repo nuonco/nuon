@@ -28,7 +28,7 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd := &cobra.Command{
 		Use:   "fetch-token",
 		Short: "Fetch and store the runner authentication token.",
-		Long:  "Authenticate with AWS using instance credentials and store the runner token.",
+		Long:  "Authenticate with AWS (presigned requests or SPIFFE/SPIRE JWT-SVID) and store the runner token.",
 		Run:   c.runFetchToken,
 	}
 

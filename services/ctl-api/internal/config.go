@@ -49,6 +49,8 @@ func init() {
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
+	config.RegisterDefault("runner_auth_aws_spiffe_audience", "nuon-runner-auth-aws")
+	config.RegisterDefault("runner_auth_aws_spiffe_path_prefix", "/nuon/runner/aws")
 
 	// max request sizes to prevent too large of requests
 	config.RegisterDefault("max_request_size", 1024*50)
@@ -199,6 +201,12 @@ type Config struct {
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
+
+	// AWS SPIFFE/SPIRE runner auth configuration
+	RunnerAuthAWSSPIFFEAudience    string `config:"runner_auth_aws_spiffe_audience"`
+	RunnerAuthAWSSPIFFESocketPath  string `config:"runner_auth_aws_spiffe_socket_path"`
+	RunnerAuthAWSSPIFFETrustDomain string `config:"runner_auth_aws_spiffe_trust_domain"`
+	RunnerAuthAWSSPIFFEPathPrefix  string `config:"runner_auth_aws_spiffe_path_prefix"`
 
 	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
