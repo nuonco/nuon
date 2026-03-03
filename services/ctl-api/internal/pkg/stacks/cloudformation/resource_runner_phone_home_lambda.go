@@ -78,7 +78,16 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 	}
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
-		lambdaprops[secret.Name+"_arn"] = cloudformation.RefPtr(secret.CloudFormationStackName)
+		if secret.AutoGenerate || secret.Required {
+			lambdaprops[secret.Name+"_arn"] = cloudformation.RefPtr(secret.CloudFormationStackName)
+			continue
+		}
+
+		lambdaprops[secret.Name+"_arn"] = cloudformation.If(
+			a.secretConditionName(secret.CloudFormationParamName),
+			cloudformation.Ref(secret.CloudFormationStackName),
+			"",
+		)
 	}
 
 	return &cloudformation.CustomResource{
