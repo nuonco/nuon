@@ -20,7 +20,7 @@ export async function createOrg({
 
   if (SF_TRIAL_ACCESS_ENDPOINT) {
     const firstName = session?.user?.given_name || session?.user?.name
-    const lastName = session?.user?.family_name || ''
+    const lastName = session?.user?.family_name || 'LNU'
     const requestBody = JSON.stringify({
       firstName,
       lastName,
