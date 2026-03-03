@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
@@ -55,7 +57,6 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			return sync.SyncErr{
 				Resource:    fmt.Sprintf("action-%s", action.Name),
 				Description: "invalid timeout duration",
-				Err:         err,
 			}
 		}
 		timeout = parsedTimeout
@@ -75,19 +76,19 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	}
 
 	// Build triggers
-	triggers := make([]app.ActionWorkflowConfigTrigger, 0, len(action.Triggers))
+	triggers := make([]app.ActionWorkflowTriggerConfig, 0, len(action.Triggers))
 	for _, trigger := range action.Triggers {
-		triggers = append(triggers, app.ActionWorkflowConfigTrigger{
-			Index:         trigger.Index,
-			Type:          app.ActionWorkflowTriggerType(trigger.Type),
-			CronSchedule:  trigger.CronSchedule,
-			ComponentName: trigger.ComponentName,
+		triggers = append(triggers, app.ActionWorkflowTriggerConfig{
+			Index:        int(trigger.Index),
+			Type:         app.ActionWorkflowTriggerType(trigger.Type),
+			CronSchedule: trigger.CronSchedule,
+			ComponentID:  generics.NewNullString(trigger.ComponentName),
 		})
 	}
 
 	// Build steps
 	vcsHelper := vcshelpers.New(vcshelpers.Params{})
-	steps := make([]app.ActionWorkflowConfigStep, 0, len(action.Steps))
+	steps := make([]app.ActionWorkflowStepConfig, 0, len(action.Steps))
 
 	for _, step := range action.Steps {
 		var githubVCSConfig *app.ConnectedGithubVCSConfig
@@ -96,9 +97,9 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 		if step.ConnectedRepo != nil {
 			githubVCSConfig, err = vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
-				Repo:      &step.ConnectedRepo.Repo,
+				Repo:      step.ConnectedRepo.Repo,
 				Branch:    step.ConnectedRepo.Branch,
-				Directory: &step.ConnectedRepo.Directory,
+				Directory: step.ConnectedRepo.Directory,
 			}, parentApp.Org)
 			if err != nil {
 				return sync.SyncInternalErr{
@@ -110,9 +111,9 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 		if step.PublicRepo != nil {
 			publicGitConfig, err = vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
-				Repo:      &step.PublicRepo.Repo,
-				Branch:    &step.PublicRepo.Branch,
-				Directory: &step.PublicRepo.Directory,
+				Repo:      step.PublicRepo.Repo,
+				Branch:    step.PublicRepo.Branch,
+				Directory: step.PublicRepo.Directory,
 			})
 			if err != nil {
 				return sync.SyncInternalErr{
@@ -128,9 +129,15 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			references = append(references, ref.String())
 		}
 
-		steps = append(steps, app.ActionWorkflowConfigStep{
+		// Convert env vars map to pgtype.Hstore
+		envVars := pgtype.Hstore{}
+		for k, v := range step.EnvVarMap {
+			envVars[k] = &v
+		}
+
+		steps = append(steps, app.ActionWorkflowStepConfig{
 			Name:                     step.Name,
-			EnvVars:                  step.EnvVarMap,
+			EnvVars:                  envVars,
 			Command:                  step.Command,
 			InlineContents:           step.InlineContents,
 			References:               pq.StringArray(references),
@@ -147,14 +154,14 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 	// Create action workflow config
 	awc := app.ActionWorkflowConfig{
-		AppConfigID:       s.appConfigID,
-		ActionWorkflowID:  actionWorkflow.ID,
-		Timeout:           timeout.Nanoseconds(),
-		Dependencies:      action.Dependencies,
-		References:        pq.StringArray(actionReferences),
-		BreakGlassRoleARN: action.BreakGlassRole,
-		Triggers:          triggers,
-		Steps:             steps,
+		AppConfigID:            s.appConfigID,
+		ActionWorkflowID:       actionWorkflow.ID,
+		Timeout:                timeout,
+		ComponentDependencyIDs: pq.StringArray(action.Dependencies),
+		References:             pq.StringArray(actionReferences),
+		BreakGlassRoleARN:      generics.NewNullString(action.BreakGlassRole),
+		Triggers:               triggers,
+		Steps:                  steps,
 	}
 
 	res = s.db.WithContext(ctx).Create(&awc)

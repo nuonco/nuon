@@ -30,6 +30,7 @@ func (a *Activities) cloneRepo(ctx context.Context, runID string, vcsConfigID st
 	ws, err := workspace.New(a.v,
 		workspace.WithGitSource(gitSource),
 		workspace.WithID(workspaceID),
+		workspace.WithCleanup(true),
 		workspace.WithLogger(zap.L()),
 	)
 	if err != nil {

@@ -66,9 +66,8 @@ func (s *syncer) syncComponent(ctx context.Context, comp *config.Component) erro
 	}
 
 	updates := app.Component{
-		Name:         comp.Name,
-		VarName:      comp.VarName,
-		Dependencies: comp.Dependencies,
+		Name:    comp.Name,
+		VarName: comp.VarName,
 	}
 
 	res := s.db.WithContext(ctx).
