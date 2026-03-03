@@ -43,10 +43,11 @@ runs:
         LATEST_VERSION=$(curl -s $BASE_URL/latest.txt)
         echo "Downloading nuonctl $LATEST_VERSION for ${OS}_${ARCH}..."
 
-        # Download and install
-        curl -sL "$BASE_URL/$LATEST_VERSION/nuonctl_${OS}_${ARCH}" -o /tmp/nuonctl
-        sudo mv /tmp/nuonctl /usr/local/bin/nuonctl
-        sudo chmod +x /usr/local/bin/nuonctl
+        # Download and install (no sudo - self-hosted runners run as root)
+        mkdir -p "$HOME/.local/bin"
+        curl -sL "$BASE_URL/$LATEST_VERSION/nuonctl_${OS}_${ARCH}" -o "$HOME/.local/bin/nuonctl"
+        chmod +x "$HOME/.local/bin/nuonctl"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
         echo "✅ nuonctl installed successfully"
 
     - name: test-nuonctl
