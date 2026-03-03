@@ -53,9 +53,8 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	}
 
 	// Run the DB syncer
-	s := syncer.New(a.db, req.AppID, req.AppBranchID, &cfg)
-	result, err := s.Sync(ctx, req.AppConfigID)
-	if err != nil {
+	s := syncer.NewDBSyncer(a.db, req.AppID, &cfg, req.AppConfigID)
+	if err := s.Sync(ctx); err != nil {
 		// Mark config as error
 		a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
 			"status":             app.AppConfigStatusError,
@@ -65,7 +64,7 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	}
 
 	return &SyncAppConfigOutput{
-		AppConfigID:  result.AppConfigID,
-		ComponentIDs: result.ComponentIDs,
+		AppConfigID:  s.GetAppConfigID(),
+		ComponentIDs: s.GetComponentStateIds(),
 	}, nil
 }

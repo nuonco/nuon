@@ -42,8 +42,7 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 	if err := s.validateRequiredInputsWithInstalls(ctx); err != nil {
 		return sync.SyncErr{
 			Resource:    "app-inputs",
-			Description: "validation failed",
-			Err:         err,
+			Description: fmt.Sprintf("validation failed: %v", err),
 		}
 	}
 
