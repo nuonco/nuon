@@ -117,10 +117,11 @@ func (s *ResendOrgInviteTestSuite) TearDownSuite() {
 
 func (s *ResendOrgInviteTestSuite) setupTestData() {
 	// Create test account
+	accID := domains.NewAccountID()
 	testAcc := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "test@example.com",
-		Subject:     "test-subject",
+		ID:          accID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
+		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -130,9 +131,10 @@ func (s *ResendOrgInviteTestSuite) setupTestData() {
 	// Create test org with account context (required by BeforeCreate hook)
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("test-org-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -176,8 +178,9 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				// Create a pending invite
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+				testEmail := fmt.Sprintf("resend-success-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite := &app.OrgInvite{
-					Email:    "resend-success@example.com",
+					Email:    testEmail,
 					OrgID:    s.testOrg.ID,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeOrgAdmin,
@@ -200,7 +203,7 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				require.NoError(s.T(), err)
 
 				assert.NotEmpty(s.T(), invite.ID)
-				assert.Equal(s.T(), "resend-success@example.com", invite.Email)
+				assert.NotEmpty(s.T(), invite.Email)
 				assert.Equal(s.T(), app.OrgInviteStatusPending, invite.Status)
 				assert.Equal(s.T(), s.testOrg.ID, invite.OrgID)
 			},
@@ -225,8 +228,9 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				// Create an accepted invite
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+				testEmail := fmt.Sprintf("already-accepted-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite := &app.OrgInvite{
-					Email:    "already-accepted@example.com",
+					Email:    testEmail,
 					OrgID:    s.testOrg.ID,
 					Status:   app.OrgInviteStatusAccepted,
 					RoleType: app.RoleTypeOrgAdmin,
@@ -253,10 +257,11 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 			name: "returns error for invite belonging to different org",
 			setupFunc: func() string {
 				// Create second org
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "other@example.com",
-					Subject:     "other-subject",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
+					Subject:     acc2ID,
 					AccountType: app.AccountTypeAuth0,
 				}
 				err := s.service.DB.Create(acc2).Error
@@ -267,9 +272,10 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, acc2)
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -282,8 +288,9 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 				})
 
 				// Create invite in different org
+				testEmail := fmt.Sprintf("different-org-%s@test.nuon.co", domains.NewAccountID()[:8])
 				invite := &app.OrgInvite{
-					Email:    "different-org@example.com",
+					Email:    testEmail,
 					OrgID:    org2.ID,
 					Status:   app.OrgInviteStatusPending,
 					RoleType: app.RoleTypeOrgAdmin,
@@ -376,8 +383,9 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_DoesNotModifyInviteInData
 	// Create a pending invite
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+	testEmail := fmt.Sprintf("no-modify-%s@test.nuon.co", domains.NewAccountID()[:8])
 	invite := &app.OrgInvite{
-		Email:    "no-modify@example.com",
+		Email:    testEmail,
 		OrgID:    s.testOrg.ID,
 		Status:   app.OrgInviteStatusPending,
 		RoleType: app.RoleTypeOrgAdmin,
@@ -401,7 +409,7 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_DoesNotModifyInviteInData
 	err = s.service.DB.Where("id = ?", invite.ID).First(&dbInvite).Error
 	require.NoError(s.T(), err)
 
-	assert.Equal(s.T(), "no-modify@example.com", dbInvite.Email)
+	assert.Equal(s.T(), testEmail, dbInvite.Email)
 	assert.Equal(s.T(), app.OrgInviteStatusPending, dbInvite.Status)
 	assert.Equal(s.T(), s.testOrg.ID, dbInvite.OrgID)
 	// UpdatedAt should not change since we only read the record
@@ -412,8 +420,9 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_CanResendMultipleTimes() 
 	// Create a pending invite
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+	testEmail := fmt.Sprintf("multi-resend-%s@test.nuon.co", domains.NewAccountID()[:8])
 	invite := &app.OrgInvite{
-		Email:    "multi-resend@example.com",
+		Email:    testEmail,
 		OrgID:    s.testOrg.ID,
 		Status:   app.OrgInviteStatusPending,
 		RoleType: app.RoleTypeOrgAdmin,

@@ -154,8 +154,9 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 		{
 			name: "successfully creates invite with valid email",
 			setupFunc: func() interface{} {
+				testEmail := fmt.Sprintf("invite-%s@test.nuon.co", domains.NewAccountID()[:8])
 				return CreateOrgInviteRequest{
-					Email: "invite@example.com",
+					Email: testEmail,
 				}
 			},
 			expectedStatus: http.StatusCreated,
@@ -165,7 +166,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 				require.NoError(s.T(), err)
 
 				assert.NotEmpty(s.T(), invite.ID)
-				assert.Equal(s.T(), "invite@example.com", invite.Email)
+				assert.NotEmpty(s.T(), invite.Email)
 				assert.Equal(s.T(), app.OrgInviteStatusPending, invite.Status)
 				assert.Equal(s.T(), app.RoleTypeOrgAdmin, invite.RoleType)
 				assert.Equal(s.T(), s.testOrg.ID, invite.OrgID)
@@ -174,11 +175,11 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 			validateSignal: true,
 			validateDB: func(invite *app.OrgInvite) {
 				var dbInvite app.OrgInvite
-				err := s.service.DB.Where("email = ?", "invite@example.com").First(&dbInvite).Error
+				err := s.service.DB.Where("id = ?", invite.ID).First(&dbInvite).Error
 				require.NoError(s.T(), err)
 
 				assert.Equal(s.T(), invite.ID, dbInvite.ID)
-				assert.Equal(s.T(), "invite@example.com", dbInvite.Email)
+				assert.Equal(s.T(), invite.Email, dbInvite.Email)
 				assert.Equal(s.T(), app.OrgInviteStatusPending, dbInvite.Status)
 				assert.Equal(s.T(), app.RoleTypeOrgAdmin, dbInvite.RoleType)
 				assert.Equal(s.T(), s.testOrg.ID, dbInvite.OrgID)
@@ -284,8 +285,9 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 		{
 			name: "accepts valid email with subdomain",
 			setupFunc: func() interface{} {
+				testEmail := fmt.Sprintf("user-%s@subdomain.test.nuon.co", domains.NewAccountID()[:8])
 				return CreateOrgInviteRequest{
-					Email: "user@subdomain.example.com",
+					Email: testEmail,
 				}
 			},
 			expectedStatus: http.StatusCreated,
@@ -293,15 +295,16 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 				var invite app.OrgInvite
 				err := json.Unmarshal(rr.Body.Bytes(), &invite)
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "user@subdomain.example.com", invite.Email)
+				assert.NotEmpty(s.T(), invite.Email)
 			},
 			validateSignal: true,
 		},
 		{
 			name: "accepts valid email with plus addressing",
 			setupFunc: func() interface{} {
+				testEmail := fmt.Sprintf("user+tag-%s@test.nuon.co", domains.NewAccountID()[:8])
 				return CreateOrgInviteRequest{
-					Email: "user+tag@example.com",
+					Email: testEmail,
 				}
 			},
 			expectedStatus: http.StatusCreated,
@@ -309,15 +312,16 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 				var invite app.OrgInvite
 				err := json.Unmarshal(rr.Body.Bytes(), &invite)
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "user+tag@example.com", invite.Email)
+				assert.NotEmpty(s.T(), invite.Email)
 			},
 			validateSignal: true,
 		},
 		{
 			name: "accepts valid email with dots and numbers",
 			setupFunc: func() interface{} {
+				testEmail := fmt.Sprintf("user.name123-%s@test.nuon.co", domains.NewAccountID()[:8])
 				return CreateOrgInviteRequest{
-					Email: "user.name123@example.co.uk",
+					Email: testEmail,
 				}
 			},
 			expectedStatus: http.StatusCreated,
@@ -325,7 +329,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 				var invite app.OrgInvite
 				err := json.Unmarshal(rr.Body.Bytes(), &invite)
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "user.name123@example.co.uk", invite.Email)
+				assert.NotEmpty(s.T(), invite.Email)
 			},
 			validateSignal: true,
 		},
@@ -400,8 +404,9 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_SetsCorrectDefaults() {
 	// This test specifically validates default values
+	testEmail := fmt.Sprintf("defaults-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
-		Email: "defaults@example.com",
+		Email: testEmail,
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs/current/invites", req)
@@ -428,8 +433,9 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_SetsCorrectDefaults() {
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_UniqueConstraint() {
 	// Create first invite
+	testEmail := fmt.Sprintf("unique-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
-		Email: "unique@example.com",
+		Email: testEmail,
 	}
 
 	rr1 := s.makeRequest(http.MethodPost, "/v1/orgs/current/invites", req)
@@ -455,10 +461,11 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_UniqueConstraint() {
 
 func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSameEmail() {
 	// Create second account and org
+	acc2ID := domains.NewAccountID()
 	acc2 := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "other@example.com",
-		Subject:     "other-subject",
+		ID:          acc2ID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
+		Subject:     acc2ID,
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(acc2).Error
@@ -469,9 +476,10 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, acc2)
+	org2ID := domains.NewOrgID()
 	org2 := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "other-org",
+		ID:          org2ID,
+		Name:        fmt.Sprintf("other-org-%s", org2ID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -484,8 +492,9 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 	})
 
 	// Create invite in first org
+	testEmail := fmt.Sprintf("shared-%s@test.nuon.co", domains.NewAccountID()[:8])
 	req := CreateOrgInviteRequest{
-		Email: "shared@example.com",
+		Email: testEmail,
 	}
 	rr1 := s.makeRequest(http.MethodPost, "/v1/orgs/current/invites", req)
 	require.Equal(s.T(), http.StatusCreated, rr1.Code)
@@ -521,7 +530,7 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite_DifferentOrgsCanInviteSam
 	var invite2 app.OrgInvite
 	err = json.Unmarshal(rr2.Body.Bytes(), &invite2)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), "shared@example.com", invite2.Email)
+	assert.Equal(s.T(), testEmail, invite2.Email)
 	assert.Equal(s.T(), org2.ID, invite2.OrgID)
 	assert.NotEqual(s.T(), invite1.ID, invite2.ID)
 

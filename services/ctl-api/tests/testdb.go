@@ -4,10 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -27,11 +23,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
-var createDBOnce sync.Once
-
-// dbConfig holds just the database connection fields we need.
+// DBConfig holds just the database connection fields we need.
 // Uses the same config tags as internal.Config so it picks up the registered defaults.
-type dbConfig struct {
+type DBConfig struct {
 	DBHost     string `config:"db_host"`
 	DBPort     string `config:"db_port"`
 	DBUser     string `config:"db_user"`
@@ -48,34 +42,21 @@ func SkipIfNotIntegration(t *testing.T) {
 	}
 }
 
-// CreateTestDatabase creates a per-process test database and runs migrations.
-// Each test process (from -p N) gets its own database to allow safe parallel truncation.
-func CreateTestDatabase() error {
-	var cfg dbConfig
+// LoadDBConfig loads the database config from environment variables.
+func LoadDBConfig() (DBConfig, error) {
+	var cfg DBConfig
 	if err := config.LoadInto(nil, &cfg); err != nil {
-		return fmt.Errorf("failed to load db config: %w", err)
+		return cfg, fmt.Errorf("failed to load db config: %w", err)
 	}
-
 	if cfg.DBName == "" {
-		return fmt.Errorf("DB_NAME must be set in the environment")
+		return cfg, fmt.Errorf("DB_NAME must be set in the environment")
 	}
-
-	// Give each process its own database using PID suffix
-	cfg.DBName = fmt.Sprintf("%s_%d", cfg.DBName, os.Getpid())
-
-	// Update env so FX/GORM connections use the per-process DB
-	os.Setenv("DB_NAME", cfg.DBName)
-
-	if err := createAndMigrateDatabase(cfg); err != nil {
-		return err
-	}
-
-	return nil
+	return cfg, nil
 }
 
-// createAndMigrateDatabase creates the per-process test database and runs migrations.
-// Each process gets its own database (PID suffix), so no locking is needed.
-func createAndMigrateDatabase(cfg dbConfig) error {
+// CreateAndMigrateDatabase drops and recreates the test database, then runs migrations.
+// Called by the testsetup binary before tests run.
+func CreateAndMigrateDatabase(cfg DBConfig) error {
 	// Connect to the default 'postgres' database to create test database
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBSSLMode)
@@ -93,43 +74,25 @@ func createAndMigrateDatabase(cfg dbConfig) error {
 	}
 	defer sqlDB.Close()
 
-	// Drop all old per-process test databases matching the base name pattern
-	var oldDBs []string
-	baseName := strings.TrimSuffix(cfg.DBName, fmt.Sprintf("_%d", os.Getpid()))
-	err = db.Raw("SELECT datname FROM pg_database WHERE datname LIKE ?", baseName+"_%").Scan(&oldDBs).Error
-	if err != nil {
-		return fmt.Errorf("failed to list old test databases: %w", err)
-	}
+	// Terminate existing connections and drop the database
+	db.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", cfg.DBName))
+	db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", cfg.DBName))
 
-	for _, oldDB := range oldDBs {
-		// Extract PID from database name (format: baseName_PID) and only drop if process is dead
-		parts := strings.Split(oldDB, "_")
-		if len(parts) > 0 {
-			if pid, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
-				if syscall.Kill(pid, 0) == nil {
-					// Process still alive, skip
-					continue
-				}
-			}
-		}
-		db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", oldDB))
-	}
-
-	// Create fresh per-process database
+	// Create fresh database
 	if err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", cfg.DBName)).Error; err != nil {
 		return fmt.Errorf("failed to create test database: %w", err)
 	}
 
-	// Always run migrations (they're idempotent and will skip already-applied migrations)
-	if err := migrateTestDatabase(cfg); err != nil {
+	// Run migrations
+	if err := MigrateTestDatabase(cfg); err != nil {
 		return fmt.Errorf("failed to migrate test database: %w", err)
 	}
 
 	return nil
 }
 
-// migrateTestDatabase connects to the test database and runs GORM AutoMigrate on all models.
-func migrateTestDatabase(cfg dbConfig) error {
+// MigrateTestDatabase connects to the test database and runs all migrations.
+func MigrateTestDatabase(cfg DBConfig) error {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 
@@ -158,45 +121,11 @@ func migrateTestDatabase(cfg dbConfig) error {
 	return nil
 }
 
-// TruncateAllTables truncates all tables in the database except service accounts.
-// Service accounts are preserved to avoid re-running data migrations.
-func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
-	models := psql.AllModels()
-
-	tableNames := make([]string, 0, len(models))
-	for _, model := range models {
-		stmt := &gorm.Statement{DB: db}
-		if err := stmt.Parse(model); err != nil {
-			return fmt.Errorf("failed to parse model: %w", err)
-		}
-
-		// Skip accounts table - we'll handle it separately
-		if stmt.Schema.Table == "accounts" {
-			continue
-		}
-
-		tableNames = append(tableNames, fmt.Sprintf(`"%s"`, stmt.Schema.Table))
-	}
-
-	// Truncate all tables except accounts
-	sql := fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE",
-		strings.Join(tableNames, ", "))
-
-	if err := db.WithContext(ctx).Exec(sql).Error; err != nil {
-		return fmt.Errorf("failed to truncate tables: %w", err)
-	}
-
-	// Delete non-service accounts from accounts table
-	if err := db.WithContext(ctx).Exec("DELETE FROM accounts WHERE account_type <> 'service'").Error; err != nil {
-		return fmt.Errorf("failed to clean accounts table: %w", err)
-	}
-
-	return nil
-}
-
-// BaseDBTestSuite provides automatic test database setup with fresh DB on each run.
-// Embed this in your test suites and call SetDB() in SetupSuite.
-// Tests rely on unique names for data isolation during parallel execution.
+// BaseDBTestSuite provides the base test suite for database-backed tests.
+// Embed this in your test suites. The database must already exist and be migrated
+// (via the testsetup binary) before tests run.
+//
+// Tests rely on unique names for data isolation — no truncation is needed.
 //
 // Example:
 //
@@ -211,40 +140,21 @@ func TruncateAllTables(ctx context.Context, db *gorm.DB) error {
 //	}
 //
 //	func (s *MyTestSuite) SetupSuite() {
-//	    s.BaseDBTestSuite.SetupSuite() // drops and recreates test DB
+//	    s.BaseDBTestSuite.SetupSuite()
 //	    // create your fx app and get DB
 //	    s.SetDB(db)
 //	    s.SetCHDB(chDB) // optional
 //	}
-//
-// Database is dropped and recreated fresh at start, tests use unique names for isolation.
 type BaseDBTestSuite struct {
 	suite.Suite
 	db   *gorm.DB
 	chDB *gorm.DB
 }
 
-// SetupSuite creates the test databases if needed.
-// Call this at the start of your SetupSuite if you override it.
-// DB_NAME and CLICKHOUSE_DB_NAME must already be set in the environment.
-func (s *BaseDBTestSuite) SetupSuite() {
-	// Create PostgreSQL test database if it doesn't exist (only once per test run)
-	createDBOnce.Do(func() {
-		if err := CreateTestDatabase(); err != nil {
-			s.T().Fatalf("failed to create test database: %v", err)
-		}
-	})
+// SetupSuite is a no-op. The database is created by the testsetup binary before tests run.
+func (s *BaseDBTestSuite) SetupSuite() {}
 
-	// Create ClickHouse test database if it doesn't exist (only once per test run)
-	createCHDBOnce.Do(func() {
-		if err := CreateTestClickHouseDatabase(); err != nil {
-			s.T().Fatalf("failed to create clickhouse test database: %v", err)
-		}
-	})
-}
-
-// SetDB stores the PostgreSQL database connection for use in truncation.
-// Call this in your SetupSuite after creating the DB connection.
+// SetDB stores the PostgreSQL database connection.
 func (s *BaseDBTestSuite) SetDB(db *gorm.DB) {
 	s.db = db
 }
@@ -254,9 +164,7 @@ func (s *BaseDBTestSuite) DB() *gorm.DB {
 	return s.db
 }
 
-// SetCHDB stores the ClickHouse database connection for use in truncation.
-// Call this in your SetupSuite after creating the CH connection.
-// If not called, ClickHouse tables will not be truncated between tests.
+// SetCHDB stores the ClickHouse database connection.
 func (s *BaseDBTestSuite) SetCHDB(db *gorm.DB) {
 	s.chDB = db
 }
@@ -266,23 +174,8 @@ func (s *BaseDBTestSuite) CHDB() *gorm.DB {
 	return s.chDB
 }
 
-// SetupTest truncates all tables before each test within the same process.
-// This ensures service-level tests that use hardcoded test data get a clean state.
-func (s *BaseDBTestSuite) SetupTest() {
-	if s.db == nil {
-		return
-	}
-
-	if err := TruncateAllTables(context.Background(), s.db); err != nil {
-		s.T().Fatalf("failed to truncate tables: %v", err)
-	}
-
-	if s.chDB != nil {
-		if err := TruncateAllCHTables(context.Background(), s.chDB); err != nil {
-			s.T().Fatalf("failed to truncate CH tables: %v", err)
-		}
-	}
-}
+// SetupTest is a no-op. Tests use unique names for data isolation.
+func (s *BaseDBTestSuite) SetupTest() {}
 
 func runMigrator(ctx context.Context, db *gorm.DB) error {
 	testConfig := &internal.Config{

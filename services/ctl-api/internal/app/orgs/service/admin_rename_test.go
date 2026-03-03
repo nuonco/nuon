@@ -322,9 +322,10 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				})
 
 				// Create other org that should NOT be affected
+				otherOrgID := domains.NewOrgID()
 				otherOrg := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          otherOrgID,
+					Name:        fmt.Sprintf("other-org-%s", otherOrgID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -332,6 +333,7 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 				}
 				err = s.service.DB.WithContext(ctx).Create(otherOrg).Error
 				require.NoError(s.T(), err)
+				originalOtherOrgName := otherOrg.Name
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", otherOrg.ID)
 				})
@@ -342,7 +344,7 @@ func (s *AdminRenameOrgTestSuite) TestAdminRenameOrg() {
 					var unchangedOtherOrg app.Org
 					err := s.service.DB.Where("id = ?", otherOrg.ID).First(&unchangedOtherOrg).Error
 					require.NoError(s.T(), err)
-					require.Equal(s.T(), "other-org", unchangedOtherOrg.Name)
+					require.Equal(s.T(), originalOtherOrgName, unchangedOtherOrg.Name)
 				})
 
 				return targetOrg

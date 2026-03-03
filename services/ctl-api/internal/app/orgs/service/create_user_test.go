@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -145,9 +146,10 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 			name: "successfully adds authenticated user to org",
 			setupFunc: func() *app.Account {
 				// Create a new account that's not yet in the org
+				accID := domains.NewAccountID()
 				acc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "newuser@example.com",
+					ID:          accID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", accID),
 					Subject:     "new-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -182,9 +184,10 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 		{
 			name: "returns authenticated account in response",
 			setupFunc: func() *app.Account {
+				accID := domains.NewAccountID()
 				acc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "responseuser@example.com",
+					ID:          accID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", accID),
 					Subject:     "response-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -206,9 +209,10 @@ func (s *CreateUserTestSuite) TestCreateUser() {
 		{
 			name: "handles empty request body",
 			setupFunc: func() *app.Account {
+				accID := domains.NewAccountID()
 				acc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "emptybody@example.com",
+					ID:          accID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", accID),
 					Subject:     "empty-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
