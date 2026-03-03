@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -106,7 +107,7 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 	accID := domains.NewAccountID()
 	testAcc := &app.Account{
 		ID:          accID,
-		Email:       accID + "@test.com",
+		Email:       fmt.Sprintf("%s@test.nuon.co", accID),
 		Subject:     accID,
 		AccountType: app.AccountTypeAuth0,
 	}
@@ -116,9 +117,10 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 
 	// Create test org
 	ctx = cctx.SetAccountContext(ctx, testAcc)
+	testOrgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "test-org",
+		ID:          testOrgID,
+		Name:        fmt.Sprintf("test-org-%s", testOrgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -373,9 +375,10 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create second org
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",

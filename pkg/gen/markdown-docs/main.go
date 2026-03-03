@@ -103,21 +103,21 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 	// Find the target schema (handle $ref schemas like the API does)
 	targetSchema := resolveSchemaRef(s)
 
+	// Collect all definitions from the original schema for sub-type expansion
+	allDefs := collectDefinitions(s)
+
 	// Add properties table if schema has properties
 	if targetSchema.Properties != nil && targetSchema.Properties.Len() > 0 {
 		doc.AddHeading(2, "Properties")
 
-		// Build properties table
-		table := mdast.NewTable([]string{
-			"Property",
-			"Type",
-			"Required",
-			"Description",
-			"Default",
-			"Example",
-		})
+		// Collect properties, partitioned into required and optional
+		type propEntry struct {
+			name     string
+			prop     *jsonschema.Schema
+			required bool
+		}
+		var requiredProps, optionalProps []propEntry
 
-		// Iterate through properties in order (same as OrderedMap iteration)
 		for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
 			propName := pair.Key
 			prop := pair.Value
@@ -134,28 +134,59 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 				}
 			}
 
-			// Check if required
 			isRequired := isPropertyRequired(targetSchema.Required, propName)
-
-			// Build table row
-			row := []string{
-				mdast.Code(propName),
-				mdast.Code(getTypeString(prop)),
-				formatRequired(isRequired),
-				formatDescription(prop.Description),
-				formatDefault(prop.Default),
-				formatExample(prop),
+			entry := propEntry{name: propName, prop: prop, required: isRequired}
+			if isRequired {
+				requiredProps = append(requiredProps, entry)
+			} else {
+				optionalProps = append(optionalProps, entry)
 			}
+		}
 
-			table.AddRow(row)
+		allEntries := append(requiredProps, optionalProps...)
+
+		// Find properties that reference sub-schemas (compute before table so we can link)
+		type subSchemaRef struct {
+			propName string
+			def      *jsonschema.Schema
+		}
+		var subSchemaRefs []subSchemaRef
+		subSchemaPropNames := make(map[string]bool)
+		seenDefs := make(map[string]bool)
+
+		for _, entry := range allEntries {
+			defName := getPropertyRefName(entry.prop)
+			if defName == "" || seenDefs[defName] {
+				continue
+			}
+			if def, ok := allDefs[defName]; ok && def.Properties != nil && def.Properties.Len() > 0 {
+				subSchemaRefs = append(subSchemaRefs, subSchemaRef{
+					propName: entry.name,
+					def:      def,
+				})
+				subSchemaPropNames[entry.name] = true
+				seenDefs[defName] = true
+			}
+		}
+
+		// Build properties table with required fields first
+		table := mdast.NewTable([]string{
+			"Property",
+			"Description",
+			"Values",
+			"Example",
+		})
+
+		for _, entry := range allEntries {
+			table.AddRow(buildPropertyRow(entry.name, entry.prop, entry.required, subSchemaPropNames))
 		}
 
 		doc.AddTable(table)
 
-		// Add property details section for properties with enums or multiple examples
-		detailsSection := buildPropertyDetails(targetSchema)
-		if detailsSection != nil {
-			doc.AddNode(detailsSection)
+		// Render sub-type sections
+		for _, ref := range subSchemaRefs {
+			doc.AddHeading(3, mdast.Code(ref.propName))
+			renderSubSchemaTable(doc, ref.def)
 		}
 	}
 
@@ -190,32 +221,16 @@ func generateIndexPage(schemaNames []string, outputDir, format string) error {
 	doc.AddParagraph("This section provides detailed JSON Schema references for all Nuon configuration types.")
 	doc.AddHeading(2, "Available Configurations")
 
-	// Categorize schemas
-	categories := categorizeSchemas(schemaNames)
-
-	// Add category sections
-	for _, category := range []string{"Component Types", "Configuration Types", "Other Types"} {
-		schemas, ok := categories[category]
-		if !ok || len(schemas) == 0 {
-			continue
+	if format == "mintlify" {
+		doc.AddRaw("<CardGroup cols={2}>\n")
+		for _, name := range schemaNames {
+			doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"file\" href=\"%s\"></Card>\n",
+				formatTitle(name), name))
 		}
-
-		doc.AddHeading(3, category)
-
-		if format == "mintlify" {
-			// Use Mintlify CardGroup
-			doc.AddRaw("<CardGroup cols={2}>\n")
-			for _, name := range schemas {
-				icon := categoryIcon(category)
-				doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"%s\" href=\"%s\"></Card>\n",
-					formatTitle(name), icon, name))
-			}
-			doc.AddRaw("</CardGroup>\n\n")
-		} else {
-			// Use markdown list
-			for _, name := range schemas {
-				doc.AddListItem(fmt.Sprintf("[%s](%s.mdx)", formatTitle(name), name))
-			}
+		doc.AddRaw("</CardGroup>\n\n")
+	} else {
+		for _, name := range schemaNames {
+			doc.AddListItem(fmt.Sprintf("[%s](%s.mdx)", formatTitle(name), name))
 		}
 	}
 
@@ -355,6 +370,98 @@ func isExcludedProperty(propName string) bool {
 	return false
 }
 
+// buildPropertyRow creates a table row for a single property.
+// subSchemaPropNames indicates which property names have sub-sections below (used to render links).
+func buildPropertyRow(name string, prop *jsonschema.Schema, required bool, subSchemaPropNames map[string]bool) []string {
+	typeStr := getTypeString(prop)
+	if subSchemaPropNames[name] {
+		typeStr = "[" + typeStr + "](#" + name + ")"
+	}
+	propertyCell := "**" + mdast.Code(name) + "**" +
+		"<br/>" + typeStr
+
+	valuesParts := []string{"**" + formatRequired(required) + "**"}
+	if d := formatDefault(prop.Default); d != "-" {
+		valuesParts = append(valuesParts, "Default: "+d)
+	}
+	if len(prop.Enum) > 0 {
+		valuesParts = append(valuesParts, formatEnum(prop.Enum))
+	}
+
+	return []string{
+		propertyCell,
+		formatDescription(prop.Description),
+		strings.Join(valuesParts, "<br/>"),
+		formatExample(prop),
+	}
+}
+
+// renderSubSchemaTable renders a properties table for a sub-type definition
+func renderSubSchemaTable(doc *mdast.Document, schema *jsonschema.Schema) {
+	if schema.Properties == nil || schema.Properties.Len() == 0 {
+		return
+	}
+
+	table := mdast.NewTable([]string{"Property", "Description", "Values", "Example"})
+
+	type propEntry struct {
+		name     string
+		prop     *jsonschema.Schema
+		required bool
+	}
+	var requiredProps, optionalProps []propEntry
+
+	for pair := schema.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		isRequired := isPropertyRequired(schema.Required, pair.Key)
+		entry := propEntry{name: pair.Key, prop: pair.Value, required: isRequired}
+		if isRequired {
+			requiredProps = append(requiredProps, entry)
+		} else {
+			optionalProps = append(optionalProps, entry)
+		}
+	}
+
+	for _, entry := range append(requiredProps, optionalProps...) {
+		table.AddRow(buildPropertyRow(entry.name, entry.prop, entry.required, nil))
+	}
+
+	doc.AddTable(table)
+}
+
+// collectDefinitions gathers all definitions from a schema and its allOf sub-schemas
+func collectDefinitions(s *jsonschema.Schema) map[string]*jsonschema.Schema {
+	defs := make(map[string]*jsonschema.Schema)
+
+	if s.Definitions != nil {
+		for name, def := range s.Definitions {
+			defs[name] = def
+		}
+	}
+
+	for _, allOfSchema := range s.AllOf {
+		if allOfSchema.Definitions != nil {
+			for name, def := range allOfSchema.Definitions {
+				defs[name] = def
+			}
+		}
+	}
+
+	return defs
+}
+
+// getPropertyRefName extracts the definition name referenced by a property (direct $ref or array items $ref)
+func getPropertyRefName(prop *jsonschema.Schema) string {
+	if prop.Ref != "" {
+		parts := strings.Split(prop.Ref, "/")
+		return parts[len(parts)-1]
+	}
+	if prop.Items != nil && prop.Items.Ref != "" {
+		parts := strings.Split(prop.Items.Ref, "/")
+		return parts[len(parts)-1]
+	}
+	return ""
+}
+
 func getTypeString(prop *jsonschema.Schema) string {
 	if prop.Type != "" {
 		return prop.Type
@@ -379,9 +486,9 @@ func getTypeString(prop *jsonschema.Schema) string {
 
 func formatRequired(required bool) string {
 	if required {
-		return "✅ Yes"
+		return "✅ Required"
 	}
-	return "No"
+	return "Optional"
 }
 
 func formatDescription(desc string) string {
@@ -414,113 +521,26 @@ func formatDefault(defaultVal any) string {
 	return mdast.Code(string(bytes))
 }
 
+func formatEnum(enum []any) string {
+	var parts []string
+	for _, val := range enum {
+		bytes, _ := json.Marshal(val)
+		parts = append(parts, mdast.Code(string(bytes)))
+	}
+	return strings.Join(parts, ", ")
+}
+
 func formatExample(prop *jsonschema.Schema) string {
 	if len(prop.Examples) > 0 {
-		bytes, _ := json.Marshal(prop.Examples[0])
-		exampleStr := string(bytes)
-		if len(exampleStr) > 100 {
-			runes := []rune(exampleStr)
-			if len(runes) > 97 {
-				exampleStr = string(runes[:97]) + "..."
-			}
+		var parts []string
+		for _, example := range prop.Examples {
+			bytes, _ := json.Marshal(example)
+			parts = append(parts, mdast.Code(string(bytes)))
 		}
-		return mdast.Code(exampleStr)
-	}
-
-	if len(prop.Enum) > 0 {
-		bytes, _ := json.Marshal(prop.Enum[0])
-		return mdast.Code(string(bytes))
+		return strings.Join(parts, ", ")
 	}
 
 	return "-"
-}
-
-func buildPropertyDetails(targetSchema *jsonschema.Schema) *mdast.Section {
-	// Check if any properties have detailed info
-	hasDetails := false
-	for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		prop := pair.Value
-		if len(prop.Enum) > 0 || len(prop.Examples) > 1 {
-			hasDetails = true
-			break
-		}
-	}
-
-	if !hasDetails {
-		return nil
-	}
-
-	section := mdast.NewSection()
-	section.AddHeading(3, "Property Details")
-
-	for pair := targetSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		propName := pair.Key
-		prop := pair.Value
-
-		needsDetail := len(prop.Enum) > 0 || len(prop.Examples) > 1
-		if !needsDetail {
-			continue
-		}
-
-		section.AddHeading(4, mdast.Code(propName))
-
-		// Add enum values
-		if len(prop.Enum) > 0 {
-			section.AddParagraph("**Allowed values:**\n")
-			for _, val := range prop.Enum {
-				valStr, _ := json.Marshal(val)
-				section.AddListItem(mdast.Code(string(valStr)))
-			}
-			section.AddParagraph("")
-		}
-
-		// Add multiple examples
-		if len(prop.Examples) > 1 {
-			section.AddParagraph("**Examples:**\n")
-			for i, example := range prop.Examples {
-				if i >= 5 {
-					break
-				}
-				exampleBytes, _ := json.MarshalIndent(example, "", "  ")
-				section.AddCodeBlock("yaml", string(exampleBytes))
-			}
-		}
-	}
-
-	return section
-}
-
-func categorizeSchemas(schemaNames []string) map[string][]string {
-	categories := map[string][]string{
-		"Component Types":     {},
-		"Configuration Types": {},
-		"Other Types":         {},
-	}
-
-	for _, name := range schemaNames {
-		if strings.Contains(name, "component") || name == "helm" || name == "docker-build" ||
-			name == "container-image" || name == "terraform" || name == "kubernetes-manifest" {
-			categories["Component Types"] = append(categories["Component Types"], name)
-		} else if strings.Contains(name, "config") || name == "inputs" || name == "secrets" ||
-			name == "policies" || name == "metadata" || name == "permissions" {
-			categories["Configuration Types"] = append(categories["Configuration Types"], name)
-		} else {
-			categories["Other Types"] = append(categories["Other Types"], name)
-		}
-	}
-
-	return categories
-}
-
-func categoryIcon(category string) string {
-	switch category {
-	case "Component Types":
-		return "cube"
-	case "Configuration Types":
-		return "gear"
-	default:
-		return "file"
-	}
 }
 
 func formatTitle(schemaName string) string {

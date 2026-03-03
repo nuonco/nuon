@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -84,10 +85,10 @@ func (s *AdminRestartTestSuite) SetupTest() {
 	s.mockEvClient.Reset()
 	s.setupTestData()
 
-	// Admin routes do NOT use TestOrg/TestAcc context
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -193,9 +194,10 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/other",

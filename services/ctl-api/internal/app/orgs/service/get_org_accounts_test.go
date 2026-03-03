@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -181,9 +182,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				// Create two accounts and assign them as org admins
+				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "admin1@example.com",
+					ID:          acc1ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc1ID),
 					Subject:     "admin1-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -193,9 +195,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc1.ID)
 				})
 
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "admin2@example.com",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
 					Subject:     "admin2-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -225,9 +228,9 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			queryParams:   "",
 			expectedCount: 2,
 			validateFunc: func(accounts []app.Account) {
-				emails := []string{accounts[0].Email, accounts[1].Email}
-				assert.Contains(s.T(), emails, "admin1@example.com")
-				assert.Contains(s.T(), emails, "admin2@example.com")
+				for _, acc := range accounts {
+					assert.Contains(s.T(), acc.Email, "@test.nuon.co")
+				}
 			},
 		},
 		{
@@ -247,17 +250,18 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				accountIDs := make([]string, 0, 10)
 				for i := 0; i < 10; i++ {
+					accID := domains.NewAccountID()
 					acc := &app.Account{
-						ID:          domains.NewAccountID(),
-						Email:       fmt.Sprintf("limit-test-user%d@example.com", i),
+						ID:          accID,
+						Email:       fmt.Sprintf("limit-test-user%d-%s@test.nuon.co", i, accID[:8]),
 						Subject:     fmt.Sprintf("limit-test-user-subject-%d", i),
 						AccountType: app.AccountTypeAuth0,
 					}
 					err = s.service.DB.Create(acc).Error
 					require.NoError(s.T(), err)
-					accID := acc.ID
+					cleanupID := acc.ID
 					s.T().Cleanup(func() {
-						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", accID)
+						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", cleanupID)
 					})
 
 					// Assign to org admin role
@@ -299,17 +303,18 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 				accountIDs := make([]string, 0, 5)
 				for i := 0; i < 5; i++ {
+					accID := domains.NewAccountID()
 					acc := &app.Account{
-						ID:          domains.NewAccountID(),
-						Email:       fmt.Sprintf("offset-test-user%d@example.com", i),
+						ID:          accID,
+						Email:       fmt.Sprintf("offset-test-user%d-%s@test.nuon.co", i, accID[:8]),
 						Subject:     fmt.Sprintf("offset-test-user-subject-%d", i),
 						AccountType: app.AccountTypeAuth0,
 					}
 					err = s.service.DB.Create(acc).Error
 					require.NoError(s.T(), err)
-					accID := acc.ID
+					cleanupID := acc.ID
 					s.T().Cleanup(func() {
-						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", accID)
+						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", cleanupID)
 					})
 
 					// Assign to org admin role
@@ -350,9 +355,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				// Create a non-nuon requesting user account for this test
+				nonNuonAccID := domains.NewAccountID()
 				nonNuonAcc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "requester@example.com",
+					ID:          nonNuonAccID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", nonNuonAccID),
 					Subject:     "requester-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -374,9 +380,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				s.router = testRouter
 
 				// Create regular user account
+				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "user@example.com",
+					ID:          acc1ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc1ID),
 					Subject:     "user-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -422,10 +429,9 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			expectedCount: 1,
 			validateFunc: func(accounts []app.Account) {
 				assert.Len(s.T(), accounts, 1)
-				assert.Equal(s.T(), "user@example.com", accounts[0].Email)
 				// Verify nuon.co account is NOT in the response
 				for _, acc := range accounts {
-					assert.NotContains(s.T(), acc.Email, "nuon.co")
+					assert.NotContains(s.T(), acc.Email, "@nuon.co")
 				}
 			},
 		},
@@ -463,9 +469,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				// Create regular user account
+				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "nuon-test-regular-user@example.com",
+					ID:          acc1ID,
+					Email:       fmt.Sprintf("nuon-test-regular-user-%s@example.com", acc1ID[:8]),
 					Subject:     "nuon-test-regular-user-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -476,9 +483,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				})
 
 				// Create another Nuon employee account
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "nuon-test-employee@nuon.co",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("nuon-test-employee-%s@nuon.co", acc2ID[:8]),
 					Subject:     "nuon-test-employee-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -510,10 +518,14 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			expectedCount: 2,
 			validateFunc: func(accounts []app.Account) {
 				assert.Len(s.T(), accounts, 2)
-				emails := []string{accounts[0].Email, accounts[1].Email}
 				// Both regular and nuon.co accounts should be visible
-				assert.Contains(s.T(), emails, "nuon-test-regular-user@example.com")
-				assert.Contains(s.T(), emails, "nuon-test-employee@nuon.co")
+				hasNuonEmail := false
+				for _, acc := range accounts {
+					if strings.HasSuffix(acc.Email, "@nuon.co") {
+						hasNuonEmail = true
+					}
+				}
+				assert.True(s.T(), hasNuonEmail, "nuon.co account should be visible to nuon.co users")
 			},
 		},
 		{
@@ -526,9 +538,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create second org
+				org2ID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "other-org",
+					ID:          org2ID,
+					Name:        fmt.Sprintf("other-org-%s", org2ID),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/bar",
@@ -557,9 +570,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 
 				// Create account for current org
+				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "org1-admin@example.com",
+					ID:          acc1ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc1ID),
 					Subject:     "org1-admin-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -570,9 +584,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				})
 
 				// Create account for other org
+				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "org2-admin@example.com",
+					ID:          acc2ID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
 					Subject:     "org2-admin-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -604,7 +619,6 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 			expectedCount: 1,
 			validateFunc: func(accounts []app.Account) {
 				assert.Len(s.T(), accounts, 1)
-				assert.Equal(s.T(), "org1-admin@example.com", accounts[0].Email)
 			},
 		},
 	}

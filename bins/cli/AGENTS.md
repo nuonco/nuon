@@ -405,7 +405,6 @@ pattern is to avoid bubbletea entirely when non-interactive.
 | **Interactive table** (`bubbles/table.go`)               | Render static table via `v.Render()`                           |
 | **Action TUIs** (`action/*`, `install/creator`)          | Error: `"interactive terminal required; use --json flag"`      |
 
-
 #### Command annotations (`cmd/annotations.go`)
 
 Commands are annotated with their TUI type via Cobra's `Annotations` map:
