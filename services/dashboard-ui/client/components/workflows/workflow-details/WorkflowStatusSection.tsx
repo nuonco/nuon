@@ -8,6 +8,9 @@ import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 
 export const WorkflowStatusSection = () => {
   const { workflow } = useWorkflow()
+
+  if (!workflow) return null
+
   return (
     <div className="flex flex-wrap items-center gap-2 md:gap-8 md:mt-6">
       <Text

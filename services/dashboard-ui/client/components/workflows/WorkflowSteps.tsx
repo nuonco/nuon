@@ -1,6 +1,5 @@
-'use client'
-
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -13,20 +12,20 @@ import { StepDetailPanelButton } from '@/components/workflows/step-details/StepD
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflow } from '@/hooks/use-workflow'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { getWorkflowSteps } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { getStepBadge } from '@/utils/workflow-utils'
 
-interface IWorkflowSteps extends IPollingProps {
+interface IWorkflowSteps {
   approvalPrompt?: boolean
-  initWorkflowSteps: TWorkflowStep[]
   planOnly?: boolean
+  pollInterval?: number
+  shouldPoll?: boolean
   workflowId: string
 }
 
 export const WorkflowSteps = ({
   approvalPrompt = false,
-  initWorkflowSteps,
   planOnly = false,
   pollInterval = 4000,
   shouldPoll = false,
@@ -36,23 +35,20 @@ export const WorkflowSteps = ({
   const { workflow } = useWorkflow()
   const [searchName, setSearchName] = useState<string>('')
 
-  // Stop polling if workflow is finished or cancelled
-  const shouldStopPolling =
-    workflow?.finished || workflow?.status?.status === 'cancelled'
+  const shouldStopPolling = workflow?.finished || workflow?.status?.status === 'cancelled'
   const effectiveShouldPoll = shouldPoll && !shouldStopPolling
 
-  const { data: workflowSteps } = usePolling<TWorkflowStep[]>({
-    path: `/api/orgs/${org?.id}/workflows/${workflowId}/steps`,
-    shouldPoll: effectiveShouldPoll,
-    initData: initWorkflowSteps,
-    pollInterval,
+  const { data: workflowSteps = [] } = useQuery<TWorkflowStep[]>({
+    queryKey: ['workflow-steps', org?.id, workflowId],
+    queryFn: () => getWorkflowSteps({ orgId: org.id, workflowId }),
+    refetchOnMount: 'always',
+    refetchInterval: effectiveShouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!workflowId,
   })
 
   const filteredSteps = workflowSteps
-    ? workflowSteps
-        .filter((step) => step.execution_type !== 'hidden')
-        .filter((step) => step.name.includes(searchName))
-    : []
+    .filter((step) => step.execution_type !== 'hidden')
+    .filter((step) => step.name.includes(searchName))
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,7 +58,7 @@ export const WorkflowSteps = ({
         onChange={setSearchName}
       />
       <div className="flex flex-col gap-4">
-        {filteredSteps && filteredSteps?.length ? (
+        {filteredSteps.length ? (
           filteredSteps.map((step) => {
             const badgeConfig = getStepBadge(step, approvalPrompt)
 
@@ -80,8 +76,7 @@ export const WorkflowSteps = ({
 
                   <PolicyCountsBadge step={step} />
 
-                  {(step.execution_type === 'system' &&
-                    !step.step_target_type) ||
+                  {(step.execution_type === 'system' && !step.step_target_type) ||
                   step.status.status === 'pending' ? null : (
                     <StepDetailPanelButton
                       approvalPrompt={approvalPrompt}
@@ -93,10 +88,7 @@ export const WorkflowSteps = ({
                   {step?.finished ? (
                     <Text variant="subtext" theme="neutral">
                       Completed in{' '}
-                      <Duration
-                        variant="subtext"
-                        nanoseconds={step?.execution_time}
-                      />
+                      <Duration variant="subtext" nanoseconds={step?.execution_time} />
                     </Text>
                   ) : null}
                 </div>
@@ -113,11 +105,7 @@ export const WorkflowSteps = ({
                 ? 'No workflow steps match your search. Try adjusting your search criteria.'
                 : 'Steps will appear here once the workflow has been generated.'
             }
-            emptyTitle={
-              workflowSteps.length
-                ? 'No steps found'
-                : 'Workflow steps not available'
-            }
+            emptyTitle={workflowSteps.length ? 'No steps found' : 'Workflow steps not available'}
           />
         )}
       </div>

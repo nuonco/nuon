@@ -24,4 +24,5 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewHealthHandler)),
 	fx.Provide(asService(handlers.NewRootHandler)),
 	fx.Provide(asService(handlers.NewConnectHandler)),
+	fx.Provide(asService(handlers.NewWorkflowsHandler)),
 )

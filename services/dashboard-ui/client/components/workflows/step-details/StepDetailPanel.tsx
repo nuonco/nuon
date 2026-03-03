@@ -1,18 +1,13 @@
-'use client'
-
-import { useSearchParams } from 'next/navigation'
-import React, {
-  useEffect,
-  type ReactElement,
-  type ReactNode,
-} from 'react'
+import { useSearchParams } from 'react-router'
+import React, { useEffect, type ReactElement, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
+import { getWorkflowStep } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from './action-run-details/ActionRunStepDetails'
 import { DeployStepDetails } from './deploy-details/DeployStepDetails'
@@ -26,45 +21,30 @@ import { RunnerStepDetails } from './RunnerStepDetails'
 type TPanelSize = IPanel['size']
 
 function getStepPanelSize(step: TWorkflowStep): TPanelSize {
-  let size: TPanelSize = 'half'
-
   if (
     step?.step_target_type === 'install_deploys' ||
     step?.step_target_type === 'install_sandbox_runs' ||
     step?.step_target_type === 'install_action_workflow_runs'
   ) {
-    size = '3/4'
+    return '3/4'
   }
-
-  return size
+  return 'half'
 }
 
 function getStepPanelDetails(step: TWorkflowStep): ReactNode {
-  if (step.step_target_type === 'install_action_workflow_runs') {
-    return <ActionRunStepDetails />
-  }
-
-  if (step.step_target_type === 'install_deploys') {
-    return <DeployStepDetails />
-  }
-
-  if (step.step_target_type === 'install_sandbox_runs') {
-    return <SandboxRunStepDetails />
-  }
-
-  if (step.step_target_type === 'install_stack_versions') {
-    return <StackStepDetails />
-  }
-
-  if (step.step_target_type === 'runners') {
-    return <RunnerStepDetails />
-  }
+  if (step.step_target_type === 'install_action_workflow_runs') return <ActionRunStepDetails />
+  if (step.step_target_type === 'install_deploys') return <DeployStepDetails />
+  if (step.step_target_type === 'install_sandbox_runs') return <SandboxRunStepDetails />
+  if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
+  if (step.step_target_type === 'runners') return <RunnerStepDetails />
 }
 
-export interface IStepDetailPanel extends IPanel, IPollingProps {
+export interface IStepDetailPanel extends IPanel {
   children: ReactNode
   initStep: TWorkflowStep
   planOnly?: boolean
+  pollInterval?: number
+  shouldPoll?: boolean
 }
 
 export const StepDetailPanel = ({
@@ -76,11 +56,18 @@ export const StepDetailPanel = ({
   ...props
 }: IStepDetailPanel) => {
   const { org } = useOrg()
-  const { data: step } = usePolling<TWorkflowStep>({
-    initData: initStep,
-    path: `/api/orgs/${org.id}/workflows/${initStep.install_workflow_id}/steps/${initStep.id}`,
-    pollInterval,
-    shouldPoll,
+
+  const { data: step = initStep } = useQuery<TWorkflowStep>({
+    queryKey: ['workflow-step', org?.id, initStep.install_workflow_id, initStep.id],
+    queryFn: () =>
+      getWorkflowStep({
+        orgId: org.id,
+        workflowId: initStep.install_workflow_id,
+        workflowStepId: initStep.id,
+      }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    initialData: initStep,
+    enabled: !!org?.id,
   })
 
   return (
@@ -95,10 +82,7 @@ export const StepDetailPanel = ({
         React.isValidElement(c)
           ? React.cloneElement(
               c as ReactElement<{ step: TWorkflowStep; panelId: string }>,
-              {
-                step,
-                panelId: props.panelId,
-              }
+              { step, panelId: props.panelId }
             )
           : null
       )}
@@ -119,7 +103,8 @@ export const StepDetailPanelButton = ({
   planOnly?: boolean
 }) => {
   const { addPanel } = useSurfaces()
-  const searchParams = useSearchParams()
+  const [searchParams] = useSearchParams()
+
   const panel = (
     <StepDetailPanel
       panelKey={step.id}
@@ -132,9 +117,7 @@ export const StepDetailPanelButton = ({
     </StepDetailPanel>
   )
 
-  const handleAddPanel = () => {
-    addPanel(panel, step.id)
-  }
+  const handleAddPanel = () => addPanel(panel, step.id)
 
   useEffect(() => {
     if (step.id && step.id === searchParams?.get('panel')) {

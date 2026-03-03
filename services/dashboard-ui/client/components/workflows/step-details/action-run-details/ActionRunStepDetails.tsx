@@ -1,8 +1,9 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
-import { useQuery } from '@/hooks/use-query'
+import { getInstallActionRun } from '@/lib'
 import type { TInstallActionRun } from '@/types'
 import { ActionRunHeader, ActionRunHeaderSkeleton } from './ActionRunHeader'
 import {
@@ -22,8 +23,9 @@ export const ActionRunStepDetails = ({ step }: IActionRunDetails) => {
     error,
     isLoading,
   } = useQuery<TInstallActionRun>({
-    dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step.owner_id}/actions/runs/${step?.step_target_id}`,
+    queryKey: ['action-run', org?.id, step?.owner_id, step?.step_target_id],
+    queryFn: () => getInstallActionRun({ orgId: org.id, installId: step.owner_id, runId: step.step_target_id }),
+    enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
 
   const isAdhoc = actionRun?.trigger_type === 'adhoc'

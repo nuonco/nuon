@@ -6,7 +6,7 @@ import { getWorkflow } from '@/lib'
 import type { TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
-  workflow: TWorkflow
+  workflow: TWorkflow | undefined
   isLoading: boolean
   error?: any
   stopPolling: () => void

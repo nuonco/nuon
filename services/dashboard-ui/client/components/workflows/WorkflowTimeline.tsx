@@ -1,56 +1,62 @@
-'use client'
-
+import { useSearchParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Timeline, type ITimeline } from '@/components/common/Timeline'
+import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { usePolling, type IPollingProps } from '@/hooks/use-polling'
-import { useQueryParams } from '@/hooks/use-query-params'
+import { getInstallWorkflows } from '@/lib'
 import type { TWorkflow } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getWorkflowBadge } from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
-interface IWorkflowTimeline
-  extends Omit<ITimeline<TWorkflow>, 'events' | 'renderEvent'>,
-    IPollingProps {
-  initWorkflows: Array<TWorkflow>
-  ownerId: string
-  ownerType: 'apps' | 'installs'
+const LIMIT = 10
+
+interface IWorkflowTimeline {
+  installId: string
+  pollInterval?: number
+  shouldPoll?: boolean
   type?: string
   planonly?: boolean
 }
 
 export const WorkflowTimeline = ({
-  initWorkflows,
-  pagination,
+  installId,
   shouldPoll = false,
   pollInterval = 20000,
-  ownerId,
-  ownerType,
   planonly = true,
   type = '',
 }: IWorkflowTimeline) => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const queryParams = useQueryParams({
-    offset: pagination?.offset,
-    limit: 10,
-    planonly,
-    type,
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
+
+  const { data: result } = useQuery({
+    queryKey: ['install-workflows', org?.id, installId, offset, planonly, type],
+    queryFn: () =>
+      getInstallWorkflows({
+        orgId: org.id,
+        installId,
+        limit: LIMIT,
+        offset,
+        planonly,
+        type,
+      }),
+    refetchOnMount: 'always',
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!installId,
   })
-  const { data: workflows } = usePolling<TWorkflow[]>({
-    dependencies: [queryParams],
-    path: `/api/orgs/${org?.id}/${ownerType}/${ownerId}/workflows${queryParams}`,
-    shouldPoll,
-    initData: initWorkflows,
-    pollInterval,
-  })
+
+  const workflows = result ?? []
+  const pagination = result?.pagination
+    ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
+    : { hasNext: false, offset, limit: LIMIT }
 
   return workflows?.length ? (
     <Timeline<TWorkflow>
@@ -60,7 +66,7 @@ export const WorkflowTimeline = ({
         const workflowTitle = (
           <Link
             className="inline-flex gap-2 items-center"
-            href={`/${org.id}/${ownerType}/${ownerId}/workflows/${workflow.id}`}
+            href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
           >
             {workflow?.type === 'action_workflow_run' &&
             workflow?.metadata?.adhoc_action
@@ -118,9 +124,8 @@ export const WorkflowTimeline = ({
     <div className="mx-auto mt-24">
       <EmptyState
         variant="table"
-        emptyMessage="There are no workflows to display. This could be because no workflows have run yet, 
-        or your current filters are not matching any results."
-        emptyTitle="No workflows founds"
+        emptyMessage="There are no workflows to display. This could be because no workflows have run yet, or your current filters are not matching any results."
+        emptyTitle="No workflows found"
       />
     </div>
   )

@@ -16,6 +16,8 @@ export const WorkflowMetrics = () => {
     totalSteps,
   } = useWorkflow()
 
+  if (!workflow) return null
+
   const showPendingApprovals =
     workflow.approval_option === 'prompt' && !workflow?.plan_only
 

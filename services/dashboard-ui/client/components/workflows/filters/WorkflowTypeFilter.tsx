@@ -1,13 +1,10 @@
-'use client'
-
-import { useRouter, useSearchParams } from 'next/navigation'
-import { ChangeEvent, useCallback, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router'
+import { type ChangeEvent, useCallback, useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { toSentenceCase } from '@/utils/string-utils'
 
 const WORKFLOW_TYPE_OPTIONS = [
   'provision',
@@ -24,53 +21,41 @@ const WORKFLOW_TYPE_OPTIONS = [
   'sync_secrets',
   'drift_run',
   'reprovision',
-]
-
-type TTypeOption = (typeof WORKFLOW_TYPE_OPTIONS)[number]
+] as const
 
 const WORKFLOW_TYPE_PARAM = 'type'
 
 export const WorkflowTypeFilter = () => {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const workflowType = searchParams.get(WORKFLOW_TYPE_PARAM) || ''
 
   const updateTypeParam = useCallback(
     (type: string) => {
       const params = new URLSearchParams(searchParams.toString())
-
       if (type) {
         params.set(WORKFLOW_TYPE_PARAM, type)
       } else {
         params.delete(WORKFLOW_TYPE_PARAM)
       }
-
       params.delete('offset')
-
-      router.replace(`?${params.toString()}`)
+      navigate(`?${params.toString()}`, { replace: true })
     },
-    [router, searchParams]
+    [navigate, searchParams]
   )
 
   const handleTypeChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      updateTypeParam(e.target.value)
-    },
+    (e: ChangeEvent<HTMLInputElement>) => updateTypeParam(e.target.value),
     [updateTypeParam]
   )
 
-  const handleClearFilter = useCallback(() => {
-    updateTypeParam('')
-  }, [updateTypeParam])
+  const handleClearFilter = useCallback(() => updateTypeParam(''), [updateTypeParam])
 
   const typeOptions = useMemo(
-    () =>
-      WORKFLOW_TYPE_OPTIONS.map((type) => ({
-        value: type,
-        label: type,
-      })),
+    () => WORKFLOW_TYPE_OPTIONS.map((type) => ({ value: type, label: type })),
     []
   )
+
   return (
     <Dropdown
       alignment="right"
@@ -81,7 +66,7 @@ export const WorkflowTypeFilter = () => {
           Type filter
         </>
       }
-      id="install-filter"
+      id="workflow-type-filter"
       variant="ghost"
     >
       <Menu className="!p-0 !w-68">
@@ -101,7 +86,6 @@ export const WorkflowTypeFilter = () => {
               />
             ))}
           </div>
-
           <div className="flex flex-col gap-0.5 px-2 pb-2 w-full">
             <hr />
             <Button className="mt-1" isMenuButton type="reset" variant="ghost">

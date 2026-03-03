@@ -6,10 +6,11 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
-import { useQuery } from '@/hooks/use-query'
+import { getDeploy } from '@/lib'
 import type { TDeploy } from '@/types'
 import type { IStepDetails } from '../types'
 import { DeployApply } from './DeployApply'
+import { useQuery } from '@tanstack/react-query'
 
 export const DeployStepDetails = ({ step }: IStepDetails) => {
   const { org } = useOrg()
@@ -18,8 +19,9 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
     error,
     isLoading,
   } = useQuery<TDeploy>({
-    dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/deploys/${step.step_target_id}`,
+    queryKey: ['deploy', org?.id, step?.owner_id, step?.step_target_id],
+    queryFn: () => getDeploy({ orgId: org.id, installId: step.owner_id, deployId: step.step_target_id }),
+    enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
 
   return (

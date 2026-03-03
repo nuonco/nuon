@@ -1,7 +1,8 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useQuery } from '@/hooks/use-query'
+import { getInstallStack } from '@/lib'
 import type { TInstallStack } from '@/types'
 import type { IStepDetails } from '../types'
 import {
@@ -19,8 +20,9 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
   const isGenerateStack = step.name === 'generate install stack'
   const { org } = useOrg()
   const { data: stack, isLoading } = useQuery<TInstallStack>({
-    dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step.owner_id}/stack`,
+    queryKey: ['install-stack', org?.id, step?.owner_id],
+    queryFn: () => getInstallStack({ orgId: org.id, installId: step.owner_id }),
+    enabled: !!org?.id && !!step?.owner_id,
   })
 
   return (

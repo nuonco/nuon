@@ -13,6 +13,8 @@ export const WorkflowHeader = () => {
   const { install } = useInstall()
   const { workflow } = useWorkflow()
 
+  if (!workflow) return null
+
   return (
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
       <div className="flex flex-col gap-4">

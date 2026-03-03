@@ -1,31 +1,24 @@
-'use client'
-
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useNavigate, useSearchParams } from 'react-router'
 import { type ChangeEvent } from 'react'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 
 export const ShowDriftScan = () => {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const showDrifts = searchParams.get('drifts') !== 'false'
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked
-
     const params = new URLSearchParams(searchParams.toString())
-    params.set('drifts', checked ? 'true' : 'false')
+    params.set('drifts', e.target.checked ? 'true' : 'false')
     params.delete('offset')
-    router.replace(`?${params.toString()}`)
+    navigate(`?${params.toString()}`, { replace: true })
   }
 
   return (
-    <>
-      <CheckboxInput
-        labelProps={{ labelText: 'Drift scan' }}
-        checked={showDrifts}
-        onChange={handleChange}
-      />
-    </>
+    <CheckboxInput
+      labelProps={{ labelText: 'Drift scan' }}
+      checked={showDrifts}
+      onChange={handleChange}
+    />
   )
 }

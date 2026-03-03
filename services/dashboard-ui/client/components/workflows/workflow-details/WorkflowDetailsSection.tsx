@@ -16,6 +16,8 @@ export const WorkflowDetailsSection = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
+  if (!workflow) return null
+
   return (
     <Expand
       className="border rounded-md"

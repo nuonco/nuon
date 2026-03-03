@@ -6,7 +6,8 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
-import { useQuery } from '@/hooks/use-query'
+import { useQuery } from '@tanstack/react-query'
+import { getInstallSandboxRun } from '@/lib'
 import {
   SandboxRunApply,
   SandboxRunApplySkeleton,
@@ -21,8 +22,9 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
   const { org } = useOrg()
 
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({
-    dependencies: [step],
-    path: `/api/orgs/${org.id}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`,
+    queryKey: ['sandbox-run', org?.id, step?.step_target_id],
+    queryFn: () => getInstallSandboxRun({ orgId: org.id, runId: step!.step_target_id }),
+    enabled: !!org?.id && !!step?.step_target_id,
   })
 
   return (
@@ -40,7 +42,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
 
         <Text variant="subtext">
           <Link
-            href={`/${org.id}/installs/${step.owner_id}/sandbox/${step.step_target_id}`}
+            href={`/${org.id}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
           >
             View run <Icon variant="CaretRight" />
           </Link>
