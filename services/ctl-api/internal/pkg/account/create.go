@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -38,7 +37,6 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 // DefaultEvaluationJourney returns the evaluation journey for self-signup users
 // This is the 6-step journey: account_created, org_created, cli_installed, app_created, app_synced, install_created
 func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
-	now := time.Now().UTC()
 	return app.UserJourneys{
 		{
 			Name:  "evaluation",
@@ -47,10 +45,10 @@ func DefaultEvaluationJourney(completionSource string) app.UserJourneys {
 				{
 					Name:             "account_created",
 					Title:            "Create an account",
-					Complete:         true,
-					CompletedAt:      &now,
-					CompletionMethod: "auto",
-					CompletionSource: completionSource,
+					Complete:         false,
+					CompletedAt:      nil,
+					CompletionMethod: "",
+					CompletionSource: "",
 					Metadata:         make(map[string]interface{}),
 				},
 				{
