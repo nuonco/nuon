@@ -60,7 +60,7 @@ export const SandboxRunsTimeline = ({
             title={
               <span className="flex items-center gap-2">
                 <Link
-                  href={`/${org.id}/installs/${install?.id}/sandbox/${run?.id}`}
+                  href={`/${org.id}/installs/${install?.id}/sandbox/runs/${run?.id}`}
                 >
                   {toSentenceCase(snakeToWords(run?.run_type))}
                 </Link>

@@ -21,6 +21,8 @@ export const ManageRunDropdown = ({
 }: ManageRunDropdownProps) => {
   const { sandboxRun } = useSandboxRun()
   
+  if (!sandboxRun) return null
+
   const hasRunnerJobs = sandboxRun?.runner_jobs?.length > 0
   const shouldShowCancel = sandboxRun?.runner_jobs &&
     sandboxRun?.status_v2?.status !== 'active' &&

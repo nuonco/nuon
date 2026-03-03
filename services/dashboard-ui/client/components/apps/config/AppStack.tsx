@@ -1,5 +1,6 @@
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
+import { PropertyGrid } from "@/components/common/PropertyGrid"
 import { Text } from '@/components/common/Text'
 import type { TAppConfig } from '@/types'
 
@@ -41,6 +42,17 @@ export const AppStack = ({ appConfig }: IAppStack) => {
             </Link>
           </Text>
         </LabeledValue>
+      ) : null}
+
+    {stackConfig?.custom_nested_stacks?.length ? (
+        <PropertyGrid
+          values={stackConfig?.custom_nested_stacks?.map((s) => ({
+            name: s?.name,
+            template_url: s?.template_url,
+            contents_hash: s?.contents_hash,
+          }))}
+          gridTemplate="1fr 2fr 2fr"
+        />
       ) : null}
     </div>
   )

@@ -16,6 +16,7 @@ import { ActionDetail } from './ActionDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
+import { SandboxRunDetail } from './SandboxRunDetail'
 
 export const installRoutes: RouteObject[] = [
   {
@@ -28,6 +29,7 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
       { path: ':orgId/installs/:installId/sandbox', element: <Sandbox /> },
+      { path: ':orgId/installs/:installId/sandbox/runs/:runId', element: <SandboxRunDetail /> },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
