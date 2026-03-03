@@ -59,14 +59,16 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 			continue
 		}
 
-		secret, err := p.getKubernetesSecret(stack.InstallStackOutputs, cfg)
+		secret, ok, err := p.getKubernetesSecret(stack.InstallStackOutputs, cfg)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get kubernetes secret")
 		}
+		if !ok {
+			l.Debug("skipping optional kubernetes secret sync because stack output is missing or empty", zap.String("secret_name", cfg.Name))
+			continue
+		}
+
 		secrets = append(secrets, secret)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get kubernetes secret")
-		}
 	}
 
 	if len(secrets) < 1 {
@@ -112,11 +114,15 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 	return plan, nil
 }
 
-func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.AppSecretConfig) (plantypes.KubernetesSecretSync, error) {
+func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.AppSecretConfig) (plantypes.KubernetesSecretSync, bool, error) {
 	key := fmt.Sprintf("%s_arn", cfg.Name)
 	secretARN, ok := stack.Data[key]
-	if !ok {
-		return plantypes.KubernetesSecretSync{}, fmt.Errorf("secret arn not found in stack output: %s", key)
+	if !ok || secretARN == nil || generics.FromPtrStr(secretARN) == "" {
+		if cfg.Required {
+			return plantypes.KubernetesSecretSync{}, false, fmt.Errorf("secret arn not found in stack output: %s", key)
+		}
+
+		return plantypes.KubernetesSecretSync{}, false, nil
 	}
 
 	return plantypes.KubernetesSecretSync{
@@ -127,5 +133,5 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 		Name:      cfg.KubernetesSecretName,
 		KeyName:   cfg.KubernetesSecretKey,
 		Format:    string(cfg.Format),
-	}, nil
+	}, true, nil
 }
