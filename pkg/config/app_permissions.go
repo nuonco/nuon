@@ -43,8 +43,10 @@ func (a PermissionsConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("IAM role used for tearing down the install and cleaning up resources").
 		Field("maintenance_role").Short("maintenance IAM role").
 		Long("IAM role used for day-to-day maintenance, updates, and operational tasks").
+		Field("custom_roles").Short("custom IAM roles").
+		Long("Additional IAM roles for specialized operations beyond the standard provision/maintenance/deprovision lifecycle. Each role must have type set to 'custom'").
 		Field("roles").Short("list of permission roles").
-		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, or deprovision)")
+		Long("Array of role definitions in directory-based permission structure. Each role must have a type field (provision, maintenance, deprovision, or custom)")
 }
 
 func (a *PermissionsConfig) parse() error {

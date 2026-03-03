@@ -16,7 +16,6 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"break-glass":         BreakGlassConfigSchema,
 	"container-image":     ContainerImageConfigSchema,
 	"docker-build":        DockerBuildConfigSchema,
-	"full":                AppConfigSchema,
 	"helm":                HelmConfigSchema,
 	"input":               InputSchema,
 	"input-group":         InputGroupSchema,

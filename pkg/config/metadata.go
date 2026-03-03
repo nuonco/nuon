@@ -35,5 +35,6 @@ func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Slack webhook URL to receive deployment notifications and updates").
 		Example("https://hooks.slack.com/services/YOUR/WEBHOOK/URL").
 		Field("readme").Short("README content").
-		Long("Markdown content displayed as README documentation for the application")
+		Long("Markdown content displayed as README documentation for the application").
+		Example("./README.md")
 }
