@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -147,9 +148,10 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create account with invite
+				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "invited@example.com",
+					ID:          userToRemoveID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", userToRemoveID),
 					Subject:     "invited-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -219,9 +221,10 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create account
+				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "multirole@example.com",
+					ID:          userToRemoveID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", userToRemoveID),
 					Subject:     "multirole-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -293,9 +296,10 @@ func (s *RemoveUserTestSuite) TestRemoveUser() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create account
+				userToRemoveID := domains.NewAccountID()
 				userToRemove := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "reinvite@example.com",
+					ID:          userToRemoveID,
+					Email:       fmt.Sprintf("%s@test.nuon.co", userToRemoveID),
 					Subject:     "reinvite-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
@@ -444,9 +448,10 @@ func (s *RemoveUserTestSuite) TestRemoveUserWithoutOrgContext() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	// Create user to remove
+	userToRemoveID := domains.NewAccountID()
 	userToRemove := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "nocontext@example.com",
+		ID:          userToRemoveID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", userToRemoveID),
 		Subject:     "nocontext-subject",
 		AccountType: app.AccountTypeAuth0,
 	}
@@ -488,9 +493,10 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	// Create second org
+	acc2ID := domains.NewAccountID()
 	acc2 := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "org2admin@example.com",
+		ID:          acc2ID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", acc2ID),
 		Subject:     "org2-subject",
 		AccountType: app.AccountTypeAuth0,
 	}
@@ -518,9 +524,10 @@ func (s *RemoveUserTestSuite) TestRemoveUserAcrossOrgs() {
 	})
 
 	// Create user that belongs to both orgs
+	sharedUserID := domains.NewAccountID()
 	sharedUser := &app.Account{
-		ID:          domains.NewAccountID(),
-		Email:       "shared@example.com",
+		ID:          sharedUserID,
+		Email:       fmt.Sprintf("%s@test.nuon.co", sharedUserID),
 		Subject:     "shared-subject",
 		AccountType: app.AccountTypeAuth0,
 	}
