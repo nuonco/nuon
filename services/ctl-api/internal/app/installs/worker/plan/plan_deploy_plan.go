@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
@@ -75,20 +77,6 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		InstallID:     install.ID,
 		ComponentName: installDeploy.ComponentName,
 		ComponentID:   installDeploy.ComponentID,
-	}
-
-	// Get install stack for role selection
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	// Get install state for role selection
-	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
 	switch build.ComponentConfigConnection.Type {

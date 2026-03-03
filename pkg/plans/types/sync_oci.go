@@ -11,9 +11,5 @@ type SyncOCIPlan struct {
 	Dst    *configs.OCIRegistryRepository `json:"dst_registry" validate:"required"`
 	DstTag string                         `json:"dst_tag" validate:"required"`
 
-	// Auth for cloud providers
-	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
-	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
-
 	MinSandboxMode
 }

@@ -9,15 +9,12 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSecretsPlanRequest) (*plantypes.SyncSecretsPlan, error) {
