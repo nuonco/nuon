@@ -41,6 +41,8 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Configuration for a public repository accessible without authentication").
 		Field("drift_schedule").Short("drift detection schedule").
 		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled").
+		Example("0 2 * * *").
+		Example("*/10 * * * *").
 		Field("env_vars").Short("environment variables").
 		Long("Map of environment variables passed to Terraform as key-value pairs").
 		Field("vars").Short("Terraform variables").

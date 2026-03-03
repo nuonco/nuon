@@ -61,12 +61,14 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Ordered list of steps to execute. Each step requires a command and can optionally load scripts from repositories").
 		Field("dependencies").Short("component dependencies referenced in this action").
 		Long("Automatically extracted from template references in steps (e.g., {{.component.component_name}})").
+		Example("database").Example("api-server").
 		Field("break_glass_role").Short("IAM role for break-glass access to this action").
 		Long("When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudFormation stacks deployed to the customer's AWS account and provide temporary elevated access for emergency situations, migrations, or customer-initiated opt-in operations. See https://docs.nuon.co/updates/020-break-glass-actions for configuration details").
 		Example("bucket-operations-break-glass").
 		Example("database-migration-break-glass").
 		Field("role").Short("IAM role name for action execution").
-		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated")
+		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated").
+		Example("{{.nuon.install.id}}-maintenance")
 }
 
 func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -85,7 +87,8 @@ func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("database").
 		Example("api-server").
 		Field("index").Short("index for manual trigger").
-		Long("Used to differentiate multiple manual triggers in the same action")
+		Long("Used to differentiate multiple manual triggers in the same action").
+		Example("0").Example("1")
 }
 
 func (a ActionStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -105,7 +108,9 @@ func (a ActionStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("connected_repo").Short("connected repository containing the step script").OneOfRequired("script_source").
 		Long("Use a Nuon-connected repository to load scripts from. Requires 'repo', 'branch', and optionally 'directory' fields").
 		Field("inline_contents").Short("inline script contents").
-		Long("Embed script contents directly in the config file. Supports Go templating and external URLs: HTTP(S) (https://example.com/script.sh), git repositories (git::https://github.com/org/repo//path/to/script), file paths (file:///path/to/script.sh), and relative paths (./local/path)")
+		Long("Embed script contents directly in the config file. Supports Go templating and external URLs: HTTP(S) (https://example.com/script.sh), git repositories (git::https://github.com/org/repo//path/to/script), file paths (file:///path/to/script.sh), and relative paths (./local/path)").
+		Example("./src/healthcheck.sh").
+		Example("#!/usr/bin/env sh\nkubectl get pods -n default")
 }
 
 func (a *ActionConfig) parse() error {

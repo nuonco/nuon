@@ -37,5 +37,7 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("policies").Short("policy definitions for the role").Required().
 		Long("List of IAM policies to attach to the role. Each policy defines specific AWS permissions").
 		Field("permissions_boundary").Short("permissions boundary policy").
-		Long("Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)")
+		Long("Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
+		Example("./provision_boundary.json").
+		Example("./maintenance_boundary.json")
 }

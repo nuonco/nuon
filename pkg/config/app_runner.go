@@ -30,9 +30,7 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Path to an external file containing runner configuration (YAML, JSON, or TOML)").
 		Field("runner_type").Short("type of runner").Required().
 		Long("Specifies how the runner executes deployments").
-		Example("kubernetes").
-		Example("docker").
-		Example("vm").
+		Example("aws").
 		Field("env_vars").Short("environment variables").
 		Long("Map of environment variables to pass to the runner as key-value pairs").
 		Example("DEBUG=true").
@@ -42,7 +40,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("configmap").
 		Example("secret").
 		Field("init_script_url").Short("initialization script URL").
-		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh")
+		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh").
+		Example("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh").
+		Field("env_var").Short("deprecated: use env_vars map instead").
+		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
 }
 
 func (a *AppRunnerConfig) parse() error {

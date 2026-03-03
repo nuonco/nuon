@@ -9,25 +9,16 @@ title: 'Install'
 
 ## Properties
 
-| Property | Type | Required | Description | Default | Example |
-|----------|----------|----------|----------|----------|----------|
-| `name` | `string` | ✅ Yes | name of the install Unique identifier for this install configuration | - | - |
-| `approval_option` | `string` | No | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | - | `"approve-all"` |
-| `aws_account` | `AWSAccount` | No | AWS account configuration AWS-specific settings for this install, including region and other account details | - | - |
-| `inputs` | `array` | No | input values Array of input groups with key-value pairs for customer inputs provided during installation | - | - |
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`name`**<br/>string | name of the install Unique identifier for this install configuration | **✅ Required** | `"production"`, `"staging"`, `"customer-acme"` |
+| **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
+| **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
+| **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
 
-### Property Details
+### `aws_account`
 
-#### `approval_option`
-
-**Examples:**
-
-
-```yaml
-"approve-all"
-```
-
-```yaml
-"prompt"
-```
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`region`**<br/>string | AWS region AWS region where the infrastructure will be deployed | **✅ Required** | `"us-east-1"`, `"us-west-2"`, `"eu-west-1"` |
 

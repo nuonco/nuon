@@ -28,6 +28,8 @@ func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml").
 		Field("index").Short("execution order index").Required().
 		Long("Determines the execution order of custom nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
+		Example("0").
+		Example("1").
 		Field("parameters").Short("parameter-to-input mappings").
 		Long("Map of CloudFormation parameter names to Nuon install input references. Values must use the template format {{.nuon.install.inputs.<input_name>}}. Only vendor-provided inputs are supported.").
 		Example("Namespaces = \"{{.nuon.install.inputs.namespaces}}\"")

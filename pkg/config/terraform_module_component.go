@@ -11,7 +11,9 @@ type TerraformVariablesFile struct {
 func (t TerraformVariablesFile) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("contents").Short("variable file contents").
-		Long("Contents of a Terraform .tfvars file. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git repositories (git::https://github.com/org/repo//path/to/vars.tfvars), file paths (file:///path/to/vars.tfvars), and relative paths (./vars.tfvars)")
+		Long("Contents of a Terraform .tfvars file. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git repositories (git::https://github.com/org/repo//path/to/vars.tfvars), file paths (file:///path/to/vars.tfvars), and relative paths (./vars.tfvars)").
+		Example("./sandbox.tfvars").
+		Example("./variables/production.tfvars")
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
@@ -54,14 +56,20 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Long("Configuration for a private repository connected to the Nuon platform").
 		Field("drift_schedule").Short("drift detection schedule").
 		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating").
+		Example("0 2 * * *").
+		Example("*/10 * * * *").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
 		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
-		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\")").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("var").Short("deprecated: use vars map instead").
+		Long("Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead").
+		Field("env_var").Short("deprecated: use env_vars map instead").
+		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
 }
 
 func (t *TerraformModuleComponentConfig) Parse() error {

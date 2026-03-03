@@ -29,8 +29,8 @@ type TerraformVariable struct {
 
 func (t TerraformVariable) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("name").Short("terraform variable name").
-		Field("value").Short("terraform variable value")
+		Field("name").Short("terraform variable name").Examples("cluster_name", "install_id", "region").
+		Field("value").Short("terraform variable value").Examples("{{.nuon.install.id}}", "true", "us-west-2")
 }
 
 type EnvironmentVariable struct {
@@ -40,6 +40,6 @@ type EnvironmentVariable struct {
 
 func (e EnvironmentVariable) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("name").Short("environment variable name").
-		Field("value").Short("environment variable value")
+		Field("name").Short("environment variable name").Examples("NAMESPACE", "INGRESS_NAME", "LOG_LEVEL").
+		Field("value").Short("environment variable value").Examples("kube-system", "{{.nuon.install.id}}-public", "info")
 }
