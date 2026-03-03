@@ -99,6 +99,33 @@ jobs:
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
+  pkg_lint:
+    name: 🔍 Lint pkg
+    needs:
+      - changes
+      - tag
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'lsp') || contains(needs.changes.outputs.services, 'workers-')) }}
+    runs-on: build-only
+    env:
+      NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
+      DISABLE_GITHUB_OIDC: false
+    steps:
+      - uses: FranzDiebold/github-env-vars-action@v2
+      - name: Checkout repo
+        uses: actions/checkout@v6
+      - name: Setup nuonctl
+        uses: ./actions/setup-nuonctl
+      - name: Use nuon buildkit in infra-shared-ci
+        if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
+        run: |
+          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
+      - name: 🔍 Lint pkg
+        run: |
+          docker buildx build \
+            --target pkg-lint \
+            -f images/go-base/Dockerfile.build \
+            .
+
   services:
     name: 🚢
     needs:
