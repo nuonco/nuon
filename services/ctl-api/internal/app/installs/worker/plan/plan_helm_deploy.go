@@ -13,14 +13,12 @@ import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 //go:embed fake_helm_plan.json
@@ -119,54 +117,9 @@ func (p *Planner) createHelmDeployPlan(
 	var azureAuth *azurecredentials.Config
 
 	if !org.SandboxMode {
-		// Determine operation type based on deploy type
-		var operation app.OperationType
-		switch installDeploy.Type {
-		case app.InstallDeployTypeApply:
-			operation = app.OperationDeploy
-		case app.InstallDeployTypeTeardown:
-			operation = app.OperationTeardown
-		default:
-			operation = app.OperationDeploy
-		}
-
-		// Get default role from app permissions config
-		// Components use MaintenanceRole for deploy and teardown operations
-		defaultRole := appCfg.PermissionsConfig.MaintenanceRole.Name
-
-		// Build selection context
-		// TODO: Add component-specific operation roles when available
-		selectionCtx := &operationroles.SelectionContext{
-			Operation:     operation,
-			PrincipalType: principal.TypeComponent,
-			RuntimeRole:   installDeploy.Role,
-			EntityRoles:   nil, // Components don't currently have entity-specific operation roles
-			MatrixRules:   appCfg.OperationRoleConfig.Rules,
-			DefaultRole:   defaultRole,
-			AppConfig:     appCfg,
-			StackOutputs:  &stack.InstallStackOutputs,
-			InstallState:  state,
-		}
-
-		// Select role using operation roles engine
-		roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+		awsAuth, azureAuth, err = p.getAuthForDeploy(ctx, stack.InstallStackOutputs, installDeploy, compBuild, appCfg, stack, state, fmt.Sprintf("component-deploy-%s", installDeploy.ID))
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to select role for deploy")
-		}
-
-		l.Info("selected role for component deploy",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-			zap.String("source", string(roleSelection.Source)),
-		)
-
-		// Create auth configuration with selected role
-		awsAuth = &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("component-deploy-%s", installDeploy.ID),
-				RoleARN:     roleSelection.RoleARN,
-			},
+			return nil, errors.Wrap(err, "unable to get auth for deploy")
 		}
 
 		// Set auth on cluster info if present

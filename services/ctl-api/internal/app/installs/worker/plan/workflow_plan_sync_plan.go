@@ -1,21 +1,12 @@
 package plan
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {
@@ -24,20 +15,14 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, deploy.ComponentBuildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component build")
+	}
+
 	srcCfg, err := p.getOrgRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org registry repository")
-	}
-
-	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install registry repository")
-	}
-
-	// Get context for role selection
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
@@ -62,73 +47,9 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	// Perform role selection for OCI sync
-	// OCI sync is part of the deployment process, so use OperationDeploy
-	operation := app.OperationDeploy
-	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeComponent,
-		PrincipalName: deploy.ComponentName,
-		RuntimeRole:   deploy.Role,
-		EntityRoles:   nil, // OCI sync doesn't have component-specific operation roles
-		MatrixRules:   appCfg.OperationRoleConfig.Rules,
-		DefaultRole:   defaultRole,
-		AppConfig:     appCfg,
-		StackOutputs:  &stack.InstallStackOutputs,
-		InstallState:  installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState)
 	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for OCI sync",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	l.Info("selected role for OCI sync plan",
-		zap.String("role_name", roleSelection.RoleName),
-		zap.String("role_arn", roleSelection.RoleARN),
-		zap.String("source", string(roleSelection.Source)),
-		zap.String("operation", string(operation)),
-		zap.String("component_name", deploy.ComponentName),
-	)
-
-	// Create auth configuration using selected role
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
-
-	switch {
-	case stack.InstallStackOutputs.AWSStackOutputs != nil:
-		awsAuth = &awscredentials.Config{
-			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("oci-sync-%s", deploy.ID),
-				RoleARN:     roleSelection.RoleARN,
-			},
-		}
-	case stack.InstallStackOutputs.AzureStackOutputs != nil:
-		azureOutputs := stack.InstallStackOutputs.AzureStackOutputs
-		azureAuth = &azurecredentials.Config{
-			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-				SubscriptionID:       azureOutputs.SubscriptionID,
-				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
-			},
-			UseDefault: true,
-		}
+		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
 	pln := &plantypes.SyncOCIPlan{
@@ -137,9 +58,6 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 
 		DstTag: deploy.ID,
 		Dst:    dstCfg,
-
-		AWSAuth:   awsAuth,
-		AzureAuth: azureAuth,
 	}
 
 	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)

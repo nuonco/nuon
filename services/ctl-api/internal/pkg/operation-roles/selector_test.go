@@ -1302,6 +1302,256 @@ func TestSelectRoleWithTemplateRendering(t *testing.T) {
 	}
 }
 
+func TestFindMatrixRole(t *testing.T) {
+	installState := &state.State{
+		Install: &state.InstallState{
+			ID:   "ins_abc123xyz",
+			Name: "production",
+		},
+		Org: &state.OrgState{
+			Name: "acme-corp",
+		},
+	}
+
+	tests := []struct {
+		name          string
+		rules         []*app.AppOperationRoleRule
+		principalType principal.Type
+		principalName string
+		operation     app.OperationType
+		installState  *state.State
+		expectedRole  string
+		expectedFound bool
+		expectError   bool
+	}{
+		{
+			name: "plain name matches exactly",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "api", Role: "ApiRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "api",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "ApiRole",
+			expectedFound: true,
+		},
+		{
+			name: "plain name does not match",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "api", Role: "ApiRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "database",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "wildcard matches any principal name",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "*", Role: "WildcardRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "any-component",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "WildcardRole",
+			expectedFound: true,
+		},
+		{
+			name: "operation mismatch skips rule",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationTeardown, PrincipalType: principal.TypeComponent, PrincipalName: "api", Role: "TeardownRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "api",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "principal type mismatch skips rule",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeAction, PrincipalName: "api", Role: "ActionRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "api",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "templated principalName renders before comparison with plain rule name",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "production", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.install.name}}", // renders to "production"
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "ProdRole",
+			expectedFound: true,
+		},
+		{
+			name: "templated principalName renders but does not match",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "staging", Role: "StagingRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.install.name}}", // renders to "production"
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "templated rule PrincipalName renders before comparison with plain principalName",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "production", // matches rendered "{{.nuon.install.name}}"
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "ProdRole",
+			expectedFound: true,
+		},
+		{
+			name: "templated rule PrincipalName renders but does not match",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "staging",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "both principalName and rule PrincipalName are templated and match",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.install.name}}", // both render to "production"
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "ProdRole",
+			expectedFound: true,
+		},
+		{
+			name: "both templated but render to different values",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.org.name}}", // renders to "acme-corp", rule renders to "production"
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedFound: false,
+		},
+		{
+			name: "wildcard matches templated principalName without rendering",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "*", Role: "WildcardRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.install.name}}",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "WildcardRole",
+			expectedFound: true,
+		},
+		{
+			name: "nil installState falls back to plain comparison",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "api", Role: "ApiRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "api",
+			operation:     app.OperationDeploy,
+			installState:  nil,
+			expectedRole:  "ApiRole",
+			expectedFound: true,
+		},
+		{
+			name: "nil installState leaves templates unrendered so they do not match plain name",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "production", Role: "ProdRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "{{.nuon.install.name}}", // not rendered, stays as literal
+			operation:     app.OperationDeploy,
+			installState:  nil,
+			expectedFound: false,
+		},
+		{
+			name: "sandbox matches when rule PrincipalName is empty",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationProvision, PrincipalType: principal.TypeSandbox, PrincipalName: "", Role: "SandboxRole"},
+			},
+			principalType: principal.TypeSandbox,
+			principalName: "",
+			operation:     app.OperationProvision,
+			installState:  installState,
+			expectedRole:  "SandboxRole",
+			expectedFound: true,
+		},
+		{
+			name: "sandbox does not match when rule PrincipalName is non-empty",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationProvision, PrincipalType: principal.TypeSandbox, PrincipalName: "some-name", Role: "SandboxRole"},
+			},
+			principalType: principal.TypeSandbox,
+			principalName: "",
+			operation:     app.OperationProvision,
+			installState:  installState,
+			expectedFound: false,
+		},
+
+		// Multiple rules — specific before wildcard, first match wins
+		{
+			name: "specific rule matched before wildcard",
+			rules: []*app.AppOperationRoleRule{
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "{{.nuon.install.name}}", Role: "SpecificRole"},
+				{Operation: app.OperationDeploy, PrincipalType: principal.TypeComponent, PrincipalName: "*", Role: "WildcardRole"},
+			},
+			principalType: principal.TypeComponent,
+			principalName: "production",
+			operation:     app.OperationDeploy,
+			installState:  installState,
+			expectedRole:  "SpecificRole",
+			expectedFound: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role, found, err := findMatrixRole(tt.rules, tt.principalType, tt.principalName, tt.operation, tt.installState)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if found != tt.expectedFound {
+				t.Errorf("expected found=%v, got found=%v", tt.expectedFound, found)
+			}
+
+			if tt.expectedFound && role != tt.expectedRole {
+				t.Errorf("expected role %q, got %q", tt.expectedRole, role)
+			}
+		})
+	}
+}
+
 func TestRenderRoleName(t *testing.T) {
 	tests := []struct {
 		name          string

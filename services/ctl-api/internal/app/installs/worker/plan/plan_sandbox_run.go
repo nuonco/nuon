@@ -273,19 +273,13 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	return vars, nil
 }
 
-func (p *Planner) getAuth(
-	ctx workflow.Context,
-	outputs app.InstallStackOutputs,
-	run *app.InstallSandboxRun,
+func (p *Planner) getRoleForSandbox(
+	l *zap.Logger,
 	appCfg *app.AppConfig,
+	run *app.InstallSandboxRun,
 	stack *app.InstallStack,
 	installState *state.State,
-) (*awscredentials.Config, *azurecredentials.Config, error) {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
+) (*operationroles.RoleSelection, app.OperationType, error) {
 	// Determine operation type based on run type
 	var operation app.OperationType
 	switch run.RunType {
@@ -330,13 +324,34 @@ func (p *Planner) getAuth(
 		var fallbackErr error
 		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
 		if fallbackErr != nil {
-			return nil, nil, fmt.Errorf("unable to get default role: %w", fallbackErr)
+			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 
 		l.Warn("using default role for sandbox",
 			zap.String("role_name", roleSelection.RoleName),
 			zap.String("role_arn", roleSelection.RoleARN),
 		)
+	}
+
+	return roleSelection, operation, nil
+}
+
+func (p *Planner) getAuth(
+	ctx workflow.Context,
+	outputs app.InstallStackOutputs,
+	run *app.InstallSandboxRun,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*awscredentials.Config, *azurecredentials.Config, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	l.Info("selected role for sandbox run plan",
