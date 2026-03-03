@@ -17,6 +17,7 @@ export const deployComponent = ({
   body: TDeployComponentBody
 }) =>
   api<TDeploy>({
+    withHeaders: true,
     path: `installs/${installId}/deploys`,
     method: 'POST',
     orgId,

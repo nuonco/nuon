@@ -17,6 +17,11 @@ export type TWithMetaResult<T> = {
   nextOffset: string | null
 }
 
+export type TWithHeadersResult<T> = {
+  data: T
+  headers: Record<string, string>
+}
+
 interface IAPIData {
   abortTimeout?: number
   headers?: Record<string, unknown>
@@ -27,11 +32,13 @@ interface IAPIData {
   body?: any
   paginated?: boolean
   withMeta?: boolean
+  withHeaders?: boolean
 }
 
+export async function api<T>(opts: IAPIData & { withHeaders: true }): Promise<TWithHeadersResult<T>>
 export async function api<T>(opts: IAPIData & { paginated: true }): Promise<TPaginatedResult<T>>
 export async function api<T>(opts: IAPIData & { withMeta: true }): Promise<TWithMetaResult<T>>
-export async function api<T>(opts: IAPIData & { paginated?: false; withMeta?: false }): Promise<T>
+export async function api<T>(opts: IAPIData & { paginated?: false; withMeta?: false; withHeaders?: false }): Promise<T>
 export async function api<T>({
   abortTimeout = 10000,
   headers = {},
@@ -42,7 +49,8 @@ export async function api<T>({
   body,
   paginated,
   withMeta,
-}: IAPIData): Promise<T | TPaginatedResult<T> | TWithMetaResult<T>> {
+  withHeaders,
+}: IAPIData): Promise<T | TPaginatedResult<T> | TWithMetaResult<T> | TWithHeadersResult<T>> {
   let response: Response | undefined
   try {
     const fetchOpts: RequestInit = {
@@ -112,6 +120,11 @@ export async function api<T>({
       }
       if (withMeta) {
         return { data: data as T, nextOffset: response.headers.get('x-nuon-api-next') }
+      }
+      if (withHeaders) {
+        const responseHeaders: Record<string, string> = {}
+        response.headers.forEach((value, key) => { responseHeaders[key] = value })
+        return { data: data as T, headers: responseHeaders }
       }
       return data as T
     } else {

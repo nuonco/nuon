@@ -28,14 +28,19 @@ export const SyncSecretsModal = ({ ...props }: ISyncSecrets & IModal) => {
         installId: install.id,
         body: { plan_only: false },
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       addToast(
         <Toast heading="Secret sync started" theme="success">
           <Text>Secrets for {install.name} are being synchronized.</Text>
         </Toast>
       )
-      navigate(`/${org.id}/installs/${install.id}/workflows`)
       removeModal(props.modalId)
+      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      if (workflowId) {
+        navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
+      } else {
+        navigate(`/${org.id}/installs/${install.id}/workflows`)
+      }
     },
     onError: (error) => {
       addToast(

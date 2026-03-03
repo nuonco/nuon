@@ -20,7 +20,7 @@ export const WorkflowActionButtons = () => {
     canShowCancel, 
     canShowTemporalLink 
   } = useWorkflowActions(workflow, hasApprovals)
-
+  
   return (
     <div className="flex items-center gap-4">
       {canShowApproveAll && (

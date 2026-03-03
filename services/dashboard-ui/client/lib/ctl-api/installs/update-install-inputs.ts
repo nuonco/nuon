@@ -15,6 +15,7 @@ export const updateInstallInputs = ({
   orgId: string
 }) =>
   api<TInstallInputs>({
+    withHeaders: true,
     body,
     method: 'PATCH',
     orgId,

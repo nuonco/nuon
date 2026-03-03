@@ -96,15 +96,23 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
         installId: install.id,
         orgId: org.id,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
+
+      console.log('results', result)
+      
       addToast(
         <Toast heading="Adhoc action started" theme="success">
           <Text>Adhoc action is running.</Text>
         </Toast>
       )
       clearDraft()
-      navigate(`/${org.id}/installs/${install.id}/workflows`)
       removeModal(props.modalId)
+      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      if (workflowId) {
+        navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
+      } else {
+        navigate(`/${org.id}/installs/${install.id}/workflows`)
+      }
     },
     onError: (error) => {
       addToast(

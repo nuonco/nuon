@@ -35,14 +35,19 @@ export const DeprovisionModal = ({ ...props }: IDeprovision & IModal) => {
           error_behavior: 'abort',
         },
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       addToast(
         <Toast heading="Deprovision started" theme="success">
           <Text>Deprovision workflow started for {install.name}.</Text>
         </Toast>
       )
-      navigate(`/${org.id}/installs/${install.id}/workflows`)
       removeModal(props.modalId)
+      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      if (workflowId) {
+        navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
+      } else {
+        navigate(`/${org.id}/installs/${install.id}/workflows`)
+      }
     },
     onError: (error) => {
       addToast(

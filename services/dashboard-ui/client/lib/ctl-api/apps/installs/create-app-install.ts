@@ -33,6 +33,7 @@ export const createAppInstall = ({
   orgId: string
 }) =>
   api<TInstall>({
+    withHeaders: true,
     abortTimeout: 25000,
     body,
     method: 'POST',

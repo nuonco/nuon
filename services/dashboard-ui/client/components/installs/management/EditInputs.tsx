@@ -150,14 +150,19 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
         body: { inputs },
       })
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       addToast(
         <Toast heading="Inputs updated" theme="success">
           <Text>Install inputs updated successfully!</Text>
         </Toast>
       )
-      navigate(`/${org.id}/installs/${install?.id}/workflows`)
       removeModal(props.modalId)
+      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      if (workflowId) {
+        navigate(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
+      } else {
+        navigate(`/${org.id}/installs/${install?.id}/workflows`)
+      }
     },
     onError: (error) => {
       addToast(

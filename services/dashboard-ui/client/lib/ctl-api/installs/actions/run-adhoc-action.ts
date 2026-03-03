@@ -18,6 +18,7 @@ export async function runAdhocAction({
   orgId: string
 }) {
   return api<string>({
+    withHeaders: true,
     body,
     method: 'POST',
     orgId,

@@ -164,16 +164,20 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
 
       return createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' })
     },
-    onSuccess: (install) => {
+    onSuccess: (result) => {
       addToast(
         <Toast heading="Install created" theme="success">
           <Text>Install created successfully!</Text>
         </Toast>
       )
-      navigate(
-        `/${org?.id}/installs/${install.id}/workflows${install?.install_number === 1 ? '?onboardingComplete=true' : ''}`
-      )
       removeModal(props.modalId)
+      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      if (workflowId) {
+        navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
+      } else {
+        navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
+      }
     },
     onError: (error) => {
       addToast(

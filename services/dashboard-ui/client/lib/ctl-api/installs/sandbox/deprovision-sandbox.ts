@@ -15,6 +15,7 @@ export async function deprovisionSandbox({
   orgId: string
 }) {
   return api<string>({
+    withHeaders: true,
     body,
     method: 'POST',
     orgId,

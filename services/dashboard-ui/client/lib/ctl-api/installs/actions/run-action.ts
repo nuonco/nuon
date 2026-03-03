@@ -15,6 +15,7 @@ export async function runAction({
   orgId: string
 }) {
   return api<string>({
+    withHeaders: true,
     body,
     method: 'POST',
     orgId,
