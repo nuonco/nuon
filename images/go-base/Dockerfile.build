@@ -36,6 +36,11 @@ COPY sdks ./sdks/
 # Pre-download dependencies — bakes modules into the layer at /go-mod-cache
 RUN go mod download
 
+# Pre-install code generation tools so service builds don't re-download them.
+# swag is already in go.sum (v1.16.6) so this uses the pinned version.
+RUN --mount=type=cache,target=/go-cache,id=gobase-build \
+    go install github.com/swaggo/swag/cmd/swag
+
 # Copy and generate package code (common code generation)
 COPY pkg pkg
 RUN --mount=type=cache,target=/go-cache,id=gobase-build \

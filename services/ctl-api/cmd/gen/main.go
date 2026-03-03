@@ -33,7 +33,6 @@ func init() {
 
 func generateRunnerSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--instanceName", "runner",
 		"--output", "docs/runner",
@@ -45,7 +44,7 @@ func generateRunnerSchema(ctx context.Context) error {
 
 	cmd, err := command.New(v,
 		command.WithInheritedEnv(),
-		command.WithCmd("go"),
+		command.WithCmd("swag"),
 		command.WithArgs(args),
 		command.WithLinePrefix("runner-schema"),
 	)
@@ -63,7 +62,6 @@ func generateRunnerSchema(ctx context.Context) error {
 
 func generateAdminSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--instanceName", "admin",
 		"--output", "docs/admin",
@@ -76,7 +74,7 @@ func generateAdminSchema(ctx context.Context) error {
 
 	cmd, err := command.New(v,
 		command.WithInheritedEnv(),
-		command.WithCmd("go"),
+		command.WithCmd("swag"),
 		command.WithArgs(args),
 		command.WithLinePrefix("admin-schema"),
 	)
@@ -94,7 +92,6 @@ func generateAdminSchema(ctx context.Context) error {
 
 func generatePublicSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
 		"--parseDependency",
 		"--output", "docs/public",
@@ -106,7 +103,7 @@ func generatePublicSchema(ctx context.Context) error {
 
 	cmd, err := command.New(v,
 		command.WithInheritedEnv(),
-		command.WithCmd("go"),
+		command.WithCmd("swag"),
 		command.WithArgs(args),
 		command.WithLinePrefix("public-schema"),
 	)
