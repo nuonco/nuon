@@ -1,0 +1,69 @@
+.tabs div.enter {
+  opacity: 0;
+  animation: enter-tab var(--duration-fastest) var(--ease-cubic)
+    var(--duration-fast) forwards;
+}
+
+.tabs div.exit {
+  animation: exit-tab var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-tab {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes exit-tab {
+  0% {
+    opacity: 1;
+    position: absolute;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.tabs {
+  height: fit-content;
+  max-height: auto;
+  transition: max-height var(--duration-fastest) var(--ease-cubic)
+    var(--duration-fastest);
+}
+
+.tabs > .tab-group {
+  position: relative;
+}
+
+.tabs > .tab-group:after {
+  background-color: var(--color-primary-500);
+  bottom: 0;
+  content: '';
+  height: 3px;
+  left: var(--active-tab-left);
+  position: absolute;
+  width: var(--active-tab-width);
+  transition:
+    left var(--duration-fastest) var(--ease-cubic),
+    width var(--duration-fastest) var(--ease-cubic);
+}
+
+.tabs > .tab-group:before {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary-500) 30%,
+    transparent
+  );
+  bottom: 0;
+  content: '';
+  height: 3px;
+  left: var(--hovered-tab-left);
+  position: absolute;
+  width: var(--hovered-tab-width);
+  transition:
+    left var(--duration-fastest) var(--ease-cubic),
+    width var(--duration-fastest) var(--ease-cubic);
+}

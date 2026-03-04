@@ -22,7 +22,9 @@ func (m *middleware) Name() string {
 
 func (m *middleware) Handler() gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods: []string{"PUT", "PATCH", "POST", "GET", "OPTIONS"},
 		AllowHeaders: []string{
 			"Authorization",
@@ -37,7 +39,16 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			"Sec-Ch-Ua-Mobile",
 			"Sec-Ch-Ua-Platform",
 		},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"X-Nuon-Page-Next",
+			"X-Nuon-Page-Offset",
+			"X-Nuon-Page-Limit",
+			"X-Nuon-Page-Number",
+			"X-Nuon-Install-Workflow-ID",
+			"X-Nuon-API-Next",
+			"X-Nuon-API-Version",
+		},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	})
