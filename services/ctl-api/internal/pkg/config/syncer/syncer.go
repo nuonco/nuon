@@ -10,6 +10,15 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/policies"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/runner"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/sandbox"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/secrets"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/stack"
 )
 
 // syncer implements sync.Syncer using direct database access.
@@ -83,6 +92,21 @@ func (s *syncer) Sync(ctx context.Context) error {
 	}
 	s.orgID = orgID
 
+	// Initialize state
+	s.state = &sync.State{
+		Version:    "v1",
+		CfgID:      s.appConfigID,
+		AppID:      s.appID,
+		Components: []sync.ComponentState{},
+		Actions:    []sync.ActionState{},
+	}
+
+	// Initialize prevState for orphaned resource tracking
+	s.prevState = &sync.State{
+		Components: []sync.ComponentState{},
+		Actions:    []sync.ActionState{},
+	}
+
 	// Build sync steps
 	steps := s.syncSteps()
 
@@ -109,35 +133,51 @@ func (s *syncer) syncSteps() []syncStep {
 		},
 		{
 			Resource: "app-inputs",
-			Method:   s.syncAppInput,
+			Method: func(ctx context.Context) error {
+				return inputs.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.orgID, s.state)
+			},
 		},
 		{
 			Resource: "app-sandbox",
-			Method:   s.syncAppSandbox,
+			Method: func(ctx context.Context) error {
+				return sandbox.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.state)
+			},
 		},
 		{
 			Resource: "app-runner",
-			Method:   s.syncAppRunner,
+			Method: func(ctx context.Context) error {
+				return runner.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.state)
+			},
 		},
 		{
 			Resource: "app-permissions",
-			Method:   s.syncAppPermissions,
+			Method: func(ctx context.Context) error {
+				return permissions.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
 		},
 		{
 			Resource: "app-policies",
-			Method:   s.syncAppPolicies,
+			Method: func(ctx context.Context) error {
+				return policies.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
 		},
 		{
 			Resource: "app-secrets",
-			Method:   s.syncAppSecrets,
+			Method: func(ctx context.Context) error {
+				return secrets.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
 		},
 		{
 			Resource: "app-break-glass",
-			Method:   s.syncAppBreakGlass,
+			Method: func(ctx context.Context) error {
+				return breakglass.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
 		},
 		{
 			Resource: "app-cloudformation-stack",
-			Method:   s.syncAppCloudFormationStack,
+			Method: func(ctx context.Context) error {
+				return stack.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
 		},
 	}
 
@@ -145,9 +185,20 @@ func (s *syncer) syncSteps() []syncStep {
 	for _, comp := range s.cfg.Components {
 		c := comp // Capture loop variable
 		steps = append(steps, syncStep{
-			Resource: fmt.Sprintf("component-%s", c.Name),
+			Resource: fmt.Sprintf("component-ensure-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return s.ensureComponent(ctx, c)
+				return components.EnsureComponent(ctx, s.db, c, s.appID)
+			},
+		})
+	}
+
+	// Sync component configurations
+	for _, comp := range s.cfg.Components {
+		c := comp // Capture loop variable
+		steps = append(steps, syncStep{
+			Resource: fmt.Sprintf("component-sync-%s", c.Name),
+			Method: func(ctx context.Context) error {
+				return components.SyncComponent(ctx, s.db, c, s.appID, s.appConfigID, s.state)
 			},
 		})
 	}

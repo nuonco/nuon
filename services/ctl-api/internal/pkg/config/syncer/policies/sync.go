@@ -1,25 +1,27 @@
-package syncer
+package policies
 
 import (
 	"context"
+
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// syncAppPolicies creates the app policies configuration.
+// Sync creates the app policies configuration.
 // Duplicates logic from services/ctl-api/internal/app/apps/service/create_app_policies_config.go
-func (s *syncer) syncAppPolicies(ctx context.Context) error {
-	if s.cfg.Policies == nil {
+func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string) error {
+	if cfg.Policies == nil {
 		return nil
 	}
 
-	policies := make([]app.AppPolicyConfig, 0, len(s.cfg.Policies.Policies))
-	for _, policy := range s.cfg.Policies.Policies {
-		policies = append(policies, app.AppPolicyConfig{
-			AppID:       s.appID,
-			AppConfigID: s.appConfigID,
+	policyConfigs := make([]app.AppPolicyConfig, 0, len(cfg.Policies.Policies))
+	for _, policy := range cfg.Policies.Policies {
+		policyConfigs = append(policyConfigs, app.AppPolicyConfig{
+			AppID:       appID,
+			AppConfigID: appConfigID,
 			Type:        config.AppPolicyType(policy.Type),
 			Engine:      config.AppPolicyEngine(policy.Engine),
 			Contents:    policy.Contents,
@@ -28,12 +30,12 @@ func (s *syncer) syncAppPolicies(ctx context.Context) error {
 	}
 
 	obj := app.AppPoliciesConfig{
-		AppID:       s.appID,
-		AppConfigID: s.appConfigID,
-		Policies:    policies,
+		AppID:       appID,
+		AppConfigID: appConfigID,
+		Policies:    policyConfigs,
 	}
 
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
 		return sync.SyncInternalErr{
 			Description: "unable to create app policies config",
