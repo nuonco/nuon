@@ -83,7 +83,7 @@ func init() {
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
 	// Blob storage configuration
-	config.RegisterDefault("blob_storage_bucket", "nuon-blobs")
+	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
 }
 

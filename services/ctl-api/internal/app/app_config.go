@@ -64,7 +64,7 @@ type AppConfig struct {
 
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 
-	IntermediateConfig blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
+	IntermediateConfig *blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
 
 	// OwnerID            string         `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	// OwnerType          string         `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
