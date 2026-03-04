@@ -28,12 +28,12 @@ func (h *Helpers) GetPubliGitSource(ctx context.Context, cfg *app.PublicGitVCSCo
 }
 
 func (h *Helpers) GetGitSource(ctx context.Context, cfg *app.ConnectedGithubVCSConfig) (*plantypes.GitSource, error) {
-	token, err := h.createInstallationToken(ctx, &cfg.VCSConnection, cfg.RepoName)
+	token, err := h.CreateInstallationToken(ctx, &cfg.VCSConnection, cfg.RepoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create installation token")
 	}
 
-	commit, err := h.GetVCSConfigLatestCommit(ctx, cfg)
+	commit, err := h.GetConnectedGithubVCSConfigLatestCommit(ctx, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get latest commit")
 	}
@@ -45,9 +45,37 @@ func (h *Helpers) GetGitSource(ctx context.Context, cfg *app.ConnectedGithubVCSC
 	}, nil
 }
 
-// NOTE(jm): this is mainly taken from `pkg/github` which was an implementation of this that used kube secrets to grab
-// the GH app key and secret. Long term, this package should remove all need for that package.
-func (h *Helpers) createInstallationToken(ctx context.Context, vcsConn *app.VCSConnection, repoName string) (string, error) {
+// GetGitSourceAtCommit returns a git source for a connected GitHub repo at a specific commit SHA.
+// Unlike GetGitSource, it does not look up the latest commit — it uses the provided SHA directly.
+func (h *Helpers) GetGitSourceAtCommit(ctx context.Context, cfg *app.ConnectedGithubVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
+	token, err := h.CreateInstallationToken(ctx, &cfg.VCSConnection, cfg.RepoName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create installation token")
+	}
+
+	return &plantypes.GitSource{
+		URL:  githubpkg.RepoPath(cfg.RepoOwner, cfg.RepoName, token),
+		Ref:  commitSHA,
+		Path: cfg.Directory,
+	}, nil
+}
+
+// GetPublicGitSourceAtCommit returns a git source for a public repo at a specific commit SHA.
+func (h *Helpers) GetPublicGitSourceAtCommit(cfg *app.PublicGitVCSConfig, commitSHA string) (*plantypes.GitSource, error) {
+	url, err := githubpkg.EnsureURL(cfg.Repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to derive url from source")
+	}
+
+	return &plantypes.GitSource{
+		URL:  url,
+		Ref:  commitSHA,
+		Path: cfg.Directory,
+	}, nil
+}
+
+// CreateInstallationToken creates a GitHub installation token for the given VCS connection and repo.
+func (h *Helpers) CreateInstallationToken(ctx context.Context, vcsConn *app.VCSConnection, repoName string) (string, error) {
 	ghInstallID, err := strconv.Atoi(vcsConn.GithubInstallID)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse github install id")

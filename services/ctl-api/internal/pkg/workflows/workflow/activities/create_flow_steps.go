@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type CreateFlowStep struct {
@@ -15,7 +16,6 @@ type CreateFlowStep struct {
 	OwnerType      string                        `json:"owner_type" validate:"required"`
 	Status         app.CompositeStatus           `json:"status"`
 	Name           string                        `json:"name"`
-	Signal         app.Signal                    `json:"signal"`
 	Idx            int                           `json:"idx"`
 	ExecutionType  app.WorkflowStepExecutionType `json:"execution_type"`
 	Metadata       pgtype.Hstore                 `json:"metadata"`
@@ -25,6 +25,10 @@ type CreateFlowStep struct {
 	GroupRetryIdx  int                           `json:"group_retry_idx"`
 	StepTargetType string                        `json:"step_target_type"`
 	StepTargetID   string                        `json:"step_target_id"`
+
+	// TODO(jm): this is being deprecated
+	Signal      *app.Signal          `json:"signal"`
+	QueueSignal *signaldb.SignalData `json:"queue_signal"`
 }
 
 type CreateFlowStepsRequest struct {
@@ -45,7 +49,6 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			OwnerType:         req.OwnerType,
 			Status:            req.Status,
 			Name:              req.Name,
-			Signal:            req.Signal,
 			Idx:               req.Idx,
 			ExecutionType:     req.ExecutionType,
 			Metadata:          req.Metadata,
@@ -55,6 +58,8 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			GroupRetryIdx:     req.GroupRetryIdx,
 			StepTargetType:    req.StepTargetType,
 			StepTargetID:      req.StepTargetID,
+			Signal:            req.Signal,
+			QueueSignal:       req.QueueSignal,
 		}
 		steps = append(steps, &step)
 	}

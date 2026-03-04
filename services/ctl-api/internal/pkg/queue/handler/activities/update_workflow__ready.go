@@ -11,20 +11,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
-type UpdateWorkflowReadyRequest struct {
-	Namespace  string
-	UpdateID   string
-	WorkflowID string
-}
-
-// @temporal-gen activity
-func (a *Activities) UpdateWorkflowReady(ctx context.Context, req *UpdateWorkflowReadyRequest) (*handler.ReadyResponse, error) {
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 30s
+// @as-wrapper
+// @wrapper-prefix HandlerInternal
+// @by-field WorkflowID
+func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string) (*handler.ReadyResponse, error) {
 	info := activity.GetInfo(ctx)
 
 	rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
 		tclient.UpdateWorkflowOptions{
-			WorkflowID:   req.WorkflowID,
+			WorkflowID:   workflowID,
 			UpdateName:   handler.ReadyHandlerName,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		})

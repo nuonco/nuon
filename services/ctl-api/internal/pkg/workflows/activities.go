@@ -3,6 +3,9 @@ package workflows
 import (
 	"go.uber.org/fx"
 
+	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
@@ -13,11 +16,19 @@ import (
 type Params struct {
 	fx.In
 
-	Activities        *activities.Activities
-	JobActivities     *jobactivities.Activities
-	FlowActivities    *flowactivities.Activities
+	Activities *activities.Activities
+	// runner jobs
+	JobActivities *jobactivities.Activities
+	// workflows
+	FlowActivities *flowactivities.Activities
+	// shared statuses tooling
+	StatusActivities *statusactivities.Activities
+
+	// queues / signals
+	QueueActs         *queueactivities.Activities
+	QueueClient       *queueclient.Client
+	HandlerActs       *handleractivities.Activities
 	SignalsActivities *signalsactivities.Activities
-	StatusActivities  *statusactivities.Activities
 }
 
 type Activities struct {
@@ -26,6 +37,9 @@ type Activities struct {
 	SignalsActivities *signalsactivities.Activities
 	StatusActivities  *statusactivities.Activities
 	Activities        *activities.Activities
+	QueueActivities   *queueactivities.Activities
+	HandlerActivities *handleractivities.Activities
+	QueueClient       *queueclient.Client
 }
 
 func (a *Activities) AllActivities() []any {
@@ -35,6 +49,9 @@ func (a *Activities) AllActivities() []any {
 		a.Activities,
 		a.SignalsActivities,
 		a.StatusActivities,
+		a.QueueActivities,
+		a.HandlerActivities,
+		a.QueueClient,
 	}
 }
 
@@ -45,5 +62,8 @@ func NewActivities(params Params) *Activities {
 		FlowActivities:    params.FlowActivities,
 		SignalsActivities: params.SignalsActivities,
 		StatusActivities:  params.StatusActivities,
+		QueueActivities:   params.QueueActs,
+		HandlerActivities: params.HandlerActs,
+		QueueClient:       params.QueueClient,
 	}
 }
