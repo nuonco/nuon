@@ -140,11 +140,6 @@
         ]
       },
       {
-        "tab": "Architecture",
-        "icon": "sitemap",
-        "pages": ["runner-architecture"]
-      },
-      {
         "tab": "Concepts",
         "icon": "lightbulb",
         "pages": [
@@ -211,6 +206,11 @@
             "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
           }
         ]
+      },
+      {
+        "tab": "Architecture",
+        "icon": "sitemap",
+        "pages": ["runner-architecture"]
       },
       {
         "tab": "Knowledge Base",
