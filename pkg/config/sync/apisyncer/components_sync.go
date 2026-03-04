@@ -74,11 +74,13 @@ func (s *syncer) syncComponentConfig(ctx context.Context, comp *config.Component
 	}, nil
 }
 
-func (s *syncer) cleanupComponent(ctx context.Context, compID string) {
+func (s *syncer) cleanupComponent(ctx context.Context, compID string) error {
 	_, err := s.apiClient.DeleteComponent(ctx, compID)
 	if err != nil {
-		fmt.Println("unable to delete component after config: %w", err)
+		return fmt.Errorf("unable to delete component after config: %w", err)
 	}
+
+	return nil
 }
 
 func (s *syncer) ensureComponent(ctx context.Context, resource string, comp *config.Component) error {
