@@ -12,8 +12,8 @@ import (
 
 	"text/template"
 
-	"github.com/fidiego/systemctl"
 	"github.com/pkg/errors"
+	"github.com/taigrr/systemctl"
 	"go.uber.org/zap"
 )
 

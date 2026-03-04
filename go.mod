@@ -1,6 +1,6 @@
 module github.com/nuonco/nuon
 
-go 1.25.4
+go 1.26
 
 // NOTE(jm): some older versions of viper, require an older and incompatible version of ugorgi/go which has some
 // backwards compatibility issues with go modules:
@@ -70,7 +70,6 @@ require (
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/facebookgo/symwalk v0.0.0-20150726040526-42004b9f3222
-	github.com/fidiego/systemctl v0.0.0-20250806220859-522199525cc8
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gin-contrib/size v1.0.1
@@ -124,6 +123,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/swag v1.16.6
+	github.com/taigrr/systemctl v1.1.0
 	github.com/tidwall/gjson v1.17.1
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
