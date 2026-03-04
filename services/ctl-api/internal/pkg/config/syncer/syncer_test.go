@@ -53,7 +53,7 @@ func (s *SyncerTestSuite) SetupSuite() {
 
 	// Build FX options using shared test options plus testseed
 	options := append(
-		tests.CtlApiFXOptions(),
+		tests.CtlApiFXOptions(s.T()),
 		// Add testseed provider
 		// fx.Provide(testseed.New), // TODO: Uncomment when fx.In is available
 		// fx.Populate(&s.service),
