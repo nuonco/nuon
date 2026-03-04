@@ -1,7 +1,7 @@
 ---
 title: 'Custom Nested CloudFormation Stacks'
 description: 'Extend the install stack with custom CloudFormation nested templates.'
-icon: 'code'
+icon: "layer-group"
 keywords: ["installs", "runners", "nested stack", "CloudFormation template", "extend install stack", "custom stack", "stack.toml"]
 ---
 
@@ -71,10 +71,11 @@ ClusterName = "{{.nuon.install.inputs.cluster_name}}"
 | `index`        | `int`               | Yes      | Execution order (ascending). Must be unique across all custom nested stacks.                                                                  |
 | `parameters`   | `map[string]string` | No       | Explicit parameter mappings from install inputs. See [Parameter Mapping](#parameter-mapping).                                                 |
 
-<!-- prettier-ignore-start -->
-> [!TIP]
-> The `template_url` field supports Go templating, so you can dynamically construct URLs if needed.
-<!-- prettier-ignore-end -->
+{/* prettier-ignore-start */}
+<Tip>
+The `template_url` field supports Go templating, so you can dynamically construct URLs if needed.
+</Tip>
+{/* prettier-ignore-end */}
 
 ## Execution Order
 
@@ -366,8 +367,9 @@ For Lambda-backed custom resources, this includes:
 - `lambda:CreateFunction`, `lambda:DeleteFunction`, `lambda:InvokeFunction`
 - Any permissions the Lambda function itself needs (passed via its IAM role)
 
-<!-- prettier-ignore-start -->
-> [!NOTE]
-> These permissions are distinct from the permissions in the `permissions/` directory in the app config. They are the
-> permissions the customer has at the moment they execute the CloudFormation template.
-<!-- prettier-ignore-end -->
+{/* prettier-ignore-start */}
+<Note>
+These permissions are distinct from the permissions in the `permissions/` directory in the app config. They are the
+permissions the customer has at the moment they execute the CloudFormation template.
+</Note>
+{/* prettier-ignore-end */}
