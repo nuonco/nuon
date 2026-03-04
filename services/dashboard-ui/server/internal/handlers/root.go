@@ -39,8 +39,17 @@ func (h *RootHandler) Handle(c *gin.Context) {
 	}
 
 	if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
-		c.Redirect(http.StatusFound, "/"+orgId+"/apps")
-		return
+		orgClient, err := nuon.New(
+			nuon.WithURL(h.cfg.APIUrl),
+			nuon.WithAuthToken(token),
+			nuon.WithOrgID(orgId),
+		)
+		if err == nil {
+			if _, err := orgClient.GetOrg(c.Request.Context()); err == nil {
+				c.Redirect(http.StatusFound, "/"+orgId+"/apps")
+				return
+			}
+		}
 	}
 
 	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))

@@ -6,6 +6,7 @@ export type TLinkVariant = 'default' | 'ghost' | 'nav' | 'breadcrumb'
 
 export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   isActive?: boolean
+  isATag?: boolean
   isExternal?: boolean
   variant?: TLinkVariant
   href?: string
@@ -48,6 +49,7 @@ export const Link = ({
   className,
   children,
   href,
+  isATag = false,
   isActive = false,
   isExternal = false,
   variant = 'default',
@@ -83,7 +85,11 @@ export const Link = ({
     className
   )
 
-  return isExternal ? (
+  return isATag ? (
+    <a className={classes} href={href as string} {...props}>
+      {children}
+    </a>
+  ) : isExternal ? (
     <a
       className={classes}
       href={href as string}

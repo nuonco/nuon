@@ -17,7 +17,9 @@ export const ProviderError = ({ error }: { error: TAPIError }) => {
         }
         action={
           <Text variant="subtext">
-            <Link href="/">Back to home</Link>
+            <Link href="/" isATag>
+              Back to home
+            </Link>
           </Text>
         }
       />
