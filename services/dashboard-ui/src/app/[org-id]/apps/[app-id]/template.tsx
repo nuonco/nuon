@@ -90,16 +90,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   text: 'Components',
                 },
                 {
-                  path: `/installs`,
-                  iconVariant: 'Cube',
-                  text: 'Installs',
-                },
-                {
-                  path: `/branches`,
-                  iconVariant: 'GitBranch',
-                  text: 'Branches',
-                },
-                {
                   path: `/actions`,
                   iconVariant: 'TerminalWindow',
                   text: 'Actions',

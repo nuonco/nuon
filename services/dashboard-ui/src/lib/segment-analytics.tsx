@@ -51,7 +51,6 @@ export const SegmentAnalyticsSetOrg: FC<{ org: TOrg }> = ({ org }) => {
 export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
   writeKey,
 }) => {
-  return
   useEffect(() => {
     window.analytics = AnalyticsBrowser.load({
       writeKey,

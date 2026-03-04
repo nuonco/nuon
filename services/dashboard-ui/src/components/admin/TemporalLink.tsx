@@ -7,20 +7,16 @@ import { Link } from '@/components/common/Link'
 export const TemporalLink = ({
   namespace,
   eventLoopId,
-  skipPrefix = false,
 }: {
   namespace: string
   eventLoopId: string
-  skipPrefix?: boolean
 }) => {
   const { user, isLoading } = useAuth()
-
-  const workflowId = skipPrefix ? eventLoopId : `event-loop-${eventLoopId}`
 
   return !isLoading && user?.email?.endsWith('@nuon.co') ? (
     <Link
       className="text-xs"
-      href={`/admin/temporal/namespaces/${namespace}/workflows/${workflowId}`}
+      href={`/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`}
       target="_blank"
     >
       View in Temporal <Icon variant="ArrowSquareOutIcon" />
