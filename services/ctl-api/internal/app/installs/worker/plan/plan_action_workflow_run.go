@@ -8,8 +8,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -127,27 +125,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
-
-	// Perform role selection for action workflow runs
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
-
-	if !org.SandboxMode {
-		awsAuth, azureAuth, err = p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get auth for action workflow run")
-		}
-
-		// Set auth on cluster info if present
-		if plan.ClusterInfo != nil {
-			plan.ClusterInfo.WithAWSAuth(awsAuth)
-			plan.ClusterInfo.WithAzureAuth(azureAuth)
-		}
-	}
-
-	// Set auth on the plan
-	plan.AWSAuth = awsAuth
-	plan.AzureAuth = azureAuth
 
 	if org.SandboxMode {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
