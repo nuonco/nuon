@@ -38,8 +38,6 @@ export const BuildRunner = () => {
     enabled: !!org?.id && !!runnerId,
   })
 
-  if (!org) return <>Loading org...</>
-
   const breadcrumbs = (
     <Breadcrumbs
       breadcrumbs={[

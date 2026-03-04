@@ -11,7 +11,6 @@ import { useOrg } from '@/hooks/use-org'
 export const Installs = () => {
   const { org } = useOrg()
 
-  if (!org) return <>Loading org...</>
   return (
     <PageLayout>
       <Breadcrumbs

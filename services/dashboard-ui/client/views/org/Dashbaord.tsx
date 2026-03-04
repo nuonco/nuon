@@ -5,7 +5,6 @@ import { useOrg } from '@/hooks/use-org'
 export const Dashboard = () => {
   const { org } = useOrg()
 
-  if (!org) return <>Loading org...</>
   return (
     <PageLayout>
       <Breadcrumbs

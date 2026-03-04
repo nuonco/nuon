@@ -11,7 +11,6 @@ import { useOrg } from '@/hooks/use-org'
 export const Apps = () => {
   const { org } = useOrg()
 
-  if (!org) return <>Loading org...</>
   return (
     <PageLayout isScrollable>
       <Breadcrumbs

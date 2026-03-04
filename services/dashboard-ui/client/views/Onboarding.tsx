@@ -1,7 +1,6 @@
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
-import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
 const PlaceholderStep = ({ onAdvance }: IWizardStepComponentProps) => {
@@ -30,8 +29,8 @@ const STEPS = [
   },
   {
     id: 'step-3',
-    title: 'Install the Nuon CLI',
-    description: 'Lets install the Nuon CLI.',
+    title: 'Download the Nuon CLI',
+    description: 'Lets download the Nuon CLI.',
     component: PlaceholderStep,
   },
   {

@@ -14,9 +14,8 @@ import { useOrg } from '@/hooks/use-org'
 export const Team = () => {
   const { org } = useOrg()
 
-  if (!org) return <>Loading org...</>
   return (
-    <PageLayout>
+    <PageLayout isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -32,7 +31,7 @@ export const Team = () => {
       <PageHeader className="flex items-center justify-between">
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1}>
-            Team
+            Team duder
           </Text>
           <Text theme="neutral">Manage your team members and permissions.</Text>
         </HeadingGroup>
