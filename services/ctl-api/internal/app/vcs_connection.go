@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,10 +20,10 @@ type VCSConnection struct {
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" swaggerignore:"true" gorm:"index:idx_github_install_id,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `swaggerignore:"true" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	GithubInstallID string `json:"github_install_id,omitzero" gorm:"index:idx_github_install_id,unique" temporaljson:"github_install_id,omitzero,omitempty"`
+	GithubInstallID string `json:"github_install_id,omitzero" temporaljson:"github_install_id,omitzero,omitempty"`
 
 	GithubAccountID   string `json:"github_account_id,omitempty" gorm:"not null;default:''" temporaljson:"github_account_id,omitzero,omitempty"`
 	GithubAccountName string `json:"github_account_name,omitempty" gorm:"not null;default:''" temporaljson:"github_account_name,omitzero,omitempty"`
@@ -38,6 +39,11 @@ func (v *VCSConnection) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_github_install_id",
+			Columns:     []string{"org_id", "github_install_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

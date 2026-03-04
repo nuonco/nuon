@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -35,11 +36,11 @@ type RunnerGroupSettings struct {
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_group_settings,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 
-	RunnerGroupID string `json:"runner_group_id,omitzero" gorm:"index:idx_runner_group_settings,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
+	RunnerGroupID string `json:"runner_group_id,omitzero" temporaljson:"runner_group_id,omitzero,omitempty"`
 
 	// configuration for deploying the runner
 	ContainerImageURL string `json:"container_image_url,omitzero" gorm:"default null;not null" temporaljson:"container_image_url,omitzero,omitempty"`
@@ -87,6 +88,11 @@ func (i *RunnerGroupSettings) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_runner_group_settings",
+			Columns:     []string{"deleted_at", "runner_group_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

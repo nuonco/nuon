@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,12 +20,12 @@ type RunnerJobPlan struct {
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_job_plan,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
+	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull" temporaljson:"runner_job_id,omitzero,omitempty"`
 
 	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
 	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
@@ -37,6 +38,11 @@ func (r *RunnerJobPlan) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_runner_job_plan",
+			Columns:     []string{"deleted_at", "runner_job_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

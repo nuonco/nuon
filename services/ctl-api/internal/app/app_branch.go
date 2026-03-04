@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -21,10 +22,10 @@ type AppBranch struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID string `json:"app_id,omitzero" gorm:"not null;index:idx_app_app_branch;uniqueIndex:idx_app_branch_name_per_app" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"not null;index:idx_app_app_branch" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
-	Name                       string                   `gorm:"uniqueIndex:idx_app_branch_name_per_app;not null" json:"name" temporaljson:"name"`
+	Name                       string                   `gorm:"not null" json:"name" temporaljson:"name"`
 	ConnectedGithubVCSConfigID string                   `gorm:"notnull" json:"connected_github_vcs_config_id" temporaljson:"connected_github_vcs_config_id"`
 	ConnectedGithubVCSConfig   ConnectedGithubVCSConfig `json:"-" temporaljson:"connected_github_vcs_config"`
 
@@ -38,6 +39,11 @@ func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_app_branch_name_per_app",
+			Columns:     []string{"app_id", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

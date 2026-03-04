@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -102,23 +103,23 @@ type ActionWorkflowTriggerConfig struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	App   App    `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
-	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
 
 	// this belongs to an app config id
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
-	Type ActionWorkflowTriggerType `json:"type,omitzero" swaggertype:"string" gorm:"default null;not null;index:idx_action_workflow_trigger_config_action_workflow_config_id_type,unique" temporaljson:"type,omitzero,omitempty"`
+	Type ActionWorkflowTriggerType `json:"type,omitzero" swaggertype:"string" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
 
 	Index int `json:"index,omitzero" swaggertype:"integer" gorm:"default:0;"`
 
@@ -136,6 +137,11 @@ func (a *ActionWorkflowTriggerConfig) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_action_workflow_trigger_config_action_workflow_config_id_ty",
+			Columns:     []string{"deleted_at", "action_workflow_config_id", "type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

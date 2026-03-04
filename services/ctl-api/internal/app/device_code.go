@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,12 +19,12 @@ type DeviceCode struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_device_code_account,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// Account relationship
-	AccountID string   `gorm:"not null;index:idx_device_code_account,unique" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
+	AccountID string   `gorm:"not null" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 	Account   *Account `gorm:"constraint:OnDelete:CASCADE" faker:"-" json:"-" temporaljson:"account,omitzero,omitempty"`
-	Code      string   `gorm:"unique;not null;index:idx_device_code_account,unique"`
+	Code      string   `gorm:"not null"`
 
 	ExpiresAt time.Time `gorm:"not null"`      // 2 min from approval
 	Consumed  bool      `gorm:"default:false"` // Token issued?
@@ -43,6 +44,16 @@ func (a *DeviceCode) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"account_id",
 			},
+		},
+		{
+			Name:        "idx_device_code_account",
+			Columns:     []string{"deleted_at", "account_id", "code"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+		{
+			Name:        indexes.Name(db, &DeviceCode{}, "code"),
+			Columns:     []string{"code"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,17 +18,17 @@ type InstallActionWorkflow struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_install_action_workflow_id,unique;index:idx_iaw_org_id_install_id,priority:3" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
-	OrgID string `json:"org_id,omitzero" gorm:"notnull;index:idx_iaw_org_id_install_id,priority:1" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	Install   Install `json:"-" swaggerignore:"true" temporaljson:"install,omitzero,omitempty"`
-	InstallID string  `json:"install_id,omitzero" gorm:"index:idx_install_action_workflow_id,unique;index:idx_iaw_org_id_install_id,priority:2" faker:"-" temporaljson:"install_id,omitzero,omitempty"`
+	InstallID string  `json:"install_id,omitzero" faker:"-" temporaljson:"install_id,omitzero,omitempty"`
 
 	ActionWorkflow   ActionWorkflow `json:"action_workflow,omitzero" temporaljson:"action_workflow,omitzero,omitempty"`
-	ActionWorkflowID string         `json:"action_workflow_id,omitzero" gorm:"index:idx_install_action_workflow_id,unique" temporaljson:"action_workflow_id,omitzero,omitempty"`
+	ActionWorkflowID string         `json:"action_workflow_id,omitzero" temporaljson:"action_workflow_id,omitzero,omitempty"`
 
 	Runs []InstallActionWorkflowRun `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"runs,omitzero" temporaljson:"runs,omitzero,omitempty"`
 
@@ -42,6 +43,11 @@ func (a *InstallActionWorkflow) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_install_action_workflow_id",
+			Columns:     []string{"deleted_at", "install_id", "action_workflow_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

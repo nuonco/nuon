@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -26,8 +27,8 @@ type OCIArtifact struct {
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;uniqueIndex:idx_owner" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;uniqueIndex:idx_owner" temporaljson:"owner_type,omitzero,omitempty"`
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"type:text" temporaljson:"owner_type,omitzero,omitempty"`
 
 	Tag          string         `json:"tag,omitzero" temporaljson:"tag,omitzero,omitempty"`
 	Repository   string         `json:"repository,omitzero" temporaljson:"repository,omitzero,omitempty"`
@@ -53,6 +54,11 @@ func (r *OCIArtifact) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_owner",
+			Columns:     []string{"owner_id", "owner_type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

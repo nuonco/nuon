@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -30,13 +31,13 @@ type App struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Name        string              `json:"name,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name        string              `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	Description generics.NullString `json:"description,omitzero" swaggertype:"string" temporaljson:"description,omitzero,omitempty"`
 	DisplayName generics.NullString `json:"display_name,omitzero" swaggertype:"string" temporaljson:"display_name,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
@@ -84,6 +85,11 @@ func (a *App) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_app_name",
+			Columns:     []string{"deleted_at", "name", "org_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

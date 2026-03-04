@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,15 +19,15 @@ type AccountRole struct {
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_account_role:unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID generics.NullString `json:"org_id,omitzero" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org                `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RoleID string `gorm:"primary_key;index:idx_account_role:unique" temporaljson:"role_id,omitzero,omitempty"`
+	RoleID string `gorm:"primary_key" temporaljson:"role_id,omitzero,omitempty"`
 	Role   Role   `temporaljson:"role,omitzero,omitempty"`
 
-	AccountID string  `json:"account_id,omitzero" gorm:"primary_key;index:idx_account_role:unique" temporaljson:"account_id,omitzero,omitempty"`
+	AccountID string  `json:"account_id,omitzero" gorm:"primary_key" temporaljson:"account_id,omitzero,omitempty"`
 	Account   Account `json:"account,omitzero" temporaljson:"account,omitzero,omitempty"`
 }
 
@@ -55,6 +56,11 @@ func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_account_role",
+			Columns:     []string{"deleted_at", "role_id", "account_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

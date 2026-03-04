@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -123,16 +124,16 @@ type Component struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_component_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Name    string `json:"name,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name    string `json:"name,omitzero" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
 	VarName string `json:"var_name,omitzero" temporaljson:"var_name,omitzero,omitempty"`
 
-	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
 	Status            ComponentStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
@@ -163,6 +164,11 @@ func (c *Component) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_app_component_name",
+			Columns:     []string{"deleted_at", "name", "app_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

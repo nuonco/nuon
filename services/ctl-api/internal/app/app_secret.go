@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,15 +18,15 @@ type AppSecret struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_secret_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID string `json:"app_id,omitzero" gorm:"not null;default null;index:idx_app_secret_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"not null;default null" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `json:"-" faker:"-" temporaljson:"app,omitzero,omitempty"`
 
-	Name  string `json:"name,omitzero" gorm:"not null;default null;index:idx_app_secret_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name  string `json:"name,omitzero" gorm:"not null;default null" temporaljson:"name,omitzero,omitempty"`
 	Value string `json:"-" gorm:"not null;default null" temporaljson:"value,omitzero,omitempty"`
 
 	// after query fields
@@ -39,6 +40,11 @@ func (a *AppSecret) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_app_secret_name",
+			Columns:     []string{"deleted_at", "app_id", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,8 +23,8 @@ type HelmChart struct {
 	OrgID string `json:"org_id" `
 	Org   Org    `json:"-" `
 
-	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26;uniqueIndex:idx_owner" `
-	OwnerType string `json:"owner_type" gorm:"type:text;uniqueIndex:idx_owner"`
+	OwnerID   string `json:"owner_id" gorm:"type:text;check:owner_id_checker,char_length(id)=26" `
+	OwnerType string `json:"owner_type" gorm:"type:text"`
 
 	HelmReleases []HelmRelease `faker:"-"  gorm:"constraint:OnDelete:CASCADE;"`
 }
@@ -35,6 +36,11 @@ func (h *HelmChart) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_owner",
+			Columns:     []string{"owner_id", "owner_type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

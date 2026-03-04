@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -69,20 +70,20 @@ type Runner struct {
 	CreatedByID string  `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	Status            RunnerStatus `json:"status,omitzero" gorm:"not null;default null" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string       `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
 
-	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
+	RunnerGroupID string      `json:"runner_group_id,omitzero" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`
 
-	Name        string `json:"name,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name        string `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	DisplayName string `json:"display_name,omitzero" gorm:"not null;default null" temporaljson:"display_name,omitzero,omitempty"`
 
 	Jobs       []RunnerJob       `json:"jobs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"jobs,omitzero,omitempty"`
@@ -98,6 +99,11 @@ func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_runner_name",
+			Columns:     []string{"deleted_at", "runner_group_id", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

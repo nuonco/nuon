@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -35,18 +36,18 @@ type AppInput struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_app_input_unique_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppInputConfigID string         `json:"app_input_id,omitzero" gorm:"notnull; default null;index:idx_app_input_unique_name,unique" temporaljson:"app_input_config_id,omitzero,omitempty"`
+	AppInputConfigID string         `json:"app_input_id,omitzero" gorm:"notnull; default null" temporaljson:"app_input_config_id,omitzero,omitempty"`
 	AppInputConfig   AppInputConfig `json:"-" temporaljson:"app_input_config,omitzero,omitempty"`
 
 	AppInputGroup   AppInputGroup `json:"group,omitzero" temporaljson:"app_input_group,omitzero,omitempty"`
 	AppInputGroupID string        `json:"group_id,omitzero" temporaljson:"app_input_group_id,omitzero,omitempty"`
 
-	Name        string `json:"name,omitzero" gorm:"not null;default null;index:idx_app_input_unique_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name        string `json:"name,omitzero" gorm:"not null;default null" temporaljson:"name,omitzero,omitempty"`
 	DisplayName string `json:"display_name,omitzero" temporaljson:"display_name,omitzero,omitempty"`
 	Description string `json:"description,omitzero" gorm:"not null; default null" temporaljson:"description,omitzero,omitempty"`
 	Default     string `json:"default,omitzero" temporaljson:"default,omitzero,omitempty"`
@@ -70,6 +71,11 @@ func (a *AppInput) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_app_input_unique_name",
+			Columns:     []string{"deleted_at", "app_input_config_id", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

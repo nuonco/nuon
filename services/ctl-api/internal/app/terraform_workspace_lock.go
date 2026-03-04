@@ -1,11 +1,13 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type TerraformWorkspaceLock struct {
@@ -20,13 +22,23 @@ type TerraformWorkspaceLock struct {
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// Foreign key to TerraformWorkspace with unique constraint to prevent multiple active locks
-	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null;foreignKey:WorkspaceID;references:ID;uniqueIndex:idx_workspace_active_lock" temporaljson:"workspace_id,omitzero,omitempty"`
+	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null;foreignKey:WorkspaceID;references:ID" temporaljson:"workspace_id,omitzero,omitempty"`
 	Workspace   TerraformWorkspace `json:"-" temporaljson:"workspace,omitzero,omitempty"`
 
 	Lock *TerraformLock `json:"lock,omitzero" temporaljson:"lock,omitzero,omitempty"`
 
 	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
+}
+
+func (r *TerraformWorkspaceLock) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name:        "idx_workspace_active_lock",
+			Columns:     []string{"workspace_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+	}
 }
 
 func (r *TerraformWorkspaceLock) BeforeCreate(tx *gorm.DB) (err error) {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -19,24 +20,24 @@ type ActionWorkflowStepConfig struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	App   App    `json:"-" swaggerignore:"true" temporaljson:"app,omitzero,omitempty"`
-	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+	AppID string `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
 
 	// this belongs to an app config id
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
-	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
+	ActionWorkflowConfigID string               `json:"action_workflow_config_id,omitzero" temporaljson:"action_workflow_config_id,omitzero,omitempty"`
 	ActionWorkflowConfig   ActionWorkflowConfig `json:"-" temporaljson:"action_workflow_config,omitzero,omitempty"`
 
 	// metadata
-	Name           string         `json:"name,omitzero" gorm:"index:idx_action_workflow_step_config_action_workflow_config_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name           string         `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	PreviousStepID string         `json:"previous_step_id,omitzero" temporaljson:"previous_step_id,omitzero,omitempty"`
 	Idx            int            `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 	References     pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
@@ -58,6 +59,11 @@ func (a *ActionWorkflowStepConfig) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_action_workflow_step_config_action_workflow_config_id_name",
+			Columns:     []string{"deleted_at", "action_workflow_config_id", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

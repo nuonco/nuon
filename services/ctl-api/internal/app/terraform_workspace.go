@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -23,8 +24,8 @@ type TerraformWorkspace struct {
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;uniqueIndex:idx_owner" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;uniqueIndex:idx_owner" temporaljson:"owner_type,omitzero,omitempty"`
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType string `json:"owner_type,omitzero" gorm:"type:text" temporaljson:"owner_type,omitzero,omitempty"`
 
 	States      []TerraformWorkspaceState `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"states,omitzero,omitempty"`
 	LockHistory []TerraformWorkspaceLock  `faker:"-" json:"lock_history" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
@@ -39,6 +40,11 @@ func (r *TerraformWorkspace) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_owner",
+			Columns:     []string{"owner_id", "owner_type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

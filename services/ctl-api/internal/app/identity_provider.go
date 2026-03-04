@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -26,14 +27,14 @@ type IdentityProvider struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_provider_type,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// OrgID can be nil for global providers available to all orgs in the deployment.
 	// If set, the provider is only available to users in that specific org.
-	OrgID *string `json:"org_id,omitempty" gorm:"index:idx_provider_type,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID *string `json:"org_id,omitempty" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org    `faker:"-" json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"org,omitzero,omitempty"`
 
-	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"not null,index:idx_provider_type,unique" temporaljson:"provider_type,omitzero,omitempty"`
+	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"not null" temporaljson:"provider_type,omitzero,omitempty"`
 	Enabled      bool         `json:"enabled" gorm:"default:false" temporaljson:"enabled,omitempty"`
 
 	// Config holds provider-specific configuration as JSON.
@@ -59,6 +60,11 @@ func (a *IdentityProvider) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_provider_type",
+			Columns:     []string{"deleted_at", "org_id", "provider_type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ type AccountIdentity struct {
 	UpdatedAt time.Time `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 
 	// Account relationship
-	AccountID string   `gorm:"not null;index:idx_account_identity_account_provider,unique" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
+	AccountID string   `gorm:"not null" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 	Account   *Account `gorm:"constraint:OnDelete:CASCADE" faker:"-" json:"-" temporaljson:"account,omitzero,omitempty"`
 
 	// Identity Provider relationship (nullable for default env-var provider)
@@ -27,10 +28,10 @@ type AccountIdentity struct {
 	IdentityProvider   *IdentityProvider `gorm:"constraint:OnDelete:SET NULL" faker:"-" json:"-" temporaljson:"identity_provider,omitzero,omitempty"`
 
 	// Provider type - required, enables lookup when using the default env-var provider
-	ProviderType ProviderType `gorm:"not null;index:idx_account_identity_account_provider,unique;index:idx_account_identity_provider_sub,unique" json:"provider_type,omitzero" temporaljson:"provider_type,omitzero,omitempty"`
+	ProviderType ProviderType `gorm:"not null" json:"provider_type,omitzero" temporaljson:"provider_type,omitzero,omitempty"`
 
 	// Subject identifier from the IdP - the canonical, stable user identifier
-	Sub string `gorm:"not null;index:idx_account_identity_provider_sub,unique" json:"sub,omitzero" temporaljson:"sub,omitzero,omitempty"`
+	Sub string `gorm:"not null" json:"sub,omitzero" temporaljson:"sub,omitzero,omitempty"`
 
 	// User profile information from the identity provider
 	Name    string `json:"name,omitempty" temporaljson:"name,omitempty"`
@@ -62,6 +63,16 @@ func (a *AccountIdentity) Indexes(db *gorm.DB) []migrations.Index {
 				"provider_type",
 				"sub",
 			},
+		},
+		{
+			Name:        "idx_account_identity_account_provider",
+			Columns:     []string{"account_id", "provider_type"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+		{
+			Name:        "idx_account_identity_provider_sub",
+			Columns:     []string{"provider_type", "sub"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

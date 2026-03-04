@@ -1,12 +1,15 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type TokenType string
@@ -30,13 +33,23 @@ type Token struct {
 
 	AccountID string `json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 
-	Token     string    `gorm:"unique" json:"-" temporaljson:"token,omitzero,omitempty"`
+	Token     string    `json:"-" temporaljson:"token,omitzero,omitempty"`
 	TokenType TokenType `json:"token_type,omitzero" temporaljson:"token_type,omitzero,omitempty"`
 
 	// claim data
 	ExpiresAt time.Time `json:"expires_at,omitzero" gorm:"notnull" temporaljson:"expires_at,omitzero,omitempty"`
 	IssuedAt  time.Time `json:"issued_at,omitzero" gorm:"notnull" temporaljson:"issued_at,omitzero,omitempty"`
 	Issuer    string    `json:"issuer,omitzero" gorm:"notnull;default null" temporaljson:"issuer,omitzero,omitempty"`
+}
+
+func (a *Token) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name:        indexes.Name(db, &Token{}, "token"),
+			Columns:     []string{"token"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+	}
 }
 
 func (a *Token) BeforeCreate(tx *gorm.DB) error {

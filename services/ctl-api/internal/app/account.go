@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"slices"
 	"strings"
 	"time"
@@ -30,10 +31,10 @@ type Account struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_email_subject,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Email       string      `json:"email,omitzero" gorm:"index:idx_email_subject,unique,not null;default null" temporaljson:"email,omitzero,omitempty"`
-	Subject     string      `json:"subject,omitzero" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
+	Email       string      `json:"email,omitzero" gorm:"not null;default null" temporaljson:"email,omitzero,omitempty"`
+	Subject     string      `json:"subject,omitzero" gorm:"not null" temporaljson:"subject,omitzero,omitempty"`
 	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
 
 	Roles        []Role            `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`
@@ -50,7 +51,6 @@ type Account struct {
 }
 
 func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
-
 	return []migrations.Index{
 		{
 			Name: indexes.Name(db, &Account{}, "email"),
@@ -59,11 +59,17 @@ func (a *Account) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
-		{Name: indexes.Name(db, &Account{}, "subject"),
+		{
+			Name: indexes.Name(db, &Account{}, "subject"),
 			Columns: []string{
 				"subject",
 				"deleted_at",
 			},
+		},
+		{
+			Name:        "idx_email_subject",
+			Columns:     []string{"deleted_at", "email", "subject"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

@@ -3,11 +3,14 @@ package app
 import (
 	"time"
 
+	"database/sql"
+
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
@@ -66,9 +69,9 @@ type Org struct {
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `gorm:"index:idx_org_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Name              string    `gorm:"index:idx_org_name,unique;notnull" json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	Name              string    `gorm:"notnull" json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	Status            OrgStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string    `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 
@@ -116,6 +119,16 @@ type Org struct {
 	// Transient fields for counts (not persisted to database)
 	AppCount     int `json:"app_count,omitempty" gorm:"-"`
 	InstallCount int `json:"install_count,omitempty" gorm:"-"`
+}
+
+func (o *Org) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name:        "idx_org_name",
+			Columns:     []string{"deleted_at", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
+	}
 }
 
 func (o *Org) AfterQuery(tx *gorm.DB) error {

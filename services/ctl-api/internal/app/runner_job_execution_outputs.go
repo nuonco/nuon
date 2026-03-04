@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -26,7 +27,7 @@ type RunnerJobExecutionOutputs struct {
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerJobExecutionID string             `json:"runner_job_execution_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_execution_outputs,unique" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
+	RunnerJobExecutionID string             `json:"runner_job_execution_id,omitzero" gorm:"defaultnull;notnull" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecution   RunnerJobExecution `json:"-" temporaljson:"runner_job_execution,omitzero,omitempty"`
 
 	Outputs []byte `json:"outputs_json,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
@@ -43,6 +44,11 @@ func (r *RunnerJobExecutionOutputs) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_runner_job_execution_outputs",
+			Columns:     []string{"runner_job_execution_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

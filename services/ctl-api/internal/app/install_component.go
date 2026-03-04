@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -43,10 +44,10 @@ type InstallComponent struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	InstallID string  `json:"install_id,omitzero" gorm:"index:install_component_group,unique;notnull" temporaljson:"install_id,omitzero,omitempty"`
+	InstallID string  `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	ComponentID string    `json:"component_id,omitzero" gorm:"index:install_component_group,unique;notnull" temporaljson:"component_id,omitzero,omitempty"`
+	ComponentID string    `json:"component_id,omitzero" gorm:"notnull" temporaljson:"component_id,omitzero,omitempty"`
 	Component   Component `faker:"-" json:"component,omitzero" temporaljson:"component,omitzero,omitempty"`
 
 	InstallDeploys     []InstallDeploy    `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"install_deploys,omitzero" temporaljson:"install_deploys,omitzero,omitempty"`
@@ -81,6 +82,11 @@ func (c *InstallComponent) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "install_component_group",
+			Columns:     []string{"install_id", "component_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

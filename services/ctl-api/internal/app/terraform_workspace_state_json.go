@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -23,7 +24,7 @@ type TerraformWorkspaceStateJSON struct {
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// Foreign key to TerraformWorkspace with unique constraint to prevent conflicting states for a workspace
-	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null;uniqueIndex:idx_workspace_active_lock" temporaljson:"workspace_id,omitzero,omitempty"`
+	WorkspaceID string             `json:"workspace_id,omitzero" gorm:"type:text;not null" temporaljson:"workspace_id,omitzero,omitempty"`
 	Workspace   TerraformWorkspace `json:"-" temporaljson:"workspace,omitzero,omitempty"`
 
 	RunnerJobID *string   `json:"runner_job_id,omitzero" temporaljson:"runner_job_id,omitzero,omitempty"`
@@ -37,6 +38,11 @@ func (a *TerraformWorkspaceStateJSON) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"workspace_id",
 			},
+		},
+		{
+			Name:        "idx_workspace_active_lock",
+			Columns:     []string{"workspace_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

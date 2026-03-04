@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,13 +25,13 @@ type OrgInvite struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_invite_org_email,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// parent relationship
-	OrgID string `json:"org_id,omitzero" gorm:"notnull;index:idx_invite_org_email,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID string `json:"org_id,omitzero" gorm:"notnull" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Email    string          `gorm:"notnull;default null;index:idx_invite_org_email,unique" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
+	Email    string          `gorm:"notnull;default null" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
 	Status   OrgInviteStatus `json:"status,omitzero" gorm:"notnull;default null" temporaljson:"status,omitzero,omitempty"`
 	RoleType RoleType        `json:"role_type,omitzero" temporaljson:"role_type,omitzero,omitempty"`
 }
@@ -42,6 +43,11 @@ func (o *OrgInvite) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        "idx_invite_org_email",
+			Columns:     []string{"deleted_at", "org_id", "email"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }
