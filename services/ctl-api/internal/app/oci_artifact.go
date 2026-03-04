@@ -56,7 +56,7 @@ func (r *OCIArtifact) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
-			Name:        "idx_owner",
+			Name:        indexes.Name(db, &OCIArtifact{}, "owner"),
 			Columns:     []string{"owner_id", "owner_type"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},

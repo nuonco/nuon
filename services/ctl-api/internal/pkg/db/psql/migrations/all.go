@@ -48,5 +48,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "093-add-adhoc-actions",
 			Fn:   m.Migration093AddAdhocActions,
 		},
+		{
+			Name: "094-drop-colliding-index-names",
+			Fn:   m.Migration094DropCollidingIndexNames,
+		},
 	}
 }

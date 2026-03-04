@@ -32,7 +32,7 @@ type Token struct {
 
 	AccountID string `json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 
-	Token     string    `json:"-" temporaljson:"token,omitzero,omitempty"`
+	Token     string    `json:"-" gorm:"unique" temporaljson:"token,omitzero,omitempty"`
 	TokenType TokenType `json:"token_type,omitzero" temporaljson:"token_type,omitzero,omitempty"`
 
 	// claim data
@@ -44,7 +44,7 @@ type Token struct {
 func (a *Token) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:        "uni_tokens_token",
+			Name:        "idx_tokens_token",
 			Columns:     []string{"token"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},

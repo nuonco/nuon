@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -38,11 +37,6 @@ func (a *TerraformWorkspaceStateJSON) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"workspace_id",
 			},
-		},
-		{
-			Name:        "idx_workspace_active_lock",
-			Columns:     []string{"workspace_id"},
-			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

@@ -24,7 +24,7 @@ type DeviceCode struct {
 	// Account relationship
 	AccountID string   `gorm:"not null" json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 	Account   *Account `gorm:"constraint:OnDelete:CASCADE" faker:"-" json:"-" temporaljson:"account,omitzero,omitempty"`
-	Code      string   `gorm:"not null"`
+	Code      string   `gorm:"unique;not null"`
 
 	ExpiresAt time.Time `gorm:"not null"`      // 2 min from approval
 	Consumed  bool      `gorm:"default:false"` // Token issued?

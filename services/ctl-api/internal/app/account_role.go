@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -56,11 +55,6 @@ func (a *AccountRole) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
-		},
-		{
-			Name:        "idx_account_role",
-			Columns:     []string{"deleted_at", "role_id", "account_id"},
-			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }
