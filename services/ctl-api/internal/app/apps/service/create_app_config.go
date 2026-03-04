@@ -96,12 +96,12 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {
 	inputs := app.AppConfig{
-		OrgID:             orgID,
-		AppID:             appID,
-		Status:            app.AppConfigStatusPending,
-		StatusDescription: "sync pending",
-		Readme:            req.Readme,
-		CLIVersion:        req.CLIVersion,
+		OrgID:              orgID,
+		AppID:              appID,
+		Status:             app.AppConfigStatusPending,
+		StatusDescription:  "sync pending",
+		Readme:             req.Readme,
+		CLIVersion:         req.CLIVersion,
 		IntermediateConfig: &blobstore.Blob{},
 	}
 

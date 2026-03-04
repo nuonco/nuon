@@ -3,8 +3,8 @@ package apisyncer
 import (
 	"context"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/pkg/generics"
 )
