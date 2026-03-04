@@ -66,9 +66,9 @@ jobs:
           echo "Updated service.yml:"
           yq '.tests' services/dashboard-ui/service.yml
 
-      #- name: 😎 Tests
-        #run: |
-          #CI=true nuonctl tests run-all ${{inputs.service}}
+      - name: 😎 Tests
+        run: |
+          CI=true nuonctl tests run-all ${{inputs.service}}
 
       - name: 📦 Build
         run: |

@@ -32,6 +32,7 @@ export async function api<T>({
         Authorization: `Bearer ${session?.accessToken || session?.tokenSet?.accessToken}`,
         'Content-Type': 'application/json',
         'X-Nuon-Org-ID': orgId || '',
+        'x-nuon-pagination-enabled': 'true',
         ...headers,
       },
       signal: AbortSignal.timeout(abortTimeout),
@@ -134,16 +135,16 @@ export async function api<T>({
       data: null,
       error: timeoutError
         ? {
-          description:
-            'The request timed out. Please check your connection and try again.',
-          error: 'Timeout',
-          user_error: true,
-        }
+            description:
+              'The request timed out. Please check your connection and try again.',
+            error: 'Timeout',
+            user_error: true,
+          }
         : {
-          description: 'An unexpected error occurred while fetching data.',
-          error: error instanceof Error ? error.message : 'Unknown Error',
-          user_error: false,
-        },
+            description: 'An unexpected error occurred while fetching data.',
+            error: error instanceof Error ? error.message : 'Unknown Error',
+            user_error: false,
+          },
       status: timeoutError ? 408 : 500,
       headers: errorHeadersObj,
     }
