@@ -2,7 +2,8 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getRunner } from '@/lib'
-import { Loading } from '@/components/common/Loading'
+import { ProviderError } from '@/components/layout/ProviderError'
+import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import type { TRunner } from '@/types'
 
 type RunnerContextValue = {
@@ -26,14 +27,16 @@ export function RunnerProvider({
 }) {
   const { org } = useOrg()
 
-  const { data: runner, isLoading } = useQuery({
+  const { data: runner, isLoading, error } = useQuery({
     queryKey: ['runner', org.id!, runnerId],
     queryFn: () => getRunner({ orgId: org.id!, runnerId }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!runnerId,
   })
 
-  if (isLoading || !runner) return <Loading />
+  if (error) return <ProviderError error={error} />
+
+  if (isLoading || !runner) return <ProviderLoading />
 
   return (
     <RunnerContext.Provider value={{ runner }}>

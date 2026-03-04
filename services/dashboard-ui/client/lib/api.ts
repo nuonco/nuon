@@ -139,14 +139,18 @@ export async function api<T>({
             'The server is temporarily unavailable. Please try again later.',
           error: 'Bad Gateway',
           user_error: true,
+          status: 502,
         } satisfies TAPIError
       }
 
-      throw (data ?? {
-        error: 'Unknown error',
-        description: 'No error details provided',
-        user_error: false,
-      }) as TAPIError
+      throw {
+        ...(data ?? {
+          error: 'Unknown error',
+          description: 'No error details provided',
+          user_error: false,
+        }),
+        status: response.status,
+      } as TAPIError
     }
   } catch (error) {
     if (error && typeof error === 'object' && 'error' in error) {

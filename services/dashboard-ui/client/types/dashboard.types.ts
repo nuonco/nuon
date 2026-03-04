@@ -52,6 +52,7 @@ export type TAPIError = {
   error: string
   user_error: boolean
   meta?: any
+  status?: number
 }
 
 export type TAPIResponse<T> = {

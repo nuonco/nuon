@@ -1,19 +1,25 @@
 import { cn } from '@/utils/classnames'
 
 export const Loading = ({
+  className,
   strokeWidth = 'default',
   variant = 'default',
 }: {
+  className?: string
   strokeWidth?: 'default' | 'thick'
   variant?: 'default' | 'large'
 }) => {
   return (
     <span className="animate-pulse">
       <svg
-        className={cn('animate-spin', {
-          'h-5 w-5': variant === 'default',
-          'h-10 w-10': variant === 'large',
-        })}
+        className={cn(
+          'animate-spin',
+          {
+            'h-5 w-5': variant === 'default',
+            'h-10 w-10': variant === 'large',
+          },
+          className
+        )}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

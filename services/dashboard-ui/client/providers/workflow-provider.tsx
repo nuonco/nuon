@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
 import { getWorkflow } from '@/lib'
-import { Loading } from '@/components/common/Loading'
+import { ProviderError } from '@/components/layout/ProviderError'
+import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import type { TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
@@ -40,7 +41,7 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const [pollingEnabled, setPollingEnabled] = useState(shouldPoll)
 
-  const { data: workflow, isLoading } = useQuery({
+  const { data: workflow, isLoading, error } = useQuery({
     queryKey: ['workflow', org.id!, workflowId],
     queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
     refetchInterval: pollingEnabled ? pollInterval : false,
@@ -49,7 +50,9 @@ export const WorkflowProvider = ({
 
   const metrics = useWorkflowMetrics(workflow)
 
-  if (isLoading || !workflow) return <Loading />
+  if (error) return <ProviderError error={error} />
+
+  if (isLoading || !workflow) return <ProviderLoading />
 
   const value: WorkflowContextValue = {
     workflow,
