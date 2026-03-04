@@ -5,7 +5,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type middleware struct {
@@ -19,7 +18,7 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cctx.SetBlobServiceGinContext(ctx, m.svc)
+		blobstore.WithBlobServiceGin(ctx, m.svc)
 		ctx.Next()
 	}
 }

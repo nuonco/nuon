@@ -8,6 +8,8 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
+	"go.temporal.io/sdk/activity"
+	"go.uber.org/zap"
 )
 
 type SyncAppConfigInput struct {
@@ -42,10 +44,16 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	})
 
 	// Deserialize the intermediate config
+	l := activity.GetLogger(ctx)
+
 	intermediateJSON, err := appConfig.IntermediateConfig.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get intermediate config: %w", err)
 	}
+	l.Error("app-config",
+		zap.Any("intermediate-config", appConfig.IntermediateConfig),
+		zap.Any("intermediate-json", intermediateJSON),
+	)
 
 	var cfg config.AppConfig
 	if err := json.Unmarshal([]byte(intermediateJSON), &cfg); err != nil {

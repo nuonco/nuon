@@ -69,6 +69,7 @@ func (b *Blob) Scan(value interface{}) error {
 // Returns the blob metadata as JSONB to store in database
 func (b *Blob) Value() (driver.Value, error) {
 	if b.metadata.BlobID == "" {
+		fmt.Println("blob-debug: empty blob id")
 		return nil, nil
 	}
 
@@ -86,14 +87,16 @@ func (b Blob) GormDataType() string {
 }
 
 // BeforeSave implements GORM hook for automatic S3 upload
-func (b Blob) BeforeCreate(tx *gorm.DB) error {
+func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	// Skip if not dirty (no changes)
 	if !b.dirty {
+		fmt.Println("blob-debug: not dirty")
 		return nil
 	}
 
 	// Check context - is blob write enabled?
 	if !IsBlobWriteEnabled(tx.Statement.Context) {
+		fmt.Println("blob-debug: write disabled")
 		return nil
 	}
 
@@ -105,12 +108,14 @@ func (b Blob) BeforeCreate(tx *gorm.DB) error {
 
 	// Generate blob ID if new
 	if b.metadata.BlobID == "" {
+		fmt.Println("blob-debug: generated-blob-id")
 		b.metadata.BlobID = domains.NewBlobID()
 	}
 
 	// Construct S3 key: org_id/blob_id
-	s3Key := fmt.Sprintf("%s/%s", orgID, b.metadata.BlobID)
+	s3Key := buildS3Key(orgID, b.metadata.BlobID)
 	b.metadata.S3Key = s3Key
+	fmt.Println("blob-debug: set key")
 
 	// Get account ID for created_by
 	if accountID, err := cctxAccountIDFromContext(tx.Statement.Context); err == nil {
@@ -142,7 +147,7 @@ func (b Blob) BeforeCreate(tx *gorm.DB) error {
 	reader := strings.NewReader(*b.value)
 	checksum, err := svc.UploadStream(tx.Statement.Context, s3Key, reader)
 	if err != nil {
-		return fmt.Errorf("failed to upload blob to S3: %w", err)
+		return fmt.Errorf("failed to upload blob to S3 key (%s): %w", s3Key, err)
 	}
 
 	// Store metadata
@@ -317,4 +322,10 @@ func cctxAccountIDFromContext(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("account ID not set on context")
 	}
 	return accountID, nil
+}
+
+// buildS3Key constructs the S3 key for blob storage
+// Format: {org_id}/{blob_id}
+func buildS3Key(orgID, blobID string) string {
+	return fmt.Sprintf("blobs/%s/%s", orgID, blobID)
 }

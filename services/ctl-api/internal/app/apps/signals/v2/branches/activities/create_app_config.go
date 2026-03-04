@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type CreateAppConfigInput struct {
@@ -35,6 +36,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		AppBranchID:       generics.NewNullString(req.AppBranchID),
 		Status:            app.AppConfigStatusPending,
 		StatusDescription: "pending sync",
+		IntermediateConfig: &blobstore.Blob{},
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)
 

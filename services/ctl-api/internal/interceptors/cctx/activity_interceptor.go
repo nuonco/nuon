@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
-	pkgcctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 var _ interceptor.ActivityInboundInterceptor = (*actInterceptor)(nil)
@@ -28,7 +27,7 @@ func (a *actInterceptor) ExecuteActivity(
 	in *interceptor.ExecuteActivityInput,
 ) (interface{}, error) {
 	// Add blobstore service to context
-	ctx = pkgcctx.SetBlobServiceContext(ctx, a.blobSvc)
+	ctx = blobstore.WithBlobService(ctx, a.blobSvc)
 
 	// Continue with execution
 	return a.Next.ExecuteActivity(ctx, in)
