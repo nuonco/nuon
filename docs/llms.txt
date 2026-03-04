@@ -1,0 +1,94 @@
+# Nuon Documentation
+
+> Nuon is a BYOC (Bring Your Own Cloud) platform that lets software vendors deploy applications directly into customer cloud accounts — no cross-account access, no shared infrastructure. Vendors package their app once using Nuon's configuration format, and Nuon handles deployment, updates, and day-2 operations in the customer's own AWS, Azure, or GCP account via an egress-only runner.
+
+## Get Started
+
+- [Introduction](/get-started/introduction): What Nuon is and how to navigate the docs.
+- [Quickstart](/get-started/quickstart): Install the CLI, authenticate, and connect GitHub.
+- [Create an AWS EKS App](/get-started/app-aws-k8s): End-to-end tutorial — package a Helm app and deploy it to AWS EKS.
+- [Create an AWS Lambda App](/get-started/app-aws-lambda): End-to-end tutorial — package a Lambda function app and deploy it to AWS.
+
+## Concepts
+
+- [Overview](/concepts/overview): Index of all platform concepts.
+- [Apps](/concepts/apps): The top-level unit — a versioned, installable BYOC product.
+- [Sandboxes](/concepts/sandboxes): The base cloud infrastructure provisioned in a customer's account (EKS, ECS, AKS, etc.).
+- [Components](/concepts/components): The building blocks of an app — Helm charts, Terraform modules, Kubernetes manifests, Docker builds, container images.
+- [Installs](/concepts/installs): A single-tenant deployment of an app into a customer's cloud account.
+- [Runners](/concepts/runners): Egress-only agents that run inside customer accounts and execute all deployment work.
+- [Workflows](/concepts/workflows): The orchestrated lifecycle — provision, deploy, update, teardown — with approval gates and drift detection.
+- [Actions](/concepts/actions): Vendor-defined operational scripts (health checks, migrations, diagnostics) that run inside an install.
+- [Policies](/concepts/policies): OPA-based compliance rules enforced at build and deploy time.
+- [Operation Roles](/concepts/operation-roles): IAM role mappings for least-privilege access during specific operations.
+- [Inputs](/concepts/app-inputs): Customer-supplied values (region, instance type, API keys) that configure each install.
+- [App Variables](/concepts/app-variables): Dynamic values shared across all installs of an app via the API.
+- [Secrets](/concepts/app-secrets): Sensitive values like credentials and API keys used in app configuration.
+- [Glossary](/concepts/glossary): Definitions of all platform terms.
+
+## Guides
+
+### Configuration
+- [App and Install Life Cycle](/guides/app-install-life-cycle): Recommended first read — how apps are packaged, installed, updated, monitored, and remediated.
+- [Connect GitHub](/guides/vcs): Connect a GitHub org or account for private repo access.
+- [App Initialization](/guides/app-init): How to initialize a new Nuon app directory.
+- [Docker Build Components](/guides/docker-build-components): Build and push Docker images as components.
+- [Container Image Components](/guides/container-image-components): Use existing container images as components.
+- [Terraform Components](/guides/terraform-components): Deploy Terraform modules as components.
+- [Helm Chart Components](/guides/helm-chart-components): Deploy Helm charts as components.
+- [Kubernetes Manifest Components](/guides/kubernetes-manifest-components): Deploy raw Kubernetes manifests as components.
+- [Component Dependencies](/guides/component-dependencies): Define deploy order across components.
+- [Actions](/guides/actions): Configure action workflows for operational scripts.
+- [Operation Roles](/guides/operation-roles): Configure per-operation IAM roles.
+- [External Image Policies](/guides/external-image-policies): Enforce policies on external container images.
+- [Configuring Policies](/guides/configuring-policies): Write and attach OPA policies to an app.
+- [Bring Your Own Network](/guides/bring-your-own-network): Install into a customer-provided VPC or VNet.
+- [AI and App Building](/guides/ai-and-apps): Use AI tools (Claude Code, Cursor) to build Nuon apps faster.
+
+### Customer Experience
+- [Customer Portal](/guides/customer-portal): Configure the self-service install portal for customers.
+- [Integrate into your Product](/guides/control-plane-integration): Embed Nuon install flows into your own product UI.
+- [Nuon Security & Trust](/guides/vendor-customers): Answering customer security and trust questions.
+
+### How To
+- [Install Nuon BYOC](/guides/byoc): Self-host the Nuon platform in your own AWS account.
+- [Install Access Permissions](/guides/install-access-permissions): Configure access delegation for installs.
+- [Using Variables](/guides/using-variables): Reference and update app variables across installs.
+- [Using READMEs](/guides/using-readmes): Render dynamic install READMEs with template values.
+- [Custom Domains](/guides/custom-domains): Configure custom domains for installs.
+- [Sandbox Orgs](/guides/sandbox-orgs): Use sandbox orgs for development and testing.
+- [Team Management](/guides/team-management): Invite and manage org members.
+- [Runner Management Mode](/guides/runner-management-mode): Enable and migrate to runner management mode.
+- [Custom Nested CloudFormation Stacks](/guides/custom-nested-stacks): Extend the runner stack with custom CloudFormation resources.
+
+### Integrations
+- [Notifications](/guides/notifications): Send Slack notifications for app and install events.
+- [GitHub Actions](/guides/github-actions): Trigger builds and deploys from GitHub Actions.
+- [CLI Extensions](/guides/cli-extensions): Extend the Nuon CLI with custom commands.
+
+## Configuration Reference
+
+- [Configuration Reference Index](/config-ref/index): Overview of all config file types.
+- Component types: [Container Image](/config-ref/container-image), [Docker Build](/config-ref/docker-build), [Helm](/config-ref/helm), [Kubernetes Manifest](/config-ref/kubernetes-manifest), [Terraform](/config-ref/terraform)
+- Configuration types: [Inputs](/config-ref/inputs), [Metadata](/config-ref/metadata), [Permissions](/config-ref/permissions), [Policies](/config-ref/policies), [Secrets](/config-ref/secrets)
+- Other types: [Action](/config-ref/action), [Break Glass](/config-ref/break-glass), [Input](/config-ref/input), [Input Group](/config-ref/input-group), [Install](/config-ref/install), [Installer](/config-ref/installer), [Policy](/config-ref/policy), [Runner](/config-ref/runner), [Sandbox](/config-ref/sandbox), [Secret](/config-ref/secret), [Stack](/config-ref/stack)
+
+## Resources
+
+- [CLI](/cli): Install and use the Nuon CLI.
+- [Dashboard](/dashboard): Navigate the Nuon web dashboard.
+- [Deployment Options](/deployment-options): Cloud platforms and deployment models supported.
+- [Configuration Files](/configuration-files): Overview of the TOML config file system.
+- [Nuon API](/nuon-api): REST API overview and authentication.
+- [SDKs](/sdks): Go and TypeScript SDK references.
+
+## Platform Support
+
+- [Platform Support Overview](/platform-support/introduction): Supported cloud platforms.
+- [AWS](/platform-support/aws): AWS-specific support details.
+- [Azure](/platform-support/azure): Azure-specific support details.
+- [GCP](/platform-support/gcp): GCP-specific support details.
+
+## Architecture
+
+- [Runner Architecture](/runner-architecture): How the egress-only runner works inside customer cloud accounts.
