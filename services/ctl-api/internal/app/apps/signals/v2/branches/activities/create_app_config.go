@@ -30,12 +30,12 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 	}
 
 	appConfig := &app.AppConfig{
-		AppID:             req.AppID,
-		OrgID:             req.OrgID,
-		CreatedByID:       req.CreatedByID,
-		AppBranchID:       generics.NewNullString(req.AppBranchID),
-		Status:            app.AppConfigStatusPending,
-		StatusDescription: "pending sync",
+		AppID:              req.AppID,
+		OrgID:              req.OrgID,
+		CreatedByID:        req.CreatedByID,
+		AppBranchID:        generics.NewNullString(req.AppBranchID),
+		Status:             app.AppConfigStatusPending,
+		StatusDescription:  "pending sync",
 		IntermediateConfig: &blobstore.Blob{},
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)

@@ -46,4 +46,3 @@ func (c *client) GetActionWorkflowConfig(ctx context.Context, actionWorkflowID s
 
 	return resp.Payload, nil
 }
-
