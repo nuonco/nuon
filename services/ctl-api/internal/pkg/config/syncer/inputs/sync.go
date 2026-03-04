@@ -1,32 +1,45 @@
-package syncer
+package inputs
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
-// syncAppInput creates the app input configuration with groups and inputs.
+var (
+	interpolatedNameRegex = regexp.MustCompile(`^[a-z0-9_{}\.]*$`)
+	validInputTypes       = map[string]bool{
+		"bool":   true,
+		"json":   true,
+		"list":   true,
+		"number": true,
+		"string": true,
+	}
+)
+
+// Sync creates the app input configuration with groups and inputs.
 // Duplicates logic from services/ctl-api/internal/app/apps/service/create_app_input_config.go
-func (s *syncer) syncAppInput(ctx context.Context) error {
+func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID, orgID string, state *sync.State) error {
 	// Handle nil inputs config
-	if s.cfg.Inputs == nil {
-		cfg := app.AppInputConfig{
-			AppConfigID:    s.appConfigID,
-			OrgID:          s.orgID,
-			AppID:          s.appID,
+	if cfg.Inputs == nil {
+		inputCfg := app.AppInputConfig{
+			AppConfigID:    appConfigID,
+			OrgID:          orgID,
+			AppID:          appID,
 			AppInputGroups: []app.AppInputGroup{},
 		}
 
-		res := s.db.WithContext(ctx).Create(&cfg)
+		res := db.WithContext(ctx).Create(&inputCfg)
 		if res.Error != nil {
 			return sync.SyncInternalErr{
 				Description: "unable to create empty app input config",
@@ -34,12 +47,20 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 			}
 		}
 
-		s.state.InputConfigID = cfg.ID
+		state.InputConfigID = inputCfg.ID
 		return nil
 	}
 
+	// Validate inputs
+	if err := validateInputs(cfg); err != nil {
+		return sync.SyncErr{
+			Resource:    "app-inputs",
+			Description: fmt.Sprintf("validation failed: %v", err),
+		}
+	}
+
 	// Validate required inputs with existing installs
-	if err := s.validateRequiredInputsWithInstalls(ctx); err != nil {
+	if err := validateRequiredInputsWithInstalls(ctx, db, cfg, appID); err != nil {
 		return sync.SyncErr{
 			Resource:    "app-inputs",
 			Description: fmt.Sprintf("validation failed: %v", err),
@@ -47,8 +68,8 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 	}
 
 	// Create groups
-	groups := make([]app.AppInputGroup, 0, len(s.cfg.Inputs.Groups))
-	for idx, group := range s.cfg.Inputs.Groups {
+	groups := make([]app.AppInputGroup, 0, len(cfg.Inputs.Groups))
+	for idx, group := range cfg.Inputs.Groups {
 		groups = append(groups, app.AppInputGroup{
 			Name:        group.Name,
 			Description: group.Description,
@@ -57,14 +78,14 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 		})
 	}
 
-	cfg := app.AppInputConfig{
-		AppConfigID:    s.appConfigID,
-		OrgID:          s.orgID,
-		AppID:          s.appID,
+	inputCfg := app.AppInputConfig{
+		AppConfigID:    appConfigID,
+		OrgID:          orgID,
+		AppID:          appID,
 		AppInputGroups: groups,
 	}
 
-	res := s.db.WithContext(ctx).Create(&cfg)
+	res := db.WithContext(ctx).Create(&inputCfg)
 	if res.Error != nil {
 		return sync.SyncInternalErr{
 			Description: "unable to create app input config",
@@ -73,13 +94,13 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 	}
 
 	// Create inputs
-	if len(s.cfg.Inputs.Inputs) > 0 {
-		inputs := make([]app.AppInput, 0, len(s.cfg.Inputs.Inputs))
+	if len(cfg.Inputs.Inputs) > 0 {
+		inputs := make([]app.AppInput, 0, len(cfg.Inputs.Inputs))
 
-		for idx, input := range s.cfg.Inputs.Inputs {
+		for idx, input := range cfg.Inputs.Inputs {
 			// Find group ID
 			var groupID string
-			for _, group := range cfg.AppInputGroups {
+			for _, group := range inputCfg.AppInputGroups {
 				if group.Name == input.Group {
 					groupID = group.ID
 					break
@@ -111,8 +132,8 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 			inputType := generics.ValOrDefault(input.Type, "string")
 
 			inputs = append(inputs, app.AppInput{
-				OrgID:            cfg.OrgID,
-				AppInputConfigID: cfg.ID,
+				OrgID:            inputCfg.OrgID,
+				AppInputConfigID: inputCfg.ID,
 				AppInputGroupID:  groupID,
 				Name:             input.Name,
 				Description:      input.Description,
@@ -127,7 +148,7 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 			})
 		}
 
-		res := s.db.WithContext(ctx).Create(&inputs)
+		res := db.WithContext(ctx).Create(&inputs)
 		if res.Error != nil {
 			return sync.SyncInternalErr{
 				Description: "unable to create app inputs",
@@ -136,17 +157,57 @@ func (s *syncer) syncAppInput(ctx context.Context) error {
 		}
 	}
 
-	s.state.InputConfigID = cfg.ID
+	state.InputConfigID = inputCfg.ID
+	return nil
+}
+
+// validateInputs validates input names, group references, and types.
+// Duplicates validation logic from services/ctl-api/internal/app/apps/service/create_app_input_config.go
+func validateInputs(cfg *config.AppConfig) error {
+	// Build map of valid group names
+	validGroups := make(map[string]bool)
+	for _, group := range cfg.Inputs.Groups {
+		validGroups[group.Name] = true
+	}
+
+	// Validate each input
+	for _, input := range cfg.Inputs.Inputs {
+		// Validate input name using interpolated_name pattern
+		if input.Name != "" && !interpolatedNameRegex.MatchString(input.Name) {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid input name: %s", input.Name),
+				Description: fmt.Sprintf("Input name '%s' must contain only lowercase letters, numbers, underscores, dots, and curly braces (for interpolation)", input.Name),
+			}
+		}
+
+		// Validate input references a valid group
+		if input.Group != "" && !validGroups[input.Group] {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid group reference: %s", input.Group),
+				Description: fmt.Sprintf("Input '%s' references group '%s' which does not exist", input.Name, input.Group),
+			}
+		}
+
+		// Validate input type is valid
+		inputType := generics.ValOrDefault(input.Type, "string")
+		if !validInputTypes[inputType] {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("invalid input type: %s", inputType),
+				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string", input.Name, inputType),
+			}
+		}
+	}
+
 	return nil
 }
 
 // validateRequiredInputsWithInstalls ensures new required inputs have default values when installs exist.
 // Duplicates logic from services/ctl-api/internal/app/apps/service/create_app_input_config.go
-func (s *syncer) validateRequiredInputsWithInstalls(ctx context.Context) error {
+func validateRequiredInputsWithInstalls(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID string) error {
 	var installCount int64
-	res := s.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		Model(&app.Install{}).
-		Where("app_id = ?", s.appID).
+		Where("app_id = ?", appID).
 		Count(&installCount)
 
 	if res.Error != nil {
@@ -159,8 +220,8 @@ func (s *syncer) validateRequiredInputsWithInstalls(ctx context.Context) error {
 
 	// Get existing input names
 	var existingInputConfig app.AppInputConfig
-	res = s.db.WithContext(ctx).
-		Where("app_id = ?", s.appID).
+	res = db.WithContext(ctx).
+		Where("app_id = ?", appID).
 		Preload("AppInputs").
 		Order("created_at DESC").
 		First(&existingInputConfig)
@@ -175,7 +236,7 @@ func (s *syncer) validateRequiredInputsWithInstalls(ctx context.Context) error {
 	}
 
 	// Validate NEW required inputs have defaults
-	for _, input := range s.cfg.Inputs.Inputs {
+	for _, input := range cfg.Inputs.Inputs {
 		if existingInputNames[input.Name] {
 			continue
 		}
