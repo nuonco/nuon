@@ -1,0 +1,21 @@
+package apisyncer
+
+import (
+	"context"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+)
+
+func (s *syncer) start(ctx context.Context) error {
+	cfg, err := s.apiClient.CreateAppConfig(ctx, s.appID, &models.ServiceCreateAppConfigRequest{
+		Readme:     s.cfg.Readme,
+		CliVersion: s.cliVersion,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.appConfigID = cfg.ID
+	s.state.CfgID = cfg.ID
+	return nil
+}

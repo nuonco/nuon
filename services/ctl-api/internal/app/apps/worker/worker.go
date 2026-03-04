@@ -12,6 +12,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
@@ -28,10 +29,11 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	Cfg     *internal.Config
-	Tclient temporalclient.Client
-	Wkflows *Workflows
-	Acts    *activities.Activities
+	Cfg        *internal.Config
+	Tclient    temporalclient.Client
+	Wkflows    *Workflows
+	Acts       *activities.Activities
+	BranchActs *branchactivities.Activities
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
@@ -57,6 +59,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	// register activities
 	wkr.RegisterActivity(params.Acts)
+	wkr.RegisterActivity(params.BranchActs)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
@@ -69,8 +72,7 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterWorkflow(wkflow)
 	}
 
-	// NOTE(jm): I am deferring doing this the proper way, so I can easily add fx dependencies into submodules in a
-	// a follow up
+	// register nested packages
 	wkr.RegisterActivity(ecrrepository.NewActivities(&ecrrepository.ActivitiesParams{
 		Cfg: params.Cfg,
 	}))

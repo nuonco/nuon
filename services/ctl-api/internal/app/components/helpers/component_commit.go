@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // GetComponentCommit will return a commit for a component, when a connected git source is attached.
@@ -20,25 +20,24 @@ func (s *Helpers) GetComponentCommit(ctx context.Context, cmpID string) (*app.VC
 	}
 
 	// find the latest commit for this connection
-	commit, err := s.vcsHelpers.GetVCSConfigLatestCommit(ctx, cmp.LatestConfig.ConnectedGithubVCSConfig)
+	commit, err := s.vcsHelpers.GetConnectedGithubVCSConfigLatestCommit(ctx, cmp.LatestConfig.ConnectedGithubVCSConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	vcsCommit := app.VCSConnectionCommit{
-		SHA:             *commit.SHA,
-		Message:         *commit.Commit.Message,
-		VCSConnectionID: cmp.LatestConfig.ConnectedGithubVCSConfig.VCSConnectionID,
-	}
-	if commit.Commit != nil && commit.Commit.Author != nil {
-		vcsCommit.AuthorName = generics.FromPtrStr(commit.Commit.Author.Name)
-		vcsCommit.AuthorEmail = generics.FromPtrStr(commit.Commit.Author.Email)
+	// Use mapper to convert GitHub commit to VCSConnectionCommit
+	vcsCommit := s.vcsHelpers.GithubCommitToVCSConnectionCommit(commit,
+		cmp.LatestConfig.ConnectedGithubVCSConfig.ID,
+		plugins.TableName(s.db, &app.ConnectedGithubVCSConfig{}),
+		cmp.LatestConfig.ConnectedGithubVCSConfig.VCSConnectionID)
+	if vcsCommit == nil {
+		return nil, fmt.Errorf("invalid commit data from GitHub")
 	}
 
-	res := s.db.WithContext(ctx).Create(&vcsCommit)
+	res := s.db.WithContext(ctx).Create(vcsCommit)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create vcs commit: %w", res.Error)
 	}
 
-	return &vcsCommit, nil
+	return vcsCommit, nil
 }

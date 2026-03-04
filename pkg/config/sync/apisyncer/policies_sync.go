@@ -1,0 +1,53 @@
+package apisyncer
+
+import (
+	"context"
+
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+)
+
+func (s *syncer) policyToRequest(policy config.AppPolicy) *models.ServiceAppPolicyConfig {
+	pt := models.ConfigAppPolicyType(policy.Type)
+	pe := models.ConfigAppPolicyEngine(policy.Engine)
+	return &models.ServiceAppPolicyConfig{
+		Type:       &pt,
+		Engine:     pe,
+		Name:       policy.Name,
+		Contents:   generics.ToPtr(policy.Contents),
+		Components: policy.Components,
+	}
+}
+
+func (s *syncer) getAppPoliciesRequest() *models.ServiceCreateAppPoliciesConfigRequest {
+	req := &models.ServiceCreateAppPoliciesConfigRequest{
+		AppConfigID: generics.ToPtr(s.appConfigID),
+	}
+
+	policies := make([]*models.ServiceAppPolicyConfig, 0)
+	for _, policy := range s.cfg.Policies.Policies {
+		policies = append(policies, s.policyToRequest(policy))
+	}
+	req.Policies = policies
+
+	return req
+}
+
+func (s *syncer) syncAppPolicies(ctx context.Context, resource string) error {
+	if s.cfg.Policies == nil {
+		return nil
+	}
+
+	req := s.getAppPoliciesRequest()
+	_, err := s.apiClient.CreateAppPoliciesConfig(ctx, s.appID, req)
+	if err != nil {
+		return sync.SyncAPIErr{
+			Resource: resource,
+			Err:      err,
+		}
+	}
+
+	return nil
+}

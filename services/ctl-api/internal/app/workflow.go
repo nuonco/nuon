@@ -36,7 +36,7 @@ const (
 	WorkflowTypeDriftRun                   WorkflowType = "drift_run"
 
 	// app branches workflows
-	WorkflowTypeAppBranchesManualUpdate        WorkflowType = "app_branches_manual_update"
+	WorkflowTypeAppBranchesRun                 WorkflowType = "app_branches_manual_update"
 	WorkflowTypeAppBranchesConfigRepoUpdate    WorkflowType = "app_branches_config_repo_update"
 	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
 
@@ -154,7 +154,7 @@ type Workflow struct {
 	CreatedBy   Account               `json:"created_by" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
@@ -189,6 +189,7 @@ type Workflow struct {
 	InstallSandboxRuns        []InstallSandboxRun        `json:"install_sandbox_runs,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 	InstallDeploys            []InstallDeploy            `json:"install_deploys,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
 	InstallActionWorkflowRuns []InstallActionWorkflowRun `json:"install_action_workflow_runs,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_action_runs,omitzero,omitempty"`
+	AppBranchRuns             []AppBranchRun             `json:"app_branch_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"app_branch_runs,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 }

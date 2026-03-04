@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -20,6 +22,8 @@ type EnqueueResponse struct {
 	WorkflowID string
 }
 
+// @temporal-gen-v2 update
+// @id enqueue
 func (w *queue) enqueueHandler(ctx workflow.Context, sig signal.Signal) (*EnqueueResponse, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -35,8 +39,11 @@ func (w *queue) enqueueHandler(ctx workflow.Context, sig signal.Signal) (*Enqueu
 		return nil, errors.Wrapf(err, "unable to queue item, depth of %d reached", q.MaxDepth)
 	}
 
-	qSignal, err := activities.AwaitCreateQueueSignal(ctx, sig, &activities.CreateQueueSignalRequest{
+	qSignal, err := activities.AwaitCreateQueueSignal(ctx, activities.CreateQueueSignalRequest{
 		QueueID: q.ID,
+		Signal:  sig,
+	}, &workflow.ActivityOptions{
+		StartToCloseTimeout: 10 * time.Second,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create queue signal")
@@ -46,6 +53,7 @@ func (w *queue) enqueueHandler(ctx workflow.Context, sig signal.Signal) (*Enqueu
 		QueueID:       q.ID,
 		QueueSignalID: qSignal.ID,
 	})
+
 	l.Info("queueing signal for processing", zap.String("workflow-id", qSignal.Workflow.ID))
 	w.ch.Send(ctx, QueueRef{
 		WorkflowID: qSignal.Workflow.ID,

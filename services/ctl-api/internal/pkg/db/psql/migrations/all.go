@@ -48,5 +48,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "093-add-adhoc-actions",
 			Fn:   m.Migration093AddAdhocActions,
 		},
+		{
+			Name: "094-vcs-commit-polymorphic-ownership",
+			Fn:   m.Migration094VCSCommitPolymorphicOwnership,
+		},
 	}
 }
