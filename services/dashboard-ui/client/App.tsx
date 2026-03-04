@@ -6,6 +6,7 @@ import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
 import { Login } from '@/views/Login'
+import { Onboarding } from '@/views/Onboarding'
 import { orgRoutes } from '@/views/org/routes'
 
 const queryClient = new QueryClient({
@@ -16,10 +17,6 @@ const queryClient = new QueryClient({
     },
   },
 })
-
-const Onboarding = () => {
-  return <>Onboarding</>
-}
 
 const router = createBrowserRouter([
   { index: true, element: <Login /> },
