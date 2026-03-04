@@ -8,7 +8,6 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
@@ -45,7 +44,7 @@ type Token struct {
 func (a *Token) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:        indexes.Name(db, &Token{}, "token"),
+			Name:        "uni_tokens_token",
 			Columns:     []string{"token"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},

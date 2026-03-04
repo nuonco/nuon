@@ -49,6 +49,10 @@ func (a *InstallActionWorkflow) Indexes(db *gorm.DB) []migrations.Index {
 			Columns:     []string{"deleted_at", "install_id", "action_workflow_id"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
+		{
+			Name:    "idx_iaw_org_id_install_id",
+			Columns: []string{"deleted_at", "org_id", "install_id"},
+		},
 	}
 }
 

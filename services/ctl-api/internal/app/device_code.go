@@ -51,7 +51,7 @@ func (a *DeviceCode) Indexes(db *gorm.DB) []migrations.Index {
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 		{
-			Name:        indexes.Name(db, &DeviceCode{}, "code"),
+			Name:        "uni_device_codes_code",
 			Columns:     []string{"code"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
