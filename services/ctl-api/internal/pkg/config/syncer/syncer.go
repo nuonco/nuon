@@ -74,31 +74,14 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 
-	// Extract org ID from context
-	org, err := cctx.OrgFromContext(ctx)
+	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
 		return sync.SyncInternalErr{
 			Description: "missing org context",
 			Err:         err,
 		}
 	}
-	s.orgID = org.ID
-
-	// Fetch previous state
-	if err := s.fetchState(ctx); err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to fetch state",
-			Err:         err,
-		}
-	}
-
-	// Create app config
-	if err := s.start(ctx); err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to start sync",
-			Err:         err,
-		}
-	}
+	s.orgID = orgID
 
 	// Build sync steps
 	steps := s.syncSteps()
@@ -107,14 +90,6 @@ func (s *syncer) Sync(ctx context.Context) error {
 	for _, step := range steps {
 		if err := step.Method(ctx); err != nil {
 			return err
-		}
-	}
-
-	// Mark config as complete
-	if err := s.finish(ctx); err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to finish sync",
-			Err:         err,
 		}
 	}
 
