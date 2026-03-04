@@ -177,6 +177,7 @@ type Client interface {
 	// log stream/logs
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
 	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, error)
+	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error)
 
 	// components
 	GetAllComponents(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)

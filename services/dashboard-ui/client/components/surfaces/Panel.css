@@ -1,0 +1,61 @@
+.panel-wrapper.enter .panel-overlay {
+  animation: enter-overlay var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+.panel-wrapper.exit .panel-overlay {
+  animation: exit-overlay var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-overlay {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes exit-overlay {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.panel-wrapper.enter .panel {
+  opacity: 0;
+  animation: enter-right var(--duration-fastest) var(--ease-cubic)
+    var(--duration-fastest) forwards;
+}
+
+.panel-wrapper.exit .panel {
+  animation: exit-right var(--duration-fastest) var(--ease-cubic) forwards;
+}
+
+@keyframes enter-right {
+  0% {
+    opacity: 0;
+    transform: translateX(5rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes exit-right {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(5rem);
+  }
+}
+
+.panel {
+  transition: width var(--duration-fastest) var(--ease-cubic);
+}

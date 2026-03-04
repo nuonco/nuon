@@ -1,0 +1,87 @@
+#toast-portal {
+  --stack-gap: 24px;
+  --ease: ease;
+  --speed: 0.4s;
+  --speed-fast: 0.25s;
+  height: var(--height);
+  transition:
+    height var(--speed) var(--ease),
+    bottom var(--speed) var(--ease);
+}
+
+#toast-portal:hover {
+  height: var(--hover-height);
+}
+
+#toast-portal:hover .toast-wrapper:not(:last-child) .toast {
+  transform: translate3d(
+    0,
+    calc(var(--hover-offset-y) - var(--stack-gap) * (var(--index) - 1)),
+    0
+  );
+}
+
+.toast-wrapper .toast {
+}
+
+.toast-wrapper.toast-wrapper-1 .toast {
+  --bottom-start: -1rem;
+}
+
+#toast-portal .toast-wrapper:not(:last-child) .toast {
+  --i: calc(var(--index) - 1);
+  --bottom-start: 0;
+  transform: translate3d(0, calc(1px - (var(--stack-gap) * var(--i))), 0)
+    scale(calc(1 - 0.05 * var(--i)));
+}
+
+.toast-wrapper.enter.toast-wrapper-4 .toast {
+  animation: fade-toast var(--speed-fast) var(--ease) forwards;
+}
+
+/* toast component */
+.toast {
+  transition-property: opacity, transform, bottom;
+  transition-duration: var(--speed);
+  transition-timing-function: var(--ease);
+}
+
+.enter .toast {
+  opacity: 0;
+  animation: enter-toast var(--speed) var(--ease) var(--speed) forwards;
+}
+
+.exit .toast {
+  animation: exit-toast var(--speed-fast) var(--ease) forwards;
+}
+
+@keyframes enter-toast {
+  0% {
+    opacity: 0;
+    bottom: var(--bottom-start);
+  }
+  100% {
+    opacity: 1;
+    bottom: 0;
+  }
+}
+
+@keyframes exit-toast {
+  0% {
+    opacity: 1;
+    bottom: 0;
+  }
+  100% {
+    opacity: 0;
+    bottom: -1rem;
+  }
+}
+
+@keyframes fade-toast {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

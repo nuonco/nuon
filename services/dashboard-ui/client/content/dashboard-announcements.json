@@ -1,0 +1,16 @@
+{
+  "announcements": [
+    {
+      "id": "nuon-actions-2025",
+      "title": "Day-2 using Actions!",
+      "date": "Jan 5, 2026",
+      "description": "Actions allow you to create automated workflows that can be run in installs. Actions are useful for debugging, running scripts, and implementing health checks.",
+      "image": "/images/announcements/nuon-actions-light.png",
+      "imageDark": "/images/announcements/nuon-actions-dark.png",
+      "ctaText": "Check it out",
+      "ctaUrl": "https://docs.nuon.co/concepts/actions",
+      "dismissible": true
+    }
+  ]
+}
+
