@@ -1,20 +1,33 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
+  "theme": "almond",
   "name": "Nuon documentation",
+  "description": "Deploy your software into customer cloud accounts without cross-account access. Nuon is the BYOC platform for software vendors.",
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude"]
+    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
   },
   "colors": {
-    "primary": "#8040BF",
-    "light": "#C494F4",
-    "dark": "#8040BF"
+    "primary": "#256A7F",
+    "light": "#4CC9F0",
+    "dark": "#256A7F"
+  },
+  "background": {
+    "color": {
+      "light": "#FAFAFA"
+    }
   },
   "favicon": "/favicon.svg",
+  "custom": {
+    "css": "/style.css"
+  },
+  "fonts": {
+    "family": "Inter"
+  },
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
+        "icon": "book-open",
         "groups": [
           {
             "group": "Get Started",
@@ -32,27 +45,43 @@
               {
                 "group": "Config Reference",
                 "pages": [
-                  "config-ref/action",
-                  "config-ref/break-glass",
-                  "config-ref/container-image",
-                  "config-ref/docker-build",
-                  "config-ref/helm",
-                  "config-ref/input",
-                  "config-ref/input-group",
-                  "config-ref/inputs",
-                  "config-ref/install",
-                  "config-ref/installer",
-                  "config-ref/kubernetes-manifest",
-                  "config-ref/metadata",
-                  "config-ref/permissions",
-                  "config-ref/policies",
-                  "config-ref/policy",
-                  "config-ref/runner",
-                  "config-ref/sandbox",
-                  "config-ref/secret",
-                  "config-ref/secrets",
-                  "config-ref/stack",
-                  "config-ref/terraform"
+                  "config-ref/index",
+                  {
+                    "group": "Component Types",
+                    "pages": [
+                      "config-ref/container-image",
+                      "config-ref/docker-build",
+                      "config-ref/helm",
+                      "config-ref/kubernetes-manifest",
+                      "config-ref/terraform"
+                    ]
+                  },
+                  {
+                    "group": "Configuration Types",
+                    "pages": [
+                      "config-ref/inputs",
+                      "config-ref/metadata",
+                      "config-ref/permissions",
+                      "config-ref/policies",
+                      "config-ref/secrets"
+                    ]
+                  },
+                  {
+                    "group": "Other Types",
+                    "pages": [
+                      "config-ref/action",
+                      "config-ref/break-glass",
+                      "config-ref/input",
+                      "config-ref/input-group",
+                      "config-ref/install",
+                      "config-ref/installer",
+                      "config-ref/policy",
+                      "config-ref/runner",
+                      "config-ref/sandbox",
+                      "config-ref/secret",
+                      "config-ref/stack"
+                    ]
+                  }
                 ]
               }
             ]
@@ -65,11 +94,16 @@
               "platform-support/azure",
               "platform-support/gcp"
             ]
+          },
+          {
+            "group": "Support",
+            "pages": ["support/support"]
           }
         ]
       },
       {
         "tab": "Changelog",
+        "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
           "updates/031-operation-roles",
@@ -106,29 +140,28 @@
         ]
       },
       {
-        "tab": "Architecture",
-        "pages": ["runner-architecture"]
-      },
-      {
         "tab": "Concepts",
+        "icon": "lightbulb",
         "pages": [
           "concepts/overview",
           "concepts/apps",
           "concepts/sandboxes",
           "concepts/components",
           "concepts/installs",
-          "concepts/actions",
-          "concepts/operation-roles",
-          "concepts/workflows",
-          "concepts/policies",
           "concepts/runners",
+          "concepts/workflows",
+          "concepts/actions",
+          "concepts/policies",
+          "concepts/operation-roles",
           "concepts/app-inputs",
           "concepts/app-variables",
-          "concepts/app-secrets"
+          "concepts/app-secrets",
+          "concepts/glossary"
         ]
       },
       {
         "tab": "Guides",
+        "icon": "map",
         "groups": [
           {
             "group": "Configuration",
@@ -145,7 +178,9 @@
               "guides/component-dependencies",
               "guides/actions",
               "guides/operation-roles",
-              "guides/ai-and-apps"
+              "guides/ai-and-apps",
+              "guides/app-init",
+              "guides/bring-your-own-network"
             ]
           },
           {
@@ -168,16 +203,18 @@
           },
           {
             "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions"]
+            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
           }
         ]
       },
       {
-        "tab": "Support",
-        "pages": ["support/support"]
+        "tab": "Architecture",
+        "icon": "sitemap",
+        "pages": ["runner-architecture"]
       },
       {
         "tab": "Knowledge Base",
+        "icon": "book-open",
         "href": "https://support.nuon.co"
       }
     ],
@@ -203,7 +240,8 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "/get-started/introduction"
   },
   "navbar": {
     "primary": {
@@ -218,7 +256,7 @@
   "footer": {
     "socials": {
       "website": "https://www.nuon.co",
-      "twitter": "https://twitter.com/nuoninc",
+      "x": "https://twitter.com/nuoninc",
       "linkedin": "https://www.linkedin.com/company/nuonco/"
     }
   },
@@ -234,15 +272,11 @@
     },
     {
       "source": "/changelog",
-      "destination": "/updates/changelog"
-    },
-    {
-      "source": "/roadmap",
-      "destination": "/updates/roadmap"
+      "destination": "/updates/updates"
     },
     {
       "source": "/faq",
-      "destination": "/support/faq"
+      "destination": "/support/support"
     }
   ]
 }
