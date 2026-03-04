@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth-server'
 import { executeServerAction } from '@/actions/execute-server-action'
 import { SF_TRIAL_ACCESS_ENDPOINT } from '@/configs/app'
 import { createOrg as create, type TCreateOrgBody } from '@/lib'
+import { statsd } from '@/lib/metrics'
 
 export async function createOrg({
   body,
@@ -31,13 +32,30 @@ export async function createOrg({
       subject: 'trial-signup',
     })
 
+    const sfMetric = 'ui.request.upstream.latency'
+    const sfStart = Date.now()
+    const sfTags = {
+      upstream: 'salesforce',
+      method: 'post',
+      endpoint: new URL(SF_TRIAL_ACCESS_ENDPOINT).pathname,
+      status: 'unknown',
+      status_code_class: 'unknown',
+    }
     await fetch(SF_TRIAL_ACCESS_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: requestBody,
-    }).catch((err) => {
-      console.error('error posting to salesforce api:', err)
     })
+      .then((res) => {
+        sfTags.status = res.status < 400 ? 'success' : 'error'
+        sfTags.status_code_class = Math.floor(res.status / 100) + 'xx'
+        statsd?.timing(sfMetric, Date.now() - sfStart, sfTags)
+      })
+      .catch((err) => {
+        console.error('error posting to salesforce api:', err)
+        sfTags.status = 'error'
+        statsd?.timing(sfMetric, Date.now() - sfStart, sfTags)
+      })
   }
 
   return executeServerAction({
