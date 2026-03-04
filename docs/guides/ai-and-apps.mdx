@@ -1,21 +1,34 @@
 ---
 title: "AI and App Building"
-description: "Learn how AI can build your Nuon app configuration."
-icon: "code"
-keywords: ["AI assistant", "generate app config", "AI app builder", "automated configuration"]
+description: "Use AI agents to generate and manage your Nuon app configuration."
+icon: "robot"
+keywords: ["AI assistant", "generate app config", "AI app builder", "automated configuration", "Claude Code", "nuon-plugin"]
 ---
 
-Besides copying one of our [example apps](https://github.com/nuonco/example-app-configs) and changing the TOML files, you can also leverage your favorite terminal-based AI tool to generate a Nuon app.
+You can use any terminal-based AI agent to build Nuon app configurations — instead of writing TOML files by hand, describe your application and let the agent scaffold everything for you.
 
+## Getting started
 
-If you clone the [example apps repo](https://github.com/nuonco/example-app-configs), there is an [AGENTS.md](https://github.com/nuonco/example-app-configs/blob/main/AGENTS.md) and  [CLAUDE.md](https://github.com/nuonco/example-app-configs/blob/main/AGENTS.md) that symlinks to it, that give instructions to a terminal-based AI agent on how to build an app.
+Clone the [example apps repo](https://github.com/nuonco/example-app-configs) and start your agent from that directory. The repo includes an `AGENTS.md` file (with a `CLAUDE.md` symlink) that gives any agent the context it needs: links to the Nuon OSS repo, example configs, and sandbox infrastructure references.
 
-The file gives URLs our OSS repo, our example apps repo, and sandbox repos (Kubernetes and other underlying infrastructure) to help guide the agent on how to build your app.
+```bash
+git clone https://github.com/nuonco/example-app-configs
+cd example-app-configs
+claude  # or: gemini, amp, etc.
+```
 
-When starting the AI agent, you should also provide links to your Helm charts, documentation, Terraform repos - to help guide the agent as well.
+When starting the agent, also point it at your own resources — Helm charts, Terraform modules, and any relevant documentation — so it can tailor the config to your stack.
 
-Any agent can work like Claude Code, Google Gemini CLI, Amp Code, etc. Create a symlink to the `AGENTS.md` if needed. e.g., `GEMINI.md` for Gooogle Gemini CLI.
+<Tip>
+Works with any agent: Claude Code, Google Gemini CLI, Amp Code, and others. For agents that don't read `CLAUDE.md`, create a symlink — e.g., `ln -s AGENTS.md GEMINI.md`.
+</Tip>
 
-<Note>
-Be sure to start the AI agent in the home directory of the examples repo or copy the `AGENTS.md` and `CLAUDE.md` files to a directory you want to build the Nuon app configuration from.
-</Note>
+## Claude Code
+
+Claude Code users can also load the [nuon-plugin](https://github.com/nuonco/nuon-plugin) for deeper integration, or install individual [skills](https://github.com/nuonco/skills) from the Nuon skills library.
+
+The plugin adds `/nuon:init`, `/nuon:convert`, and `/nuon:validate` slash commands directly in your Claude session. The skills (`nuon-creator`, `nuon-app-config`, `nuon-actions`, `nuon-policy`) provide focused, auto-invoked assistance for specific tasks like config generation, action scripting, and policy authoring.
+
+```bash
+npx skills add nuonco/skills
+```
