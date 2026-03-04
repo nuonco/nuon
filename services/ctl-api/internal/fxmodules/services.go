@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
+<<<<<<< Updated upstream
 // domainServiceEntry defines a domain service with both its FX constructor
 // and a factory for creating zero-value test instances.
 type domainServiceEntry struct {
@@ -82,6 +83,8 @@ func TestDomainServices(ea *api.EndpointAudit) []api.Service {
 	return svcs
 }
 
+=======
+>>>>>>> Stashed changes
 // sharedServices are services needed by public, runner, and internal APIs.
 // These do NOT include authservice which has strict config requirements.
 var sharedServices = fx.Options(
@@ -91,7 +94,19 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(httpbin.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
 	// Domain services with swagger-annotated routes.
-	domainServicesFxOptions(),
+	fx.Provide(api.AsService(accountsservice.New)),
+	fx.Provide(api.AsService(actionsservice.New)),
+	fx.Provide(api.AsService(appsservice.New)),
+	fx.Provide(api.AsService(componentsservice.New)),
+	fx.Provide(api.AsService(generalservice.New)),
+	fx.Provide(api.AsService(identityprovidersservice.New)),
+	fx.Provide(api.AsService(installsservice.New)),
+	fx.Provide(api.AsService(orgsservice.New)),
+	fx.Provide(api.AsService(policyreportsservice.New)),
+	fx.Provide(api.AsService(releasesservice.New)),
+	fx.Provide(api.AsService(runnerauthservice.New)),
+	fx.Provide(api.AsService(runnersservice.New)),
+	fx.Provide(api.AsService(vcsservice.New)),
 )
 
 // PublicServicesModule provides services for the public API (excludes authservice).
