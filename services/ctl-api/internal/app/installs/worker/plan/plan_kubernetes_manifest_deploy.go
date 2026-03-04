@@ -11,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/diff"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -36,17 +34,15 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, err
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
-	}
-
 	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
+		ctx,
+		installDeploy.ComponentBuildID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -80,11 +76,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
-	}
-
 	// Build OCI artifact reference from the install deploy's synced artifact
 	// The manifest content is pulled from this artifact at runtime by the runner
 	ociArtifact := installDeploy.OCIArtifact
@@ -97,21 +88,22 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		zap.String("tag", ociArtifact.Tag),
 		zap.String("digest", ociArtifact.Digest))
 
-	// Perform role selection for component deploys
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
+	cloudAuth, err := p.getAuthForDeploy(
+		ctx,
+		installDeploy,
+		compBuild,
+		appCfg,
+		stack,
+		state,
+		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for deploy")
+	}
 
-	if !org.SandboxMode {
-		awsAuth, azureAuth, err = p.getAuthForDeploy(ctx, stack.InstallStackOutputs, installDeploy, compBuild, appCfg, stack, state, fmt.Sprintf("component-deploy-%s", installDeploy.ID))
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get auth for deploy")
-		}
-
-		// Set auth on cluster info if present
-		if clusterInfo != nil {
-			clusterInfo.WithAWSAuth(awsAuth)
-			clusterInfo.WithAzureAuth(azureAuth)
-		}
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
 	return &plantypes.KubernetesManifestDeployPlan{
@@ -123,12 +115,14 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 			Tag:    ociArtifact.Tag,
 			Digest: ociArtifact.Digest,
 		},
-		AWSAuth:   awsAuth,
-		AzureAuth: azureAuth,
+		AWSAuth:   cloudAuth.AWS,
+		AzureAuth: cloudAuth.Azure,
 	}, nil
 }
 
-func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(req *plantypes.KubernetesManifestDeployPlan) (*plantypes.KubernetesSandboxMode, error) {
+func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(
+	req *plantypes.KubernetesManifestDeployPlan,
+) (*plantypes.KubernetesSandboxMode, error) {
 	obj := types.KubernetesManifestPlanContents{
 		Plan: "{\n  \"diff\": [\n    {\n      \"_version\": \"2\",\n      \"name\": \"demo\",\n      \"namespace\": \"default\",\n      \"kind\": \"ConfigMap\",\n      \"api\": \"/v1\",\n      \"resource\": \"configmaps\",\n      \"op\": \"apply\",\n      \"type\": 3,\n      \"dry_run\": true,\n      \"entries\": [\n        {\n          \"path\": \"data.sample_data\",\n          \"original\": \"3\",\n          \"applied\": \"4\",\n          \"type\": 3,\n          \"payload\": \"  map[string]any{\\n  \\t\\\"apiVersion\\\": string(\\\"v1\\\"),\\n- \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"3\\\")},\\n+ \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"4\\\")},\\n  \\t\\\"kind\\\":       string(\\\"ConfigMap\\\"),\\n  \\t\\\"metadata\\\":   map[string]any{\\\"name\\\": string(\\\"demo\\\"), ...},\\n  }\\n\"\n        }\n      ]\n    }\n  ]\n}",
 		Op:   "apply",

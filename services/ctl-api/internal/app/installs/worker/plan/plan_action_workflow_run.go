@@ -8,8 +8,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -77,7 +75,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
-	var attrs map[string]string = make(map[string]string, 0)
+	attrs := make(map[string]string, 0)
 	if !run.ActionWorkflowConfigID.Empty() {
 		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
 		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
@@ -87,6 +85,16 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		attrs["action.id"] = run.ID
 	}
 
+	cloudAuth, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
+	}
+
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
 		InstallID:       run.InstallID,
 		ID:              runID,
@@ -94,11 +102,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
 		Attrs:           attrs,
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err == nil {
-		plan.ClusterInfo = clusterInfo
+		ClusterInfo:     clusterInfo,
+		AzureAuth:       cloudAuth.Azure,
+		AWSAuth:         cloudAuth.AWS,
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {
@@ -118,27 +124,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
-
-	// Perform role selection for action workflow runs
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
-
-	if !org.SandboxMode {
-		awsAuth, azureAuth, err = p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get auth for action workflow run")
-		}
-
-		// Set auth on cluster info if present
-		if plan.ClusterInfo != nil {
-			plan.ClusterInfo.WithAWSAuth(awsAuth)
-			plan.ClusterInfo.WithAzureAuth(azureAuth)
-		}
-	}
-
-	// Set auth on the plan
-	plan.AWSAuth = awsAuth
-	plan.AzureAuth = azureAuth
 
 	if org.SandboxMode {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
@@ -235,15 +220,15 @@ func (p *Planner) getAuthForActionWorkflowRun(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
-) (*awscredentials.Config, *azurecredentials.Config, error) {
+) (*CloudAuth, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	roleSelection, operation, err := p.getRoleForAction(l, appCfg, run, stack, installState)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	l.Info("selected role for action workflow run plan",
@@ -254,25 +239,5 @@ func (p *Planner) getAuthForActionWorkflowRun(
 		zap.String("run_id", run.ID),
 	)
 
-	switch {
-	case outputs.AWSStackOutputs != nil:
-		return &awscredentials.Config{
-			Region: outputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: fmt.Sprintf("action-workflow-%s", run.ID),
-				RoleARN:     roleSelection.RoleARN,
-			},
-		}, nil, nil
-	case outputs.AzureStackOutputs != nil:
-		azureOutputs := outputs.AzureStackOutputs
-		return nil, &azurecredentials.Config{
-			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-				SubscriptionID:       azureOutputs.SubscriptionID,
-				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
-			},
-			UseDefault: true,
-		}, nil
-	}
-
-	return nil, nil, errors.New("unable to get auth data from stack outputs")
+	return getCloudAuth(roleSelection, &outputs, fmt.Sprintf("action-workflow-%s", run.ID))
 }

@@ -41,19 +41,13 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
-	awsAuth, azureAuth, err := p.getAuthForDeploy(ctx, stack.InstallStackOutputs, installDeploy, compBuild, appCfg, stack, installState, sessionName)
+	cloudAuth, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for install registry")
 	}
 
 	cfg := &configs.OCIRegistryRepository{
-		RegistryType: "",
-		Plugin:       "oci",
-		Repository:   "",
-		LoginServer:  "",
-		Region:       "",
-		ECRAuth:      nil,
-		ACRAuth:      nil,
+		Plugin: "oci",
 	}
 
 	// NOTE(jm): this is mainly a relic of not having the outputs properly passed from the install sandbox, or a
@@ -83,7 +77,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 		}
 		cfg.LoginServer = loginServer
 		cfg.Region = stack.InstallStackOutputs.AWSStackOutputs.Region
-		cfg.ECRAuth = awsAuth
+		cfg.ECRAuth = cloudAuth.AWS
 
 	case stack.InstallStackOutputs.AzureStackOutputs != nil:
 

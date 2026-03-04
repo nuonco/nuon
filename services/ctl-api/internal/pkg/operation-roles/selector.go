@@ -63,8 +63,9 @@ const (
 
 type RoleSelection struct {
 	RoleName string
-	RoleARN  string
-	Source   RoleSelectionSource
+	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
+	RoleARN string
+	Source  RoleSelectionSource
 }
 
 // SelectRole determines which role to use based on precedence rules

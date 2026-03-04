@@ -12,9 +12,6 @@ import (
 
 	_ "embed"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -46,12 +43,10 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install id")
-	}
-
-	installComp, err := activities.AwaitGetInstallComponentByID(ctx, installDeploy.InstallComponentID)
+	installComp, err := activities.AwaitGetInstallComponentByID(
+		ctx,
+		installDeploy.InstallComponentID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
@@ -61,7 +56,10 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
+		ctx,
+		installDeploy.ComponentBuildID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -85,14 +83,6 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	var clusterInfo *kube.ClusterInfo
-	if !org.SandboxMode {
-		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
-		if err != nil {
-			l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
-		}
-	}
-
 	envVars := generics.ToStringMap(cfg.EnvVars)
 
 	if err := render.RenderMap(&envVars, stateData); err != nil {
@@ -104,15 +94,22 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	// Perform role selection for component deploys
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
+	cloudAuth, err := p.getAuthForDeploy(
+		ctx,
+		installDeploy,
+		compBuild,
+		appCfg,
+		stack,
+		state,
+		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for deploy")
+	}
 
-	if !org.SandboxMode {
-		awsAuth, azureAuth, err = p.getAuthForDeploy(ctx, stack.InstallStackOutputs, installDeploy, compBuild, appCfg, stack, state, fmt.Sprintf("component-deploy-%s", installDeploy.ID))
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get auth for deploy")
-		}
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
 	}
 
 	// construct plan from rendered values
@@ -125,8 +122,8 @@ func (p *Planner) createTerraformDeployPlan(
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
-		AzureAuth:   azureAuth,
-		AWSAuth:     awsAuth,
+		AzureAuth:   cloudAuth.Azure,
+		AWSAuth:     cloudAuth.AWS,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,
@@ -134,7 +131,10 @@ func (p *Planner) createTerraformDeployPlan(
 	}, nil
 }
 
-func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) (*plantypes.TerraformSandboxMode, error) {
+func (p *Planner) createTerraformDeploySandboxMode(
+	ctx workflow.Context,
+	req *plantypes.TerraformDeployPlan,
+) (*plantypes.TerraformSandboxMode, error) {
 	pdcJSONByts := new(bytes.Buffer)
 	if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
 		return nil, errors.Wrap(err, "unable to get json")

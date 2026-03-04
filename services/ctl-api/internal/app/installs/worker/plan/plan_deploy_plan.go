@@ -7,8 +7,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
@@ -197,22 +195,28 @@ func (p *Planner) getRoleForDeploy(
 
 func (p *Planner) getAuthForDeploy(
 	ctx workflow.Context,
-	outputs app.InstallStackOutputs,
 	installDeploy *app.InstallDeploy,
 	compBuild *app.ComponentBuild,
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
 	sessionName string,
-) (*awscredentials.Config, *azurecredentials.Config, error) {
+) (*CloudAuth, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	roleSelection, operation, err := p.getRoleForDeploy(l, appCfg, installDeploy, compBuild, stack, installState)
+	roleSelection, operation, err := p.getRoleForDeploy(
+		l,
+		appCfg,
+		installDeploy,
+		compBuild,
+		stack,
+		installState,
+	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	l.Info("selected role for component deploy plan",
@@ -223,25 +227,5 @@ func (p *Planner) getAuthForDeploy(
 		zap.String("deploy_type", string(installDeploy.Type)),
 	)
 
-	switch {
-	case outputs.AWSStackOutputs != nil:
-		return &awscredentials.Config{
-			Region: outputs.AWSStackOutputs.Region,
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				SessionName: sessionName,
-				RoleARN:     roleSelection.RoleARN,
-			},
-		}, nil, nil
-	case outputs.AzureStackOutputs != nil:
-		azureOutputs := outputs.AzureStackOutputs
-		return nil, &azurecredentials.Config{
-			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-				SubscriptionID:       azureOutputs.SubscriptionID,
-				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
-			},
-			UseDefault: true,
-		}, nil
-	}
-
-	return nil, nil, errors.New("unable to get auth data from stack outputs")
+	return getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
 }

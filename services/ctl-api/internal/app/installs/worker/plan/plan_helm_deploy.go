@@ -10,8 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -40,17 +38,15 @@ func (p *Planner) createHelmDeployPlan(
 		return nil, err
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
-	}
-
 	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
+		ctx,
+		installDeploy.ComponentBuildID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -86,16 +82,14 @@ func (p *Planner) createHelmDeployPlan(
 
 	var helmChartID string
 	if driver == "nuon" {
-		hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
+		hc, err := activities.AwaitGetHelmChartByOwnerID(
+			ctx,
+			installDeploy.InstallComponent.ID,
+		)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get helm chart")
 		}
 		helmChartID = hc.ID
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
 	valuesFiles := []string(cfg.ValuesFiles)
@@ -112,21 +106,22 @@ func (p *Planner) createHelmDeployPlan(
 		})
 	}
 
-	// Perform role selection for component deploys
-	var awsAuth *awscredentials.Config
-	var azureAuth *azurecredentials.Config
+	cloudAuth, err := p.getAuthForDeploy(
+		ctx,
+		installDeploy,
+		compBuild,
+		appCfg,
+		stack,
+		state,
+		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for deploy")
+	}
 
-	if !org.SandboxMode {
-		awsAuth, azureAuth, err = p.getAuthForDeploy(ctx, stack.InstallStackOutputs, installDeploy, compBuild, appCfg, stack, state, fmt.Sprintf("component-deploy-%s", installDeploy.ID))
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get auth for deploy")
-		}
-
-		// Set auth on cluster info if present
-		if clusterInfo != nil {
-			clusterInfo.WithAWSAuth(awsAuth)
-			clusterInfo.WithAzureAuth(azureAuth)
-		}
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
 	return &plantypes.HelmDeployPlan{
@@ -140,12 +135,15 @@ func (p *Planner) createHelmDeployPlan(
 		TakeOwnership:   cfg.TakeOwnership,
 
 		ClusterInfo: clusterInfo,
-		AWSAuth:     awsAuth,
-		AzureAuth:   azureAuth,
+		AWSAuth:     cloudAuth.AWS,
+		AzureAuth:   cloudAuth.Azure,
 	}, nil
 }
 
-func (p *Planner) createHelmDeploySandboxMode(ctx workflow.Context, req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
+func (p *Planner) createHelmDeploySandboxMode(
+	ctx workflow.Context,
+	req *plantypes.HelmDeployPlan,
+) *plantypes.HelmSandboxMode {
 	return &plantypes.HelmSandboxMode{
 		PlanContents:        FakeHelmPlanJSON,
 		PlanDisplayContents: FakeHelmPlanDisplayJSON,
