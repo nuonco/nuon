@@ -76,7 +76,6 @@ nuon sync
 		c.orgsCmd(),
 		c.secretsCmd(),
 		c.buildsCmd(),
-		c.devCmd(),
 		c.loginCmd(),
 		c.extensionsCmd(),
 	}

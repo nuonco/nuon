@@ -43,7 +43,7 @@ func New(params Params) *service {
 		db:             params.DB,
 		cfg:            params.Cfg,
 		v:              params.V,
-		l:              params.Logger.Named("queues.service"),
+		l:              params.Logger,
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 	}

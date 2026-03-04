@@ -58,6 +58,7 @@ var domainServices = []domainServiceEntry{
 	{runnerauthservice.New, func(ea *api.EndpointAudit) api.Service { return runnerauthservice.New(runnerauthservice.Params{}) }},
 	{runnersservice.New, func(ea *api.EndpointAudit) api.Service { return runnersservice.New(runnersservice.Params{}) }},
 	{vcsservice.New, func(ea *api.EndpointAudit) api.Service { return vcsservice.New(vcsservice.Params{}) }},
+	{queuesservice.New, func(ea *api.EndpointAudit) api.Service { return queuesservice.New(queuesservice.Params{}) }},
 }
 
 // domainServicesFxOptions builds FX provider options from domainServices.
@@ -88,7 +89,6 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
 	fx.Provide(api.AsService(httpbin.New)),
-	fx.Provide(api.AsService(queuesservice.New)),
 	fx.Provide(api.AsService(admindashboardservice.New)),
 	// Domain services with swagger-annotated routes.
 	domainServicesFxOptions(),
