@@ -136,6 +136,94 @@ var models []ModelName
 err := db.Select(&models, "SELECT * FROM table_name WHERE org_id = $1", orgID)
 ```
 
+**SQL Views for Computed Fields:**
+
+When you need computed fields like numbered sequences, aggregations, or complex joins, use SQL views instead of migrations:
+
+**When to Use Views:**
+- Computed sequences (e.g., `install_number`, `config_number`)
+- Aggregated data from related tables
+- Complex joins that would be expensive in application code
+- Read-only derived fields
+
+**Implementation Pattern:**
+
+1. **Create SQL View File** in `/services/ctl-api/internal/pkg/db/viewsql/`:
+```sql
+/* app_branch_configs_view_v1.sql */
+SELECT
+    abc.*,
+    row_number() OVER (
+        PARTITION BY app_branch_id
+        ORDER BY abc.created_at
+    ) AS config_number
+FROM
+    app_branch_configs abc
+WHERE
+    abc.deleted_at = 0
+```
+
+2. **Add Embed to viewsql.go**:
+```go
+//go:embed app_branch_configs_view_v1.sql
+var AppBranchConfigsViewV1 string
+```
+
+3. **Update Model** in `/services/ctl-api/internal/app/`:
+```go
+import (
+    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+    "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+)
+
+type AppBranchConfig struct {
+    // ... existing fields ...
+    
+    // View-generated field - read-only
+    ConfigNumber int `json:"config_number,omitzero" gorm:"->;-:migration" temporaljson:"config_number,omitzero,omitempty"`
+}
+
+// Enable view usage
+func (a *AppBranchConfig) UseView() bool {
+    return true
+}
+
+// Version the view for schema evolution
+func (a *AppBranchConfig) ViewVersion() string {
+    return "v1"
+}
+
+// Define the view
+func (a *AppBranchConfig) Views(db *gorm.DB) []migrations.View {
+    return []migrations.View{
+        {
+            Name:          views.DefaultViewName(db, &AppBranchConfig{}, 1),
+            SQL:           viewsql.AppBranchConfigsViewV1,
+            AlwaysReapply: true, // Recreate on every migration run
+        },
+    }
+}
+```
+
+**Critical View Field Tags:**
+- `gorm:"->;-:migration"` - Read-only field, excluded from migrations
+- View fields CANNOT be written to via GORM operations
+- Views are recreated automatically on service startup
+
+**View Versioning:**
+- Start at `v1`, increment for schema changes
+- Use `AlwaysReapply: true` to ensure views stay current
+- Old view versions can coexist during migrations
+
+**Common Patterns:**
+- **Numbered sequences**: `row_number() OVER (PARTITION BY parent_id ORDER BY created_at)`
+- **Aggregations**: JOIN with subqueries using `hstore()` for key-value pairs
+- **Status rollups**: CASE statements to compute composite statuses
+
+**Examples in Codebase:**
+- `install.go` - Uses `InstallsViewV6` for `install_number` and component statuses
+- `app_branch_config.go` - Uses `AppBranchConfigsViewV1` for `config_number`
+
 ### 4. RBAC Integration
 
 **Three-Layer Permission System:**
@@ -180,6 +268,47 @@ if err != nil {
         Error:   "internal_error",
         Message: "Failed to perform operation",
     })
+}
+```
+
+**User-Facing Validation Errors:**
+
+For validation errors that should be shown to end users, use `stderr.ErrUser`:
+
+```go
+import "github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+
+func (c *CreateRequest) Validate(v *validator.Validate) error {
+    if err := v.Struct(c); err != nil {
+        return err
+    }
+    
+    // Custom validation with user-friendly error
+    if c.SomeField == c.OtherField {
+        return stderr.ErrUser{
+            Err:         fmt.Errorf("fields cannot be equal: %s", c.SomeField),
+            Description: "the two fields must have different values",
+        }
+    }
+    
+    return nil
+}
+```
+
+**When to Use stderr.ErrUser:**
+- Input validation failures (duplicate values, invalid combinations)
+- Business rule violations (constraints, limits exceeded)
+- Any error that the end user can fix by changing their input
+- Provides both technical error (for logging) and user-friendly description (for API response)
+
+**Example from Codebase:**
+```go
+// In shared_vcs_configs.go validation
+if b.PublicGitVCSConfig != nil && b.ConnectedGithubVCSConfig != nil {
+    return stderr.ErrUser{
+        Err:         fmt.Errorf("both public and connected github config set"),
+        Description: "only one of connected github or public git configs can be set",
+    }
 }
 ```
 
@@ -241,6 +370,15 @@ go fmt ./services/ctl-api/...
 - **Service Config**: `/services/ctl-api/service.yml`
 
 You are proactive in identifying security issues, performance concerns, and maintainability problems. You provide complete, production-ready implementations that follow Nuon's established patterns and best practices.
+
+## Packages
+
+Please reference `pkg` in the top of the mono repo.
+
+Specifically:
+
+- pkg/generics
+- pkg/gen/temporal-gen-v2
 
 ## Todo
 

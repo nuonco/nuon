@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 // BlobMetadata represents the JSONB structure stored in the database
@@ -86,7 +86,7 @@ func (b Blob) GormDataType() string {
 }
 
 // BeforeSave implements GORM hook for automatic S3 upload
-func (b *Blob) BeforeSave(tx *gorm.DB) error {
+func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	// Skip if not dirty (no changes)
 	if !b.dirty {
 		return nil
@@ -109,7 +109,7 @@ func (b *Blob) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// Construct S3 key: org_id/blob_id
-	s3Key := fmt.Sprintf("%s/%s", orgID, b.metadata.BlobID)
+	s3Key := buildS3Key(orgID, b.metadata.BlobID)
 	b.metadata.S3Key = s3Key
 
 	// Get account ID for created_by
@@ -142,7 +142,7 @@ func (b *Blob) BeforeSave(tx *gorm.DB) error {
 	reader := strings.NewReader(*b.value)
 	checksum, err := svc.UploadStream(tx.Statement.Context, s3Key, reader)
 	if err != nil {
-		return fmt.Errorf("failed to upload blob to S3: %w", err)
+		return fmt.Errorf("failed to upload blob to S3 key (%s): %w", s3Key, err)
 	}
 
 	// Store metadata
@@ -303,10 +303,24 @@ func (b *Blob) SetContentType(contentType string) {
 
 // cctxOrgIDFromContext extracts org ID from context using cctx package
 func cctxOrgIDFromContext(ctx context.Context) (string, error) {
-	return cctx.OrgIDFromContext(ctx)
+	orgID := keys.OrgIDFromContext(ctx)
+	if orgID == "" {
+		return "", fmt.Errorf("org ID not set on context")
+	}
+	return orgID, nil
 }
 
 // cctxAccountIDFromContext extracts account ID from context using cctx package
 func cctxAccountIDFromContext(ctx context.Context) (string, error) {
-	return cctx.AccountIDFromContext(ctx)
+	accountID := keys.CreatedByIDFromContext(ctx)
+	if accountID == "" {
+		return "", fmt.Errorf("account ID not set on context")
+	}
+	return accountID, nil
+}
+
+// buildS3Key constructs the S3 key for blob storage
+// Format: {org_id}/{blob_id}
+func buildS3Key(orgID, blobID string) string {
+	return fmt.Sprintf("blobs/%s/%s", orgID, blobID)
 }

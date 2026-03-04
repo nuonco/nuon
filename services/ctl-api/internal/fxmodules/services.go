@@ -14,6 +14,7 @@ import (
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
+	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
 	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
@@ -57,6 +58,7 @@ var domainServices = []domainServiceEntry{
 	{runnerauthservice.New, func(ea *api.EndpointAudit) api.Service { return runnerauthservice.New(runnerauthservice.Params{}) }},
 	{runnersservice.New, func(ea *api.EndpointAudit) api.Service { return runnersservice.New(runnersservice.Params{}) }},
 	{vcsservice.New, func(ea *api.EndpointAudit) api.Service { return vcsservice.New(vcsservice.Params{}) }},
+	{queuesservice.New, func(ea *api.EndpointAudit) api.Service { return queuesservice.New(queuesservice.Params{}) }},
 }
 
 // domainServicesFxOptions builds FX provider options from domainServices.

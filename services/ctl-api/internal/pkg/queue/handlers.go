@@ -35,6 +35,21 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			w.statusHandler,
 			nil,
 		},
+		PauseHandlerName: {
+			handlerTypeUpdate,
+			w.pauseHandler,
+			nil,
+		},
+		ResumeHandlerName: {
+			handlerTypeUpdate,
+			w.resumeHandler,
+			nil,
+		},
+		RestartUpdateName: {
+			handlerTypeUpdate,
+			w.restartUpdateHandler,
+			nil,
+		},
 	}
 	for name, handler := range updateHandlers {
 		switch handler.typ {

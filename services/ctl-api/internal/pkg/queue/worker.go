@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	queueReceiveTimeout time.Duration = time.Second * 1
+	queueReceiveTimeout time.Duration = time.Minute * 1
 )
 
 func (q *queue) startWorkers(ctx workflow.Context) error {
@@ -44,6 +44,35 @@ func (q *queue) worker(ctx workflow.Context) error {
 	}
 
 	for {
+		// if the queue is paused, wait until it is resumed
+		if q.paused {
+			if err := workflow.Await(ctx, func() bool {
+				return !q.paused || q.stopped || q.restarted
+			}); err != nil {
+				return err
+			}
+		}
+
+		// check release window
+		if q.releaseWindow != nil {
+			now := workflow.Now(ctx)
+			if !q.releaseWindow.IsOpen(now) {
+				nextOpen := q.releaseWindow.NextOpenTime(now)
+				sleepDuration := nextOpen.Sub(now)
+				if sleepDuration > 0 {
+					l.Info("queue is outside release window, sleeping", zap.Duration("duration", sleepDuration))
+					// We use Await with timeout instead of Sleep so we can be woken up by stop/restart/pause
+					if _, err := workflow.AwaitWithTimeout(ctx, sleepDuration, func() bool {
+						return q.stopped || q.restarted || q.paused
+					}); err != nil {
+						return err
+					}
+					// loop again to check conditions
+					continue
+				}
+			}
+		}
+
 		if q.stopped {
 			return nil
 		}

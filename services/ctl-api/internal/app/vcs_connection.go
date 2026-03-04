@@ -27,7 +27,7 @@ type VCSConnection struct {
 	GithubAccountID   string `json:"github_account_id,omitempty" gorm:"not null;default:''" temporaljson:"github_account_id,omitzero,omitempty"`
 	GithubAccountName string `json:"github_account_name,omitempty" gorm:"not null;default:''" temporaljson:"github_account_name,omitzero,omitempty"`
 
-	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"commits,omitzero,omitempty"`
+	Commits                   []VCSConnectionCommit      `json:"vcs_connection_commit,omitzero" gorm:"constraint:OnDelete:SET NULL;" temporaljson:"commits,omitzero,omitempty"`
 	ConnectedGithubVCSConfigs []ConnectedGithubVCSConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"connected_github_vcs_configs,omitzero,omitempty"`
 }
 

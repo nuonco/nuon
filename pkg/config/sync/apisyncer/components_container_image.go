@@ -1,0 +1,68 @@
+package apisyncer
+
+import (
+	"context"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
+)
+
+func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
+	containerImage := comp.ExternalImage
+
+	configRequest := &models.ServiceCreateExternalImageComponentConfigRequest{
+		AppConfigID:   s.appConfigID,
+		Dependencies:  comp.Dependencies,
+		BuildTimeout:  containerImage.BuildTimeout,
+		DeployTimeout: containerImage.DeployTimeout,
+	}
+
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
+	if containerImage.AWSECRImageConfig != nil {
+		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)
+		configRequest.Tag = generics.ToPtr(containerImage.AWSECRImageConfig.Tag)
+		configRequest.AwsEcrImageConfig = &models.ServiceAwsECRImageConfigRequest{
+			AwsRegion:  containerImage.AWSECRImageConfig.AWSRegion,
+			IamRoleArn: containerImage.AWSECRImageConfig.IAMRoleARN,
+		}
+	} else if containerImage.PublicImageConfig != nil {
+		configRequest.ImageURL = generics.ToPtr(containerImage.PublicImageConfig.ImageURL)
+		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
+	}
+
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
+	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
+	if err != nil {
+		return "", "", err
+	}
+	// Check if we should skip this build due to checksum match
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, cmpChecksum)
+	if err != nil {
+		return "", "", err
+	}
+
+	if shouldSkip {
+		return existingConfigID, cmpChecksum.Checksum, nil
+	}
+
+	configRequest.Checksum = cmpChecksum.Checksum
+	cfg, err := s.apiClient.CreateExternalImageComponentConfig(ctx, compID, configRequest)
+	if err != nil {
+		return "", "", err
+	}
+
+	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+
+	return cfg.ID, cmpChecksum.Checksum, nil
+}

@@ -13,6 +13,7 @@ import (
 	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 // @temporal-gen workflow
@@ -25,6 +26,11 @@ func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) er
 	}
 
 	for _, ev := range evs {
+		if ev.WorkflowRef != nil {
+			queueclient.AwaitRestart(ctx, ev.ID)
+			continue
+		}
+
 		if err := w.restartEventLoop(ctx, ev.Namespace, ev.ID); err != nil {
 			return errors.Wrap(err, "unable to restart event loop")
 		}

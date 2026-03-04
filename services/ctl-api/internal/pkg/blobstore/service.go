@@ -88,8 +88,8 @@ func (s *service) Download(ctx context.Context, s3Key string) ([]byte, error) {
 }
 
 func (s *service) UploadStream(ctx context.Context, s3Key string, reader io.Reader) (string, error) {
-	// UploadFile returns SHA256 checksum
-	checksum, err := s.uploader.UploadFile(ctx, "", s3Key)
+	// UploadStream returns SHA256 checksum
+	checksum, err := s.uploader.UploadStream(ctx, reader, s3Key)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload stream: %w", err)
 	}

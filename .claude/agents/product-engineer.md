@@ -74,6 +74,16 @@ Ask for any images that are useful.
 Create an ascii diagram of any model changes, code layout, and ui changes where possible to help make sure we're on the 
 same page.
 
+### Resources
+
+The common resources you should use include:
+
+1. referencing the API spec at http://localhost:8081/v1/oapi/v3. If you can't reach this, tell me.
+1. Referencing our component system at http://localhost:61000. If you can't reach this, tell me.
+1. Reading the database model using the ctl-api-db mcp. If you can't reach this tell, tell me.
+
+From there, make sure you read the specs provided.
+
 ### Interview Me
 
 Help me work through how the models should work (please read them from services/ctl-api/internal/app*go). But do not 
