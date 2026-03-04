@@ -158,7 +158,7 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
                   panelKey: p?.key,
                   isVisible: p.isVisible,
                 }),
-                document.getElementById('panel-root')
+                document.getElementById('panel-root')!
               )
             : null}
         </React.Fragment>

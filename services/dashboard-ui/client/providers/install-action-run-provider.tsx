@@ -3,12 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallActionRun } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TInstallActionRun } from '@/types'
 
 type InstallActionRunContextValue = {
-  installActionRun: TInstallActionRun | null
-  isLoading: boolean
-  error: any
+  installActionRun: TInstallActionRun
   refresh: () => void
 }
 
@@ -29,27 +28,17 @@ export function InstallActionRunProvider({
 }) {
   const { org } = useOrg()
   const { install } = useInstall()
-  const {
-    data: installActionRun,
-    error,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ['install-action-run', org?.id, install?.id, runId],
-    queryFn: () => getInstallActionRun({ orgId: org.id, installId: install.id, runId }),
+  const { data: installActionRun, isLoading, refetch } = useQuery({
+    queryKey: ['install-action-run', org.id!, install.id!, runId],
+    queryFn: () => getInstallActionRun({ orgId: org.id!, installId: install.id!, runId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!install?.id && !!runId,
+    enabled: !!org.id && !!install.id && !!runId,
   })
 
+  if (isLoading || !installActionRun) return <Loading />
+
   return (
-    <InstallActionRunContext.Provider
-      value={{
-        installActionRun: installActionRun ?? null,
-        isLoading,
-        error,
-        refresh: refetch,
-      }}
-    >
+    <InstallActionRunContext.Provider value={{ installActionRun, refresh: refetch }}>
       {children}
     </InstallActionRunContext.Provider>
   )

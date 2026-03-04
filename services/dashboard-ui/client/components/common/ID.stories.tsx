@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { ID } from './ID'
 import { Text } from './Text'
 

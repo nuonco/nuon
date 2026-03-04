@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Code } from './Code'
 import { Text } from './Text'
 import { ClickToCopy } from './ClickToCopy'

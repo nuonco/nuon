@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Panel } from './Panel'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useSurfaces } from '@/hooks/use-surfaces'

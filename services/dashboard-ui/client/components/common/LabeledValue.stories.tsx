@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { LabeledValue } from './LabeledValue'
 import { Text } from './Text'
 import { Badge } from './Badge'

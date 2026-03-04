@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { TWorkflow } from '@/types'
 
-export const useWorkflowMetrics = (workflow: TWorkflow) => {
+export const useWorkflowMetrics = (workflow: TWorkflow | undefined) => {
   return useMemo(() => {
     const workflowSteps = workflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
     

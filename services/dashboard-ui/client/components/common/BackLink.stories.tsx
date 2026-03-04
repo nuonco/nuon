@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { BackLink } from './BackLink'
 import { Text } from './Text'
 import { Icon } from './Icon'

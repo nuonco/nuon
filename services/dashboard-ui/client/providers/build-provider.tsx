@@ -2,12 +2,11 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getComponentBuild } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TBuild } from '@/types'
 
 type BuildContextValue = {
-  build: TBuild | null
-  isLoading: boolean
-  error: any
+  build: TBuild
 }
 
 export const BuildContext = createContext<BuildContextValue | undefined>(
@@ -28,25 +27,17 @@ export function BuildProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const {
-    data: build,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ['build', org?.id, componentId, buildId],
-    queryFn: () => getComponentBuild({ orgId: org.id, componentId, buildId }),
+  const { data: build, isLoading } = useQuery({
+    queryKey: ['build', org.id!, componentId, buildId],
+    queryFn: () => getComponentBuild({ orgId: org.id!, componentId, buildId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!componentId && !!buildId,
+    enabled: !!org.id && !!componentId && !!buildId,
   })
 
+  if (isLoading || !build) return <Loading />
+
   return (
-    <BuildContext.Provider
-      value={{
-        build: build ?? null,
-        isLoading,
-        error,
-      }}
-    >
+    <BuildContext.Provider value={{ build }}>
       {children}
     </BuildContext.Provider>
   )

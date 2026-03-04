@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
@@ -12,34 +11,17 @@ describe('updateInstallConfig should handle response status codes from PATCH ins
   const installConfigId = 'test-install-config-id'
 
   test('201 status with approve-all option', async () => {
-    const body: TUpdateInstallConfigBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { data, status } = await updateInstallConfig({
-      body,
-      installConfigId,
-      installId,
-      orgId,
-    })
-    expect(data).toHaveProperty('id')
-    expect(data).toHaveProperty('approval_option')
-    expect(status).toBe(201)
+    const body: TUpdateInstallConfigBody = { approval_option: 'approve-all' }
+    const result = await updateInstallConfig({ body, installConfigId, installId, orgId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('approval_option')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const body: TUpdateInstallConfigBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { error, status } = await updateInstallConfig({
-      body,
-      installConfigId,
-      installId,
-      orgId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    const body: TUpdateInstallConfigBody = { approval_option: 'approve-all' }
+    await expect(
+      updateInstallConfig({ body, installConfigId, installId, orgId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

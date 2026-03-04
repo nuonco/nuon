@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Modal } from './Modal'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useSurfaces } from '@/hooks/use-surfaces'

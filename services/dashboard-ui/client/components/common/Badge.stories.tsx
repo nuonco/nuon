@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Badge } from './Badge'
 import { Text } from './Text'
 import { Icon } from './Icon'

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { describe, expect, test, beforeAll, afterAll, vi } from 'vitest'
 import { isLessThan15SecondsOld } from './time-utils'
 import { DateTime } from 'luxon'

@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
@@ -11,31 +10,17 @@ describe('approveAllWorkflowSteps should handle response status codes from PATCH
   const workflowId = 'test-workflow-id'
 
   test('200 status with approve-all option', async () => {
-    const body: TApproveAllWorkflowStepsBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { data } = await approveAllWorkflowSteps({
-      body,
-      orgId,
-      workflowId,
-    })
-    expect(data).toHaveProperty('id')
-    expect(data).toHaveProperty('status')
+    const body: TApproveAllWorkflowStepsBody = { approval_option: 'approve-all' }
+    const result = await approveAllWorkflowSteps({ body, orgId, workflowId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('status')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const body: TApproveAllWorkflowStepsBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { error, status } = await approveAllWorkflowSteps({
-      body,
-      orgId,
-      workflowId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    const body: TApproveAllWorkflowStepsBody = { approval_option: 'approve-all' }
+    await expect(
+      approveAllWorkflowSteps({ body, orgId, workflowId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Pagination } from './Pagination'
 import { Text } from './Text'
 

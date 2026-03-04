@@ -1,5 +1,3 @@
-'use client'
-
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Duration } from '@/components/common/Duration'
 import { JSONViewer } from '@/components/common/JSONViewer'
@@ -82,7 +80,7 @@ export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
 
       <div className="flex flex-col gap-2">
         <Text weight="strong">Action outputs</Text>
-        <InstallActionRunProvider initInstallActionRun={actionRun}>
+        <InstallActionRunProvider runId={actionRun?.id}>
           <InstallActionRunOutputs />
         </InstallActionRunProvider>
       </div>

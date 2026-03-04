@@ -96,10 +96,7 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
         installId: install.id,
         orgId: org.id,
       }),
-    onSuccess: (result) => {
-
-      console.log('results', result)
-      
+    onSuccess: (result) => {      
       addToast(
         <Toast heading="Adhoc action started" theme="success">
           <Text>Adhoc action is running.</Text>

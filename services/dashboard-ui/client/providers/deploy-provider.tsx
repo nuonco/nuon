@@ -2,12 +2,11 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getDeploy } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TDeploy } from '@/types'
 
 type DeployContextValue = {
-  deploy: TDeploy | null
-  isLoading: boolean
-  error: any
+  deploy: TDeploy
 }
 
 export const DeployContext = createContext<DeployContextValue | undefined>(
@@ -28,25 +27,17 @@ export function DeployProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const {
-    data: deploy,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ['deploy', org?.id, installId, deployId],
-    queryFn: () => getDeploy({ orgId: org.id, installId, deployId }),
+  const { data: deploy, isLoading } = useQuery({
+    queryKey: ['deploy', org.id!, installId, deployId],
+    queryFn: () => getDeploy({ orgId: org.id!, installId, deployId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!installId && !!deployId,
+    enabled: !!org.id && !!installId && !!deployId,
   })
 
+  if (isLoading || !deploy) return <Loading />
+
   return (
-    <DeployContext.Provider
-      value={{
-        deploy: deploy ?? null,
-        isLoading,
-        error,
-      }}
-    >
+    <DeployContext.Provider value={{ deploy }}>
       {children}
     </DeployContext.Provider>
   )

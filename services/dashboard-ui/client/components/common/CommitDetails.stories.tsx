@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { CommitDetails } from './CommitDetails'
 import { LabeledValue } from './LabeledValue'
 import { Text } from './Text'

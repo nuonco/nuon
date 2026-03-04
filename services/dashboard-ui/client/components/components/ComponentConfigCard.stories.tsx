@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ComponentConfigCard } from './ComponentConfigCard'
 import type { TComponentConfig } from '@/types'

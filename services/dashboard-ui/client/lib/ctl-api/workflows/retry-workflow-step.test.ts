@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
@@ -12,33 +11,16 @@ describe('retryWorkflowStep should handle response status codes from POST workfl
   const stepId = 'test-step-id'
 
   test('201 status with skip-step operation', async () => {
-    const body: TRetryWorkflowStepBody = {
-      operation: 'skip-step',
-      step_id: stepId,
-    }
-
-    const { data, status } = await retryWorkflowStep({
-      body,
-      orgId,
-      workflowId,
-    })
-    expect(data).toHaveProperty('workflow_id')
-    expect(status).toBe(201)
+    const body: TRetryWorkflowStepBody = { operation: 'skip-step', step_id: stepId }
+    const result = await retryWorkflowStep({ body, orgId, workflowId })
+    expect(result).toHaveProperty('workflow_id')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const body: TRetryWorkflowStepBody = {
-      operation: 'retry-step',
-      step_id: stepId,
-    }
-
-    const { error, status } = await retryWorkflowStep({
-      body,
-      orgId,
-      workflowId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    const body: TRetryWorkflowStepBody = { operation: 'retry-step', step_id: stepId }
+    await expect(
+      retryWorkflowStep({ body, orgId, workflowId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

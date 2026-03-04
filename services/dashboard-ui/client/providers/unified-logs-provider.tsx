@@ -208,7 +208,6 @@ const useUnifiedLogData = ({
     }
 
     prevIsStreamOpen.current = isStreamOpen
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logStream?.id, isStreamOpen, org.id, staticEnabled])
 
   useEffect(() => {

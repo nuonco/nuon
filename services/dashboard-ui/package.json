@@ -21,12 +21,13 @@
     "start": "next start -p 4000",
     "start-mock-api": "tsx test/mock-express-api.ts",
     "lint": "next lint && npm run lint:client",
-    "lint:client": "eslint \"client/**/*.{ts,tsx}\"",
+    "lint:spa": "eslint \"client/**/*.{ts,tsx}\"",
     "fmt": "prettier src",
     "pretest": "npm run generate-api-mocks",
     "test": "vitest run --testTimeout 40000",
     "pretsc": "npm run generate-api-types",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "tsc:spa": "tsc --noEmit --project client/tsconfig.json"
   },
   "dependencies": {
     "@andypf/json-viewer": "^2.1.10",

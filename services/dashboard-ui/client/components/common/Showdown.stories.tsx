@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Markdown as Showdown } from './Showdown'
 import { Text } from './Text'
 import { Badge } from './Badge'

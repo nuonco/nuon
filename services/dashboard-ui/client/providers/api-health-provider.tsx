@@ -39,7 +39,7 @@ export function APIHealthProvider({
   return (
     <APIHealthContext.Provider
       value={{
-        health,
+        health: health!,
         isLoading,
         error,
       }}
@@ -53,11 +53,11 @@ export function APIHealthProvider({
                   <DegradedBanner
                     key={d}
                     heading={
-                      DEGRADED_MESSAGE[d]?.heading ||
+                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]?.heading ||
                       DEGRADED_MESSAGE['generic']?.heading
                     }
                     message={
-                      DEGRADED_MESSAGE[d]?.message ||
+                      DEGRADED_MESSAGE[d as keyof typeof DEGRADED_MESSAGE]?.message ||
                       DEGRADED_MESSAGE['generic']?.message
                     }
                   />

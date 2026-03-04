@@ -3,12 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
 import { getWorkflow } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
-  workflow: TWorkflow | undefined
-  isLoading: boolean
-  error?: any
+  workflow: TWorkflow
   stopPolling: () => void
   workflowSteps: any[]
   hasApprovals: boolean
@@ -41,19 +40,19 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const [pollingEnabled, setPollingEnabled] = useState(shouldPoll)
 
-  const { data: workflow, isLoading, error } = useQuery({
-    queryKey: ['workflow', org?.id, workflowId],
-    queryFn: () => getWorkflow({ orgId: org.id, workflowId }),
+  const { data: workflow, isLoading } = useQuery({
+    queryKey: ['workflow', org.id!, workflowId],
+    queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
     refetchInterval: pollingEnabled ? pollInterval : false,
-    enabled: !!org?.id && !!workflowId,
+    enabled: !!org.id && !!workflowId,
   })
 
   const metrics = useWorkflowMetrics(workflow)
 
+  if (isLoading || !workflow) return <Loading />
+
   const value: WorkflowContextValue = {
     workflow,
-    isLoading,
-    error,
     stopPolling: () => setPollingEnabled(false),
     ...metrics,
   }

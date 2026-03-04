@@ -15,6 +15,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAction } from '@/lib'
+import type { TActionConfigTriggerType } from "@/types"
 
 const CONTAINER_ID = 'action-detail-page'
 
@@ -67,7 +68,7 @@ export const ActionDetail = () => {
                   {config.triggers.map((trigger) => (
                     <div key={trigger.id} className="flex items-center gap-2 flex-wrap">
                       <ActionTriggerType
-                        triggerType={trigger.type}
+                        triggerType={trigger.type as TActionConfigTriggerType}
                         componentName={trigger?.component?.name}
                         componentPath={`/${org?.id}/apps/${app?.id}/components/${trigger?.component_id}`}
                       />

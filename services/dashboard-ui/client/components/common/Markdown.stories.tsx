@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Markdown } from './Markdown'
 
 export const BasicUsage = () => (

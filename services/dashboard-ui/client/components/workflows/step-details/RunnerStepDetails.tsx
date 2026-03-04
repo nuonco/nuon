@@ -1,5 +1,3 @@
-'use client'
-
 import { useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -52,7 +50,7 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
         {(isRunnerLoading || isHeartbeatLoading) && !runner ? (
           <RunnerDetailsCardSkeleton />
         ) : (
-          <RunnerProvider initRunner={runner}>
+          <RunnerProvider runnerId={runner?.id}>
             <RunnerDetailsCard
               initHeartbeat={runnerHeartbeat}
               runnerGroup={{ platform: 'local' }}
@@ -64,7 +62,7 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
         {(isHealthCheckLoading || !runnerHealthCheck) && !runner ? (
           <RunnerHealthCardSkeleton />
         ) : (
-          <RunnerProvider initRunner={runner}>
+          <RunnerProvider runnerId={runner.id}>
             <RunnerHealthCard
               initHealthchecks={runnerHealthCheck}
               shouldPoll

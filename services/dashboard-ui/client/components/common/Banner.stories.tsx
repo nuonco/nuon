@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Banner } from './Banner'
 import { Button } from './Button'
 import { Text } from './Text'

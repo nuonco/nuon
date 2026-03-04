@@ -70,7 +70,7 @@ export const BuildDetail = () => {
 
   const { data: component } = useQuery({
     queryKey: ['component', org?.id, app?.id, componentId],
-    queryFn: () => getComponent({ orgId: org.id, appId: app.id, componentId: componentId! }),
+    queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 

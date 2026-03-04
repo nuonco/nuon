@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { removeVCSConnection } from './remove-vcs-connection'
@@ -8,14 +7,14 @@ describe('removeVCSConnection should handle response status codes from DELETE vc
   const connectionId = 'test-connection-id'
 
   test('204 status', async () => {
-    const { status } = await removeVCSConnection({ orgId, connectionId })
-    expect(status).toBe(204)
+    const result = await removeVCSConnection({ orgId, connectionId })
+    expect(result).toBeNull()
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await removeVCSConnection({ orgId, connectionId })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(
+      removeVCSConnection({ orgId, connectionId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

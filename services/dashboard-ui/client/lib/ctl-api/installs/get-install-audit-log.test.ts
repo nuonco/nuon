@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getInstallAuditLog } from './get-install-audit-log'
@@ -10,25 +9,14 @@ describe('getInstallAuditLog should handle response status codes from GET instal
   const end = '2024-01-31T23:59:59Z'
 
   test('200 status', async () => {
-    const { status } = await getInstallAuditLog({
-      installId,
-      orgId,
-      start,
-      end,
-    })
-    expect(status).toBe(200)
+    const result = await getInstallAuditLog({ installId, orgId, start, end })
+    expect(Array.isArray(result)).toBe(true)
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getInstallAuditLog({
-      installId,
-      orgId,
-      start,
-      end,
-    })
-
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(
+      getInstallAuditLog({ installId, orgId, start, end })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
     })

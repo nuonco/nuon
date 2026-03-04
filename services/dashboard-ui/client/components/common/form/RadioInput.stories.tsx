@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { RadioInput } from './RadioInput'
 
 export default {

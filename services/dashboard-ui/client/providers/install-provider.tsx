@@ -2,12 +2,11 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getInstall } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TInstall } from '@/types'
 
 type InstallContextValue = {
-  install: TInstall | null
-  isLoading: boolean
-  error: any
+  install: TInstall
   refresh: () => void
 }
 
@@ -27,22 +26,17 @@ export function InstallProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const { data: install, error, isLoading, refetch } = useQuery({
-    queryKey: ['install', org?.id, installId],
-    queryFn: () => getInstall({ orgId: org.id, installId }),
+  const { data: install, isLoading, refetch } = useQuery({
+    queryKey: ['install', org.id!, installId],
+    queryFn: () => getInstall({ orgId: org.id!, installId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!installId,
+    enabled: !!org.id && !!installId,
   })
 
+  if (isLoading || !install) return <Loading />
+
   return (
-    <InstallContext.Provider
-      value={{
-        install: install ?? null,
-        isLoading,
-        error,
-        refresh: refetch,
-      }}
-    >
+    <InstallContext.Provider value={{ install, refresh: refetch }}>
       {children}
     </InstallContext.Provider>
   )

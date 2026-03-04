@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Avatar } from './Avatar'
 import { Text } from './Text'
 

@@ -521,6 +521,20 @@ export interface paths {
      */
     get: operations["GetLatestAppSecretsConfig"];
   };
+  "/v1/apps/{app_id}/operation-role-configs": {
+    /**
+     * create operation role config
+     * @description Create operation role rules for an app config
+     */
+    post: operations["CreateAppOperationRoleConfig"];
+  };
+  "/v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}": {
+    /**
+     * get operation role configs
+     * @description Get all operation role configs for an app
+     */
+    get: operations["GetAppOperationRoleConfigs"];
+  };
   "/v1/apps/{app_id}/permissions-configs": {
     /** @description Create app permissions config. */
     post: operations["CreateAppPermissionsConfig"];
@@ -1169,6 +1183,21 @@ export interface paths {
      * @description Returns audit logs for an install.
      */
     get: operations["GetInstallAuditLogs"];
+  };
+  "/v1/installs/{install_id}/available-roles": {
+    /**
+     * get available IAM roles for a specific operation
+     * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+     *
+     * The endpoint filters roles based on the operation type:
+     * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
+     * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
+     * - **deploy**: Custom roles, break glass roles, maintenance IAM role
+     * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+     *
+     * Roles are sourced from the install's stack outputs.
+     */
+    get: operations["GetAvailableRoles"];
   };
   "/v1/installs/{install_id}/components": {
     /**
@@ -2191,10 +2220,13 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.AWSIAMRoleType": "runner_provision" | "runner_deprovision" | "runner_maintenance" | "breakglass" | "runner_breakglass";
+    "app.AWSIAMRoleType": "runner_provision" | "runner_deprovision" | "runner_maintenance" | "breakglass" | "custom" | "runner_breakglass";
     "app.AWSStackOutputs": {
       account_id?: string;
       break_glass_role_arns?: {
+        [key: string]: string;
+      };
+      custom_role_arns?: {
         [key: string]: string;
       };
       deprovision_iam_role_arn?: string;
@@ -2250,6 +2282,7 @@ export interface components {
       id?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      role?: string;
       steps?: components["schemas"]["app.ActionWorkflowStepConfig"][];
       timeout?: number;
       /** @description INFO: if adding new associations here, ensure they are added to the batch delete activity */
@@ -2412,6 +2445,7 @@ export interface components {
       created_by_id?: string;
       id?: string;
       input?: components["schemas"]["app.AppInputConfig"];
+      operation_role_config?: components["schemas"]["app.AppOperationRoleConfig"];
       org_id?: string;
       permissions?: components["schemas"]["app.AppPermissionsConfig"];
       policies?: components["schemas"]["app.AppPoliciesConfig"];
@@ -2482,6 +2516,29 @@ export interface components {
     };
     /** @enum {string} */
     "app.AppInputSource": "vendor" | "customer";
+    "app.AppOperationRoleConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      rules?: components["schemas"]["app.AppOperationRoleRule"][];
+      updated_at?: string;
+    };
+    "app.AppOperationRoleRule": {
+      app_operation_role_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      operation?: string;
+      org?: components["schemas"]["app.Org"];
+      org_id?: string;
+      principal_name?: string;
+      principal_type?: string;
+      role?: string;
+      updated_at?: string;
+    };
     "app.AppPermissionsConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -2489,6 +2546,7 @@ export interface components {
       break_glass_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
       created_at?: string;
       created_by_id?: string;
+      custom_aws_iam_roles?: components["schemas"]["app.AppAWSIAMRoleConfig"][];
       deprovision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
       id?: string;
       maintenance_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
@@ -2559,6 +2617,10 @@ export interface components {
         [key: string]: string;
       };
       id?: string;
+      /** @description Operation roles map: operation type -> role name */
+      operation_roles?: {
+        [key: string]: string;
+      };
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       references?: string[];
@@ -2729,6 +2791,10 @@ export interface components {
       id?: string;
       job?: components["schemas"]["app.JobComponentConfig"];
       kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
+      /** @description Operation roles map: operation type -> role name */
+      operation_roles?: {
+        [key: string]: string;
+      };
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
@@ -2980,6 +3046,8 @@ export interface components {
       outputs?: {
         [key: string]: unknown;
       };
+      /** @description Role to be used when running this action */
+      role?: string;
       run_env_vars?: {
         [key: string]: string;
       };
@@ -3071,6 +3139,8 @@ export interface components {
       plan_only?: boolean;
       policy_reports?: components["schemas"]["app.PolicyReport"][];
       release_id?: string;
+      /** @description Role to be used when running this component */
+      role?: string;
       /** @description runner details */
       runner_jobs?: components["schemas"]["app.RunnerJob"][];
       status?: string;
@@ -3139,6 +3209,8 @@ export interface components {
         [key: string]: unknown;
       };
       policy_reports?: components["schemas"]["app.PolicyReport"][];
+      /** @description Role to be used when planning and applying sandbox runs */
+      role?: string;
       run_type?: components["schemas"]["app.SandboxRunType"];
       /** @description runner details */
       runner_jobs?: components["schemas"]["app.RunnerJob"][];
@@ -3328,6 +3400,8 @@ export interface components {
     };
     /** @enum {string} */
     "app.OperationStatus": "started" | "finished" | "noop" | "failed";
+    /** @enum {string} */
+    "app.OperationType": "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
     "app.Org": {
       /** @description Transient fields for counts (not persisted to database) */
       app_count?: number;
@@ -3613,6 +3687,7 @@ export interface components {
       finished_at?: string;
       group?: components["schemas"]["app.RunnerJobGroup"];
       id?: string;
+      json?: components["schemas"]["app.RunnerJobPlan"];
       log_stream_id?: string;
       max_executions?: number;
       metadata?: {
@@ -3688,6 +3763,16 @@ export interface components {
     "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
+    "app.RunnerJobPlan": {
+      composite_plan?: components["schemas"]["plantypes.CompositePlan"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      plan_json?: string;
+      runner_job_id?: string;
+      updated_at?: string;
+    };
     /** @enum {string} */
     "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
@@ -3870,6 +3955,7 @@ export interface components {
       owner_id?: string;
       owner_type?: string;
       plan_only?: boolean;
+      role?: string;
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       /** @description DEPRECATED: for now we always abort on step errors */
@@ -4249,6 +4335,8 @@ export interface components {
       build_plan?: components["schemas"]["plantypes.BuildPlan"];
       deploy_plan?: components["schemas"]["plantypes.DeployPlan"];
       fetch_image_metadata_plan?: components["schemas"]["plantypes.FetchImageMetadataPlan"];
+      /** @description Auth for cloud providers */
+      plan_auth?: components["schemas"]["plantypes.PlanAuth"];
       sandbox_run_plan?: components["schemas"]["plantypes.SandboxRunPlan"];
       sync_oci_plan?: components["schemas"]["plantypes.SyncOCIPlan"];
       sync_secrets_plan?: components["schemas"]["plantypes.SyncSecretsPlan"];
@@ -4395,6 +4483,10 @@ export interface components {
       tag?: string;
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
+    };
+    "plantypes.PlanAuth": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
     };
     "plantypes.SandboxMode": {
       enabled?: boolean;
@@ -4576,6 +4668,14 @@ export interface components {
       updated_at?: string;
       user_journeys?: components["schemas"]["app.UserJourney"][];
     };
+    "service.AvailableRole": {
+      arn?: string;
+      name?: string;
+      role_type?: string;
+    };
+    "service.AvailableRolesResponse": {
+      roles?: components["schemas"]["service.AvailableRole"][];
+    };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
       auth_audience?: string;
@@ -4612,6 +4712,7 @@ export interface components {
       break_glass_role_arn?: string;
       dependencies?: string[];
       references?: string[];
+      role?: string;
       steps: components["schemas"]["service.CreateActionWorkflowConfigStepRequest"][];
       timeout?: number;
       triggers: components["schemas"]["service.CreateActionWorkflowConfigTriggerRequest"][];
@@ -4640,6 +4741,7 @@ export interface components {
       };
       inline_contents?: string;
       name?: string;
+      role?: string;
       timeout?: number;
     };
     "service.CreateAdHocActionResponse": {
@@ -4679,9 +4781,14 @@ export interface components {
         [key: string]: components["schemas"]["service.AppInputRequest"];
       };
     };
+    "service.CreateAppOperationRoleConfigRequest": {
+      app_config_id: string;
+      rules: components["schemas"]["service.OperationRoleRuleRequest"][];
+    };
     "service.CreateAppPermissionsConfigRequest": {
       app_config_id: string;
       break_glass_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
+      custom_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
       deprovision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
       maintenance_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
       provision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
@@ -4710,6 +4817,9 @@ export interface components {
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSSandboxConfigRequest"];
       drift_schedule?: string;
       env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
         [key: string]: string;
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSSandboxConfigRequest"];
@@ -4776,6 +4886,9 @@ export interface components {
       env_vars?: {
         [key: string]: string;
       };
+      operation_roles?: {
+        [key: string]: string;
+      };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       target?: string;
@@ -4790,6 +4903,9 @@ export interface components {
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
       image_url: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
       references?: string[];
       tag: string;
     };
@@ -4806,6 +4922,9 @@ export interface components {
       drift_schedule?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
       namespace?: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       storage_driver?: string;
@@ -4816,7 +4935,8 @@ export interface components {
       values_files?: string[];
     };
     "service.CreateInstallActionWorkflowRunRequest": {
-      action_workflow_config_id?: string;
+      action_workflow_config_id: string;
+      role?: string;
       run_env_vars?: {
         [key: string]: string;
       };
@@ -4825,6 +4945,7 @@ export interface components {
       build_id?: string;
       deploy_dependents?: boolean;
       plan_only?: boolean;
+      role?: string;
     };
     "service.CreateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
@@ -4833,6 +4954,7 @@ export interface components {
       build_id?: string;
       deploy_dependents?: boolean;
       plan_only?: boolean;
+      role?: string;
     };
     "service.CreateInstallInputsRequest": {
       inputs: {
@@ -4881,6 +5003,9 @@ export interface components {
         [key: string]: string;
       };
       image_url: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
       references?: string[];
       tag: string;
     };
@@ -4899,6 +5024,9 @@ export interface components {
       /** @description Inline manifest (mutually exclusive with Kustomize) */
       manifest?: string;
       namespace?: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
     };
@@ -4924,6 +5052,9 @@ export interface components {
       deploy_timeout?: string;
       drift_schedule?: string;
       env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
         [key: string]: string;
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
@@ -4958,12 +5089,14 @@ export interface components {
     };
     "service.DeployInstallComponentsRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.DeprovisionInstallRequest": {
       plan_only?: boolean;
     };
     "service.DeprovisionInstallSandboxRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
@@ -4990,6 +5123,11 @@ export interface components {
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
+    "service.OperationRoleRuleRequest": {
+      operation: components["schemas"]["app.OperationType"];
+      principal: string;
+      role: string;
+    };
     "service.PatchInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
     };
@@ -5024,6 +5162,7 @@ export interface components {
     };
     "service.ReprovisionInstallSandboxRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.RetryWorkflowByIDRequest": {
       /** @description Retry indicates whether to retry the current step or not */
@@ -5061,9 +5200,11 @@ export interface components {
     };
     "service.TeardownInstallComponentRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.TeardownInstallComponentsRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.UpdateActionWorkflowRequest": {
       name?: string;
@@ -9514,6 +9655,114 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.AppSecretsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create operation role config
+   * @description Create operation role rules for an app config
+   */
+  CreateAppOperationRoleConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppOperationRoleConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppOperationRoleConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get operation role configs
+   * @description Get all operation role configs for an app
+   */
+  GetAppOperationRoleConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description operation role config ID */
+        operation_role_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppOperationRoleConfig"][];
         };
       };
       /** @description Bad Request */
@@ -14021,6 +14270,70 @@ export interface operations {
       500: {
         content: {
           "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get available IAM roles for a specific operation
+   * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+   *
+   * The endpoint filters roles based on the operation type:
+   * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
+   * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
+   * - **deploy**: Custom roles, break glass roles, maintenance IAM role
+   * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+   *
+   * Roles are sourced from the install's stack outputs.
+   */
+  GetAvailableRoles: {
+    parameters: {
+      query: {
+        /** @description principal type: component, sandbox, action */
+        principal_type: "component" | "sandbox" | "action";
+        /** @description operation type: provision, reprovision, deprovision, deploy, teardown, trigger */
+        "app.operationType": string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AvailableRolesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

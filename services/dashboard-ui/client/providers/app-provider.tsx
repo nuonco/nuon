@@ -2,12 +2,11 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getApp } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TApp } from '@/types'
 
 type AppContextValue = {
-  app: TApp | null
-  isLoading: boolean
-  error: any
+  app: TApp
   refresh: () => void
 }
 
@@ -25,22 +24,17 @@ export function AppProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const { data: app, error, isLoading, refetch } = useQuery({
-    queryKey: ['app', org?.id, appId],
-    queryFn: () => getApp({ orgId: org.id, appId }),
+  const { data: app, isLoading, refetch } = useQuery({
+    queryKey: ['app', org.id!, appId],
+    queryFn: () => getApp({ orgId: org.id!, appId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!appId,
+    enabled: !!org.id && !!appId,
   })
 
+  if (isLoading || !app) return <Loading />
+
   return (
-    <AppContext.Provider
-      value={{
-        app: app ?? null,
-        isLoading,
-        error,
-        refresh: refetch,
-      }}
-    >
+    <AppContext.Provider value={{ app, refresh: refetch }}>
       {children}
     </AppContext.Provider>
   )

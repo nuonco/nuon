@@ -23,8 +23,8 @@ describe('action-utils', () => {
 
     test('should hydrate steps with config data', () => {
       const steps = [
-        { step_id: 'step-1', status: 'completed' },
-        { step_id: 'step-2', status: 'running' },
+        { step_id: 'step-1', status: 'finished' },
+        { step_id: 'step-2', status: 'pending' },
       ] as TInstallActionRun['steps']
 
       const stepConfigs = [
@@ -35,15 +35,15 @@ describe('action-utils', () => {
       const result = hydrateActionRunSteps({ steps, stepConfigs })
 
       expect(result).toEqual([
-        { step_id: 'step-1', status: 'completed', name: 'Build', idx: 0 },
-        { step_id: 'step-2', status: 'running', name: 'Deploy', idx: 1 },
+        { step_id: 'step-1', status: 'finished', name: 'Build', idx: 0 },
+        { step_id: 'step-2', status: 'pending', name: 'Deploy', idx: 1 },
       ])
     })
 
     test('should handle steps without matching config', () => {
       const steps = [
-        { step_id: 'step-1', status: 'completed' },
-        { step_id: 'step-unknown', status: 'running' },
+        { step_id: 'step-1', status: 'finished' },
+        { step_id: 'step-unknown', status: 'pending' },
       ] as TInstallActionRun['steps']
 
       const stepConfigs = [
@@ -53,8 +53,8 @@ describe('action-utils', () => {
       const result = hydrateActionRunSteps({ steps, stepConfigs })
 
       expect(result).toEqual([
-        { step_id: 'step-1', status: 'completed', name: 'Build', idx: 0 },
-        { step_id: 'step-unknown', status: 'running' },
+        { step_id: 'step-1', status: 'finished', name: 'Build', idx: 0 },
+        { step_id: 'step-unknown', status: 'pending' },
       ])
     })
   })

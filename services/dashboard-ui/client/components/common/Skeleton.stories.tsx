@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Skeleton } from './Skeleton'
 import { Text } from './Text'
 

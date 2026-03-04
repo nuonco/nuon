@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { CheckboxInput, Checkbox, CheckboxInputWithButton } from './CheckboxInput'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'

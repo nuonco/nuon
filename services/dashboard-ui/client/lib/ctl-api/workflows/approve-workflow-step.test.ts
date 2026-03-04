@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
@@ -13,37 +12,16 @@ describe('approveWorkflowStep should handle response status codes from POST work
   const workflowStepId = 'test-workflow-step-id'
 
   test('201 status with approve operation', async () => {
-    const body: TApproveWorkflowStepBody = {
-      note: 'Approved by test',
-      response_type: 'approve',
-    }
-
-    const { data, status } = await approveWorkflowStep({
-      approvalId,
-      body,
-      orgId,
-      workflowId,
-      workflowStepId,
-    })
-    expect(data).toHaveProperty('id')
-    expect(status).toBe(201)
+    const body: TApproveWorkflowStepBody = { note: 'Approved by test', response_type: 'approve' }
+    const result = await approveWorkflowStep({ approvalId, body, orgId, workflowId, workflowStepId })
+    expect(result).toHaveProperty('id')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const body: TApproveWorkflowStepBody = {
-      note: 'Test note',
-      response_type: 'approve',
-    }
-
-    const { error, status } = await approveWorkflowStep({
-      approvalId,
-      body,
-      orgId,
-      workflowId,
-      workflowStepId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    const body: TApproveWorkflowStepBody = { note: 'Test note', response_type: 'approve' }
+    await expect(
+      approveWorkflowStep({ approvalId, body, orgId, workflowId, workflowStepId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

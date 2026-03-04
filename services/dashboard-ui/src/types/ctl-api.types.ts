@@ -236,7 +236,7 @@ export type TRunnerGroupSettings =
   components['schemas']['app.RunnerGroupSettings']
 export type TRunnerGroupType = components['schemas']['app.RunnerGroupType']
 export type TRunner = components['schemas']['app.Runner']
-export type TRunnerJob = components['schemas']['app.RunnerJob']
+export type TRunnerJob = components['schemas']['app.RunnerJob'] & { json: any }
 export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 export type TRunnerMngHeartbeat = {

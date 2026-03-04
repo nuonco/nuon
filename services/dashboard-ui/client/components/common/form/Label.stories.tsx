@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Label } from './Label'
 import { Input } from './Input'
 import { Text } from '@/components/common/Text'

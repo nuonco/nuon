@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { HeadingGroup } from './HeadingGroup'
 import { Text } from './Text'
 import { Badge } from './Badge'

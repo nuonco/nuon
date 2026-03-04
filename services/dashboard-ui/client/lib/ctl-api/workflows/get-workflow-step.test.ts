@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getWorkflowStep } from './get-workflow-step'
@@ -9,25 +8,17 @@ describe('getWorkflowStep should handle response status codes from GET endpoint'
   const workflowStepId = 'test-workflow-step-id'
 
   test('200 status', async () => {
-    const { data } = await getWorkflowStep({
-      orgId,
-      workflowId,
-      workflowStepId,
-    })
-    expect(data).toHaveProperty('id')
-    expect(data).toHaveProperty('name')
-    expect(data).toHaveProperty('workflow_id')
-    expect(data).toHaveProperty('execution_type')
+    const result = await getWorkflowStep({ orgId, workflowId, workflowStepId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('name')
+    expect(result).toHaveProperty('workflow_id')
+    expect(result).toHaveProperty('execution_type')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getWorkflowStep({
-      orgId,
-      workflowId,
-      workflowStepId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(
+      getWorkflowStep({ orgId, workflowId, workflowStepId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

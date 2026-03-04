@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { CloudPlatform } from './CloudPlatform'
 import { Text } from './Text'
 import { Badge } from './Badge'

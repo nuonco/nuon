@@ -1,12 +1,11 @@
-import React, { type FC, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useSearchParams } from 'react-router'
 import { useAuth } from '@/hooks/use-auth'
 import { AnalyticsBrowser } from '@segment/analytics-next'
-import type { TOrg } from '@/types'
-import type { IUser } from '@/types/dashboard.types'
+import type { TOrg, IUser } from '@/types'
 
-export const SegmentAnalyticsIdentify: FC = () => {
-  const { user, error, isLoading } = useAuth()
+export const SegmentAnalyticsIdentify = () => {
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
     if (window['analytics'] && user && !isLoading) {
@@ -16,7 +15,7 @@ export const SegmentAnalyticsIdentify: FC = () => {
         name: user.name,
       })
     }
-  }, [user, error, isLoading])
+  }, [user, isLoading])
 
   const { pathname } = useLocation()
   const [searchParams] = useSearchParams()
@@ -27,7 +26,7 @@ export const SegmentAnalyticsIdentify: FC = () => {
   return <></>
 }
 
-export const SegmentAnalyticsSetOrg: FC<{ org: TOrg }> = ({ org }) => {
+export const SegmentAnalyticsSetOrg = ({ org }: { org: TOrg }) => {
   const { user, isLoading } = useAuth()
 
   useEffect(() => {
@@ -42,11 +41,9 @@ export const SegmentAnalyticsSetOrg: FC<{ org: TOrg }> = ({ org }) => {
   return <></>
 }
 
-export const InitSegmentAnalytics: FC<{ writeKey: string }> = ({
-  writeKey,
-}) => {
+export const InitSegmentAnalytics = ({ writeKey }: { writeKey: string }) => {
   useEffect(() => {
-    window.analytics = AnalyticsBrowser.load({
+    window['analytics'] = AnalyticsBrowser.load({
       writeKey,
     })
   }, [])

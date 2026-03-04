@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { ToastProvider } from '@/providers/toast-provider'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/common/Button'

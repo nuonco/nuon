@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Timeline } from './Timeline'
 import { TimelineEvent } from './TimelineEvent'
 import { Text } from './Text'

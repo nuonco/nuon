@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
@@ -11,32 +10,17 @@ describe('createInstallConfig should handle response status codes from POST inst
   const installId = 'test-install-id'
 
   test('201 status with approve-all option', async () => {
-    const body: TCreateInstallConfigBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { data, status } = await createInstallConfig({
-      body,
-      installId,
-      orgId,
-    })
-    expect(data).toHaveProperty('id')
-    expect(data).toHaveProperty('approval_option')
-    expect(status).toBe(201)
+    const body: TCreateInstallConfigBody = { approval_option: 'approve-all' }
+    const result = await createInstallConfig({ body, installId, orgId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('approval_option')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const body: TCreateInstallConfigBody = {
-      approval_option: 'approve-all',
-    }
-
-    const { error, status } = await createInstallConfig({
-      body,
-      installId,
-      orgId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    const body: TCreateInstallConfigBody = { approval_option: 'approve-all' }
+    await expect(
+      createInstallConfig({ body, installId, orgId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

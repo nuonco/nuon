@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Button } from './Button'
 import { Dropdown } from './Dropdown'
 import { Icon } from './Icon'

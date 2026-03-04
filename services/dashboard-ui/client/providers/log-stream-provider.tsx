@@ -2,12 +2,11 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getLogStream } from '@/lib'
+import { Loading } from '@/components/common/Loading'
 import type { TLogStream } from '@/types'
 
 type LogStreamContextValue = {
-  logStream: TLogStream | null
-  isLoading: boolean
-  error: any
+  logStream: TLogStream
   refresh: () => void
 }
 
@@ -27,27 +26,17 @@ export function LogStreamProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
-  const {
-    data: logStream,
-    error,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ['log-stream', org?.id, logStreamId],
-    queryFn: () => getLogStream({ orgId: org.id, logStreamId }),
+  const { data: logStream, isLoading, refetch } = useQuery({
+    queryKey: ['log-stream', org.id!, logStreamId],
+    queryFn: () => getLogStream({ orgId: org.id!, logStreamId }),
     refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org?.id && !!logStreamId,
+    enabled: !!org.id && !!logStreamId,
   })
 
+  if (isLoading || !logStream) return <Loading />
+
   return (
-    <LogStreamContext.Provider
-      value={{
-        logStream: logStream ?? null,
-        isLoading,
-        error,
-        refresh: refetch,
-      }}
-    >
+    <LogStreamContext.Provider value={{ logStream, refresh: refetch }}>
       {children}
     </LogStreamContext.Provider>
   )

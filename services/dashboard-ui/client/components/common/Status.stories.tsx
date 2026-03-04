@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Status } from './Status'
 
 export const Variants = () => (

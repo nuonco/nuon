@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { ContextTooltip } from './ContextTooltip'
 import { Button } from './Button'
 import { Icon } from './Icon'

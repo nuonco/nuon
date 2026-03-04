@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Menu } from './Menu'
 import { Button } from './Button'
 import { SplitButton } from './SplitButton'

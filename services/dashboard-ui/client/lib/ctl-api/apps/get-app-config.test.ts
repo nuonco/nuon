@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getAppConfig } from './get-app-config'
@@ -9,23 +8,13 @@ describe('getAppConfig should handle response status codes from GET app config b
   const appConfigId = 'test-app-config-id'
 
   test('200 status', async () => {
-    const { data: config } = await getAppConfig({
-      orgId,
-      appId,
-      appConfigId,
-    })
-    expect(config).toHaveProperty('id')
-    expect(config).toHaveProperty('status')
+    const result = await getAppConfig({ orgId, appId, appConfigId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('status')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getAppConfig({
-      orgId,
-      appId,
-      appConfigId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(getAppConfig({ orgId, appId, appConfigId })).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

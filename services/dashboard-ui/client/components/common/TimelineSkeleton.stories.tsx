@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { TimelineSkeleton } from './TimelineSkeleton'
 import { Text } from './Text'
 import { Button } from './Button'

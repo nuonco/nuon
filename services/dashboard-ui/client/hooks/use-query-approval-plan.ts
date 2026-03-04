@@ -23,5 +23,5 @@ export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
     enabled: !!org?.id && !!step?.id && !!step?.install_workflow_id && !!step?.approval?.id,
   })
 
-  return { plan, isLoading, error: error?.message }
+  return { plan, isLoading, error: error?.error }
 }

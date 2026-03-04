@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { ColumnDef } from '@tanstack/react-table'
 import { TableSkeleton } from './TableSkeleton'
 import { Table } from './Table'

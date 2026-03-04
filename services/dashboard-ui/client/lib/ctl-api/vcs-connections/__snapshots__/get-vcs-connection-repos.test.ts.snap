@@ -1,9 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`getVCSConnectionRepos should handle response status codes > 401 status 1`] = `
-{
-  "description": Any<String>,
-  "error": Any<String>,
-  "user_error": Any<Boolean>,
-}
-`;

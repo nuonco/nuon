@@ -1,6 +1,34 @@
 import type { ReactNode } from 'react'
 import type { TIconVariant } from '@/components/common/Icon'
 
+// TODO(nnnat): old types replace with types below
+export type TRouteParams<S extends string | number | symbol = string> = Record<
+  S,
+  string
+>
+export type TRouteSearchParams<S extends string | number | symbol = string> =
+  Record<S, string>
+
+export interface IPageProps<
+  P extends string | number | symbol = string,
+  S extends string | number | symbol = string,
+> {
+  params?: Promise<TRouteParams<P>>
+  searchParams?: Promise<TRouteSearchParams<S>>
+}
+
+export interface ILayoutProps<
+  P extends string | number | symbol = string,
+  S extends string | number | symbol = string,
+> {
+  children: ReactNode
+  params?: Promise<TRouteParams<P>>
+  searchParams?: Promise<TRouteSearchParams<S>>
+}
+
+export interface IRouteProps extends IPageProps {}
+// -- end old types ---
+
 // nextjs types
 export type TParams<Keys extends string> = Promise<Record<Keys, string>>
 

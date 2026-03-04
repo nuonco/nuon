@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { ClickToCopy, ClickToCopyButton } from './ClickToCopy'
 import { Text } from './Text'
 import { Badge } from './Badge'

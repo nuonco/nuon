@@ -114,7 +114,7 @@ export const UpdateRunnerModal = ({
         props: { orgId: org.id, runnerId: runner.id, err: error?.error },
       })
     }
-    if (isUpdated) {
+    if (isUpdated as unknown) {
       trackEvent({
         event: 'runner_update',
         status: 'ok',

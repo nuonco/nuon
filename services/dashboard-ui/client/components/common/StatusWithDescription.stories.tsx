@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { StatusWithDescription } from './StatusWithDescription'
 import { Text } from './Text'
 import { Badge } from './Badge'

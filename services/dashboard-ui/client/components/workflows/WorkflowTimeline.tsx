@@ -53,7 +53,7 @@ export const WorkflowTimeline = ({
     enabled: !!org?.id && !!installId,
   })
 
-  const workflows = result ?? []
+  const workflows = result?.data ?? []
   const pagination = result?.pagination
     ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
     : { hasNext: false, offset, limit: LIMIT }

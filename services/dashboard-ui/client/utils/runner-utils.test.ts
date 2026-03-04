@@ -174,11 +174,11 @@ describe('runner-utils', () => {
     test('should return type for operations jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'operations',
-        type: 'cleanup',
+        type: 'noop',
       } as TRunnerJob
 
       const name = getJobName(mockJob)
-      expect(name).toBe('cleanup')
+      expect(name).toBe('noop')
     })
 
     test('should return Unknown for missing metadata', () => {

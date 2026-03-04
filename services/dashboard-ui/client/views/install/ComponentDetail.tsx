@@ -83,11 +83,7 @@ export const InstallComponentDetail = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
         <PageSection className="md:col-span-8">
-          {isLoading ? (
-            <InstallComponentConfigCardSkeleton />
-          ) : installComponent ? (
-            <InstallComponentConfigCard config={installComponent?.component?.configs?.[0]} />
-          ) : null}
+          <>Comonponent config details here!!</>
 
           {component?.dependencies?.length ? (
             <InstallComponentDependencies deps={component.dependencies} />

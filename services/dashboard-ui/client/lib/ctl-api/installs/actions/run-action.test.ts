@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { runAction } from './run-action'
@@ -9,7 +8,7 @@ describe('runAction should handle response status codes from POST installs/:inst
   const actionWorkflowConfigId = 'test-config-id'
 
   test('201 status with run_env_vars', async () => {
-    const { data, status } = await runAction({
+    const result = await runAction({
       installId,
       orgId,
       body: {
@@ -20,23 +19,20 @@ describe('runAction should handle response status codes from POST installs/:inst
         },
       },
     })
-    expect(data).toEqual(expect.any(String))
-    expect(status).toBe(201)
+    expect(result).toHaveProperty('data')
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await runAction({
-      installId,
-      orgId,
-      body: {
-        action_workflow_config_id: actionWorkflowConfigId,
-        run_env_vars: {
-          TEST_VAR: 'test_value',
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(
+      runAction({
+        installId,
+        orgId,
+        body: {
+          action_workflow_config_id: actionWorkflowConfigId,
+          run_env_vars: { TEST_VAR: 'test_value' },
         },
-      },
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+      })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

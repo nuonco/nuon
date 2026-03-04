@@ -18,6 +18,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
+import type { TActionConfigTriggerType } from "@/types"
 
 const CONTAINER_ID = 'install-action-detail-page'
 
@@ -88,7 +89,7 @@ export const ActionDetail = () => {
               </LabeledValue>
               <LabeledValue label="Last trigger">
                 <ActionTriggerType
-                  triggerType={action.runs[0].triggered_by_type}
+                  triggerType={action.runs[0].triggered_by_type as TActionConfigTriggerType}
                   componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
                   componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
                 />

@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { deployComponents } from './deploy-components'
@@ -8,26 +7,18 @@ describe('deployComponents should handle response status codes from POST install
   const orgId = 'test-org-id'
 
   test('200 status with default body', async () => {
-    const { data: deploy } = await deployComponents({
-      body: {
-        plan_only: true,
-      },
+    const result = await deployComponents({
+      body: { plan_only: true },
       installId,
       orgId,
     })
-    expect(deploy).toBeDefined()
+    expect(result).toBeDefined()
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await deployComponents({
-      body: {
-        plan_only: true,
-      },
-      installId,
-      orgId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(
+      deployComponents({ body: { plan_only: true }, installId, orgId })
+    ).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

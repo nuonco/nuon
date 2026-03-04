@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getLogStream } from './get-log-stream'
@@ -8,21 +7,13 @@ describe('getLogStream should handle response status codes from GET log-streams/
   const orgId = 'test-org-id'
 
   test('200 status', async () => {
-    const { data: logStream } = await getLogStream({
-      logStreamId,
-      orgId,
-    })
-    expect(logStream).toHaveProperty('id')
-    expect(logStream).toHaveProperty('owner_type')
+    const result = await getLogStream({ logStreamId, orgId })
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('owner_type')
   }, 60000)
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await getLogStream({
-      logStreamId,
-      orgId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(getLogStream({ logStreamId, orgId })).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

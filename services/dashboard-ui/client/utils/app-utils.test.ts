@@ -10,13 +10,13 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Database Settings',
           description: 'Database configuration',
-          order: 1,
+          index: 1,
         },
         {
           id: 'group-2', 
           name: 'Network Settings',
           description: 'Network configuration',
-          order: 2,
+          index: 2,
         },
       ]
 
@@ -51,7 +51,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Database Settings',
           description: 'Database configuration',
-          order: 1,
+          index: 1,
           app_inputs: [
             {
               id: 'input-1',
@@ -73,7 +73,7 @@ describe('app-utils', () => {
           id: 'group-2',
           name: 'Network Settings',
           description: 'Network configuration',
-          order: 2,
+          index: 2,
           app_inputs: [
             {
               id: 'input-3',
@@ -93,7 +93,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Empty Group',
           description: 'Group with no inputs',
-          order: 1,
+          index: 1,
         },
       ]
 
@@ -114,7 +114,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Empty Group',
           description: 'Group with no inputs',
-          order: 1,
+          index: 1,
           app_inputs: [],
         },
       ])
@@ -143,7 +143,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Test Group',
           description: 'Test description',
-          order: 1,
+          index: 1,
         },
       ]
       const inputs: TAppConfig['input']['inputs'] = []
@@ -155,7 +155,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Test Group',
           description: 'Test description',
-          order: 1,
+          index: 1,
           app_inputs: [],
         },
       ])
@@ -176,7 +176,7 @@ describe('app-utils', () => {
           id: 'group-1',
           name: 'Advanced Group',
           description: 'Advanced configuration options',
-          order: 10,
+          index: 10,
           // Additional properties that might exist
           custom_field: 'custom_value',
         } as any,
@@ -190,7 +190,7 @@ describe('app-utils', () => {
         id: 'group-1',
         name: 'Advanced Group', 
         description: 'Advanced configuration options',
-        order: 10,
+        index: 10,
         custom_field: 'custom_value',
         app_inputs: [],
       })

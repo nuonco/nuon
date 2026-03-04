@@ -1,4 +1,3 @@
-import '@test/mock-auth'
 import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { shutdownRunnerInstance } from './shutdown-runner-instance'
@@ -8,20 +7,12 @@ describe('shutdownRunnerInstance should handle response status codes from POST r
   const runnerId = 'test-runner-id'
 
   test('200 status', async () => {
-    const { data } = await shutdownRunnerInstance({
-      orgId,
-      runnerId,
-    })
-    expect(data).toBe(true)
+    const result = await shutdownRunnerInstance({ orgId, runnerId })
+    expect(result).toBe(true)
   })
 
-  test.each(badResponseCodes)('%s status', async (code) => {
-    const { error, status } = await shutdownRunnerInstance({
-      orgId,
-      runnerId,
-    })
-    expect(status).toBe(code)
-    expect(error).toMatchSnapshot({
+  test.each(badResponseCodes)('%s status', async () => {
+    await expect(shutdownRunnerInstance({ orgId, runnerId })).rejects.toMatchObject({
       error: expect.any(String),
       description: expect.any(String),
       user_error: expect.any(Boolean),

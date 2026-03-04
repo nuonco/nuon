@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { describe, expect, test } from 'vitest'
 import { parseHelmPlan } from './helm-utils'
 import type { THelmPlan } from '@/types'

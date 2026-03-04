@@ -40,7 +40,7 @@ export const SandboxRunMenu = ({ activeSandboxRunId }: ISandboxRunMenu) => {
 
   const scrollToBottom = useScrollToBottom({
     onScrollToBottom: () => {
-      if (data?.headers?.['x-nuon-page-next'] === 'true') {
+      if (data?.pagination?.hasNext) {
         setOffset((prev) => {
           if (prev === 0) {
             return limit + 1

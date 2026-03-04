@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Hash } from './Hash'
 import { LabeledValue } from './LabeledValue'
 

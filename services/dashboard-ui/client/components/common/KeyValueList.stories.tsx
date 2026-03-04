@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { Button } from './Button'
 import { KeyValueList, KeyValueListSkeleton } from './KeyValueList'
 import { Text } from './Text'
