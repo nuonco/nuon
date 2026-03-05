@@ -37,15 +37,17 @@ COPY sdks ./sdks/
 # Download all dependencies into the module cache
 RUN go mod download
 
+# Copy and generate package code (common code generation)
+COPY pkg pkg
+RUN cd pkg && go generate ./...
+
 # Test target for pkg directory
 FROM build AS pkg-test
-RUN cd pkg && go generate ./...
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go test -v ./...
 
 # Lint target for pkg directory
 FROM build AS pkg-lint
-RUN cd pkg && go generate ./...
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-pkg \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
@@ -60,12 +62,11 @@ ENV GOMODCACHE=/go/pkg/mod
 ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
-COPY --from=build /src/go.mod /src/go.mod
-COPY --from=build /src/go.sum /src/go.sum
-COPY --from=build /src/tools.go /src/tools.go
+COPY --from=build /src/ /src/
 
 # Bake downloaded modules into the image
 COPY --from=build /go/pkg/mod /go/pkg/mod
+COPY --from=build /go/pkg/build-cache /go/pkg/build-cache
 
 WORKDIR /src
 # Set default CMD

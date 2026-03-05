@@ -101,7 +101,8 @@ jobs:
         uses: ./actions/setup-nuonctl
       - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
-        run: CI=true nuonctl builds driver ctl-api
+        run: |
+          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
       - name: 🔍 Lint pkg
         run: |
           CI=true nuonctl builds pkg-lint
