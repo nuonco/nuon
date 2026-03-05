@@ -193,11 +193,6 @@ export const BranchWorkflowRunsTable = ({
                 'Failed to load workflow runs'
         )
       } else {
-        console.log('Workflows received:', data?.length)
-        if (data && data.length > 0) {
-          console.log('Sample workflow:', data[0])
-          console.log('Branch runs in sample:', data[0]?.app_branch_runs)
-        }
         // Sort by created_at descending (newest first)
         const sorted = (data || []).sort(
           (a, b) =>
