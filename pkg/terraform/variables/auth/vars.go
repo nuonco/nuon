@@ -6,6 +6,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
@@ -28,6 +29,12 @@ func (v *auth) GetEnv(ctx context.Context) (map[string]string, error) {
 		}
 
 		envVars, err := awscredentials.FetchEnv(ctx, v.AWSAuth)
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch environment vars: %w", err)
+		}
+		return envVars, nil
+	case v.GCPAuth != nil:
+		envVars, err := gcpcredentials.FetchEnv(ctx, v.GCPAuth)
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch environment vars: %w", err)
 		}

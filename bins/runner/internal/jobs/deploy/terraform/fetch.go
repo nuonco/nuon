@@ -49,6 +49,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	if h.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		h.state.plan.TerraformDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
 		h.state.plan.TerraformDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+		h.state.plan.TerraformDeployPlan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	l.Info("fetching app config")

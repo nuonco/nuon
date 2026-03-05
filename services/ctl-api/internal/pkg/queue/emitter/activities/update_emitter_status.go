@@ -15,7 +15,7 @@ type UpdateEmitterStatusRequest struct {
 
 type UpdateEmitterStatusResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateEmitterStatus(ctx context.Context, req *UpdateEmitterStatusRequest) (*UpdateEmitterStatusResponse, error) {
 	var emitter app.QueueEmitter
 	if res := a.db.WithContext(ctx).First(&emitter, "id = ?", req.EmitterID); res.Error != nil {

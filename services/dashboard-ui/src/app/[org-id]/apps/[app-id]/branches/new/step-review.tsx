@@ -55,7 +55,7 @@ export const StepReview = ({
                 Branch Created Successfully!
               </Text>
               <Text variant="base" theme="neutral">
-                Your app branch "{formData.branchName}" has been created with
+                Your app branch &quot;{formData.branchName}&quot; has been created with
                 mock data.
               </Text>
               <Text

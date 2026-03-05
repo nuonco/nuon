@@ -49,6 +49,12 @@ func GenerateActivity(data ActivityData) ([]byte, error) {
 			}
 			return strings.ToUpper(s[:1]) + s[1:]
 		},
+		"isPointer": func(s string) bool {
+			return strings.HasPrefix(s, "*")
+		},
+		"derefType": func(s string) string {
+			return strings.TrimPrefix(s, "*")
+		},
 	}).Parse(string(tmplContent))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse template: %w", err)

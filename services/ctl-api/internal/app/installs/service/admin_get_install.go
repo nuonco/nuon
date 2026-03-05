@@ -37,6 +37,7 @@ func (s *service) adminGetInstall(ctx context.Context, installID string) (*app.I
 	res := s.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("AzureAccount").
+		Preload("GCPAccount").
 		Preload("App").
 		Preload("App.Org").
 		Preload("CreatedBy").

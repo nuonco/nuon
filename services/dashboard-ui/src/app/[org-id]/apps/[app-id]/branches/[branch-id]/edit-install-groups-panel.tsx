@@ -258,26 +258,12 @@ export const EditInstallGroupsPanel = ({
         }
       }
 
-      console.log('=== SAVING INSTALL GROUPS ===')
-      console.log('App ID:', appId)
-      console.log('Branch ID:', branch.id)
-      console.log('Org ID:', orgId)
-      console.log('Request payload:', JSON.stringify(request, null, 2))
-      console.log(
-        'API endpoint:',
-        `POST /v1/apps/${appId}/branches/${branch.id}/configs`
-      )
-
       const response = await createBranchConfig({
         appId,
         branchId: branch.id || '',
         orgId,
         request,
       })
-
-      console.log('Response:', response)
-      console.log('Response error:', response.error)
-      console.log('Response data:', response.data)
 
       if (response.error) {
         setError(
@@ -290,11 +276,11 @@ export const EditInstallGroupsPanel = ({
         )
         setIsSaving(false)
       } else {
-        console.log('Success! Config created:', response.data)
         router.refresh()
         onClose()
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Failed to save install groups:', err)
       setError('Failed to save install groups. Please try again.')
       setIsSaving(false)

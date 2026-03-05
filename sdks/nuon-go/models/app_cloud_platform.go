@@ -36,6 +36,9 @@ const (
 	// AppCloudPlatformAzure captures enum value "azure"
 	AppCloudPlatformAzure AppCloudPlatform = "azure"
 
+	// AppCloudPlatformGcp captures enum value "gcp"
+	AppCloudPlatformGcp AppCloudPlatform = "gcp"
+
 	// AppCloudPlatformUnknown captures enum value "unknown"
 	AppCloudPlatformUnknown AppCloudPlatform = "unknown"
 )
@@ -45,7 +48,7 @@ var appCloudPlatformEnum []any
 
 func init() {
 	var res []AppCloudPlatform
-	if err := json.Unmarshal([]byte(`["aws","azure","unknown"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws","azure","gcp","unknown"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

@@ -11,18 +11,21 @@ title: 'Break Glass'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`name`**<br/>string | name of the IAM role Name used for the role in AWS. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
+| **`name`**<br/>string | name of the role Name used for the role in the target cloud platform. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
 | **`description`**<br/>string | description of the role Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating | **✅ Required** | `"Provides S3 bucket access for the application"`, `"Database migration role with elevated permissions"` |
-| **`policies`**<br/>[array](#policies) | policy definitions for the role List of IAM policies to attach to the role. Each policy defines specific AWS permissions | **✅ Required** | - |
+| **`policies`**<br/>[array](#policies) | policy definitions for the role List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles) | **✅ Required** | - |
 | **`type`**<br/>string | role type in permission directory Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating | **Optional** | `"provision"`, `"maintenance"`, `"deprovision"` |
+| **`cloud_platform`**<br/>string | target cloud platform Cloud platform this role targets. Determines which downstream renderer processes the role (e.g., AWS CloudFormation vs GCP IAM). Defaults to aws if omitted | **Optional**<br/>`"aws"`, `"azure"`, `"gcp"` | `"aws"`, `"gcp"` |
 | **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
-| **`permissions_boundary`**<br/>string | permissions boundary policy Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://exa... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
+| **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 
 ### `policies`
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`name`**<br/>string | policy name Name for the policy. Used when creating inline or customer managed policies. Supports Nuon templating | **✅ Required** | `"app-{{.nuon.install.id}}-policy"`, `"s3-access-policy"` |
-| **`managed_policy_name`**<br/>string | AWS managed policy name Name or ARN of an AWS managed policy to attach to the role | **Optional** | `"AmazonS3FullAccess"`, `"ReadOnlyAccess"` |
-| **`contents`**<br/>string | IAM policy document JSON policy document defining IAM permissions. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (git::https:/... | **Optional** | `"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:*\",\"Resource\":\"*\"}]}"` |
+| **`name`**<br/>string | policy name Name for the policy. Used across all cloud platforms when creating the permission grant. Supports Nuon templating | **✅ Required** | `"app-{{.nuon.install.id}}-policy"`, `"s3-access-policy"` |
+| **`managed_policy_name`**<br/>string | [AWS] managed policy name [AWS only] Name or ARN of an AWS managed policy to attach to the IAM role. Mutually exclusive with contents | **Optional** | `"AmazonS3FullAccess"`, `"ReadOnlyAccess"` |
+| **`contents`**<br/>string | [AWS] inline policy document [AWS only] JSON policy document defining inline IAM permissions. Mutually exclusive with managed_policy_name. Supports Nuon templating and external file sources: HTTP(S... | **Optional** | `"{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:*\",\"Resource\":\"*\"}]}"` |
+| **`gcp_permissions`**<br/>array | [GCP] individual permissions [GCP only] List of individual GCP IAM permission strings to include in a custom role bound to the service account. Use this for fine-grained permission control. Mutuall... | **Optional** | `"compute.instances.get"`, `"storage.objects.list"` |
+| **`gcp_predefined_role`**<br/>string | [GCP] predefined role [GCP only] Name of a GCP predefined role to bind to the service account. This is the GCP equivalent of AWS managed policies — a Google-managed bundle of permissions. Mutually ... | **Optional** | `"roles/editor"`, `"roles/owner"` |
 

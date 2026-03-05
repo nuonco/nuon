@@ -15,7 +15,7 @@ func (s *syncer) getAppBreakGlassRequest() *models.ServiceCreateAppBreakGlassCon
 
 	roles := make([]*models.ServiceAppAWSIAMRoleConfig, 0)
 	for _, role := range s.cfg.BreakGlass.Roles {
-		roles = append(roles, s.awsIAMRoleToRequest(role))
+		roles = append(roles, s.iamRoleToRequest(role))
 	}
 
 	req.Roles = roles

@@ -14,8 +14,6 @@ interface IInstallCard {
 }
 
 export const InstallCard = ({ install, isDragging, isDisabled }: IInstallCard) => {
-  if (!install) return null
-
   const {
     attributes,
     listeners,
@@ -24,9 +22,11 @@ export const InstallCard = ({ install, isDragging, isDisabled }: IInstallCard) =
     transition,
     isDragging: isSortableDragging,
   } = useSortable({
-    id: install.id,
-    disabled: isDisabled,
+    id: install?.id ?? '',
+    disabled: isDisabled || !install,
   })
+
+  if (!install) return null
 
   const style = {
     transform: CSS.Transform.toString(transform),

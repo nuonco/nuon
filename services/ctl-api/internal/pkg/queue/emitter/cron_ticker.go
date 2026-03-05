@@ -14,7 +14,7 @@ type CronTickerWorkflowRequest struct {
 	EmitterID string `validate:"required"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @task-queue "queue"
 // @id-template queue-emitter-cron-{{.QueueID}}-{{.EmitterID}}
 func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowRequest) error {

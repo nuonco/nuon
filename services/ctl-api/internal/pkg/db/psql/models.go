@@ -64,6 +64,7 @@ func AllModels() []any {
 		// installs
 		&app.AWSAccount{},
 		&app.AzureAccount{},
+		&app.GCPAccount{},
 		&app.Install{},
 		&app.InstallState{},
 		&app.InstallEvent{},

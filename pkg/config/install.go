@@ -43,6 +43,22 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("eu-west-1")
 }
 
+type GCPAccount struct {
+	ProjectID string `mapstructure:"project_id,omitempty" toml:"project_id,omitempty" jsonschema:"required"`
+	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+}
+
+func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("project_id").Short("GCP project ID").
+		Long("GCP project where the infrastructure will be deployed").
+		Example("my-gcp-project").
+		Field("region").Short("GCP region").
+		Long("GCP region where the infrastructure will be deployed").
+		Example("us-central1").
+		Example("europe-west1")
+}
+
 type InputGroup struct {
 	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
 	// expected by mapstructure.
@@ -95,6 +111,7 @@ type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
+	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 }
 
@@ -111,6 +128,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("prompt").
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
+		Field("gcp_account").Short("GCP account configuration").
+		Long("GCP-specific settings for this install, including project ID and region").
 		Field("inputs").Short("input values").
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
 		Type("array")
@@ -175,6 +194,19 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 				diff.WithKey("region"),
 				diff.WithStringDiff(upstreamInstall.AWSAccount.Region, i.AWSAccount.Region),
 			))),
+		)
+	}
+
+	if i.GCPAccount != nil {
+		upstreamGCP := &GCPAccount{}
+		if upstreamInstall.GCPAccount != nil {
+			upstreamGCP = upstreamInstall.GCPAccount
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("gcp_account"), diff.WithChildren(
+				diff.NewDiff(diff.WithKey("project_id"), diff.WithStringDiff(upstreamGCP.ProjectID, i.GCPAccount.ProjectID)),
+				diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(upstreamGCP.Region, i.GCPAccount.Region)),
+			)),
 		)
 	}
 

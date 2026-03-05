@@ -29,10 +29,12 @@ type AppAWSIAMPolicyConfig struct {
 	AppAWSIAMRoleConfigID string              `json:"app_aws_iam_role_config_id,omitzero" temporaljson:"app_awsiam_role_config_id,omitzero,omitempty"`
 	AppAWSIAMRoleConfig   AppAWSIAMRoleConfig `json:"-" temporaljson:"app_awsiam_role_config,omitzero,omitempty"`
 
-	ManagedPolicyName       string `json:"managed_policy_name,omitzero" features:"template" temporaljson:"managed_policy_name,omitzero,omitempty"`
-	Name                    string `json:"name" features:"template,omitzero" temporaljson:"name,omitzero,omitempty"`
-	Contents                []byte `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"contents,omitzero,omitempty"`
-	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
+	ManagedPolicyName       string   `json:"managed_policy_name,omitzero" features:"template" temporaljson:"managed_policy_name,omitzero,omitempty"`
+	Name                    string   `json:"name" features:"template,omitzero" temporaljson:"name,omitzero,omitempty"`
+	Contents                []byte   `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" features:"template" temporaljson:"contents,omitzero,omitempty"`
+	GCPPermissions          []string `json:"gcp_permissions,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"gcp_permissions,omitzero,omitempty"`
+	GCPPredefinedRole       string   `json:"gcp_predefined_role,omitzero" gorm:"default:''" temporaljson:"gcp_predefined_role,omitzero,omitempty"`
+	CloudFormationStackName string   `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 }
 
 func (a *AppAWSIAMPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {

@@ -23,7 +23,7 @@ type EmitterState struct {
 	EmitCount int64
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @task-queue "queue"
 // @id-template queue-emitter-{{.QueueID}}-{{.EmitterID}}
 func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) error {
