@@ -62,14 +62,23 @@ ENV GOCACHE=/go/pkg/build-cache
 ENV GOMODCACHE=/go/pkg/mod
 ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
-# Copy the binaries and any other necessary files from the build stage
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
-COPY --from=build /src/ /src/
 
-# Bake downloaded modules and pkg-generated build cache into the image —
-# one-time export cost, amortized across all service builds.
+# Copy specific parts of /src/ instead of all of it.
+# Each service has a different workdir (different sources: in service.yml),
+# so /src/ content varies. Granular COPYs let BuildKit cache by content hash
+# of each path independently — stable paths hit even if sdks differs.
+COPY --from=build /src/go.mod /src/go.mod
+COPY --from=build /src/go.sum /src/go.sum
+COPY --from=build /src/tools.go /src/tools.go
+# pkg generated output is deterministic — always hits across services.
+COPY --from=build /src/pkg /src/pkg
+# Bake downloaded modules and pkg-generated build cache into the image.
 COPY --from=build /go/pkg/mod /go/pkg/mod
 COPY --from=build /go/pkg/build-cache /go/pkg/build-cache
+# sdks last — should be identical across services but isolated so any
+# variation only invalidates this one layer.
+COPY --from=build /src/sdks /src/sdks
 
 WORKDIR /src
 # Set default CMD

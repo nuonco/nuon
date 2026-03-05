@@ -11,6 +11,7 @@ ARG ETCSSL=/etc/ssl/cert.pem
 # Copy service-specific files
 WORKDIR /src/services/${SERVICE}
 
+COPY pkg ./pkg/
 COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY docs ./docs/
