@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	appselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/app/selector"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/creator"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 )
@@ -22,9 +23,18 @@ const (
 )
 
 func (s *Service) Create(ctx context.Context, appID, name, region string, inputs []string, asJSON, noSelect bool) error {
-	appID, err := lookup.AppID(ctx, s.api, appID)
-	if err != nil {
-		return ui.PrintError(err)
+	if appID == "" {
+		selectedID, err := appselector.App(ctx, s.cfg, s.api)
+		if err != nil {
+			return ui.PrintError(err)
+		}
+		appID = selectedID
+	} else {
+		var err error
+		appID, err = lookup.AppID(ctx, s.api, appID)
+		if err != nil {
+			return ui.PrintError(err)
+		}
 	}
 
 	// we collect these and pass them down so we can pre-fill specific fields

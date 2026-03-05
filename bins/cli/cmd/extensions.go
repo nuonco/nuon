@@ -155,10 +155,12 @@ func (c *cli) extInstallCmd() *cobra.Command {
 }
 
 func (c *cli) extUpgradeCmd() *cobra.Command {
-	return &cobra.Command{
+	var force bool
+
+	cmd := &cobra.Command{
 		Use:         "upgrade [name]",
 		Short:       "Upgrade extensions",
-		Long:        "Upgrade a specific extension or all installed extensions.",
+		Long:        "Upgrade a specific extension or all installed extensions. Use --force to re-download even if already at latest version.",
 		Args:        cobra.MaximumNArgs(1),
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
@@ -201,7 +203,7 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
 			spinner.Start(fmt.Sprintf("Upgrading %s...", args[0]))
 
-			if err := mgr.Upgrade(args[0]); err != nil {
+			if err := mgr.Upgrade(args[0], force); err != nil {
 				spinner.Fail(err)
 				return err
 			}
@@ -215,6 +217,10 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 			return nil
 		}),
 	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "Force re-download even if already at latest version")
+
+	return cmd
 }
 
 func (c *cli) extRemoveCmd() *cobra.Command {

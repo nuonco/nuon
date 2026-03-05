@@ -9,7 +9,8 @@ import (
 )
 
 // Upgrade upgrades a specific installed extension to the latest version.
-func (m *Manager) Upgrade(name string) error {
+// If force is true, the binary is re-downloaded even when the tag matches.
+func (m *Manager) Upgrade(name string, force bool) error {
 	ext, err := m.Get(name)
 	if err != nil {
 		return err
@@ -24,7 +25,7 @@ func (m *Manager) Upgrade(name string) error {
 		return fmt.Errorf("unable to check for updates: %w", err)
 	}
 
-	if release.TagName == ext.Tag {
+	if !force && release.TagName == ext.Tag {
 		return fmt.Errorf("extension %q is already at the latest version (%s)", name, ext.Tag)
 	}
 
@@ -89,7 +90,7 @@ func (m *Manager) UpgradeAll() ([]UpgradeResult, error) {
 			OldVersion: oldVersion,
 		}
 
-		err := m.Upgrade(ext.Name)
+		err := m.Upgrade(ext.Name, false)
 		if err != nil {
 			result.Error = err
 			result.NewVersion = oldVersion
