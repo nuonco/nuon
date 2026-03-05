@@ -142,9 +142,6 @@ Parameters:
   RunnerId:
     Type: String
     Description: The runner ID
-  RunnerApiToken:
-    Type: String
-    Description: API token for the runner
   RunnerApiUrl:
     Type: String
     Description: API URL for the runner
@@ -187,7 +184,6 @@ func TestExtractNestedStackParameters_RunnerASG(t *testing.T) {
 		"RunnerEgressGroupId",
 		"InstallId",
 		"RunnerId",
-		"RunnerApiToken",
 		"RunnerApiUrl",
 		"RunnerInitScriptUrl",
 		"InstanceType",
