@@ -24,7 +24,7 @@ type VCSConnectionCommit struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// Polymorphic ownership - references VCS config that owns this commit
-	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
 	// Optional VCS connection reference (nullable for public repos)
