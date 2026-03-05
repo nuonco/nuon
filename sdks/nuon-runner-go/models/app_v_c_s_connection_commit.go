@@ -35,6 +35,12 @@ type AppVCSConnectionCommit struct {
 	// message
 	Message string `json:"message,omitempty"`
 
+	// Polymorphic ownership - references VCS config that owns this commit
+	OwnerID string `json:"owner_id,omitempty"`
+
+	// owner type
+	OwnerType string `json:"owner_type,omitempty"`
+
 	// sha
 	Sha string `json:"sha,omitempty"`
 
