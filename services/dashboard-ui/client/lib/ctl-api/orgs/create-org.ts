@@ -4,6 +4,7 @@ import type { TOrg } from '@/types'
 export type TCreateOrgBody = {
   name: string
   use_sandbox_mode: boolean
+  tags?: string[]
 }
 
 export const createOrg = ({ body }: { body: TCreateOrgBody }) =>
