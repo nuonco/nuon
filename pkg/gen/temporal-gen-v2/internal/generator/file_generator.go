@@ -9,6 +9,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
@@ -36,6 +37,8 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 
 	hasTemporal := false
 	namespacedActivities := []ActivityData{}
+	// extra imports detected from type signatures (pkgName -> importPath)
+	extraImports := make(map[string]string)
 
 	filename := filepath.Base(f.Path)
 	fileExt := filepath.Ext(filename)
@@ -43,9 +46,12 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	clientName := toPascalCase(baseName)
 
 	for _, fn := range f.Functions {
-		inputType, outputType, params, receiver, err := getSignature(f.Package.Pkg, fn.Decl)
+		inputType, outputType, params, receiver, sigImports, err := getSignature(f.Package.Pkg, fn.Decl)
 		if err != nil {
 			return fmt.Errorf("failed to get signature for %s: %w", fn.Decl.Name.Name, err)
+		}
+		for name, path := range sigImports {
+			extraImports[name] = path
 		}
 
 		var code []byte
@@ -101,6 +107,7 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 								if p == f.Package.Pkg.Types {
 									return ""
 								}
+								extraImports[p.Name()] = p.Path()
 								return p.Name()
 							}
 							byFieldType = types.TypeString(fieldType, qualifier)
@@ -233,6 +240,27 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 		out.WriteString("\t\"go.temporal.io/sdk/activity\"\n")
 		out.WriteString("\t\"go.temporal.io/sdk/worker\"\n")
 	}
+
+	hardcoded := map[string]bool{
+		"go.temporal.io/sdk/client":   true,
+		"go.temporal.io/sdk/workflow": true,
+		"go.temporal.io/sdk/temporal": true,
+		"go.temporal.io/sdk/activity": true,
+		"go.temporal.io/sdk/worker":   true,
+	}
+	var extraPaths []string
+	for _, path := range extraImports {
+		if strings.Contains(path, ".") && !hardcoded[path] {
+			extraPaths = append(extraPaths, path)
+		}
+	}
+	if len(extraPaths) > 0 {
+		sort.Strings(extraPaths)
+		out.WriteString("\n")
+		for _, path := range extraPaths {
+			out.WriteString(fmt.Sprintf("\t%q\n", path))
+		}
+	}
 	out.WriteString(")\n\n")
 
 	// If we have a client, generate the client struct and options
@@ -323,20 +351,23 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 // Actually f.Package is *dir.Package which contains Pkg *packages.Package.
 // packages.Package contains Types *types.Package.
 
-func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, err error) {
+func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, requiredPkgs map[string]string, err error) {
+	requiredPkgs = make(map[string]string)
+
 	obj := pkg.TypesInfo.Defs[decl.Name]
 	if obj == nil {
-		return "", "", nil, "", fmt.Errorf("type object not found for %s", decl.Name.Name)
+		return "", "", nil, "", nil, fmt.Errorf("type object not found for %s", decl.Name.Name)
 	}
 	sig, ok := obj.Type().(*types.Signature)
 	if !ok {
-		return "", "", nil, "", fmt.Errorf("not a function")
+		return "", "", nil, "", nil, fmt.Errorf("not a function")
 	}
 
 	qualifier := func(p *types.Package) string {
 		if p == pkg.Types {
 			return ""
 		}
+		requiredPkgs[p.Name()] = p.Path()
 		return p.Name()
 	}
 
@@ -384,7 +415,7 @@ func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, 
 		}
 	}
 
-	return inputType, outputType, params, receiver, nil
+	return inputType, outputType, params, receiver, requiredPkgs, nil
 }
 
 func toPascalCase(s string) string {
