@@ -1,4 +1,4 @@
-package tests
+package oapi
 
 import (
 	"encoding/json"
@@ -10,15 +10,50 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
+	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
+	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
+	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
+	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
+	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
+	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
+	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
+	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
+	releasesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/service"
+	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
+	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
+	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
 	"github.com/nuonco/nuon/services/ctl-api/docs/admin"
 	"github.com/nuonco/nuon/services/ctl-api/docs/public"
 	"github.com/nuonco/nuon/services/ctl-api/docs/runner"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
+
+// testDomainServices returns all domain services that register swagger-annotated routes,
+// instantiated with zero-value params for route registration testing.
+func testDomainServices(ea *api.EndpointAudit) []api.Service {
+	return []api.Service{
+		accountsservice.New(accountsservice.Params{}),
+		actionsservice.New(actionsservice.Params{}),
+		appsservice.New(appsservice.Params{EndpointAudit: ea}),
+		componentsservice.New(componentsservice.Params{}),
+		generalservice.New(generalservice.Params{}),
+		identityprovidersservice.New(identityprovidersservice.Params{}),
+		installsservice.New(installsservice.Params{EndpointAudit: ea}),
+		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
+		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
+		queuesservice.New(queuesservice.Params{}),
+		releasesservice.New(releasesservice.Params{}),
+		runnerauthservice.New(runnerauthservice.Params{}),
+		runnersservice.New(runnersservice.Params{}),
+		vcsservice.New(vcsservice.Params{}),
+	}
+}
 
 // SwaggerSpec represents the structure of a Swagger/OpenAPI 2.0 specification
 type SwaggerSpec struct {
@@ -170,10 +205,8 @@ func parseSwaggerSpec(t *testing.T, specJSON string, specName string) *SwaggerSp
 func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// All domain services are registered in fxmodules.domainServices — the single
-	// source of truth for both FX dependency injection and this test.
 	ea := api.NewEndpointAudit()
-	services := fxmodules.TestDomainServices(ea)
+	services := testDomainServices(ea)
 
 	// Each swagger spec maps to one or more route-registration methods.
 	// The public spec includes routes from both RegisterPublicRoutes (unauthenticated)
@@ -410,12 +443,12 @@ func TestSwaggerParamNamesConsistency(t *testing.T) {
 // TestSwaggerSpecsExist validates that all required swagger spec files exist
 func TestSwaggerSpecsExist(t *testing.T) {
 	specs := []string{
-		"../docs/public/swagger.json",
-		"../docs/public/docs.go",
-		"../docs/admin/admin_swagger.json",
-		"../docs/admin/admin_docs.go",
-		"../docs/runner/runner_swagger.json",
-		"../docs/runner/runner_docs.go",
+		"../../../docs/public/swagger.json",
+		"../../../docs/public/docs.go",
+		"../../../docs/admin/admin_swagger.json",
+		"../../../docs/admin/admin_docs.go",
+		"../../../docs/runner/runner_swagger.json",
+		"../../../docs/runner/runner_docs.go",
 	}
 
 	for _, spec := range specs {
