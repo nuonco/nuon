@@ -48,6 +48,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	if h.state.plan.HelmDeployPlan.ClusterInfo != nil {
 		h.state.plan.HelmDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
 		h.state.plan.HelmDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+		h.state.plan.HelmDeployPlan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	l.Info("fetching app config")

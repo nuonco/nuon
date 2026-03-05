@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"strconv"
 
@@ -20,6 +21,10 @@ import (
 //
 // swagger:model service.AppAWSIAMRoleConfig
 type ServiceAppAWSIAMRoleConfig struct {
+
+	// cloud platform
+	// Enum: ["aws","gcp"]
+	CloudPlatform string `json:"cloud_platform,omitempty"`
 
 	// description
 	// Required: true
@@ -45,6 +50,10 @@ type ServiceAppAWSIAMRoleConfig struct {
 func (m *ServiceAppAWSIAMRoleConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCloudPlatform(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateDescription(formats); err != nil {
 		res = append(res, err)
 	}
@@ -64,6 +73,48 @@ func (m *ServiceAppAWSIAMRoleConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+var serviceAppAWSIAMRoleConfigTypeCloudPlatformPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["aws","gcp"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		serviceAppAWSIAMRoleConfigTypeCloudPlatformPropEnum = append(serviceAppAWSIAMRoleConfigTypeCloudPlatformPropEnum, v)
+	}
+}
+
+const (
+
+	// ServiceAppAWSIAMRoleConfigCloudPlatformAws captures enum value "aws"
+	ServiceAppAWSIAMRoleConfigCloudPlatformAws string = "aws"
+
+	// ServiceAppAWSIAMRoleConfigCloudPlatformGcp captures enum value "gcp"
+	ServiceAppAWSIAMRoleConfigCloudPlatformGcp string = "gcp"
+)
+
+// prop value enum
+func (m *ServiceAppAWSIAMRoleConfig) validateCloudPlatformEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceAppAWSIAMRoleConfigTypeCloudPlatformPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ServiceAppAWSIAMRoleConfig) validateCloudPlatform(formats strfmt.Registry) error {
+	if swag.IsZero(m.CloudPlatform) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateCloudPlatformEnum("cloud_platform", "body", m.CloudPlatform); err != nil {
+		return err
+	}
+
 	return nil
 }
 

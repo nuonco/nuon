@@ -59,7 +59,7 @@ export const StepBasicInfo = ({
             variant="xs"
             className="text-cool-grey-600 dark:text-cool-grey-400 mb-2"
           >
-            Optional description to help identify this branch's purpose
+            Optional description to help identify this branch&apos;s purpose
           </Text>
         </label>
         <textarea

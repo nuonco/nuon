@@ -12,8 +12,8 @@ type GetEmitterRequest struct {
 	EmitterID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id EmitterID
+// @temporal-gen-v2 activity
+// @by-field EmitterID
 func (a *Activities) GetEmitter(ctx context.Context, req *GetEmitterRequest) (*app.QueueEmitter, error) {
 	var emitter app.QueueEmitter
 

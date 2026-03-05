@@ -5,6 +5,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -36,6 +37,13 @@ func CreatePlanAuth(stackOutputs app.InstallStackOutputs, roleARN, sessionName s
 				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
 			},
 			UseDefault: true,
+		}
+
+	case stackOutputs.GCPStackOutputs != nil:
+		planAuth.GCPAuth = &gcpcredentials.Config{
+			ProjectID:                 stackOutputs.GCPStackOutputs.ProjectID,
+			Region:                    stackOutputs.GCPStackOutputs.Region,
+			ImpersonateServiceAccount: roleARN,
 		}
 
 	default:

@@ -24,6 +24,9 @@ type StateCloudAccount struct {
 
 	// azure
 	Azure *StateAzureCloudAccount `json:"azure,omitempty"`
+
+	// gcp
+	Gcp *StateGCPCloudAccount `json:"gcp,omitempty"`
 }
 
 // Validate validates this state cloud account
@@ -35,6 +38,10 @@ func (m *StateCloudAccount) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzure(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +97,29 @@ func (m *StateCloudAccount) validateAzure(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *StateCloudAccount) validateGcp(formats strfmt.Registry) error {
+	if swag.IsZero(m.Gcp) { // not required
+		return nil
+	}
+
+	if m.Gcp != nil {
+		if err := m.Gcp.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this state cloud account based on the context it is used
 func (m *StateCloudAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -99,6 +129,10 @@ func (m *StateCloudAccount) ContextValidate(ctx context.Context, formats strfmt.
 	}
 
 	if err := m.contextValidateAzure(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcp(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -149,6 +183,31 @@ func (m *StateCloudAccount) contextValidateAzure(ctx context.Context, formats st
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *StateCloudAccount) contextValidateGcp(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Gcp != nil {
+
+		if swag.IsZero(m.Gcp) { // not required
+			return nil
+		}
+
+		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp")
 			}
 
 			return err

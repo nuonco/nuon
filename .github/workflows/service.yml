@@ -51,10 +51,9 @@ jobs:
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
 
-      - name: Use nuon buildkit in infra-shared-ci
+      - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
-        run: |
-         CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
+        run: CI=true nuonctl builds driver ctl-api
 
       - name: 🔧 Enable local API types generation (dashboard-ui only)
         if: ${{ inputs.service == 'dashboard-ui' && env.GEN_API_TYPES == 'true' }}
@@ -147,3 +146,7 @@ jobs:
         if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=prod --tag=${{inputs.tag}}
+
+      - name: 💾 Save cache
+        run: |
+          CI=true nuonctl builds release ${{inputs.service}} --tag=${{inputs.tag}} --push=false --write-cache

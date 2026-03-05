@@ -119,6 +119,32 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 		cfg.ACRAuth = &azurecredentials.Config{
 			UseDefault: true,
 		}
+
+	case stack.GCPStackOutputs != nil:
+
+		cfg.RegistryType = configs.OCIRegistryTypeGAR
+		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.repository_url}}", stateData)
+		if err != nil {
+			l.Error("error rendering repository",
+				zap.Any("repository", repositoryStr),
+				zap.Error(err),
+				zap.Any("state", stateData),
+			)
+			return nil, errors.Wrap(err, "unable to render gar repository url")
+		}
+		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE
+		cfg.Repository = repositoryStr + "/app"
+		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
+		if err != nil {
+			l.Error("error rendering registy url",
+				zap.Any("registry-url", loginServer),
+				zap.Error(err),
+				zap.Any("state", stateData),
+			)
+			return nil, errors.Wrap(err, "unable to render gar login server")
+		}
+		cfg.LoginServer = loginServer
+		cfg.Region = stack.GCPStackOutputs.Region
 	}
 
 	return cfg, nil

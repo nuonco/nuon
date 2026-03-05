@@ -296,8 +296,14 @@ func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs
 		if err != nil {
 			return "", fmt.Errorf("unable to get AWS role map: %w", err)
 		}
+	} else if stackOutputs.GCPStackOutputs != nil {
+		// Try GCP third
+		availableRoles, err = getGCPSAMap(appCfg, stackOutputs.GCPStackOutputs, installState)
+		if err != nil {
+			return "", fmt.Errorf("unable to get GCP SA map: %w", err)
+		}
 	} else {
-		return "", errors.New("stack outputs must have either AWS or Azure outputs")
+		return "", errors.New("stack outputs must have either AWS, Azure, or GCP outputs")
 	}
 
 	roleARN, ok := availableRoles[renderedRoleName]
@@ -350,4 +356,49 @@ func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, ins
 func getAzureRoleMap(appCfg *app.AppConfig, stackOutputs *app.AzureStackOutputs) map[string]string {
 	availableRoles := make(map[string]string)
 	return availableRoles
+}
+
+// getGCPSAMap returns a map of rendered role name to GCP service account email.
+func getGCPSAMap(appCfg *app.AppConfig, stackOutputs *app.GCPStackOutputs, installState *state.State) (map[string]string, error) {
+	if appCfg == nil {
+		return nil, fmt.Errorf("app config is required")
+	}
+	if installState == nil {
+		return nil, fmt.Errorf("install state is required for role rendering")
+	}
+
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
+	}
+
+	availableRoles := make(map[string]string)
+
+	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render provision role name: %w", err)
+	}
+	availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionSAEmail
+
+	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render maintenance role name: %w", err)
+	}
+	availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceSAEmail
+
+	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
+	}
+	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionSAEmail
+
+	if appCfg.PermissionsConfig.BreakGlassRole.Name != "" {
+		renderedBreakGlassRoleName, err := render.RenderV2(appCfg.PermissionsConfig.BreakGlassRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render break glass role name: %w", err)
+		}
+		availableRoles[renderedBreakGlassRoleName] = stackOutputs.BreakGlassSAEmail
+	}
+
+	return availableRoles, nil
 }

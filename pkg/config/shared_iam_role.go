@@ -5,7 +5,8 @@ import (
 )
 
 type AppAWSIAMRole struct {
-	Type string `mapstructure:"type" toml:"type"`
+	Type          string `mapstructure:"type" toml:"type"`
+	CloudPlatform string `mapstructure:"cloud_platform,omitempty" toml:"cloud_platform,omitempty"`
 
 	Name        string            `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string            `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
@@ -22,8 +23,13 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("provision").
 		Example("maintenance").
 		Example("deprovision").
-		Field("name").Short("name of the IAM role").Required().
-		Long("Name used for the role in AWS. Supports Go templating using standard template variables (e.g., {{.nuon.install.id}})").
+		Field("cloud_platform").Short("target cloud platform").
+		Long("Cloud platform this role targets. Determines which downstream renderer processes the role (e.g., AWS CloudFormation vs GCP IAM). Defaults to aws if omitted").
+		Enum("aws", "azure", "gcp").
+		Example("aws").
+		Example("gcp").
+		Field("name").Short("name of the role").Required().
+		Long("Name used for the role in the target cloud platform. Supports Go templating using standard template variables (e.g., {{.nuon.install.id}})").
 		Example("app-{{.nuon.install.id}}-role").
 		Example("admin-role").
 		Field("description").Short("description of the role").Required().
@@ -35,9 +41,9 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("Application S3 Access").
 		Example("Database Admin").
 		Field("policies").Short("policy definitions for the role").Required().
-		Long("List of IAM policies to attach to the role. Each policy defines specific AWS permissions").
-		Field("permissions_boundary").Short("permissions boundary policy").
-		Long("Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
+		Long("List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles)").
+		Field("permissions_boundary").Short("[AWS] permissions boundary policy").
+		Long("[AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
 		Example("./provision_boundary.json").
 		Example("./maintenance_boundary.json")
 }

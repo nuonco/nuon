@@ -23,6 +23,7 @@ func (h *Helpers) GetInstall(ctx context.Context, orgID, installID string) (*app
 		Preload("RunnerGroup.Runners").
 		Preload("AWSAccount").
 		Preload("AzureAccount").
+		Preload("GCPAccount").
 		Preload("App").
 		Preload("App.AppInputConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_input_configs.created_at DESC").Limit(1)

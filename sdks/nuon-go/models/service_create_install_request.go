@@ -26,6 +26,9 @@ type ServiceCreateInstallRequest struct {
 	// azure account
 	AzureAccount *ServiceCreateInstallRequestAzureAccount `json:"azure_account,omitempty"`
 
+	// gcp account
+	GcpAccount *ServiceCreateInstallRequestGcpAccount `json:"gcp_account,omitempty"`
+
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
 
@@ -49,6 +52,10 @@ func (m *ServiceCreateInstallRequest) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAccount(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAccount(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -107,6 +114,29 @@ func (m *ServiceCreateInstallRequest) validateAzureAccount(formats strfmt.Regist
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateInstallRequest) validateGcpAccount(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAccount) { // not required
+		return nil
+	}
+
+	if m.GcpAccount != nil {
+		if err := m.GcpAccount.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_account")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_account")
 			}
 
 			return err
@@ -183,6 +213,10 @@ func (m *ServiceCreateInstallRequest) ContextValidate(ctx context.Context, forma
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateGcpAccount(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateInstallConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -238,6 +272,31 @@ func (m *ServiceCreateInstallRequest) contextValidateAzureAccount(ctx context.Co
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateInstallRequest) contextValidateGcpAccount(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAccount != nil {
+
+		if swag.IsZero(m.GcpAccount) { // not required
+			return nil
+		}
+
+		if err := m.GcpAccount.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_account")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_account")
 			}
 
 			return err
@@ -382,6 +441,46 @@ func (m *ServiceCreateInstallRequestAzureAccount) MarshalBinary() ([]byte, error
 // UnmarshalBinary interface implementation
 func (m *ServiceCreateInstallRequestAzureAccount) UnmarshalBinary(b []byte) error {
 	var res ServiceCreateInstallRequestAzureAccount
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*m = res
+	return nil
+}
+
+// ServiceCreateInstallRequestGcpAccount service create install request gcp account
+//
+// swagger:model ServiceCreateInstallRequestGcpAccount
+type ServiceCreateInstallRequestGcpAccount struct {
+
+	// project id
+	ProjectID string `json:"project_id,omitempty"`
+
+	// region
+	Region string `json:"region,omitempty"`
+}
+
+// Validate validates this service create install request gcp account
+func (m *ServiceCreateInstallRequestGcpAccount) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this service create install request gcp account based on context it is used
+func (m *ServiceCreateInstallRequestGcpAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (m *ServiceCreateInstallRequestGcpAccount) MarshalBinary() ([]byte, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(m)
+}
+
+// UnmarshalBinary interface implementation
+func (m *ServiceCreateInstallRequestGcpAccount) UnmarshalBinary(b []byte) error {
+	var res ServiceCreateInstallRequestGcpAccount
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

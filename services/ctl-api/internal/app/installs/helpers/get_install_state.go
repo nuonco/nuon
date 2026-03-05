@@ -185,6 +185,7 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("AzureAccount").
+		Preload("GCPAccount").
 		Preload("AWSAccount").
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)

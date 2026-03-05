@@ -20,6 +20,12 @@ type ServiceAppAWSIAMPolicyConfig struct {
 	// contents
 	Contents string `json:"contents,omitempty"`
 
+	// gcp permissions
+	GcpPermissions []string `json:"gcp_permissions"`
+
+	// gcp predefined role
+	GcpPredefinedRole string `json:"gcp_predefined_role,omitempty"`
+
 	// managed policy name
 	ManagedPolicyName string `json:"managed_policy_name,omitempty"`
 
