@@ -3,6 +3,7 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
+import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import { cn } from '@/utils/classnames'
 
@@ -17,6 +18,11 @@ export function WizardNav() {
     goPrev,
     goToStep,
   } = useOnboardingWizard()
+
+  const { isStepComplete, getStepMetadata } = useOnboardingJourney()
+
+  const orgCreated = isStepComplete('org_created')
+  const orgId = getStepMetadata('org_created', 'org_id') as string | undefined
 
   const canGoBack = currentStepIndex > 0
   const currentStepId = steps[currentStepIndex]?.id
@@ -112,7 +118,13 @@ export function WizardNav() {
         </Button>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 flex justify-end">
+        {orgCreated && orgId && (
+          <Button variant="ghost" href={`/${orgId}/apps`}>
+            Exit
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

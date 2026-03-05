@@ -40,7 +40,7 @@ export function WizardStepView() {
           {visibleStep.title}
         </Text>
         {visibleStep.description && (
-          <Text variant="body" theme="neutral">
+          <Text variant="body" theme="neutral" className="!block max-w-md !text-pretty">
             {visibleStep.description}
           </Text>
         )}
@@ -54,6 +54,7 @@ export function WizardStepView() {
           markComplete(visibleStep.id)
           goNext()
         }}
+        nextStepTitle={steps[visibleIndex + 1]?.title}
       />
     </div>
   )

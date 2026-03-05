@@ -1,65 +1,69 @@
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
-import { Button } from '@/components/common/Button'
-import { Text } from '@/components/common/Text'
-import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
-
-const PlaceholderStep = ({ onAdvance }: IWizardStepComponentProps) => {
-  return (
-    <div className="py-12 items-center flex flex-col gap-4">
-      <Text variant="body">Step content goes here.</Text>
-      <Button onClick={onAdvance} variant="primary">
-        Complete step
-      </Button>
-    </div>
-  )
-}
+import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
+import { CreateOrgStep } from '@/components/onboarding/steps/CreateOrgStep'
+import { DownloadCliStep } from '@/components/onboarding/steps/DownloadCliStep'
+import { CreateAppStep } from '@/components/onboarding/steps/CreateAppStep'
+import { SyncAppStep } from '@/components/onboarding/steps/SyncAppStep'
+import { CreateInstallStep } from '@/components/onboarding/steps/CreateInstallStep'
+import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
+import { ToastProvider } from '@/providers/toast-provider'
 
 const STEPS = [
   {
     id: 'step-1',
     title: 'Welcome to Nuon',
-    description: "Let's get you set up.",
-    component: PlaceholderStep,
+    description: "Let's setup your account.",
+    component: WelcomeStep,
   },
   {
     id: 'step-2',
     title: 'Create your org',
     description: 'Set up your organization.',
-    component: PlaceholderStep,
+    component: CreateOrgStep,
   },
   {
     id: 'step-3',
     title: 'Download the Nuon CLI',
-    description: 'Lets download the Nuon CLI.',
-    component: PlaceholderStep,
+    description:
+      'Download the Nuon CLI to create and manage your apps from the terminal.',
+    component: DownloadCliStep,
   },
   {
     id: 'step-4',
     title: 'Create your first app',
-    description: 'Choose an example app to get started.',
-    component: PlaceholderStep,
+    description:
+      'Choose an example app to get started. You can customize it later.',
+    component: CreateAppStep,
   },
   {
     id: 'step-5',
     title: 'Sync your app config',
-    description: 'Sync your example app config to get ready for deployment.',
-    component: PlaceholderStep,
+    description:
+      'Syncing pushes your app config to Nuon and triggers a build. Run this from inside your cloned app directory.',
+    component: SyncAppStep,
   },
   {
     id: 'step-6',
     title: 'Create an install',
-    description: 'Create an install of your app config.',
-    component: PlaceholderStep,
+    description: 'Create an install to deploy your app to a cloud account.',
+    component: CreateInstallStep,
   },
 ]
 
 export function Onboarding() {
   return (
-    <OnboardingWizard
-      steps={STEPS}
-      onComplete={() => {
-        window.location.href = '/'
-      }}
-    />
+    <ToastProvider>
+      <SurfacesProvider>
+        <OnboardingJourneyProvider>
+          <OnboardingWizard
+            steps={STEPS}
+            onComplete={() => {
+              window.location.href = '/'
+            }}
+          />
+        </OnboardingJourneyProvider>
+      </SurfacesProvider>
+    </ToastProvider>
   )
 }

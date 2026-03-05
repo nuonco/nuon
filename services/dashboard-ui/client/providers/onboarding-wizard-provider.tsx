@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback } from 'react'
+import { createContext, useState, useCallback, useEffect } from 'react'
 import type { ComponentType } from 'react'
 
 export interface IWizardStepComponentProps {
@@ -6,6 +6,7 @@ export interface IWizardStepComponentProps {
   sharedData: Record<string, unknown>
   setSharedData: (key: string, val: unknown) => void
   onAdvance: () => void
+  nextStepTitle?: string
 }
 
 export interface IWizardStepDef<TData = unknown> {
@@ -40,6 +41,8 @@ export interface IWizardContext {
 
 export const WizardContext = createContext<IWizardContext | undefined>(undefined)
 
+const STORAGE_KEY = 'onboarding-wizard-step'
+
 export function OnboardingWizardProvider({
   steps,
   onComplete,
@@ -47,9 +50,23 @@ export function OnboardingWizardProvider({
   onClose,
   children,
 }: IOnboardingWizardProps & { children: React.ReactNode }) {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
+  const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === null) return 0
+    const parsed = parseInt(saved, 10)
+    return parsed >= 0 && parsed < steps.length ? parsed : 0
+  })
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === null) return new Set()
+    const parsed = parseInt(saved, 10)
+    return new Set(steps.slice(0, parsed).map((s) => s.id))
+  })
   const [sharedData, setSharedDataState] = useState<Record<string, unknown>>({})
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, String(currentStepIndex))
+  }, [currentStepIndex])
 
   const markComplete = useCallback((id: string) => {
     setCompletedSteps((prev) => new Set([...prev, id]))
@@ -71,6 +88,7 @@ export function OnboardingWizardProvider({
   const goNext = useCallback(() => {
     setCurrentStepIndex((prev) => {
       if (prev < steps.length - 1) return prev + 1
+      localStorage.removeItem(STORAGE_KEY)
       onComplete()
       return prev
     })
