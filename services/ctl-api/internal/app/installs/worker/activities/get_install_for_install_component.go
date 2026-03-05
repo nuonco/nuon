@@ -12,7 +12,7 @@ type GetInstallForInstallComponentRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallComponentID
+// @by-field InstallComponentID
 func (a *Activities) GetInstallForInstallComponent(ctx context.Context, req GetInstallForInstallComponentRequest) (*app.Install, error) {
 	var component app.InstallComponent
 

@@ -13,7 +13,7 @@ type DeleteInstallSandboxRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallSandboxID
+// @by-field InstallSandboxID
 func (a *Activities) DeleteInstallSanbox(ctx context.Context, req DeleteInstallSandboxRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

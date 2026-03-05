@@ -15,7 +15,7 @@ type GetRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, error) {
 	return a.getInstall(ctx, req.InstallID)
 }

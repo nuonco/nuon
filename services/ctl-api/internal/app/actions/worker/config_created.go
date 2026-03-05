@@ -10,7 +10,7 @@ import (
 	installsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1m
 // @task-timeout 30s
 func (w *Workflows) ConfigCreated(ctx workflow.Context, sreq signals.RequestSignal) error {

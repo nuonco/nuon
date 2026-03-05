@@ -16,7 +16,7 @@ type GetInstallSandboxRunStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallSandboxRunState(ctx context.Context, req GetInstallSandboxRunStateRequest) (*app.InstallSandboxRun, error) {
 	var installSandboxRun app.InstallSandboxRun
 	res := a.db.WithContext(ctx).

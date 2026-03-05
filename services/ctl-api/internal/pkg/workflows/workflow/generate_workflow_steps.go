@@ -14,7 +14,7 @@ type GenerateWorkflowStepsRequest struct {
 	Steps      []*app.WorkflowStep `json:"steps" validate:"required"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1h
 // @task-timeout 1m
 // @id-template {{.CallerID}}-generate-steps

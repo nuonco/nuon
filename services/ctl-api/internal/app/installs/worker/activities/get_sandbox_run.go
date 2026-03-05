@@ -13,7 +13,7 @@ type GetSandboxRunRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunID
+// @by-field RunID
 func (a *Activities) GetSandboxRun(ctx context.Context, req GetSandboxRunRequest) (*app.InstallSandboxRun, error) {
 	var run app.InstallSandboxRun
 

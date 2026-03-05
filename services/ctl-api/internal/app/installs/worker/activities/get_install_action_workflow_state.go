@@ -16,7 +16,7 @@ type GetInstallActionWorkflowStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallActionWorkflowID
+// @by-field InstallActionWorkflowID
 func (a *Activities) GetInstallActionWorkflowState(ctx context.Context, req GetInstallActionWorkflowStateRequest) (*app.InstallActionWorkflow, error) {
 	var act app.InstallActionWorkflow
 	res := a.db.WithContext(ctx).

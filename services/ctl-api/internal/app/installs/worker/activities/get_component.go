@@ -11,7 +11,7 @@ type GetComponentRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ComponentID
+// @by-field ComponentID
 func (a *Activities) GetComponent(ctx context.Context, req GetComponentRequest) (*app.Component, error) {
 	return a.componentsHelpers.GetComponent(ctx, req.ComponentID)
 }

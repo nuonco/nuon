@@ -13,3 +13,11 @@ func NewWorkflow(cfg *workers.Config) Wkflow {
 		Cfg: cfg,
 	}
 }
+
+// ListWorkflowFns returns the list of workflow functions for registration
+func (w *Wkflow) ListWorkflowFns() []any {
+	return []any{
+		w.ProvisionECRRepository,
+		w.DeprovisionECRRepository,
+	}
+}

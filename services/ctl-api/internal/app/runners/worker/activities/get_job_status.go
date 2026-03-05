@@ -12,7 +12,7 @@ type GetJobStatusRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetJobStatus(ctx context.Context, req GetJobStatusRequest) (app.RunnerJobStatus, error) {
 	job, err := a.getRunnerJob(ctx, req.ID)
 	if err != nil {

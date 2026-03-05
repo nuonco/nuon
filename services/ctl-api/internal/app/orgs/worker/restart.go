@@ -16,7 +16,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 1m
 func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) error {

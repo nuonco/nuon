@@ -12,7 +12,7 @@ type GetInstallForSandboxRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id SandboxID
+// @by-field SandboxID
 func (a *Activities) GetInstallForSandbox(ctx context.Context, req GetInstallForSandboxRequest) (*app.Install, error) {
 	var sandbox app.InstallSandbox
 

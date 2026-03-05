@@ -17,7 +17,7 @@ type GetLatestJobRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id OwnerID
+// @by-field OwnerID
 func (a *Activities) GetLatestJob(ctx context.Context, req *GetLatestJobRequest) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).

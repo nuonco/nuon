@@ -13,7 +13,7 @@ type GetActionWorkflows struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetActionWorkflows(ctx context.Context, req *GetActionWorkflows) ([]*app.InstallActionWorkflow, error) {
 	return a.getActionWorkflows(ctx, req.InstallID)
 }

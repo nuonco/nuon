@@ -14,7 +14,7 @@ type CreateSandboxInstallStackVersionRunRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id StackVersionID
+// @by-field StackVersionID
 func (a *Activities) CreateSandboxInstallStackVersionRun(ctx context.Context, req *CreateSandboxInstallStackVersionRunRequest) (*app.InstallStackVersionRun, error) {
 	versionRun := app.InstallStackVersionRun{
 		InstallStackVersionID: req.StackVersionID,

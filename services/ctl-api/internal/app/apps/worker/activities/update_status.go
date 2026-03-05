@@ -15,7 +15,7 @@ type UpdateStatusRequest struct {
 	StatusDescription string        `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {
 	currentApp := app.App{
 		ID: req.AppID,

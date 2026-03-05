@@ -13,7 +13,7 @@ import (
 
 // inviteAccepted: is called when an invite is accepted
 //
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) InviteAccepted(ctx workflow.Context, sreq signals.RequestSignal) error {
 	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
 	if err != nil {

@@ -12,8 +12,8 @@ type GetJobRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgWorkflowsJobGetJob(ctx context.Context, req *GetJobRequest) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).

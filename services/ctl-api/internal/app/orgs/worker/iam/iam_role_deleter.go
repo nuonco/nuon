@@ -20,7 +20,7 @@ type DeleteIAMRoleResponse struct {
 	RoleArn string `json:"role_arn" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @max-retries 2
 func (a *Activities) DeleteIAMRole(ctx context.Context, req DeleteIAMRoleRequest) (DeleteIAMRoleResponse, error) {

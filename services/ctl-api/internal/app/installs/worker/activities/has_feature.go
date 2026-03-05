@@ -11,7 +11,7 @@ type HasFeatureRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id Feature
+// @by-field Feature
 func (a *Activities) HasFeature(ctx context.Context, req HasFeatureRequest) (bool, error) {
 	return a.features.FeatureEnabled(ctx, app.OrgFeature(req.Feature))
 }

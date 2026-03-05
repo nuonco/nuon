@@ -12,7 +12,7 @@ type GetOrgRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetOrg(ctx context.Context, req GetOrgRequest) (*app.Org, error) {
 	return a.getInstallOrg(ctx, req.InstallID)
 }

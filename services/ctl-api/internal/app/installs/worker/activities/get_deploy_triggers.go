@@ -16,7 +16,7 @@ type GetInstallActionWorkflowsByTriggerTypeRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ComponentID
+// @by-field ComponentID
 func (a *Activities) GetInstallActionWorkflowsByTriggerType(ctx context.Context, req GetInstallActionWorkflowsByTriggerTypeRequest) ([]*app.InstallActionWorkflow, error) {
 	workflows, err := a.getActionWorkflows(ctx, req.InstallID)
 	if err != nil {

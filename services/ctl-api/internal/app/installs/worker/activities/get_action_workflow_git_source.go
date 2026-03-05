@@ -14,7 +14,7 @@ type GetActionWorkflowGitSourceRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id StepID
+// @by-field StepID
 func (a *Activities) GetActionWorkflowStepGitSource(ctx context.Context, req GetActionWorkflowGitSourceRequest) (*plantypes.GitSource, error) {
 	cfg, err := a.getActionWorkflowStepConfig(ctx, req.StepID)
 	if err != nil {

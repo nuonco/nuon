@@ -13,7 +13,7 @@ type DeleteInstallComponentRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallComponentID
+// @by-field InstallComponentID
 func (a *Activities) DeleteInstallComponent(ctx context.Context, req DeleteInstallComponentRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

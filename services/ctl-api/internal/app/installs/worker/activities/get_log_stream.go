@@ -12,7 +12,7 @@ type GetLogStreamRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id LogStreamID
+// @by-field LogStreamID
 func (a *Activities) GetLogStream(ctx context.Context, req GetLogStreamRequest) (*app.LogStream, error) {
 	return a.getLogStream(ctx, req.LogStreamID)
 }

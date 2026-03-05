@@ -14,7 +14,7 @@ type GetInstallStackStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallStackState(ctx context.Context, req GetInstallStackRequest) (*app.InstallStack, error) {
 	var installStack app.InstallStack
 	res := a.db.WithContext(ctx).

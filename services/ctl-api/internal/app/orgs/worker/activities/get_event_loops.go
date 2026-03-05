@@ -10,8 +10,8 @@ type GetEventLoopsRequest struct {
 	OrgID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OrgID
+// @temporal-gen-v2 activity
+// @by-field OrgID
 func (a *Activities) GetEventLoops(ctx context.Context, req GetEventLoopsRequest) ([]bulk.EventLoop, error) {
 	return a.helpers.GetEventLoops(ctx, req.OrgID)
 }

@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) ForceDelete(ctx workflow.Context, sreq signals.RequestSignal) error {

@@ -35,7 +35,7 @@ type CreateFlowStepsRequest struct {
 	Steps []CreateFlowStep `json:"steps" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs CreateFlowStepsRequest) ([]*app.WorkflowStep, error) {
 	if len(reqs.Steps) == 0 {
 		return []*app.WorkflowStep{}, nil

@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) ForceSandboxMode(ctx workflow.Context, sreq signals.RequestSignal) error {

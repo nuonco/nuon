@@ -14,7 +14,7 @@ type GetInstallSandboxRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallSandbox(ctx context.Context, req GetInstallSandboxRequest) (*app.InstallSandbox, error) {
 	is := app.InstallSandbox{}
 	query := a.db.WithContext(ctx)

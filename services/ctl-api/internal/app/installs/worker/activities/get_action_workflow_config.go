@@ -12,7 +12,7 @@ type GetActionWorkflowConfig struct {
 }
 
 // @temporal-gen activity
-// @by-id ActionWorkflowID
+// @by-field ActionWorkflowID
 func (a *Activities) GetActionWorkflowConfig(ctx context.Context, req *GetActionWorkflowConfig) (*app.ActionWorkflowConfig, error) {
 	return a.actionHelpers.GetActionWorkflowConfig(ctx, req.ActionWorkflowID, req.AppConfigID)
 }

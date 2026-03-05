@@ -53,7 +53,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 	return nil
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {

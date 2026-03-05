@@ -12,7 +12,7 @@ type GetPoliciesConfigByAppConfigIDRequest struct {
 	AppConfigID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) GetPoliciesConfigByAppConfigID(ctx context.Context, req *GetPoliciesConfigByAppConfigIDRequest) (*app.AppPoliciesConfig, error) {
 	l := temporalzap.GetActivityLogger(ctx)

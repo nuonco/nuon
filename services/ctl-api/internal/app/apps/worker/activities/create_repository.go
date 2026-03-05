@@ -16,7 +16,7 @@ type CreateAppRepositoryRequest struct {
 	CreateResponse *ecrrepository.ProvisionECRRepositoryResponse `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateAppRepository(ctx context.Context, req *CreateAppRepositoryRequest) (*app.AppRepository, error) {
 	appRep := app.AppRepository{
 		AppID:          req.AppID,

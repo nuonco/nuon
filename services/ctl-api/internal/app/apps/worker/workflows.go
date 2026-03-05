@@ -33,6 +33,20 @@ func (w *Workflows) All() []any {
 	return append(wkflows, w.ListWorkflowFns()...)
 }
 
+// ListWorkflowFns returns the list of workflow functions for registration
+func (w *Workflows) ListWorkflowFns() []any {
+	return []any{
+		w.Created,
+		w.Deprovision,
+		w.ExecuteFlow,
+		w.PollDependencies,
+		w.Provision,
+		w.Reprovision,
+		w.SyncCustomStacks,
+		w.UpdateSandbox,
+	}
+}
+
 type Params struct {
 	fx.In
 

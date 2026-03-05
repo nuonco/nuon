@@ -12,8 +12,8 @@ type GetOrgInstallsRequest struct {
 	OrgID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OrgID
+// @temporal-gen-v2 activity
+// @by-field OrgID
 func (a *Activities) GetOrgInstalls(ctx context.Context, req GetOrgInstallsRequest) ([]*app.Install, error) {
 	var installs []*app.Install
 

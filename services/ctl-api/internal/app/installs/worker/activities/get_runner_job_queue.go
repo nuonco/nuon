@@ -19,7 +19,7 @@ type GetRunnerJobQueueRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id JobID
+// @by-field JobID
 func (a *Activities) GetRunnerJobQueue(ctx context.Context, req *GetRunnerJobQueueRequest) ([]*app.RunnerJob, error) {
 	job, err := a.GetJob(ctx, &GetJobRequest{
 		ID: req.JobID,

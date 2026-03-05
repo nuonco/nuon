@@ -17,7 +17,7 @@ type UpdateJobFinishedAtRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id JobID
+// @by-field JobID
 func (a *Activities) UpdateJobFinishedAt(ctx context.Context, req UpdateJobFinishedAtRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

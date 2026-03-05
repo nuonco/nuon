@@ -10,7 +10,7 @@ import (
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 10s
 func (w *Workflows) RestartRunners(ctx workflow.Context, sreq signals.RequestSignal) error {

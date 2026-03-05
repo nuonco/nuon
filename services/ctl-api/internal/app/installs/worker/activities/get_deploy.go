@@ -15,7 +15,7 @@ type GetDeployRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id DeployID
+// @by-field DeployID
 func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.InstallDeploy, error) {
 	return a.getDeploy(ctx, req.DeployID)
 }

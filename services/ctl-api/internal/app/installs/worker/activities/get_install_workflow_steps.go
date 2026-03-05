@@ -12,7 +12,7 @@ type GetInstallWorkflowStepsRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallWorkflowID
+// @by-field InstallWorkflowID
 func (a *Activities) GetInstallWorkflowsSteps(ctx context.Context, req GetInstallWorkflowStepsRequest) ([]app.WorkflowStep, error) {
 	var steps []app.WorkflowStep
 

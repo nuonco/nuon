@@ -30,7 +30,7 @@ type CreateRepositoryResponse struct {
 	Region         string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) CreateRepository(ctx context.Context, req *CreateRepositoryRequest) (*CreateRepositoryResponse, error) {
 	var resp CreateRepositoryResponse

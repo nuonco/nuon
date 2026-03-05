@@ -16,7 +16,7 @@ type GetRunnerRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetRunner(ctx context.Context, req GetRunnerRequest) (*app.Runner, error) {
 	return a.getRunner(ctx, req.ID)
 }

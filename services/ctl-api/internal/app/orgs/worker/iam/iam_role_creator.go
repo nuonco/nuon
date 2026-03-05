@@ -32,7 +32,7 @@ type CreateIAMRoleResponse struct {
 	RoleArn string `json:"role_arn" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) CreateIAMRole(ctx context.Context, req CreateIAMRoleRequest) (CreateIAMRoleResponse, error) {
 	var resp CreateIAMRoleResponse

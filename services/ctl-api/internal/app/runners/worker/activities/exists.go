@@ -14,7 +14,7 @@ type CheckExistsRequest struct {
 // @temporal-gen activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
-// @by-id ID
+// @by-field ID
 func (a *Activities) CheckExists(ctx context.Context, req CheckExistsRequest) (bool, error) {
 	return loop.CheckExists[*app.Runner](ctx, a.db, req.ID)
 }

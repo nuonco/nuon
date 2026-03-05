@@ -14,7 +14,7 @@ type GetJobRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetJob(ctx context.Context, req GetJobRequest) (*app.RunnerJob, error) {
 	job, err := a.getRunnerJob(ctx, req.ID)
 	if err != nil {

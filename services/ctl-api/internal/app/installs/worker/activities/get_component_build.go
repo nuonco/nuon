@@ -15,7 +15,7 @@ type GetComponentBuildRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ComponentBuildID
+// @by-field ComponentBuildID
 func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuildRequest) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
 	res := a.db.WithContext(ctx).

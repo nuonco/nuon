@@ -25,10 +25,9 @@ func (w Wkflow) provisionRunnerIAM(ctx workflow.Context, req *ProvisionIAMReques
 	return w.createIAMSet(ctx, req, set)
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
-// @id-callback ProvisionIAMCallback
 func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*ProvisionIAMResponse, error) {
 	resp := &ProvisionIAMResponse{}
 

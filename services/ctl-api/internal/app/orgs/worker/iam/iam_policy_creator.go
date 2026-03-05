@@ -31,7 +31,7 @@ type CreateIAMPolicyResponse struct {
 	PolicyArn string `validate:"required" json:"policy_arn"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) CreateIAMPolicy(ctx context.Context, req CreateIAMPolicyRequest) (CreateIAMPolicyResponse, error) {
 	var resp CreateIAMPolicyResponse

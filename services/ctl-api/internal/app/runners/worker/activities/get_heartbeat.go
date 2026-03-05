@@ -12,7 +12,7 @@ type GetHeartBeatRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetHeartBeat(ctx context.Context, req GetHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	runner := app.RunnerHeartBeat{}
 	res := a.chDB.WithContext(ctx).

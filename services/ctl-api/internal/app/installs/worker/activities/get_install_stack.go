@@ -12,7 +12,7 @@ type GetInstallStackRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallStack(ctx context.Context, req GetInstallStackRequest) (*app.InstallStack, error) {
 	var stack app.InstallStack
 

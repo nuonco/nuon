@@ -16,7 +16,7 @@ type GetInstallActionWorkflowRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetInstallActionWorkflow(ctx context.Context, req GetInstallActionWorkflowRequest) (*app.InstallActionWorkflow, error) {
 	if req.ID != "" {
 		return a.getInstallActionWorkflowByID(ctx, req.ID)

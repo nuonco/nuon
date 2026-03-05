@@ -21,7 +21,7 @@ type CreateTokenResponse struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) CreateJobLogToken(ctx context.Context, req CreateTokenRequest) (*CreateTokenResponse, error) {
 	email := account.ServiceAccountEmail(req.RunnerID)
 

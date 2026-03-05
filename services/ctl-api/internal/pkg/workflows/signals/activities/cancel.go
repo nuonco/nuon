@@ -9,7 +9,7 @@ type CancelRequest struct {
 	Namespace string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgSignalsCancel(ctx context.Context, req *CancelRequest) error {
 	return a.evClient.Cancel(ctx, req.Namespace, req.ID)
 }

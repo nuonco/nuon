@@ -12,8 +12,8 @@ type GetActionWorkflowRequest struct {
 	WorkflowID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id WorkflowID
+// @temporal-gen-v2 activity
+// @by-field WorkflowID
 func (a *Activities) GetActionWorkflow(ctx context.Context, req *GetActionWorkflowRequest) (*app.ActionWorkflow, error) {
 	return a.getActionWorkflow(ctx, req.WorkflowID)
 }

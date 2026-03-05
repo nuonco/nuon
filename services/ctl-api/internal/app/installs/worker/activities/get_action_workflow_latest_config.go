@@ -14,7 +14,7 @@ type GetActionWorkflowLatestConfig struct {
 }
 
 // @temporal-gen activity
-// @by-id ActionWorkflowID
+// @by-field ActionWorkflowID
 func (a *Activities) GetActionWorkflowLatestConfig(ctx context.Context, req *GetActionWorkflowLatestConfig) (*app.ActionWorkflowConfig, error) {
 	return a.getActionWorkflowLatestConfig(ctx, req.ActionWorkflowID)
 }

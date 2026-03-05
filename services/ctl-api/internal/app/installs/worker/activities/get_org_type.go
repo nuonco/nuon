@@ -11,7 +11,7 @@ type GetOrgTypeRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetOrgType(ctx context.Context, req GetOrgRequest) (app.OrgType, error) {
 	return a.features.OrgType(ctx)
 }

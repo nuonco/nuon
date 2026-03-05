@@ -15,7 +15,7 @@ type UpdateWorkflowStepStartedAtRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) UpdateWorkflowStepStartedAt(ctx context.Context, req UpdateWorkflowStepStartedAtRequest) error {
 	runner := app.WorkflowStep{
 		ID: req.ID,

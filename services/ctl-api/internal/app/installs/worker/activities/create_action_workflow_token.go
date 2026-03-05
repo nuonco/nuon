@@ -22,7 +22,7 @@ type CreateActionWorkflowRunTokenResponse struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) CreateActionWorkflowRunToken(ctx context.Context, req *CreateActionWorkflowRunTokenRequest) (*CreateActionWorkflowRunTokenResponse, error) {
 	email := account.ServiceAccountEmail(req.RunnerID)
 

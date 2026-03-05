@@ -17,7 +17,7 @@ type FailQueuedDeploysRequest struct {
 // # Eventually, this should be fixed with more intelligent release tooling, but for now we just mark them as error
 //
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) FailQueuedDeploys(ctx context.Context, req FailQueuedDeploysRequest) error {
 	var installDeploys []app.InstallDeploy
 

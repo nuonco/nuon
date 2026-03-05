@@ -12,7 +12,7 @@ type GetInstallActionWorkflowRunRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunID
+// @by-field RunID
 func (a *Activities) GetInstallActionWorkflowRun(ctx context.Context, req GetInstallActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
 	return a.getInstallActionWorkflowRun(ctx, req.RunID)
 }

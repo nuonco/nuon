@@ -14,7 +14,7 @@ type CheckNoopPlanRequest struct {
 	StepTargetID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)

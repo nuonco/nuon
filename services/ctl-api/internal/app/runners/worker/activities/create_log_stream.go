@@ -18,7 +18,7 @@ type CreateLogStreamRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id OperationID
+// @by-field OperationID
 func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamRequest) (*app.LogStream, error) {
 	typ := "runner_operations"
 

@@ -15,7 +15,7 @@ type CreateFetchImageMetadataJobRequest struct {
 	Metadata    map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateFetchImageMetadataJob(ctx context.Context, req *CreateFetchImageMetadataJobRequest) (*app.RunnerJob, error) {
 	bld, err := a.getComponentBuild(ctx, req.BuildID)
 	if err != nil {

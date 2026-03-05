@@ -16,7 +16,7 @@ type GetComponentLatestBuildRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ComponentID
+// @by-field ComponentID
 func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetComponentLatestBuildRequest) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild
 	viewOrTable := views.TableOrViewName(a.db, &app.ComponentConfigConnection{}, "")

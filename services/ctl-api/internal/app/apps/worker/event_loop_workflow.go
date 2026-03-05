@@ -11,13 +11,27 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:          AwaitCreated,
-		signals.OperationPollDependencies: AwaitPollDependencies,
-		signals.OperationProvision:        AwaitProvision,
-		signals.OperationReprovision:      AwaitReprovision,
-		signals.OperationUpdateSandbox:    AwaitUpdateSandbox,
-		signals.OperationSyncCustomStacks: AwaitSyncCustomStacks,
-		signals.OperationDeprovision:      AwaitDeprovision,
+		signals.OperationCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitCreated(ctx, input)
+		},
+		signals.OperationPollDependencies: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitPollDependencies(ctx, input)
+		},
+		signals.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvision(ctx, input)
+		},
+		signals.OperationReprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovision(ctx, input)
+		},
+		signals.OperationUpdateSandbox: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitUpdateSandbox(ctx, input)
+		},
+		signals.OperationSyncCustomStacks: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitSyncCustomStacks(ctx, input)
+		},
+		signals.OperationDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovision(ctx, input)
+		},
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

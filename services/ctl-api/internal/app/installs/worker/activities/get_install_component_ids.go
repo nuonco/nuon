@@ -13,7 +13,7 @@ type GetInstallComponentIDsRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallComponentIDs(ctx context.Context, req GetInstallComponentIDsRequest) ([]string, error) {
 	install := &app.Install{}
 	res := a.db.WithContext(ctx).

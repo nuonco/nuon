@@ -15,7 +15,7 @@ type GetMostRecentHeartBeatRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID)
 	if err != nil {

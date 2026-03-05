@@ -12,7 +12,7 @@ type GetHelmChartRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id OwnerID
+// @by-field OwnerID
 func (a *Activities) GetHelmChart(ctx context.Context, req GetHelmChartRequest) (*app.HelmChart, error) {
 	return a.getOrCreateHelmChart(ctx, req.OwnerID)
 }

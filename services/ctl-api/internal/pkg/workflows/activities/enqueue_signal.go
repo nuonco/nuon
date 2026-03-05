@@ -23,7 +23,7 @@ type EnqueueSignalToOwnerResponse struct {
 // EnqueueSignalToOwner sends a signal to a queue owned by a specific entity (e.g., runner, install).
 // This enables cross-namespace signal sending where one namespace can trigger work in another.
 //
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @as-wrapper
 func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSignalToOwnerRequest) (*EnqueueSignalToOwnerResponse, error) {
 	if err := a.v.Struct(req); err != nil {

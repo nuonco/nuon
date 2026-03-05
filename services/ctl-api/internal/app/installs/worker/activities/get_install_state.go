@@ -14,7 +14,7 @@ type GetInstallStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 // @timeout 10s
 func (a *Activities) GetInstallState(ctx context.Context, req *GetInstallStateRequest) (*state.State, error) {
 	state, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)

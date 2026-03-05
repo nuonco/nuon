@@ -14,7 +14,7 @@ type ForceDeleteRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) ForceDelete(ctx context.Context, req ForceDeleteRequest) error {
 	res := a.db.WithContext(ctx).
 		Unscoped().

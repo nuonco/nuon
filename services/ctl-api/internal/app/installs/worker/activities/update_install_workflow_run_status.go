@@ -16,7 +16,7 @@ type UpdateInstallWorkflowRunStatusRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunID
+// @by-field RunID
 func (a *Activities) UpdateInstallWorkflowRunStatus(ctx context.Context, req UpdateInstallWorkflowRunStatusRequest) error {
 	install := app.InstallActionWorkflowRun{
 		ID: req.RunID,

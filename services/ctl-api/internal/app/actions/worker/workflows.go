@@ -43,6 +43,17 @@ func (w *Workflows) All() []interface{} {
 	return wkflows
 }
 
+// ListWorkflowFns returns the list of workflow functions for registration
+func (w *Workflows) ListWorkflowFns() []any {
+	return []any{
+		w.ConfigCreated,
+		w.Created,
+		w.Delete,
+		w.PollDependencies,
+		w.Restart,
+	}
+}
+
 func NewWorkflows(params Params) (*Workflows, error) {
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MW),

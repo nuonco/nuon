@@ -23,8 +23,8 @@ type NamespaceMetrics struct {
 	ExpectedEventLoops int64
 }
 
-// @temporal-gen activity
-// @by-id Name
+// @temporal-gen-v2 activity
+// @by-field Name
 // @schedule-to-close-timeout 120s
 // @start-to-close-timeout 120s
 func (a *Activities) GetNamespaceMetrics(ctx context.Context, req GetNamespaceMetricsRequest) (*NamespaceMetrics, error) {

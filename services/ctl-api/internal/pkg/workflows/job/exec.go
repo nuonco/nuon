@@ -37,11 +37,10 @@ type ExecuteJobRequest struct {
 	WorkflowID string `json:"workflow_id" validate:"required"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1h
 // @task-timeout 1m
 // @task-queue "api"
-// @id-callback WorkflowIDCallback
 func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
 	if workflow.GetInfo(ctx).ContinuedExecutionRunID != "" {
 		return w.pollJob(ctx, req)

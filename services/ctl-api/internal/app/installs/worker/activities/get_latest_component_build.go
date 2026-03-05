@@ -12,7 +12,7 @@ type GetLatestComponentBuildRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 func (a *Activities) GetLatestComponentBuild(ctx context.Context, req GetLatestComponentBuildRequest) (*app.ComponentBuild, error) {
 	builds, err := a.componentsHelpers.GetComponentLatestBuilds(ctx, req.ID)
 	if err != nil {

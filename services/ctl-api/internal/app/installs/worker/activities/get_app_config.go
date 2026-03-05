@@ -13,7 +13,7 @@ type GetAppConfigRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id ID
+// @by-field ID
 // @start-to-close-timeout 10s
 func (a *Activities) GetAppConfig(ctx context.Context, req GetAppConfigRequest) (*app.AppConfig, error) {
 	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, req.ID, false)

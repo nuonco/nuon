@@ -14,7 +14,7 @@ type GetSecretsSyncJobRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetSecretsSyncJob(ctx context.Context, req GetSecretsSyncJobRequest) (*app.RunnerJob, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {

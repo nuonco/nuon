@@ -20,7 +20,7 @@ type GetRunnerShutdownJobQueueRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) GetRunnerShutdownJobQueue(ctx context.Context, req *GetRunnerShutdownJobQueueRequest) ([]*app.RunnerJob, error) {
 	// Get queued, available, and in progress shutdown jobs from the operation gruop
 	var jobs []*app.RunnerJob

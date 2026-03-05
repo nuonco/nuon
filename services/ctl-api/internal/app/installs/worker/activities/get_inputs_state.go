@@ -12,7 +12,7 @@ type GetInstallInputsStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallInputsState(ctx context.Context, req GetInstallInputsStateRequest) (*app.InstallInputs, error) {
 	var inps app.InstallInputs
 	res := a.db.WithContext(ctx).

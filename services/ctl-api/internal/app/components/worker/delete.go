@@ -52,7 +52,7 @@ func (w *Workflows) pollComponentBeingUnused(ctx workflow.Context, compID string
 	return nil
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 3m
 func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {

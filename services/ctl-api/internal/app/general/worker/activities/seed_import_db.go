@@ -14,7 +14,7 @@ type SeedImportDB struct {
 	BackupIAMRole  string `json:"backup_iam_role" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) SeedImportDB(ctx context.Context, req SeedImportDB) (*SeedImportDBResponse, error) {
 	return nil, nil
 }

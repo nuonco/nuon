@@ -17,7 +17,7 @@ type UpdateJobStartedAtRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id JobID
+// @by-field JobID
 func (a *Activities) UpdateJobStartedAt(ctx context.Context, req UpdateJobStartedAtRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

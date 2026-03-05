@@ -14,7 +14,7 @@ type GetInstallStackVersionRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) GetInstallStackVersion(ctx context.Context, req GetInstallStackRequest) (*app.InstallStackVersion, error) {
 	var stack app.InstallStack
 

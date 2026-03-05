@@ -49,27 +49,27 @@ type GetCHActivePartStatsRequest struct {
 	Table    string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetCHTableMetrics(ctx context.Context, req GetCHTableMetricsRequest) ([]app.CHTableSize, error) {
 	return a.getCHTableSizes(ctx, a.chDB)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetCHPendingInserts(ctx context.Context, req GetCHPendingInsertsRequest) ([]PendingAsyncInsert, error) {
 	return a.getPendingAsyncInserts(ctx, a.chDB)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetCHPartsPerPartition(ctx context.Context, req GetCHPartsPerPartitionRequest) ([]CHPartsPerPartition, error) {
 	return a.getCHPartsPerPartition(ctx, a.chDB)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetCHRowsPerPartStats(ctx context.Context, req GetCHPartStatisticsRequest) ([]CHRowPerParts, error) {
 	return a.getCHRowsPerPart(ctx, a.chDB)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetCHActivePartStats(ctx context.Context, req GetCHActivePartStatsRequest) ([]CHActivePartStats, error) {
 	return a.getCHActivePartStats(ctx, a.chDB)
 }

@@ -13,7 +13,7 @@ type DeleteRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallID
+// @by-field InstallID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

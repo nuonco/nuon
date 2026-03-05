@@ -16,7 +16,7 @@ type GetInstallComponentStateRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id InstallComponentID
+// @by-field InstallComponentID
 func (h *Activities) GetInstallComponentState(ctx context.Context, req GetInstallComponentStateRequest) (*app.InstallComponent, error) {
 	var installComponent app.InstallComponent
 

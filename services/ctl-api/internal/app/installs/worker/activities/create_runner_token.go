@@ -12,7 +12,7 @@ type CreateRunnerTokenRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id RunnerID
+// @by-field RunnerID
 func (a *Activities) CreateRunnerTokenRequest(ctx context.Context, req *CreateRunnerTokenRequest) (*string, error) {
 	token, err := a.runnersHelpers.CreateToken(ctx, req.RunnerID)
 	if err != nil {

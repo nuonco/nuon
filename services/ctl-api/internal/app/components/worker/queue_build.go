@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) QueueBuild(ctx workflow.Context, sreq signals.RequestSignal) error {
 	cmp, err := activities.AwaitGetComponentByComponentID(ctx, sreq.ID)
 	if err != nil {

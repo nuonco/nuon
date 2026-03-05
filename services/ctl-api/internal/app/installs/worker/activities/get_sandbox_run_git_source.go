@@ -14,7 +14,7 @@ type GetSandboxRunGitSourceRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id AppConfigID
+// @by-field AppConfigID
 func (a *Activities) GetSandboxRunGitSource(ctx context.Context, req GetSandboxRunGitSourceRequest) (*plantypes.GitSource, error) {
 	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, req.AppConfigID, false)
 	if err != nil {

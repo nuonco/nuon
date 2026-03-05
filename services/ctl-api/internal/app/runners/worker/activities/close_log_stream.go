@@ -13,7 +13,7 @@ type CloseLogStreamRequest struct {
 }
 
 // @temporal-gen activity
-// @by-id LogStreamID
+// @by-field LogStreamID
 func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamRequest) error {
 	ls := &app.LogStream{
 		ID: req.LogStreamID,
