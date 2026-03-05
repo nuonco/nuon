@@ -67,6 +67,9 @@ type AppApp struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// queue id
+	QueueID string `json:"queue_id,omitempty"`
+
 	// runner config
 	RunnerConfig *AppAppRunnerConfig `json:"runner_config,omitempty"`
 

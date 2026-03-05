@@ -29,3 +29,19 @@ func (c *client) LogStreamReadLogs(ctx context.Context, logStreamId string, offs
 	}
 	return resp.Payload, nil
 }
+
+func (c *client) LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error) {
+	hr := newResponseHeaderReader(&operations.LogStreamReadLogsReader{})
+
+	resp, err := c.genClient.Operations.LogStreamReadLogs(&operations.LogStreamReadLogsParams{
+		LogStreamID:    logStreamId,
+		XNuonAPIOffset: &offset,
+		Context:        ctx,
+	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return nil, "", err
+	}
+
+	nextOffset := hr.GetHeader("X-Nuon-API-Next")
+	return resp.Payload, nextOffset, nil
+}

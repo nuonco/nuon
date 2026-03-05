@@ -11,8 +11,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-func (c *Client) EnqueueSignal(ctx context.Context, queueID string, sig signal.Signal) (*queue.EnqueueResponse, error) {
-	q, err := c.getQueue(ctx, queueID)
+type EnqueueSignalRequest struct {
+	QueueID string        `validate:"required"`
+	Signal  signal.Signal `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {
+	q, err := c.getQueue(ctx, req.QueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue")
 	}
@@ -22,7 +29,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, queueID string, sig signal.S
 		UpdateName:   queue.EnqueueUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
-			sig,
+			req.Signal,
 		},
 	})
 	if err != nil {

@@ -4,7 +4,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+// RenderMapTestSuite is the testify suite for render_map tests
+type RenderMapTestSuite struct {
+	suite.Suite
+}
+
+// TestRenderMapSuite runs the test suite
+func TestRenderMapSuite(t *testing.T) {
+	suite.Run(t, new(RenderMapTestSuite))
+}
 
 type renderMapTest struct {
 	input       map[string]string
@@ -13,7 +24,8 @@ type renderMapTest struct {
 	shouldError bool
 }
 
-func TestRenderMapWithStringMap(t *testing.T) {
+func (s *RenderMapTestSuite) TestRenderMapWithStringMap() {
+	t := s.T()
 	tests := map[string]renderMapTest{
 		"simple map[string]string": {
 			input: map[string]string{
@@ -76,7 +88,8 @@ type renderMapAnyTest struct {
 	shouldError bool
 }
 
-func TestRenderMapWithStringMapAny(t *testing.T) {
+func (s *RenderMapTestSuite) TestRenderMapWithStringMapAny() {
+	t := s.T()
 	tests := map[string]renderMapAnyTest{
 		"simple map[string]string": {
 			input: map[string]any{

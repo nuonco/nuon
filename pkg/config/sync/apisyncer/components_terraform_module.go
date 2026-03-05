@@ -1,0 +1,98 @@
+package apisyncer
+
+import (
+	"context"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/generics"
+)
+
+func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resource, compID string, comp *config.Component) (string, string, error) {
+	obj := comp.TerraformModule
+
+	configRequest := &models.ServiceCreateTerraformModuleComponentConfigRequest{
+		AppConfigID:              s.appConfigID,
+		Dependencies:             comp.Dependencies,
+		ConnectedGithubVcsConfig: nil,
+		PublicGitVcsConfig:       nil,
+		Variables:                map[string]string{},
+		EnvVars:                  map[string]string{},
+		VariablesFiles:           make([]string, 0),
+		Version:                  obj.TerraformVersion,
+		BuildTimeout:             obj.BuildTimeout,
+		DeployTimeout:            obj.DeployTimeout,
+	}
+
+	if obj.DriftSchedule != nil {
+		configRequest.DriftSchedule = *obj.DriftSchedule
+	}
+
+	for _, ref := range comp.References {
+		configRequest.References = append(configRequest.References, ref.String())
+	}
+
+	for _, val := range obj.Variables {
+		configRequest.Variables[val.Name] = val.Value
+	}
+	for k, v := range obj.VarsMap {
+		configRequest.Variables[k] = v
+	}
+
+	for _, val := range obj.EnvVars {
+		configRequest.EnvVars[val.Name] = val.Value
+	}
+	for k, v := range obj.EnvVarMap {
+		configRequest.EnvVars[k] = v
+	}
+	for _, v := range obj.VariablesFiles {
+		configRequest.VariablesFiles = append(configRequest.VariablesFiles, v.Contents)
+	}
+
+	if len(comp.OperationRoles) > 0 {
+		configRequest.OperationRoles = make(map[string]string)
+		for _, opRole := range comp.OperationRoles {
+			configRequest.OperationRoles[string(opRole.Operation)] = opRole.RoleName
+		}
+	}
+
+	if obj.PublicRepo != nil {
+		configRequest.PublicGitVcsConfig = &models.ServicePublicGitVCSConfigRequest{
+			Branch:    generics.ToPtr(obj.PublicRepo.Branch),
+			Directory: generics.ToPtr(obj.PublicRepo.Directory),
+			Repo:      generics.ToPtr(obj.PublicRepo.Repo),
+		}
+	}
+	if obj.ConnectedRepo != nil {
+		configRequest.ConnectedGithubVcsConfig = &models.ServiceConnectedGithubVCSConfigRequest{
+			Branch:    obj.ConnectedRepo.Branch,
+			Directory: generics.ToPtr(obj.ConnectedRepo.Directory),
+			// NOTE: GitRef is not required for config sync
+			Repo: generics.ToPtr(obj.ConnectedRepo.Repo),
+		}
+	}
+
+	cmpChecksum, err := s.generateComponentChecksun(ctx, comp)
+	if err != nil {
+		return "", "", err
+	}
+	shouldSkip, existingConfigID, err := s.shouldSkipBuildDueToChecksum(ctx, compID, cmpChecksum)
+	if err != nil {
+		return "", "", err
+	}
+
+	if shouldSkip {
+		return existingConfigID, cmpChecksum.Checksum, nil
+	}
+
+	configRequest.Checksum = cmpChecksum.Checksum
+	cfg, err := s.apiClient.CreateTerraformModuleComponentConfig(ctx, compID, configRequest)
+	if err != nil {
+		return "", "", err
+	}
+
+	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+
+	return cfg.ID, cmpChecksum.Checksum, nil
+}

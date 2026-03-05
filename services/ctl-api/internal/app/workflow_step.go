@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type WorkflowStepExecutionType string
@@ -68,8 +69,10 @@ type WorkflowStep struct {
 	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	Name   string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 
-	// the signal that needs to be called
-	Signal Signal `json:"-" temporaljson:"signal,omitzero,omitempty"`
+	// the signal that needs to be called (legacy)
+	Signal *Signal `json:"-" temporaljson:"signal,omitzero,omitempty"`
+
+	QueueSignal *signaldb.SignalData `json:"-" dnetemporaljson:"queue_signal,omitzero,omitempty"`
 
 	Idx int `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 
@@ -125,6 +128,7 @@ func (i *WorkflowStep) Indexes(db *gorm.DB) []migrations.Index {
 		},
 	}
 }
+
 func (i *WorkflowStep) TableName() string {
 	// WorkflowStep used to be called InstallWorkflowStep
 	return "install_workflow_steps"

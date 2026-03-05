@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
-	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/config/sync/apisyncer"
 	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/errs"
 )
@@ -82,7 +82,7 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 		ui.PrintWarning("deprecated: skipped syncing installs from app config. to sync these installs, switch to 'nuon installs sync' command.")
 	}
 
-	syncer := sync.New(s.api, appID, version, cfg)
+	syncer := apisyncer.New(s.api, appID, version, cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)

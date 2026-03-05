@@ -1,0 +1,195 @@
+import type { TBadgeTheme } from '@/components/common/Badge'
+import type { TBannerTheme } from '@/components/common/Banner'
+import type { TWorkflow, TWorkflowStep } from '@/types'
+
+export type TBadgeCfg = {
+  children?: string
+  theme?: TBadgeTheme
+}
+
+const WORKFLOW_BADGE_MAP: Record<
+  string,
+  { children: string; theme?: TBadgeTheme }
+> = {
+  'user-skipped': { children: 'Skipped' },
+  discarded: { children: 'Discarded' },
+  success: { children: 'Completed', theme: 'success' },
+  'auto-approved': { children: 'Auto approved', theme: 'neutral' },
+  approved: { children: 'Plan approved', theme: 'success' },
+  'approval-awaiting': { children: 'Awaiting approval', theme: 'warn' },
+  'approval-denied': { children: 'Plan denied', theme: 'warn' },
+  'approval-retry': { children: 'Plan retried', theme: 'info' },
+  error: { children: 'Failed', theme: 'error' },
+  'not-attempted': { children: 'Not attempted' },
+  noop: { children: 'NOOP' },
+  cancelled: { children: 'Cancelled', theme: 'warn' },
+}
+
+export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
+  const status = workflow?.status?.status
+  // fallback to empty object if status not found
+  return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
+}
+
+export function getStepBadge(
+  step: TWorkflowStep,
+  isApprovalPrompt?: boolean
+): TBadgeCfg {
+  if (step?.retried) {
+    return { children: 'Retried', theme: 'info' }
+  }
+  if (step?.execution_type === 'skipped') {
+    return { children: 'Skipped' }
+  }
+
+  if (step?.status?.status === 'auto-skipped') {
+    return { children: 'Auto skipped' }
+  }
+
+  if (step?.execution_type === 'approval' && !isApprovalPrompt) {
+    if (step?.status?.status === 'approved') {
+      return WORKFLOW_BADGE_MAP['approved']
+    } else if (step?.status?.status === 'pending') {
+      return WORKFLOW_BADGE_MAP['auto-approved']
+    }
+  }
+  const status = step?.status?.status
+  return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
+}
+export type TStepButtonsCfg = {
+  cancel: boolean
+  approval: boolean
+  retry: boolean
+}
+
+export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
+  const status = step?.status?.status
+  return {
+    retry: status === 'error' && !!step?.retryable && !step?.retried,
+    cancel: status === 'in-progress' || status === 'approval-awaiting',
+    approval: status === 'approval-awaiting',
+  }
+}
+
+export type TStepBannerCfg = {
+  copy: string
+  theme: TBannerTheme
+  title: string
+}
+
+export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
+  if (!step?.status?.status) return undefined
+
+  const { status, status_human_description } = step.status
+  const email = step?.created_by?.email
+
+  if (status === 'error') {
+    return {
+      copy: `Step encountered an error: ${status_human_description}`,
+      theme: 'error',
+      title: `Step ${step?.name} failed`,
+    }
+  }
+
+  if (status === 'cancelled') {
+    return {
+      copy: `Step was cancelled: ${status_human_description}`,
+      theme: 'warn',
+      title: `Step ${step?.name} cancelled`,
+    }
+  }
+
+  if (status === 'discarded') {
+    return {
+      copy: `Step was discarded: ${status_human_description}`,
+      theme: 'default',
+      title: `Step ${step?.name} discarded`,
+    }
+  }
+
+  if (status === 'user-skipped') {
+    return {
+      copy: `Step was skipped by ${email}: ${status_human_description}`,
+      theme: 'default',
+      title: `Step ${step?.name} skipped`,
+    }
+  }
+
+  if (status === 'not-attempted') {
+    return {
+      copy: `Step was not attempted ${status_human_description ? `: ${status_human_description}` : ''}`,
+      theme: 'default',
+      title: `Step ${step?.name} not attempted`,
+    }
+  }
+
+  if (step.execution_type === 'skipped') {
+    return {
+      copy: `Step was skipped due to being a plan only workflow`,
+      theme: 'default',
+      title: `Step ${step?.name} skipped`,
+    }
+  }
+
+  if (step?.retryable && step?.retried) {
+    return {
+      copy: `Step was retried by ${email}: ${status_human_description}`,
+      theme: 'info',
+      title: `Step ${step?.name} retried`,
+    }
+  }
+
+  return undefined
+}
+
+export function getWorkflowStep({
+  workflow,
+  stepTargetId,
+}: {
+  workflow: TWorkflow
+  stepTargetId: string
+}): TWorkflowStep | null {
+  return workflow
+    ? workflow?.steps?.filter((s) => s?.step_target_id === stepTargetId)?.at(-1)
+    : null
+}
+
+export interface PolicyViolation {
+  policy_id: string
+  message: string
+  severity: 'deny' | 'warn'
+}
+
+export interface PolicyViolationCounts {
+  denyViolations: PolicyViolation[]
+  warnViolations: PolicyViolation[]
+  denyCount: number
+  warnCount: number
+  hasPolicyData: boolean
+  hasViolations: boolean
+}
+
+export function getPolicyViolationCounts(
+  step: TWorkflowStep
+): PolicyViolationCounts {
+  const metadata = step?.status?.metadata
+  const denyViolations =
+    (metadata?.deny_violations as PolicyViolation[]) || []
+  const warnViolations =
+    (metadata?.warn_violations as PolicyViolation[]) || []
+  const denyCount = denyViolations.length
+  const warnCount = warnViolations.length
+  const hasPolicyData =
+    metadata?.deny_violations !== undefined ||
+    metadata?.warn_violations !== undefined
+  const hasViolations = denyCount > 0 || warnCount > 0
+
+  return {
+    denyViolations,
+    warnViolations,
+    denyCount,
+    warnCount,
+    hasPolicyData,
+    hasViolations,
+  }
+}

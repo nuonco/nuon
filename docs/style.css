@@ -1,7 +1,7 @@
 :root {
-  /* Light purple for label backgrounds (used by .nuon-label) */
-  --light: #c494f4;
+  --light: #4CC9F0;
 }
+
 
 /* ensure tables are full-width */
 .prose

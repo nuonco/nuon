@@ -69,6 +69,13 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			token = qtoken
 		}
 
+		// fall back to the X-Nuon-Auth cookie (sent by browser SPA via credentials: 'include')
+		if token == "" {
+			if cookieToken, cookieErr := ctx.Cookie("X-Nuon-Auth"); cookieErr == nil {
+				token = cookieToken
+			}
+		}
+
 		if token == "" {
 			ctx.Error(stderr.ErrAuthentication{
 				Err:         fmt.Errorf("auth token was empty"),

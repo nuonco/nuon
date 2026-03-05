@@ -1,7 +1,7 @@
 ---
 title: "App and Install Life Cycle"
 description: "Understand the life cycle of apps and installs in Nuon."
-icon: "code"
+icon: "arrow-right-arrow-left"
 keywords: ["installs", "install guide", "lifecycle", "provision flow", "deprovision flow", "reprovision", "teardown", "install stages", "how installs work"]
 ---
 
@@ -34,7 +34,7 @@ stores them in the container registry like AWS ECR.
 
 **Important:** After the initial sync, component changes require rebuilding. `nuon apps sync` will automatically rebuild when it detects changes to TOML files or referenced files like Helm values.
 
-![CLI Build](../images/guides/app-install-life-cycle/cli-build.png)
+![CLI Build](/images/guides/app-install-life-cycle/cli-build.png)
 
 However, you must manually rebuild in the dashboard when:
   - Git repository source code changes (e.g., Terraform modules or Helm charts)
@@ -44,7 +44,7 @@ However, you must manually rebuild in the dashboard when:
 
 Remember to run `nuon apps sync` whenever anything in your TOML files changes.
 
-![Rebuild components](../images/guides/app-install-life-cycle/component-build.png)
+![Rebuild components](/images/guides/app-install-life-cycle/component-build.png)
 
 # Install Life Cycle
 
@@ -57,15 +57,15 @@ uses the latest built version of each component.
 An install's life cycle is managed by [workflows](../concepts/workflows) that
 define the steps to deploy, update, manage, and tear down the install.
 
-![Workflows](../images/guides/app-install-life-cycle/workflow-history.png)
+![Workflows](/images/guides/app-install-life-cycle/workflow-history.png)
 
 Creating an install starts by providing any inputs defined by the app, such as API keys, cloud region, node instance type, or app release version. This is how you customize installs for each customer.
 
-![Inputs](../images/guides/app-install-life-cycle/inputs.png)
+![Inputs](/images/guides/app-install-life-cycle/inputs.png)
 
 Install workflows deploy the sandbox, components, and actions from your app in sequence.
 
-![Workflow approvals](../images/guides/app-install-life-cycle/approval-sandbox.png)
+![Workflow approvals](/images/guides/app-install-life-cycle/approval-sandbox.png)
 
 ## Update, with change controls
 
@@ -77,7 +77,7 @@ Updates have approval gates by default to ensure changes are reviewed before
 being applied to customer installs. e.g., Helm diffs, Terraform plan outputs.
 The user can optionally Accept All approvals to streamline the update process.
 
-![Component update approvals](../images/guides/app-install-life-cycle/approval-step-helm.png)
+![Component update approvals](/images/guides/app-install-life-cycle/approval-step-helm.png)
 
 Kyverno policies can also be applied to installs to enforce security and
 compliance during updates. e.g., creating ingress resources or tampering with
@@ -85,7 +85,7 @@ container resources requests/limits.
 
 **Critical step:** When you rebuild a component for an app with existing installs, you must manually redeploy that component through the dashboard or the CLI. The install won't receive the changes automatically—this is a common step that gets overlooked.
 
-![Redeploy component](../images/guides/app-install-life-cycle/component-redeploy.png)
+![Redeploy component](/images/guides/app-install-life-cycle/component-redeploy.png)
 
 ## Monitor and Remediate
 
@@ -93,12 +93,12 @@ Once deployed, installs can be monitored for health and performance metrics with
 actions, bash scripts included in the app. e.g., checking pod status, disk
 space, ALB availability, etc.
 
-![Action healthcheck](../images/guides/app-install-life-cycle/action-healthcheck.png)
+![Action healthcheck](/images/guides/app-install-life-cycle/action-healthcheck.png)
 
 Actions can also perform remediation tasks automatically or manually through the
 dashboard to resolve issues detected during monitoring.
 
-![Action remediation](../images/guides/app-install-life-cycle/action-remediation.png)
+![Action remediation](/images/guides/app-install-life-cycle/action-remediation.png)
 
 If elevated permissions are required, the user maintaining the install can
 request a break glass role with elevated permissions for a limited time to

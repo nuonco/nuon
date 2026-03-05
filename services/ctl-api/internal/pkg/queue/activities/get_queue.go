@@ -8,16 +8,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-type GetQueueRequest struct {
-	QueueID string `validate:"required"`
-}
-
-// @temporal-gen activity
-// @by-id QueueID
-func (a *Activities) GetQueue(ctx context.Context, req *GetQueueRequest) (*app.Queue, error) {
-	return a.getQueue(ctx, req.QueueID)
-}
-
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @wrapper-prefix QueueInternal
+// @by-field queueID
+// @start-to-close-timeout 5m
 func (a *Activities) getQueue(ctx context.Context, queueID string) (*app.Queue, error) {
 	var queue app.Queue
 

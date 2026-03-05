@@ -37,7 +37,7 @@ func WithStepSkippable(skippable bool) WorkflowStepOption {
 	return func(s *app.WorkflowStep) { s.Skippable = skippable }
 }
 
-func WithStepSignal(signal app.Signal) WorkflowStepOption {
+func WithStepSignal(signal *app.Signal) WorkflowStepOption {
 	return func(s *app.WorkflowStep) { s.Signal = signal }
 }
 
@@ -46,7 +46,7 @@ func (s *Seeder) CreateWorkflowStep(ctx context.Context, t *testing.T, workflowI
 	step := &app.WorkflowStep{
 		InstallWorkflowID: workflowID,
 		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
-		Signal:            app.Signal{Type: "provision_sandbox"},
+		Signal:            &app.Signal{Type: "provision_sandbox"},
 		Name:              "test-step",
 		ExecutionType:     app.WorkflowStepExecutionTypeSystem,
 	}

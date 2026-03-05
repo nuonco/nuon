@@ -1,6 +1,7 @@
 ---
 title: 'Architecture'
-description: 'How Nuon makes BYOC possible.'
+description: "How the egress-only Nuon Runner enables BYOC deployments without requiring cross-account access to customer infrastructure."
+keywords: ["Nuon Runner", "runner architecture", "egress-only runner", "BYOC architecture", "control plane", "install runner", "build runner", "cross-account access", "customer infrastructure", "Nuon Control API", "CloudFormation stack", "runner provisioning"]
 ---
 
 When building Nuon, the central design challenge we faced was how to allow vendors to manage an app in a customer's cloud account without requiring cross-account access. Through multiple iterations -- and a lot of learning things the hard way -- we have arrived at our current architecture, built around the Nuon Runner.

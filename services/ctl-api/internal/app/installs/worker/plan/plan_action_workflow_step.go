@@ -42,7 +42,7 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 	plan.GitSource = gitSource
 
 	for k, v := range step.Step.EnvVars {
-		renderedVal, err := render.Render(*v, stateMap)
+		renderedVal, err := render.RenderV2(*v, stateMap)
 		if err != nil {
 			l.Error("error rendering env-var",
 				zap.String("env-var", *v),
@@ -55,7 +55,7 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 
 	if step.Step.InlineContents != "" {
 		l.Debug("rendering inline contents")
-		renderedVal, err := render.Render(step.Step.InlineContents, stateMap)
+		renderedVal, err := render.RenderV2(step.Step.InlineContents, stateMap)
 		if err != nil {
 			l.Error("error rendering inline contents",
 				zap.String("input", step.Step.InlineContents),
@@ -71,7 +71,7 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 
 	if step.Step.Command != "" {
 		l.Debug("rendering command")
-		renderedVal, err := render.Render(step.Step.Command, stateMap)
+		renderedVal, err := render.RenderV2(step.Step.Command, stateMap)
 		if err != nil {
 			l.Error("error rendering command",
 				zap.String("command", step.Step.Command),
