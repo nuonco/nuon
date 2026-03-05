@@ -30,7 +30,7 @@ type HandlerRequest struct {
 	QueueSignalID string `validate:"required"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @task-queue "handler"
 // @id-template queue-{{.QueueID}}-handler-{{.QueueSignalID}}
 func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
@@ -63,6 +63,11 @@ type handler struct {
 	stopped   bool
 	restarted bool
 	finished  bool
+	canceled  bool
+
+	// cancelable context for execution
+	executingCtx    workflow.Context
+	executingCancel workflow.CancelFunc
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal

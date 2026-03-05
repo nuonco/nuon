@@ -40,6 +40,9 @@ func AllModels() []any {
 		&app.AppRepository{},
 		&app.AppConfig{},
 		&app.AppBranch{},
+		&app.AppBranchConfig{},
+		&app.AppBranchInstallGroup{},
+		&app.AppBranchRun{},
 		&app.AppSandboxConfig{},
 		&app.AppRunnerConfig{},
 		&app.AppInput{},
@@ -61,6 +64,7 @@ func AllModels() []any {
 		// installs
 		&app.AWSAccount{},
 		&app.AzureAccount{},
+		&app.GCPAccount{},
 		&app.Install{},
 		&app.InstallState{},
 		&app.InstallEvent{},

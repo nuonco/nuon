@@ -27,6 +27,9 @@ type Uploader interface {
 
 	// uploadBlob writes the data in the byte slice into the output s3 blob
 	UploadBlob(context.Context, []byte, string) error
+
+	// uploadStream writes the data from the reader into the output s3 blob and returns SHA256 checksum
+	UploadStream(context.Context, io.Reader, string) (string, error)
 }
 
 func NewS3Uploader(v *validator.Validate, opts ...uploaderOptions) (*s3Uploader, error) {
@@ -162,6 +165,28 @@ func (s *s3Uploader) UploadBlob(ctx context.Context, byts []byte, outputName str
 	f := bytes.NewReader(byts)
 
 	return s.upload(ctx, uploader, f, outputName)
+}
+
+func (s *s3Uploader) UploadStream(ctx context.Context, reader io.Reader, outputName string) (string, error) {
+	cfg, err := s.loadAWSConfig(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to load aws config: %w", err)
+	}
+
+	client := s3.NewFromConfig(cfg)
+	uploader := manager.NewUploader(client)
+
+	// Calculate SHA256 checksum as we read the stream
+	hash := sha256.New()
+	teeReader := io.TeeReader(reader, hash)
+
+	if err := s.upload(ctx, uploader, teeReader, outputName); err != nil {
+		return "", err
+	}
+
+	// Return checksum in sha256: format
+	checksum := fmt.Sprintf("sha256:%x", hash.Sum(nil))
+	return checksum, nil
 }
 
 type s3UploaderClient interface {

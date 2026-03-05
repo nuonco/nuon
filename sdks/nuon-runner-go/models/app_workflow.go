@@ -20,6 +20,9 @@ import (
 // swagger:model app.Workflow
 type AppWorkflow struct {
 
+	// app branch runs
+	AppBranchRuns []*AppAppBranchRun `json:"app_branch_runs"`
+
 	// approval option
 	ApprovalOption AppInstallApprovalOption `json:"approval_option,omitempty"`
 
@@ -97,6 +100,10 @@ type AppWorkflow struct {
 func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppBranchRuns(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateApprovalOption(formats); err != nil {
 		res = append(res, err)
 	}
@@ -132,6 +139,36 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppWorkflow) validateAppBranchRuns(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppBranchRuns) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.AppBranchRuns); i++ {
+		if swag.IsZero(m.AppBranchRuns[i]) { // not required
+			continue
+		}
+
+		if m.AppBranchRuns[i] != nil {
+			if err := m.AppBranchRuns[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("app_branch_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("app_branch_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -347,6 +384,10 @@ func (m *AppWorkflow) validateType(formats strfmt.Registry) error {
 func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppBranchRuns(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateApprovalOption(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -382,6 +423,35 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppWorkflow) contextValidateAppBranchRuns(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AppBranchRuns); i++ {
+
+		if m.AppBranchRuns[i] != nil {
+
+			if swag.IsZero(m.AppBranchRuns[i]) { // not required
+				return nil
+			}
+
+			if err := m.AppBranchRuns[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("app_branch_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("app_branch_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

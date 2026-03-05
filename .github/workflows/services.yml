@@ -81,23 +81,31 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           allow_failure: true
 
-  build_base_images:
-    name: 🏗️ Build Base Images
+  pkg_lint:
+    name: 🔍 Lint pkg
     needs:
       - changes
       - tag
-    # Only build base images if there are Go services (ctl-api, runner, cli, lsp, workers-*)
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'lsp') || contains(needs.changes.outputs.services, 'workers-')) }}
-    strategy:
-      fail-fast: false
-    # nb: given that we've a common base for all Go services, we can do it for just ctl-api
-      matrix:
-        service: ['ctl-api']
-    uses: ./.github/workflows/build-base-images.yml
-    with:
-      service: ${{ matrix.service }}
-      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
-    secrets: inherit
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'lsp') || contains(needs.changes.outputs.services, 'workers-')) }}
+    runs-on: build-only
+    timeout-minutes: 15
+    env:
+      NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
+      NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
+      DISABLE_GITHUB_OIDC: ${{ github.repository != 'nuonco/nuon' }}
+    steps:
+      - uses: FranzDiebold/github-env-vars-action@v2
+      - name: Checkout repo
+        uses: actions/checkout@v6
+      - name: Setup nuonctl
+        uses: ./actions/setup-nuonctl
+      - name: Setup BuildKit
+        if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
+        run: |
+          CI=true nuonctl builds driver ctl-api && nuonctl builds driver-health ctl-api || docker buildx ls
+      - name: 🔍 Lint pkg
+        run: |
+          CI=true nuonctl builds pkg-lint
 
   services:
     name: 🚢
@@ -105,9 +113,7 @@ jobs:
       - changes
       - check_labels
       - tag
-      - build_base_images
-    # Run if there are service changes AND base images succeeded or were skipped
-    if: ${{ !cancelled() && (needs.build_base_images.result == 'success' || needs.build_base_images.result == 'skipped') && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:

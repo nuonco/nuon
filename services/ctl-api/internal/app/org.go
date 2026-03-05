@@ -57,6 +57,7 @@ const (
 	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
 	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
 	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
+	OrgFeatureQueues                  OrgFeature = "queues"
 )
 
 type Org struct {
@@ -157,10 +158,10 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	// except org-dashboard, install-break-glass, and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureOrgDashboard:        false,
-		OrgFeatureInstallBreakGlass:   false,
-		OrgFeatureTerraformInstaller:  false,
-		OrgFeatureUserManagedFeatures: false,
+		OrgFeatureOrgDashboard:       false,
+		OrgFeatureInstallBreakGlass:  false,
+		OrgFeatureTerraformInstaller: false,
+		OrgFeatureQueues:             false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -225,6 +226,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTerraformInstaller,
 		OrgFeatureDashboardSSE,
 		OrgFeatureUserManagedFeatures,
+		OrgFeatureQueues,
 	}
 }
 

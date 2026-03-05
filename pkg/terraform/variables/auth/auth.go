@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/terraform/variables"
 )
 
@@ -18,6 +19,7 @@ type auth struct {
 
 	AWSAuth   *credentials.Config
 	AzureAuth *azurecredentials.Config
+	GCPAuth   *gcpcredentials.Config
 }
 
 type varsOption func(*auth) error
@@ -49,6 +51,13 @@ func WithAWSAuth(cfg *credentials.Config) varsOption {
 func WithAzureAuth(cfg *azurecredentials.Config) varsOption {
 	return func(v *auth) error {
 		v.AzureAuth = cfg
+		return nil
+	}
+}
+
+func WithGCPAuth(cfg *gcpcredentials.Config) varsOption {
+	return func(v *auth) error {
+		v.GCPAuth = cfg
 		return nil
 	}
 }

@@ -1,0 +1,60 @@
+import { Dropdown } from '@/components/common/Dropdown'
+import { Icon } from '@/components/common/Icon'
+import { Menu } from '@/components/common/Menu'
+import { Text } from '@/components/common/Text'
+import { AuditHistoryButton } from './AuditHistory'
+import { DeprovisionButton } from './Deprovision'
+import { DeprovisionStackButton } from './DeprovisionStack'
+import { EditInputsButton } from './EditInputs'
+import { EnableAutoApproveButton } from './EnableAutoApprove'
+import { EnableConfigSyncButton } from './EnableConfigSync'
+import { ForgetButton } from './Forget'
+import { GenerateInstallConfigButton } from './GenerateInstallConfig'
+import { ReprovisionButton } from './Reprovision'
+import { RunAdhocActionButton } from './RunAdhocAction'
+import { SyncSecretsButton } from './SyncSecrets'
+import { ViewStateButton } from './ViewState'
+
+export const InstallManagementDropdown = () => {
+  return (
+    <Dropdown
+      buttonText={
+        <>
+          <Icon variant="SlidersHorizontalIcon" />
+          Manage
+        </>
+      }
+      id="install-mgmt"
+      variant="primary"
+      alignment="right"
+    >
+      <Menu className="min-w-56">
+        <Text variant="label" theme="neutral">
+          Settings
+        </Text>
+        <EditInputsButton isMenuButton />
+        <AuditHistoryButton isMenuButton />
+        <ViewStateButton isMenuButton />
+        <EnableAutoApproveButton isMenuButton />
+        <EnableConfigSyncButton isMenuButton />
+        <GenerateInstallConfigButton isMenuButton />
+        <hr />
+        <Text variant="label" theme="neutral">
+          Controls
+        </Text>
+        <ReprovisionButton isMenuButton />
+        <RunAdhocActionButton isMenuButton />
+        <SyncSecretsButton isMenuButton />
+        <DeprovisionButton isMenuButton />
+        <DeprovisionStackButton isMenuButton />
+        <hr />
+        <Text variant="label" theme="neutral">
+          Danger
+        </Text>
+        <span>
+          <ForgetButton />
+        </span>
+      </Menu>
+    </Dropdown>
+  )
+}

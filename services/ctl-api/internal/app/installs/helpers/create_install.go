@@ -9,7 +9,9 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type InstallMetadata struct {
@@ -26,6 +28,11 @@ type CreateInstallParams struct {
 	AzureAccount *struct {
 		Location string `json:"location"`
 	} `json:"azure_account"`
+
+	GCPAccount *struct {
+		ProjectID string `json:"project_id"`
+		Region    string `json:"region"`
+	} `json:"gcp_account"`
 
 	Inputs map[string]*string `json:"inputs"`
 
@@ -91,6 +98,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			Location: req.AzureAccount.Location,
 		}
 	}
+	if req.GCPAccount != nil {
+		install.GCPAccount = &app.GCPAccount{
+			ProjectID: req.GCPAccount.ProjectID,
+			Region:    req.GCPAccount.Region,
+		}
+	}
 	if len(parentApp.AppInputConfigs) > 0 {
 		install.InstallInputs = []app.InstallInputs{
 			{
@@ -113,11 +126,29 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Data: generics.ToHstore(map[string]string{}),
 			},
 		}
+	case "gcp":
+		install.InstallStack = &app.InstallStack{
+			InstallStackOutputs: app.InstallStackOutputs{
+				Data: generics.ToHstore(map[string]string{}),
+			},
+		}
 	}
 
 	res = s.db.WithContext(ctx).Create(&install)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
+	}
+
+	// Create a queue for this install (enables cross-namespace signal delivery)
+	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     install.ID,
+		OwnerType:   plugins.TableName(s.db, app.Install{}),
+		Namespace:   "installs",
+		MaxInFlight: 1,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create queue for install: %w", err)
 	}
 
 	if req.InstallConfig != nil {

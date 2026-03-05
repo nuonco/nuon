@@ -1,0 +1,86 @@
+@media (prefers-color-scheme: light) {
+  .tooltip-content {
+    --background: var(--color-cool-grey-100);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .tooltip-content {
+    --background: var(--color-dark-grey-600);
+  }
+}
+
+.tooltip-content {
+  z-index: 1000;
+}
+
+/* tooltip enter / exit animations */
+.tooltip-content.enter {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--duration-fastest) var(--ease-cubic),
+    translate var(--duration-fastest) var(--ease-cubic);
+  translate: 0 0;
+}
+
+.tooltip-content.exit {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-fastest) var(--ease-cubic),
+    translate var(--duration-fastest) var(--ease-cubic),
+    visibility 0s var(--ease-cubic) var(--duration-fastest);
+}
+
+.tooltip-content.top.exit {
+  translate: 0 -0.5rem;
+}
+
+.tooltip-content.bottom.exit {
+  translate: 0 0.5rem;
+}
+
+.tooltip-content.right.exit {
+  translate: 0.5rem 0;
+}
+
+.tooltip-content.left.exit {
+  translate: -0.5rem 0;
+}
+
+/* tooltip arrow point */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  border-width: 0.35rem;
+  border-style: solid;
+}
+
+.tooltip-content.top::after {
+  bottom: -0.6rem;
+  left: 50%;
+  translate: -50%;
+  border-color: var(--background) transparent transparent transparent;
+}
+
+.tooltip-content.bottom::after {
+  top: -0.6rem;
+  left: 50%;
+  translate: -50%;
+  border-color: transparent transparent var(--background) transparent;
+}
+
+.tooltip-content.right::after {
+  left: -0.6rem;
+  top: 50%;
+  translate: 0 -50%;
+  border-color: transparent var(--background) transparent transparent;
+}
+
+.tooltip-content.left::after {
+  right: -0.6rem;
+  top: 50%;
+  translate: 0 -50%;
+  border-color: transparent transparent transparent var(--background);
+}

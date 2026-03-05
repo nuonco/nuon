@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,7 @@ type AppAWSIAMRoleConfig struct {
 	DisplayName         string `json:"display_name" validate:"required"`
 	Description         string `json:"description" validate:"required"`
 	PermissionsBoundary string `json:"permissions_boundary,omitempty" swaggertype:"string" validate:"optional_json"`
+	CloudPlatform       string `json:"cloud_platform,omitempty" validate:"omitempty,oneof=aws gcp"`
 
 	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
 }
@@ -43,6 +45,8 @@ func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPoli
 			ManagedPolicyName: policy.ManagedPolicyName,
 			Name:              policy.Name,
 			Contents:          generics.ToJSON(policy.Contents),
+			GCPPermissions:    policy.GCPPermissions,
+			GCPPredefinedRole: policy.GCPPredefinedRole,
 		})
 	}
 
@@ -52,13 +56,60 @@ func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPoli
 type AppAWSIAMPolicyConfig struct {
 	ManagedPolicyName string `json:"managed_policy_name"`
 
-	Name     string `json:"name"`
-	Contents string `json:"contents" swaggertype:"string" validate:"optional_json"`
+	Name              string   `json:"name"`
+	Contents          string   `json:"contents" swaggertype:"string" validate:"optional_json"`
+	GCPPermissions    []string `json:"gcp_permissions,omitempty"`
+	GCPPredefinedRole string   `json:"gcp_predefined_role,omitempty"`
+}
+
+func (p *AppAWSIAMPolicyConfig) validateMutualExclusivity(roleName string) error {
+	if p.Contents != "" && p.ManagedPolicyName != "" {
+		return fmt.Errorf("role %q policy %q: contents and managed_policy_name are mutually exclusive; specify one or the other", roleName, p.Name)
+	}
+
+	if len(p.GCPPermissions) > 0 && p.GCPPredefinedRole != "" {
+		return fmt.Errorf("role %q policy %q: gcp_permissions and gcp_predefined_role are mutually exclusive; use gcp_permissions for fine-grained custom permissions or gcp_predefined_role for a Google-managed role, not both", roleName, p.Name)
+	}
+
+	return nil
 }
 
 func (c *CreateAppPermissionsConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	allRoles := []struct {
+		name string
+		role AppAWSIAMRoleConfig
+	}{
+		{"provision_role", c.ProvisionRole},
+		{"deprovision_role", c.DeprovisionRole},
+		{"maintenance_role", c.MaintenanceRole},
+	}
+	if c.BreakGlassRoles != nil {
+		for _, r := range *c.BreakGlassRoles {
+			allRoles = append(allRoles, struct {
+				name string
+				role AppAWSIAMRoleConfig
+			}{r.Name, r})
+		}
+	}
+	if c.CustomRoles != nil {
+		for _, r := range *c.CustomRoles {
+			allRoles = append(allRoles, struct {
+				name string
+				role AppAWSIAMRoleConfig
+			}{r.Name, r})
+		}
+	}
+
+	for _, entry := range allRoles {
+		for i := range entry.role.Policies {
+			if err := entry.role.Policies[i].validateMutualExclusivity(entry.name); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -110,6 +161,7 @@ func (s *service) getCustomRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID 
 	for _, role := range roles {
 		roleConfig := app.AppAWSIAMRoleConfig{
 			AppConfigID:             appConfigID,
+			CloudPlatform:           role.CloudPlatform,
 			Type:                    app.AWSIAMRoleTypeCustom,
 			Name:                    role.Name,
 			Description:             role.Description,
@@ -129,6 +181,7 @@ func (s *service) getBreakGlassRoleConfigs(roles []AppAWSIAMRoleConfig, appConfi
 	for _, role := range roles {
 		roleConfig := app.AppAWSIAMRoleConfig{
 			AppConfigID:             appConfigID,
+			CloudPlatform:           role.CloudPlatform,
 			Type:                    app.AWSIAMRoleTypeBreakGlass,
 			Name:                    role.Name,
 			Description:             role.Description,
@@ -149,6 +202,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 		Roles: []app.AppAWSIAMRoleConfig{
 			{
 				AppConfigID:             req.AppConfigID,
+				CloudPlatform:           req.ProvisionRole.CloudPlatform,
 				Type:                    app.AWSIAMRoleTypeRunnerProvision,
 				Name:                    req.ProvisionRole.Name,
 				Description:             req.ProvisionRole.Description,
@@ -158,6 +212,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 			},
 			{
 				AppConfigID:             req.AppConfigID,
+				CloudPlatform:           req.MaintenanceRole.CloudPlatform,
 				Type:                    app.AWSIAMRoleTypeRunnerMaintenance,
 				Name:                    req.MaintenanceRole.Name,
 				Description:             req.MaintenanceRole.Description,
@@ -167,6 +222,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 			},
 			{
 				AppConfigID:             req.AppConfigID,
+				CloudPlatform:           req.DeprovisionRole.CloudPlatform,
 				Type:                    app.AWSIAMRoleTypeRunnerDeprovision,
 				Name:                    req.DeprovisionRole.Name,
 				Description:             req.DeprovisionRole.Description,

@@ -4,8 +4,6 @@ FROM ${BUILD_IMAGE} AS code
 
 WORKDIR /src
 ARG SERVICE=runner
-ARG GOCACHE=/go-cache
-ARG GOMODCACHE=/go-mod-cache
 ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 
 
@@ -18,7 +16,7 @@ COPY sdks ./sdks/
 COPY main.go .
 COPY generate.sh .
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     go generate ./...
 
 FROM code AS build
@@ -26,7 +24,7 @@ FROM code AS build
 ARG tag=
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
@@ -34,12 +32,13 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     -o /bin/runner
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     golangci-lint run -c .golangci.yml -v
 
 FROM golang:1.25-alpine AS nuon-cli
@@ -73,6 +72,15 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
+FROM golang:1.25-alpine AS gcloud
+
+RUN apk add --update --no-cache curl ca-certificates python3
+WORKDIR /opt
+ARG GCLOUD_VERSION=516.0.0
+RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
+    && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
+    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
+
 FROM golang:1.25-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
@@ -90,7 +98,7 @@ ARG tag=
 RUN mkdir -p /out
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -102,7 +110,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -114,7 +122,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -126,7 +134,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -138,7 +146,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -150,7 +158,7 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
@@ -178,7 +186,8 @@ RUN apk add --no-cache \
     kubectl \
     zip \
     openssl \
-    helm
+    helm \
+    python3
 
 WORKDIR /src/bins/runner
 
@@ -189,7 +198,10 @@ COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
+COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
+
+ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
 COPY ./bundle /bundle
 COPY --from=build /bin/runner /bin/runner
@@ -209,7 +221,7 @@ ARG tag=
 RUN mkdir -p /out
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-runner \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     GOOS=linux \
     GOARCH=amd64 \
     go build \

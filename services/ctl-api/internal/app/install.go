@@ -56,6 +56,7 @@ type Install struct {
 	InstallStack *InstallStack `json:"install_stack,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
 	AWSAccount   *AWSAccount   `json:"aws_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
 	AzureAccount *AzureAccount `json:"azure_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"azure_account,omitzero,omitempty"`
+	GCPAccount   *GCPAccount   `json:"gcp_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"gcp_account,omitzero,omitempty"`
 
 	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
 

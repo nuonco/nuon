@@ -24,12 +24,18 @@ func newGenerateCmd() *cobra.Command {
 	generateCmd.Flags().BoolVar(&validateFlag, "validate", false, "Fail on validation errors")
 	generateCmd.Flags().BoolVar(&cleanupFlag, "cleanup", false, "Cleanup generated files before generating")
 	generateCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively process subdirectories")
+	generateCmd.Flags().BoolVar(&importsFlag, "imports", false, "Process imports using golang.org/x/tools/imports library")
 	return generateCmd
 }
 
 func runGen(cmd *cobra.Command, args []string) error {
 	targetDir := getDir(args)
 	strict := validateFlag
+
+	// Create generator options from flags
+	opts := generator.GeneratorOptions{
+		ProcessImports: importsFlag,
+	}
 
 	if cleanupFlag {
 		if err := runClean(targetDir, false, recursiveFlag); err != nil {
@@ -80,7 +86,7 @@ func runGen(cmd *cobra.Command, args []string) error {
 			}
 
 			if f != nil && len(f.Functions) > 0 {
-				if err := generator.GenerateForFile(f); err != nil {
+				if err := generator.GenerateForFile(f, opts); err != nil {
 					return fmt.Errorf("failed to generate code for %s: %w", path, err)
 				}
 			}

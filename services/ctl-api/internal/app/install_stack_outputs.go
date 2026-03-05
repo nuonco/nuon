@@ -36,6 +36,7 @@ type InstallStackOutputs struct {
 
 	AWSStackOutputs   *AWSStackOutputs   `json:"aws,omitzero" gorm:"-" temporaljson:"aws_stack_outputs,omitzero,omitempty"`
 	AzureStackOutputs *AzureStackOutputs `json:"azure,omitzero" gorm:"-" temporaljson:"azure_stack_outputs,omitzero,omitempty"`
+	GCPStackOutputs   *GCPStackOutputs   `json:"gcp,omitzero" gorm:"-" temporaljson:"gcp_stack_outputs,omitzero,omitempty"`
 }
 
 type AWSStackOutputs struct {
@@ -75,6 +76,21 @@ type AzureStackOutputs struct {
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
 }
 
+type GCPStackOutputs struct {
+	ProjectID                 string `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
+	Region                    string `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
+	NetworkName               string `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
+	NetworkID                 string `json:"network_id,omitzero" mapstructure:"network_id" temporaljson:"network_id,omitzero,omitempty"`
+	PublicSubnetName          string `json:"public_subnet_name,omitzero" mapstructure:"public_subnet_name" temporaljson:"public_subnet_name,omitzero,omitempty"`
+	PrivateSubnetName         string `json:"private_subnet_name,omitzero" mapstructure:"private_subnet_name" temporaljson:"private_subnet_name,omitzero,omitempty"`
+	RunnerSubnetName          string `json:"runner_subnet_name,omitzero" mapstructure:"runner_subnet_name" temporaljson:"runner_subnet_name,omitzero,omitempty"`
+	RunnerServiceAccountEmail string `json:"runner_service_account_email,omitzero" mapstructure:"runner_service_account_email" temporaljson:"runner_service_account_email,omitzero,omitempty"`
+	ProvisionSAEmail          string `json:"provision_sa_email,omitzero" mapstructure:"provision_sa_email" temporaljson:"provision_sa_email,omitzero,omitempty"`
+	MaintenanceSAEmail        string `json:"maintenance_sa_email,omitzero" mapstructure:"maintenance_sa_email" temporaljson:"maintenance_sa_email,omitzero,omitempty"`
+	DeprovisionSAEmail        string `json:"deprovision_sa_email,omitzero" mapstructure:"deprovision_sa_email" temporaljson:"deprovision_sa_email,omitzero,omitempty"`
+	BreakGlassSAEmail         string `json:"break_glass_sa_email,omitzero" mapstructure:"break_glass_sa_email" temporaljson:"break_glass_sa_email,omitzero,omitempty"`
+}
+
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
@@ -91,7 +107,25 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	// TODO(ja): what have i become
+	// detect cloud platform from output keys
+	_, isGCP := a.Data["runner_service_account_email"]
+	if isGCP {
+		var gcpOutputs GCPStackOutputs
+		gcpDecoderConfig := &mapstructure.DecoderConfig{
+			WeaklyTypedInput: true,
+			Result:           &gcpOutputs,
+		}
+		gcpDecoder, err := mapstructure.NewDecoder(gcpDecoderConfig)
+		if err != nil {
+			return errors.Wrap(err, "unable to create gcp decoder")
+		}
+		if err := gcpDecoder.Decode(a.Data); err != nil {
+			return errors.Wrap(err, "unable to parse gcp outputs")
+		}
+		a.GCPStackOutputs = &gcpOutputs
+		return nil
+	}
+
 	_, isAzure := a.Data["resource_group_id"]
 	if isAzure {
 		var azureOutputs AzureStackOutputs

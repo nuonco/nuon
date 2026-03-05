@@ -1,0 +1,104 @@
+import { useParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { Plan } from '@/components/approvals/Plan'
+import { BackToTop } from '@/components/common/BackToTop'
+import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
+import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
+import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
+import { useSandboxRun } from '@/hooks/use-sandbox-run'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { getWorkflow } from '@/lib'
+
+const CONTAINER_ID = 'sandbox-run-page'
+
+export const SandboxRunDetail = () => {
+  const { runId } = useParams()
+
+  return (
+    <SandboxRunProvider runId={runId!} shouldPoll>
+      <SandboxRunDetailContent />
+    </SandboxRunProvider>
+  )
+}
+
+const SandboxRunDetailContent = () => {
+  const { runId } = useParams()
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const { sandboxRun } = useSandboxRun()
+
+  const { data: workflow } = useQuery({
+    queryKey: ['workflow', org?.id, sandboxRun?.install_workflow_id],
+    queryFn: () =>
+      getWorkflow({ orgId: org.id, workflowId: sandboxRun!.install_workflow_id }),
+    enabled: !!org?.id && !!sandboxRun?.install_workflow_id,
+  })
+
+  const step = workflow?.steps
+    ?.filter((s) => s?.step_target_id === sandboxRun?.id)
+    ?.at(-1) ?? null
+
+  const logStream = sandboxRun?.log_stream
+  const pendingApproval =
+    step?.approval && !step?.approval?.response && step?.status?.status !== 'auto-skipped'
+  const completedApproval =
+    step?.approval && !!step?.approval?.response && step?.status?.status !== 'auto-skipped'
+
+  return (
+    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+      <Breadcrumbs
+        breadcrumbs={[
+          { path: `/${org?.id}`, text: org?.name },
+          { path: `/${org?.id}/installs`, text: 'Installs' },
+          { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
+          { path: `/${org?.id}/installs/${install?.id}/sandbox`, text: 'Sandbox' },
+          {
+            path: `/${org?.id}/installs/${install?.id}/sandbox/runs/${runId}`,
+            text: sandboxRun?.run_type ?? 'Run',
+          },
+        ]}
+      />
+
+      <SandboxHeader workflow={workflow} stepId={step?.id} />
+
+      <PageSection className="!pb-12" isScrollable={false}>
+        <div className="flex flex-col gap-6">
+          {pendingApproval ? (
+            <div className="flex flex-col gap-4">
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
+            </div>
+          ) : null}
+
+          {logStream ? (
+            <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
+              <UnifiedLogsProvider>
+                <LogViewerProvider>
+                  <SSELogs />
+                </LogViewerProvider>
+              </UnifiedLogsProvider>
+            </LogStreamProvider>
+          ) : (
+            <LogsSkeleton />
+          )}
+
+          {completedApproval ? (
+            <div className="flex flex-col gap-4">
+              <ApprovalBanner step={step} />
+              <Plan step={step} />
+            </div>
+          ) : null}
+        </div>
+
+        <BackToTop containerId={CONTAINER_ID} />
+      </PageSection>
+    </PageSection>
+  )
+}

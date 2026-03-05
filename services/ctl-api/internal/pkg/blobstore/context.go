@@ -1,6 +1,10 @@
 package blobstore
 
-import "context"
+import (
+	"context"
+
+	"github.com/gin-gonic/gin"
+)
 
 type blobContextKey string
 
@@ -22,6 +26,11 @@ func WithBlobAutoLoad(ctx context.Context, enabled bool) context.Context {
 
 // WithBlobService sets the blobstore service in context
 func WithBlobService(ctx context.Context, svc Service) context.Context {
+	return context.WithValue(ctx, BlobServiceKey, svc)
+}
+
+// WithBlobService sets the blobstore service in context
+func WithBlobServiceGin(ctx *gin.Context, svc Service) context.Context {
 	return context.WithValue(ctx, BlobServiceKey, svc)
 }
 

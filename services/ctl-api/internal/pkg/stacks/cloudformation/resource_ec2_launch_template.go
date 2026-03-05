@@ -38,10 +38,6 @@ func (a *Templates) getRunnerLaunchTemplateData(inp *stacks.TemplateInput, t tag
 						Key:   "nuon_runner_api_url",
 						Value: inp.Settings.RunnerAPIURL,
 					},
-					{
-						Key:   "nuon_runner_api_token",
-						Value: inp.APIToken,
-					},
 				}, "runner-instance"),
 			},
 			{

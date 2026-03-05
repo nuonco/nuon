@@ -49,7 +49,7 @@ func TestResolveRoleARN(t *testing.T) {
 			installState:  installState,
 			expectedARN:   "",
 			expectError:   true,
-			errorContains: "stack outputs must have either AWS or Azure outputs",
+			errorContains: "stack outputs must have either AWS, Azure, or GCP outputs",
 		},
 		{
 			name:     "role found in provision role",
