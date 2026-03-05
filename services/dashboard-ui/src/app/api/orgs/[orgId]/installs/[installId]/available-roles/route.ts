@@ -25,5 +25,5 @@ export async function GET(
     orgId,
   })
 
-  return NextResponse.json(response)
+  return NextResponse.json(response, { status: response.status })
 }
