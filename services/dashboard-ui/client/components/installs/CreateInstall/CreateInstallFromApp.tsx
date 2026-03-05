@@ -90,6 +90,10 @@ export const CreateInstallFromApp = ({
           subscription_id: '',
           subscription_tenant_id: '',
         }
+      } else if (platform === 'gcp' && formDataObj.gcp_region) {
+        body.gcp_account = {
+          region: formDataObj.gcp_region as string,
+        }
       }
 
       return createAppInstall({ appId: app.id, body, orgId: org?.id || '' })
@@ -190,7 +194,7 @@ export const CreateInstallFromApp = ({
       <CreateInstallForm
         ref={formRef}
         appId={app.id}
-        platform={app.runner_config.app_runner_type as 'aws' | 'azure'}
+        platform={app.runner_config.app_runner_type as 'aws' | 'azure' | 'gcp'}
         inputConfig={{
           ...config.input,
           input_groups: nestInputsUnderGroups(

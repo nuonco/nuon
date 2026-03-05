@@ -2601,7 +2601,7 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerConfigHelmDriverType": "secret" | "configmap" | "";
     /** @enum {string} */
-    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure";
+    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure" | "gcp";
     "app.AppSandboxConfig": {
       app_config_id?: string;
       app_id?: string;

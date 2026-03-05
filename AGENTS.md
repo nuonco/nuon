@@ -16,7 +16,7 @@ Binaries compiled and run as executables (not deployed as Kubernetes services):
 
 #### `/services/` - Web Services & Applications
 - **`ctl-api/`** - Control API service (Go)
-- **`dashboard-ui/`** - Main dashboard UI (Next.js/React)
+- **`dashboard-ui/`** - Main dashboard UI: the running app is a client-side SPA served by a Go server from the `client/` directory (not the `src/` Next.js app)
 - **`website-v2/`** - Marketing website (Astro)
 - **`website/`** - Legacy website (Astro)
 - **`wiki/`** - Internal documentation site (Astro + Starlight)

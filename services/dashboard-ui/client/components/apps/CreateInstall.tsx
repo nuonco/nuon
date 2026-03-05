@@ -160,6 +160,10 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           subscription_id: '',
           subscription_tenant_id: '',
         }
+      } else if (platform === 'gcp' && formDataObj.gcp_region) {
+        body.gcp_account = {
+          region: formDataObj.gcp_region as string,
+        }
       }
 
       return createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' })
@@ -291,7 +295,7 @@ const CreateInstallFormContent = forwardRef<
     <CreateInstallForm
       ref={ref}
       appId={app.id}
-      platform={app?.runner_config?.app_runner_type as 'aws' | 'azure'}
+      platform={app?.runner_config?.app_runner_type as 'aws' | 'azure' | 'gcp'}
       inputConfig={{
         ...config?.input,
         input_groups: nestInputsUnderGroups(
