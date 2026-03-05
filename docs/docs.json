@@ -142,6 +142,7 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
+<<<<<<< HEAD
         "pages": [
           "concepts/overview",
           "concepts/apps",
@@ -157,6 +158,46 @@
           "concepts/app-variables",
           "concepts/app-secrets",
           "concepts/glossary"
+=======
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["concepts/overview"]
+          },
+          {
+            "group": "Connect Your App",
+            "pages": [
+              "concepts/apps",
+              "concepts/components",
+              "concepts/sandboxes",
+              "concepts/app-inputs",
+              "concepts/app-secrets",
+              "concepts/app-variables"
+            ]
+          },
+          {
+            "group": "Support Customer Infrastructure",
+            "pages": [
+              "concepts/installs",
+              "concepts/stacks",
+              "concepts/runners",
+              "concepts/operation-roles"
+            ]
+          },
+          {
+            "group": "Continuous Delivery",
+            "pages": [
+              "concepts/workflows",
+              "concepts/actions",
+              "concepts/policies",
+              "concepts/customer-portal"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": ["concepts/glossary"]
+          }
+>>>>>>> se/docs-keywords
         ]
       },
       {
@@ -210,7 +251,11 @@
       {
         "tab": "Architecture",
         "icon": "sitemap",
+<<<<<<< HEAD
         "pages": ["runner-architecture"]
+=======
+        "pages": ["architecture/byoc", "architecture/platform", "security"]
+>>>>>>> se/docs-keywords
       },
       {
         "tab": "Knowledge Base",
@@ -277,6 +322,13 @@
     {
       "source": "/faq",
       "destination": "/support/support"
+<<<<<<< HEAD
+=======
+    },
+    {
+      "source": "/runner-architecture",
+      "destination": "/architecture/platform"
+>>>>>>> se/docs-keywords
     }
   ]
 }
