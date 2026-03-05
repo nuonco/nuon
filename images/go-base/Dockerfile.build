@@ -34,21 +34,18 @@ COPY tools.go go.mod go.sum ./
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 
-# Download all dependencies into the image layer (not a cache mount) so all
-# service builds get modules without any network I/O.
+# Download all dependencies into the module cache
 RUN go mod download
-
-# Copy and generate package code (common code generation)
-COPY pkg pkg
-RUN cd pkg && go generate ./...
 
 # Test target for pkg directory
 FROM build AS pkg-test
+RUN cd pkg && go generate ./...
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go test -v ./...
 
 # Lint target for pkg directory
 FROM build AS pkg-lint
+RUN cd pkg && go generate ./...
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-pkg \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
@@ -63,22 +60,12 @@ ENV GOMODCACHE=/go/pkg/mod
 ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
-
-# Copy specific parts of /src/ instead of all of it.
-# Each service has a different workdir (different sources: in service.yml),
-# so /src/ content varies. Granular COPYs let BuildKit cache by content hash
-# of each path independently — stable paths hit even if sdks differs.
 COPY --from=build /src/go.mod /src/go.mod
 COPY --from=build /src/go.sum /src/go.sum
 COPY --from=build /src/tools.go /src/tools.go
-# pkg generated output is deterministic — always hits across services.
-COPY --from=build /src/pkg /src/pkg
-# Bake downloaded modules and pkg-generated build cache into the image.
+
+# Bake downloaded modules into the image
 COPY --from=build /go/pkg/mod /go/pkg/mod
-COPY --from=build /go/pkg/build-cache /go/pkg/build-cache
-# sdks last — should be identical across services but isolated so any
-# variation only invalidates this one layer.
-COPY --from=build /src/sdks /src/sdks
 
 WORKDIR /src
 # Set default CMD
