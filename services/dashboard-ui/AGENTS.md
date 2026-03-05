@@ -1,4 +1,4 @@
-# Dashboard UI Service  
+# Dashboard UI Service
 
 The **Dashboard UI** is the primary web application frontend for the Nuon platform, providing a comprehensive interface for managing applications, deployments, and infrastructure.
 

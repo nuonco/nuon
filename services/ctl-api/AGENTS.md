@@ -1,4 +1,4 @@
-# CTL-API Service
+# CTL-API Service 
 
 The **Control API (ctl-api)** is the core backend service of the Nuon platform, providing comprehensive APIs for
 managing applications, components, installs, and infrastructure deployments.

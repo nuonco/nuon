@@ -1,4 +1,4 @@
-# Nuon Language Server Protocol (LSP)
+# Nuon Language Server Protocol (LSP) 
 
 A Language Server Protocol implementation for Nuon TOML configuration files.
 

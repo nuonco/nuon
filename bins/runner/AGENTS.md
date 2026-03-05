@@ -1,4 +1,4 @@
-# Runner Binary
+# Runner Binary 
 
 The **Runner** is a critical binary that executes deployment operations in customer infrastructure. Unlike other binaries, it runs as an executable in both Kubernetes containers and cloud VMs (AWS, Azure, with more platforms planned), providing secure execution of deployments in customer environments.
 
