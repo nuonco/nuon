@@ -61,6 +61,11 @@ const AppTemplate = () => {
                 text: 'Actions',
               },
               {
+                path: `/branches`,
+                iconVariant: 'GitBranch',
+                text: 'Branches',
+              },
+              {
                 path: `/roles`,
                 iconVariant: 'FileLock',
                 text: 'Roles',
@@ -115,6 +120,11 @@ const AppTemplate = () => {
                   path: `/actions`,
                   iconVariant: 'TerminalWindow',
                   text: 'Actions',
+                },
+                {
+                  path: `/branches`,
+                  iconVariant: 'GitBranch',
+                  text: 'Branches',
                 },
                 {
                   path: `/roles`,
