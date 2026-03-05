@@ -14,7 +14,7 @@ type UpdateWorkflowStepFinishedAtRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field ID
 func (a *Activities) UpdateWorkflowStepFinishedAt(ctx context.Context, req UpdateWorkflowStepFinishedAtRequest) error {
 	runner := app.WorkflowStep{

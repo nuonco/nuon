@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1m
 // @task-timeout 30s
 func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {

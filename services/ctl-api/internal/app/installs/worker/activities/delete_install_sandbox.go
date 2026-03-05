@@ -12,7 +12,7 @@ type DeleteInstallSandboxRequest struct {
 	InstallSandboxID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallSandboxID
 func (a *Activities) DeleteInstallSanbox(ctx context.Context, req DeleteInstallSandboxRequest) error {
 	res := a.db.WithContext(ctx).

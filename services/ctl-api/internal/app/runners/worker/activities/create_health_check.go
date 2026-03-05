@@ -13,7 +13,7 @@ type CreateHealthCheckRequest struct {
 	Status   app.RunnerStatus `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) CreateHealthCheck(ctx context.Context, req CreateHealthCheckRequest) (*app.RunnerHealthCheck, error) {
 	hc := app.RunnerHealthCheck{

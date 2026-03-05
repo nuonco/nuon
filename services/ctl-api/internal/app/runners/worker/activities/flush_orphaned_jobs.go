@@ -14,7 +14,7 @@ type FlushOrphanedJobsRequest struct {
 	Threshold time.Time `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) FlushOrphanedJobs(ctx context.Context, req FlushOrphanedJobsRequest) error {
 	res := a.db.WithContext(ctx).
 		Where(app.RunnerJob{

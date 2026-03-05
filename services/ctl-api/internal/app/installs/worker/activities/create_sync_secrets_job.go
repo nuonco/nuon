@@ -16,7 +16,7 @@ type CreateSyncSecretsJobRequest struct {
 	Metadata  map[string]string          `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateSyncSecretsJob(ctx context.Context, req *CreateSyncSecretsJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateSyncSecretsJob(ctx,
 		req.RunnerID,

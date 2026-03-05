@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 720h
 // @id-template {{.Req.ID}}-execute-workflow-{{.Req.InstallWorkflowID}}-rerun-flow
 func (w *Workflows) RerunFlow(ctx workflow.Context, sreq signals.RequestSignal) error {

@@ -11,7 +11,7 @@ type CreateRunnerTokenRequest struct {
 	RunnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) CreateRunnerTokenRequest(ctx context.Context, req *CreateRunnerTokenRequest) (*string, error) {
 	token, err := a.runnersHelpers.CreateToken(ctx, req.RunnerID)

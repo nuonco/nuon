@@ -19,9 +19,8 @@ func ExecuteWorkflowIDCallback(req signals.RequestSignal) string {
 	return fmt.Sprintf("%s-execute-workflow-%s", req.ID, req.InstallWorkflowID)
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 720h
-// @id-callback ExecuteWorkflowIDCallback
 func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal) error {
 	if sreq.FlowID == "" {
 		sreq.FlowID = sreq.InstallWorkflowID

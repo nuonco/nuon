@@ -15,7 +15,7 @@ type GetInstallSandboxRunStateRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) GetInstallSandboxRunState(ctx context.Context, req GetInstallSandboxRunStateRequest) (*app.InstallSandboxRun, error) {
 	var installSandboxRun app.InstallSandboxRun

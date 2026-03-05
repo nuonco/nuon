@@ -17,7 +17,7 @@ type SaveStateRequest struct {
 	TriggeredByType string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (*app.InstallState, error) {
 	obj := &app.InstallState{
 		InstallID:       req.InstallID,

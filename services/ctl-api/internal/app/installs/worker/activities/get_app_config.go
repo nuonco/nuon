@@ -12,7 +12,7 @@ type GetAppConfigRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field ID
 // @start-to-close-timeout 10s
 func (a *Activities) GetAppConfig(ctx context.Context, req GetAppConfigRequest) (*app.AppConfig, error) {

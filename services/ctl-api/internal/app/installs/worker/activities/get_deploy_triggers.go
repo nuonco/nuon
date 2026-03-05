@@ -15,7 +15,7 @@ type GetInstallActionWorkflowsByTriggerTypeRequest struct {
 	TriggerType app.ActionWorkflowTriggerType `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field ComponentID
 func (a *Activities) GetInstallActionWorkflowsByTriggerType(ctx context.Context, req GetInstallActionWorkflowsByTriggerTypeRequest) ([]*app.InstallActionWorkflow, error) {
 	workflows, err := a.getActionWorkflows(ctx, req.InstallID)

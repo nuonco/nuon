@@ -14,7 +14,7 @@ type GetMostRecentHeartBeatRequest struct {
 	RunnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID)

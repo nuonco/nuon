@@ -13,9 +13,9 @@ type GetInstallStateRequest struct {
 	InstallID string `json:"install_id" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallID
-// @timeout 10s
+// @start-to-close-timeout 10s
 func (a *Activities) GetInstallState(ctx context.Context, req *GetInstallStateRequest) (*state.State, error) {
 	state, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
 	if err != nil {

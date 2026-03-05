@@ -26,7 +26,7 @@ type statePartial struct {
 }
 
 // GenerateState generates the state for an install
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @task-timeout 30m
 // @id-template {{.CallerID}}-generate-state

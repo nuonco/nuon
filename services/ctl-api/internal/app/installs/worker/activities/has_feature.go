@@ -10,7 +10,7 @@ type HasFeatureRequest struct {
 	Feature string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field Feature
 func (a *Activities) HasFeature(ctx context.Context, req HasFeatureRequest) (bool, error) {
 	return a.features.FeatureEnabled(ctx, app.OrgFeature(req.Feature))

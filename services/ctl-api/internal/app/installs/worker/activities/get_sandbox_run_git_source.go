@@ -13,7 +13,7 @@ type GetSandboxRunGitSourceRequest struct {
 	AppConfigID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field AppConfigID
 func (a *Activities) GetSandboxRunGitSource(ctx context.Context, req GetSandboxRunGitSourceRequest) (*plantypes.GitSource, error) {
 	cfg, err := a.appsHelpers.GetFullAppConfig(ctx, req.AppConfigID, false)

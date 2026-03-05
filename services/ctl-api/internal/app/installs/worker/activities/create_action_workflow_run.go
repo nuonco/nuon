@@ -24,7 +24,7 @@ type CreateActionWorkflowRunRequest struct {
 	Role       string             `json:"role,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateActionWorkflowRun(ctx context.Context, req *CreateActionWorkflowRunRequest) (*app.InstallActionWorkflowRun, error) {
 	return a.createActionWorkflowRun(ctx,
 		req.ActionWorkflowID,

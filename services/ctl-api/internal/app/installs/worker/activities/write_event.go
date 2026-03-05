@@ -16,7 +16,7 @@ type WriteEventRequest struct {
 	OperationStatus app.OperationStatus  `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) WriteEvent(ctx context.Context, req WriteEventRequest) error {
 	if req.DeployID != "" {
 		return a.helpers.WriteDeployEvent(ctx, req.DeployID, req.Operation, req.OperationStatus)

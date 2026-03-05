@@ -14,7 +14,7 @@ const (
 	defaultPollTimeout time.Duration = time.Second * 10
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 3m
 func (w *Workflows) PollDependencies(ctx workflow.Context, sreq signals.RequestSignal) error {

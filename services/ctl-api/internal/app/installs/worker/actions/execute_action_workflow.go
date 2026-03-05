@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ExecuteActionWorkflowRun(ctx workflow.Context, req signals.RequestSignal) error {
@@ -54,7 +54,7 @@ func (w *Workflows) ExecuteActionWorkflowRun(ctx workflow.Context, req signals.R
 	return nil
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @task-timeout 30m
 func (w *Workflows) ExecuteActionWorkflow(ctx workflow.Context, req signals.RequestSignal) error {

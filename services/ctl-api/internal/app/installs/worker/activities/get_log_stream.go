@@ -11,7 +11,7 @@ type GetLogStreamRequest struct {
 	LogStreamID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field LogStreamID
 func (a *Activities) GetLogStream(ctx context.Context, req GetLogStreamRequest) (*app.LogStream, error) {
 	return a.getLogStream(ctx, req.LogStreamID)

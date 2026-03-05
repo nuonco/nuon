@@ -15,7 +15,7 @@ type UpdateInstallComponentStatusRequest struct {
 	StatusDescription  string                     `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateInstallComponentStatus(ctx context.Context, req UpdateInstallComponentStatusRequest) error {
 	installComponent := app.InstallComponent{
 		ID: req.InstallComponentID,

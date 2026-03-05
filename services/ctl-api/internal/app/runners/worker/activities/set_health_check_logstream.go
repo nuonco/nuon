@@ -13,7 +13,7 @@ type SetHealthCheckRunnerJobRequest struct {
 	RunnerJobID   string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) SetHealthCheckRunnerJob(ctx context.Context, req SetHealthCheckRunnerJobRequest) error {
 	hc := app.RunnerHealthCheck{
 		ID: req.HealthCheckID,

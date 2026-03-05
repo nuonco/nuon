@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @execution-timeout 30m
 func (w *Workflows) DeprovisionDNS(ctx workflow.Context, sreq signals.RequestSignal) error {

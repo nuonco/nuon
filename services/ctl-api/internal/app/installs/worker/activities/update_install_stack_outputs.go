@@ -16,7 +16,7 @@ type UpdateInstallStackOutputs struct {
 	Data                     map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateInstallStackOutputs(ctx context.Context, req UpdateInstallStackOutputs) error {
 	outputs := app.InstallStackOutputs{}
 	res := a.db.WithContext(ctx).

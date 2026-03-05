@@ -21,7 +21,7 @@ type CreateActionWorkflowRunTokenResponse struct {
 	APIURL string `json:"api_url"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) CreateActionWorkflowRunToken(ctx context.Context, req *CreateActionWorkflowRunTokenRequest) (*CreateActionWorkflowRunTokenResponse, error) {
 	email := account.ServiceAccountEmail(req.RunnerID)

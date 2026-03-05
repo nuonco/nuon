@@ -16,7 +16,7 @@ type UpdateRunStatusRequest struct {
 	SkipStatusSync    bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusRequest) error {
 	install := app.InstallSandboxRun{
 		ID: req.RunID,

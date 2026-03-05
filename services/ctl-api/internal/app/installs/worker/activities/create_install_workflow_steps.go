@@ -22,7 +22,7 @@ type CreateInstallWorkflowStepRequest struct {
 	Metadata          pgtype.Hstore                 `json:"metadata" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateInstallWorkflowStep(ctx context.Context, req CreateInstallWorkflowStepRequest) error {
 	step := &app.WorkflowStep{
 		InstallWorkflowID: req.InstallWorkflowID,

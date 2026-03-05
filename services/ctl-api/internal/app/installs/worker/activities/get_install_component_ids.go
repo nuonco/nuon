@@ -12,7 +12,7 @@ type GetInstallComponentIDsRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) GetInstallComponentIDs(ctx context.Context, req GetInstallComponentIDsRequest) ([]string, error) {
 	install := &app.Install{}

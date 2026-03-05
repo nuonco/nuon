@@ -15,7 +15,7 @@ type GetInstallComponentStateRequest struct {
 	InstallComponentID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallComponentID
 func (h *Activities) GetInstallComponentState(ctx context.Context, req GetInstallComponentStateRequest) (*app.InstallComponent, error) {
 	var installComponent app.InstallComponent

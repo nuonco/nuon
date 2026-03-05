@@ -12,7 +12,7 @@ type CreateInstallWorkflowApprovalRequest struct {
 	InstallWorkflowStepID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateInstallWorkflowApproval(ctx context.Context, req *CreateInstallWorkflowApprovalRequest) (*app.WorkflowStepApproval, error) {
 	var step app.WorkflowStep
 	res := a.db.WithContext(ctx).

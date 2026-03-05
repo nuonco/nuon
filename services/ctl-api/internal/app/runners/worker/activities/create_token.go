@@ -20,7 +20,7 @@ type CreateTokenResponse struct {
 	Token string `json:"token"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateToken(ctx context.Context, req CreateTokenRequest) (*CreateTokenResponse, error) {
 	email := account.ServiceAccountEmail(req.RunnerID)
 

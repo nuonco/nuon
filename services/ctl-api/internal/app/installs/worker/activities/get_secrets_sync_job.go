@@ -13,7 +13,7 @@ type GetSecretsSyncJobRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) GetSecretsSyncJob(ctx context.Context, req GetSecretsSyncJobRequest) (*app.RunnerJob, error) {
 	install, err := a.getInstall(ctx, req.InstallID)

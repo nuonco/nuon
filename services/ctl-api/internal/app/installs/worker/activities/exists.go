@@ -11,7 +11,7 @@ type CheckExistsRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
 // @by-field ID

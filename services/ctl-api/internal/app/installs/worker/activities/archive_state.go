@@ -10,7 +10,7 @@ type ArchiveStateRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest) error {
 	retainCount := 50 // Number of states to retain
 

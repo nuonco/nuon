@@ -15,7 +15,7 @@ type GetComponentLatestBuildRequest struct {
 	ComponentID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field ComponentID
 func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetComponentLatestBuildRequest) (*app.ComponentBuild, error) {
 	var build app.ComponentBuild

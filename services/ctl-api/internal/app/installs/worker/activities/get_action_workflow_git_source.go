@@ -13,7 +13,7 @@ type GetActionWorkflowGitSourceRequest struct {
 	StepID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field StepID
 func (a *Activities) GetActionWorkflowStepGitSource(ctx context.Context, req GetActionWorkflowGitSourceRequest) (*plantypes.GitSource, error) {
 	cfg, err := a.getActionWorkflowStepConfig(ctx, req.StepID)

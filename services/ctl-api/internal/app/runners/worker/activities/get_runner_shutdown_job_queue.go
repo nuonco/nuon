@@ -19,7 +19,7 @@ type GetRunnerShutdownJobQueueRequest struct {
 	RunnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) GetRunnerShutdownJobQueue(ctx context.Context, req *GetRunnerShutdownJobQueueRequest) ([]*app.RunnerJob, error) {
 	// Get queued, available, and in progress shutdown jobs from the operation gruop

@@ -11,7 +11,7 @@ type GetJobExecutionStatusRequest struct {
 	JobExecutionID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetJobExecutionStatus(ctx context.Context, req GetJobExecutionStatusRequest) (app.RunnerJobExecutionStatus, error) {
 	jobExecution, err := a.getRunnerJobExecution(ctx, req.JobExecutionID)
 	if err != nil {

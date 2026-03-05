@@ -13,7 +13,7 @@ type GetJobRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field ID
 // @start-to-close-timeout 10s
 func (a *Activities) GetJob(ctx context.Context, req *GetJobRequest) (*app.RunnerJob, error) {

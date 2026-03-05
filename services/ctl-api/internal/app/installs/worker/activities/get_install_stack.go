@@ -11,7 +11,7 @@ type GetInstallStackRequest struct {
 	InstallID string `json:"id" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) GetInstallStack(ctx context.Context, req GetInstallStackRequest) (*app.InstallStack, error) {
 	var stack app.InstallStack

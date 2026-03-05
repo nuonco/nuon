@@ -13,7 +13,7 @@ type CreateSandboxInstallStackVersionRunRequest struct {
 	Data map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field StackVersionID
 func (a *Activities) CreateSandboxInstallStackVersionRun(ctx context.Context, req *CreateSandboxInstallStackVersionRunRequest) (*app.InstallStackVersionRun, error) {
 	versionRun := app.InstallStackVersionRun{

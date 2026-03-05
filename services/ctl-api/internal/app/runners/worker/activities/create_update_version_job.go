@@ -16,7 +16,7 @@ type CreateUpdateVersionJobRequest struct {
 	Metadata    map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateUpdateVersionJob(ctx context.Context, req *CreateUpdateVersionJobRequest) (*app.RunnerJob, error) {
 	return a.CreateJob(ctx, &CreateJobRequest{
 		RunnerID:    req.RunnerID,

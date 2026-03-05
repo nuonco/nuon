@@ -12,7 +12,7 @@ type GetAppGraphRequest struct {
 	Reverse bool `json:"reverse"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetAppGraph(ctx context.Context, req GetAppGraphRequest) ([]string, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {

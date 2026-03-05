@@ -11,7 +11,7 @@ type UpdateInstallInputsFromStackRequest struct {
 	InstallStackVersionID string            `temporaljson:"install_stack_version_id"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) UpdateInstallInputsFromStack(ctx context.Context, req *UpdateInstallInputsFromStackRequest) error {
 	return a.helpers.UpdateInstallInputsFromStackOutputs(ctx, req.InstallStackVersionID, req.InstallID, req.InputConfigID, req.InputValues)

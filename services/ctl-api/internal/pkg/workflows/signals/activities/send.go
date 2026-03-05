@@ -9,7 +9,6 @@ import (
 	generalsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
 	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	releasessignals "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/signals"
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
@@ -45,12 +44,6 @@ func (a *Activities) PkgSignalsSendAppsSignal(ctx context.Context, req *SendSign
 
 // @temporal-gen-v2 activity
 func (a *Activities) PkgSignalsSendOrgsSignal(ctx context.Context, req *SendSignalRequest[*orgssignals.Signal]) error {
-	a.evClient.Send(ctx, req.ID, req.Signal)
-	return nil
-}
-
-// @temporal-gen-v2 activity
-func (a *Activities) PkgSignalsSendReleasesSignal(ctx context.Context, req *SendSignalRequest[*releasessignals.Signal]) error {
 	a.evClient.Send(ctx, req.ID, req.Signal)
 	return nil
 }

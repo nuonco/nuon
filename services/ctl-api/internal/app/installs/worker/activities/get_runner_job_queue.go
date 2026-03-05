@@ -18,7 +18,7 @@ type GetRunnerJobQueueRequest struct {
 	JobID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @by-field JobID
 func (a *Activities) GetRunnerJobQueue(ctx context.Context, req *GetRunnerJobQueueRequest) ([]*app.RunnerJob, error) {
 	job, err := a.GetJob(ctx, &GetJobRequest{
