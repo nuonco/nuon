@@ -1,47 +1,49 @@
 ---
 title: "Nuon Security & Trust"
 description: "Learn how to position Nuon's security and user experience to customers."
-icon: "handshake"
-keywords: ["security positioning", "customer trust", "data residency", "compliance", "vendor security", "customer FAQ"]
+icon: "shield-check"
 ---
 
-Bring Your Own Cloud (BYOC) — or allowing vendors to install and manage their software in their customers’ cloud accounts — introduces scrutiny and questions from those customers. This is reasonable and to be expected since BYOC is a newer software deployment paradigm and allowing an external party to do anything in a customer cloud should be managed carefully.
+Bring Your Own Cloud (BYOC), or allowing vendors to install and manage their software in their customers' cloud accounts, introduces scrutiny and questions from those customers. This is reasonable and to be expected since BYOC is a newer software deployment paradigm and allowing an external party to do anything in a customer cloud should be managed carefully.
+
+For a technical overview of all security properties, see the [Security](/security) page.
 
 ### Secrets and Sensitive Values
 
-In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the AWS CloudFormation stack.  They are then stored in AWS Secrets Manager and are retrieved programmatically by the Nuon runner in the customer cloud account to insert into components as the vendor’s software is provisioned or updated.
+In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the [Stack](/concepts/stacks). They are then stored in the customer's cloud secret manager (e.g., AWS Secrets Manager) and are retrieved programmatically by the Nuon [Runner](/concepts/runners) in the customer cloud account to insert into [components](/concepts/components) as the vendor's software is provisioned or updated.
 
-Nuon can automatically sync secrets to a Kubernetes cluster deployed by the Nuon runner, which can then be referenced in components like Helm charts, Kubernetes manifests, and Terraform modules.
+Nuon can automatically sync secrets to a Kubernetes cluster deployed by the Runner, which can then be referenced in components like Helm charts, Kubernetes manifests, and Terraform modules.
 
 The vendor by default cannot access the secrets unless the customer happened to approve IAM roles with elevated privileges to run action scripts to view the secrets.
 
 ### Log Viewing and Exfiltration Prevention
 
-By default, Nuon only stores logs of the infrastructure changing in the customer account. e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform. Application logs are not accessible or sent to the Nuon control plane.
+By default, Nuon only stores logs of the infrastructure changing in the customer account, e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform. Application logs are not accessible or sent to the Nuon control plane.
 
-One of Nuon’s concepts is an action - which are vendor-defined scripts to deploy infrastructure but are also useful in troubleshooting and debugging. Outputs of actions are stored in the Nuon control plane. Actions are defined by IAM roles and permissions that vendor’s customers would approve before hand. If those roles were elevated enough to execute commands that can access sensitive data like a database table with `psql` or view a Kubernetes secret with `kubectl`, the outputs would be stored in the Nuon control plane.
+One of Nuon's concepts is an [action](/concepts/actions), which are vendor-defined scripts to deploy infrastructure but are also useful in troubleshooting and debugging. Outputs of actions are stored in the Nuon control plane. Actions are defined by IAM roles and permissions that vendor's customers would approve beforehand. If those roles were elevated enough to execute commands that can access sensitive data like a database table with `psql` or view a Kubernetes secret with `kubectl`, the outputs would be stored in the Nuon control plane.
 
-If vendors implement the customer dashboard, audit logs can be exposed to the customer to view what infrastructure was changed. The vendor can also export those install logs as a CSV file and share directly with the customer.
+If vendors implement the [Customer Portal](/concepts/customer-portal), audit logs can be exposed to the customer to view what infrastructure was changed. The vendor can also export those install logs as a CSV file and share directly with the customer.
 
 ### Customer Inputs
 
-Inputs are a Nuon concept where dynamic values specific to an install are entered and then referenced into the install provision workflow. With Nuon, inputs can be configured to be vendor-entered, or customer-entered. Vendor inputs may be the Kubernetes and vendor app release versions or the compute node size. Customer inputs could be an AI or vendor license key.
+[Inputs](/concepts/app-inputs) are dynamic values specific to an install that are entered and then referenced into the install provision workflow. With Nuon, inputs can be configured to be vendor-entered or customer-entered. Vendor inputs may be the Kubernetes and vendor app release versions or the compute node size. Customer inputs could be an AI or vendor license key.
 
-Customers enter inputs in the customer dashboard and and can be updated over time. Vendors conversely enter their inputs either in the vendor dashboard or with the Nuon CLI.
+Customers enter inputs in the customer dashboard and can be updated over time. Vendors conversely enter their inputs either in the vendor dashboard or with the Nuon CLI.
 
 ### Customer Cloud Permissions
 
-When customers deploy the vendor's application through Nuon, they run a CloudFormation stack in your own AWS account that creates the IAM roles and policies defining what Nuon's runner can do. The runner is a lightweight agent deployed entirely within their cloud account that connects outbound-only to Nuon's control plane—no VPN tunnels, no cross-account access, and no inbound connections required.
+When customers deploy the vendor's application through Nuon, they run a [Stack](/concepts/stacks) in their own cloud account that creates the IAM roles and policies defining what Nuon's Runner can do. The Runner is a lightweight agent deployed entirely within their cloud account that connects outbound-only to Nuon's control plane. No VPN tunnels, no cross-account access, and no inbound connections required.
 
-The vendor's app config defines three scoped IAM roles with different permission levels: provision (for initial setup), deprovision (for removal, automatically disabled after use), and maintenance (for ongoing updates and monitoring). Customers control these permissions directly through the CloudFormation stack and can toggle them on or off at any time.
+The vendor's app config defines three scoped IAM roles with different permission levels: provision (for initial setup), deprovision (for removal, automatically disabled after use), and maintenance (for ongoing updates and monitoring). Customers control these permissions directly through the Stack and can toggle them on or off at any time.
 
-For emergency access, break-glass permissions work the same way. Customers grant or revoke elevated access by updating parameters in their CloudFormation stack, giving them complete control over when emergency permissions are enabled. All runner actions are logged for complete audit visibility. This architecture ensures the vendor's software can be deployed and managed in the customers' environment without ever exposing their cloud credentials to external parties.
-
+For emergency access, break-glass permissions work the same way. Customers grant or revoke elevated access by updating parameters in their Stack, giving them complete control over when emergency permissions are enabled. All Runner actions are logged for complete audit visibility. This architecture ensures the vendor's software can be deployed and managed in the customers' environment without ever exposing their cloud credentials to external parties.
 
 ### Nuon Deployment Options
 
-Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors’ apps, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transet and Auth0 and their Google account for Nuon authentication.
+Nuon Cloud is our SaaS offering primarily targeted for free trials and smaller customers. Vendors' apps, installs, and logs are stored in an encrypted PostgreSQL database and securely accessed by the vendors and customers using TLS for encryption of data in transit and Auth0 for authentication.
 
-For vendors and their customers concerned about data residency and multiple SaaS 3rd parties in the loop, Nuon supports self-hosting Nuon’s control plane in the vendor’s AWS cloud. Nuon uses its BYOC product to provision and update Nuon. In this deployment scenario, the metadata and logs about customer installs are stored encrypted in PostgreSQL RDS in the vendor’s AWS cloud. The vendor can cut off access of the Nuon runner to the Nuon control plane except as required during maintenance windows to upgrade the Nuon control plane. This offering is called Nuon BYOC.
+For vendors and their customers concerned about data residency and multiple SaaS 3rd parties in the loop, Nuon supports self-hosting Nuon's control plane in the vendor's AWS cloud. Nuon uses its BYOC product to provision and update Nuon. In this deployment scenario, the metadata and logs about customer installs are stored encrypted in PostgreSQL RDS in the vendor's AWS cloud. The vendor can cut off access of the Nuon Runner to the Nuon control plane except as required during maintenance windows to upgrade the Nuon control plane. This offering is called Nuon BYOC.
 
-Nuon is working on a fully self-hosted option where the vendor can take Nuon’s Helm charts and deploy Nuon manually into its cloud account.
+Nuon also supports fully self-hosted deployments where the vendor can deploy Nuon using Helm charts into their own cloud account.
+
+For a technical overview of all these properties, see the [Security](/security) page.

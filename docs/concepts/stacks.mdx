@@ -1,0 +1,42 @@
+---
+title: "Stacks"
+icon: "layer-group"
+description: "Stacks are cloud-native templates that bootstrap an install in a customer's cloud account."
+---
+
+A Stack is the first thing deployed into a customer's cloud account when an install is created. It is a cloud-native infrastructure template that provisions the foundational resources needed to run the install.
+
+- On **AWS**, this is a CloudFormation stack.
+- On **Azure**, this is a Bicep deployment.
+
+## What does a Stack create?
+
+A Stack provisions:
+
+- **Networking** by creating a new VPC or connecting to an existing one provided by the customer
+- **The [Runner](/concepts/runners)** as a VM with Docker running the Runner binary
+- **IAM roles and permissions** for the Runner to operate
+
+Stacks also support customers bringing their own Kubernetes clusters or other existing infrastructure through [inputs](/concepts/app-configuration#inputs).
+
+## How is a Stack deployed?
+
+When a vendor creates an install, Nuon generates a Stack template link. The vendor shares this link with the customer, who deploys it in their cloud console or CLI using their own credentials. This is how access is granted: the customer creates the resources themselves.
+
+No cross-account access is required. The customer retains full ownership and visibility of all infrastructure created by the Stack.
+
+![Install stack](../images/concepts/runner/install-stack.png)
+
+## Customer Control
+
+The Stack gives the customer full control over the Runner's access. Through the stack parameters, the customer can:
+
+- **Enable or disable the Runner** to stop it from executing jobs
+- **Configure IAM roles and policies** to control what the Runner can do
+- **Grant break glass roles** for temporary elevated access during emergencies, which the customer can revoke at any time
+
+This means the customer always has a killswitch. See [Install Access Permissions](/guides/install-access-permissions) and [Break Glass](/config-ref/break-glass) for details.
+
+## Stack Inputs
+
+Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-configuration#secrets) are entered by the customer when deploying the stack template, and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-configuration#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.

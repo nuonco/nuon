@@ -5,7 +5,11 @@ icon: "compass"
 keywords: ["BYOC", "bring your own cloud", "concepts", "platform overview", "how Nuon works"]
 ---
 
-This section of our docs outlines the basic concepts you should understand to get the most of Nuon and the BYOC model.
+Nuon is built around three pillars: packaging your app, supporting customer infrastructure, and delivering updates continuously. This section covers the core concepts behind each.
+
+## Connect Your App
+
+Everything you define as a vendor to package your application for BYOC delivery.
 
 <CardGroup cols={2}>
 
@@ -13,48 +17,72 @@ This section of our docs outlines the basic concepts you should understand to ge
     Package your application code and infrastructure as versioned, installable BYOC products.
   </Card>
 
-  <Card title="Sandboxes" icon="border-all" href="/concepts/sandboxes">
-    Define the base infrastructure layer provisioned in each customer's cloud account.
-  </Card>
-
   <Card title="Components" icon="object-group" href="/concepts/components">
     Wire up Helm charts, Terraform modules, Kubernetes manifests, and container images.
   </Card>
 
-  <Card title="Installs" icon="cube" href="/concepts/installs">
-    Instances of your app deployed and running in a customer's cloud account.
-  </Card>
-
-  <Card title="Actions" icon="circle-play" href="/concepts/actions">
-    Run operational scripts for health checks, migrations, and day-2 operations.
-  </Card>
-
-  <Card title="Workflows" icon="circle-nodes" href="/concepts/workflows">
-    Orchestrate the deployment, update, and teardown lifecycle of apps and components.
-  </Card>
-
-  <Card title="Policies" icon="shield" href="/concepts/policies">
-    Enforce compliance and security rules across builds and infrastructure deployments.
-  </Card>
-
-  <Card title="Runners" icon="shoe-prints" href="/concepts/runners">
-    Egress-only agents that deploy and manage installs inside customer cloud accounts.
+  <Card title="Sandboxes" icon="border-all" href="/concepts/sandboxes">
+    Define the base infrastructure layer provisioned in each customer's cloud account.
   </Card>
 
   <Card title="Inputs" icon="sliders" href="/concepts/app-inputs">
     Customer-supplied values — region, instance type, API keys — that configure each install.
   </Card>
 
-  <Card title="Operation Roles" icon="user-lock" href="/concepts/operation-roles">
-    Map IAM roles to specific operations for least-privilege access in customer accounts.
+  <Card title="Secrets" icon="key" href="/concepts/app-secrets">
+    Manage sensitive values like credentials and API keys used in app configuration.
   </Card>
 
   <Card title="App Variables" icon="code" href="/concepts/app-variables">
     Store and share dynamic values across all installs of an app via the API.
   </Card>
 
-  <Card title="Secrets" icon="key" href="/concepts/app-secrets">
-    Manage sensitive values like credentials and API keys used in app configuration.
+</CardGroup>
+
+## Support Customer Infrastructure
+
+Deploy into customer cloud accounts and adapt to their existing infrastructure.
+
+<CardGroup cols={2}>
+
+  <Card title="Installs" icon="cube" href="/concepts/installs">
+    Instances of your app deployed and running in a customer's cloud account.
+  </Card>
+
+  <Card title="Stacks" icon="layer-group" href="/concepts/stacks">
+    Cloud-native templates that bootstrap an install in a customer's cloud account.
+  </Card>
+
+  <Card title="Runners" icon="shoe-prints" href="/concepts/runners">
+    Egress-only agents that deploy and manage installs inside customer cloud accounts.
+  </Card>
+
+  <Card title="Operation Roles" icon="user-lock" href="/concepts/operation-roles">
+    Map IAM roles to specific operations for least-privilege access in customer accounts.
+  </Card>
+
+</CardGroup>
+
+## Continuous Delivery
+
+Push updates with governance, audit trails, and day-2 operational control.
+
+<CardGroup cols={2}>
+
+  <Card title="Workflows" icon="circle-nodes" href="/concepts/workflows">
+    Orchestrate the deployment, update, and teardown lifecycle of apps and components.
+  </Card>
+
+  <Card title="Actions" icon="circle-play" href="/concepts/actions">
+    Run operational scripts for health checks, migrations, and day-2 operations.
+  </Card>
+
+  <Card title="Policies" icon="shield" href="/concepts/policies">
+    Enforce compliance and security rules across builds and infrastructure deployments.
+  </Card>
+
+  <Card title="Customer Experience" icon="users" href="/concepts/customer-portal">
+    How your customers interact with installs — via the hosted portal, your own product, or CLI.
   </Card>
 
 </CardGroup>
