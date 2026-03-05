@@ -190,6 +190,10 @@
             "group": "Configuration",
             "pages": [
               "guides/app-install-life-cycle",
+              "guides/managing-apps",
+              "guides/managing-components",
+              "guides/configuring-sandboxes",
+              "guides/configuring-inputs-and-secrets",
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
