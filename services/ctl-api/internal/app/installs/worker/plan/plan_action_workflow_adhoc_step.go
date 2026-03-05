@@ -32,7 +32,7 @@ func (p *Planner) createAdhocStepPlan(ctx workflow.Context,
 
 	adhocCfg := step.AdHocConfig
 	for k, v := range adhocCfg.EnvVars {
-		renderedVal, err := render.Render(*v, stateMap)
+		renderedVal, err := render.RenderV2(*v, stateMap)
 		if err != nil {
 			l.Error("error rendering env-var",
 				zap.String("env-var", *v),
@@ -45,7 +45,7 @@ func (p *Planner) createAdhocStepPlan(ctx workflow.Context,
 
 	if adhocCfg.InlineContents != "" {
 		l.Debug("rendering inline contents")
-		renderedVal, err := render.Render(adhocCfg.InlineContents, stateMap)
+		renderedVal, err := render.RenderV2(adhocCfg.InlineContents, stateMap)
 		if err != nil {
 			l.Error("error rendering inline contents",
 				zap.String("input", adhocCfg.InlineContents),
@@ -61,7 +61,7 @@ func (p *Planner) createAdhocStepPlan(ctx workflow.Context,
 
 	if adhocCfg.Command != "" {
 		l.Debug("rendering command")
-		renderedVal, err := render.Render(adhocCfg.Command, stateMap)
+		renderedVal, err := render.RenderV2(adhocCfg.Command, stateMap)
 		if err != nil {
 			l.Error("error rendering command",
 				zap.String("command", adhocCfg.Command),
