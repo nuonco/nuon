@@ -60,6 +60,11 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-pkg \
 # Final build image that can be referenced
 FROM build-base AS final
 
+# Set GOPROXY so all service builds FROM this image inherit it — no ARG needed in downstream Dockerfiles
+ENV GOCACHE=/go/pkg/build-cache
+ENV GOMODCACHE=/go/pkg/mod
+ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
+
 # Copy the binaries and any other necessary files from the build stage
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
 COPY --from=build /src/ /src/
