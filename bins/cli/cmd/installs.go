@@ -97,7 +97,6 @@ func (c *cli) installsCmd() *cobra.Command {
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
-	createCmd.MarkFlagRequired("app-id")
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "The name you want to give this install")
 
 	if !c.cfg.Preview {
