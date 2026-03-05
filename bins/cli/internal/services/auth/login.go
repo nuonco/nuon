@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 var (
@@ -136,39 +137,78 @@ func (a *Service) loginWithAuth0(ctx context.Context, cfg *models.ServiceCLIConf
 	}, nil
 }
 
-// selectAPIURL prompts the user to select their deployment type and returns the appropriate API URL
+// selectAPIURL checks for a configured API URL and either confirms it or prompts for selection.
 func (a *Service) selectAPIURL() (string, error) {
-	const defaultURL = "https://api.nuon.co"
+	const nuonCloudURL = "https://api.nuon.co"
 
+	// Check if an API URL was explicitly configured (via config file or NUON_API_URL env).
+	// The struct default is set directly, not via viper, so GetString returns ""
+	// when no explicit value was provided.
+	configuredURL := a.cfg.GetString("api_url")
+
+	// No URL configured — show deployment type selector (first-time user)
+	if configuredURL == "" {
+		return a.promptDeploymentType(nuonCloudURL)
+	}
+
+	// URL is configured — show source info and confirm
+	displayName := configuredURL
+	if configuredURL == nuonCloudURL {
+		displayName = "Nuon Cloud"
+	}
+
+	// Print dim context line showing URL and source
+	source := a.cfg.APIURLSource
+	fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %s (%s)", configuredURL, source)))
+
+	var confirmed bool
+	confirmPrompt := &survey.Confirm{
+		Message: fmt.Sprintf("Login to %s", displayName),
+		Default: true,
+	}
+	if err := survey.AskOne(confirmPrompt, &confirmed); err != nil {
+		return "", fmt.Errorf("failed to confirm API URL: %w", err)
+	}
+
+	if confirmed {
+		return configuredURL, nil
+	}
+
+	return a.promptCustomURL()
+}
+
+// promptDeploymentType shows the Nuon Cloud / Nuon BYOC selector.
+func (a *Service) promptDeploymentType(nuonCloudURL string) (string, error) {
 	var deploymentType string
 	prompt := &survey.Select{
 		Message: "Which Nuon deployment are you using?",
 		Options: []string{"Nuon Cloud", "Nuon BYOC"},
 		Default: "Nuon Cloud",
 	}
-
 	if err := survey.AskOne(prompt, &deploymentType); err != nil {
 		return "", fmt.Errorf("failed to get deployment type: %w", err)
 	}
 
 	if deploymentType == "Nuon Cloud" {
-		return defaultURL, nil
+		return nuonCloudURL, nil
 	}
 
-	// For BYOC Nuon, ask for custom hostname
+	return a.promptCustomURL()
+}
+
+// promptCustomURL asks for a URL and normalizes the scheme.
+func (a *Service) promptCustomURL() (string, error) {
 	var customHostname string
 	hostPrompt := &survey.Input{
-		Message: "Enter your Nuon API hostname:",
-		Help:    "Example: api.your-domain.com",
+		Message: "Enter your Nuon API URL:",
+		Help:    "Example: https://api.your-domain.com or https://api.nuon.co",
 	}
-
 	if err := survey.AskOne(hostPrompt, &customHostname, survey.WithValidator(survey.Required)); err != nil {
-		return "", fmt.Errorf("failed to get custom hostname: %w", err)
+		return "", fmt.Errorf("failed to get API URL: %w", err)
 	}
 
 	customHostname = strings.TrimSpace(customHostname)
 	if !strings.HasPrefix(customHostname, "http://") && !strings.HasPrefix(customHostname, "https://") {
-		// Use http:// for localhost, https:// for everything else
 		if strings.HasPrefix(customHostname, "localhost") || strings.HasPrefix(customHostname, "127.0.0.1") {
 			customHostname = "http://" + customHostname
 		} else {
