@@ -15,10 +15,6 @@ import (
 func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
 	tags := []tags.Tag{
 		{
-			Key:   "nuon_runner_api_token",
-			Value: inp.APIToken,
-		},
-		{
 			Key:   "Name",
 			Value: fmt.Sprintf("%s-runner-instance", inp.Install.ID),
 		},
@@ -42,7 +38,6 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 			"RunnerEgressGroupId": cloudformation.Ref("RunnerSecurityGroup"),
 			"InstallId":           inp.Install.ID,
 			"RunnerId":            inp.Runner.ID,
-			"RunnerApiToken":      inp.APIToken,
 			"RunnerApiUrl":        a.cfg.RunnerAPIURL,
 			"InstanceType":        "t3a.medium",            // NOTE(fd): this may be a good thing to make configurable later
 			"RootVolumeSize":      "30",                    // NOTE(fd): this may be a good thing to make configurable later
@@ -73,10 +68,6 @@ func (a *Templates) getRunnerASGNestedStackParams() map[string]cloudformation.Pa
 		"RunnerId": {
 			Type:        "String",
 			Description: generics.ToPtr("The runner ID"),
-		},
-		"RunnerApiToken": {
-			Type:        "String",
-			Description: generics.ToPtr("API token for the runner"),
 		},
 		"RunnerApiUrl": {
 			Type:        "String",
