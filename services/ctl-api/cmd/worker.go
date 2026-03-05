@@ -82,9 +82,10 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.InstallsWorkerModule)
 	}
 
-	if (namespace == "all" || namespace == "releases") && !shouldSkipNamespace("releases") {
-		providers = append(providers, fxmodules.ReleasesWorkerModule)
-	}
+	// Releases namespace removed - being deprecated
+	// if (namespace == "all" || namespace == "releases") && !shouldSkipNamespace("releases") {
+	// 	providers = append(providers, fxmodules.ReleasesWorkerModule)
+	// }
 
 	if (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners") {
 		providers = append(providers, fxmodules.RunnersWorkerModule)

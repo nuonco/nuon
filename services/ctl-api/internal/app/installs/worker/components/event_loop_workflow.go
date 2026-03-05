@@ -19,13 +19,23 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationExecuteDeployComponentSyncAndPlan: AwaitExecuteDeployComponentSyncAndPlan,
-		signals.OperationExecuteDeployComponentApplyPlan:   AwaitExecuteDeployComponentApplyPlan,
+		signals.OperationExecuteDeployComponentSyncAndPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteDeployComponentSyncAndPlan(ctx, input)
+		},
+		signals.OperationExecuteDeployComponentApplyPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteDeployComponentApplyPlan(ctx, input)
+		},
 
-		signals.OperationExecuteDeployComponentSyncImage: AwaitExecuteDeployComponentSyncImage,
+		signals.OperationExecuteDeployComponentSyncImage: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteDeployComponentSyncImage(ctx, input)
+		},
 
-		signals.OperationExecuteTeardownComponentSyncAndPlan: AwaitExecuteTeardownComponentSyncAndPlan,
-		signals.OperationExecuteTeardownComponentApplyPlan:   AwaitExecuteTeardownComponentApplyPlan,
+		signals.OperationExecuteTeardownComponentSyncAndPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteTeardownComponentSyncAndPlan(ctx, input)
+		},
+		signals.OperationExecuteTeardownComponentApplyPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteTeardownComponentApplyPlan(ctx, input)
+		},
 	}
 }
 

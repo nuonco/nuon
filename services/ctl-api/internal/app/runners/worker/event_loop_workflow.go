@@ -17,33 +17,67 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			})
 			return AwaitRestart(ctx, req)
 		},
-		signals.OperationDelete: AwaitDelete,
+		signals.OperationDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDelete(ctx, input)
+		},
 		signals.OperationCreated: func(ctx workflow.Context, req signals.RequestSignal) error {
 			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
 			return AwaitCreated(ctx, req)
 		},
-		signals.OperationProvision:         AwaitProvision,
-		signals.OperationReprovision:       AwaitReprovision,
-		signals.OperationDeprovision:       AwaitDeprovision,
-		signals.OperationProcessJob:        AwaitProcessJob,
-		signals.OperationUpdateVersion:     AwaitUpdateVersion,
-		signals.OperationGracefulShutdown:  AwaitGracefulShutdown,
-		signals.OperationForceShutdown:     AwaitForceShutdown,
-		signals.OperationOfflineCheck:      AwaitOfflineCheck,
-		signals.OperationFlushOrphanedJobs: AwaitFlushOrphanedJobs,
+		signals.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvision(ctx, input)
+		},
+		signals.OperationReprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovision(ctx, input)
+		},
+		signals.OperationDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovision(ctx, input)
+		},
+		signals.OperationProcessJob: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProcessJob(ctx, input)
+		},
+		signals.OperationUpdateVersion: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitUpdateVersion(ctx, input)
+		},
+		signals.OperationGracefulShutdown: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitGracefulShutdown(ctx, input)
+		},
+		signals.OperationForceShutdown: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitForceShutdown(ctx, input)
+		},
+		signals.OperationOfflineCheck: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitOfflineCheck(ctx, input)
+		},
+		signals.OperationFlushOrphanedJobs: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitFlushOrphanedJobs(ctx, input)
+		},
 
 		// independent runner
-		signals.OperationProvisionServiceAccount:   AwaitProvisionServiceAccount,
-		signals.OperationReprovisionServiceAccount: AwaitReprovisionServiceAccount,
-		signals.OperationInstallStackVersionRun:    AwaitInstallStackVersionRun,
+		signals.OperationProvisionServiceAccount: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvisionServiceAccount(ctx, input)
+		},
+		signals.OperationReprovisionServiceAccount: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovisionServiceAccount(ctx, input)
+		},
+		signals.OperationInstallStackVersionRun: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitInstallStackVersionRun(ctx, input)
+		},
 
 		// independent runner management mode
-		signals.OperationMngVMShutDown: AwaitMngVMShutdown,
-		signals.OperationMngShutDown:   AwaitMngShutdown,
-		signals.OperationMngUpdate:     AwaitMngUpdate,
-		signals.OperationMngFetchToken: AwaitMngFetchToken,
+		signals.OperationMngVMShutDown: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitMngVMShutdown(ctx, input)
+		},
+		signals.OperationMngShutDown: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitMngShutdown(ctx, input)
+		},
+		signals.OperationMngUpdate: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitMngUpdate(ctx, input)
+		},
+		signals.OperationMngFetchToken: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitMngFetchToken(ctx, input)
+		},
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

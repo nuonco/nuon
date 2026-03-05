@@ -15,14 +15,24 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationDeprovisionSandboxPlan:      AwaitDeprovisionSandboxPlan,
-		signals.OperationDeprovisionSandboxApplyPlan: AwaitDeprovisionSandboxApplyPlan,
-
-		signals.OperationReprovisionSandboxPlan:      AwaitReprovisionSandboxPlan,
-		signals.OperationReprovisionSandboxApplyPlan: AwaitReprovisionSandboxApplyPlan,
-
-		signals.OperationProvisionSandboxPlan:      AwaitProvisionSandboxPlan,
-		signals.OperationProvisionSandboxApplyPlan: AwaitProvisionSandboxApplyPlan,
+		signals.OperationDeprovisionSandboxPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovisionSandboxPlan(ctx, input)
+		},
+		signals.OperationDeprovisionSandboxApplyPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovisionSandboxApplyPlan(ctx, input)
+		},
+		signals.OperationReprovisionSandboxPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovisionSandboxPlan(ctx, input)
+		},
+		signals.OperationReprovisionSandboxApplyPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovisionSandboxApplyPlan(ctx, input)
+		},
+		signals.OperationProvisionSandboxPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvisionSandboxPlan(ctx, input)
+		},
+		signals.OperationProvisionSandboxApplyPlan: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvisionSandboxApplyPlan(ctx, input)
+		},
 	}
 }
 

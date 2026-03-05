@@ -33,13 +33,33 @@ type WorkflowParams struct {
 func (w *Workflows) All() []any {
 	wkflow := runner.NewWorkflow(*w.cfg)
 
-	wkflows := []any{
+	return []any{
+		w.Created,
+		w.Delete,
+		w.Deprovision,
+		w.FlushOrphanedJobs,
+		w.ForceShutdown,
+		w.GracefulShutdown,
+		w.HealthcheckCheckRestart,
+		w.HealthcheckJobRunner,
+		w.HealthcheckUpdateNeeded,
+		w.InstallStackVersionRun,
+		w.MngFetchToken,
+		w.MngShutdown,
+		w.MngUpdate,
+		w.MngVMShutdown,
+		w.OfflineCheck,
+		w.ProcessJob,
+		w.Provision,
+		w.ProvisionServiceAccount,
+		w.Reprovision,
+		w.ReprovisionServiceAccount,
+		w.Restart,
+		w.UpdateVersion,
 		w.EventLoop,
 		w.HealthCheck,
 		wkflow.ProvisionRunner,
 	}
-
-	return append(wkflows, w.ListWorkflowFns()...)
 }
 
 func NewWorkflows(params WorkflowParams) (*Workflows, error) {

@@ -26,7 +26,7 @@ type OfflineCheckRequest struct {
 	RunnerID string `validate:"required" json:"runner_id"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) OfflineCheck(ctx workflow.Context, sreq signals.RequestSignal) error {
 	startTS := workflow.Now(ctx)
 	status := "ok"

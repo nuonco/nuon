@@ -8,7 +8,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (a *Activities) GetInstallGroupsByConfigID(ctx context.Context, configID string) ([]*app.AppBranchInstallGroup, error) {
 	var groups []*app.AppBranchInstallGroup
 
