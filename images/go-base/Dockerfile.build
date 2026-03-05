@@ -21,9 +21,10 @@ FROM build-base AS build
 # Copy golangci-lint binary from the golangci image
 COPY --from=golangci /usr/bin/golangci-lint /usr/bin/
 
-# Configure standard Go paths
-ENV GOCACHE=/go-cache
-ENV GOMODCACHE=/go-mod-cache
+# Configure standard Go paths — must match the cache mount targets below
+ENV GOCACHE=/go/pkg/build-cache
+ENV GOMODCACHE=/go/pkg/mod
+ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
 WORKDIR /src
 
@@ -35,19 +36,19 @@ COPY sdks ./sdks/
 
 # Pre-download dependencies
 RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     go mod download
 
 # Copy and generate package code (common code generation)
 COPY pkg pkg
 RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go generate ./...
 
 # Test target for pkg directory
 FROM build AS pkg-test
 RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go test -v ./...
 
 # Lint target for pkg directory

@@ -4,8 +4,6 @@ FROM ${BUILD_IMAGE} AS code
 
 ARG BIN_NAME=nuon-lsp
 ARG SERVICE=lsp
-ARG GOCACHE=/go-cache
-ARG GOMODCACHE=/go-mod-cache
 ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 
 # copy each file that is specific to the lsp into the correct directory
@@ -18,17 +16,17 @@ COPY models ./models/
 COPY sdks ./sdks/
 COPY main.go .
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     go generate ./...
 
 FROM code AS build
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/${BIN_NAME}
 
 FROM code AS test
-RUN --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     go test -v ./...
 
 FROM code AS lint
@@ -52,7 +50,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -63,7 +61,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -74,7 +72,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -85,7 +83,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -96,7 +94,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -107,7 +105,7 @@ ARG BIN_NAME=nuon-lsp
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-lsp \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
