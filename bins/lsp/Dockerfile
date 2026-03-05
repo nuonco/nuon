@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-lsp \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-lsp \
     golangci-lint run -c .golangci.yml -v
 
 FROM golang:1.25-alpine AS final

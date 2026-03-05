@@ -38,6 +38,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
     golangci-lint run -c .golangci.yml -v
 
 FROM golang:1.25-alpine AS nuon-cli
