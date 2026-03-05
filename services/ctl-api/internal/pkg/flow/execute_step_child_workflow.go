@@ -21,12 +21,6 @@ type ExecuteStepWorkflows struct {
 	ExecFn func(workflow.Context, *signaldb.SignalData, app.WorkflowStep) error
 }
 
-// ExecuteStep is the child workflow that runs a single step's ExecFn.
-//
-// @temporal-gen-v2 workflow
-// @workflow-task-queue "api"
-// @id-template step-{{.StepID}}
-// @wait-for-cancellation true
 func (w *ExecuteStepWorkflows) ExecuteStep(ctx workflow.Context, req ExecuteStepRequest) error {
 	if w.ExecFn == nil {
 		return errors.New("ExecFn not configured on ExecuteStepWorkflows")
