@@ -25,6 +25,13 @@ type AppAppBranchRun struct {
 	// app branch config
 	AppBranchConfig *AppAppBranchConfig `json:"app_branch_config,omitempty"`
 
+	// AppConfigID is the app config that was created/synced during this run
+	AppConfigID string `json:"app_config_id,omitempty"`
+
+	// CommitSHA is the VCS commit that triggered or is associated with this run
+	// DEPRECATED: Use VCSConnectionCommit relationship instead
+	CommitSha string `json:"commit_sha,omitempty"`
+
 	// CompletedAt tracks when execution finished
 	CompletedAt string `json:"completed_at,omitempty"`
 
@@ -56,6 +63,9 @@ type AppAppBranchRun struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
+	// vcs connection commit
+	VcsConnectionCommit *AppVCSConnectionCommit `json:"vcs_connection_commit,omitempty"`
+
 	// workflow
 	Workflow *AppWorkflow `json:"workflow,omitempty"`
 }
@@ -73,6 +83,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCreatedBy(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVcsConnectionCommit(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -155,6 +169,29 @@ func (m *AppAppBranchRun) validateCreatedBy(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validateVcsConnectionCommit(formats strfmt.Registry) error {
+	if swag.IsZero(m.VcsConnectionCommit) { // not required
+		return nil
+	}
+
+	if m.VcsConnectionCommit != nil {
+		if err := m.VcsConnectionCommit.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("vcs_connection_commit")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("vcs_connection_commit")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validateWorkflow(formats strfmt.Registry) error {
 	if swag.IsZero(m.Workflow) { // not required
 		return nil
@@ -191,6 +228,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVcsConnectionCommit(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -270,6 +311,31 @@ func (m *AppAppBranchRun) contextValidateCreatedBy(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("created_by")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateVcsConnectionCommit(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.VcsConnectionCommit != nil {
+
+		if swag.IsZero(m.VcsConnectionCommit) { // not required
+			return nil
+		}
+
+		if err := m.VcsConnectionCommit.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("vcs_connection_commit")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("vcs_connection_commit")
 			}
 
 			return err

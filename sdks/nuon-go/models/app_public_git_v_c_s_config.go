@@ -38,6 +38,9 @@ type AppPublicGitVCSConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// path filter
+	PathFilter string `json:"path_filter,omitempty"`
+
 	// actual configuration
 	Repo string `json:"repo,omitempty"`
 
