@@ -41,7 +41,7 @@ func GenerateActivity(data ActivityData) ([]byte, error) {
 func GenerateActivityStub(data ActivityData) ([]byte, error) {
 	// For stubs, generate minimal valid code without templates
 	var buf bytes.Buffer
-	
+
 	// Generate request type if needed
 	if data.Options.GenerateWrapper && len(data.Params) > 0 {
 		reqType := toPascalCase(data.Name) + "Request"
@@ -50,7 +50,7 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 			buf.WriteString(fmt.Sprintf("\t%s interface{}\n", p.ExportedName))
 		}
 		buf.WriteString("}\n\n")
-		
+
 		// Generate wrapper method
 		buf.WriteString(fmt.Sprintf("func (a %s) ", data.Receiver))
 		if data.Options.WrapperPrefix != "" {
@@ -66,7 +66,7 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 		buf.WriteString("\tpanic(\"stub implementation - will be replaced in phase 2\")\n")
 		buf.WriteString("}\n\n")
 	}
-	
+
 	// Generate Await function
 	buf.WriteString(fmt.Sprintf("func Await%s(ctx workflow.Context, input interface{}, opts ...*workflow.ActivityOptions) ", toPascalCase(data.Name)))
 	if data.OutputType != "" && data.OutputType != "interface{}" {
@@ -76,7 +76,7 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 	}
 	buf.WriteString("\tpanic(\"stub implementation - will be replaced in phase 2\")\n")
 	buf.WriteString("}\n\n")
-	
+
 	// Generate ByField function if needed
 	if data.Options.ByField != "" && !data.Options.ByFieldOnly {
 		buf.WriteString(fmt.Sprintf("func Await%sBy%s(ctx workflow.Context, input interface{}, opts ...*workflow.ActivityOptions) ", toPascalCase(data.Name), data.Options.ByField))
@@ -88,12 +88,12 @@ func GenerateActivityStub(data ActivityData) ([]byte, error) {
 		buf.WriteString("\tpanic(\"stub implementation - will be replaced in phase 2\")\n")
 		buf.WriteString("}\n\n")
 	}
-	
+
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
 		return buf.Bytes(), fmt.Errorf("failed to format stub source: %w", err)
 	}
-	
+
 	return formatted, nil
 }
 

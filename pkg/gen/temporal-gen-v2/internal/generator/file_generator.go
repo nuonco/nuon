@@ -336,7 +336,7 @@ func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, 
 	if pkg.TypesInfo == nil || pkg.TypesInfo.Defs == nil {
 		return getSignatureFromAST(decl)
 	}
-	
+
 	obj := pkg.TypesInfo.Defs[decl.Name]
 	if obj == nil {
 		// Fall back to AST if type info not available
@@ -452,7 +452,7 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 	if decl.Recv != nil && len(decl.Recv.List) > 0 {
 		receiver = exprToString(decl.Recv.List[0].Type)
 	}
-	
+
 	// Extract parameters
 	if decl.Type.Params != nil {
 		start := 0
@@ -464,18 +464,18 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 				start = 1
 			}
 		}
-		
+
 		for i := start; i < len(decl.Type.Params.List); i++ {
 			field := decl.Type.Params.List[i]
-			
+
 			// Skip variadic parameters (e.g., opts ...*workflow.ActivityOptions)
 			// These are always optional and handled separately in templates
 			if _, isEllipsis := field.Type.(*ast.Ellipsis); isEllipsis {
 				continue
 			}
-			
+
 			typeStr := exprToString(field.Type)
-			
+
 			for _, name := range field.Names {
 				params = append(params, Param{
 					Name:         name.Name,
@@ -485,11 +485,11 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 			}
 		}
 	}
-	
+
 	if len(params) > 0 {
 		inputType = params[0].Type
 	}
-	
+
 	// Extract return type
 	if decl.Type.Results != nil && len(decl.Type.Results.List) > 0 {
 		// If 2 returns, first is result type, second is error
@@ -498,7 +498,7 @@ func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType strin
 		}
 		// If 1 return, it's just error
 	}
-	
+
 	return inputType, outputType, params, receiver, nil
 }
 
@@ -546,7 +546,7 @@ func exprToString(expr ast.Expr) string {
 func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) (string, error) {
 	// Remove pointer prefix if present
 	structName = strings.TrimPrefix(structName, "*")
-	
+
 	// Search through all files in the package for the struct definition
 	for _, file := range pkg.Pkg.Syntax {
 		for _, decl := range file.Decls {
@@ -554,18 +554,18 @@ func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) 
 			if !ok || genDecl.Tok != token.TYPE {
 				continue
 			}
-			
+
 			for _, spec := range genDecl.Specs {
 				typeSpec, ok := spec.(*ast.TypeSpec)
 				if !ok || typeSpec.Name.Name != structName {
 					continue
 				}
-				
+
 				structType, ok := typeSpec.Type.(*ast.StructType)
 				if !ok {
 					continue
 				}
-				
+
 				// Found the struct, now find the field
 				for _, field := range structType.Fields.List {
 					for _, name := range field.Names {
@@ -574,11 +574,11 @@ func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) 
 						}
 					}
 				}
-				
+
 				return "", fmt.Errorf("field %s not found in struct %s", fieldName, structName)
 			}
 		}
 	}
-	
+
 	return "", fmt.Errorf("struct %s not found in package", structName)
 }
