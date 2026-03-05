@@ -20,7 +20,7 @@ type EmitSignalResponse struct {
 	WorkflowID    string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*EmitSignalResponse, error) {
 	// Get the emitter to access its signal template
 	var emitter app.QueueEmitter

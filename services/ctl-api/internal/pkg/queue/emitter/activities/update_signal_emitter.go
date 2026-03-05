@@ -18,7 +18,7 @@ type UpdateSignalEmitterResponse struct {
 	Success bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateSignalEmitter(ctx context.Context, req *UpdateSignalEmitterRequest) (*UpdateSignalEmitterResponse, error) {
 	// Update the queue signal to set its emitter relationship
 	res := a.db.WithContext(ctx).

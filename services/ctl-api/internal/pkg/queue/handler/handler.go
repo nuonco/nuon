@@ -30,7 +30,7 @@ type HandlerRequest struct {
 	QueueSignalID string `validate:"required"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @task-queue "handler"
 // @id-template queue-{{.QueueID}}-handler-{{.QueueSignalID}}
 func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
