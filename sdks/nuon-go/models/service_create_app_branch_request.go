@@ -19,10 +19,6 @@ import (
 // swagger:model service.CreateAppBranchRequest
 type ServiceCreateAppBranchRequest struct {
 
-	// connected github vcs config id
-	// Required: true
-	ConnectedGithubVcsConfigID *string `json:"connected_github_vcs_config_id"`
-
 	// name
 	// Required: true
 	// Min Length: 1
@@ -33,10 +29,6 @@ type ServiceCreateAppBranchRequest struct {
 func (m *ServiceCreateAppBranchRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateConnectedGithubVcsConfigID(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
@@ -44,15 +36,6 @@ func (m *ServiceCreateAppBranchRequest) Validate(formats strfmt.Registry) error 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *ServiceCreateAppBranchRequest) validateConnectedGithubVcsConfigID(formats strfmt.Registry) error {
-
-	if err := validate.Required("connected_github_vcs_config_id", "body", m.ConnectedGithubVcsConfigID); err != nil {
-		return err
-	}
-
 	return nil
 }
 
