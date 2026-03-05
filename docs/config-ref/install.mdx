@@ -14,6 +14,7 @@ title: 'Install'
 | **`name`**<br/>string | name of the install Unique identifier for this install configuration | **✅ Required** | `"production"`, `"staging"`, `"customer-acme"` |
 | **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
+| **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
 
 ### `aws_account`
@@ -21,4 +22,11 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`region`**<br/>string | AWS region AWS region where the infrastructure will be deployed | **✅ Required** | `"us-east-1"`, `"us-west-2"`, `"eu-west-1"` |
+
+### `gcp_account`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`project_id`**<br/>string | GCP project ID GCP project where the infrastructure will be deployed | **✅ Required** | `"my-gcp-project"` |
+| **`region`**<br/>string | GCP region GCP region where the infrastructure will be deployed | **✅ Required** | `"us-central1"`, `"europe-west1"` |
 

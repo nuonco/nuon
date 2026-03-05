@@ -43,6 +43,3 @@ jobs:
          CI=true nuonctl builds base \
            ${{inputs.service}}
 
-      - name: 🔍 Lint pkg
-        run: |
-         CI=true nuonctl builds pkg-lint

@@ -696,3 +696,24 @@ export const AZURE_REGIONS = [
     value: "israelcentral",
   },
 ];
+
+export const GCP_REGIONS = [
+  { text: "Iowa (US)", value: "us-central1", iconVariant: "flag-US" },
+  { text: "South Carolina (US)", value: "us-east1", iconVariant: "flag-US" },
+  { text: "N. Virginia (US)", value: "us-east4", iconVariant: "flag-US" },
+  { text: "Oregon (US)", value: "us-west1", iconVariant: "flag-US" },
+  { text: "Los Angeles (US)", value: "us-west2", iconVariant: "flag-US" },
+  { text: "Las Vegas (US)", value: "us-west4", iconVariant: "flag-US" },
+  { text: "Belgium (EU)", value: "europe-west1", iconVariant: "flag-BE" },
+  { text: "London (EU)", value: "europe-west2", iconVariant: "flag-GB" },
+  { text: "Frankfurt (EU)", value: "europe-west3", iconVariant: "flag-DE" },
+  { text: "Netherlands (EU)", value: "europe-west4", iconVariant: "flag-NL" },
+  { text: "Finland (EU)", value: "europe-north1", iconVariant: "flag-FI" },
+  { text: "Tokyo (Asia)", value: "asia-northeast1", iconVariant: "flag-JP" },
+  { text: "Seoul (Asia)", value: "asia-northeast3", iconVariant: "flag-KR" },
+  { text: "Mumbai (Asia)", value: "asia-south1", iconVariant: "flag-IN" },
+  { text: "Singapore (Asia)", value: "asia-southeast1", iconVariant: "flag-SG" },
+  { text: "Sydney (Australia)", value: "australia-southeast1", iconVariant: "flag-AU" },
+  { text: "Montreal (Canada)", value: "northamerica-northeast1", iconVariant: "flag-CA" },
+  { text: "Sao Paulo (S. America)", value: "southamerica-east1", iconVariant: "flag-BR" },
+];

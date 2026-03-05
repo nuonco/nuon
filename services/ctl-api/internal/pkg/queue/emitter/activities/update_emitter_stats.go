@@ -19,7 +19,7 @@ type UpdateEmitterStatsResponse struct {
 	EmitCount int64
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateEmitterStats(ctx context.Context, req *UpdateEmitterStatsRequest) (*UpdateEmitterStatsResponse, error) {
 	now := time.Now()
 

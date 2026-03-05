@@ -18,7 +18,7 @@ type MarkEmitterFiredResponse struct {
 	Success bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) MarkEmitterFired(ctx context.Context, req *MarkEmitterFiredRequest) (*MarkEmitterFiredResponse, error) {
 	now := time.Now()
 

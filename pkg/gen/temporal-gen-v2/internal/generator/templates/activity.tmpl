@@ -101,7 +101,7 @@ func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByField
 
 	ctx = workflow.WithActivityOptions(ctx, options)
 	{{- if .Options.ByFieldOnly}}
-	req := {{$reqType}}{
+	req := {{if isPointer $reqType}}&{{derefType $reqType}}{{else}}{{$reqType}}{{end}}{
 		{{.Options.ByField}}: input,
 	}
 	{{- if .Options.Namespace}}
@@ -122,7 +122,7 @@ func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByField
 {{- if and .Options.ByField (not .Options.ByFieldOnly)}}
 // Await{{.Name | ToPascal}}By{{.Options.ByField}} is a wrapper for the {{.Name | ToPascal}} activity
 func Await{{.Name | ToPascal}}By{{.Options.ByField}}(ctx workflow.Context, input {{.ByFieldType}}, opts ...*workflow.ActivityOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
-	req := {{$reqType}}{
+	req := {{if isPointer $reqType}}&{{derefType $reqType}}{{else}}{{$reqType}}{{end}}{
 		{{.Options.ByField}}: input,
 	}
 	return Await{{.Name | ToPascal}}(ctx, req, opts...)

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -194,11 +196,13 @@ func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 		envVars[k] = v
 	}
 
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
-		return envVars
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+	case app.AppRunnerTypeGCP:
+		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
+		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 	}
-
-	envVars["AWS_REGION"] = "{{.nuon.install_stack.outputs.region}}"
 
 	return envVars
 }
@@ -210,22 +214,37 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 		vars[k] = v
 	}
 
-	if appCfg.RunnerConfig.Type != app.AppRunnerTypeAWS {
+	var builtin map[string]any
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		builtin = map[string]any{
+			"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
+			"nuon_id":                  "{{.nuon.install.id}}",
+			"region":                   "{{.nuon.install_stack.outputs.region}}",
+			"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
+			"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
+			"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
+			"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
+			"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
+			"tags": map[string]string{
+				"NUON_INSTALL_ID": "{{.nuon.install.id}}",
+			},
+		}
+	case app.AppRunnerTypeGCP:
+		builtin = map[string]any{
+			"nuon_id":              "{{.nuon.install.id}}",
+			"project_id":           "{{.nuon.install_stack.outputs.project_id}}",
+			"region":               "{{.nuon.install_stack.outputs.region}}",
+			"network":              "{{.nuon.install_stack.outputs.network_name}}",
+			"subnetwork":           "{{.nuon.install_stack.outputs.private_subnet_name}}",
+			"public_root_domain":   fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
+			"internal_root_domain": fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
+			"labels": map[string]string{
+				"nuon-install-id": "{{.nuon.install.id}}",
+			},
+		}
+	default:
 		return vars, nil
-	}
-
-	builtin := map[string]any{
-		"vpc_id":                   "{{.nuon.install_stack.outputs.vpc_id}}",
-		"nuon_id":                  "{{.nuon.install.id}}",
-		"region":                   "{{.nuon.install_stack.outputs.region}}",
-		"public_root_domain":       fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain),
-		"internal_root_domain":     fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain),
-		"provision_iam_role_arn":   "{{.nuon.install_stack.outputs.provision_iam_role_arn}}",
-		"deprovision_iam_role_arn": "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}",
-		"maintenance_iam_role_arn": "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}",
-		"tags": map[string]string{
-			"NUON_INSTALL_ID": "{{.nuon.install.id}}",
-		},
 	}
 
 	for k, v := range builtin {
@@ -235,38 +254,41 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	return vars, nil
 }
 
-// func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
-// 	switch {
-// 	case outputs.AWSStackOutputs != nil:
-// 		awsOutputs := outputs.AWSStackOutputs
-// 		roleARN := awsOutputs.ProvisionIAMRoleARN
-// 		switch run.RunType {
-// 		case app.SandboxRunTypeReprovision:
-// 			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
-// 		case app.SandboxRunTypeDeprovision:
-// 			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
-// 		}
-//
-// 		return &awscredentials.Config{
-// 			Region: outputs.AWSStackOutputs.Region,
-// 			AssumeRole: &awscredentials.AssumeRoleConfig{
-// 				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
-// 				RoleARN:     roleARN,
-// 			},
-// 		}, nil, nil
-// 	case outputs.AzureStackOutputs != nil:
-// 		azureOutputs := outputs.AzureStackOutputs
-// 		return nil, &azurecredentials.Config{
-// 			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
-// 				SubscriptionID:       azureOutputs.SubscriptionID,
-// 				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
-// 			},
-// 			UseDefault: true,
-// 		}, nil
-// 	}
-//
-// 	return nil, nil, errors.New("unable to get auth data from stack outputs")
-// }
+func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
+	switch {
+	case outputs.AWSStackOutputs != nil:
+		awsOutputs := outputs.AWSStackOutputs
+		roleARN := awsOutputs.ProvisionIAMRoleARN
+		switch run.RunType {
+		case app.SandboxRunTypeReprovision:
+			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
+		case app.SandboxRunTypeDeprovision:
+			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
+		}
+
+		return &awscredentials.Config{
+			Region: outputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
+				RoleARN:     roleARN,
+			},
+		}, nil, nil
+	case outputs.AzureStackOutputs != nil:
+		azureOutputs := outputs.AzureStackOutputs
+		return nil, &azurecredentials.Config{
+			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+				SubscriptionID:       azureOutputs.SubscriptionID,
+				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
+			},
+			UseDefault: true,
+		}, nil
+	case outputs.GCPStackOutputs != nil:
+		// GCP runner uses attached service account on GCE instance — no explicit credentials needed
+		return nil, nil, nil
+	}
+
+	return nil, nil, errors.New("unable to get auth data from stack outputs")
+}
 
 // TODO(ja): flesh out sandbox mode for azure
 func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallStack) map[string]any {

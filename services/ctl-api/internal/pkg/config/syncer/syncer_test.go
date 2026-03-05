@@ -10,9 +10,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/pkg/testseed"
-	testseedconfig "github.com/nuonco/nuon/services/ctl-api/pkg/testseed/config"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
+	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
 // TestService contains the dependencies injected by FX for testing.
@@ -97,8 +97,8 @@ func (s *SyncerTestSuite) TestSmokeTest() {
 	// 4. Faker providers are registered
 
 	// Verify faker provider registration
-	cfg := testseedconfig.GetMinimalAppConfig()
-	s.NotNil(cfg, "GetMinimalAppConfig should return a config")
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	s.NotNil(cfg, "BuildMinimalAppConfig should return a config")
 	s.Equal("1", cfg.Version, "Version should be set")
 	s.NotNil(cfg.Sandbox, "Sandbox should be set")
 	s.NotNil(cfg.Runner, "Runner should be set")
@@ -117,7 +117,7 @@ func (s *SyncerTestSuite) TestMinimalSync() {
 		testApp := s.service.Seed.EnsureApp(ctx, s.T())
 
 		// Create a minimal config
-		cfg := testseedconfig.GetMinimalAppConfig()
+		cfg := testseedconfig.BuildMinimalAppConfig()
 
 		// Create syncer
 		syncerInstance := New(Params{DB: s.service.DB}, testApp.ID, cfg)

@@ -18,6 +18,10 @@ import {
   AwaitAzureDetails,
   AwaitAzureDetailsSkeleton,
 } from './AwaitAzureDetails'
+import {
+  AwaitGCPDetails,
+  AwaitGCPDetailsSkeleton,
+} from './AwaitGCPDetails'
 import type { IStackDetails } from './types'
 
 export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
@@ -62,6 +66,8 @@ export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
 
       {install?.app_runner_config?.app_runner_type?.startsWith('aws') ? (
         <AwaitAWSDetails stack={stack} {...props} />
+      ) : (install?.app_runner_config?.app_runner_type as string) === 'gcp' ? (
+        <AwaitGCPDetails stack={stack} {...props} />
       ) : (
         <AwaitAzureDetails stack={stack} {...props} />
       )}
@@ -95,6 +101,8 @@ export const AwaitStackDetailsSkeleton = () => {
 
       {install?.app_runner_config?.app_runner_type?.startsWith('aws') ? (
         <AwaitAWSDetailsSkeleton />
+      ) : (install?.app_runner_config?.app_runner_type as string) === 'gcp' ? (
+        <AwaitGCPDetailsSkeleton />
       ) : (
         <AwaitAzureDetailsSkeleton />
       )}

@@ -98,9 +98,6 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
   const [createdBranchId, setCreatedBranchId] = useState<string | null>(null)
 
   const handleCreate = async () => {
-    console.log('🚀 handleCreate called with formData:', formData)
-    console.log('📍 Current step:', currentStep)
-    
     setIsSubmitting(true)
 
     try {
@@ -126,14 +123,11 @@ export default function NewBranchPage({ params }: INewBranchPageProps) {
       // Save to localStorage
       saveConfigToLocalStorage(branchId, config)
 
-      console.log('✅ Created branch configuration (stub):', config)
-      console.log('📦 Saved to localStorage key:', `app-branch-config-${branchId}`)
-      console.log('🎉 Branch ID:', branchId)
-
       // Set success state
       setCreatedBranchId(branchId)
     } catch (error) {
-      console.error('❌ Error creating branch (stub):', error)
+      // eslint-disable-next-line no-console
+      console.error('Error creating branch (stub):', error)
     } finally {
       setIsSubmitting(false)
     }

@@ -21,10 +21,11 @@ title: 'Permissions'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`name`**<br/>string | name of the IAM role Name used for the role in AWS. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
+| **`name`**<br/>string | name of the role Name used for the role in the target cloud platform. Supports Go templating using standard template variables (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"app-{{.nuon.install.id}}-role"`, `"admin-role"` |
 | **`description`**<br/>string | description of the role Human-readable description that explains the role's purpose. Rendered in the installer to customers. Supports templating | **✅ Required** | `"Provides S3 bucket access for the application"`, `"Database migration role with elevated permissions"` |
-| **`policies`**<br/>array | policy definitions for the role List of IAM policies to attach to the role. Each policy defines specific AWS permissions | **✅ Required** | - |
+| **`policies`**<br/>array | policy definitions for the role List of policies to attach to the role. Each policy defines cloud-specific permissions (AWS IAM policies, GCP IAM permissions, or GCP predefined roles) | **✅ Required** | - |
 | **`type`**<br/>string | role type in permission directory Used when defining permissions in a directory. Indicates when the role is active (provision, maintenance, or deprovision). Supports templating | **Optional** | `"provision"`, `"maintenance"`, `"deprovision"` |
+| **`cloud_platform`**<br/>string | target cloud platform Cloud platform this role targets. Determines which downstream renderer processes the role (e.g., AWS CloudFormation vs GCP IAM). Defaults to aws if omitted | **Optional**<br/>`"aws"`, `"azure"`, `"gcp"` | `"aws"`, `"gcp"` |
 | **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
-| **`permissions_boundary`**<br/>string | permissions boundary policy Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://exa... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
+| **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
 

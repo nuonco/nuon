@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	defaultRunnerTokenTimeout time.Duration = time.Hour * 24 * 90
+	defaultRunnerTokenTimeout   time.Duration = time.Hour * 24 * 90
+	bootstrapRunnerTokenTimeout time.Duration = time.Hour * 2
 )
 
 func (a *Helpers) CreateToken(ctx context.Context, runnerID string) (*app.Token, error) {
@@ -20,6 +21,17 @@ func (a *Helpers) CreateToken(ctx context.Context, runnerID string) (*app.Token,
 	token, err := a.acctClient.CreateToken(ctx, email, defaultRunnerTokenTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create token")
+	}
+
+	return token, nil
+}
+
+func (a *Helpers) CreateBootstrapToken(ctx context.Context, runnerID string) (*app.Token, error) {
+	email := account.ServiceAccountEmail(runnerID)
+
+	token, err := a.acctClient.CreateToken(ctx, email, bootstrapRunnerTokenTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create bootstrap token")
 	}
 
 	return token, nil

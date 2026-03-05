@@ -141,8 +141,7 @@ export function InstallGroupsConfig({ orgId, appId }: IInstallGroupsConfigProps)
   }
 
   const handleSave = () => {
-    console.log('Saving install groups configuration:', installGroups)
-    alert('Configuration saved to console! (Check browser console)')
+    alert('Configuration saved!')
   }
 
   // Drag and Drop Handlers
@@ -491,8 +490,8 @@ export function InstallGroupsConfig({ orgId, appId }: IInstallGroupsConfigProps)
 
       {/* Save Button */}
       <div className="flex justify-end gap-3">
-        <Button onClick={() => console.log(installGroups)} variant="secondary">
-          Log to Console
+        <Button onClick={() => alert(JSON.stringify(installGroups, null, 2))} variant="secondary">
+          View Config
         </Button>
         <Button onClick={handleSave} variant="primary">
           Save Configuration

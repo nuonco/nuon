@@ -34,8 +34,7 @@ COPY tools.go go.mod go.sum ./
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 
-# Download all dependencies into the image layer (not a cache mount) so all
-# service builds get modules without any network I/O.
+# Download all dependencies into the module cache
 RUN go mod download
 
 # Copy and generate package code (common code generation)
@@ -62,12 +61,10 @@ ENV GOCACHE=/go/pkg/build-cache
 ENV GOMODCACHE=/go/pkg/mod
 ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
-# Copy the binaries and any other necessary files from the build stage
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
 COPY --from=build /src/ /src/
 
-# Bake downloaded modules and pkg-generated build cache into the image —
-# one-time export cost, amortized across all service builds.
+# Bake downloaded modules into the image
 COPY --from=build /go/pkg/mod /go/pkg/mod
 COPY --from=build /go/pkg/build-cache /go/pkg/build-cache
 

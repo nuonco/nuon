@@ -14,21 +14,21 @@ func (s *syncer) getAppPermissionsRequest() *models.ServiceCreateAppPermissionsC
 	}
 
 	if s.cfg.Permissions.DeprovisionRole != nil {
-		req.DeprovisionRole = s.awsIAMRoleToRequest(s.cfg.Permissions.DeprovisionRole)
+		req.DeprovisionRole = s.iamRoleToRequest(s.cfg.Permissions.DeprovisionRole)
 	}
 
 	if s.cfg.Permissions.ProvisionRole != nil {
-		req.ProvisionRole = s.awsIAMRoleToRequest(s.cfg.Permissions.ProvisionRole)
+		req.ProvisionRole = s.iamRoleToRequest(s.cfg.Permissions.ProvisionRole)
 	}
 
 	if s.cfg.Permissions.MaintenanceRole != nil {
-		req.MaintenanceRole = s.awsIAMRoleToRequest(s.cfg.Permissions.MaintenanceRole)
+		req.MaintenanceRole = s.iamRoleToRequest(s.cfg.Permissions.MaintenanceRole)
 	}
 
 	if s.cfg.BreakGlass != nil && len(s.cfg.BreakGlass.Roles) > 0 {
 		breakGlassRoles := make([]*models.ServiceAppAWSIAMRoleConfig, 0, len(s.cfg.BreakGlass.Roles))
 		for _, role := range s.cfg.BreakGlass.Roles {
-			breakGlassRoles = append(breakGlassRoles, s.awsIAMRoleToRequest(role))
+			breakGlassRoles = append(breakGlassRoles, s.iamRoleToRequest(role))
 		}
 		req.BreakGlassRoles = breakGlassRoles
 	}
@@ -36,7 +36,7 @@ func (s *syncer) getAppPermissionsRequest() *models.ServiceCreateAppPermissionsC
 	if len(s.cfg.Permissions.CustomRoles) > 0 {
 		customRoles := make([]*models.ServiceAppAWSIAMRoleConfig, 0, len(s.cfg.Permissions.CustomRoles))
 		for _, role := range s.cfg.Permissions.CustomRoles {
-			customRoles = append(customRoles, s.awsIAMRoleToRequest(role))
+			customRoles = append(customRoles, s.iamRoleToRequest(role))
 		}
 		req.CustomRoles = customRoles
 	}

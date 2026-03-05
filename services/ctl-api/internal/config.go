@@ -19,7 +19,7 @@ func init() {
 	config.RegisterDefault("internal_http_port", "8082")
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
-	config.RegisterDefault("admin_dashboard_http_port", "8085")
+	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("worker_healthcheck_port", "8086")
 	config.RegisterDefault("worker_healthcheck_enabled", true)
 
@@ -61,6 +61,8 @@ func init() {
 	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
+	config.RegisterDefault("gcp_stack_template_bucket", "nuon-install-templates-gcp")
+	config.RegisterDefault("gcp_stack_template_base_url", "https://storage.googleapis.com/nuon-install-templates-gcp")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 

@@ -72,6 +72,15 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
+FROM golang:1.25-alpine AS gcloud
+
+RUN apk add --update --no-cache curl ca-certificates python3
+WORKDIR /opt
+ARG GCLOUD_VERSION=516.0.0
+RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
+    && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
+    && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
+
 FROM golang:1.25-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
@@ -177,7 +186,8 @@ RUN apk add --no-cache \
     kubectl \
     zip \
     openssl \
-    helm
+    helm \
+    python3
 
 WORKDIR /src/bins/runner
 
@@ -188,7 +198,10 @@ COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
+COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
+
+ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
 COPY ./bundle /bundle
 COPY --from=build /bin/runner /bin/runner

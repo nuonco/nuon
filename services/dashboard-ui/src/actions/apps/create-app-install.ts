@@ -64,6 +64,15 @@ export async function createAppInstall({
     }
   }
 
+  if (formData?.gcp_region) {
+    body = {
+      ...body,
+      gcp_account: {
+        region: formData?.gcp_region as string,
+      },
+    }
+  }
+
   return executeServerAction({
     action: create,
     args: { ...args, body },

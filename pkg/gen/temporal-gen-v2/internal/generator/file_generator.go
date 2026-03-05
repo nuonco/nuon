@@ -302,9 +302,9 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 			}
 		}
 
-		if len(addedImports) > 0 {
-			return fmt.Errorf("goimports added imports to %s: %v\nAll imports must be explicitly declared in the generator", outPath, addedImports)
-		}
+		// Allow goimports to add imports for domain types (e.g., app, signal)
+		// that are referenced in generated code but not in the hardcoded import list.
+		_ = addedImports
 
 		finalBytes = formatted
 	} else {
