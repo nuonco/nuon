@@ -1,0 +1,39 @@
+---
+title: 'Platform Architecture'
+icon: "diagram-project"
+description: 'How the Nuon Control Plane and Runners work together to orchestrate BYOC deployments.'
+---
+
+<Note>
+This page covers the internal architecture of the Nuon platform. For an overview of what gets deployed into a customer's cloud account, see [App Deployment Architecture](/architecture/byoc).
+</Note>
+
+The Nuon platform consists of a Control Plane that remotely orchestrates [Runners](/concepts/runners) deployed into customer accounts. Runners are egress-only: they poll the Control Plane for jobs rather than receiving inbound commands. This allows the Control Plane to coordinate work across all installs without any access to the accounts Runners are hosted in.
+
+**No cross-account access is required.**
+
+![runner-architecture](/images/runner-architecture.png)
+
+## Install Runner
+
+The Install Runner is a stateless Go binary deployed into each customer account as part of the [Stack](/concepts/stacks). It polls the Control Plane for jobs, executes them, and streams job logs back. The customer controls the Runner's access and can disable it at any time through the Stack. See [Runners](/concepts/runners) for more detail.
+
+## Control Plane
+
+The Control Plane orchestrates and monitors jobs across all Install Runners and provides a single view of every install.
+
+### Control API
+
+The central interface for managing apps, installs, and jobs. The [Dashboard](/dashboard) and [CLI](/cli) are built on top of it, and you can integrate with it directly to build custom interfaces.
+
+<Note>[Nuon Cloud](https://app.nuon.co) is multi-tenant with logical isolation per org. Nuon can also be deployed as a BYOC app into a customer's own cloud account. See the [BYOC Nuon repo](https://github.com/nuonco/byoc) for details.</Note>
+
+### Runner API
+
+A separate API that Runners use to poll for jobs and write logs and metrics. This is distinct from the Control API used by vendors and operators.
+
+### Build Runner
+
+Before components can be deployed to installs, they are built into OCI artifacts by a Build Runner hosted in the Control Plane. All installs of an app share the same artifacts. The Build Runner is the same binary as the Install Runner, but only runs build jobs. It is the only part of the Control Plane that touches your source code.
+
+<Note>Build Runners are always single-tenant. Each is deployed to its own host and does not share resources with other Runners.</Note>
