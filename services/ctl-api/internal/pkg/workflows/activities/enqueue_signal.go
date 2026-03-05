@@ -24,7 +24,6 @@ type EnqueueSignalToOwnerResponse struct {
 // This enables cross-namespace signal sending where one namespace can trigger work in another.
 //
 // @temporal-gen-v2 activity
-// @as-wrapper
 func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSignalToOwnerRequest) (*EnqueueSignalToOwnerResponse, error) {
 	if err := a.v.Struct(req); err != nil {
 		return nil, errors.Wrap(err, "invalid request")

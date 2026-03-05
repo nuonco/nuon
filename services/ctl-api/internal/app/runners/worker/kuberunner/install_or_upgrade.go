@@ -31,7 +31,7 @@ type InstallOrUpgradeRequest struct {
 
 type InstallOrUpgradeResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 10m
 // @start-to-close-timeout 10m
 // @max-retries 5

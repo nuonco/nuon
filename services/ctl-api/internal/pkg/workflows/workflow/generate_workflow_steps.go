@@ -28,7 +28,8 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 	if err == nil && len(existingSteps) > 0 {
 		result := make([]*app.WorkflowStep, len(existingSteps))
 		for i := range existingSteps {
-			result[i] = &existingSteps[i]
+			step := existingSteps[i]
+			result[i] = &step
 		}
 		return result, nil
 	}
