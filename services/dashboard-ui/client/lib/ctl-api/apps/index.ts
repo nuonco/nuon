@@ -1,4 +1,5 @@
 export * from './actions'
+export * from './branches'
 export * from './components'
 export * from './installs'
 export * from './get-apps'

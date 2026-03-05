@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -8,11 +7,9 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { TemporalLink } from '@/components/admin/TemporalLink'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
-import { listQueues } from '@/lib'
 import { BranchProvider } from '@/providers/branch-provider'
 import { BranchDetailActions } from './components/BranchDetailActions'
 
@@ -25,13 +22,6 @@ const BranchDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
 
-  const { data: queues } = useQuery({
-    queryKey: ['branch-queues', org.id, branchId],
-    queryFn: () =>
-      listQueues({ orgId: org.id!, ownerId: branchId, ownerType: 'app_branches' }),
-    enabled: !!org.id && !!branchId,
-  })
-
   // Get current config (most recent)
   const currentConfig =
     branch.configs && branch.configs.length > 0
@@ -39,9 +29,6 @@ const BranchDetailContent = () => {
           (a, b) => (b.config_number || 0) - (a.config_number || 0)
         )[0]
       : undefined
-
-  // Get the branch's queue for Temporal link
-  const branchQueue = queues && queues.length > 0 ? queues[0] : undefined
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -58,13 +45,6 @@ const BranchDetailContent = () => {
         </HeadingGroup>
 
         <div className="flex items-center gap-4">
-          {branchQueue && (
-            <TemporalLink
-              namespace="apps"
-              eventLoopId={`queue-${branchQueue.id}`}
-              skipPrefix
-            />
-          )}
           <BranchDetailActions
             branch={branch}
             currentConfig={currentConfig}
