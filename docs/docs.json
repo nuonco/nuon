@@ -142,23 +142,6 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
-<<<<<<< HEAD
-        "pages": [
-          "concepts/overview",
-          "concepts/apps",
-          "concepts/sandboxes",
-          "concepts/components",
-          "concepts/installs",
-          "concepts/runners",
-          "concepts/workflows",
-          "concepts/actions",
-          "concepts/policies",
-          "concepts/operation-roles",
-          "concepts/app-inputs",
-          "concepts/app-variables",
-          "concepts/app-secrets",
-          "concepts/glossary"
-=======
         "groups": [
           {
             "group": "Overview",
@@ -197,7 +180,6 @@
             "group": "Reference",
             "pages": ["concepts/glossary"]
           }
->>>>>>> se/docs-keywords
         ]
       },
       {
@@ -251,11 +233,7 @@
       {
         "tab": "Architecture",
         "icon": "sitemap",
-<<<<<<< HEAD
-        "pages": ["runner-architecture"]
-=======
         "pages": ["architecture/byoc", "architecture/platform", "security"]
->>>>>>> se/docs-keywords
       },
       {
         "tab": "Knowledge Base",
@@ -322,13 +300,10 @@
     {
       "source": "/faq",
       "destination": "/support/support"
-<<<<<<< HEAD
-=======
     },
     {
       "source": "/runner-architecture",
       "destination": "/architecture/platform"
->>>>>>> se/docs-keywords
     }
   ]
 }
