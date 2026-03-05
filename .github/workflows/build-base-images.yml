@@ -45,7 +45,4 @@ jobs:
 
       - name: 🔍 Lint pkg
         run: |
-          docker buildx build \
-            --target pkg-lint \
-            -f images/go-base/Dockerfile.build \
-            .
+         CI=true nuonctl builds pkg-lint

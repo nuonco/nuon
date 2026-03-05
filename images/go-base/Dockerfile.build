@@ -21,9 +21,10 @@ FROM build-base AS build
 # Copy golangci-lint binary from the golangci image
 COPY --from=golangci /usr/bin/golangci-lint /usr/bin/
 
-# Configure standard Go paths
-ENV GOCACHE=/go-cache
-ENV GOMODCACHE=/go-mod-cache
+# Configure standard Go paths — must match the cache mount targets below
+ENV GOCACHE=/go/pkg/build-cache
+ENV GOMODCACHE=/go/pkg/mod
+ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
 
 WORKDIR /src
 
@@ -33,35 +34,42 @@ COPY tools.go go.mod go.sum ./
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 
-# Pre-download dependencies
-RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
-    go mod download
+# Download all dependencies into the image layer (not a cache mount) so all
+# service builds get modules without any network I/O.
+RUN go mod download
 
 # Copy and generate package code (common code generation)
 COPY pkg pkg
-RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
-    cd pkg && go generate ./...
+RUN cd pkg && go generate ./...
 
 # Test target for pkg directory
 FROM build AS pkg-test
-RUN --mount=type=cache,target=/go/pkg/mod,id=gobase-mod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobase-build \
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && go test -v ./...
 
 # Lint target for pkg directory
 FROM build AS pkg-lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-pkg \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobase-build \
     cd pkg && golangci-lint run -c ../.golangci.yml -v
 
 # Final build image that can be referenced
 FROM build-base AS final
 
+# Set GOPROXY so all service builds FROM this image inherit it — no ARG needed in downstream Dockerfiles
+ENV GOCACHE=/go/pkg/build-cache
+ENV GOMODCACHE=/go/pkg/mod
+ENV GOPROXY=http://athens.arc-athens.svc.cluster.local:3000|https://proxy.golang.org,direct
+
 # Copy the binaries and any other necessary files from the build stage
 COPY --from=build /usr/bin/golangci-lint /usr/bin/golangci-lint
 COPY --from=build /src/ /src/
+
+# Bake downloaded modules and pkg-generated build cache into the image —
+# one-time export cost, amortized across all service builds.
+COPY --from=build /go/pkg/mod /go/pkg/mod
+COPY --from=build /go/pkg/build-cache /go/pkg/build-cache
 
 WORKDIR /src
 # Set default CMD
