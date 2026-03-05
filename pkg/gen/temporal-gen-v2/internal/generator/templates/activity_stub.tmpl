@@ -1,0 +1,31 @@
+{{- $reqType := "" -}}
+{{- if .Options.GenerateWrapper -}}
+	{{- $reqType = printf "%sRequest" (.Name | ToPascal) -}}
+{{- else -}}
+	{{- $reqType = .InputType -}}
+{{- end -}}
+
+{{- if .Options.GenerateWrapper}}
+type {{$reqType}} struct {
+{{- range .Params}}
+	{{.ExportedName}} {{.Type}} `validate:"required"`
+{{- end}}
+}
+
+// {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}} is a wrapper for the {{.OriginalName}} activity
+func (a {{.Receiver}}) {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}(ctx context.Context, req {{$reqType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	panic("stub implementation - will be replaced in phase 2")
+}
+{{- end}}
+
+// Await{{.Name | ToPascal}} is a wrapper for the {{.Name | ToPascal}} activity
+func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByFieldOnly}}{{.ByFieldType}}{{else}}{{$reqType}}{{end}}, opts ...*workflow.ActivityOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	panic("stub implementation - will be replaced in phase 2")
+}
+
+{{- if and .Options.ByField (not .Options.ByFieldOnly)}}
+// Await{{.Name | ToPascal}}By{{.Options.ByField}} is a wrapper for the {{.Name | ToPascal}} activity
+func Await{{.Name | ToPascal}}By{{.Options.ByField}}(ctx workflow.Context, input {{.ByFieldType}}, opts ...*workflow.ActivityOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	panic("stub implementation - will be replaced in phase 2")
+}
+{{- end}}
