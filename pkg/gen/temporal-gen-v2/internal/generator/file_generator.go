@@ -4,20 +4,27 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/parser"
+	"go/token"
 	"go/types"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
 	"golang.org/x/tools/go/packages"
+	"golang.org/x/tools/imports"
 )
 
 // Param is defined in activity_generator.go
 
-func GenerateForFile(f *file.File) error {
+// GeneratorOptions contains configuration for the code generator
+type GeneratorOptions struct {
+	ProcessImports bool
+}
+
+func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	var body bytes.Buffer
 	hasActivity := false
 	hasWorkflow := false
@@ -259,15 +266,53 @@ func GenerateForFile(f *file.File) error {
 	base := strings.TrimSuffix(f.Path, ext)
 	outPath := base + "_gen.go"
 
-	if err := os.WriteFile(outPath, out.Bytes(), 0644); err != nil {
-		return err
+	// Conditionally process imports if flag is enabled
+	var finalBytes []byte
+	if opts.ProcessImports {
+		// Parse original to get imports before processing
+		fset := token.NewFileSet()
+		original, err := parser.ParseFile(fset, outPath, out.Bytes(), parser.ParseComments)
+		if err != nil {
+			return fmt.Errorf("error parsing generated file: %w", err)
+		}
+
+		// Process imports
+		formatted, err := imports.Process(outPath, out.Bytes(), nil)
+		if err != nil {
+			return fmt.Errorf("goimports processing failed for %s: %w", outPath, err)
+		}
+
+		// Parse result to check for added imports
+		processed, err := parser.ParseFile(fset, outPath, formatted, parser.ParseComments)
+		if err != nil {
+			return fmt.Errorf("error parsing formatted file: %w", err)
+		}
+
+		// Build map of original imports
+		originalImports := make(map[string]bool)
+		for _, imp := range original.Imports {
+			originalImports[imp.Path.Value] = true
+		}
+
+		// Check for added imports
+		var addedImports []string
+		for _, imp := range processed.Imports {
+			if !originalImports[imp.Path.Value] {
+				addedImports = append(addedImports, imp.Path.Value)
+			}
+		}
+
+		if len(addedImports) > 0 {
+			return fmt.Errorf("goimports added imports to %s: %v\nAll imports must be explicitly declared in the generator", outPath, addedImports)
+		}
+
+		finalBytes = formatted
+	} else {
+		finalBytes = out.Bytes()
 	}
 
-	// Run goimports
-	cmd := exec.Command("goimports", "-w", outPath)
-	if err := cmd.Run(); err != nil {
-		// If goimports is not installed or fails, we just warn but don't fail the generation
-		fmt.Printf("Warning: failed to run goimports on %s: %v\n", outPath, err)
+	if err := os.WriteFile(outPath, finalBytes, 0644); err != nil {
+		return err
 	}
 
 	return nil

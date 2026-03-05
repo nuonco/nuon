@@ -9,6 +9,7 @@ var (
 	dryRunFlag    bool
 	cleanupFlag   bool
 	recursiveFlag bool
+	importsFlag   bool
 )
 
 func NewRootCmd() *cobra.Command {
