@@ -47,3 +47,35 @@ func TestGenerateWorkflow(t *testing.T) {
 	assert.Contains(t, code, "func AwaitMyWorkflowWithCron(ctx workflow.Context, input MyInput, cronSchedule string, opts ...*workflow.ChildWorkflowOptions) (MyOutput, error)")
 	assert.Contains(t, code, "CronSchedule: cronSchedule")
 }
+
+func TestGenerateWorkflowWithCallerIDTemplate(t *testing.T) {
+	data := WorkflowData{
+		Name:         "WorkflowWithCallerID",
+		OriginalName: "WorkflowWithCallerID",
+		InputType:    "TaskInput",
+		OutputType:   "",
+		Options: &parser.WorkflowOptions{
+			IDTemplate: "{{.CallerID}}-subtask-{{.Req.TaskID}}",
+		},
+	}
+
+	output, err := GenerateWorkflow(data)
+	require.NoError(t, err)
+
+	code := string(output)
+
+	// Verify CallerID field is in the template data struct
+	assert.Contains(t, code, "CallerID string")
+
+	// Verify CallerID is populated from workflow info
+	assert.Contains(t, code, "CallerID: info.WorkflowExecution.ID")
+
+	// Verify the template string is preserved
+	assert.Contains(t, code, "{{.CallerID}}-subtask-{{.Req.TaskID}}")
+
+	// Verify Req field is still present (backward compatibility)
+	assert.Contains(t, code, "Req      TaskInput")
+
+	// Verify Info field is still present (backward compatibility)
+	assert.Contains(t, code, "Info     *workflow.Info")
+}

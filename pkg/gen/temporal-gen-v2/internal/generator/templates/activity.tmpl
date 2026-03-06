@@ -33,6 +33,8 @@ func Await{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByField
 	{{- end}}
 	{{- if .Options.StartToCloseTimeout}}
 	options.StartToCloseTimeout = time.Duration({{.Options.StartToCloseTimeout | durationToNs}})
+	{{- else}}
+	options.StartToCloseTimeout = time.Duration(60000000000) // Default: 1 minute
 	{{- end}}
 	{{- if .Options.HeartbeatTimeout}}
 	options.HeartbeatTimeout = time.Duration({{.Options.HeartbeatTimeout | durationToNs}})

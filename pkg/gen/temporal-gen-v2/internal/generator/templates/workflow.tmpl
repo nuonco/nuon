@@ -52,11 +52,13 @@ func Exec{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow
 	{
 		info := workflow.GetInfo(ctx)
 		data := struct {
-			Req {{.InputType}}
-			Info *workflow.Info
+			Req      {{.InputType}}
+			Info     *workflow.Info
+			CallerID string
 		}{
-			Req: input,
-			Info: info,
+			Req:      input,
+			Info:     info,
+			CallerID: info.WorkflowExecution.ID,
 		}
 		idTmpl, err := template.New("id").Parse("{{.Options.IDTemplate}}")
 		if err != nil {
