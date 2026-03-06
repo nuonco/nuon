@@ -168,6 +168,18 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		"Workflow with CallerID id-template": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @id-template {{.CallerID}}-subtask-{{.Req.TaskID}}",
+			},
+			expected: &Annotation{
+				Type: "workflow",
+				WorkflowOpts: &WorkflowOptions{
+					IDTemplate: "{{.CallerID}}-subtask-{{.Req.TaskID}}",
+				},
+			},
+		},
 		"Workflow with id-generator": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " workflow",
