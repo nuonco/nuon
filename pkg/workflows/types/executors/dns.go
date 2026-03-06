@@ -18,10 +18,6 @@ func ProvisionDNSIDCallback(req *ProvisionDNSDelegationRequest) string {
 	return req.WorkflowID
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback ProvisionDNSIDCallback
 func ProvisionDNSDelegation(workflow.Context, *ProvisionDNSDelegationRequest) (*ProvisionDNSDelegationResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
@@ -39,10 +35,6 @@ func DeprovisionDNSIDCallback(req *DeprovisionDNSDelegationRequest) string {
 	return req.WorkflowID
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback DeprovisionDNSIDCallback
 func DeprovisionDNSDelegation(workflow.Context, *DeprovisionDNSDelegationRequest) (*DeprovisionDNSDelegationResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")

@@ -23,10 +23,6 @@ func CheckPermissionsIDCallback(req *CheckPermissionsRequest) string {
 	return fmt.Sprintf("%s-%s-%s", req.Metadata.OrgID, req.Metadata.AppID, req.Metadata.InstallID)
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback CheckPermissionsIDCallback
 func CheckPermissions(workflow.Context, *CheckPermissionsRequest) (*CheckPermissionsResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")

@@ -11,10 +11,6 @@ func ProvisionIDCallback(req *ProvisionIAMRequest) string {
 	return "provision-iam-" + req.OrgID
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback ProvisionIDCallback
 func ProvisionIAM(workflow.Context, *ProvisionIAMRequest) (*ProvisionIAMResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
@@ -40,10 +36,6 @@ func DeprovisionIDCallback(req *DeprovisionIAMRequest) string {
 	return "deprovision-iam-" + req.OrgID
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback DeprovisionIDCallback
 func DeprovisionIAM(workflow.Context, *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
