@@ -31,6 +31,7 @@ func generateRunnerSchema(ctx context.Context) error {
 	args := []string{
 		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
+		"--maxFileParallelism", "5",
 		"--instanceName", "runner",
 		"--output", "docs/runner",
 		"--parseDependency",
@@ -61,6 +62,7 @@ func generateAdminSchema(ctx context.Context) error {
 	args := []string{
 		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
+		"--maxFileParallelism", "5",
 		"--instanceName", "admin",
 		"--output", "docs/admin",
 		"--parseDependency",
@@ -92,6 +94,7 @@ func generatePublicSchema(ctx context.Context) error {
 	args := []string{
 		"run", "github.com/swaggo/swag/cmd/swag@latest",
 		"init",
+		"--maxFileParallelism", "5",
 		"--parseDependency",
 		"--output", "docs/public",
 		"--parseInternal",

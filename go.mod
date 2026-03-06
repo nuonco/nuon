@@ -21,6 +21,8 @@ replace helm.sh/helm/v4 => helm.sh/helm/v4 v4.0.0-alpha.1
 replace (
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
+	github.com/swaggo/swag => ../../clones/swag
+	github.com/swaggo/swag/files => ../../clones/swag/files
 )
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
@@ -62,7 +64,6 @@ require (
 	github.com/charmbracelet/huh v0.8.0
 	github.com/cockroachdb/errors v1.11.3
 	github.com/databus23/helm-diff/v3 v3.12.5
-	github.com/dave/dst v0.27.3
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/dominikbraun/graph v0.23.0
@@ -80,13 +81,11 @@ require (
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-swagger/go-swagger v0.33.0
-	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-github/v41 v41.0.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.6.0
-	github.com/grafana/codejen v0.0.3
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-version v1.7.0
@@ -214,6 +213,13 @@ require (
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
+	github.com/go-openapi/swag/conv v0.25.1 // indirect
+	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
+	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
+	github.com/go-openapi/swag/loading v0.25.1 // indirect
+	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
+	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
+	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
@@ -510,10 +516,10 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/inflect v0.21.3 // indirect
-	github.com/go-openapi/jsonpointer v0.21.2 // indirect
-	github.com/go-openapi/jsonreference v0.21.0 // indirect
+	github.com/go-openapi/jsonpointer v0.22.1 // indirect
+	github.com/go-openapi/jsonreference v0.21.3 // indirect
 	github.com/go-openapi/loads v0.22.0 // indirect
-	github.com/go-openapi/spec v0.21.0 // indirect
+	github.com/go-openapi/spec v0.22.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
