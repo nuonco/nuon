@@ -6,14 +6,40 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	appselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/app/selector"
+	installselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/selector"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/watch"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 	workflowselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow/selector"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+// selectInstallID resolves an install ID by checking the flag, config, or showing
+// interactive selectors (app selector first if no app is set, then install selector).
+func (s *Service) selectInstallID(ctx context.Context, installID string) (string, error) {
+	if installID == "" {
+		installID = s.GetInstallID()
+	}
+	if installID == "" {
+		// If no app is selected, show app selector first so installs are filtered
+		if s.cfg.AppID == "" {
+			appID, err := appselector.App(ctx, s.cfg, s.api)
+			if err != nil {
+				return "", err
+			}
+			s.cfg.AppID = appID
+		}
+		selectedID, err := installselector.App(ctx, s.cfg, s.api, 20, 0)
+		if err != nil {
+			return "", err
+		}
+		installID = selectedID
+	}
+	return lookup.InstallID(ctx, s.api, installID)
+}
+
 func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string) error {
-	installID, err := lookup.InstallID(ctx, s.api, installID)
+	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -84,7 +110,11 @@ func (s *Service) WorkflowsWatchTUI(ctx context.Context, installID, workflowID s
 			return ExitCodeFailed, ui.PrintError(err)
 		}
 	} else {
-		return ExitCodeFailed, ui.PrintError(errors.New("either --install-id or --workflow-id is required"))
+		var err error
+		resolvedInstallID, err = s.selectInstallID(ctx, installID)
+		if err != nil {
+			return ExitCodeFailed, ui.PrintError(err)
+		}
 	}
 
 	exitCode := watch.WatchApp(ctx, s.cfg, s.api, resolvedInstallID)
