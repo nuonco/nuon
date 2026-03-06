@@ -105,30 +105,8 @@ export const RoleSelector = ({
     )
   }
 
-  if (error) {
-    return (
-      <div className="flex flex-col gap-1">
-        <Text variant="label" weight="strong">
-          Execution Role (optional)
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          {error}
-        </Text>
-      </div>
-    )
-  }
-
-  if (roles.length === 0) {
-    return (
-      <div className="flex flex-col gap-1">
-        <Text variant="label" weight="strong">
-          Execution Role (optional)
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          No roles available from install stack outputs
-        </Text>
-      </div>
-    )
+  if (error || roles.length === 0) {
+    return null
   }
 
   return (

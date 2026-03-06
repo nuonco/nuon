@@ -6,16 +6,19 @@ import { DeployComponentButton } from '@/components/install-components/managemen
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
-import type { TComponent } from '@/types'
+import { UnlockTerraformStateButton } from '@/components/install-components/management/UnlockTerraformState'
+import type { TComponent, TInstallComponent } from '@/types'
 
 export const ManagementDropdown = ({
   component,
   currentBuildId,
   currentDeployStatus,
+  installComponent,
 }: {
   component: TComponent
   currentBuildId?: string
   currentDeployStatus?: string
+  installComponent?: TInstallComponent
 }) => {
   return (
     <Dropdown
@@ -41,6 +44,13 @@ export const ManagementDropdown = ({
           currentDeployStatus={currentDeployStatus}
           isMenuButton
         />
+        {component?.type === 'terraform_module' && installComponent?.terraform_workspace?.id ? (
+          <UnlockTerraformStateButton
+            component={component}
+            installComponent={installComponent}
+            isMenuButton
+          />
+        ) : null}
         <hr />
         <Text>Remove</Text>
         {currentDeployStatus === 'inactive' ? (
