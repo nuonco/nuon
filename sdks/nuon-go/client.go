@@ -206,14 +206,6 @@ type Client interface {
 	GetComponentBuild(ctx context.Context, componentID, buildID string) (*models.AppComponentBuild, error)
 	GetBuild(ctx context.Context, buildID string) (*models.AppComponentBuild, error)
 
-	// component releases
-	GetAppReleases(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponentRelease, bool, error)
-	GetComponentReleases(ctx context.Context, componentID string, query *models.GetPaginatedQuery) ([]*models.AppComponentRelease, bool, error)
-	CreateComponentRelease(ctx context.Context, componentID string, req *models.ServiceCreateComponentReleaseRequest) (*models.AppComponentRelease, error)
-
-	GetRelease(ctx context.Context, releaseID string) (*models.AppComponentRelease, error)
-	GetReleaseSteps(ctx context.Context, releaseID string, query *models.GetPaginatedQuery) ([]*models.AppComponentReleaseStep, bool, error)
-
 	// actions
 	GetActionWorkflows(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppActionWorkflow, bool, error)
 	GetActionWorkflow(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflow, error)
