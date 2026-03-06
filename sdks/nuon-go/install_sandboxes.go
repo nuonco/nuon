@@ -50,3 +50,20 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 
 	return nil
 }
+
+func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string) (string, error) {
+	hr := newResponseHeaderReader(&operations.ReprovisionInstallSandboxReader{})
+
+	_, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
+		InstallID: installID,
+		Context:   ctx,
+		Req: &models.ServiceReprovisionInstallSandboxRequest{
+			PlanOnly: false,
+		},
+	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	if err != nil {
+		return "", err
+	}
+
+	return hr.GetHeader(HeaderInstallWorkflowID), nil
+}
