@@ -27,15 +27,20 @@ defaults:
     shell: bash
 
 jobs:
-  changes:
-    name: 🔍 changes
+  prepare:
+    name: Prepare
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
     outputs:
       services: ${{ steps.filter.outputs.changes }}
+      git_ref: ${{ steps.git_ref.outputs.git_ref }}
+      auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          sparse-checkout: ci-triggers.yml
+          sparse-checkout-cone-mode: false
 
       - name: read ci triggers file
         uses: pietrobolcato/action-read-yaml@1.1.0
@@ -48,31 +53,12 @@ jobs:
         with:
           filters: ${{ steps.ci_triggers.outputs['services'] }}
 
-  tag:
-    name: Determine short ref
-    runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
-    outputs:
-      git_ref: ${{steps.git_ref.outputs.git_ref}}
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-
       - name: Set git_ref output
         id: git_ref
         run: |
           SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           echo "git_ref=${SHA::7}" >> $GITHUB_OUTPUT
 
-  check_labels:
-    name: Check for labels
-    runs-on: ubuntu-latest
-    needs:
-      - tag
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'promote') }}
-    outputs:
-      auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
-    steps:
       - uses: docker://agilepathway/pull-request-label-checker:latest
         id: auto_deploy
         if: ${{ github.event_name == 'pull_request' }}
@@ -84,9 +70,8 @@ jobs:
   pkg_lint:
     name: 🔍 Lint pkg
     needs:
-      - changes
-      - tag
-    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' && (contains(needs.changes.outputs.services, 'ctl-api') || contains(needs.changes.outputs.services, 'runner') || contains(needs.changes.outputs.services, 'cli') || contains(needs.changes.outputs.services, 'lsp') || contains(needs.changes.outputs.services, 'workers-')) }}
+      - prepare
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' && (contains(needs.prepare.outputs.services, 'ctl-api') || contains(needs.prepare.outputs.services, 'runner') || contains(needs.prepare.outputs.services, 'cli') || contains(needs.prepare.outputs.services, 'lsp') || contains(needs.prepare.outputs.services, 'workers-')) }}
     runs-on: build-only
     timeout-minutes: 15
     env:
@@ -110,20 +95,18 @@ jobs:
   services:
     name: 🚢
     needs:
-      - changes
-      - check_labels
-      - tag
-    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.changes.outputs.services != '[]' && needs.changes.outputs.services != '' }}
+      - prepare
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' }}
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(needs.changes.outputs.services) }}
+        service: ${{ fromJSON(needs.prepare.outputs.services) }}
     uses: ./.github/workflows/service.yml
     with:
       service: ${{matrix.service}}
       prod: false
-      stage: ${{ github.event_name != 'pull_request' || needs.check_labels.outputs.auto_deploy == 'true'}}
-      tag: ${{ needs.tag.outputs.git_ref }}
+      stage: ${{ github.event_name != 'pull_request' || needs.prepare.outputs.auto_deploy == 'true'}}
+      tag: ${{ needs.prepare.outputs.git_ref }}
       disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
     secrets: inherit
 
