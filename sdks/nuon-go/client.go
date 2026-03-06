@@ -148,6 +148,7 @@ type Client interface {
 
 	// install sandbox
 	DeprovisionInstallSandbox(ctx context.Context, installID string) error
+	ReprovisionInstallSandbox(ctx context.Context, installID string) (string, error)
 	GetInstallSandboxRuns(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallSandboxRun, bool, error)
 
 	// install inputs
