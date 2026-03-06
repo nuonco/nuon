@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
+// USAGE: go run ... this file
 // NOTE: contributed by claude
 func main() {
 	fmt.Println()

@@ -2,19 +2,26 @@ package common
 
 import (
 	"image/color"
+	"os"
 
 	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
+var hasDarkBG = lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
+var lightDark = lipgloss.LightDark(hasDarkBG)
+
 var dialogBoxStyle = lipgloss.NewStyle().
-	Padding(1, 0).
+	Padding(1, 3).
+	Align(lipgloss.Center).
 	Border(lipgloss.RoundedBorder()).
 	BorderTop(true).
 	BorderLeft(true).
 	BorderRight(true).
 	BorderForeground(styles.PrimaryColor).
 	BorderBottom(true)
+
+var bgCharColor = lightDark(lipgloss.Color("#E8E8E8"), lipgloss.Color("#1A1A1A"))
 
 var levelStyleMap = map[string]color.Color{
 	"default": styles.SubtleColor,
@@ -47,11 +54,9 @@ func FullPageDialog(req FullPageDialogRequest) string {
 		lipgloss.Center, lipgloss.Center,
 		dialogBoxStyle.
 			BorderForeground(levelStyle).
-			Width(lipgloss.Width(req.Content)).
-			Height(lipgloss.Height(req.Content)).
 			Render(req.Content),
 		lipgloss.WithWhitespaceChars("⦾∙"),
-		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(styles.Ghost)),
+		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(bgCharColor)),
 	)
 	return dialog
 }
