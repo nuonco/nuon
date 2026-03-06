@@ -21,15 +21,17 @@ COPY docs/runner/descriptions ./docs/runner/descriptions/
 COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
 
-FROM code AS docs-gen
+FROM code AS generated
 
+# Generate all code artifacts required for compile/test (swagger + temporal + mocks).
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go run ./cmd/gen
+    go generate ./...
 
 FROM code AS build
 
-COPY --from=docs-gen /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
@@ -37,7 +39,8 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 
 FROM code AS unit-test
 
-COPY --from=docs-gen /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
@@ -45,7 +48,8 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 
 FROM code AS lint
 
-COPY --from=docs-gen /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 
 COPY .golangci.yml .
 
