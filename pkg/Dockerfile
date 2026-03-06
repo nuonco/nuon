@@ -2,6 +2,7 @@ FROM golang:1.25 AS base
 
 WORKDIR /src
 
+
 # Copy module files and local replace targets, then download dependencies
 COPY --from=nuon go.mod go.sum ./
 COPY --from=nuon sdks ./sdks/
