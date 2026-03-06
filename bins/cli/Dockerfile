@@ -15,9 +15,6 @@ COPY internal ./internal/
 # Copy in-tree SDKs (required for go.mod replace directives)
 COPY sdks ./sdks/
 COPY main.go .
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
-    go generate ./...
 
 FROM code AS build
 
@@ -26,12 +23,14 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/${BIN_NAME}
 
 FROM code AS test
-RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
+    --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
     golangci-lint run -c .golangci.yml  -v
 
