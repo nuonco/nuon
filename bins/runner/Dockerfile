@@ -1,4 +1,8 @@
 ARG BUILD_IMAGE=buildimage
+ARG NUON_CLI_VERSION=0.19.602
+ARG AWS_IAM_AUTHENTICATOR_VERSION=0.6.2
+ARG KUBELOGIN_VERSION=0.2.9
+ARG GCLOUD_VERSION=516.0.0
 
 FROM ${BUILD_IMAGE} AS code
 
@@ -14,17 +18,21 @@ COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY sdks ./sdks/
 COPY main.go .
-COPY generate.sh .
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
-    go generate ./...
 
 FROM code AS build
 
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    go build -o /bin/runner
+
+FROM code AS build-versioned
+
 ARG tag=
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
@@ -32,40 +40,46 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     -o /bin/runner
 
 FROM code AS test
-RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+    --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml -v
 
 FROM golang:1.25-alpine AS nuon-cli
 
+ARG NUON_CLI_VERSION
+
 RUN apk add --update --no-cache curl ca-certificates
-RUN curl https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/0.19.602/nuon_linux_amd64 -o /bin/nuon && chmod +x /bin/nuon
+RUN curl "https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/${NUON_CLI_VERSION}/nuon_linux_amd64" -o /bin/nuon && chmod +x /bin/nuon
 
 FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
 
 FROM golang:1.25-alpine AS aws-iam-authenticator
 
+ARG AWS_IAM_AUTHENTICATOR_VERSION
+
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
-# iam authenticator download url
-ARG version=0.6.2
 RUN curl \
     -Lo aws-iam-authenticator \
-    "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${version}/aws-iam-authenticator_${version}_linux_amd64" \
+    "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${AWS_IAM_AUTHENTICATOR_VERSION}/aws-iam-authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
 FROM golang:1.25-alpine AS kubelogin
+
+ARG KUBELOGIN_VERSION
 
 RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /bin
 # kubelogin download url
 RUN curl -LO \
-    https://github.com/Azure/kubelogin/releases/download/v0.2.9/kubelogin-linux-amd64.zip \
+    "https://github.com/Azure/kubelogin/releases/download/v${KUBELOGIN_VERSION}/kubelogin-linux-amd64.zip" \
     && unzip kubelogin-linux-amd64.zip \
     && mv bin/linux_amd64/kubelogin . \
     && rm kubelogin-linux-amd64.zip \
@@ -74,9 +88,10 @@ RUN curl -LO \
 
 FROM golang:1.25-alpine AS gcloud
 
+ARG GCLOUD_VERSION
+
 RUN apk add --update --no-cache curl ca-certificates python3
 WORKDIR /opt
-ARG GCLOUD_VERSION=516.0.0
 RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
     && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
     && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
@@ -97,8 +112,8 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -109,8 +124,8 @@ FROM code AS build-darwin-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -121,8 +136,8 @@ FROM code AS build-linux-arm
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -133,8 +148,8 @@ FROM code AS build-linux-arm64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -145,8 +160,8 @@ FROM code AS build-linux-386
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -157,8 +172,8 @@ FROM code AS build-linux-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-cli \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
@@ -167,9 +182,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-cli \
 
 # END
 
-FROM golang:1.25-alpine AS final
-
-ARG tag
+FROM golang:1.25-alpine AS runtime-base
 
 RUN apk add --no-cache \
     bash \
@@ -189,8 +202,6 @@ RUN apk add --no-cache \
     helm \
     python3
 
-WORKDIR /src/bins/runner
-
 # add dependencies
 COPY --from=kaniko /kaniko/* /kaniko/
 COPY --from=kaniko /kaniko/.docker /kaniko/.docker
@@ -203,33 +214,22 @@ COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
 
-COPY ./bundle /bundle
-COPY --from=build /bin/runner /bin/runner
-
 # udpate the ca certs so python's urllib cert verification passes
 RUN update-ca-certificates
 
+FROM runtime-base AS final
 
+WORKDIR /src/bins/runner
+
+COPY ./bundle /bundle
+COPY --from=build-versioned /bin/runner /bin/runner
+
+ARG tag
 ENV GIT_REF=$tag
 
 ENTRYPOINT ["/bin/runner"]
 
-FROM build AS build-artifacts
-
-ARG BIN_NAME=runner
-ARG tag=
-RUN mkdir -p /out
-
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
-    GOOS=linux \
-    GOARCH=amd64 \
-    go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
-    -o /out/${BIN_NAME}_linux_amd64 .
-
 FROM scratch AS artifacts-build
-COPY --from=build-artifacts /out /
 COPY --from=build-darwin-arm64 /out/ /
 COPY --from=build-darwin-amd64 /out/ /
 COPY --from=build-linux-arm /out/ /

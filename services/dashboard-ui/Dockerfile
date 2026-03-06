@@ -1,17 +1,6 @@
-FROM golang:1.25.4-alpine AS openapi-gen
+FROM alpine:3.21 AS openapi-spec
 
-WORKDIR /src
-
-RUN apk add --no-cache git
-
-COPY go.mod go.sum ./
-COPY pkg pkg
-COPY sdks sdks
-COPY ctl-api services/ctl-api
-
-WORKDIR /src/services/ctl-api
-
-RUN go run cmd/gen/main.go
+COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
 FROM node:20-alpine AS deps
 
@@ -63,7 +52,7 @@ RUN npm run lint
 
 FROM deps AS test-local-spec
 
-COPY --from=openapi-gen /src/services/ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
+COPY --from=openapi-spec /openapi/swagger-v3.json /openapi/swagger-v3.json
 ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
 RUN npm run test -- -t=30000

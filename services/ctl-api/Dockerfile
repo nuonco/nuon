@@ -13,29 +13,49 @@ WORKDIR /src/services/${SERVICE}
 
 COPY cmd  ./cmd/
 COPY internal ./internal/
-COPY docs ./docs/
+# Copy only static docs inputs so generated swagger artifacts do not churn the cache.
+RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
+COPY docs/admin/descriptions ./docs/admin/descriptions/
+COPY docs/public/descriptions ./docs/public/descriptions/
+COPY docs/runner/descriptions ./docs/runner/descriptions/
 COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-ctl-api \
+
+FROM code AS generated
+
+# Generate all code artifacts required for compile/test (swagger + temporal + mocks).
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go generate ./...
 
 FROM code AS build
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-ctl-api \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-ctl-api \
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 
 FROM code AS unit-test
-RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-ctl-api \
+
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go test -v ./...
 
 FROM code AS lint
 
+COPY --from=generated /src/services/${SERVICE}/internal ./internal/
+COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+
 COPY .golangci.yml .
 
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-ctl-api \
+    --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml  -v
 
 # Use the provided runtime image
