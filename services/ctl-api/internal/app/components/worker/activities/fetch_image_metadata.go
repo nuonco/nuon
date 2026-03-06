@@ -24,7 +24,7 @@ type FetchImageMetadataResult struct {
 	Metadata *metadata.ImageMetadata `json:"metadata" temporaljson:"metadata,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 2
 // @schedule-to-close-timeout 5m
 // @start-to-close-timeout 4m

@@ -46,6 +46,26 @@ func (w *Workflows) All() []any {
 	return append(wkflows, w.ListWorkflowFns()...)
 }
 
+// ListWorkflowFns returns the list of workflow functions for registration
+func (w *Workflows) ListWorkflowFns() []any {
+	return []any{
+		w.Created,
+		w.Provision,
+		w.Reprovision,
+		w.Deprovision,
+		w.ForceDeprovision,
+		w.Restart,
+		w.RestartRunners,
+		w.InviteUser,
+		w.InviteAccepted,
+		w.ForceDelete,
+		w.Delete,
+		w.ForceSandboxMode,
+		w.EnableFeatureFlags,
+		w.StageSeed,
+	}
+}
+
 func NewWorkflows(params Params) (*Workflows, error) {
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MW),

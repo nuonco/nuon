@@ -22,8 +22,6 @@ import (
 	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	orgsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	releasesworker "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker"
-	releasesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/releases/worker/activities"
 	runnersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker"
 	runnersactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 )
@@ -67,13 +65,6 @@ var InstallsWorkerModule = fx.Module("worker-installs",
 	fx.Provide(installsstackworker.NewWorkflows),
 	fx.Provide(installstate.New),
 	fx.Provide(worker.AsWorker(installsworker.New)),
-)
-
-// ReleasesWorkerModule provides the releases namespace worker.
-var ReleasesWorkerModule = fx.Module("worker-releases",
-	fx.Provide(releasesactivities.New),
-	fx.Provide(releasesworker.NewWorkflows),
-	fx.Provide(worker.AsWorker(releasesworker.New)),
 )
 
 // RunnersWorkerModule provides the runners namespace worker.

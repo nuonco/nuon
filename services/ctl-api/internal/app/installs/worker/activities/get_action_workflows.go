@@ -12,8 +12,8 @@ type GetActionWorkflows struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallID
+// @temporal-gen-v2 activity
+// @by-field InstallID
 func (a *Activities) GetActionWorkflows(ctx context.Context, req *GetActionWorkflows) ([]*app.InstallActionWorkflow, error) {
 	return a.getActionWorkflows(ctx, req.InstallID)
 }

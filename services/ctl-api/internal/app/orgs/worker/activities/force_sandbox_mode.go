@@ -12,8 +12,8 @@ type ForceSandboxModeRequest struct {
 	OrgID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OrgID
+// @temporal-gen-v2 activity
+// @by-field OrgID
 func (a *Activities) ForceSandboxMode(ctx context.Context, req ForceSandboxModeRequest) error {
 	if err := a.forceSandboxMode(ctx, req.OrgID); err != nil {
 		return errors.Wrap(err, "unable to force sandbox mode")

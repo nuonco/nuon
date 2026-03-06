@@ -19,7 +19,7 @@ type CheckContainerImagePoliciesExistResult struct {
 	AppConfigID   string `json:"app_config_id" temporaljson:"app_config_id,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 30s

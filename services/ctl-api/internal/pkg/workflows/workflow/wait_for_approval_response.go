@@ -23,7 +23,7 @@ type WaitForApprovalResponseRequest struct {
 	MaxTS      *time.Time
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 720h
 // @task-timeout 1m
 // @id-template {{.CallerID}}-{{.Req.StepID}}-wait-for-approval-response

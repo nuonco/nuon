@@ -16,7 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1h
 // @task-timeout 30s
 func (w *Workflows) AwaitRunnerHealthy(ctx workflow.Context, sreq signals.RequestSignal) error {

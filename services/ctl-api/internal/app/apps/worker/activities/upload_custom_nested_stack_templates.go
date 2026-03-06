@@ -19,7 +19,7 @@ type UploadCustomNestedStackTemplatesRequest struct {
 	AppStackConfigID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *UploadCustomNestedStackTemplatesRequest) error {
 	var stackConfig app.AppStackConfig
 	res := a.db.WithContext(ctx).First(&stackConfig, "id = ?", req.AppStackConfigID)

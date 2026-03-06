@@ -13,8 +13,8 @@ type GetActionWorkflowLatestConfig struct {
 	ActionWorkflowID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ActionWorkflowID
+// @temporal-gen-v2 activity
+// @by-field ActionWorkflowID
 func (a *Activities) GetActionWorkflowLatestConfig(ctx context.Context, req *GetActionWorkflowLatestConfig) (*app.ActionWorkflowConfig, error) {
 	return a.getActionWorkflowLatestConfig(ctx, req.ActionWorkflowID)
 }

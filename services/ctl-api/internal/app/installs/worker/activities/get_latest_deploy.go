@@ -14,7 +14,7 @@ type GetLatestDeployRequest struct {
 	InstallID   string `json:"install_id" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetLatestDeploy(ctx context.Context, req GetLatestDeployRequest) (*app.InstallDeploy, error) {
 	installCmpDeploy, err := a.getLatestDeploy(ctx, req.InstallID, req.ComponentID)
 	if err != nil {

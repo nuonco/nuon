@@ -14,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {

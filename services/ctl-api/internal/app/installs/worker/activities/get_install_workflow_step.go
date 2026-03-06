@@ -12,8 +12,8 @@ type GetInstallWorkflowStepRequest struct {
 	InstallWorkflowStepID string `json:"install_workflow_step_id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallWorkflowStepID
+// @temporal-gen-v2 activity
+// @by-field InstallWorkflowStepID
 func (a *Activities) GetInstallWorkflowsStep(ctx context.Context, req GetInstallWorkflowStepRequest) (*app.WorkflowStep, error) {
 	var step app.WorkflowStep
 

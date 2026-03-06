@@ -17,7 +17,7 @@ type CreateSyncJobRequest struct {
 	Metadata    map[string]string          `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateSyncJob(ctx context.Context, req *CreateSyncJobRequest) (*app.RunnerJob, error) {
 	deploy, err := a.getDeploy(ctx, req.DeployID)
 	if err != nil {

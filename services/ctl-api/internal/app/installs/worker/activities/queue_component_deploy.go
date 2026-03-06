@@ -17,7 +17,7 @@ type CreateInstallDeployRequest struct {
 	Role        string                `json:"role,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
 	// create deploy
 	install, err := a.getInstall(ctx, req.InstallID)

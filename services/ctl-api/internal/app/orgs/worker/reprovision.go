@@ -13,7 +13,7 @@ import (
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 20m
 // @task-timeout 10m
 func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal) error {

@@ -19,7 +19,7 @@ type CreateDeployJobRequest struct {
 	TimeoutDuration *time.Duration             // Optional custom timeout
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRequest) (*app.RunnerJob, error) {
 	deploy, err := a.getDeploy(ctx, req.DeployID)
 	if err != nil {

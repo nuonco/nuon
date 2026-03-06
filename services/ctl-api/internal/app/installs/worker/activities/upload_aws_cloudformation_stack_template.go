@@ -14,7 +14,7 @@ type UploadAWSCloudFormationStackVersionTemplateRequest struct {
 	Template  []byte `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UploadAWSCloudFormationStackVersionTemplate(ctx context.Context, req *UploadAWSCloudFormationStackVersionTemplateRequest) error {
 	uploader, err := s3uploader.NewS3Uploader(a.v,
 		s3uploader.WithBucketName(a.cfg.AWSCloudFormationStackTemplateBucket),

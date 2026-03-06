@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
@@ -79,7 +80,8 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 					if !found {
 						return fmt.Errorf("field %s not found in generated wrapper parameters", fieldName)
 					}
-				} else {
+				} else if f.Package.Pkg.TypesInfo != nil {
+					// Only attempt to extract field type if we have type information
 					obj := f.Package.Pkg.TypesInfo.Defs[fn.Decl.Name]
 					if sig, ok := obj.Type().(*types.Signature); ok {
 						sigParams := sig.Params()
@@ -105,6 +107,12 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 							}
 							byFieldType = types.TypeString(fieldType, qualifier)
 						}
+					}
+				} else {
+					// AST-only mode: extract field type from the struct definition
+					byFieldType, err = getFieldTypeFromAST(f.Package, inputType, fn.Annotation.ActivityOpts.ByField)
+					if err != nil {
+						return fmt.Errorf("failed to extract field %s from %s using AST: %w", fn.Annotation.ActivityOpts.ByField, inputType, err)
 					}
 				}
 			}
@@ -324,9 +332,15 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 // packages.Package contains Types *types.Package.
 
 func getSignature(pkg *packages.Package, decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, err error) {
+	// If TypesInfo is nil, fall back to AST-only parsing
+	if pkg.TypesInfo == nil || pkg.TypesInfo.Defs == nil {
+		return getSignatureFromAST(decl)
+	}
+
 	obj := pkg.TypesInfo.Defs[decl.Name]
 	if obj == nil {
-		return "", "", nil, "", fmt.Errorf("type object not found for %s", decl.Name.Name)
+		// Fall back to AST if type info not available
+		return getSignatureFromAST(decl)
 	}
 	sig, ok := obj.Type().(*types.Signature)
 	if !ok {
@@ -430,4 +444,141 @@ func getFieldType(t types.Type, fieldName string) (types.Type, error) {
 	}
 
 	return nil, fmt.Errorf("field %s not found in %s", fieldName, t)
+}
+
+// getSignatureFromAST extracts function signature from AST when type information is unavailable
+func getSignatureFromAST(decl *ast.FuncDecl) (inputType string, outputType string, params []Param, receiver string, err error) {
+	// Extract receiver
+	if decl.Recv != nil && len(decl.Recv.List) > 0 {
+		receiver = exprToString(decl.Recv.List[0].Type)
+	}
+
+	// Extract parameters
+	if decl.Type.Params != nil {
+		start := 0
+		// Skip context parameter
+		if len(decl.Type.Params.List) > 0 {
+			firstParam := decl.Type.Params.List[0]
+			firstType := exprToString(firstParam.Type)
+			if strings.Contains(firstType, "Context") {
+				start = 1
+			}
+		}
+
+		for i := start; i < len(decl.Type.Params.List); i++ {
+			field := decl.Type.Params.List[i]
+
+			// Skip variadic parameters (e.g., opts ...*workflow.ActivityOptions)
+			// These are always optional and handled separately in templates
+			if _, isEllipsis := field.Type.(*ast.Ellipsis); isEllipsis {
+				continue
+			}
+
+			typeStr := exprToString(field.Type)
+
+			for _, name := range field.Names {
+				params = append(params, Param{
+					Name:         name.Name,
+					Type:         typeStr,
+					ExportedName: toPascal(name.Name),
+				})
+			}
+		}
+	}
+
+	if len(params) > 0 {
+		inputType = params[0].Type
+	}
+
+	// Extract return type
+	if decl.Type.Results != nil && len(decl.Type.Results.List) > 0 {
+		// If 2 returns, first is result type, second is error
+		if len(decl.Type.Results.List) == 2 {
+			outputType = exprToString(decl.Type.Results.List[0].Type)
+		}
+		// If 1 return, it's just error
+	}
+
+	return inputType, outputType, params, receiver, nil
+}
+
+// exprToString converts an AST expression to a string representation
+func exprToString(expr ast.Expr) string {
+	switch t := expr.(type) {
+	case *ast.Ident:
+		return t.Name
+	case *ast.StarExpr:
+		return "*" + exprToString(t.X)
+	case *ast.SelectorExpr:
+		return exprToString(t.X) + "." + t.Sel.Name
+	case *ast.ArrayType:
+		if t.Len == nil {
+			return "[]" + exprToString(t.Elt)
+		}
+		return "[" + exprToString(t.Len) + "]" + exprToString(t.Elt)
+	case *ast.Ellipsis:
+		// Variadic parameter like ...string
+		return "[]" + exprToString(t.Elt)
+	case *ast.MapType:
+		return "map[" + exprToString(t.Key) + "]" + exprToString(t.Value)
+	case *ast.InterfaceType:
+		return "interface{}"
+	case *ast.IndexExpr:
+		// Generic type like Foo[T]
+		return exprToString(t.X) + "[" + exprToString(t.Index) + "]"
+	case *ast.IndexListExpr:
+		// Generic with multiple params like Foo[T, U]
+		result := exprToString(t.X) + "["
+		for i, index := range t.Indices {
+			if i > 0 {
+				result += ", "
+			}
+			result += exprToString(index)
+		}
+		result += "]"
+		return result
+	default:
+		return "interface{}"
+	}
+}
+
+// getFieldTypeFromAST extracts a field's type from a struct definition using AST
+func getFieldTypeFromAST(pkg *dir.Package, structName string, fieldName string) (string, error) {
+	// Remove pointer prefix if present
+	structName = strings.TrimPrefix(structName, "*")
+
+	// Search through all files in the package for the struct definition
+	for _, file := range pkg.Pkg.Syntax {
+		for _, decl := range file.Decls {
+			genDecl, ok := decl.(*ast.GenDecl)
+			if !ok || genDecl.Tok != token.TYPE {
+				continue
+			}
+
+			for _, spec := range genDecl.Specs {
+				typeSpec, ok := spec.(*ast.TypeSpec)
+				if !ok || typeSpec.Name.Name != structName {
+					continue
+				}
+
+				structType, ok := typeSpec.Type.(*ast.StructType)
+				if !ok {
+					continue
+				}
+
+				// Found the struct, now find the field
+				for _, field := range structType.Fields.List {
+					for _, name := range field.Names {
+						if name.Name == fieldName {
+							return exprToString(field.Type), nil
+						}
+					}
+				}
+
+				return "", fmt.Errorf("field %s not found in struct %s", fieldName, structName)
+			}
+		}
+	}
+
+	return "", fmt.Errorf("struct %s not found in package", structName)
 }

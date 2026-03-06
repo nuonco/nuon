@@ -14,7 +14,7 @@ type UpdateJobExecutionStatusRequest struct {
 	Status         app.RunnerJobExecutionStatus `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJobExecutionStatusRequest) error {
 	runner := app.RunnerJobExecution{
 		ID: req.JobExecutionID,

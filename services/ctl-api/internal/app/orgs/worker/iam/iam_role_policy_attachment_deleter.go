@@ -23,7 +23,7 @@ func (r DeleteIAMRolePolicyAttachmentRequest) validate() error {
 
 type DeleteIAMRolePolicyAttachmentResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @max-retries 2
 func (a *Activities) DeleteIAMRolePolicyAttachment(ctx context.Context, req DeleteIAMRolePolicyAttachmentRequest) (DeleteIAMRolePolicyAttachmentResponse, error) {

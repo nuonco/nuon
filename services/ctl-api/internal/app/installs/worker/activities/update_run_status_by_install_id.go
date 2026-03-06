@@ -14,7 +14,7 @@ type UpdateRunStatusByInstallIDRequest struct {
 	StatusDescription string               `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateRunStatusByInstallID(ctx context.Context, req UpdateRunStatusByInstallIDRequest) error {
 	latestRun := app.InstallSandboxRun{}
 	res := a.db.WithContext(ctx).

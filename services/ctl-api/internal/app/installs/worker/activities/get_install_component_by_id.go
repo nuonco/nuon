@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetInstallComponentByID(ctx context.Context, id string) (*app.InstallComponent, error) {
 	installComponent, err := a.getInstallComponentByID(ctx, id)
 	if err != nil {

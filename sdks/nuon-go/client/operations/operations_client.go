@@ -162,8 +162,6 @@ type ClientService interface {
 
 	CreateComponentBuild(params *CreateComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentBuildCreated, error)
 
-	CreateComponentRelease(params *CreateComponentReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentReleaseCreated, error)
-
 	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
@@ -338,8 +336,6 @@ type ClientService interface {
 
 	GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppPoliciesConfigsOK, error)
 
-	GetAppReleases(params *GetAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleasesOK, error)
-
 	GetAppRunnerConfigs(params *GetAppRunnerConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerConfigsOK, error)
 
 	GetAppRunnerLatestConfig(params *GetAppRunnerLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppRunnerLatestConfigOK, error)
@@ -383,8 +379,6 @@ type ClientService interface {
 	GetComponentLatestBuild(params *GetComponentLatestBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestBuildOK, error)
 
 	GetComponentLatestConfig(params *GetComponentLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestConfigOK, error)
-
-	GetComponentReleases(params *GetComponentReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentReleasesOK, error)
 
 	GetConfigSchema(params *GetConfigSchemaParams, opts ...ClientOption) (*GetConfigSchemaOK, error)
 
@@ -515,10 +509,6 @@ type ClientService interface {
 	GetOrgVCSConnections(params *GetOrgVCSConnectionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgVCSConnectionsOK, error)
 
 	GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgsOK, error)
-
-	GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error)
-
-	GetReleaseSteps(params *GetReleaseStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseStepsOK, error)
 
 	GetRunnerCardDetails(params *GetRunnerCardDetailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerCardDetailsOK, error)
 
@@ -2486,52 +2476,6 @@ func (a *Client) CreateComponentBuild(params *CreateComponentBuildParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateComponentBuild: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-CreateComponentRelease creates a release
-
-Create a release for a component.
-*/
-func (a *Client) CreateComponentRelease(params *CreateComponentReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentReleaseCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateComponentReleaseParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateComponentRelease",
-		Method:             "POST",
-		PathPattern:        "/v1/components/{component_id}/releases",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateComponentReleaseReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateComponentReleaseCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateComponentRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -6594,52 +6538,6 @@ func (a *Client) GetAppPoliciesConfigs(params *GetAppPoliciesConfigsParams, auth
 }
 
 /*
-GetAppReleases gets all releases for an app
-
-Returns all releases for the provided app.
-*/
-func (a *Client) GetAppReleases(params *GetAppReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppReleasesOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetAppReleasesParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetAppReleases",
-		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/releases",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetAppReleasesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetAppReleasesOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetAppReleases: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 GetAppRunnerConfigs gets app runner configs
 
 Returns all runner configurations for the provided app.
@@ -7656,52 +7554,6 @@ func (a *Client) GetComponentLatestConfig(params *GetComponentLatestConfigParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetComponentLatestConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetComponentReleases gets all releases for a component
-
-Returns all releases for the provided component.
-*/
-func (a *Client) GetComponentReleases(params *GetComponentReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentReleasesOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetComponentReleasesParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetComponentReleases",
-		Method:             "GET",
-		PathPattern:        "/v1/components/{component_id}/releases",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetComponentReleasesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetComponentReleasesOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetComponentReleases: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -10737,98 +10589,6 @@ func (a *Client) GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetOrgs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetRelease gets a release
-
-Return a release by id.
-*/
-func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetReleaseParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetRelease",
-		Method:             "GET",
-		PathPattern:        "/v1/releases/{release_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetReleaseReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetReleaseOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetReleaseSteps gets a release s steps
-
-Return a release by id.
-*/
-func (a *Client) GetReleaseSteps(params *GetReleaseStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseStepsOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetReleaseStepsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetReleaseSteps",
-		Method:             "GET",
-		PathPattern:        "/v1/releases/{release_id}/steps",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetReleaseStepsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetReleaseStepsOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetReleaseSteps: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

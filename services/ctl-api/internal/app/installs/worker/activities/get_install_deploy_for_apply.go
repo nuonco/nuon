@@ -14,7 +14,7 @@ type GetInstallDeployForApplyStep struct {
 	ComponentID       string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetInstallDeployForApplyStep(ctx context.Context, req GetInstallDeployForApplyStep) (*app.InstallDeploy, error) {
 	return a.getInstallDeployForApplyStep(ctx, req.InstallWorkflowID, req.ComponentID)
 }

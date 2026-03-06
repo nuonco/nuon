@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetInstallStackOutputs(ctx context.Context, installStackID string) (*app.InstallStackOutputs, error) {
 	outputs := app.InstallStackOutputs{}
 	res := a.db.WithContext(ctx).

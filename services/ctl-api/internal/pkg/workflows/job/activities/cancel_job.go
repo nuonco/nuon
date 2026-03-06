@@ -12,8 +12,8 @@ type CancelJobRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJobRequest) error {
 	runnerJob := app.RunnerJob{
 		ID: req.ID,

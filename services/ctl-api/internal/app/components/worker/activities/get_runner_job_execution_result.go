@@ -13,7 +13,7 @@ type GetRunnerJobExecutionResultRequest struct {
 	RunnerJobExecutionID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) GetRunnerJobExecutionResult(ctx context.Context, req *GetRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
 	l := temporalzap.GetActivityLogger(ctx)

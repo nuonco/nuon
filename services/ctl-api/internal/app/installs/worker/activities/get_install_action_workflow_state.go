@@ -15,8 +15,8 @@ type GetInstallActionWorkflowStateRequest struct {
 	InstallActionWorkflowID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallActionWorkflowID
+// @temporal-gen-v2 activity
+// @by-field InstallActionWorkflowID
 func (a *Activities) GetInstallActionWorkflowState(ctx context.Context, req GetInstallActionWorkflowStateRequest) (*app.InstallActionWorkflow, error) {
 	var act app.InstallActionWorkflow
 	res := a.db.WithContext(ctx).

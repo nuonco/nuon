@@ -11,8 +11,8 @@ type GetInstallForSandboxRequest struct {
 	SandboxID string `json:"sandbox_id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id SandboxID
+// @temporal-gen-v2 activity
+// @by-field SandboxID
 func (a *Activities) GetInstallForSandbox(ctx context.Context, req GetInstallForSandboxRequest) (*app.Install, error) {
 	var sandbox app.InstallSandbox
 

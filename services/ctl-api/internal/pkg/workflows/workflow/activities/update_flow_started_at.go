@@ -14,8 +14,8 @@ type UpdateFlowStartedAtRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStartedAt(ctx context.Context, req UpdateFlowStartedAtRequest) error {
 	runner := app.Workflow{
 		ID: req.ID,

@@ -38,10 +38,13 @@ func LoadPackages(ctx context.Context, dir string) ([]*Package, error) {
 
 // LoadPackage loads a single package by its path
 func LoadPackage(ctx context.Context, path string) (*Package, error) {
+	// Use AST-only parsing by default for speed and to avoid compilation errors
+	// We extract all the type information we need directly from the AST
 	cfg := &packages.Config{
 		Context: ctx,
-		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax,
-		Tests:   false,
+		// Only load syntax and basic info, skip type checking
+		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedSyntax,
+		Tests: false,
 	}
 
 	pkgs, err := packages.Load(cfg, path)
@@ -53,13 +56,5 @@ func LoadPackage(ctx context.Context, path string) (*Package, error) {
 		return nil, fmt.Errorf("package %s not found", path)
 	}
 
-	// With a specific package path, we should get exactly one package unless there are errors
-	// If we get multiple (e.g. test variants), we take the first one that matches the ID if possible,
-	// or just the first one since we disabled Tests.
-	pkg := pkgs[0]
-	if len(pkg.Errors) > 0 {
-		return nil, fmt.Errorf("package %s has errors: %v", path, pkg.Errors)
-	}
-
-	return &Package{Pkg: pkg}, nil
+	return &Package{Pkg: pkgs[0]}, nil
 }

@@ -16,7 +16,7 @@ type UpdateFlowStepTargetStatusRequest struct {
 	StatusDescription string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Context, req UpdateFlowStepTargetStatusRequest) error {
 	step, err := a.PkgWorkflowsFlowGetFlowsStep(ctx, GetFlowStepRequest{
 		FlowStepID: req.StepID,

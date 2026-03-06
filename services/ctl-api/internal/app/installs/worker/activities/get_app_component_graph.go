@@ -13,7 +13,7 @@ type GetAppComponentGraphRequest struct {
 	Reverse bool `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetAppComponentGraph(ctx context.Context, req GetAppComponentGraphRequest) ([]string, error) {
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {

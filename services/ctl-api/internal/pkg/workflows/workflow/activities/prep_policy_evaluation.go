@@ -52,7 +52,7 @@ type PrepPolicyEvaluationResult struct {
 	ComponentName string `json:"component_name" temporaljson:"component_name,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 // @schedule-to-close-timeout 5m
 // @start-to-close-timeout 4m

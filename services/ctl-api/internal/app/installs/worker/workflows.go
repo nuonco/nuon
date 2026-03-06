@@ -62,6 +62,23 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	wkflow := installdelegationdns.NewWorkflow(*w.cfg)
 	wkflows := []any{
+		w.AwaitRunnerHealthy,
+		w.Created,
+		w.DeprovisionDNS,
+		w.DeprovisionRunner,
+		w.ExecuteFlow,
+		w.ProvisionDNS,
+		w.SyncSecrets,
+		w.WorkflowApproval,
+		w.Forget,
+		w.GenerateStateAdmin,
+		w.PollDependencies,
+		w.ProvisionRunner,
+		w.ReprovisionRunner,
+		w.WorkflowApproveAll,
+		w.RerunFlow,
+		w.Restarted,
+		w.Updated,
 		w.EventLoop,
 		w.ActionWorkflowTriggers,
 		w.stateWorkflows.GenerateState,
@@ -75,7 +92,7 @@ func (w *Workflows) All() []any {
 	}
 
 	sub := append(append(append(w.subwfSandbox.All(), w.subwfStack.All()...), w.subwfComponents.All()...), w.subwfActions.All()...)
-	return append(append(wkflows, w.ListWorkflowFns()...), sub...)
+	return append(wkflows, sub...)
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

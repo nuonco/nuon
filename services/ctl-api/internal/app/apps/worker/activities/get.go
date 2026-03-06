@@ -14,8 +14,8 @@ type GetRequest struct {
 	AppID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id AppID
+// @temporal-gen-v2 activity
+// @by-field AppID
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.App, error) {
 	currentApp := app.App{}
 	res := a.db.WithContext(ctx).

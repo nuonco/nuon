@@ -11,8 +11,8 @@ type GetFlowStepsRequest struct {
 	FlowID string `json:"flow_id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id FlowID
+// @temporal-gen-v2 activity
+// @by-field FlowID
 func (a *Activities) PkgWorkflowsFlowGetFlowSteps(ctx context.Context, req GetFlowStepsRequest) ([]app.WorkflowStep, error) {
 	var steps []app.WorkflowStep
 

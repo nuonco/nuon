@@ -11,8 +11,8 @@ type GetRunnersRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) GetRunners(ctx context.Context, req GetRunnersRequest) ([]*app.Runner, error) {
 	var runners []*app.Runner
 

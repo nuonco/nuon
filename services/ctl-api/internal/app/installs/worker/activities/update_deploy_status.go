@@ -16,7 +16,7 @@ type UpdateDeployStatusRequest struct {
 	SkipStatusSync    bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeployStatusRequest) error {
 	installDeploy := app.InstallDeploy{
 		ID: req.DeployID,

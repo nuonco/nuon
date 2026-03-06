@@ -13,8 +13,8 @@ type GetInstallStackStateRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallID
+// @temporal-gen-v2 activity
+// @by-field InstallID
 func (a *Activities) GetInstallStackState(ctx context.Context, req GetInstallStackRequest) (*app.InstallStack, error) {
 	var installStack app.InstallStack
 	res := a.db.WithContext(ctx).

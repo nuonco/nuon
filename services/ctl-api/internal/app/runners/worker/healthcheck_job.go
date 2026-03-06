@@ -28,10 +28,9 @@ func HealthcheckJobRunnerWorkflowsID(req *HealthcheckJobRunnerRequest) string {
 	return fmt.Sprintf("healthcheck-job-%s", req.RunnerID)
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 3m
 // @task-timeout 5m
-// @id-callback HealthcheckJobRunnerWorkflowsID
 func (w *Workflows) HealthcheckJobRunner(ctx workflow.Context, req *HealthcheckJobRunnerRequest) (*HealthcheckJobRunnerResponse, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

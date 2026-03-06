@@ -5,7 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) Created(ctx workflow.Context, sreq signals.RequestSignal) error {
 	return nil
 }

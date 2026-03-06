@@ -12,8 +12,8 @@ type DeleteInstallComponentRequest struct {
 	InstallComponentID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallComponentID
+// @temporal-gen-v2 activity
+// @by-field InstallComponentID
 func (a *Activities) DeleteInstallComponent(ctx context.Context, req DeleteInstallComponentRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

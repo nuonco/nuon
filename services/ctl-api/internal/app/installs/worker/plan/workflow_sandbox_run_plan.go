@@ -14,11 +14,10 @@ type CreateSandboxRunPlanRequest struct {
 	WorkflowID string
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
-// @id-callback SandboxRunWorkflowIDCallback
 func CreateSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
 	p := Planner{}
 	return p.createSandboxRunPlan(ctx, req)

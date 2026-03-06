@@ -16,7 +16,7 @@ type OrgECRAccessInfo struct {
 	Region        string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetOrgECRAccessInfo(ctx context.Context, orgID string) (*OrgECRAccessInfo, error) {
 	ecr, err := ecrauthorization.New(a.v,
 		ecrauthorization.WithCredentials(&credentials.Config{

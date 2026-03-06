@@ -16,8 +16,8 @@ type GetStatusRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgStatusGetInstallWorkflowStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
 	var obj app.Workflow
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
@@ -27,8 +27,8 @@ func (a *Activities) PkgStatusGetInstallWorkflowStatus(ctx context.Context, req 
 	return &obj.Status, nil
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgStatusGetInstallWorkflowStepStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
 	var obj app.WorkflowStep
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {
@@ -38,8 +38,8 @@ func (a *Activities) PkgStatusGetInstallWorkflowStepStatus(ctx context.Context, 
 	return &obj.Status, nil
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgStatusGetInstallStackVersionStatus(ctx context.Context, req GetStatusRequest) (*app.CompositeStatus, error) {
 	var obj app.InstallStackVersion
 	if err := a.getStatus(ctx, &obj, req.ID); err != nil {

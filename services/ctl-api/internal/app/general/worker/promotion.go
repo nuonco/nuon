@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 30s
 func (w *Workflows) Promotion(ctx workflow.Context, _ signals.RequestSignal) error {

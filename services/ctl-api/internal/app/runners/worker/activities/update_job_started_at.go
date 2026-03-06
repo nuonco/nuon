@@ -16,8 +16,8 @@ type UpdateJobStartedAtRequest struct {
 	StartedAt time.Time `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id JobID
+// @temporal-gen-v2 activity
+// @by-field JobID
 func (a *Activities) UpdateJobStartedAt(ctx context.Context, req UpdateJobStartedAtRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

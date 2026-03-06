@@ -14,8 +14,8 @@ type TerminateNamespaceWorkflowsRequest struct {
 	Namespace string `json:"namespace" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id Namespace
+// @temporal-gen-v2 activity
+// @by-field Namespace
 // @schedule-to-close-timeout 120s
 // @start-to-close-timeout 120s
 func (a *Activities) TerminateNamespaceWorkflows(ctx context.Context, req TerminateNamespaceWorkflowsRequest) (int, error) {

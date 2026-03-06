@@ -16,7 +16,7 @@ type SendNotificationRequest struct {
 	Vars map[string]string  `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
 func (a *Activities) SendEmail(ctx context.Context, req SendNotificationRequest) error {
@@ -33,7 +33,7 @@ func (a *Activities) SendEmail(ctx context.Context, req SendNotificationRequest)
 	return nil
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
 func (a *Activities) SendSlack(ctx context.Context, req SendNotificationRequest) error {

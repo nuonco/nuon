@@ -14,7 +14,7 @@ type GetInstallRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetInstall(ctx context.Context, req GetInstallRequest) (*app.Install, error) {
 	return a.getInstall(ctx, req.InstallID)
 }

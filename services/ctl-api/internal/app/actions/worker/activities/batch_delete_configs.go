@@ -13,8 +13,8 @@ type BatchDeleteActionWorkflowRequest struct {
 	ActionWorkflowID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ActionWorkflowID
+// @temporal-gen-v2 activity
+// @by-field ActionWorkflowID
 func (a *Activities) BatchDeleteActionWorkflow(ctx context.Context, req BatchDeleteActionWorkflowRequest) (bool, error) {
 	hasMore := false
 	configs := []app.ActionWorkflowConfig{}

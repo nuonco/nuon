@@ -15,7 +15,7 @@ type UpdateJobStatusRequest struct {
 	StatusDescription string              `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

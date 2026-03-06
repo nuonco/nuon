@@ -15,7 +15,7 @@ type SaveInstallStackVersionTemplateRequest struct {
 	Checksum string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) SaveInstallStackVersionTemplate(ctx context.Context, req *SaveInstallStackVersionTemplateRequest) error {
 	obj := &app.InstallStackVersion{
 		ID: req.ID,

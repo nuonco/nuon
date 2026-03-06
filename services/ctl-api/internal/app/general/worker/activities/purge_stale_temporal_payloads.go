@@ -11,7 +11,7 @@ type PurgeStaleTemporalPayloadsRequest struct {
 	DurationAgo time.Duration
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PurgeStaleTemporalPayloads(ctx context.Context, req PurgeStaleTemporalPayloadsRequest) error {
 	cutoff := time.Now().Add(-req.DurationAgo)
 

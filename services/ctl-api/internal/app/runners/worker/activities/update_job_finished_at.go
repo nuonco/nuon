@@ -16,8 +16,8 @@ type UpdateJobFinishedAtRequest struct {
 	FinishedAt time.Time `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id JobID
+// @temporal-gen-v2 activity
+// @by-field JobID
 func (a *Activities) UpdateJobFinishedAt(ctx context.Context, req UpdateJobFinishedAtRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,

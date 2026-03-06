@@ -21,10 +21,18 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	fns := w.ListWorkflowFns()
-	fns = append(fns, w.EventLoop)
-	fns = append(fns, plan.CreateComponentBuildPlan)
-	return fns
+	return []any{
+		w.Build,
+		w.Created,
+		w.Delete,
+		w.PollDependencies,
+		w.Provision,
+		w.QueueBuild,
+		w.Restarted,
+		w.UpdateComponentType,
+		w.EventLoop,
+		plan.CreateComponentBuildPlan,
+	}
 }
 
 type WorkflowsParams struct {

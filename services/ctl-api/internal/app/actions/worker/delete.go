@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 3m
 func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) error {

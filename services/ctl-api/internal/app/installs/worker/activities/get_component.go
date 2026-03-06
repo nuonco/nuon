@@ -10,8 +10,8 @@ type GetComponentRequest struct {
 	ComponentID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ComponentID
+// @temporal-gen-v2 activity
+// @by-field ComponentID
 func (a *Activities) GetComponent(ctx context.Context, req GetComponentRequest) (*app.Component, error) {
 	return a.componentsHelpers.GetComponent(ctx, req.ComponentID)
 }

@@ -10,7 +10,7 @@ import (
 	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 10m
 // @task-timeout 30s
 func (w *Workflows) Seed(ctx workflow.Context, _ signals.RequestSignal) error {

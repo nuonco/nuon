@@ -13,11 +13,10 @@ type CreateDeployPlanRequest struct {
 	WorkflowID string
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
-// @id-callback CreateDeployPlanIDCallback
 func CreateDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, error) {
 	p := Planner{}
 

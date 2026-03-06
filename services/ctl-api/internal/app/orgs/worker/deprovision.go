@@ -35,7 +35,7 @@ const (
 // 	}
 // }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {

@@ -13,8 +13,8 @@ type ForceDeleteRequest struct {
 	RunnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id RunnerID
+// @temporal-gen-v2 activity
+// @by-field RunnerID
 func (a *Activities) ForceDelete(ctx context.Context, req ForceDeleteRequest) error {
 	res := a.db.WithContext(ctx).
 		Unscoped().

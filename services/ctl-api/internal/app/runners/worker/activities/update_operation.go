@@ -14,7 +14,7 @@ type UpdateOperationRequest struct {
 	Status      app.RunnerOperationStatus `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateOperation(ctx context.Context, req UpdateOperationRequest) error {
 	currentOperation := app.RunnerOperation{
 		ID: req.OperationID,

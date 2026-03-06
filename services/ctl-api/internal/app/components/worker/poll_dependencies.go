@@ -16,7 +16,7 @@ const (
 // TODO(ja): Components don't have a status field, so we can't update them if this fails.
 // Not sure if that's a problem or not.
 //
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 3m
 func (w *Workflows) PollDependencies(ctx workflow.Context, sreq signals.RequestSignal) error {

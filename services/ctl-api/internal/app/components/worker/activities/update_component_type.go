@@ -14,7 +14,7 @@ type UpdateComponentTypeRequest struct {
 	Type        app.ComponentType `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateComponentType(ctx context.Context, req UpdateComponentTypeRequest) error {
 	cmp := app.Component{
 		ID: req.ComponentID,

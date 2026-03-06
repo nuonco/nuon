@@ -111,7 +111,6 @@ generate_repo() {
   remaining=$(printf "%s\n" "$remaining" | grep -v "services/ctl-api/main.go" || true)
 
   ordered_files=(
-    "pkg/workflows/types/executors/gen.go"
     "pkg/config/schema/gen.go"
     "pkg/types/components/components.go"
     "bins/runner/main.go"

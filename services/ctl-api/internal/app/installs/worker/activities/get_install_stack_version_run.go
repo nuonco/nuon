@@ -11,8 +11,8 @@ type GetInstallStackVersionRunRequest struct {
 	VersionID string `json:"version_id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id VersionID
+// @temporal-gen-v2 activity
+// @by-field VersionID
 func (a *Activities) GetInstallStackVersionRun(ctx context.Context, req GetInstallStackVersionRunRequest) (*app.InstallStackVersionRun, error) {
 	var stack app.InstallStackVersionRun
 

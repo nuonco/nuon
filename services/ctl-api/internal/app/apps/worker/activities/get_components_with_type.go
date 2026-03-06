@@ -11,7 +11,7 @@ type GetComponentsWithType struct {
 	IDs []string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponentsWithType) ([]app.Component, error) {
 	comps := make([]app.Component, 0)
 	res := a.db.WithContext(ctx).Model(&app.Component{}).Where("ID IN ?", req.IDs).

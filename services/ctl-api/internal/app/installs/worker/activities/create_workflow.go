@@ -14,7 +14,7 @@ type CreateWorkflowRequest struct {
 	PlanOnly     bool              `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateWorkflow(ctx context.Context, req CreateWorkflowRequest) (*app.Workflow, error) {
 	workflow, err := a.helpers.CreateWorkflow(ctx, req.InstallID, req.WorkflowType, req.Metadata, req.PlanOnly)
 	if err != nil {
