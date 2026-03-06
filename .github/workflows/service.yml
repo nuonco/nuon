@@ -53,6 +53,17 @@ jobs:
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
 
+      - name: Login to Docker Hub (optional)
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          else
+            echo "::warning::DOCKERHUB_USERNAME/DOCKERHUB_TOKEN are not configured; Docker Hub pulls may hit rate limits."
+          fi
+
       - name: Setup BuildKit
         if: ${{ env.NO_REMOTE_BUILDKIT != 'true' }}
         run: CI=true nuonctl builds driver ctl-api
