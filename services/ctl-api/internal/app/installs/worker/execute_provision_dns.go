@@ -45,7 +45,7 @@ type NuonDNSOutputs struct {
 	IngressNginx         NuonDNSChart `mapstructure:"ingress_nginx,omitempty"`
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @execution-timeout 30m
 func (w *Workflows) ProvisionDNS(ctx workflow.Context, sreq signals.RequestSignal) error {

@@ -11,8 +11,8 @@ type GetInstallForInstallComponentRequest struct {
 	InstallComponentID string `json:"component_id" validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallComponentID
+// @temporal-gen-v2 activity
+// @by-field InstallComponentID
 func (a *Activities) GetInstallForInstallComponent(ctx context.Context, req GetInstallForInstallComponentRequest) (*app.Install, error) {
 	var component app.InstallComponent
 

@@ -14,7 +14,7 @@ type SaveRunnerJobPlanRequest struct {
 	PlanJSON string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
 	if err := a.runnersHelpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON), req.CompositePlan); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)

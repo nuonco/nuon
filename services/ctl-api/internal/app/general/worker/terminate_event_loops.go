@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 10m
 // @task-timeout 30s
 func (w *Workflows) TerminateEventLoops(ctx workflow.Context, _ signals.RequestSignal) error {

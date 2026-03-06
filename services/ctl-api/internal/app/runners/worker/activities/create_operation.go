@@ -13,7 +13,7 @@ type CreateOperationRequest struct {
 	OperationType app.RunnerOperationType `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateOperationRequest(ctx context.Context, req CreateOperationRequest) (*app.RunnerOperation, error) {
 	op := app.RunnerOperation{
 		OpType:            req.OperationType,

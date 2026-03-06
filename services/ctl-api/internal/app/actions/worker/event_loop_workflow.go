@@ -4,18 +4,27 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
 )
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:          AwaitCreated,
-		signals.OperationRestart:          AwaitRestart,
-		signals.OperationPollDependencies: AwaitPollDependencies,
-		signals.OperationDelete:           AwaitDelete,
-		signals.OperationConfigCreated:    AwaitConfigCreated,
+		signals.OperationCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitCreated(ctx, input)
+		},
+		signals.OperationRestart: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitRestart(ctx, input)
+		},
+		signals.OperationDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDelete(ctx, input)
+		},
+		signals.OperationPollDependencies: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitPollDependencies(ctx, input)
+		},
+		signals.OperationConfigCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitConfigCreated(ctx, input)
+		},
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{
@@ -24,12 +33,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		MW:               w.mw,
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
-		ExistsHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) (bool, error) {
-			// TODO(sdboyer) remove the hardcoded response. Proper code is kept in so the import can remain
-			// to avoid possibilty of subtle bugs when its enabled.
-			_, _ = activities.AwaitCheckExistsByID(ctx, req.ID)
-			return true, nil
-		},
 	}
 
 	return l.Run(ctx, req, pendingSignals)

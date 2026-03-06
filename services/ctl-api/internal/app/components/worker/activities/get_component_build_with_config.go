@@ -13,8 +13,8 @@ type GetComponentBuildWithConfigRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) GetComponentBuildWithConfig(ctx context.Context, req GetComponentBuildWithConfigRequest) (*app.ComponentBuild, error) {
 	return a.getComponentBuildWithConfig(ctx, req.ID)
 }

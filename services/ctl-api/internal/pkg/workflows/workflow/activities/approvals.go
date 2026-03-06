@@ -13,7 +13,7 @@ type CreateStepApprovalResponseRequest struct {
 	Note           string                       `json:"note" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 10s
 func (a *Activities) CreateApprovalResponse(ctx context.Context, req CreateStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {

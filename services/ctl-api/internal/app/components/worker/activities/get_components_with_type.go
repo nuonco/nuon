@@ -12,7 +12,7 @@ type GetComponentsWithType struct {
 	IDs []string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @start-to-close-timeout 300s
 // @max-retries 1
 func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponentsWithType) ([]app.Component, error) {

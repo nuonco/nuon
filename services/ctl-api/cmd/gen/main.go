@@ -1,16 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -153,130 +149,6 @@ func generatePublicOAPI3Spec(ctx context.Context) error {
 	return nil
 }
 
-func runTemporalGen(ctx context.Context) error {
-	// Build a binary to reuse per-directory
-	binpath, err := compileToTemp(ctx, "github.com/nuonco/nuon/pkg/gen/temporal-gen")
-	if err != nil {
-		return fmt.Errorf("unable to compile temporal-gen binary: %w", err)
-	}
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("unable to get current working directory: %w", err)
-	}
-
-	paths := make(chan string)
-	var pathmap sync.Map
-	eg, _ := errgroup.WithContext(ctx)
-	numWorkers := runtime.NumCPU()
-	var inerr error
-
-	for i := 0; i < numWorkers; i++ {
-		eg.Go(func() error {
-			for path := range paths {
-				dir := filepath.Dir(path)
-				if _, has := pathmap.Load(dir); has {
-					continue
-				}
-				byt, err := os.ReadFile(path)
-				if err != nil {
-					return fmt.Errorf("unable to read file %s: %w", path, err)
-				}
-
-				if bytes.Contains(byt, []byte("\n// @temporal-gen ")) {
-					pathmap.Store(dir, struct{}{})
-				}
-			}
-
-			return nil
-		})
-	}
-
-	err = filepath.WalkDir(wd, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() && d.Type().IsRegular() {
-			paths <- path
-		}
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("unable to walk directory: %w", err)
-	}
-
-	close(paths)
-	eg.Wait()
-	if inerr != nil {
-		return inerr
-	}
-
-	eg, _ = errgroup.WithContext(ctx)
-	dirs := make(chan string)
-	for i := 0; i < numWorkers; i++ {
-		eg.Go(func() error {
-			for dir := range dirs {
-				cmd, err := command.New(v,
-					command.WithInheritedEnv(),
-					command.WithCmd(binpath),
-					command.WithCwd(dir),
-				)
-				if err != nil {
-					inerr = fmt.Errorf("unable to create command: %w", err)
-					continue
-				}
-				if err := cmd.Exec(ctx); err != nil {
-					inerr = fmt.Errorf("error running temporal-gen on %s: %w", dir, err)
-				}
-			}
-
-			return nil
-		})
-	}
-
-	pathmap.Range(func(k, _ any) bool {
-		dirs <- k.(string)
-		return true
-	})
-
-	close(dirs)
-	eg.Wait()
-
-	return inerr
-}
-
-func compileToTemp(ctx context.Context, path string) (string, error) {
-	// Compile the temporal-gen binary for the given path
-	// This is a placeholder function and should be implemented as needed
-	name := filepath.Base(path)
-
-	tmpdir, err := os.MkdirTemp(os.TempDir(), name)
-	if err != nil {
-		return "", fmt.Errorf("unable to create temporary directory: %w", err)
-	}
-
-	binpath := filepath.Join(tmpdir, name)
-
-	args := []string{
-		"build",
-		"-o", binpath,
-		path,
-	}
-
-	cmd, err := command.New(v,
-		command.WithInheritedEnv(),
-		command.WithCmd("go"),
-		command.WithArgs(args),
-	)
-	if err != nil {
-		return "", fmt.Errorf("unable to create command: %w", err)
-	}
-	if err := cmd.Exec(ctx); err != nil {
-		return "", fmt.Errorf("unable to execute command: %w", err)
-	}
-	return binpath, nil
-}
-
 func main() {
 	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,admin,temporal")
 	flag.Parse()
@@ -310,14 +182,6 @@ func main() {
 			})
 		})
 	}
-	if targets.has("temporal") {
-		eg.Go(func() error {
-			return recorder.time("Temporal", func() error {
-				return runTemporalGen(ctx)
-			})
-		})
-	}
-
 	if targets.has("public") {
 		eg.Go(func() error {
 			if err := recorder.time("Public schema", func() error {

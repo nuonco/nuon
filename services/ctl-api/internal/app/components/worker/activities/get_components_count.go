@@ -9,7 +9,7 @@ import (
 type GetcomponentRecordsCount struct {
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetUnknownComponentCount(ctx context.Context, req GetcomponentRecordsCount) (int64, error) {
 	count, err := a.getUnkownComponentCount(ctx)
 	if err != nil {

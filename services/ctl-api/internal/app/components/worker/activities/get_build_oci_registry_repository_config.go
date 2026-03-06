@@ -14,8 +14,8 @@ type GetComponentOCIRegistryRepository struct {
 	ComponentID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ComponentID
+// @temporal-gen-v2 activity
+// @by-field ComponentID
 func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req *GetComponentOCIRegistryRepository) (*configs.OCIRegistryRepository, error) {
 	comp, err := a.helpers.GetComponent(ctx, req.ComponentID)
 	if err != nil {

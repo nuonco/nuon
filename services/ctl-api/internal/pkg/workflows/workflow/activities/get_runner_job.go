@@ -76,7 +76,7 @@ type GetApprovalPlanRequest struct {
 	StepTargetID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 1
 func (a *Activities) GetApprovalPlan(ctx context.Context, req GetApprovalPlanRequest) (*ApprovalPlan, error) {
 	runnerJob, err := a.getRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: req.StepTargetID})

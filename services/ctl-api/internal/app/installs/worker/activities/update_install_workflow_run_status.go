@@ -15,8 +15,8 @@ type UpdateInstallWorkflowRunStatusRequest struct {
 	StatusDescription string                             `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id RunID
+// @temporal-gen-v2 activity
+// @by-field RunID
 func (a *Activities) UpdateInstallWorkflowRunStatus(ctx context.Context, req UpdateInstallWorkflowRunStatusRequest) error {
 	install := app.InstallActionWorkflowRun{
 		ID: req.RunID,

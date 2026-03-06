@@ -13,8 +13,8 @@ type GetComponentBuildForPolicyEvalRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) GetComponentBuildForPolicyEval(ctx context.Context, req GetComponentBuildForPolicyEvalRequest) (*app.ComponentBuild, error) {
 	return a.getComponentBuildForPolicyEval(ctx, req.ID)
 }

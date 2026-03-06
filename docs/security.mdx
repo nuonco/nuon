@@ -1,0 +1,51 @@
+---
+title: "Security"
+icon: "shield-halved"
+description: "How Nuon keeps customer cloud accounts secure throughout the BYOC deployment lifecycle."
+---
+
+Nuon is designed so that vendors can deploy and manage software in customer cloud accounts without ever having direct access to those accounts.
+
+## No Cross-Account Access
+
+The Nuon [Control Plane](/architecture/platform) never has credentials or network access to customer cloud accounts. [Runners](/concepts/runners) are deployed inside the customer's environment and communicate outbound only, polling the Control Plane for jobs. The Control Plane cannot push commands or open connections into customer accounts.
+
+## Customer-Deployed Infrastructure
+
+All infrastructure in a customer's account is created by the customer themselves. When a vendor creates an [install](/concepts/installs), Nuon generates a cloud-native [Stack](/concepts/stacks) template (CloudFormation or Bicep). The customer reviews and deploys it using their own credentials, retaining full ownership and visibility of every resource created.
+
+## Least-Privilege IAM Roles
+
+Runners use separate IAM roles for different operations (provisioning, maintenance, deprovisioning), each scoped to the minimum permissions required. Components and actions define their own roles and policies, so the Runner never holds more access than a single job needs. See [Permissions](/config-ref/permissions) for configuration details.
+
+## Customer Kill Switch
+
+The customer controls the Runner through the Stack. They can disable the Runner at any time to stop it from executing jobs, and re-enable it when ready. No action from the vendor or Nuon is required.
+
+## Break Glass Access
+
+Vendors can define break glass roles for temporary elevated access during emergencies. These roles are granted by the customer through the Stack and can be revoked at any time. See [Break Glass](/config-ref/break-glass) for configuration details.
+
+## Secrets Stay in the Customer's Cloud
+
+[Secrets](/concepts/app-secrets) are entered by the customer when deploying the Stack and stored in their cloud's secret manager (e.g., AWS Secrets Manager). Neither Nuon nor the vendor ever sees secret values.
+
+## Log Visibility
+
+Nuon only stores logs of infrastructure operations (e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform). Application logs are never sent to the Control Plane. [Actions](/concepts/actions) can execute operational scripts, but the IAM roles they use are defined by the vendor and approved by the customer through the Stack.
+
+## Build Isolation
+
+[Build Runners](/architecture/platform#build-runner) are always single-tenant. Each is deployed to its own host and does not share resources with other Runners. Build artifacts are stored as OCI images in the customer's cloud registry.
+
+## Policies
+
+Vendors can enforce compliance and security standards across builds and deploys using [OPA](https://www.openpolicyagent.org/) and [Kyverno](https://kyverno.io/) policies. Policies can validate Terraform plans, Helm charts, Kubernetes manifests, container images, and sandbox infrastructure, blocking or warning on violations. See [Policies](/concepts/policies) for details.
+
+## Deployment Options
+
+**Nuon Cloud** is the SaaS offering. App and install metadata is stored in an encrypted PostgreSQL database, accessed over TLS with Auth0 authentication.
+
+**Nuon BYOC** deploys the Nuon Control Plane into the vendor's own AWS account. Install metadata and logs stay in the vendor's cloud, and the vendor can restrict Runner access to the Control Plane outside of maintenance windows.
+
+For vendors with stricter requirements, Nuon also supports fully self-hosted deployments using Helm charts.

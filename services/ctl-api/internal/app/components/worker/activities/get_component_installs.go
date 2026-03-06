@@ -12,7 +12,7 @@ type GetComponentInstallsRequest struct {
 	AppID       string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetComponentInstalls(ctx context.Context, req GetComponentInstallsRequest) ([]string, error) {
 	installs, err := a.appsHelpers.GetAppInstalls(ctx, req.AppID)
 	if err != nil {

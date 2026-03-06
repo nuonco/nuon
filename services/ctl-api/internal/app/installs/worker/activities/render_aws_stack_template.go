@@ -16,7 +16,7 @@ type RenderAWSStackTemplateResponse struct {
 	Checksum string `temporaljson:"checksum"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) RenderAWSStackTemplate(ctx context.Context, req *RenderAWSStackTemplateRequest) (RenderAWSStackTemplateResponse, error) {
 	res := RenderAWSStackTemplateResponse{}
 	tmpl, awsChecksum, err := a.cfTemplates.Template(&req.Input)

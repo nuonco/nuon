@@ -17,10 +17,9 @@ import (
 )
 
 type CreateOrgRequest struct {
-	Name string `json:"name" validate:"required"`
-
-	// These fields are used to control the behaviour of the org.
-	UseSandboxMode bool `json:"use_sandbox_mode"`
+	Name           string   `json:"name" validate:"required"`
+	UseSandboxMode bool     `json:"use_sandbox_mode"`
+	Tags           []string `json:"tags" swaggertype:"array,string"`
 }
 
 func (c *CreateOrgRequest) Validate(v *validator.Validate) error {
@@ -120,6 +119,7 @@ func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateO
 		SandboxMode:         req.UseSandboxMode,
 		OrgType:             orgTyp,
 		NotificationsConfig: notificationsCfg,
+		Tags:                req.Tags,
 	}
 	if s.cfg.ForceSandboxMode {
 		org.SandboxMode = true

@@ -10,7 +10,7 @@ type UpdateInstallDeployWithWorkflowRequest struct {
 	WorkflowID      string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateInstallDeployWithWorkflow(ctx context.Context, req UpdateInstallDeployWithWorkflowRequest) error {
 	err := a.helpers.UpdateDeployWithWorkflowID(ctx, req.InstallDeployID, req.WorkflowID)
 	if err != nil {

@@ -14,7 +14,7 @@ type GetSandboxRunForApplyRequest struct {
 	InstallWorkflowID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetSandboxRunForApply(ctx context.Context, req GetSandboxRunForApplyRequest) (*app.InstallSandboxRun, error) {
 	var run app.InstallSandboxRun
 

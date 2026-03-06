@@ -11,15 +11,33 @@ import (
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationPollDependencies:    AwaitPollDependencies,
-		signals.OperationProvision:           AwaitProvision,
-		signals.OperationCreated:             AwaitCreated,
-		signals.OperationQueueBuild:          AwaitQueueBuild,
-		signals.OperationConfigCreated:       AwaitQueueBuild,
-		signals.OperationBuild:               AwaitBuild,
-		signals.OperationDelete:              AwaitDelete,
-		signals.OperationRestart:             AwaitRestarted,
-		signals.OperationUpdateComponentType: AwaitUpdateComponentType,
+		signals.OperationPollDependencies: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitPollDependencies(ctx, input)
+		},
+		signals.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvision(ctx, input)
+		},
+		signals.OperationCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitCreated(ctx, input)
+		},
+		signals.OperationQueueBuild: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitQueueBuild(ctx, input)
+		},
+		signals.OperationConfigCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitQueueBuild(ctx, input)
+		},
+		signals.OperationBuild: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitBuild(ctx, input)
+		},
+		signals.OperationDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDelete(ctx, input)
+		},
+		signals.OperationRestart: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitRestarted(ctx, input)
+		},
+		signals.OperationUpdateComponentType: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitUpdateComponentType(ctx, input)
+		},
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

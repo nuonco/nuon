@@ -42,7 +42,12 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return append(w.ListWorkflowFns(), w.StackEventLoop)
+	return []any{
+		w.GenerateInstallStackVersion,
+		w.InstallStackVersionRun,
+		w.UpdateInstallStackOutputs,
+		w.StackEventLoop,
+	}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

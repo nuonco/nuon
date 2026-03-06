@@ -22,7 +22,7 @@ func (r DeleteIAMPolicyRequest) validate() error {
 
 type DeleteIAMPolicyResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 // @max-retries 2
 func (a *Activities) DeleteIAMPolicy(ctx context.Context, req DeleteIAMPolicyRequest) (DeleteIAMPolicyResponse, error) {

@@ -11,8 +11,8 @@ type GetRunnerStatusRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) GetRunnerStatus(ctx context.Context, req GetRunnerStatusRequest) (app.RunnerStatus, error) {
 	runner, err := a.getRunner(ctx, req.ID)
 	if err != nil {

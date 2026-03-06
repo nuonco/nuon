@@ -13,7 +13,7 @@ type UpdateInstallSandboxStatusRequest struct {
 	StatusDescription string                   `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateInstallSandboxStatus(ctx context.Context, req UpdateInstallSandboxStatusRequest) error {
 	run := app.InstallSandboxRun{}
 	res := a.db.WithContext(ctx).

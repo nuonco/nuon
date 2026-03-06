@@ -13,7 +13,7 @@ type CreateHealthCheckJobRequest struct {
 	Metadata    map[string]string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateHealthCheckJob(ctx context.Context, req *CreateHealthCheckJobRequest) (*app.RunnerJob, error) {
 	return a.helpers.CreateHealthCheckJob(ctx, req.RunnerID, req.RunnerID, req.LogStreamID, req.Metadata)
 }

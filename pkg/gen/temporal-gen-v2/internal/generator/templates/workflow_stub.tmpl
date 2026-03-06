@@ -1,0 +1,21 @@
+{{- $reqType := .InputType -}}
+
+// Execute{{.Name | ToPascal}} is a wrapper for the {{.Name | ToPascal}} workflow
+func Execute{{.Name | ToPascal}}(ctx workflow.Context, input {{$reqType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	panic("stub implementation - will be replaced in phase 2")
+}
+
+// Execute{{.Name | ToPascal}}WithOptions is a wrapper for the {{.Name | ToPascal}} workflow with options
+func Execute{{.Name | ToPascal}}WithOptions(ctx workflow.Context, input {{$reqType}}, opts workflow.ChildWorkflowOptions) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	panic("stub implementation - will be replaced in phase 2")
+}
+
+// Execute{{.Name | ToPascal}}Async is a wrapper for the {{.Name | ToPascal}} workflow that returns a future
+func Execute{{.Name | ToPascal}}Async(ctx workflow.Context, input {{$reqType}}) workflow.ChildWorkflowFuture {
+	panic("stub implementation - will be replaced in phase 2")
+}
+
+// Execute{{.Name | ToPascal}}AsyncWithOptions is a wrapper for the {{.Name | ToPascal}} workflow that returns a future with options
+func Execute{{.Name | ToPascal}}AsyncWithOptions(ctx workflow.Context, input {{$reqType}}, opts workflow.ChildWorkflowOptions) workflow.ChildWorkflowFuture {
+	panic("stub implementation - will be replaced in phase 2")
+}

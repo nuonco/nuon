@@ -23,7 +23,10 @@ type ServiceCreateOrgRequest struct {
 	// Required: true
 	Name *string `json:"name"`
 
-	// These fields are used to control the behaviour of the org.
+	// tags
+	Tags []string `json:"tags"`
+
+	// use sandbox mode
 	UseSandboxMode bool `json:"use_sandbox_mode,omitempty"`
 }
 

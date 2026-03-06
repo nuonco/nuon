@@ -14,7 +14,7 @@ const (
 	orphanedJobsThreshold time.Duration = time.Hour * 12
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) FlushOrphanedJobs(ctx workflow.Context, sreq signals.RequestSignal) error {
 	ts := workflow.Now(ctx)
 	threshold := ts.Add(-orphanedJobsThreshold)

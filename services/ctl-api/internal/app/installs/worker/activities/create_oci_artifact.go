@@ -17,7 +17,7 @@ type CreateOCIArtifactRequest struct {
 	Outputs state.OCIArtifactOutputs `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateOCIArtifact(ctx context.Context, req CreateOCIArtifactRequest) (*app.OCIArtifact, error) {
 	ociArt := app.OCIArtifact{
 		OwnerType: req.OwnerType,

@@ -40,6 +40,7 @@ type Config struct {
 
 	// internal configuration, not designed to be used by users
 	GitHubAppName   string        `mapstructure:"github_app_name"`
+	APIURLSource    string        `mapstructure:"-"`
 	Env             string        `mapstructure:"-"`
 	CleanupTimeout  time.Duration `mapstructure:"-"`
 	SegmentWriteKey string        `mapstructure:"-"`
@@ -74,6 +75,15 @@ func NewConfig(customFilepath string) (*Config, error) {
 	}
 	if cfg.GetString("api_url") != "" {
 		cfg.APIURL = cfg.GetString("api_url")
+		if os.Getenv("NUON_API_URL") != "" {
+			cfg.APIURLSource = "NUON_API_URL env"
+		} else {
+			cfgFile := cfg.ConfigFileUsed()
+			if home, err := homedir.Dir(); err == nil {
+				cfgFile = strings.Replace(cfgFile, home, "~", 1)
+			}
+			cfg.APIURLSource = cfgFile
+		}
 	}
 	if cfg.GetString("org_id") != "" {
 		cfg.OrgID = cfg.GetString("org_id")

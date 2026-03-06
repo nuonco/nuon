@@ -13,7 +13,7 @@ type FetchUntornInstallDeploysRequest struct {
 	InstallID string `json:"install_id" validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) FetchUntornInstallDeploys(ctx context.Context, req FetchUntornInstallDeploysRequest) ([]*app.InstallDeploy, error) {
 	install := app.Install{}
 

@@ -10,9 +10,15 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationGenerateInstallStackVersion: AwaitGenerateInstallStackVersion,
-		signals.OperationAwaitInstallStackVersionRun: AwaitInstallStackVersionRun,
-		signals.OperationUpdateInstallStackOutputs:   AwaitUpdateInstallStackOutputs,
+		signals.OperationGenerateInstallStackVersion: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitGenerateInstallStackVersion(ctx, input)
+		},
+		signals.OperationAwaitInstallStackVersionRun: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitInstallStackVersionRun(ctx, input)
+		},
+		signals.OperationUpdateInstallStackOutputs: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitUpdateInstallStackOutputs(ctx, input)
+		},
 	}
 }
 

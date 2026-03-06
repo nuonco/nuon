@@ -7,7 +7,7 @@ import (
 type GetUnknownComponents struct {
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetUnknownComponentIDs(ctx context.Context, req GetUnknownComponents) ([]string, error) {
 	comps, err := a.getUnkownComponentIDs(ctx)
 	if err != nil {

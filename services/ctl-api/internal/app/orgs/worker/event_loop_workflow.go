@@ -17,19 +17,45 @@ type OrgEventLoopRequest struct {
 
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		sigs.OperationCreated:            AwaitCreated,
-		sigs.OperationProvision:          AwaitProvision,
-		sigs.OperationReprovision:        AwaitReprovision,
-		sigs.OperationDeprovision:        AwaitDeprovision,
-		sigs.OperationForceDeprovision:   AwaitForceDeprovision,
-		sigs.OperationRestart:            AwaitRestart,
-		sigs.OperationRestartRunners:     AwaitRestartRunners,
-		sigs.OperationInviteCreated:      AwaitInviteUser,
-		sigs.OperationInviteAccepted:     AwaitInviteAccepted,
-		sigs.OperationForceDelete:        AwaitForceDelete,
-		sigs.OperationDelete:             AwaitDelete,
-		sigs.OperationForceSandboxMode:   AwaitForceSandboxMode,
-		sigs.OperationEnableFeatureFlags: AwaitEnableFeatureFlags,
+		sigs.OperationCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitCreated(ctx, input)
+		},
+		sigs.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvision(ctx, input)
+		},
+		sigs.OperationReprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovision(ctx, input)
+		},
+		sigs.OperationDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovision(ctx, input)
+		},
+		sigs.OperationForceDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitForceDeprovision(ctx, input)
+		},
+		sigs.OperationRestart: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitRestart(ctx, input)
+		},
+		sigs.OperationRestartRunners: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitRestartRunners(ctx, input)
+		},
+		sigs.OperationInviteCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitInviteUser(ctx, input)
+		},
+		sigs.OperationInviteAccepted: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitInviteAccepted(ctx, input)
+		},
+		sigs.OperationForceDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitForceDelete(ctx, input)
+		},
+		sigs.OperationDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDelete(ctx, input)
+		},
+		sigs.OperationForceSandboxMode: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitForceSandboxMode(ctx, input)
+		},
+		sigs.OperationEnableFeatureFlags: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitEnableFeatureFlags(ctx, input)
+		},
 	}
 
 	l := loop.Loop[*signals.Signal, signals.RequestSignal]{

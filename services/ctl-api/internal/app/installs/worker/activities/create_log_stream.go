@@ -24,7 +24,7 @@ type CreateLogStreamRequest struct {
 	ParentLogStreamID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamRequest) (*app.LogStream, error) {
 	typ := "install_sandbox_runs"
 	id := req.SandboxRunID

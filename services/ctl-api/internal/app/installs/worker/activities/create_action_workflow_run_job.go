@@ -15,8 +15,8 @@ type CreateActionWorkflowRunRunnerJob struct {
 	Metadata            map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ActionWorkflowRunID
+// @temporal-gen-v2 activity
+// @by-field ActionWorkflowRunID
 func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *CreateActionWorkflowRunRunnerJob) (*app.RunnerJob, error) {
 	run, err := a.getInstallActionWorkflowRun(ctx, req.ActionWorkflowRunID)
 	if err != nil {

@@ -44,7 +44,7 @@ type PersistPolicyReportResult struct {
 	PassCount int    `json:"pass_count" temporaljson:"pass_count,omitempty"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 3
 // @schedule-to-close-timeout 2m
 // @start-to-close-timeout 1m30s

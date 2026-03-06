@@ -17,8 +17,8 @@ type CreateLogStreamRequest struct {
 	OperationID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OperationID
+// @temporal-gen-v2 activity
+// @by-field OperationID
 func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamRequest) (*app.LogStream, error) {
 	typ := "runner_operations"
 

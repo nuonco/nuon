@@ -19,7 +19,7 @@ func (d ProvisionDNSDelegationRequest) Validate() error {
 
 type ProvisionDNSDelegationResponse struct{}
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
 // @id-template {{ .CallerID }}-provision-dns-delegation

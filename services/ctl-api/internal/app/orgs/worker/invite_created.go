@@ -13,7 +13,7 @@ import (
 
 // inviteCreated: is called when a new org invite is created_by
 //
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) InviteUser(ctx workflow.Context, sreq signals.RequestSignal) error {
 	org, err := activities.AwaitGetByOrgID(ctx, sreq.ID)
 	if err != nil {

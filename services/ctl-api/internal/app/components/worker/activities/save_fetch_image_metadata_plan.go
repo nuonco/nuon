@@ -20,7 +20,7 @@ type SaveFetchImageMetadataPlanRequest struct {
 	BuildID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @max-retries 2
 // @schedule-to-close-timeout 1m
 // @start-to-close-timeout 30s

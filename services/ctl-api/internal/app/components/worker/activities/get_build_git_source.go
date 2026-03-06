@@ -13,8 +13,8 @@ type GetBuildGitSource struct {
 	BuildID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id BuildID
+// @temporal-gen-v2 activity
+// @by-field BuildID
 func (a *Activities) GetBuildGitSource(ctx context.Context, req GetBuildGitSource) (*plantypes.GitSource, error) {
 	build, err := a.getComponentBuildWithConfig(ctx, req.BuildID)
 	if err != nil {

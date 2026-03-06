@@ -14,8 +14,8 @@ type GetDeployRequest struct {
 	DeployID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id DeployID
+// @temporal-gen-v2 activity
+// @by-field DeployID
 func (a *Activities) GetDeploy(ctx context.Context, req GetDeployRequest) (*app.InstallDeploy, error) {
 	return a.getDeploy(ctx, req.DeployID)
 }

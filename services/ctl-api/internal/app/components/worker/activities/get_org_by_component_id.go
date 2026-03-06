@@ -12,8 +12,8 @@ type GetOrgRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) GetOrg(ctx context.Context, req GetOrgRequest) (*app.Org, error) {
 	var org app.Org
 	if res := a.db.WithContext(ctx).First(&org, "id = ?", req.ID); res.Error != nil {

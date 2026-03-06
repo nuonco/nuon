@@ -14,7 +14,7 @@ type UpdateRunnerGroupSettings struct {
 	LocalAWSIAMRoleARN string `json:"runner_iam_role_arn"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateRunnerGroupSettings(ctx context.Context, req *UpdateRunnerGroupSettings) error {
 	return nil
 

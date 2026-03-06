@@ -142,21 +142,44 @@
       {
         "tab": "Concepts",
         "icon": "lightbulb",
-        "pages": [
-          "concepts/overview",
-          "concepts/apps",
-          "concepts/sandboxes",
-          "concepts/components",
-          "concepts/installs",
-          "concepts/runners",
-          "concepts/workflows",
-          "concepts/actions",
-          "concepts/policies",
-          "concepts/operation-roles",
-          "concepts/app-inputs",
-          "concepts/app-variables",
-          "concepts/app-secrets",
-          "concepts/glossary"
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["concepts/overview"]
+          },
+          {
+            "group": "Connect Your App",
+            "pages": [
+              "concepts/apps",
+              "concepts/components",
+              "concepts/sandboxes",
+              "concepts/app-inputs",
+              "concepts/app-secrets",
+              "concepts/app-variables"
+            ]
+          },
+          {
+            "group": "Support Customer Infrastructure",
+            "pages": [
+              "concepts/installs",
+              "concepts/stacks",
+              "concepts/runners",
+              "concepts/operation-roles"
+            ]
+          },
+          {
+            "group": "Continuous Delivery",
+            "pages": [
+              "concepts/workflows",
+              "concepts/actions",
+              "concepts/policies",
+              "concepts/customer-portal"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": ["concepts/glossary"]
+          }
         ]
       },
       {
@@ -167,6 +190,10 @@
             "group": "Configuration",
             "pages": [
               "guides/app-install-life-cycle",
+              "guides/managing-apps",
+              "guides/managing-components",
+              "guides/configuring-sandboxes",
+              "guides/configuring-inputs-and-secrets",
               "guides/vcs",
               "guides/docker-build-components",
               "guides/container-image-components",
@@ -210,7 +237,7 @@
       {
         "tab": "Architecture",
         "icon": "sitemap",
-        "pages": ["runner-architecture"]
+        "pages": ["architecture/byoc", "architecture/platform", "security"]
       },
       {
         "tab": "Knowledge Base",
@@ -277,6 +304,10 @@
     {
       "source": "/faq",
       "destination": "/support/support"
+    },
+    {
+      "source": "/runner-architecture",
+      "destination": "/architecture/platform"
     }
   ]
 }

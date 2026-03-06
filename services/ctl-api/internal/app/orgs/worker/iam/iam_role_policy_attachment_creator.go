@@ -23,7 +23,7 @@ func (r CreateIAMRolePolicyAttachmentRequest) validate() error {
 
 type CreateIAMRolePolicyAttachmentResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) CreateIAMRolePolicyAttachment(ctx context.Context, req CreateIAMRolePolicyAttachmentRequest) (CreateIAMRolePolicyAttachmentResponse, error) {
 	var resp CreateIAMRolePolicyAttachmentResponse

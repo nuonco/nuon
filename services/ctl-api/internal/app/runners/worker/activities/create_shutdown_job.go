@@ -13,7 +13,7 @@ type CreateShutdownJobRequest struct {
 	Metadata    map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateShutdownJob(ctx context.Context, req *CreateShutdownJobRequest) (*app.RunnerJob, error) {
 	return a.helpers.CreateShutdownJob(ctx, req.RunnerID, req.RunnerID, req.LogStreamID, req.Metadata)
 }
@@ -27,7 +27,7 @@ type CreateMngJobRequest struct {
 	Metadata map[string]string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateMngJob(ctx context.Context, req *CreateMngJobRequest) (*app.RunnerJob, error) {
 	return a.helpers.CreateMngJob(ctx, req.RunnerID, req.LogStreamID, req.JobType, req.Metadata)
 }

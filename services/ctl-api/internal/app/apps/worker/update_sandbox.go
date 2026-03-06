@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 func (w *Workflows) UpdateSandbox(ctx workflow.Context, sreq signals.RequestSignal) error {
 	l := workflow.GetLogger(ctx)
 	// NOTE(sdboyer) note that this is whole behavior is a no-op right now and the signal can't carry a release-id, so we print an empty string

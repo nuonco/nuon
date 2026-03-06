@@ -16,8 +16,8 @@ type GetLatestJobRequest struct {
 	Type      app.RunnerJobType          `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OwnerID
+// @temporal-gen-v2 activity
+// @by-field OwnerID
 func (a *Activities) GetLatestJob(ctx context.Context, req *GetLatestJobRequest) (*app.RunnerJob, error) {
 	job := app.RunnerJob{}
 	res := a.db.WithContext(ctx).

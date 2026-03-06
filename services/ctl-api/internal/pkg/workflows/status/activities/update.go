@@ -29,7 +29,7 @@ type UpdateStatusRequest struct {
 }
 
 // TODO(sdboyer) remove after workflow refactor
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.Workflow{
 		ID: req.ID,
@@ -48,7 +48,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 }
 
 // TODO(sdboyer) remove after workflow refactor
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStep{
 		ID: req.ID,
@@ -66,7 +66,7 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Contex
 	return a.updateStatus(ctx, &obj, req.Status, getter)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateInstallStackVersionStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.InstallStackVersion{
 		ID: req.ID,
@@ -133,7 +133,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	return nil
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.Workflow{
 		ID: req.ID,
@@ -151,7 +151,7 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	return a.updateStatus(ctx, &obj, req.Status, getter)
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req UpdateStatusRequest) error {
 	obj := app.WorkflowStep{
 		ID: req.ID,
@@ -175,7 +175,7 @@ type UpdateBuildStatusV2 struct {
 	StatusDescription string                   `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateBuildStatusV2(ctx context.Context, req UpdateBuildStatusV2) error {
 	obj := app.ComponentBuild{
 		ID: req.BuildID,
@@ -201,8 +201,8 @@ type UpdateInstallWorkflowRunStatusV2Request struct {
 	StatusDescription string                             `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id RunID
+// @temporal-gen-v2 activity
+// @by-field RunID
 func (a *Activities) UpdateInstallWorkflowRunStatusV2(ctx context.Context, req UpdateInstallWorkflowRunStatusV2Request) error {
 	install := app.InstallActionWorkflowRun{
 		ID: req.RunID,
@@ -228,7 +228,7 @@ type UpdateRunStatusV2Request struct {
 	SkipStatusSync    bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV2Request) error {
 	install := app.InstallSandboxRun{
 		ID: req.RunID,
@@ -312,7 +312,7 @@ type UpdateDeployStatusV2Request struct {
 	SkipStatusSync    bool
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployStatusV2Request) error {
 	installDeploy := app.InstallDeploy{
 		ID: req.DeployID,

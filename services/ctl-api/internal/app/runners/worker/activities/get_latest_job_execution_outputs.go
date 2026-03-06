@@ -21,7 +21,7 @@ type GetLatestJobExecutionOutputsResponse struct {
 	JobExecution *app.RunnerJobExecution `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetLatestJobExecutionOutputs(ctx context.Context, req GetLatestJobExecutionOutputsRequest) (*GetLatestJobExecutionOutputsResponse, error) {
 	jobExecution, err := a.getLatestJobExecutionWithOutputs(ctx, req.JobID, req.AvailableAt)
 	if err != nil {

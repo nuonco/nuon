@@ -10,8 +10,12 @@ import (
 
 func (w *Workflows) GetHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationExecuteActionWorkflow: AwaitExecuteActionWorkflow,
-		signals.OperationActionWorkflowRun:     AwaitExecuteActionWorkflowRun,
+		signals.OperationExecuteActionWorkflow: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteActionWorkflow(ctx, input)
+		},
+		signals.OperationActionWorkflowRun: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteActionWorkflowRun(ctx, input)
+		},
 	}
 }
 

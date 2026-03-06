@@ -15,7 +15,7 @@ type QueueComponentBuildRequest struct {
 	CreatedByID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
 	// set the orgID on the context, for all writes
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)

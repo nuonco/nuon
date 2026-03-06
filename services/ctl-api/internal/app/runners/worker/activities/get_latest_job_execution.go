@@ -21,7 +21,7 @@ type GetLatestJobExecutionResponse struct {
 	JobExecution *app.RunnerJobExecution
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetLatestJobExecution(ctx context.Context, req GetLatestJobExecutionRequest) (*GetLatestJobExecutionResponse, error) {
 	jobExecution, err := a.getLatestJobExecution(ctx, req.JobID, req.AvailableAt)
 	if err != nil {

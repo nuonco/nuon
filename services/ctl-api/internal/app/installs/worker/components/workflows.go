@@ -45,10 +45,15 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return append(w.ListWorkflowFns(),
+	return []any{
+		w.ExecuteDeployComponentApplyPlan,
+		w.ExecuteDeployComponentSyncAndPlan,
+		w.ExecuteDeployComponentSyncImage,
+		w.ExecuteTeardownComponentApplyPlan,
+		w.ExecuteTeardownComponentSyncAndPlan,
 		w.ComponentEventLoop,
 		w.DriftCheck,
-	)
+	}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

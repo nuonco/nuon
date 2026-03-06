@@ -15,7 +15,7 @@ type UpdateInstallWorkflowStepTargetRequest struct {
 	StepTargetType string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) UpdateInstallWorkflowStepTarget(ctx context.Context, req UpdateInstallWorkflowStepTargetRequest) error {
 	step := app.WorkflowStep{
 		ID: req.StepID,

@@ -20,7 +20,7 @@ type CreateStepApprovalRequest struct {
 	Plan string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepApprovalRequest) (*app.WorkflowStepApproval, error) {
 	plan := req.Plan
 	if req.Plan == "" {

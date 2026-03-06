@@ -9,10 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam/roles"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 30m
 // @task-timeout 15m
-// @id-callback DeprovisionIAMCallback
 func (w Wkflow) DeprovisionIAM(ctx workflow.Context, req *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	resp := &DeprovisionIAMResponse{}
 

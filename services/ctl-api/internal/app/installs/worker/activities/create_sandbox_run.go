@@ -17,7 +17,7 @@ type CreateSandboxRunRequest struct {
 	Role       string
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunRequest) (*app.InstallSandboxRun, error) {
 	install, err := a.Get(ctx, GetRequest{
 		InstallID: req.InstallID,

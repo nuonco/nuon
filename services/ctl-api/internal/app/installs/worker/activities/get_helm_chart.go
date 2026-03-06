@@ -11,8 +11,8 @@ type GetHelmChartRequest struct {
 	OwnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id OwnerID
+// @temporal-gen-v2 activity
+// @by-field OwnerID
 func (a *Activities) GetHelmChart(ctx context.Context, req GetHelmChartRequest) (*app.HelmChart, error) {
 	return a.getOrCreateHelmChart(ctx, req.OwnerID)
 }

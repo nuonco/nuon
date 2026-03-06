@@ -19,7 +19,7 @@ type UninstallRequest struct {
 
 type UninstallResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 10m
 // @max-retries 5
 func (a *Activities) Uninstall(ctx context.Context, req *UninstallRequest) (*InstallOrUpgradeResponse, error) {

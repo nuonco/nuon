@@ -13,7 +13,7 @@ type MarkStateStaleRequest struct {
 	InstallID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) MarkStateStale(ctx context.Context, req *MarkStateStaleRequest) error {
 	if err := a.helpers.MarkInstallStateStale(ctx, req.InstallID); err != nil {
 		return generics.TemporalGormError(err)

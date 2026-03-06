@@ -26,7 +26,7 @@ func (d DelegateDNSRequest) validate() error {
 
 type DelegateDNSResponse struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) DelegateDNS(ctx context.Context, req DelegateDNSRequest) (DelegateDNSResponse, error) {
 	client, err := a.getRoute53Client(ctx, req.DNSAccessIAMRoleARN)

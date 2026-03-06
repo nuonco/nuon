@@ -14,7 +14,7 @@ type GetInstallSandboxRunForApplyStep struct {
 	InstallID         string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetInstallSandboxRunForApplyStep(ctx context.Context, req GetInstallSandboxRunForApplyStep) (*app.InstallSandboxRun, error) {
 	return a.getInstallSandboxRun(ctx, req.InstallWorkflowID, req.InstallID)
 }
@@ -24,7 +24,7 @@ type GetLatestInstallSandboxRun struct {
 	InstallID         string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetLatestInstallSandboxRun(ctx context.Context, req GetInstallSandboxRunForApplyStep) (*app.InstallSandboxRun, error) {
 	return a.getInstallSandboxRun(ctx, req.InstallWorkflowID, req.InstallID)
 }

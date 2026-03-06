@@ -12,8 +12,8 @@ type DeleteRequest struct {
 	AppID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id AppID
+// @temporal-gen-v2 activity
+// @by-field AppID
 func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).

@@ -18,8 +18,8 @@ type CreateLogStreamRequest struct {
 	BuildID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id BuildID
+// @temporal-gen-v2 activity
+// @by-field BuildID
 func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamRequest) (*app.LogStream, error) {
 	typ := "component_builds"
 	id := req.BuildID

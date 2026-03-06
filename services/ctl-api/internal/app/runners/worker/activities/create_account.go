@@ -15,7 +15,7 @@ type CreateAccountRequest struct {
 	RunnerID string `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest) (*app.Account, error) {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {

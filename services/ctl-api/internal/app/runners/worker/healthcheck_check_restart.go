@@ -28,10 +28,9 @@ func HealthcheckCheckRestartWorkflowsID(req *HealthcheckCheckRestartRequest) str
 	return fmt.Sprintf("healthcheck-check-restart-%s", req.RunnerID)
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 3m
 // @task-timeout 5m
-// @id-callback HealthcheckCheckRestartWorkflowsID
 func (w *Workflows) HealthcheckCheckRestart(
 	ctx workflow.Context,
 	req *HealthcheckCheckRestartRequest,

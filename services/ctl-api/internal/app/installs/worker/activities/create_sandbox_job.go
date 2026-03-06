@@ -17,7 +17,7 @@ type CreateSandboxJobRequest struct {
 	LogStreamID string                     `validate:"required"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJobRequest) (*app.RunnerJob, error) {
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx,
 		req.RunnerID,

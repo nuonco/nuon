@@ -25,10 +25,6 @@ func ProvisionECRRepositoryIDCallback(req *ProvisionECRRepositoryRequest) string
 	return "provision-ecr-" + req.OrgID + "-" + req.AppID
 }
 
-// @temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback ProvisionECRRepositoryIDCallback
 func ProvisionECRRepository(workflow.Context, *ProvisionECRRepositoryRequest) (*ProvisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")
@@ -47,9 +43,6 @@ func DeprovisionECRRepositoryIDCallback(req *DeprovisionECRRepositoryRequest) st
 }
 
 // @disabled-temporal-gen workflow
-// @execution-timeout 10m
-// @task-timeout 1m
-// @task-queue "executors"
 // @id-callback DeprovisionECRRepositoryIDCallback
 func DeprovisionECRRepository(workflow.Context, *DeprovisionECRRepositoryRequest) (*DeprovisionECRRepositoryResponse, error) {
 	panic("this should not be executed directly, and is only used to generate an await function.")

@@ -13,36 +13,66 @@ import (
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
 	return map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
-		signals.OperationCreated:            AwaitCreated,
-		signals.OperationUpdated:            AwaitUpdated,
-		signals.OperationPollDependencies:   AwaitPollDependencies,
-		signals.OperationForget:             AwaitForget,
-		signals.OperationExecuteFlow:        AwaitExecuteFlow,
-		signals.OperationRerunFlow:          AwaitRerunFlow,
-		signals.OperationWorkflowApproveAll: AwaitWorkflowApproveAll,
+		signals.OperationCreated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitCreated(ctx, input)
+		},
+		signals.OperationUpdated: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitUpdated(ctx, input)
+		},
+		signals.OperationPollDependencies: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitPollDependencies(ctx, input)
+		},
+		signals.OperationForget: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitForget(ctx, input)
+		},
+		signals.OperationExecuteFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitExecuteFlow(ctx, input)
+		},
+		signals.OperationRerunFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitRerunFlow(ctx, input)
+		},
+		signals.OperationWorkflowApproveAll: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitWorkflowApproveAll(ctx, input)
+		},
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)
 			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
 		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateState:              AwaitGenerateStateAdmin,
+		signals.OperationGenerateState: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitGenerateStateAdmin(ctx, input)
+		},
 
 		// NOTE(jm): these should be cross account to the runners namespace
 		signals.OperationAwaitRunnerHealthy: w.AwaitRunnerHealthy,
-		signals.OperationProvisionRunner:    AwaitProvisionRunner,
-		signals.OperationReprovisionRunner:  AwaitReprovisionRunner,
+		signals.OperationProvisionRunner: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvisionRunner(ctx, input)
+		},
+		signals.OperationReprovisionRunner: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitReprovisionRunner(ctx, input)
+		},
 
 		// install stack update
-		signals.OperationUpdateInstallStackOutputs: stack.AwaitUpdateInstallStackOutputs,
+		signals.OperationUpdateInstallStackOutputs: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return stack.AwaitUpdateInstallStackOutputs(ctx, input)
+		},
 
 		// adhoc action runs execute directly in main loop
-		signals.OperationActionWorkflowRun: actions.AwaitExecuteActionWorkflowRun,
+		signals.OperationActionWorkflowRun: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return actions.AwaitExecuteActionWorkflowRun(ctx, input)
+		},
 
 		// NOTE(jm): these should be child loops
-		signals.OperationProvisionDNS:   AwaitProvisionDNS,
-		signals.OperationDeprovisionDNS: AwaitDeprovisionDNS,
-		signals.OperationSyncSecrets:    AwaitSyncSecrets,
+		signals.OperationProvisionDNS: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitProvisionDNS(ctx, input)
+		},
+		signals.OperationDeprovisionDNS: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitDeprovisionDNS(ctx, input)
+		},
+		signals.OperationSyncSecrets: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitSyncSecrets(ctx, input)
+		},
 	}
 }
 

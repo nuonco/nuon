@@ -26,10 +26,9 @@ func LifecycleActionWorkflowsID(req *LifecycleActionWorkflowsRequest) string {
 	return fmt.Sprintf("action-workflows-lifecycle-%s-%s", req.TriggerType, req.InstallID)
 }
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 1h
 // @task-timeout 30s
-// @id-callback LifecycleActionWorkflowsID
 func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *LifecycleActionWorkflowsRequest) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

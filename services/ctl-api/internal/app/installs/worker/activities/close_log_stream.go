@@ -12,8 +12,8 @@ type CloseLogStreamRequest struct {
 	LogStreamID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id LogStreamID
+// @temporal-gen-v2 activity
+// @by-field LogStreamID
 func (a *Activities) CloseLogStream(ctx context.Context, req CloseLogStreamRequest) error {
 	ls := &app.LogStream{
 		ID: req.LogStreamID,

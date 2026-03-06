@@ -1,0 +1,19 @@
+---
+title: "Customer Experience"
+description: "How your customers interact with installs in their cloud accounts."
+icon: "users"
+---
+
+Nuon gives you flexibility in how much your customers are involved in managing their installs. You choose the interface and level of control that fits your product.
+
+## Customer Portal
+
+The [Customer Portal](https://customers.nuon.co/) is a hosted, branded web application where your customers can accept installs, deploy the [Stack](/concepts/stacks), approve provisioning, and monitor health checks. Each vendor org gets a portal at `https://<your-org-name>.customers.nuon.co`. See the [Customer Portal guide](/guides/customer-portal) for setup.
+
+## Your Own Product
+
+All Nuon functionality is available through the [Control API](/nuon-api) and [Go SDK](/sdks), so you can build install management directly into your own application. This lets you embed the BYOC experience in your existing product, with full control over the UX. See the [integration guide](/guides/control-plane-integration) for API examples covering the full install lifecycle.
+
+## CLI and Dashboard
+
+Vendors can also manage installs entirely through the [CLI](/cli) and [Dashboard](/dashboard) without exposing any interface to the customer, handling provisioning, approvals, and maintenance on their behalf.

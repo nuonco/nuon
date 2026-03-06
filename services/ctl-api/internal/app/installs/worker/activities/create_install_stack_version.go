@@ -20,7 +20,7 @@ type CreateInstallStackVersionRequest struct {
 	Platform       string `json:"platform"`
 }
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateInstallStackVersionRequest) (*app.InstallStackVersion, error) {
 	phoneHomeID := domains.NewAWSAccountID()
 	id := domains.NewInstallStackID()

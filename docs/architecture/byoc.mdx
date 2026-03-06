@@ -1,0 +1,19 @@
+---
+title: "App Deployment Architecture"
+icon: "cloud"
+description: "Understand what gets deployed into a customer's cloud account."
+---
+
+When you deploy your app through Nuon, it runs inside your customer's cloud account, not yours. Nuon makes this possible by layering infrastructure and execution components inside the customer's environment, all orchestrated remotely by the Nuon [Control Plane](/architecture/platform). Each deployment is called an [Install](/concepts/installs).
+
+![Install Architecture](/images/architecture/byoc-architecture.png)
+
+When an install is created, the layers build on each other from the bottom up:
+
+1. **Cloud Account** - the customer's AWS account or Azure subscription. Everything Nuon deploys lives inside it. No cross-account access is required.
+2. **[Stack](/concepts/stacks)** - a CloudFormation or Bicep template that provisions networking and the Runner. The customer deploys it using their own credentials.
+3. **[Runner](/concepts/runners)** - picks up jobs from the Control Plane and executes all infrastructure operations locally inside the customer's environment.
+4. **[Sandbox](/concepts/sandboxes)** - the base compute infrastructure (Kubernetes, VMs, serverless) provisioned by the Runner.
+5. **[Components](/concepts/components)** - your application (Helm charts, Terraform modules, manifests, container images) deployed on top of the Sandbox.
+
+Everything is defined by the [App Config](/concepts/apps), a set of TOML files that declare the stack, sandbox, components, inputs, secrets, and actions. Each install is an instance of this config deployed into a customer's cloud with their specific values.

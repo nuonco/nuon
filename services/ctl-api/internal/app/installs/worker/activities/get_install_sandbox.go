@@ -13,8 +13,8 @@ type GetInstallSandboxRequest struct {
 	ID        string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id InstallID
+// @temporal-gen-v2 activity
+// @by-field InstallID
 func (a *Activities) GetInstallSandbox(ctx context.Context, req GetInstallSandboxRequest) (*app.InstallSandbox, error) {
 	is := app.InstallSandbox{}
 	query := a.db.WithContext(ctx)

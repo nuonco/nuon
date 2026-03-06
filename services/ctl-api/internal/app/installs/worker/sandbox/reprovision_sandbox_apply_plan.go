@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 60m
 func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signals.RequestSignal) error {
 	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, sreq.ID)

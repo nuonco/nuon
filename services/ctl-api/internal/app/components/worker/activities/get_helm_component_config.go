@@ -12,8 +12,8 @@ type GetHelmComponentConfigRequest struct {
 	ComponentConfigConnectionID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ComponentConfigConnectionID
+// @temporal-gen-v2 activity
+// @by-field ComponentConfigConnectionID
 func (a *Activities) GetHelmComponentConfig(ctx context.Context, req GetHelmComponentConfigRequest) (*app.HelmComponentConfig, error) {
 	return a.getHelmComponentConfig(ctx, req.ComponentConfigConnectionID)
 }

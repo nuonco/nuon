@@ -12,8 +12,8 @@ type GetFlowRequest struct {
 	ID string `validate:"required"`
 }
 
-// @temporal-gen activity
-// @by-id ID
+// @temporal-gen-v2 activity
+// @by-field ID
 func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowRequest) (*app.Workflow, error) {
 	wf := app.Workflow{
 		ID: req.ID,

@@ -11,7 +11,7 @@ import (
 
 type GetPSQLTableMetricsRequest struct{}
 
-// @temporal-gen activity
+// @temporal-gen-v2 activity
 func (a *Activities) GetPSQLTableMetrics(ctx context.Context, req GetPSQLTableMetricsRequest) ([]app.PSQLTableSize, error) {
 	return a.getTableSizes(ctx, a.db)
 }

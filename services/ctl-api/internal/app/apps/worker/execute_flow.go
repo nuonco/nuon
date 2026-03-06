@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-// @temporal-gen workflow
+// @temporal-gen-v2 workflow
 // @execution-timeout 720h
 func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal) error {
 	fc := &flow.WorkflowConductor[*signals.Signal]{
