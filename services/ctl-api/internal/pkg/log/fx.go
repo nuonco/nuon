@@ -6,12 +6,11 @@ import (
 )
 
 func NewFXLog() (fxevent.Logger, error) {
-	zl, err := zap.NewDevelopment()
+	zl, err := zap.NewProduction()
 	if err != nil {
 		return nil, err
 	}
 
-	return &fxevent.ZapLogger{
-		Logger: zl,
-	}, nil
+	fxLog := &fxevent.ZapLogger{Logger: zl}
+	return fxLog, nil
 }

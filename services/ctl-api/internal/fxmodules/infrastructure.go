@@ -17,7 +17,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	pkglog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
@@ -38,7 +37,6 @@ import (
 var InfrastructureModule = fx.Module("infrastructure",
 	// Config and logging foundation
 	fx.Provide(internal.NewConfig),
-	fx.WithLogger(pkglog.NewFXLog),
 	fx.Provide(log.New),
 	fx.Provide(dblog.New),
 
