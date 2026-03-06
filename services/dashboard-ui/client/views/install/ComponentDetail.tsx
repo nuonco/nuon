@@ -76,6 +76,7 @@ export const InstallComponentDetail = () => {
               component={component}
               currentBuildId={latestDeploy?.build_id}
               currentDeployStatus={latestDeploy?.status_v2?.status}
+              installComponent={installComponent}
             />
           </div>
         )}

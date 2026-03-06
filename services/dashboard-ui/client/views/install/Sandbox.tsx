@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { SandboxRunConfigCard } from '@/components/sandbox/SandboxRunConfigCard'
+import { TerraformWorkspaceCard } from '@/components/sandbox/TerraformWorkspaceCard'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
@@ -51,20 +53,33 @@ export const Sandbox = () => {
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-y md:divide-x">
         <div className="md:col-span-8 divide-y flex-auto flex flex-col">
           {sandboxConfig ? (
-            <div className="p-6">
+            <div className="p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <Text variant="base" weight="strong">
+                  Config
+                </Text>
+                <Text variant="subtext">
+                  <Link href={`/${org?.id}/apps/${install?.app_id}`}>
+                    Details
+                    <Icon variant="CaretRightIcon" />
+                  </Link>
+                </Text>
+              </div>
               <SandboxRunConfigCard config={sandboxConfig} />
             </div>
           ) : null}
+
+          <div className="p-6">
+            <TerraformWorkspaceCard />
+          </div>
         </div>
 
         <div className="divide-y flex flex-col md:col-span-4">
           <div className="p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <HeadingGroup>
-                <Text variant="base" weight="strong">
-                  Sandbox controls
-                </Text>
-              </HeadingGroup>
+              <Text variant="base" weight="strong">
+                Sandbox controls
+              </Text>
               <ManagementDropdown />
             </div>
           </div>
