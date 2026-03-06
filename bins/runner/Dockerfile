@@ -21,8 +21,8 @@ COPY main.go .
 
 FROM code AS build
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build -o /bin/runner
@@ -31,8 +31,8 @@ FROM code AS build-versioned
 
 ARG tag=
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
@@ -40,15 +40,15 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
     -o /bin/runner
 
 FROM code AS test
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go test -v ./...
 
 FROM code AS lint
 COPY .golangci.yml .
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
-    --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+    --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml -v
 
 FROM golang:1.25-alpine AS nuon-cli
@@ -112,8 +112,8 @@ ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
@@ -124,8 +124,8 @@ FROM code AS build-darwin-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
@@ -136,8 +136,8 @@ FROM code AS build-linux-arm
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm \
     go build \
@@ -148,8 +148,8 @@ FROM code AS build-linux-arm64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
@@ -160,8 +160,8 @@ FROM code AS build-linux-386
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=386 \
     go build \
@@ -172,8 +172,8 @@ FROM code AS build-linux-amd64
 ARG BIN_NAME=runner
 ARG tag=
 RUN mkdir -p /out
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod-runner \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild-runner \
+RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
