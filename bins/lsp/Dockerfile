@@ -13,6 +13,7 @@ COPY handlers ./handlers/
 COPY mappers ./mappers/
 COPY models ./models/
 # Copy shared packages from the monorepo root (SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
 COPY --from=nuon pkg /src/pkg/
 COPY main.go .
 
