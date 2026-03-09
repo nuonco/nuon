@@ -12,18 +12,18 @@ ARG ETCSSL=/etc/ssl/cert.pem
 WORKDIR /src/services/${SERVICE}
 
 # Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
-COPY sdks /src/sdks/
-COPY pkg /src/pkg/
+COPY --link sdks /src/sdks/
+COPY --link pkg /src/pkg/
 
 # Copy service-specific files (most frequently changed, last for cache efficiency)
-COPY cmd  ./cmd/
-COPY internal ./internal/
+COPY --link cmd  ./cmd/
+COPY --link internal ./internal/
 RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
-COPY docs/admin/descriptions ./docs/admin/descriptions/
-COPY docs/public/descriptions ./docs/public/descriptions/
-COPY docs/runner/descriptions ./docs/runner/descriptions/
-COPY tests ./tests/
-COPY main.go admin.go public.go runner.go ./
+COPY --link docs/admin/descriptions ./docs/admin/descriptions/
+COPY --link docs/public/descriptions ./docs/public/descriptions/
+COPY --link docs/runner/descriptions ./docs/runner/descriptions/
+COPY --link tests ./tests/
+COPY --link main.go admin.go public.go runner.go ./
 
 FROM code AS generated
 
