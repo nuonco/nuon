@@ -119,31 +119,28 @@ COPY --from=build-linux-amd64 /out/ /
 # Compress, checksum, and prepare artifacts for upload
 # Go code will handle the S3 upload part
 FROM alpine:latest AS artifacts
+RUN apk add --no-cache pigz
 
 ARG BIN_NAME=nuon-lsp
-
-# Install p7zip and parallel for compression
-RUN apk add --no-cache p7zip parallel
 
 COPY --from=artifacts-build / /artifacts/
 
-# Create 7z compressed versions of all binaries in parallel
+# Create gzip compressed versions of all binaries
 RUN cd /artifacts && \
-    ls -1 ${BIN_NAME}_* | \
-    parallel -j0 --halt soon,fail=1 --ungroup \
-      'echo "Compressing {} with 7z..." && \
-       7z a -t7z -mx=9 "{}.7z" {}'
+    for f in ${BIN_NAME}_*; do \
+      echo "Compressing $f with pigz..." && \
+      pigz -k "$f"; \
+    done
 
 # Export single binary for quick builds (no multi-platform)
 FROM alpine:latest AS export-linux-amd64
-ARG BIN_NAME=nuon-lsp
+RUN apk add --no-cache pigz
 
-# Install p7zip for compression
-RUN apk add --no-cache p7zip
+ARG BIN_NAME=nuon-lsp
 
 COPY --from=build-linux-amd64 /out/${BIN_NAME}_linux_amd64 /artifacts/${BIN_NAME}_linux_amd64
 
-# Create 7z compressed version
+# Create gzip compressed version
 RUN cd /artifacts && \
-    echo "Compressing ${BIN_NAME}_linux_amd64 with 7z..." && \
-    7z a -t7z -mx=9 "${BIN_NAME}_linux_amd64.7z" "${BIN_NAME}_linux_amd64"
+    echo "Compressing ${BIN_NAME}_linux_amd64 with pigz..." && \
+    pigz -k "${BIN_NAME}_linux_amd64"

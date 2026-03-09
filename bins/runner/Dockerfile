@@ -241,21 +241,11 @@ COPY --from=build-linux-arm64 /out/ /
 COPY --from=build-linux-386 /out/ /
 COPY --from=build-linux-amd64 /out/ /
 
-# Compress, checksum, and prepare artifacts for upload
+# Prepare artifacts for upload
 # Go code will handle the S3 upload part
 FROM alpine:latest AS artifacts
 
 ARG BIN_NAME=runner
 
-# Install p7zip and parallel for compression
-RUN apk add --no-cache p7zip parallel
-
 COPY --from=artifacts-build / /artifacts/
 COPY install.sh /artifacts/install.sh
-
-# Create 7z compressed versions of all binaries in parallel
-RUN cd /artifacts && \
-    ls -1 ${BIN_NAME}_* | \
-    parallel -j0 --halt soon,fail=1 --ungroup \
-      'echo "Compressing {} with 7z..." && \
-       7z a -t7z -mx=9 "{}.7z" {}'

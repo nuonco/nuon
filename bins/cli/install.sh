@@ -76,13 +76,6 @@ else
   echo "✅ using version ${VERSION}..."
 fi
 
-# Check if 7zip is available (from brew or system)
-has_7z=false
-if command -v 7z &> /dev/null || command -v 7za &> /dev/null || command -v 7zz &> /dev/null; then
-  has_7z=true
-  echo "7zip detected, will try compressed binary first..."
-fi
-
 # Function to download and install a binary
 # Args: $1=binary_name (e.g., "nuon" or "nuon-lsp"), $2=base_url, $3=optional (true/false)
 download_and_install_binary() {
@@ -91,60 +84,42 @@ download_and_install_binary() {
   local OPTIONAL=${3:-false}
   local success=false
 
-  # Try 7z compressed binary first if 7zip is available
-  if [ "$has_7z" = true ]; then
-    echo "fetching compressed binary for ${OS} ${ARCH}..."
-    compressed_url="$URL/$VERSION/${NAME}_${OS}_${ARCH}.7z"
+  # Try gzip compressed binary first
+  echo "fetching compressed binary for ${OS} ${ARCH}..."
+  compressed_url="$URL/$VERSION/${NAME}_${OS}_${ARCH}.gz"
 
-    # Try to download .7z file
-    http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME.7z" "$compressed_url" 2>/dev/null)
-    status=$?
+  http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME.gz" "$compressed_url" 2>/dev/null)
+  status=$?
 
-    if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
-      echo "✅ compressed binary downloaded, extracting..."
+  if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
+    echo "✅ compressed binary downloaded, extracting..."
 
-      # Determine which 7z command to use (prefer 7zz, then 7z, then 7za)
-      extract_cmd=""
-      if command -v 7zz &> /dev/null; then
-        extract_cmd="7zz"
-      elif command -v 7z &> /dev/null; then
-        extract_cmd="7z"
-      elif command -v 7za &> /dev/null; then
-        extract_cmd="7za"
-      fi
+    if gunzip -f "$TEMP_DIR/$NAME.gz" &> /dev/null; then
+      echo "✅ extraction successful"
 
-      # Extract to temp directory
-      if $extract_cmd x "$TEMP_DIR/$NAME.7z" -o"$TEMP_DIR" -y &> /dev/null; then
-        echo "✅ extraction successful"
-
-        # Move the binary
-        if [ -f "$TEMP_DIR/${NAME}_${OS}_${ARCH}" ]; then
-          echo "moving binary to $DIR/$NAME..."
-          mv "$TEMP_DIR/${NAME}_${OS}_${ARCH}" "$DIR/$NAME"
-          echo "making binary executable..."
-          chmod +x "$DIR/$NAME"
-          echo "✅ $NAME should be ready to use"
-          success=true
-
-          # Cleanup
-          rm -f "$TEMP_DIR/$NAME.7z"
-        else
-          echo "⚠️  extraction succeeded but binary not found, falling back..."
-        fi
+      if [ -f "$TEMP_DIR/$NAME" ]; then
+        echo "moving binary to $DIR/$NAME..."
+        mv "$TEMP_DIR/$NAME" "$DIR/$NAME"
+        echo "making binary executable..."
+        chmod +x "$DIR/$NAME"
+        echo "✅ $NAME should be ready to use"
+        success=true
       else
-        echo "⚠️  extraction failed, falling back to uncompressed binary..."
+        echo "⚠️  extraction succeeded but binary not found, falling back..."
       fi
     else
-      if [ "$OPTIONAL" = "false" ]; then
-        echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
-      fi
+      echo "⚠️  extraction failed, falling back to uncompressed binary..."
     fi
-
-    # Cleanup failed attempt
-    rm -f "$TEMP_DIR/$NAME.7z"
+  else
+    if [ "$OPTIONAL" = "false" ]; then
+      echo "⚠️  compressed binary not available (HTTP status: $http_response), falling back..."
+    fi
   fi
 
-  # Fallback to uncompressed binary if 7z didn't succeed
+  # Cleanup failed attempt
+  rm -f "$TEMP_DIR/$NAME.gz"
+
+  # Fallback to uncompressed binary
   if [ "$success" = false ]; then
     echo "fetching binary for ${OS} ${ARCH}..."
 
