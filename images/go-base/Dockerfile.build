@@ -2,6 +2,7 @@
 
 FROM golang:1.25 AS build-base
 
+
 ARG GOPROXY=https://proxy.golang.org,direct
 
 ENV GOCACHE=/go/pkg/build-cache \
