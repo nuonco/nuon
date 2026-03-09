@@ -12,9 +12,11 @@ WORKDIR /src/bins/${SERVICE}
 
 COPY cmd  ./cmd/
 COPY internal ./internal/
-# Copy in-tree SDKs source (the go.mod/go.sum are in the base image)
-COPY --from=nuon sdks /src/sdks/
 COPY main.go .
+
+# Copy monorepo shared sources (go.mod replace directives, SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
+COPY --from=nuon pkg /src/pkg/
 
 FROM code AS build
 

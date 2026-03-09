@@ -21,6 +21,10 @@ COPY docs/runner/descriptions ./docs/runner/descriptions/
 COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
 
+# Copy monorepo shared sources (go.mod replace directives, SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
+COPY --from=nuon pkg /src/pkg/
+
 FROM code AS generated
 
 # Generate all code artifacts required for compile/test (swagger + temporal + mocks).
