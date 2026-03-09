@@ -25,9 +25,9 @@ func NewOpts() *Opts {
 		CreateViewSQLTmpl: "CREATE OR REPLACE VIEW %s AS %s",
 		DropIndexTmpl:     "DROP INDEX IF EXISTS ?",
 
-		CreateUniqueIndexTmpl: "CREATE UNIQUE INDEX ? ON ? (?)",
-		CreatePKIndexTmpl:     "CREATE PRIMARY KEY INDEX ? ON ? (?)",
-		CreateIndexTmpl:       "CREATE INDEX ? ON ? (?)",
+		CreateUniqueIndexTmpl: "CREATE UNIQUE INDEX IF NOT EXISTS ? ON ? (?)",
+		CreatePKIndexTmpl:     "CREATE PRIMARY KEY INDEX IF NOT EXISTS ? ON ? (?)",
+		CreateIndexTmpl:       "CREATE INDEX IF NOT EXISTS ? ON ? (?)",
 	}
 }
 
