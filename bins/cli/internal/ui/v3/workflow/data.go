@@ -47,6 +47,23 @@ func (m *model) getFlatSteps() []list.Item {
 	return stepsList
 }
 
+// updateListSpinnerViews updates the spinner view string on all list items
+// so in-progress step spinners animate at the same rate as the header spinner.
+func (m *model) updateListSpinnerViews() {
+	items := m.stepsList.Items()
+	if len(items) == 0 {
+		return
+	}
+	sv := m.spinner.View()
+	for i, item := range items {
+		if step, ok := item.(listStep); ok {
+			step.spinnerView = sv
+			items[i] = step
+		}
+	}
+	m.stepsList.SetItems(items)
+}
+
 // TODO: put this in a goroutine
 func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 	workflow := msg.workflow

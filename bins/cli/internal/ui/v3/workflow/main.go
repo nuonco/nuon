@@ -516,6 +516,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		m.spinner, cmd = m.spinner.Update(msg)
 		cmds = append(cmds, cmd)
+		// Update spinner view on list items so in-progress steps animate in sync with the header
+		m.updateListSpinnerViews()
 	}
 
 	return m, tea.Batch(cmds...)
