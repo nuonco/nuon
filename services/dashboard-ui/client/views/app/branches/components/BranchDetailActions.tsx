@@ -115,19 +115,23 @@ export const BranchDetailActions = ({
         </Button>
       </div>
 
-      <EditBranchNameModal
-        isVisible={showEditName}
-        onClose={() => setShowEditName(false)}
-        branch={branch}
-        currentConfig={currentConfig}
-      />
+      {showEditName && (
+        <EditBranchNameModal
+          isVisible={showEditName}
+          onClose={() => setShowEditName(false)}
+          branch={branch}
+          currentConfig={currentConfig}
+        />
+      )}
 
-      <EditInstallGroupsModal
-        isVisible={showEditGroups}
-        onClose={() => setShowEditGroups(false)}
-        branch={branch}
-        currentConfig={currentConfig}
-      />
+      {showEditGroups && (
+        <EditInstallGroupsModal
+          isVisible={showEditGroups}
+          onClose={() => setShowEditGroups(false)}
+          branch={branch}
+          currentConfig={currentConfig}
+        />
+      )}
     </>
   )
 }

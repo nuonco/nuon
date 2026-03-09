@@ -70,15 +70,12 @@ export const CreateBranchModal = ({
       connected_github_vcs_config?: any
       public_git_vcs_config?: any
     }) => {
-      const result = await createAppBranch({
+      const branch = await createAppBranch({
         appId: app.id,
         body,
         orgId: org.id,
       })
-      if (result.error) {
-        throw new Error(formatError(result.error))
-      }
-      return result.data
+      return branch
     },
     onSuccess: (data) => {
       addToast(
@@ -130,19 +127,16 @@ export const CreateBranchModal = ({
           connectionId: selectedVcsConnectionId,
         })
 
-        if (
-          response.data?.repositories &&
-          Array.isArray(response.data.repositories)
-        ) {
-          setRepos(response.data.repositories)
+        if (response.repositories && Array.isArray(response.repositories)) {
+          // Sort repos alphabetically by full_name
+          const sortedRepos = [...response.repositories].sort((a, b) => 
+            a.full_name.localeCompare(b.full_name)
+          )
+          setRepos(sortedRepos)
           setReposError(null)
-          if (response.data.repositories.length > 0) {
-            setSelectedRepo(response.data.repositories[0])
+          if (sortedRepos.length > 0) {
+            setSelectedRepo(sortedRepos[0])
           }
-        } else if (response.error) {
-          setReposError(formatError(response.error))
-          setRepos([])
-          setSelectedRepo(null)
         } else {
           setRepos([])
           setSelectedRepo(null)
@@ -177,24 +171,19 @@ export const CreateBranchModal = ({
       setValidationError(null)
       setBranchesError(null)
       try {
-        const response = await getConnectionBranches(
+        const branches = await getConnectionBranches(
           org.id,
           selectedVcsConnectionId,
           owner,
           repo
         )
-        if (response.data) {
-          setBranches(response.data)
-          setBranchesError(null)
-          const mainBranch = response.data.find((b) => b.name === 'main')
-          if (mainBranch) {
-            setSelectedBranch('main')
-          } else if (response.data.length > 0) {
-            setSelectedBranch(response.data[0].name)
-          }
-        } else if (response.error) {
-          setBranchesError(formatError(response.error))
-          setBranches([])
+        setBranches(branches)
+        setBranchesError(null)
+        const mainBranch = branches.find((b) => b.name === 'main')
+        if (mainBranch) {
+          setSelectedBranch('main')
+        } else if (branches.length > 0) {
+          setSelectedBranch(branches[0].name)
         }
       } catch (err) {
         setBranchesError('Failed to load branches. Please try again.')
