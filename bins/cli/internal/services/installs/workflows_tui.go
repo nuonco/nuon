@@ -2,12 +2,12 @@ package installs
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	appselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/app/selector"
-	installselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/selector"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/watch"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 	workflowselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow/selector"
@@ -15,21 +15,38 @@ import (
 )
 
 // selectInstallID resolves an install ID by checking the flag, config, or showing
-// interactive selectors (app selector first if no app is set, then install selector).
+// an interactive selector matching `installs select` behavior.
 func (s *Service) selectInstallID(ctx context.Context, installID string) (string, error) {
 	if installID == "" {
 		installID = s.GetInstallID()
 	}
 	if installID == "" {
-		// If no app is selected, show app selector first so installs are filtered
-		if s.cfg.AppID == "" {
-			appID, err := appselector.App(ctx, s.cfg, s.api)
-			if err != nil {
-				return "", err
-			}
-			s.cfg.AppID = appID
+		var (
+			installs []*models.AppInstall
+			err      error
+		)
+
+		if s.cfg.AppID != "" {
+			installs, _, err = s.listAppInstalls(ctx, s.cfg.AppID, 0, 50)
+		} else {
+			installs, _, err = s.listInstalls(ctx, 0, 50)
 		}
-		selectedID, err := installselector.App(ctx, s.cfg, s.api, 20, 0)
+		if err != nil {
+			return "", err
+		}
+		if len(installs) == 0 {
+			return "", fmt.Errorf("no installs found, create one using installs create")
+		}
+
+		installOptions := make([]bubbles.InstallOption, len(installs))
+		for i, install := range installs {
+			installOptions[i] = bubbles.InstallOption{
+				ID:   install.ID,
+				Name: install.Name,
+			}
+		}
+
+		selectedID, err := bubbles.SelectInstall(installOptions, s.cfg.Interactive)
 		if err != nil {
 			return "", err
 		}
