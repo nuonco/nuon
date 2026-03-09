@@ -28,9 +28,10 @@ func (c *cli) configCmd() *cobra.Command {
 
 	// Add org subcommand
 	orgCmd := &cobra.Command{
-		Use:   "org",
-		Short: "Select your current org",
-		Long:  "Select your current org from a list or by org ID",
+		Use:         "org",
+		Short:       "Select your current org",
+		Long:        "Select your current org from a list or by org ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), id, 0, 50, PrintJSON)
@@ -41,9 +42,10 @@ func (c *cli) configCmd() *cobra.Command {
 
 	// Add app subcommand
 	appCmd := &cobra.Command{
-		Use:   "app",
-		Short: "Select your current app",
-		Long:  "Select your current app from a list or by app ID",
+		Use:         "app",
+		Short:       "Select your current app",
+		Long:        "Select your current app from a list or by app ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), appID, PrintJSON)
@@ -54,9 +56,10 @@ func (c *cli) configCmd() *cobra.Command {
 
 	// Add install subcommand
 	installCmd := &cobra.Command{
-		Use:   "install",
-		Short: "Select your current install",
-		Long:  "Select your current install from a list or by install ID",
+		Use:         "install",
+		Short:       "Select your current install",
+		Long:        "Select your current install from a list or by install ID",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Select(cmd.Context(), appID, installID, PrintJSON)

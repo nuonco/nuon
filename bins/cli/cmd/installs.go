@@ -494,9 +494,10 @@ By default, launches an interactive TUI to view workflows.`,
 	workflowsCmd.AddCommand(workflowsGetCmd)
 
 	workflowsSelectCmd := &cobra.Command{
-		Use:   "select",
-		Short: "Select a workflow",
-		Long:  "Select a workflow to use as default for subsequent commands",
+		Use:         "select",
+		Short:       "Select a workflow",
+		Long:        "Select a workflow to use as default for subsequent commands",
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.WorkflowsSelect(cmd.Context(), id, workflowID, offset, limit, PrintJSON)

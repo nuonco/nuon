@@ -46,6 +46,7 @@ func (c *cli) initCmd() *cobra.Command {
 		Use:               "init",
 		Short:             "Initialize app configuration",
 		Long:              "Generate app configuration files. Use subcommands to generate specific config files, or run without subcommands to generate all files.",
+		Annotations:       tuiAnnotation(TUIContextual),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil }, // Skip auth for local init
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
