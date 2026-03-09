@@ -62,6 +62,9 @@ FROM build-base AS final
 
 COPY --from=deps /usr/bin/golangci-lint /usr/bin/golangci-lint
 COPY --from=deps /src/tools.go /src/go.mod /src/go.sum /src/
+# Copy in-tree SDK go.mod/go.sum (required for go.mod replace directives)
+COPY --from=deps /src/sdks/nuon-go/go.mod /src/sdks/nuon-go/go.sum /src/sdks/nuon-go/
+COPY --from=deps /src/sdks/nuon-runner-go/go.mod /src/sdks/nuon-runner-go/go.sum /src/sdks/nuon-runner-go/
 
 # Bake downloaded modules into the image.
 COPY --from=deps /go/pkg/mod /go/pkg/mod

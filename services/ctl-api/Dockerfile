@@ -11,27 +11,33 @@ ARG ETCSSL=/etc/ssl/cert.pem
 # Copy service-specific files
 WORKDIR /src/services/${SERVICE}
 
-COPY cmd  ./cmd/
-COPY internal ./internal/
-# Copy only static docs inputs so generated swagger artifacts do not churn the cache.
+# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
+COPY --link sdks /src/sdks/
+COPY --link pkg /src/pkg/
+
+# Copy service-specific files (most frequently changed, last for cache efficiency)
+COPY --link cmd  ./cmd/
+COPY --link internal ./internal/
 RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
-COPY docs/admin/descriptions ./docs/admin/descriptions/
-COPY docs/public/descriptions ./docs/public/descriptions/
-COPY docs/runner/descriptions ./docs/runner/descriptions/
-COPY tests ./tests/
-COPY main.go admin.go public.go runner.go ./
+COPY --link docs/admin/descriptions ./docs/admin/descriptions/
+COPY --link docs/public/descriptions ./docs/public/descriptions/
+COPY --link docs/runner/descriptions ./docs/runner/descriptions/
+COPY --link tests ./tests/
+COPY --link main.go admin.go public.go runner.go ./
 
 FROM code AS generated
 
 # Generate all code artifacts required for compile/test (swagger + temporal + mocks).
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go generate ./...
+    go generate ./... && \
+    cd /src/pkg/temporal/client && go generate ./...
 
 FROM code AS build
 
 COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
@@ -41,6 +47,7 @@ FROM code AS unit-test
 
 COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
@@ -50,6 +57,7 @@ FROM code AS lint
 
 COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
+COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 COPY .golangci.yml .
 
