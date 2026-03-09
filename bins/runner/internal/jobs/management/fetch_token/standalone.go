@@ -7,7 +7,7 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	pkgaws "github.com/nuonco/nuon/bins/runner/internal/pkg/aws"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/token"
 )
 
 type FetchTokenResult struct {
@@ -39,7 +39,7 @@ func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client) (*Fetc
 		return nil, fmt.Errorf("authentication failed: runner was not authenticated")
 	}
 
-	if err := monitor.WriteRunnerTokenFile(resp.Token); err != nil {
+	if err := token.WriteFile(resp.Token); err != nil {
 		return nil, fmt.Errorf("failed to write token: %w", err)
 	}
 
@@ -47,6 +47,6 @@ func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client) (*Fetc
 		RunnerID:   resp.RunnerID,
 		InstanceID: resp.InstanceID,
 		AccountID:  resp.AccountID,
-		TokenPath:  monitor.RunnerTokenFilename,
+		TokenPath:  token.Filename,
 	}, nil
 }
