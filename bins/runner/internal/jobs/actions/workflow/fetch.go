@@ -34,16 +34,9 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	// Auth is now stored in the plan itself, not the composite plan
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.AWSAuth,
 		AzureAuth: plan.AzureAuth,
-	}
-
-	if h.state.plan.ClusterInfo != nil {
-		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
-		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
-		h.state.plan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	// fetch the run object
