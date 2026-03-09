@@ -29,6 +29,16 @@ function getValueType(value: any): string {
     return 'object'
   }
 
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) return 'array'
+      } catch {}
+    }
+  }
+
   return typeof value // 'string', 'number', 'boolean', 'function', etc.
 }
 
@@ -42,6 +52,15 @@ function formatValue(value: any): string {
   }
 
   if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return `[${parsed.map((item: any) => formatValue(item)).join(', ')}]`
+        }
+      } catch {}
+    }
     return value
   }
 
@@ -51,7 +70,11 @@ function formatValue(value: any): string {
 
   if (typeof value === 'object') {
     if (Array.isArray(value)) {
-      return `[${value.map((item) => formatValue(item)).join(', ')}]`
+      try {
+        return JSON.stringify(value)
+      } catch {
+        return `[${value.map((item) => formatValue(item)).join(', ')}]`
+      }
     }
 
     try {

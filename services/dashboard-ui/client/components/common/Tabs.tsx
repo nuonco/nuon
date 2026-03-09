@@ -190,7 +190,7 @@ export const Tabs = ({
             ref={(el) => {
               contentRefs.current[tabKey] = el
             }}
-            className="absolute top-0 left-0 w-full"
+            className="absolute top-0 left-0 w-full tab-content"
             key={`${tabKey}-${idx}-tab`}
             isVisible={tabKey === activeTab}
           >

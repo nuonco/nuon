@@ -1,12 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Card } from '@/components/common/Card'
-import { Code } from '@/components/common/Code'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
-import { JSONViewer } from '@/components/common/JSONViewer'
-import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { UnlockSandboxTerraformStateButton } from '@/components/sandbox/management/UnlockSandboxTerraformState'
+import { TerraformState } from '@/components/terraform-workspace/TerraformState'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import {
@@ -104,67 +100,7 @@ export const TerraformWorkspaceCard = () => {
           emptyMessage="The workspace has been created, but no state has been written."
         />
       ) : (
-        <Tabs
-          tabs={{
-            resourcesList: (
-              <div className="flex flex-col gap-4 pt-4">
-                <Text variant="subtext" weight="strong">
-                  State addresses
-                </Text>
-                <div className="flex flex-col divide-y">
-                  {resources.map((address) => (
-                    <div
-                      key={address}
-                      className="py-2 overflow-hidden"
-                    >
-                      <Code variant="inline">{address}</Code>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ),
-            outputs: (
-              <div className="flex flex-col gap-4 pt-4">
-                {outputKeys.length === 0 ? (
-                  <Text variant="subtext" theme="neutral">
-                    No outputs
-                  </Text>
-                ) : (
-                  <div className="flex flex-col divide-y">
-                    {outputKeys.map((key) => {
-                      const output = outputs[key]
-                      const typeLabel = Array.isArray(output.type)
-                        ? output.type[0]
-                        : output.type
-
-                      return (
-                        <div
-                          key={key}
-                          className="py-3 flex flex-col gap-1"
-                        >
-                          <div className="flex flex-col">
-                            <Text variant="subtext" weight="strong">
-                              {key}
-                            </Text>
-                            <Text variant="label" theme="neutral">
-                              {typeLabel}
-                            </Text>
-                          </div>
-                          {output.type === 'string' ||
-                          output.type === 'number' ? (
-                            <Code variant="inline">{String(output.value)}</Code>
-                          ) : (
-                            <JSONViewer data={output.value} expanded={1} />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            ),
-          }}
-        />
+        <TerraformState terraformState={currentRevision} />
       )}
     </div>
   )

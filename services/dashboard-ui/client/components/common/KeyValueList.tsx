@@ -1,4 +1,5 @@
 import React from 'react'
+import { CodeBlock } from '@/components/common/CodeBlock'
 import type { TKeyValue } from '@/types'
 import { cn } from '@/utils/classnames'
 import { JSONViewer } from './JSONViewer'
@@ -49,7 +50,7 @@ export const KeyValueList = ({
             </Text>
             <Text
               className={cn(
-                'block py-2 pl-8 break-all !w-full overlfow-x-auto',
+                'block py-2 pl-8 break-all !w-full !max-w-fit overlfow-x-auto',
                 !isLast && 'border-b'
               )}
               variant="subtext"
@@ -58,15 +59,37 @@ export const KeyValueList = ({
               {typeof value === 'number' ? (
                 <ClickToCopy>{value}</ClickToCopy>
               ) : value ? (
-                type === 'object' || type === 'array' ? (
-                  <JSONViewer
-                    data={JSON.parse(value)}
-                    expanded={1}
-                    showDataTypes={false}
-                    showSize={false}
-                    className="!border-0 !rounded-none"
-                  />
-                ) : (
+                type === 'array' ? (() => {
+                  try {
+                    const parsed = JSON.parse(value)
+                    if (!parsed) return <Text variant="subtext" theme="neutral">—</Text>
+                    return (
+                      <CodeBlock language="json">
+                        {JSON.stringify(parsed, null, 2)}
+                      </CodeBlock>
+                    )
+                  } catch {
+                    return <ClickToCopy>{value}</ClickToCopy>
+                  }
+                })() : type === 'object' ? (() => {
+                  try {
+                    const parsed = JSON.parse(value)
+                    if (parsed === null || parsed === undefined) {
+                      return <Text variant="subtext" theme="neutral">—</Text>
+                    }
+                    return (
+                      <JSONViewer
+                        data={parsed}
+                        expanded={1}
+                        showDataTypes={false}
+                        showSize={false}
+                        className="!border-0 !rounded-none"
+                      />
+                    )
+                  } catch {
+                    return <ClickToCopy>{value}</ClickToCopy>
+                  }
+                })() : (
                   <ClickToCopy>{value}</ClickToCopy>
                 )
               ) : (

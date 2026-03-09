@@ -1,10 +1,10 @@
-.tabs div.enter {
+.tabs .tab-content.enter {
   opacity: 0;
   animation: enter-tab var(--duration-fastest) var(--ease-cubic)
     var(--duration-fast) forwards;
 }
 
-.tabs div.exit {
+.tabs .tab-content.exit {
   animation: exit-tab var(--duration-fastest) var(--ease-cubic) forwards;
 }
 
