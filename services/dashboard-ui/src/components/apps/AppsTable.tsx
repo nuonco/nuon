@@ -103,8 +103,6 @@ const columns: ColumnDef<TAppRow>[] = [
     header: 'Platform',
     cell: (info) => (
       <CloudPlatform
-        displayVariant="icon-only"
-        iconSize="24"
         platform={info?.getValue() as TCloudPlatform}
       />
     ),
