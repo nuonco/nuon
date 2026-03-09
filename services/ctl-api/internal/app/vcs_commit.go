@@ -39,10 +39,6 @@ type VCSConnectionCommit struct {
 	Message     string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
 }
 
-func (v *VCSConnectionCommit) TableName() string {
-	return "vcs_commits"
-}
-
 func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{

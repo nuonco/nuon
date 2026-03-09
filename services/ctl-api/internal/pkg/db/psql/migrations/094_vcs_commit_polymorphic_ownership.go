@@ -44,13 +44,5 @@ func (m *Migrations) Migration094VCSCommitPolymorphicOwnership(ctx context.Conte
 		return res.Error
 	}
 
-	// Rename table
-	renameTable := `
-		ALTER TABLE vcs_connection_commits RENAME TO vcs_commits;
-	`
-	if res := db.WithContext(ctx).Exec(renameTable); res.Error != nil {
-		return res.Error
-	}
-
 	return nil
 }
