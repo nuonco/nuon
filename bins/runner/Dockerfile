@@ -14,13 +14,14 @@ ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 # copy each file that is specific to the api into the correct directory
 WORKDIR /src/bins/${SERVICE}
 
+# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
+COPY --from=nuon pkg /src/pkg/
+
+# Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY cmd  ./cmd/
 COPY internal ./internal/
 COPY main.go .
-
-# Copy monorepo shared sources (go.mod replace directives, SDK go.mod/go.sum are in the base image)
-COPY --from=nuon sdks /src/sdks/
-COPY --from=nuon pkg /src/pkg/
 
 FROM code AS build
 

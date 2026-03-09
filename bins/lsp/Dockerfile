@@ -9,12 +9,14 @@ ARG PKG_ROOT=github.com/nuonco/nuon/bins/${SERVICE}
 # copy each file that is specific to the lsp into the correct directory
 WORKDIR /src/bins/${SERVICE}
 
+# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
+COPY --from=nuon pkg /src/pkg/
+
+# Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY handlers ./handlers/
 COPY mappers ./mappers/
 COPY models ./models/
-# Copy shared packages from the monorepo root (SDK go.mod/go.sum are in the base image)
-COPY --from=nuon sdks /src/sdks/
-COPY --from=nuon pkg /src/pkg/
 COPY main.go .
 
 FROM code AS build

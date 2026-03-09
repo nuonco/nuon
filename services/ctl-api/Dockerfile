@@ -11,19 +11,19 @@ ARG ETCSSL=/etc/ssl/cert.pem
 # Copy service-specific files
 WORKDIR /src/services/${SERVICE}
 
+# Copy monorepo shared sources (SDK go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
+COPY --from=nuon pkg /src/pkg/
+
+# Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY cmd  ./cmd/
 COPY internal ./internal/
-# Copy only static docs inputs so generated swagger artifacts do not churn the cache.
 RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
 COPY docs/admin/descriptions ./docs/admin/descriptions/
 COPY docs/public/descriptions ./docs/public/descriptions/
 COPY docs/runner/descriptions ./docs/runner/descriptions/
 COPY tests ./tests/
 COPY main.go admin.go public.go runner.go ./
-
-# Copy monorepo shared sources (go.mod replace directives, SDK go.mod/go.sum are in the base image)
-COPY --from=nuon sdks /src/sdks/
-COPY --from=nuon pkg /src/pkg/
 
 FROM code AS generated
 
