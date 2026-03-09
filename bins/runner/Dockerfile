@@ -16,7 +16,8 @@ WORKDIR /src/bins/${SERVICE}
 
 COPY cmd  ./cmd/
 COPY internal ./internal/
-COPY sdks ./sdks/
+# Copy in-tree SDKs source (the go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
 COPY main.go .
 
 FROM code AS build

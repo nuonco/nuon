@@ -12,8 +12,8 @@ WORKDIR /src/bins/${SERVICE}
 COPY handlers ./handlers/
 COPY mappers ./mappers/
 COPY models ./models/
-# Copy in-tree SDKs (required for go.mod replace directives)
-COPY sdks ./sdks/
+# Copy in-tree SDKs source (the go.mod/go.sum are in the base image)
+COPY --from=nuon sdks /src/sdks/
 COPY main.go .
 
 FROM code AS build
