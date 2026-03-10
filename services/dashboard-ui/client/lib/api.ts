@@ -24,6 +24,7 @@ export type TWithHeadersResult<T> = {
 
 interface IAPIData {
   abortTimeout?: number
+  baseUrl?: string
   headers?: Record<string, unknown>
   orgId?: string
   path: string
@@ -41,6 +42,7 @@ export async function api<T>(opts: IAPIData & { withMeta: true }): Promise<TWith
 export async function api<T>(opts: IAPIData & { paginated?: false; withMeta?: false; withHeaders?: false }): Promise<T>
 export async function api<T>({
   abortTimeout = 10000,
+  baseUrl,
   headers = {},
   orgId,
   path,
@@ -69,7 +71,7 @@ export async function api<T>({
       fetchOpts.body = JSON.stringify(body)
     }
 
-    response = await fetch(`${API_URL}${pathVersion}/${path}`, fetchOpts)
+    response = await fetch(`${baseUrl ?? API_URL}${pathVersion}/${path}`, fetchOpts)
 
     let data = null
     const contentType = response.headers.get('content-type')

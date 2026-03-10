@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
-// import { AdminPanel } from '@/components/admin/AdminPanel'
+import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -46,15 +46,15 @@ export const UserDropdown = ({
             Re-open onboarding <Icon variant="Signpost" />
           </Link>
         )}
-        {/* {!hideOrgSettings && isAdmin ? (
-            <Button
+        {!hideOrgSettings && isAdmin ? (
+          <Button
             onClick={() => {
-            addPanel(<div>Admin panel here</div>)
+              addPanel(<AdminPanel />)
             }}
-            >
+          >
             Admin panel <Icon variant="Sliders" />
-            </Button>
-            ) : null} */}
+          </Button>
+        ) : null}
         {!hideOrgSettings && <hr />}
         <Link
           href={`${authServiceUrl}/logout`}

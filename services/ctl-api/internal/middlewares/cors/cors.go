@@ -30,6 +30,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			"Authorization",
 			"Content-Type",
 			"X-Nuon-Org-ID",
+			"X-Nuon-Admin-Email",
 			"Origin",
 
 			// for temporal codec server

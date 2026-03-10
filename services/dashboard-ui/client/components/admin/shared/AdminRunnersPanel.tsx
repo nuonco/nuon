@@ -8,7 +8,9 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { Card } from '@/components/common/Card'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
-import { restartOrgRunners } from '@/actions/admin/restart-org-runners'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import { adminRestartOrgRunners, getInstalls } from '@/lib'
 import { RunnerCard } from '../runners/RunnerCard'
 import { LoadRunnerCard } from '../runners/LoadRunnerCard'
 import type { TInstall } from '@/types'
@@ -24,12 +26,16 @@ export const AdminRunnersPanel = ({
 }: AdminRunnersPanelProps) => {
   const { org } = useOrg()
   const { addToast } = useToast()
+  const { user } = useAuth()
+  const config = useConfig()
+  const adminEmail = user?.email ?? ''
+  const adminApiUrl = config.adminApiUrl ?? ''
   const [installs, setInstalls] = useState<TInstall[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
 
   const { mutate: restartAll, isPending: isRestarting } = useMutation({
-    mutationFn: () => restartOrgRunners(orgId),
+    mutationFn: () => adminRestartOrgRunners({ orgId, adminApiUrl, adminEmail }),
     onSuccess: async () => {
       addToast(
         <Toast heading="Runners Restarted" theme="success">
@@ -52,14 +58,8 @@ export const AdminRunnersPanel = ({
     setError(undefined)
 
     try {
-      const res = await fetch(`/api/orgs/${orgId}/installs`)
-      const { data, error } = await res.json()
-
-      if (error) {
-        setError('Unable to load org installs')
-      } else if (data) {
-        setInstalls(data)
-      }
+      const result = await getInstalls({ orgId })
+      setInstalls(result.data)
     } catch {
       setError('Unable to load org installs')
     } finally {

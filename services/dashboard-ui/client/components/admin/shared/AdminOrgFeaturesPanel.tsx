@@ -8,7 +8,9 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { updateOrgFeature } from '@/actions/admin/update-org-feature'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import { adminGetOrgFeaturesList, adminUpdateOrgFeatures } from '@/lib'
 import type { TOrg } from '@/types'
 
 interface AdminOrgFeaturesPanelProps extends IPanel {
@@ -23,12 +25,22 @@ export const AdminOrgFeaturesPanel = ({
   ...props
 }: AdminOrgFeaturesPanelProps) => {
   const { addToast } = useToast()
+  const { user } = useAuth()
+  const config = useConfig()
+  const adminEmail = user?.email ?? ''
+  const adminApiUrl = config.adminApiUrl ?? ''
   const [featuresList, setFeaturesList] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
 
   const { mutate: submit, isPending: isSubmitting } = useMutation({
-    mutationFn: (formData: FormData) => updateOrgFeature(orgId, formData, featuresList),
+    mutationFn: (formData: FormData) => {
+      const features: Record<string, boolean> = {}
+      featuresList.forEach((feature) => {
+        features[feature] = formData.get(feature) === 'on'
+      })
+      return adminUpdateOrgFeatures({ orgId, features, adminApiUrl, adminEmail })
+    },
     onSuccess: () => {
       addToast(
         <Toast heading="Features Updated" theme="success">
@@ -49,8 +61,7 @@ export const AdminOrgFeaturesPanel = ({
     setIsLoading(true)
     setError(undefined)
 
-    fetch(`/api/orgs/${orgId}/features`)
-      .then((res) => res.json())
+    adminGetOrgFeaturesList({ adminApiUrl })
       .then((features) => {
         setIsLoading(false)
         if (Array.isArray(features)) {
@@ -63,7 +74,7 @@ export const AdminOrgFeaturesPanel = ({
         setIsLoading(false)
         setError('Unable to fetch org features list')
       })
-  }, [orgId])
+  }, [adminApiUrl])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

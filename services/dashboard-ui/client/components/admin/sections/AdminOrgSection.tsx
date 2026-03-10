@@ -9,19 +9,21 @@ import { TemporalLink } from '@/components/admin/TemporalLink'
 import { AdminFeatureToggleCard } from '../shared/AdminFeatureToggleCard'
 import { AdminRunnersCard } from '../shared/AdminRunnersCard'
 import { useOrg } from '@/hooks/use-org'
-
-// Import admin actions
-import { addSupportUsersToOrg } from '@/actions/admin/add-support-users'
-import { removeSupportUsersFromOrg } from '@/actions/admin/remove-support-users'
-import { reprovisionOrg } from '@/actions/admin/reprovision-org'
-import { restartOrg } from '@/actions/admin/restart-org'
-import { restartOrgRunners } from '@/actions/admin/restart-org-runners'
-import { restartOrgRunner } from '@/actions/admin/restart-org-runner'
-import { gracefulOrgRunnerShutdown } from '@/actions/admin/graceful-org-runner-shutdown'
-import { forceOrgRunnerShutdown } from '@/actions/admin/force-org-runner-shutdown'
-import { invalidateOrgRunnerToken } from '@/actions/admin/invalidate-org-runner-token'
-import { enableOrgDebugMode } from '@/actions/admin/enable-org-debug-mode'
-import { getOrgRunner } from '@/actions/admin/get-org-runner'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import {
+  adminGetOrgRunner,
+  adminAddSupportUsersToOrg,
+  adminRemoveSupportUsersFromOrg,
+  adminReprovisionOrg,
+  adminRestartOrg,
+  adminRestartOrgRunners,
+  adminRestartRunner,
+  adminGracefulRunnerShutdown,
+  adminForceRunnerShutdown,
+  adminInvalidateRunnerToken,
+  adminEnableOrgDebugMode,
+} from '@/lib'
 
 interface AdminOrgSectionProps {
   orgId: string
@@ -29,17 +31,23 @@ interface AdminOrgSectionProps {
 
 export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
   const { org } = useOrg()
+  const { user } = useAuth()
+  const config = useConfig()
+  const adminEmail = user?.email ?? ''
+  const adminApiUrl = config.adminApiUrl ?? ''
   const [runner, setRunner] = useState<TRunner>()
   const [runnerLoading, setRunnerLoading] = useState(true)
 
   useEffect(() => {
     if (orgId) {
-      getOrgRunner(orgId).then((r) => {
+      adminGetOrgRunner({ orgId, adminApiUrl }).then((r) => {
         setRunner(r)
         setRunnerLoading(false)
       })
     }
-  }, [orgId])
+  }, [orgId, adminApiUrl])
+
+  const runnerId = runner?.id ?? ''
 
   const metadata = (
     <AdminMetadataPanel>
@@ -70,22 +78,20 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
       }
       metadata={metadata}
     >
-      {/* Org Settings */}
       <AdminActionGroup title="Org settings" icon="Users">
         <AdminActionCard
           title="Add support users"
           description="Add all Nuon support users to current org"
-          action={() => addSupportUsersToOrg(orgId)}
+          action={() => adminAddSupportUsersToOrg({ orgId, adminApiUrl, adminEmail })}
         />
         <AdminActionCard
           title="Remove support users"
           description="Remove all Nuon support users from current org"
-          action={() => removeSupportUsersFromOrg(orgId)}
+          action={() => adminRemoveSupportUsersFromOrg({ orgId, adminApiUrl, adminEmail })}
         />
         <AdminFeatureToggleCard org={org} orgId={orgId} />
       </AdminActionGroup>
 
-      {/* Infrastructure */}
       <AdminActionGroup
         title="Infrastructure"
         icon="HardDrives"
@@ -94,7 +100,7 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
         <AdminActionCard
           title="Reprovision org"
           description="Reprovision current org infrastructure"
-          action={() => reprovisionOrg(orgId)}
+          action={() => adminReprovisionOrg({ orgId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will reprovision the entire organization infrastructure. This may cause downtime."
@@ -102,33 +108,32 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
         <AdminActionCard
           title="Restart org"
           description="Restart current org event loop"
-          action={() => restartOrg(orgId)}
+          action={() => adminRestartOrg({ orgId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart the organization event loop. Continue?"
         />
       </AdminActionGroup>
 
-      {/* Runner Management */}
       <AdminActionGroup title="Runner control" icon="Play">
         <AdminActionCard
           title="Restart all runners"
           description="Restart all of current org runners"
-          action={() => restartOrgRunners(orgId)}
+          action={() => adminRestartOrgRunners({ orgId, adminApiUrl, adminEmail })}
           requiresConfirmation
           confirmationText="This will restart all runners for this organization. Continue?"
         />
         <AdminActionCard
           title="Restart runner"
           description="Restart the current org runner"
-          action={() => restartOrgRunner(orgId)}
+          action={() => adminRestartRunner({ runnerId, adminApiUrl, adminEmail })}
           requiresConfirmation
           confirmationText="This will restart the org runner. Continue?"
         />
         <AdminActionCard
           title="Graceful shutdown"
           description="Graceful shutdown of current org runner"
-          action={() => gracefulOrgRunnerShutdown(orgId)}
+          action={() => adminGracefulRunnerShutdown({ runnerId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will gracefully shutdown the org runner. Continue?"
@@ -136,7 +141,7 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
         <AdminActionCard
           title="Force shutdown"
           description="Forceful shutdown of current org runner"
-          action={() => forceOrgRunnerShutdown(orgId)}
+          action={() => adminForceRunnerShutdown({ runnerId, adminApiUrl, adminEmail })}
           variant="danger"
           requiresConfirmation
           requiresInput
@@ -144,12 +149,11 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
         />
       </AdminActionGroup>
 
-      {/* Security & Debug */}
       <AdminActionGroup title="Security & debug" icon="Shield" variant="danger">
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate runner service account token"
-          action={() => invalidateOrgRunnerToken(orgId)}
+          action={() => adminInvalidateRunnerToken({ runnerId, adminApiUrl, adminEmail })}
           variant="danger"
           requiresConfirmation
           requiresInput
@@ -158,7 +162,7 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
         <AdminActionCard
           title="Enable debug mode"
           description="Enable debug mode for this org (logs all requests)"
-          action={() => enableOrgDebugMode(orgId)}
+          action={() => adminEnableOrgDebugMode({ orgId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will enable debug mode which logs all requests for this org."

@@ -4,19 +4,21 @@ import { AdminSection } from '../shared/AdminSection'
 import { AdminActionGroup } from '../shared/AdminActionGroup'
 import { AdminActionCard } from '../shared/AdminActionCard'
 import { AdminMetadataPanel, AdminInfoCard } from '../shared/AdminMetadata'
-import { AdminTemporalLink } from '../../old/AdminTemporalLink'
-
-// Import admin actions
-import { reprovisionInstall } from '@/actions/admin/reprovision-install'
-import { reprovisionInstallRunner } from '@/actions/admin/reprovision-install-runner'
-import { restartInstall } from '@/actions/admin/restart-install'
-import { teardownInstallComponents } from '@/actions/admin/teardown-install-components'
-import { updateInstallSandbox } from '@/actions/admin/update-install-sandbox'
-import { shutdownInstallRunnerJob } from '@/actions/admin/shutdown-install-runner-job'
-import { gracefulInstallRunnerShutdown } from '@/actions/admin/graceful-install-runner-shutdown'
-import { forceInstallRunnerShutdown } from '@/actions/admin/force-install-runner-shutdown'
-import { invalidateInstallRunnerToken } from '@/actions/admin/invalidate-install-runner-token'
-import { getInstallRunner } from '@/actions/admin/get-install-runner'
+import { TemporalLink } from '@/components/admin/TemporalLink'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import {
+  adminGetInstallRunner,
+  adminReprovisionInstall,
+  adminReprovisionInstallRunner,
+  adminRestartInstall,
+  adminTeardownInstallComponents,
+  adminUpdateInstallSandbox,
+  adminShutdownRunnerJob,
+  adminGracefulRunnerShutdown,
+  adminForceRunnerShutdown,
+  adminInvalidateRunnerToken,
+} from '@/lib'
 
 interface AdminInstallSectionProps {
   orgId: string
@@ -24,44 +26,49 @@ interface AdminInstallSectionProps {
 }
 
 export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionProps) => {
+  const { user } = useAuth()
+  const config = useConfig()
+  const adminEmail = user?.email ?? ''
+  const adminApiUrl = config.adminApiUrl ?? ''
   const [runner, setRunner] = useState<TRunner>()
   const [runnerLoading, setRunnerLoading] = useState(true)
 
   useEffect(() => {
     if (installId) {
-      getInstallRunner(installId).then((r) => {
+      adminGetInstallRunner({ installId, adminApiUrl }).then((r) => {
         setRunner(r)
         setRunnerLoading(false)
       })
     }
-  }, [installId])
+  }, [installId, adminApiUrl])
+
+  const runnerId = runner?.id ?? ''
 
   const metadata = (
     <AdminMetadataPanel>
-      <AdminInfoCard 
-        title="Install Runner ID" 
-        value={runner?.id} 
-        copyable 
+      <AdminInfoCard
+        title="Install Runner ID"
+        value={runner?.id}
+        copyable
         loading={runnerLoading}
       />
       <div className="space-y-1">
-        <AdminTemporalLink namespace="installs" id={installId} />
+        <TemporalLink namespace="installs" eventLoopId={installId} />
       </div>
     </AdminMetadataPanel>
   )
 
   return (
-    <AdminSection 
+    <AdminSection
       title="Installation controls"
       subtitle={`Managing install: ${installId}`}
       metadata={metadata}
     >
-      {/* Infrastructure */}
       <AdminActionGroup title="Install infrastructure" icon="HardDrives" variant="warning">
         <AdminActionCard
           title="Reprovision install"
           description="Reprovision current install sandbox and runner"
-          action={() => reprovisionInstall(installId)}
+          action={() => adminReprovisionInstall({ installId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will reprovision the entire install infrastructure including sandbox and runner."
@@ -69,19 +76,18 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         <AdminActionCard
           title="Restart install"
           description="Restart current install event loop"
-          action={() => restartInstall(installId)}
+          action={() => adminRestartInstall({ installId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart the install event loop. Continue?"
         />
       </AdminActionGroup>
 
-      {/* Component Management */}
       <AdminActionGroup title="Component management" icon="Cube" variant="danger">
         <AdminActionCard
           title="Teardown components"
           description="Teardown all components on this install"
-          action={() => teardownInstallComponents(installId)}
+          action={() => adminTeardownInstallComponents({ installId, orgId })}
           variant="danger"
           requiresConfirmation
           requiresInput
@@ -90,26 +96,25 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         <AdminActionCard
           title="Update sandbox"
           description="Update install sandbox to current app sandbox version"
-          action={() => updateInstallSandbox(installId)}
+          action={() => adminUpdateInstallSandbox({ installId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will update the install sandbox to match the current app sandbox version."
         />
       </AdminActionGroup>
 
-      {/* Runner Management */}
       <AdminActionGroup title="Install runner control" icon="Play">
         <AdminActionCard
           title="Reprovision runner"
           description="Reprovision current install runner"
-          action={() => reprovisionInstallRunner(installId)}
+          action={() => adminReprovisionInstallRunner({ runnerId, adminApiUrl, adminEmail })}
           requiresConfirmation
           confirmationText="This will reprovision the install runner. Continue?"
         />
         <AdminActionCard
           title="Shutdown runner job"
           description="Shutdown the current install runner job"
-          action={() => shutdownInstallRunnerJob(installId)}
+          action={() => adminShutdownRunnerJob({ installId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will shutdown the current runner job. Continue?"
@@ -117,7 +122,7 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         <AdminActionCard
           title="Graceful shutdown"
           description="Graceful shutdown of current install runner"
-          action={() => gracefulInstallRunnerShutdown(installId)}
+          action={() => adminGracefulRunnerShutdown({ runnerId, adminApiUrl, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will gracefully shutdown the install runner. Continue?"
@@ -125,7 +130,7 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         <AdminActionCard
           title="Force shutdown"
           description="Forceful shutdown of current install runner"
-          action={() => forceInstallRunnerShutdown(installId)}
+          action={() => adminForceRunnerShutdown({ runnerId, adminApiUrl, adminEmail })}
           variant="danger"
           requiresConfirmation
           requiresInput
@@ -133,12 +138,11 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         />
       </AdminActionGroup>
 
-      {/* Security */}
       <AdminActionGroup title="Security" icon="Shield" variant="danger">
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate install runner service account token"
-          action={() => invalidateInstallRunnerToken(installId)}
+          action={() => adminInvalidateRunnerToken({ runnerId, adminApiUrl, adminEmail })}
           variant="danger"
           requiresConfirmation
           requiresInput

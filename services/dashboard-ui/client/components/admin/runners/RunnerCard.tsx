@@ -7,9 +7,9 @@ import { Link } from '@/components/common/Link'
 import { Expand } from '@/components/common/Expand'
 import { Toast } from '@/components/surfaces/Toast'
 import { useToast } from '@/hooks/use-toast'
-import { gracefulOrgRunnerShutdown } from '@/actions/admin/graceful-org-runner-shutdown'
-import { forceOrgRunnerShutdown } from '@/actions/admin/force-org-runner-shutdown'
-import { invalidateOrgRunnerToken } from '@/actions/admin/invalidate-org-runner-token'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
+import { adminGracefulRunnerShutdown, adminForceRunnerShutdown, adminInvalidateRunnerToken } from '@/lib'
 import { LoadRunnerHeartbeat } from './LoadRunnerHeartbeat'
 import { LoadRunnerJob } from './LoadRunnerJob'
 import type { TRunner } from '@/types'
@@ -23,9 +23,14 @@ interface RunnerCardProps {
 
 export const RunnerCard = ({ runner, href, isInstallRunner = false, onAction }: RunnerCardProps) => {
   const { addToast } = useToast()
+  const { user } = useAuth()
+  const config = useConfig()
+  const adminEmail = user?.email ?? ''
+  const adminApiUrl = config.adminApiUrl ?? ''
+  const runnerId = runner.id
 
   const { mutate: gracefulShutdown, isPending: isGracefulLoading } = useMutation({
-    mutationFn: () => gracefulOrgRunnerShutdown(runner.id),
+    mutationFn: () => adminGracefulRunnerShutdown({ runnerId, adminApiUrl, adminEmail }),
     onSuccess: () => {
       addToast(<Toast heading="Runner shutting down" theme="success"><Text>Graceful shutdown initiated.</Text></Toast>)
       onAction?.()
@@ -36,7 +41,7 @@ export const RunnerCard = ({ runner, href, isInstallRunner = false, onAction }: 
   })
 
   const { mutate: forceShutdown, isPending: isForceLoading } = useMutation({
-    mutationFn: () => forceOrgRunnerShutdown(runner.id),
+    mutationFn: () => adminForceRunnerShutdown({ runnerId, adminApiUrl, adminEmail }),
     onSuccess: () => {
       addToast(<Toast heading="Runner force stopped" theme="success"><Text>Force shutdown initiated.</Text></Toast>)
       onAction?.()
@@ -47,7 +52,7 @@ export const RunnerCard = ({ runner, href, isInstallRunner = false, onAction }: 
   })
 
   const { mutate: invalidateToken, isPending: isInvalidateLoading } = useMutation({
-    mutationFn: () => invalidateOrgRunnerToken(runner.id),
+    mutationFn: () => adminInvalidateRunnerToken({ runnerId, adminApiUrl, adminEmail }),
     onSuccess: () => {
       addToast(<Toast heading="Token invalidated" theme="success"><Text>Runner token has been invalidated.</Text></Toast>)
       onAction?.()
