@@ -1,45 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
-import { UnlockSandboxTerraformStateButton } from '@/components/sandbox/management/UnlockSandboxTerraformState'
 import { TerraformBackendConfigButton } from '@/components/terraform-workspace/TerraformBackendConfig'
 import { TerraformState } from '@/components/terraform-workspace/TerraformState'
+import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import {
-  getTerraformState,
-  getTerraformStates,
-  getTerraformWorkspaceLock,
-} from '@/lib'
-import type { TTerraformState } from '@/types'
-
-function getResourceAddresses(
-  rootModule: TTerraformState['values']['root_module']
-): string[] {
-  const addresses: string[] = []
-
-  if (rootModule?.resources) {
-    for (const res of rootModule.resources) {
-      if (res.address) addresses.push(res.address)
-    }
-  }
-
-  if (rootModule?.child_modules) {
-    for (const mod of rootModule.child_modules) {
-      if (mod.resources) {
-        for (const res of mod.resources) {
-          if (res.address) addresses.push(res.address)
-        }
-      }
-    }
-  }
-
-  return addresses
-}
+import { getTerraformState, getTerraformStates } from '@/lib'
 
 export const TerraformWorkspaceCard = ({
   workspaceId: workspaceIdProp,
-}: { workspaceId?: string } = {}) => {
+  description,
+}: { workspaceId?: string; description?: string } = {}) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const workspaceId = workspaceIdProp ?? install?.sandbox?.terraform_workspace?.id
@@ -67,25 +39,7 @@ export const TerraformWorkspaceCard = ({
     enabled: !!org?.id && !!workspaceId && !!latestStateId,
   })
 
-  const { data: lock } = useQuery({
-    queryKey: ['terraform-workspace-lock', org?.id, workspaceId],
-    queryFn: () =>
-      getTerraformWorkspaceLock({
-        orgId: org.id,
-        workspaceId: workspaceId!,
-      }),
-    enabled: !!org?.id && !!workspaceId,
-  })
-
   if (!workspaceId) return null
-
-  const resources = currentRevision
-    ? getResourceAddresses(currentRevision?.values?.root_module)
-    : []
-  const outputs = currentRevision?.values?.outputs || {}
-  const outputKeys = Object.keys(outputs)
-
-  const hasData = resources.length > 0 || outputKeys.length > 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -97,11 +51,15 @@ export const TerraformWorkspaceCard = ({
           <TerraformBackendConfigButton workspaceId={workspaceId} variant="secondary" size="sm">
             Use Terraform CLI
           </TerraformBackendConfigButton>
-          {lock ? <UnlockSandboxTerraformStateButton /> : null}
+          <UnlockTerraformWorkspaceButton
+            workspaceId={workspaceId}
+            description={description}
+            size="sm"
+          />
         </div>
       </div>
 
-      {!hasData ? (
+      {!currentRevision ? (
         <EmptyState
           variant="diagram"
           emptyTitle="No revisions yet"

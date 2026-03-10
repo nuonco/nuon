@@ -10,7 +10,7 @@ import {
   SandboxConfigCard,
   SandboxConfigCardSkeleton,
 } from '@/components/sandbox/SandboxConfigCard'
-import { TerraformWorkspaceCard } from '@/components/sandbox/TerraformWorkspaceCard'
+import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
