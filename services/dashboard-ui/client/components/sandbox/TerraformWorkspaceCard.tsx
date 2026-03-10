@@ -36,10 +36,12 @@ function getResourceAddresses(
   return addresses
 }
 
-export const TerraformWorkspaceCard = () => {
+export const TerraformWorkspaceCard = ({
+  workspaceId: workspaceIdProp,
+}: { workspaceId?: string } = {}) => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const workspaceId = install?.sandbox?.terraform_workspace?.id
+  const workspaceId = workspaceIdProp ?? install?.sandbox?.terraform_workspace?.id
 
   const { data: states } = useQuery({
     queryKey: ['terraform-states', org?.id, workspaceId],

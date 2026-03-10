@@ -12,8 +12,10 @@ import {
   ComponentConfigCardSkeleton,
 } from '@/components/components/ComponentConfigCard'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
+import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
+import { TerraformWorkspaceCard } from '@/components/sandbox/TerraformWorkspaceCard'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -66,7 +68,9 @@ export const InstallComponentDetail = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
-      <PageTitle title={`${component?.name ?? 'Component'} | ${install?.name}`} />
+      <PageTitle
+        title={`${component?.name ?? 'Component'} | ${install?.name}`}
+      />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -107,6 +111,10 @@ export const InstallComponentDetail = () => {
         )}
       </div>
 
+      {installComponent?.drifted_object ? (
+        <DriftedBanner drifted={installComponent.drifted_object} />
+      ) : null}
+
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
         <div className="md:col-span-8 flex flex-col gap-6">
           {config?.component_dependency_ids?.length ? (
@@ -130,6 +138,12 @@ export const InstallComponentDetail = () => {
               emptyMessage="This component has no configuration yet."
             />
           )}
+
+          {component?.type === 'terraform_module' ? (
+            <TerraformWorkspaceCard
+              workspaceId={installComponent?.terraform_workspace?.id}
+            />
+          ) : null}
         </div>
 
         <div className="md:col-span-4 flex flex-col gap-4">
