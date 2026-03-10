@@ -66,6 +66,7 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		Dependencies:      action.Dependencies,
 		BreakGlassRoleArn: action.BreakGlassRole,
 		Role:              action.Role,
+		KubeconfigEnabled: action.KubeconfigEnabled,
 	}
 
 	for _, ref := range action.References {
