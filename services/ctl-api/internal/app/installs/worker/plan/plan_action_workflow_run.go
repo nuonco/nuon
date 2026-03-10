@@ -90,13 +90,8 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
 	}
-
-	// For adhoc runs (no config ID), default to enabled for backward compatibility.
-	// For named action configs, respect the KubeconfigEnabled flag.
-	kubeconfigEnabled := run.ActionWorkflowConfigID.Empty() || run.ActionWorkflowConfig.KubeconfigEnabled
-
 	var clusterInfo *kube.ClusterInfo
-	if kubeconfigEnabled {
+	if run.EnableKubeConfig {
 		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get cluster info")
