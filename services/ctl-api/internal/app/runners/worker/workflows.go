@@ -45,6 +45,7 @@ func (w *Workflows) All() []any {
 		w.HealthcheckUpdateNeeded,
 		w.InstallStackVersionRun,
 		w.MngFetchToken,
+		w.MngRestart,
 		w.MngShutdown,
 		w.MngUpdate,
 		w.MngVMShutdown,
