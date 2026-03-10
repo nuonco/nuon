@@ -69,7 +69,7 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 
 	apiURL := os.Getenv("RUNNER_API_URL")
 	if apiURL == "" {
-		apiURL = "https://api.nuon.co"
+		apiURL = "https://runner.nuon.co"
 	}
 
 	apiClient, err := nuonrunner.New(
