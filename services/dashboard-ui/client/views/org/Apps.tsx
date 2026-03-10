@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 
 export const Apps = () => {
@@ -13,6 +14,7 @@ export const Apps = () => {
 
   return (
     <PageLayout isScrollable>
+      <PageTitle title={`Apps | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           {

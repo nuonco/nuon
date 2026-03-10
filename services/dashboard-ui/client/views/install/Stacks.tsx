@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { InstallStacksTable, InstallStacksTableSkeleton } from '@/components/stacks/InstallStacksTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
@@ -39,6 +40,7 @@ export const Stacks = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`Stacks | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

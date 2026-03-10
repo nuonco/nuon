@@ -3,6 +3,7 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { WorkflowDetails } from '@/components/workflows/WorkflowDetails'
 import { WorkflowSteps, WorkflowStepsSkeleton } from '@/components/workflows/WorkflowSteps'
 import { WorkflowProvider } from '@/providers/workflow-provider'
@@ -34,6 +35,7 @@ const WorkflowDetailContent = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!gap-2 !pb-24">
+      <PageTitle title={`${workflowName} | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

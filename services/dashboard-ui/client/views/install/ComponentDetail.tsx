@@ -17,6 +17,7 @@ import { ManagementDropdown } from '@/components/install-components/management/M
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getInstallComponent } from '@/lib'
@@ -65,6 +66,7 @@ export const InstallComponentDetail = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
+      <PageTitle title={`${component?.name ?? 'Component'} | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

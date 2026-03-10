@@ -8,6 +8,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunnerDetailsCard } from '@/components/runners/RunnerDetailsCard'
 import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
@@ -39,12 +40,15 @@ export const BuildRunner = () => {
   })
 
   const breadcrumbs = (
-    <Breadcrumbs
-      breadcrumbs={[
-        { path: `/${org.id}`, text: org?.name },
-        { path: `/${org.id}/runner`, text: 'Builds' },
-      ]}
-    />
+    <>
+      <PageTitle title={`Builds | ${org?.name}`} />
+      <Breadcrumbs
+        breadcrumbs={[
+          { path: `/${org.id}`, text: org?.name },
+          { path: `/${org.id}/runner`, text: 'Builds' },
+        ]}
+      />
+    </>
   )
 
   if (!runnerId) {

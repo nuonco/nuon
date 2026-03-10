@@ -17,6 +17,7 @@ import { BuildComponentButton } from '@/components/components/management/BuildCo
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs, getComponent } from '@/lib'
@@ -60,6 +61,7 @@ export const ComponentDetail = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
+      <PageTitle title={`${component?.name ?? 'Component'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

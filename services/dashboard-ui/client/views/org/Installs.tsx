@@ -6,6 +6,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 
 export const Installs = () => {
@@ -13,6 +14,7 @@ export const Installs = () => {
 
   return (
     <PageLayout>
+      <PageTitle title={`Installs | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           {

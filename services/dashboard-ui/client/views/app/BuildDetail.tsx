@@ -8,6 +8,7 @@ import { BuildHeader } from '@/components/builds/BuildHeader'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useBuild } from '@/hooks/use-build'
 import { useOrg } from '@/hooks/use-org'
@@ -76,6 +77,7 @@ export const BuildDetail = () => {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
+      <PageTitle title={`Build | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

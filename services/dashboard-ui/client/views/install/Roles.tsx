@@ -5,6 +5,7 @@ import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
@@ -35,6 +36,7 @@ export const Roles = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`Roles | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -3,6 +3,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
@@ -19,6 +20,7 @@ export const Workflows = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`Workflows | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
