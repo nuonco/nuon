@@ -10,18 +10,19 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/version"
-
-	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/pkg/retry"
 )
 
 type Params struct {
 	fx.In
 
-	L   *zap.Logger `name:"dev"`
-	Cfg *internal.Config
+	L     *zap.Logger `name:"dev"`
+	Cfg   *internal.Config
+	Token *auth.Token
 }
 
 func New(params Params) (nuonrunner.Client, error) {
@@ -48,7 +49,7 @@ func New(params Params) (nuonrunner.Client, error) {
 	api, err := nuonrunner.New(
 		nuonrunner.WithURL(params.Cfg.RunnerAPIURL),
 		nuonrunner.WithRunnerID(params.Cfg.RunnerID),
-		nuonrunner.WithAuthToken(params.Cfg.RunnerAPIToken),
+		nuonrunner.WithAuthToken(params.Token.Value),
 		nuonrunner.WithRetryer(retryer),
 	)
 	api.SetClientVersion(version.Version)

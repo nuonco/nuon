@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/api"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
@@ -21,17 +22,20 @@ type cli struct{}
 func (c *cli) commonProviders() []fx.Option {
 	// providers for both runner modes: mng and (org |install)
 	return []fx.Option{
-		fx.Provide(settings.New),
 		fx.Provide(internal.NewConfig),
 		fx.Provide(validator.New),
-		fx.Provide(api.New),
-		fx.Provide(heartbeater.New),
-		fx.Provide(metrics.New),
 		// logging and error handling
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
 		fx.Provide(log.AsSystemLogger(log.NewSystem)),
 		fx.Provide(log.AsDevLogger(log.NewDev)),
 		fx.Provide(errs.NewRecorder),
+		// auth: fetch token via IMDS (or use existing token from env)
+		fx.Provide(auth.New),
+		// api client and settings (depend on auth token)
+		fx.Provide(api.New),
+		fx.Provide(settings.New),
+		fx.Provide(heartbeater.New),
+		fx.Provide(metrics.New),
 	}
 }
 
