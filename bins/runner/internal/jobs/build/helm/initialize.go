@@ -18,7 +18,7 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
-	if h.state.plan.Src == nil && h.state.plan.Src.URL != "" && h.state.cfg.HelmRepoConfig == nil {
+	if (h.state.plan.Src == nil || h.state.plan.Src.URL == "") && h.state.cfg.HelmRepoConfig == nil {
 		return fmt.Errorf("either source or helm_repo_config must be provided")
 	}
 
