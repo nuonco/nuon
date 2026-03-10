@@ -11,6 +11,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallAuditLog } from '@/lib'
 import { downloadFileOnClick } from '@/utils/file-download'
+import { slugify } from '@/utils/string-utils'
 
 interface IAuditHistory {}
 
@@ -46,12 +47,12 @@ export const AuditHistoryModal = ({ ...props }: IAuditHistory & IModal) => {
   }
 
   const handleDownload = () => {
-    if (auditLog && auditLog.length > 0) {
+    if (auditLog?.content) {
       downloadFileOnClick({
-        content: JSON.stringify(auditLog, null, 2),
-        filename: `audit-log-${install.id}.json`,
-        fileType: 'json',
-        mimeType: 'application/json',
+        ...auditLog,
+        filename: `${slugify(install.name)}-audit-log.csv`,
+        fileType: 'csv',
+        mimeType: 'text/csv',
         callback: () => {
           removeModal(props.modalId)
         },
@@ -72,11 +73,11 @@ export const AuditHistoryModal = ({ ...props }: IAuditHistory & IModal) => {
         </Text>
       }
       primaryActionTrigger={
-        isLoading || !auditLog?.length
+        isLoading || !auditLog?.content
           ? {
               children: (
                 <span className="flex items-center gap-2">
-                  <Icon variant="Loading" /> Download JSON
+                  <Icon variant="Loading" /> Download CSV
                 </span>
               ),
               disabled: true,
@@ -85,7 +86,7 @@ export const AuditHistoryModal = ({ ...props }: IAuditHistory & IModal) => {
           : {
               children: (
                 <span className="flex items-center gap-2">
-                  <Icon variant="DownloadSimple" size="18" /> Download JSON
+                  <Icon variant="DownloadSimple" size="18" /> Download CSV
                 </span>
               ),
               onClick: handleDownload,

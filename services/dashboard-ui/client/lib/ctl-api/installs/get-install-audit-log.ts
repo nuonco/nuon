@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TInstallAuditLog } from '@/types'
+import type { TFileResponse } from '@/types'
 import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstallAuditLog = ({
@@ -13,7 +13,7 @@ export const getInstallAuditLog = ({
   start: string
   end: string
 }) =>
-  api<TInstallAuditLog[]>({
+  api<TFileResponse>({
     path: `installs/${installId}/audit_logs${buildQueryParams({ start, end })}`,
     orgId,
   })

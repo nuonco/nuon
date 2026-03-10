@@ -10,9 +10,9 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { api } from '@/lib/api'
-import type { TFileResponse } from '@/types'
+import { generateCLIInstallConfig } from '@/lib'
 import { downloadFileOnClick } from '@/utils/file-download'
+import { slugify } from '@/utils/string-utils'
 
 interface IGenerateInstallConfig {}
 
@@ -28,8 +28,8 @@ export const GenerateInstallConfigModal = ({ ...props }: IGenerateInstallConfig 
   } = useQuery({
     queryKey: ['install-generate-cli-config', org.id, install.id],
     queryFn: () =>
-      api<TFileResponse>({
-        path: `installs/${install.id}/generate-cli-config`,
+      generateCLIInstallConfig({
+        installId: install.id,
         orgId: org.id,
       }),
     enabled: !!org?.id && !!install?.id,
@@ -39,6 +39,7 @@ export const GenerateInstallConfigModal = ({ ...props }: IGenerateInstallConfig 
     if (config?.content) {
       downloadFileOnClick({
         ...config,
+        filename: `${slugify(install.name)}.toml`,
         callback: () => {
           removeModal(props.modalId)
         },

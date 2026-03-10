@@ -20,6 +20,7 @@ export * from './get-install-workflows'
 export * from './get-install-policy-reports'
 
 // mutations
+export * from './generate-cli-install-config'
 export * from './forget-install'
 export * from './create-install-config'
 export * from './deprovision-install'
