@@ -17,6 +17,7 @@ import (
 //go:generate ./generate.sh
 type Client interface {
 	SetRunnerID(runnerID string)
+	SetAuthToken(token string)
 
 	GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error)
 
