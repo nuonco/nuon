@@ -1,10 +1,12 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -31,7 +33,7 @@ export const DeployTimeline = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: result } = useQuery({
+  const { data: result, isLoading, error } = useQuery({
     queryKey: ['component-deploys', org?.id, install?.id, componentId, offset],
     queryFn: () =>
       getComponentDeploys({
@@ -50,6 +52,20 @@ export const DeployTimeline = ({
   const pagination = result?.pagination
     ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
     : { hasNext: false, offset, limit: LIMIT }
+
+  if (isLoading) {
+    return <TimelineSkeleton />
+  }
+
+  if (error || deploys.length === 0) {
+    return (
+      <EmptyState
+        variant="table"
+        emptyTitle="No deploys"
+        emptyMessage="This component has not been deployed yet."
+      />
+    )
+  }
 
   return (
     <Timeline<TDeploy>

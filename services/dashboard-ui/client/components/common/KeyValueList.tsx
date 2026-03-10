@@ -50,7 +50,7 @@ export const KeyValueList = ({
             </Text>
             <Text
               className={cn(
-                'block py-2 pl-8 break-all !w-full !max-w-fit overlfow-x-auto',
+                'block py-2 pl-8 break-all !w-full overlfow-x-auto',
                 !isLast && 'border-b'
               )}
               variant="subtext"
