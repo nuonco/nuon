@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -90,9 +91,16 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
+	// For adhoc runs (no config ID), default to enabled for backward compatibility.
+	// For named action configs, respect the KubeconfigEnabled flag.
+	kubeconfigEnabled := run.ActionWorkflowConfigID.Empty() || run.ActionWorkflowConfig.KubeconfigEnabled
+
+	var clusterInfo *kube.ClusterInfo
+	if kubeconfigEnabled {
+		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get cluster info")
+		}
 	}
 
 	plan := &plantypes.ActionWorkflowRunPlan{

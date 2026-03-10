@@ -94,6 +94,8 @@ type CreateActionWorkflowConfigRequest struct {
 
 	BreakGlassRoleARN string `json:"break_glass_role_arn"`
 	Role              string `json:"role,omitempty"`
+
+	KubeconfigEnabled *bool `json:"kubeconfig_enabled,omitempty"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -287,6 +289,11 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
+	kubeconfigEnabled := true
+	if req.KubeconfigEnabled != nil {
+		kubeconfigEnabled = *req.KubeconfigEnabled
+	}
+
 	awc := app.ActionWorkflowConfig{
 		AppID:                  parentApp.ID,
 		AppConfigID:            req.AppConfigID,
@@ -297,6 +304,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		References:             pq.StringArray(req.References),
 		BreakGlassRoleARN:      generics.NewNullString(req.BreakGlassRoleARN),
 		Role:                   req.Role,
+		KubeconfigEnabled:      kubeconfigEnabled,
 	}
 
 	res := s.db.WithContext(ctx).
