@@ -111,12 +111,12 @@ export const InstallComponentDetail = () => {
         )}
       </div>
 
-      {installComponent?.drifted_object ? (
-        <DriftedBanner drifted={installComponent.drifted_object} />
-      ) : null}
-
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
         <div className="md:col-span-8 flex flex-col gap-6">
+          {installComponent?.drifted_object ? (
+            <DriftedBanner drifted={installComponent.drifted_object} />
+          ) : null}
+
           {config?.component_dependency_ids?.length ? (
             <Card>
               <Text weight="strong">Dependencies</Text>
