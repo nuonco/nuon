@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { UnlockSandboxTerraformStateButton } from '@/components/sandbox/management/UnlockSandboxTerraformState'
+import { TerraformBackendConfigButton } from '@/components/terraform-workspace/TerraformBackendConfig'
 import { TerraformState } from '@/components/terraform-workspace/TerraformState'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -92,7 +93,12 @@ export const TerraformWorkspaceCard = ({
         <Text variant="base" weight="strong">
           Terraform state
         </Text>
-        {lock ? <UnlockSandboxTerraformStateButton /> : null}
+        <div className="flex items-center gap-2">
+          <TerraformBackendConfigButton workspaceId={workspaceId} variant="secondary" size="sm">
+            Use Terraform CLI
+          </TerraformBackendConfigButton>
+          {lock ? <UnlockSandboxTerraformStateButton /> : null}
+        </div>
       </div>
 
       {!hasData ? (
