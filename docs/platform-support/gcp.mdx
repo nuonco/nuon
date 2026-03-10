@@ -1,7 +1,22 @@
 ---
-title: 'GCP'
-description: "Deploy and manage BYOC apps on GCP."
+title: 'Google Cloud'
+description: "Deploy and manage BYOC apps on Google Cloud."
 icon: 'google'
 ---
 
-GCP support is currently on our roadmap. If you are interested in GCP support, please [contact us](https://nuon.co/contact-us).
+Nuon now supports Google Cloud to install your app into your customers' Google Cloud environments.
+
+This includes a GKE-specific sandbox [repository on GitHub](https://github.com/nuonco/gcp-gke-sandbox) to implement Google Kubernetes Engine (GKE) and necessary roles.
+
+[Sandboxes](../concepts/sandboxes) are a Terraform that install your app's underlying infrastructure like GKE.
+
+We have built a sample app [gke-simple](https://github.com/nuonco/example-app-configs/tree/main/gke-simple) that uses the sandbox to deploy GKE and a simple whoami app deployed with Helm accompanied by a certificate and load balancer.
+
+To try this sample app:
+- Download the [CLI](../cli)
+- Clone the [example apps repo](https://github.com/nuonco/example-app-configs)
+- `cd` into the `gke-simple` directory
+- Run `nuon auth login`
+- Run `nuon apps create -n gke-simple`
+- Run `nuon apps sync`
+- Open the dashboard in Nuon Cloud and create an install

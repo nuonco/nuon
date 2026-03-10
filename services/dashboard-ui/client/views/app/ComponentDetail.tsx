@@ -19,9 +19,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { api } from '@/lib/api'
-import { getComponent } from '@/lib'
-import type { TComponentConfig } from '@/types'
+import { getAppConfig, getAppConfigs, getComponent } from '@/lib'
 
 const CONTAINER_ID = 'component-detail-page'
 
@@ -32,23 +30,36 @@ export const ComponentDetail = () => {
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     queryKey: ['component', org?.id, app?.id, componentId],
-    queryFn: () =>
-      getComponent({ orgId: org.id, componentId: componentId! }),
+    queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 
-  const { data: config, isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['component-config-latest', org?.id, componentId],
-    queryFn: () =>
-      api<TComponentConfig>({
-        orgId: org.id,
-        path: `components/${componentId}/configs/latest`,
-      }),
-    enabled: !!org?.id && !!componentId,
+  const { data: configs } = useQuery({
+    queryKey: ['app-configs', org?.id, app?.id],
+    queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
+    enabled: !!org?.id && !!app?.id,
   })
 
+  const appConfigId = configs?.at(0)?.id
+
+  const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+    queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!app?.id && !!appConfigId,
+  })
+
+  const config = appConfig?.component_config_connections?.find(
+    (c) => c.component_id === componentId
+  )
+
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection id={CONTAINER_ID} isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -65,7 +76,7 @@ export const ComponentDetail = () => {
         ]}
       />
 
-      <div className="p-6 border-b flex justify-between">
+      <div className="flex items-start justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
           <span className="flex items-center gap-2">
@@ -82,13 +93,13 @@ export const ComponentDetail = () => {
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <PageSection className="md:col-span-8">
-          {component?.dependencies?.length ? (
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
+        <div className="md:col-span-8 flex flex-col gap-6">
+          {config?.component_dependency_ids?.length ? (
             <Card>
               <Text weight="strong">Dependencies</Text>
               <ComponentDependencies
-                deps={component.dependencies}
+                deps={config.component_dependency_ids}
                 variant="inline"
               />
             </Card>
@@ -105,9 +116,9 @@ export const ComponentDetail = () => {
               emptyMessage="This component has no configuration yet."
             />
           )}
-        </PageSection>
+        </div>
 
-        <PageSection className="md:col-span-4">
+        <div className="md:col-span-4 flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Build history
           </Text>
@@ -116,7 +127,7 @@ export const ComponentDetail = () => {
             componentName={component?.name ?? ''}
             shouldPoll
           />
-        </PageSection>
+        </div>
       </div>
 
       <BackToTop containerId={CONTAINER_ID} />

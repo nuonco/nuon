@@ -2,14 +2,16 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
-import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import {
-  InstallComponentConfigCard,
-  InstallComponentConfigCardSkeleton,
-} from '@/components/install-components/InstallComponentConfigCard'
+  ComponentConfigCard,
+  ComponentConfigCardSkeleton,
+} from '@/components/components/ComponentConfigCard'
+import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -17,7 +19,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallComponent } from '@/lib'
+import { getAppConfig, getInstallComponent } from '@/lib'
 
 const CONTAINER_ID = 'install-component-detail-page'
 
@@ -37,11 +39,32 @@ export const InstallComponentDetail = () => {
     enabled: !!org?.id && !!install?.id && !!componentId,
   })
 
+  const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+    queryKey: [
+      'app-config',
+      org?.id,
+      install?.app_id,
+      install?.app_config_id,
+      'recurse',
+    ],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: install.app_config_id,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!install?.app_config_id,
+  })
+
   const component = installComponent?.component
   const latestDeploy = installComponent?.install_deploys?.[0]
+  const config = appConfig?.component_config_connections?.find(
+    (c) => c.component_id === componentId
+  )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection id={CONTAINER_ID} isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -58,7 +81,7 @@ export const InstallComponentDetail = () => {
         ]}
       />
 
-      <div className="p-6 border-b flex justify-between">
+      <div className="flex items-start justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
           <span className="flex items-center gap-2">
@@ -82,16 +105,32 @@ export const InstallComponentDetail = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <PageSection className="md:col-span-8">
-          <>Comonponent config details here!!</>
-
-          {component?.dependencies?.length ? (
-            <InstallComponentDependencies deps={component.dependencies} />
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
+        <div className="md:col-span-8 flex flex-col gap-6">
+          {config?.component_dependency_ids?.length ? (
+            <Card>
+              <Text weight="strong">Dependencies</Text>
+              <InstallComponentDependencies
+                deps={config.component_dependency_ids}
+                variant="inline"
+              />
+            </Card>
           ) : null}
-        </PageSection>
 
-        <PageSection className="md:col-span-4">
+          {isLoadingConfig ? (
+            <ComponentConfigCardSkeleton />
+          ) : config ? (
+            <ComponentConfigCard config={config} />
+          ) : (
+            <EmptyState
+              variant="table"
+              emptyTitle="No configuration"
+              emptyMessage="This component has no configuration yet."
+            />
+          )}
+        </div>
+
+        <div className="md:col-span-4 flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Deploy history
           </Text>
@@ -102,7 +141,7 @@ export const InstallComponentDetail = () => {
               shouldPoll
             />
           ) : null}
-        </PageSection>
+        </div>
       </div>
 
       <BackToTop containerId={CONTAINER_ID} />
