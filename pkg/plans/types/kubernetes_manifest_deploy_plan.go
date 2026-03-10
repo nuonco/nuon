@@ -37,3 +37,4 @@ type OCIArtifactReference struct {
 	// Digest is the immutable artifact digest (e.g., sha256:abc123...)
 	Digest string `json:"digest,omitempty"`
 }
+
