@@ -150,6 +150,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 		AWSAuth:   cloudAuth.AWS,
 		AzureAuth: cloudAuth.Azure,
+		GCPAuth:   cloudAuth.GCP,
 
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: true,

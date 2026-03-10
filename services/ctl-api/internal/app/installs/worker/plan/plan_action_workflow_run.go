@@ -105,6 +105,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		ClusterInfo:     clusterInfo,
 		AzureAuth:       cloudAuth.Azure,
 		AWSAuth:         cloudAuth.AWS,
+		GCPAuth:         cloudAuth.GCP,
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {

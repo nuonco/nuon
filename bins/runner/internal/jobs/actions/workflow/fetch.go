@@ -37,6 +37,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.AWSAuth,
 		AzureAuth: plan.AzureAuth,
+		GCPAuth:   plan.GCPAuth,
 	}
 
 	// fetch the run object

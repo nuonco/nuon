@@ -137,6 +137,7 @@ func (p *Planner) createHelmDeployPlan(
 		ClusterInfo: clusterInfo,
 		AWSAuth:     cloudAuth.AWS,
 		AzureAuth:   cloudAuth.Azure,
+		GCPAuth:     cloudAuth.GCP,
 	}, nil
 }
 

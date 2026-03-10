@@ -124,6 +124,7 @@ func (p *Planner) createTerraformDeployPlan(
 		},
 		AzureAuth:   cloudAuth.Azure,
 		AWSAuth:     cloudAuth.AWS,
+		GCPAuth:     cloudAuth.GCP,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,

@@ -117,6 +117,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		},
 		AWSAuth:   cloudAuth.AWS,
 		AzureAuth: cloudAuth.Azure,
+		GCPAuth:   cloudAuth.GCP,
 	}, nil
 }
 
