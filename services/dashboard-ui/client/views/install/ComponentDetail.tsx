@@ -40,7 +40,13 @@ export const InstallComponentDetail = () => {
   })
 
   const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id, 'recurse'],
+    queryKey: [
+      'app-config',
+      org?.id,
+      install?.app_id,
+      install?.app_config_id,
+      'recurse',
+    ],
     queryFn: () =>
       getAppConfig({
         orgId: org.id,
@@ -58,7 +64,7 @@ export const InstallComponentDetail = () => {
   )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection id={CONTAINER_ID} isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -75,7 +81,7 @@ export const InstallComponentDetail = () => {
         ]}
       />
 
-      <div className="p-6 border-b flex justify-between">
+      <div className="flex items-start justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
           <span className="flex items-center gap-2">
@@ -99,8 +105,8 @@ export const InstallComponentDetail = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <PageSection className="md:col-span-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
+        <div className="md:col-span-8 flex flex-col gap-6">
           {config?.component_dependency_ids?.length ? (
             <Card>
               <Text weight="strong">Dependencies</Text>
@@ -122,9 +128,9 @@ export const InstallComponentDetail = () => {
               emptyMessage="This component has no configuration yet."
             />
           )}
-        </PageSection>
+        </div>
 
-        <PageSection className="md:col-span-4">
+        <div className="md:col-span-4 flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Deploy history
           </Text>
@@ -135,7 +141,7 @@ export const InstallComponentDetail = () => {
               shouldPoll
             />
           ) : null}
-        </PageSection>
+        </div>
       </div>
 
       <BackToTop containerId={CONTAINER_ID} />

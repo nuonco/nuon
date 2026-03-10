@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -14,6 +15,8 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
+
+const CONTAINER_ID = 'install-sandbox-detail-page'
 
 export const Sandbox = () => {
   const { org } = useOrg()
@@ -40,7 +43,7 @@ export const Sandbox = () => {
   const sandboxConfig = configResult?.sandbox
 
   return (
-    <PageSection isScrollable>
+    <PageSection id={CONTAINER_ID} isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -81,6 +84,8 @@ export const Sandbox = () => {
           <SandboxRunsTimeline shouldPoll />
         </div>
       </div>
+
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

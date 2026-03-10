@@ -30,8 +30,7 @@ export const ComponentDetail = () => {
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     queryKey: ['component', org?.id, app?.id, componentId],
-    queryFn: () =>
-      getComponent({ orgId: org.id, componentId: componentId! }),
+    queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 
@@ -46,7 +45,12 @@ export const ComponentDetail = () => {
   const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
-      getAppConfig({ orgId: org.id, appId: app.id, appConfigId, recurse: true }),
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId,
+        recurse: true,
+      }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
 
@@ -55,7 +59,7 @@ export const ComponentDetail = () => {
   )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection id={CONTAINER_ID} isScrollable>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -72,7 +76,7 @@ export const ComponentDetail = () => {
         ]}
       />
 
-      <div className="p-6 border-b flex justify-between">
+      <div className="flex items-start justify-between">
         <HeadingGroup>
           <BackLink className="mb-6" />
           <span className="flex items-center gap-2">
@@ -89,8 +93,8 @@ export const ComponentDetail = () => {
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <PageSection className="md:col-span-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
+        <div className="md:col-span-8 flex flex-col gap-6">
           {config?.component_dependency_ids?.length ? (
             <Card>
               <Text weight="strong">Dependencies</Text>
@@ -112,9 +116,9 @@ export const ComponentDetail = () => {
               emptyMessage="This component has no configuration yet."
             />
           )}
-        </PageSection>
+        </div>
 
-        <PageSection className="md:col-span-4">
+        <div className="md:col-span-4 flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Build history
           </Text>
@@ -123,7 +127,7 @@ export const ComponentDetail = () => {
             componentName={component?.name ?? ''}
             shouldPoll
           />
-        </PageSection>
+        </div>
       </div>
 
       <BackToTop containerId={CONTAINER_ID} />
