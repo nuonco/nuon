@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "Overview of supported cloud platforms — AWS, Azure, and GCP — and what's available on each."
+description: "Overview of supported cloud platforms — AWS, Azure, and Google Cloud — and what's available on each."
 icon: "layer-group"
 ---
 
@@ -23,7 +23,7 @@ Nuon will generate links and CLI commands you can share with your customer to in
 There is necessarily some variation here based on each platform's capabilities, but we strive to keep the experience as consistent as possible.
 </Note>
 
-| | AWS | Azure | GCP |
+| | AWS | Azure | Google Cloud |
 | --- | --- | --- | --- |
 | __Template Language__ | [Cloudformation](https://aws.amazon.com/cloudformation/) | [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/) | [Terraform](https://cloud.google.com/infrastructure-manager/docs/overview) |
 | __Deployed As__ | Cloudformation Stack | ARM Deployment | Infra Manager Deployment |
@@ -47,12 +47,8 @@ Since your customer installs the stack, they have full control over it, and can 
 
 The access the runner identity has is controlled by each platform's native access control features. See the page for each platform for implementation and configuration details.
 
-| | AWS                   | Azure                 | GCP |
+| | AWS                   | Azure                 | Google Cloud |
 | -------------- | --------------------- | --------------------- | --- |
 | __Custom Roles and Permissions__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="xmark" color="#e2e0e4" /> | <Icon icon="xmark" color="#e2e0e4" /> |
 | __Kyverno Policies on Runner Jobs__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="xmark" color="#e2e0e4" /> | <Icon icon="xmark" color="#e2e0e4" /> |
 | __Kyverno Policies in Kubernetes Cluster__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="xmark" color="#e2e0e4" /> | <Icon icon="xmark" color="#e2e0e4" /> |
-
-### Cross-Platform Policy Enforcement
-
-_Coming soon..._
