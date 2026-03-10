@@ -12,14 +12,22 @@ import (
 type UpdateGCPAccountRegion struct {
 	InstallID string `validate:"required"`
 	Region    string `validate:"required"`
+	ProjectID string
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) UpdateGCPAccountRegion(ctx context.Context, req *UpdateGCPAccountRegion) error {
+	updates := map[string]interface{}{
+		"region": req.Region,
+	}
+	if req.ProjectID != "" {
+		updates["project_id"] = req.ProjectID
+	}
+
 	res := a.db.WithContext(ctx).
 		Model(&app.GCPAccount{}).
 		Where("install_id = ?", req.InstallID).
-		Update("region", req.Region)
+		Updates(updates)
 	if res.Error != nil {
 		return generics.TemporalGormError(res.Error)
 	}
