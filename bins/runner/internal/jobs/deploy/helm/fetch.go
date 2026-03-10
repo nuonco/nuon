@@ -37,6 +37,7 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.HelmDeployPlan.AWSAuth,
 		AzureAuth: plan.HelmDeployPlan.AzureAuth,
+		GCPAuth:   plan.HelmDeployPlan.GCPAuth,
 	}
 
 	l.Info("fetching app config")

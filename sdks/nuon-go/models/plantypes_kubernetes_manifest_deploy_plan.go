@@ -19,8 +19,19 @@ import (
 // swagger:model plantypes.KubernetesManifestDeployPlan
 type PlantypesKubernetesManifestDeployPlan struct {
 
+	// Auth for cloud providers
+	AwsAuth struct {
+		GithubComNuoncoNuonPkgAwsCredentialsConfig
+	} `json:"aws_auth,omitempty"`
+
+	// azure auth
+	AzureAuth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"azure_auth,omitempty"`
+
 	// cluster info
 	ClusterInfo *KubeClusterInfo `json:"cluster_info,omitempty"`
+
+	// gcp auth
+	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
 
 	// Manifest is populated at runtime from the OCI artifact.
 	// This field is no longer set during plan creation - it's populated by the runner
@@ -40,7 +51,19 @@ type PlantypesKubernetesManifestDeployPlan struct {
 func (m *PlantypesKubernetesManifestDeployPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAwsAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAzureAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateClusterInfo(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -51,6 +74,37 @@ func (m *PlantypesKubernetesManifestDeployPlan) Validate(formats strfmt.Registry
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) validateAwsAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.AwsAuth) { // not required
+		return nil
+	}
+
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) validateAzureAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.AzureAuth) { // not required
+		return nil
+	}
+
+	if m.AzureAuth != nil {
+		if err := m.AzureAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -77,6 +131,29 @@ func (m *PlantypesKubernetesManifestDeployPlan) validateClusterInfo(formats strf
 	return nil
 }
 
+func (m *PlantypesKubernetesManifestDeployPlan) validateGcpAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAuth) { // not required
+		return nil
+	}
+
+	if m.GcpAuth != nil {
+		if err := m.GcpAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesKubernetesManifestDeployPlan) validateOciArtifact(formats strfmt.Registry) error {
 	if swag.IsZero(m.OciArtifact) { // not required
 		return nil
@@ -89,7 +166,19 @@ func (m *PlantypesKubernetesManifestDeployPlan) validateOciArtifact(formats strf
 func (m *PlantypesKubernetesManifestDeployPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAwsAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAzureAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateClusterInfo(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -100,6 +189,36 @@ func (m *PlantypesKubernetesManifestDeployPlan) ContextValidate(ctx context.Cont
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) contextValidateAwsAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) contextValidateAzureAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AzureAuth != nil {
+
+		if swag.IsZero(m.AzureAuth) { // not required
+			return nil
+		}
+
+		if err := m.AzureAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -119,6 +238,31 @@ func (m *PlantypesKubernetesManifestDeployPlan) contextValidateClusterInfo(ctx c
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAuth != nil {
+
+		if swag.IsZero(m.GcpAuth) { // not required
+			return nil
+		}
+
+		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

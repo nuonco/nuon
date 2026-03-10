@@ -5,6 +5,7 @@ import (
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
@@ -14,6 +15,7 @@ import (
 type CloudAuth struct {
 	AWS   *awscredentials.Config
 	Azure *azurecredentials.Config
+	GCP   *gcpcredentials.Config
 }
 
 func getCloudAuth(
@@ -23,6 +25,7 @@ func getCloudAuth(
 ) (*CloudAuth, error) {
 	var awsAuth *awscredentials.Config
 	var azureAuth *azurecredentials.Config
+	var gcpAuth *gcpcredentials.Config
 	switch {
 	case stackOutputs.AWSStackOutputs != nil:
 		if roleSelection.RoleARN == "" {
@@ -48,6 +51,13 @@ func getCloudAuth(
 			},
 			UseDefault: true,
 		}
+	case stackOutputs.GCPStackOutputs != nil:
+		// gcp uses default instance auth, no config needed
+		gcpAuth = &gcpcredentials.Config{
+			ProjectID:                 stackOutputs.GCPStackOutputs.ProjectID,
+			Region:                    stackOutputs.GCPStackOutputs.Region,
+			ImpersonateServiceAccount: roleSelection.RoleARN,
+		}
 
 	default:
 		return nil, fmt.Errorf("no supported cloud provider found in stack outputs")
@@ -56,5 +66,6 @@ func getCloudAuth(
 	return &CloudAuth{
 		Azure: azureAuth,
 		AWS:   awsAuth,
+		GCP:   gcpAuth,
 	}, nil
 }

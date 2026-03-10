@@ -26,6 +26,9 @@ type PlantypesActionWorkflowRunPlan struct {
 	// aws auth
 	AwsAuth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"aws_auth,omitempty"`
 
+	// azure auth
+	AzureAuth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"azure_auth,omitempty"`
+
 	// builtin env vars
 	BuiltinEnvVars map[string]string `json:"builtin_env_vars,omitempty"`
 
@@ -55,6 +58,10 @@ func (m *PlantypesActionWorkflowRunPlan) Validate(formats strfmt.Registry) error
 	var res []error
 
 	if err := m.validateAwsAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAzureAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +97,29 @@ func (m *PlantypesActionWorkflowRunPlan) validateAwsAuth(formats strfmt.Registry
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesActionWorkflowRunPlan) validateAzureAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.AzureAuth) { // not required
+		return nil
+	}
+
+	if m.AzureAuth != nil {
+		if err := m.AzureAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
 			}
 
 			return err
@@ -168,6 +198,10 @@ func (m *PlantypesActionWorkflowRunPlan) ContextValidate(ctx context.Context, fo
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAzureAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateClusterInfo(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -202,6 +236,31 @@ func (m *PlantypesActionWorkflowRunPlan) contextValidateAwsAuth(ctx context.Cont
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesActionWorkflowRunPlan) contextValidateAzureAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AzureAuth != nil {
+
+		if swag.IsZero(m.AzureAuth) { // not required
+			return nil
+		}
+
+		if err := m.AzureAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
 			}
 
 			return err

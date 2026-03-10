@@ -13,6 +13,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/render"
@@ -106,7 +107,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			UseDefault: true,
 		}
 
-	case stack.GCPStackOutputs != nil:
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
 		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.repository_url}}", stateData)
@@ -130,7 +131,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			return nil, errors.Wrap(err, "unable to render gar login server")
 		}
 		cfg.LoginServer = loginServer
-		cfg.Region = stack.GCPStackOutputs.Region
+		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
 	}
 
 	return cfg, nil

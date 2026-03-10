@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"maps"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"

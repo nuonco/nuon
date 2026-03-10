@@ -35,16 +35,10 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	// Auth is now stored in the nested plan, not the top-level DeployPlan
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.KubernetesManifestDeployPlan.AWSAuth,
 		AzureAuth: plan.KubernetesManifestDeployPlan.AzureAuth,
-	}
-
-	if h.state.plan.KubernetesManifestDeployPlan.ClusterInfo != nil {
-		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
-		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
-		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
+		GCPAuth:   plan.KubernetesManifestDeployPlan.GCPAuth,
 	}
 
 	l.Info("fetching app config")
