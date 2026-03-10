@@ -7,6 +7,7 @@ import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
@@ -53,6 +54,7 @@ const SandboxRunDetailContent = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+      <PageTitle title={`Sandbox run | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

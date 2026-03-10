@@ -2,17 +2,21 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
+import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 
 export const ActionRunLogsPage = () => {
+  const { install } = useInstall()
   const { installActionRun } = useInstallActionRun()
   const logStream = installActionRun?.log_stream
 
   return (
     <div className="flex flex-col gap-6">
+      <PageTitle title={`Logs | ${install?.name}`} />
       {logStream ? (
         <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
           <UnifiedLogsProvider>

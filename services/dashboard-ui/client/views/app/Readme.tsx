@@ -5,6 +5,7 @@ import { Markdown } from '@/components/common/Markdown'
 import { Skeleton } from '@/components/common/Skeleton'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs } from '@/lib'
@@ -34,6 +35,7 @@ export const Readme = () => {
 
   return (
     <PageSection id={CONTAINER_ID} className="!pb-6" isScrollable>
+      <PageTitle title={`README | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -7,6 +7,7 @@ import { DeployHeader } from '@/components/deploys/DeployHeader'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
@@ -61,6 +62,7 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+      <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

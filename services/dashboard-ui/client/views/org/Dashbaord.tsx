@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 
 export const Dashboard = () => {
@@ -16,6 +17,7 @@ export const Dashboard = () => {
 
   return (
     <PageLayout>
+      <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           {

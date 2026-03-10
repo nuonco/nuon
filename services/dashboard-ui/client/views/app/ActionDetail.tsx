@@ -12,6 +12,7 @@ import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAction } from '@/lib'
@@ -38,6 +39,7 @@ export const ActionDetail = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+      <PageTitle title={`${action?.name ?? 'Action'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

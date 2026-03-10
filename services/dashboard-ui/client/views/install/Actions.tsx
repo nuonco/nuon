@@ -3,6 +3,7 @@ import { Text } from '@/components/common/Text'
 import { InstallActionsTable } from '@/components/actions/InstallActionsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 
@@ -12,6 +13,7 @@ export const Actions = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`Actions | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

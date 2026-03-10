@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import { PolicyReportsTable, policyReportsTableColumns } from '@/components/policies/PolicyReportsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallPolicyReports } from '@/lib'
@@ -35,6 +36,7 @@ export const Policies = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`Policies | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -12,6 +12,7 @@ import {
 import { TerraformWorkspaceCard } from '@/components/sandbox/TerraformWorkspaceCard'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
@@ -44,6 +45,7 @@ export const Sandbox = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
+      <PageTitle title={`Sandbox | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

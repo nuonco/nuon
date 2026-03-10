@@ -12,6 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppPolicy, getComponents } from '@/lib'
@@ -62,6 +63,7 @@ export const PolicyDetail = () => {
 
   return (
     <PageSection isScrollable>
+      <PageTitle title={`${policy?.name ?? 'Policy'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

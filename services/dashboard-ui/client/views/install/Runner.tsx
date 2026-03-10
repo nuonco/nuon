@@ -8,6 +8,7 @@ import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
@@ -91,6 +92,7 @@ export const Runner = () => {
   if (!install?.runner_id) {
     return (
       <PageSection isScrollable>
+        <PageTitle title={`Runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },
@@ -118,6 +120,7 @@ export const Runner = () => {
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
       <PageSection className="@container" isScrollable>
+        <PageTitle title={`Runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },

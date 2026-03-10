@@ -5,6 +5,7 @@ import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme, getInstallCurrentInputs } from '@/lib'
@@ -38,6 +39,7 @@ export const Overview = () => {
 
   return (
     <PageSection className="!pt-0" isScrollable>
+      <PageTitle title={`Overview | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -5,6 +5,7 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { TeamTable } from '@/components/team/TeamTable'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { InvitedUsers } from '@/components/team/InvitedUsers'
@@ -16,6 +17,7 @@ export const Team = () => {
 
   return (
     <PageLayout isScrollable>
+      <PageTitle title={`Team | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           {

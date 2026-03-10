@@ -15,6 +15,7 @@ import { InstallActionManualRunButton } from '@/components/actions/InstallAction
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
@@ -52,6 +53,7 @@ export const ActionDetail = () => {
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+      <PageTitle title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
