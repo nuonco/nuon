@@ -57,7 +57,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if _, err := client.GetCurrentUser(c.Request.Context()); err != nil {
+		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
 			m.l.Warn("auth check failed", zap.Error(err))
 			c.Redirect(http.StatusFound, loginURL)
 			c.Abort()

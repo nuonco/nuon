@@ -102,6 +102,7 @@ type Client interface {
 	DeleteAppSecret(ctx context.Context, appID, secretID string) (bool, error)
 
 	// general methods
+	GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error)
 	GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error)
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
