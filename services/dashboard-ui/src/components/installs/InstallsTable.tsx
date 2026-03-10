@@ -88,8 +88,8 @@ function parseInstallsToTableData(
     region: (
       <CloudRegion
         variant="subtext"
-        platform={install?.aws_account ? 'aws' : 'azure'}
-        region={install.aws_account?.region}
+        platform={install?.aws_account ? 'aws' : install?.azure_account ? 'azure' : 'gcp'}
+        region={install.aws_account?.region ?? install.gcp_account?.region}
         location={install.azure_account?.location}
       />
     ),

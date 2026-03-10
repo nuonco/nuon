@@ -20,26 +20,19 @@ export const GenerateStackDetails = () => {
     path: `/api/orgs/${org.id}/apps/${install.app_id}/configs/${install.app_config_id}?recurse=true`,
   })
 
-  const isGCP = install.cloud_platform === 'gcp'
-
-  const values = isGCP
-    ? [
-        { key: 'project_id', value: install.gcp_account?.project_id },
-        { key: 'region', value: install.gcp_account?.region },
-      ]
-    : [
-        { key: 'name', value: appConfig.stack?.name },
-        { key: 'description', value: appConfig.stack?.description },
-        {
-          key: 'runner_nested_template_url',
-          value: appConfig.stack?.runner_nested_template_url,
-        },
-        {
-          key: 'vpc_nested_template_url',
-          value: appConfig.stack?.vpc_nested_template_url,
-        },
-        { key: 'type', value: appConfig.stack?.type },
-      ]
+  const values = [
+    { key: 'name', value: appConfig.stack?.name },
+    { key: 'description', value: appConfig.stack?.description },
+    {
+      key: 'runner_nested_template_url',
+      value: appConfig.stack?.runner_nested_template_url,
+    },
+    {
+      key: 'vpc_nested_template_url',
+      value: appConfig.stack?.vpc_nested_template_url,
+    },
+    { key: 'type', value: appConfig.stack?.type },
+  ]
 
   return isLoading ? (
     <GenerateStackDetailsSkeleton />

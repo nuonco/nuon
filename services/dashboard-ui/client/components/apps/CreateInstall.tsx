@@ -160,10 +160,8 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           subscription_id: '',
           subscription_tenant_id: '',
         }
-      } else if (platform === 'gcp' && formDataObj.gcp_region) {
-        body.gcp_account = {
-          region: formDataObj.gcp_region as string,
-        }
+      } else if (platform === 'gcp') {
+        body.gcp_account = {}
       }
 
       return createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' })

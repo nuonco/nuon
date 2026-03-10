@@ -88,8 +88,10 @@ download_and_install_binary() {
   echo "fetching compressed binary for ${OS} ${ARCH}..."
   compressed_url="$URL/$VERSION/${NAME}_${OS}_${ARCH}.gz"
 
+  set +e
   http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME.gz" "$compressed_url" 2>/dev/null)
   status=$?
+  set -e
 
   if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
     echo "✅ compressed binary downloaded, extracting..."
@@ -124,8 +126,10 @@ download_and_install_binary() {
     echo "fetching binary for ${OS} ${ARCH}..."
 
     # Check if binary exists before downloading
+    set +e
     http_response=$(curl -s -f -w "%{http_code}" -o "$TEMP_DIR/$NAME" "$URL/$VERSION/${NAME}_${OS}_${ARCH}" 2>/dev/null)
     status=$?
+    set -e
 
     if [ $status -eq 0 ] && [ "$http_response" = "200" ]; then
       echo "✅ fetching binary for ${OS} ${ARCH}..."

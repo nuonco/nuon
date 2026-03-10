@@ -37,7 +37,9 @@ function parseInstallsToTableData(
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
     installId: install.id,
-    region: (
+    region: install?.gcp_account ? (
+      <Text variant="subtext">{install.gcp_account?.region || '—'}</Text>
+    ) : (
       <CloudRegion
         variant="subtext"
         platform={install?.aws_account ? 'aws' : 'azure'}

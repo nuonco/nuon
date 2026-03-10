@@ -14,7 +14,7 @@ export type TCreateAppInstallBody = {
     subscription_tenant_id: ''
   }
   gcp_account?: {
-    region: string
+    region?: string
   }
   inputs?: Record<string, string>
   install_config?: {

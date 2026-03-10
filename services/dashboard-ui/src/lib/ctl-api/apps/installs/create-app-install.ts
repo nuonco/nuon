@@ -13,9 +13,7 @@ export type TCreateAppInstallBody = {
     subscription_id: ''
     subscription_tenant_id: ''
   }
-  gcp_account?: {
-    region: string
-  }
+  gcp_account?: Record<string, never>
   inputs?: Record<string, string>
   install_config?: {
     approval_option: 'prompt' | 'approve-all'

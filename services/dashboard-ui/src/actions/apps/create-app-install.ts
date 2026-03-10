@@ -64,12 +64,10 @@ export async function createAppInstall({
     }
   }
 
-  if (formData?.gcp_region) {
+  if (formData?.platform === 'gcp') {
     body = {
       ...body,
-      gcp_account: {
-        region: formData?.gcp_region as string,
-      },
+      gcp_account: {},
     }
   }
 

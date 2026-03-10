@@ -65,11 +65,14 @@ func convertIAMRole(role *config.AppAWSIAMRole, appConfigID string, roleType app
 			ManagedPolicyName: policy.ManagedPolicyName,
 			Name:              policy.Name,
 			Contents:          generics.ToJSON(policy.Contents),
+			GCPPermissions:    policy.GCPPermissions,
+			GCPPredefinedRole: policy.GCPPredefinedRole,
 		})
 	}
 
 	return app.AppAWSIAMRoleConfig{
 		AppConfigID:             appConfigID,
+		CloudPlatform:           role.CloudPlatform,
 		Type:                    roleType,
 		Name:                    role.Name,
 		Description:             role.Description,

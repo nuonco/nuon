@@ -179,7 +179,10 @@ export const CreateInstallForm = forwardRef<
           </div>
 
           {platform && (
-            <PlatformFields platform={platform} draftValues={draftValues} />
+            <>
+              <input type="hidden" name="platform" value={platform} />
+              <PlatformFields platform={platform} draftValues={draftValues} />
+            </>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
