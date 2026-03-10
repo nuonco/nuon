@@ -53,6 +53,8 @@ type InstallActionWorkflowRun struct {
 	// Role to be used when running this action
 	Role string `json:"role,omitempty" gorm:"column:role"`
 
+	EnableKubeConfig bool `json:"enable_kube_config,omitzero" gorm:"default:true" temporaljson:"enable_kube_config,omitzero,omitempty"`
+
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`

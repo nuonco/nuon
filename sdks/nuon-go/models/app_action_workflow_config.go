@@ -41,6 +41,9 @@ type AppActionWorkflowConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// enable kube config
+	EnableKubeConfig bool `json:"enable_kube_config,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
