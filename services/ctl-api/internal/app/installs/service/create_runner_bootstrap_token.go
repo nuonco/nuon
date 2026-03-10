@@ -54,7 +54,7 @@ func (s *service) CreateRunnerBootstrapToken(ctx *gin.Context) {
 		return
 	}
 
-	token, err := s.runnersHelpers.CreateBootstrapToken(ctx, install.RunnerID)
+	token, err := s.runnersHelpers.CreateToken(ctx, install.RunnerID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create bootstrap token: %w", err))
 		return
