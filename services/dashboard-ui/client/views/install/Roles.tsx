@@ -1,38 +1,35 @@
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
+import { InstallIAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig } from '@/lib'
+import { getInstallAppPermissionsConfig } from '@/lib'
 
 export const Roles = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: configResult, isLoading } = useQuery({
-    queryKey: [
-      'app-config',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-      'recurse',
-    ],
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['install-app-permissions-config', org?.id, install?.id],
     queryFn: () =>
-      getAppConfig({
+      getInstallAppPermissionsConfig({
+        installId: install.id,
         orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
       }),
-    enabled: !!org?.id && !!install?.app_config_id,
+    enabled: !!org?.id && !!install?.id,
   })
 
-  const config = configResult
+  const hasRoles =
+    config?.provision_role ||
+    config?.deprovision_role ||
+    config?.maintenance_role ||
+    config?.break_glass_roles?.length ||
+    config?.custom_roles?.length
 
   return (
     <PageSection isScrollable>
@@ -60,8 +57,8 @@ export const Roles = () => {
 
       {isLoading ? (
         <IAMRolesSkeleton />
-      ) : config?.permissions?.aws_iam_roles?.length ? (
-        <IAMRoles appConfig={config} />
+      ) : hasRoles ? (
+        <InstallIAMRoles permissionsConfig={config} />
       ) : (
         <EmptyState
           variant="table"
