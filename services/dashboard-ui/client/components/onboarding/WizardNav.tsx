@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import { cn } from '@/utils/classnames'
 
-export function WizardNav() {
+export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
   const {
     steps,
     currentStepIndex,
@@ -13,7 +13,10 @@ export function WizardNav() {
   } = useOnboardingWizard()
 
   return (
-    <div className="flex items-center px-6 pt-8 pb-6 bg-white dark:bg-dark-grey-900 z-10">
+    <div className={cn(
+      'flex items-center px-6 pt-8 pb-7 bg-white dark:bg-dark-grey-900 z-10 transition-shadow duration-200',
+      isScrolled && 'shadow-sm'
+    )}>
       <div className="flex items-center flex-1 min-w-0 max-w-2xl mx-auto">
         {steps.map((step, index) => {
           const isActive = index === currentStepIndex
