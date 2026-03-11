@@ -36,15 +36,15 @@ func TestInstallMarshal(t *testing.T) {
 					},
 				},
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = ''
 
-# input.group : test group
+# input.group: test group
 [[inputs]]
 one = 'onessss'
 two = 'tworrss'
 
-# input.group : test group 2
+# input.group: test group 2
 [[inputs]]
 onesssssss = 'one'
 twoosss = 'two'
@@ -53,7 +53,7 @@ twoosss = 'two'
 		{
 			name:    "empty install",
 			install: Install{},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = ''
 `,
 		},
@@ -62,7 +62,7 @@ name = ''
 			install: Install{
 				Name: "my-install",
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = 'my-install'
 `,
 		},
@@ -80,10 +80,10 @@ name = 'my-install'
 					},
 				},
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = ''
 
-# input.group : database
+# input.group: database
 [[inputs]]
 database = 'myapp'
 host = 'localhost'
@@ -100,10 +100,10 @@ port = '5432'
 					},
 				},
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = ''
 
-# input.group : empty-group
+# input.group: empty-group
 [[inputs]]
 `,
 		},
@@ -121,10 +121,10 @@ name = ''
 					},
 				},
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = ''
 
-# input.group : optional-configs
+# input.group: optional-configs
 [[inputs]]
 another_field = 'another_value'
 optional_field = ''
@@ -145,10 +145,10 @@ required_field = 'value'
 					},
 				},
 			},
-			expected: `# #:schema https://api.nuon.co/v1/general/config-schema?type=install
+			expected: `# install
 name = 'production-install'
 
-# input.group : app-config
+# input.group: app-config
 [[inputs]]
 debug = 'false'
 environment = 'production'
@@ -537,7 +537,7 @@ app_name = "my-app"
 			rawTOML: `name = "complex-install"
 approval_option = "approve-all"
 
-# group.name : help
+# group.name: help
 [[inputs]]
 required_field = "value"
 optional_field = ""

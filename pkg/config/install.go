@@ -109,7 +109,7 @@ func (ig InputGroup) TOMLComment() string {
 
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
-	Name           string                `mapstructure:"name" toml:"name" comment:"#:schema https://api.nuon.co/v1/general/config-schema?type=install" jsonschema:"required"`
+	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
 	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
