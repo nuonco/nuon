@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { shutdownMngRunner } from '@/actions/runners/shutdown-mng-runner'
+import { restartMngRunner } from '@/actions/runners/restart-mng-runner'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -44,7 +44,7 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
     error,
     execute,
     isLoading,
-  } = useServerAction({ action: shutdownMngRunner })
+  } = useServerAction({ action: restartMngRunner })
 
   useServerActionToast({
     data: isShutdown,
@@ -74,7 +74,7 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'managed_runner_shutdown',
+        event: 'managed_runner_restart',
         status: 'error',
         user,
         props: {
@@ -87,7 +87,7 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
 
     if (isShutdown) {
       trackEvent({
-        event: 'managed_runner_shutdown',
+        event: 'managed_runner_restart',
         status: 'ok',
         user,
         props: {

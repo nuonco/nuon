@@ -11,7 +11,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { shutdownMngRunner } from '@/lib'
+import { restartMngRunner } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
 export const ShutdownMngRunnerButton = ({ ...props }: IButtonAsButton) => {
@@ -39,12 +39,12 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
   const { addToast } = useToast()
 
   const {
-    data: isShutdown,
+    data: isRestarted,
     error,
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: () => shutdownMngRunner({ runnerId: runner.id, orgId: org.id }),
+    mutationFn: () => restartMngRunner({ runnerId: runner.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
         <Toast heading="Restart managed runner process started" theme="success">
@@ -69,21 +69,21 @@ export const ShutdownMngRunnerModal = ({ ...props }: IModal) => {
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'managed_runner_shutdown',
+        event: 'managed_runner_restart',
         status: 'error',
         user,
         props: { orgId: org.id, runnerId: runner.id, err: error?.error },
       })
     }
-    if (isShutdown) {
+    if (isRestarted) {
       trackEvent({
-        event: 'managed_runner_shutdown',
+        event: 'managed_runner_restart',
         status: 'ok',
         user,
         props: { orgId: org.id, runnerId: runner.id },
       })
     }
-  }, [isShutdown, error, org.id, runner.id, user])
+  }, [isRestarted, error, org.id, runner.id, user])
 
   return (
     <Modal
