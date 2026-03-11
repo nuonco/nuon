@@ -171,6 +171,14 @@ type Client interface {
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 	RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error)
 
+	// install runner
+	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
+
+	// runner management
+	RunnerMngRestart(ctx context.Context, runnerID string) error
+	RunnerMngShutDown(ctx context.Context, runnerID string) error
+	RunnerMngVMShutDown(ctx context.Context, runnerID string) error
+
 	// runner job plan
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
 

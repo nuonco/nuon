@@ -451,7 +451,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsTUI(cmd.Context(), id, workflowID)
+			return svc.WorkflowsTUI(cmd.Context(), id, workflowID, PrintJSON)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -770,6 +770,66 @@ Available service names: api, runner (or any service name present in the logs)`,
 	setApprovalOptionCmd.Flags().BoolVar(&promptApproval, "prompt", false, "Prompt for approval on each step")
 	setApprovalOptionCmd.MarkFlagsMutuallyExclusive("approve-all", "prompt")
 	workflowsCmd.AddCommand(setApprovalOptionCmd)
+
+	runnerCmd := &cobra.Command{
+		Use:   "runner",
+		Short: "Manage install runner",
+		Long:  "Manage the runner process for an install",
+	}
+	installsCmds.AddCommand(runnerCmd)
+
+	runnerGetCmd := &cobra.Command{
+		Use:         "get",
+		Short:       "Get install runner info",
+		Long:        "Get runner information for an install",
+		Annotations: tuiAnnotation(TUIContextual),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnerGet(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	runnerGetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnerCmd.AddCommand(runnerGetCmd)
+
+	runnerRestartCmd := &cobra.Command{
+		Use:   "restart",
+		Short: "Restart the install runner",
+		Long:  "Restart the runner process for an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnerRestart(cmd.Context(), id)
+		}),
+	}
+	runnerRestartCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnerRestartCmd.MarkFlagRequired("install-id")
+	runnerCmd.AddCommand(runnerRestartCmd)
+
+	runnerShutdownVMCmd := &cobra.Command{
+		Use:   "shutdown-vm",
+		Short: "Shut down the install runner VM",
+		Long:  "Shut down the VM running the install runner",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnerVMShutDown(cmd.Context(), id)
+		}),
+	}
+	runnerShutdownVMCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnerShutdownVMCmd.MarkFlagRequired("install-id")
+	runnerCmd.AddCommand(runnerShutdownVMCmd)
+
+	runnerShutdownCmd := &cobra.Command{
+		Use:    "shutdown",
+		Short:  "Shut down the install runner mng process",
+		Long:   "Shut down the mng process for an install runner (does not shut down the runner process)",
+		Hidden: true,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.RunnerShutDown(cmd.Context(), id)
+		}),
+	}
+	runnerShutdownCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	runnerShutdownCmd.MarkFlagRequired("install-id")
+	runnerCmd.AddCommand(runnerShutdownCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
