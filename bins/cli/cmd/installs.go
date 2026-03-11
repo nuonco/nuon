@@ -632,23 +632,63 @@ Examples:
 	stepsPlanCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
 	stepsCmd.AddCommand(stepsPlanCmd)
 
+	var (
+		logsFollow    bool
+		logsRaw       bool
+		logsBrowser   bool
+		logsLimit     int
+		logsFilter    string
+		logsSeverity  []string
+		logsService   []string
+		logsSortOrder string
+	)
 	stepsLogsCmd := &cobra.Command{
 		Use:   "logs",
 		Short: "View step logs",
-		Long:  "View execution logs for a workflow step",
+		Long: `View execution logs for a workflow step. Supports deploy, action workflow run, and sandbox run steps.
+
+Filtering examples:
+  # Show only error logs
+  nuon installs workflows steps logs -i myinstall --severity Error
+
+  # Show only runner service logs at warn or error level
+  nuon installs workflows steps logs -i myinstall --severity Warn,Error --service runner
+
+  # Search for a keyword, sorted oldest first
+  nuon installs workflows steps logs -i myinstall --filter "timeout" --sort asc
+
+Available severity levels: Trace, Debug, Info, Warn, Error, Fatal
+Available service names: api, runner (or any service name present in the logs)`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
 			}
-			return svc.WorkflowStepLogs(cmd.Context(), id, wfID, stepID, PrintJSON)
+			return svc.WorkflowStepLogs(cmd.Context(), id, wfID, stepID, PrintJSON, installs.WorkflowStepLogsOptions{
+				Follow:    logsFollow,
+				Raw:       logsRaw,
+				Browser:   logsBrowser,
+				Limit:     logsLimit,
+				Filter:    logsFilter,
+				Severity:  logsSeverity,
+				Service:   logsService,
+				SortOrder: logsSortOrder,
+			})
 		}),
 	}
 	stepsLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stepsLogsCmd.MarkFlagRequired("install-id")
 	stepsLogsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of the workflow (uses selected workflow if not provided)")
 	stepsLogsCmd.Flags().StringVarP(&stepID, "step-id", "s", "", "The ID of the step (defaults to latest)")
+	stepsLogsCmd.Flags().BoolVarP(&logsFollow, "tail", "t", false, "Tail logs in real-time (stream until log stream closes)")
+	stepsLogsCmd.Flags().BoolVar(&logsRaw, "raw", false, "Print plain text log lines (useful for piping)")
+	stepsLogsCmd.Flags().BoolVar(&logsBrowser, "browser", false, "Open logs in the dashboard UI instead")
+	stepsLogsCmd.Flags().IntVarP(&logsLimit, "limit", "n", 0, "Maximum number of log lines to display (0 for all)")
+	stepsLogsCmd.Flags().StringVar(&logsFilter, "filter", "", "Filter log lines by substring match on the log body")
+	stepsLogsCmd.Flags().StringSliceVar(&logsSeverity, "severity", nil, "Filter by severity level (Trace, Debug, Info, Warn, Error, Fatal)")
+	stepsLogsCmd.Flags().StringSliceVar(&logsService, "service", nil, "Filter by service name (e.g., api, runner)")
+	stepsLogsCmd.Flags().StringVar(&logsSortOrder, "sort", "", "Sort order by timestamp: asc (oldest first) or desc (newest first)")
 	stepsCmd.AddCommand(stepsLogsCmd)
 
 	stepsApproveCmd := &cobra.Command{

@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/browser"
-
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/plandiff"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
-	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/logs"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -645,82 +642,6 @@ func (s *Service) WorkflowSetApprovalOption(ctx context.Context, workflowID stri
 	}
 
 	fmt.Printf("Updated workflow %s approval option to %s\n", workflowID, approvalOption)
-	return nil
-}
-
-func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, stepID string, asJSON bool) error {
-	view := ui.NewListView()
-
-	// If stepID is not provided, use the last processed step (not the one awaiting action)
-	if stepID == "" {
-		var err error
-		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
-		if err != nil {
-			return view.Error(err)
-		}
-	}
-
-	if !s.cfg.Preview {
-		workflow, err := s.api.GetWorkflow(ctx, workflowID)
-		if err != nil {
-			return view.Error(err)
-		}
-
-		cfg, err := s.api.GetCLIConfig(ctx)
-		if err != nil {
-			return view.Error(err)
-		}
-
-		url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s?target=%s", cfg.DashboardURL, s.cfg.OrgID, workflow.OwnerID, workflowID, stepID)
-		browser.OpenURL(url)
-		return nil
-	}
-
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
-	if err != nil {
-		return view.Error(err)
-	}
-
-	if step.StepTargetID == "" {
-		return view.Error(fmt.Errorf("step %s does not have a target", stepID))
-	}
-
-	var logStreamID string
-	var deployID string
-	switch step.StepTargetType {
-	case "install_deploys":
-		installID, err = lookup.InstallID(ctx, s.api, installID)
-		if err != nil {
-			return ui.PrintError(err)
-		}
-		deployID = step.StepTargetID
-		deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
-		if err != nil {
-			return view.Error(err)
-		}
-		if deploy.LogStream != nil {
-			logStreamID = deploy.LogStream.ID
-		}
-	case "install_sandbox_runs":
-		return view.Error(fmt.Errorf("sandbox run logs not yet supported via this command"))
-	default:
-		return view.Error(fmt.Errorf("unsupported step target type: %s", step.StepTargetType))
-	}
-
-	if logStreamID == "" {
-		return view.Error(fmt.Errorf("no log stream found for step %s", stepID))
-	}
-
-	if asJSON {
-		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "")
-		if err != nil {
-			return view.Error(err)
-		}
-		ui.PrintJSON(logRecords)
-		return nil
-	}
-
-	logs.LogStreamApp(ctx, s.cfg, s.api, installID, deployID, logStreamID)
 	return nil
 }
 
