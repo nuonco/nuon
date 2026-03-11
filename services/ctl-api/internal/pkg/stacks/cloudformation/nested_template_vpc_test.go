@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -166,6 +167,49 @@ Resources:
       MinSize: "1"
 `
 
+const mockRunnerASGTemplateWithTokenYAML = `
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Runner ASG template (legacy with RunnerApiToken)
+Parameters:
+  SubnetId:
+    Description: The subnet on which the app will run within the selected VPC.
+    Type: AWS::EC2::Subnet::Id
+  RunnerEgressGroupId:
+    Description: The security group for the runner instance that allows outbound traffic.
+    Type: AWS::EC2::SecurityGroup::Id
+  InstallId:
+    Type: String
+    Description: The install ID
+  RunnerId:
+    Type: String
+    Description: The runner ID
+  RunnerApiToken:
+    Type: String
+    Description: API token for the runner
+  RunnerApiUrl:
+    Type: String
+    Description: API URL for the runner
+    Default: https://runner.nuon.co
+  RunnerInitScriptUrl:
+    Type: String
+    Description: URL for the init script that is added to the use data for the Runner ASG VM instances.
+    Default: https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh
+  InstanceType:
+    Type: String
+    Description: EC2 instance type for the runner
+    Default: t3a.medium
+  RootVolumeSize:
+    Type: Number
+    Description: Size of the root EBS volume in GB
+    Default: 30
+Resources:
+  RunnerAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MaxSize: "1"
+      MinSize: "1"
+`
+
 func TestExtractNestedStackParameters_RunnerASG(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
@@ -212,6 +256,87 @@ func TestExtractNestedStackParameters_RunnerASG(t *testing.T) {
 	require.Contains(t, defaultParams, "SubnetId")
 	assert.Equal(t, "AWS::EC2::Subnet::Id", defaultParams["SubnetId"].Type)
 	assert.Nil(t, defaultParams["SubnetId"].Default)
+}
+
+func TestGetRunnerASGNestedStack_WithoutRunnerApiToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write([]byte(mockRunnerASGTemplateYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{RunnerAPIURL: "https://runner.nuon.co"}}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID: "test-install-id",
+		},
+		Runner: &app.Runner{
+			ID: "test-runner-id",
+		},
+		APIToken:            "test-token-value",
+		RunnerInitScriptURL: "https://example.com/init.sh",
+		AppCfg: &app.AppConfig{
+			StackConfig: app.AppStackConfig{
+				RunnerNestedTemplateURL: server.URL + "/stack.yaml",
+			},
+		},
+	}
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	stack, err := tpl.getRunnerASGNestedStack(inp, tb)
+	require.NoError(t, err)
+
+	assert.NotContains(t, stack.Parameters, "RunnerApiToken",
+		"RunnerApiToken should not be in parameters when template does not define it")
+
+	// verify the token tag is not present
+	for _, tag := range stack.Tags {
+		assert.NotEqual(t, "nuon_runner_api_token", tag.Key,
+			"nuon_runner_api_token tag should not be present when template does not define RunnerApiToken")
+	}
+}
+
+func TestGetRunnerASGNestedStack_WithRunnerApiToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/yaml")
+		w.Write([]byte(mockRunnerASGTemplateWithTokenYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{RunnerAPIURL: "https://runner.nuon.co"}}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID: "test-install-id",
+		},
+		Runner: &app.Runner{
+			ID: "test-runner-id",
+		},
+		APIToken:            "test-token-value",
+		RunnerInitScriptURL: "https://example.com/init.sh",
+		AppCfg: &app.AppConfig{
+			StackConfig: app.AppStackConfig{
+				RunnerNestedTemplateURL: server.URL + "/stack.yaml",
+			},
+		},
+	}
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	stack, err := tpl.getRunnerASGNestedStack(inp, tb)
+	require.NoError(t, err)
+
+	assert.Contains(t, stack.Parameters, "RunnerApiToken",
+		"RunnerApiToken should be in parameters when template defines it")
+	assert.Equal(t, "test-token-value", stack.Parameters["RunnerApiToken"])
+
+	// verify the token tag is present
+	foundTag := false
+	for _, tag := range stack.Tags {
+		if tag.Key == "nuon_runner_api_token" {
+			foundTag = true
+			assert.Equal(t, "test-token-value", tag.Value)
+		}
+	}
+	assert.True(t, foundTag, "nuon_runner_api_token tag should be present when template defines RunnerApiToken")
 }
 
 const mockBYOVPCTemplateYAML = `
