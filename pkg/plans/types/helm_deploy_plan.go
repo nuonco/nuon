@@ -33,4 +33,3 @@ type HelmDeployPlan struct {
 	Values        []HelmValue `json:"values"`
 	TakeOwnership bool        `json:"take_ownership"`
 }
-
