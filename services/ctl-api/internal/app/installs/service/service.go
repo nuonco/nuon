@@ -168,6 +168,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// available roles
 		installs.GET("/available-roles", s.GetAvailableRoles)
 
+		// app permissions config with provisioning status
+		installs.GET("/app-permissions-config", s.GetInstallAppPermissionsConfig)
+
 		// install config
 		configs := installs.Group("/configs")
 		{

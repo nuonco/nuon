@@ -38,6 +38,7 @@ export function getJobHref(job: TRunnerJob): string {
 
 export function getJobName(job: TRunnerJob): string {
   const { group, metadata, type } = job ?? {}
+
   switch (group) {
     case 'build':
     case 'sync':
@@ -48,7 +49,7 @@ export function getJobName(job: TRunnerJob): string {
     case 'actions':
       return metadata?.action_workflow_name ?? 'Unknown'
     case 'operations':
-      return type ?? 'Unknown'
+      return type === 'shut-down' ? 'Runner process restart' : 'Unknown'
     case 'management':
       switch (type) {
         case 'mng-shut-down':

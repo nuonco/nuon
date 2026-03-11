@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -10,6 +12,8 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -21,32 +25,17 @@ var FakeHelmPlanJSON string
 //go:embed fake_helm_plan_display.json
 var FakeHelmPlanDisplayJSON string
 
-func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.HelmDeployPlan, error) {
+func (p *Planner) createHelmDeployPlan(
+	ctx workflow.Context,
+	req *CreateDeployPlanRequest,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	state *state.State,
+	installDeploy *app.InstallDeploy,
+) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
-	}
-
-	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
 	stateData, err := state.WorkflowSafeAsMap(ctx)
@@ -54,7 +43,10 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
+		ctx,
+		installDeploy.ComponentBuildID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -90,16 +82,14 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 
 	var helmChartID string
 	if driver == "nuon" {
-		hc, err := activities.AwaitGetHelmChartByOwnerID(ctx, installDeploy.InstallComponent.ID)
+		hc, err := activities.AwaitGetHelmChartByOwnerID(
+			ctx,
+			installDeploy.InstallComponent.ID,
+		)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get helm chart")
 		}
 		helmChartID = hc.ID
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
 	valuesFiles := []string(cfg.ValuesFiles)
@@ -116,6 +106,24 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		})
 	}
 
+	cloudAuth, err := p.getAuthForDeploy(
+		ctx,
+		installDeploy,
+		compBuild,
+		appCfg,
+		stack,
+		state,
+		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for deploy")
+	}
+
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
+	}
+
 	return &plantypes.HelmDeployPlan{
 		Name:            cfg.ChartName,
 		Namespace:       renderedNamespace,
@@ -127,10 +135,16 @@ func (p *Planner) createHelmDeployPlan(ctx workflow.Context, req *CreateDeployPl
 		TakeOwnership:   cfg.TakeOwnership,
 
 		ClusterInfo: clusterInfo,
+		AWSAuth:     cloudAuth.AWS,
+		AzureAuth:   cloudAuth.Azure,
+		GCPAuth:     cloudAuth.GCP,
 	}, nil
 }
 
-func (p *Planner) createHelmDeploySandboxMode(ctx workflow.Context, req *plantypes.HelmDeployPlan) *plantypes.HelmSandboxMode {
+func (p *Planner) createHelmDeploySandboxMode(
+	ctx workflow.Context,
+	req *plantypes.HelmDeployPlan,
+) *plantypes.HelmSandboxMode {
 	return &plantypes.HelmSandboxMode{
 		PlanContents:        FakeHelmPlanJSON,
 		PlanDisplayContents: FakeHelmPlanDisplayJSON,

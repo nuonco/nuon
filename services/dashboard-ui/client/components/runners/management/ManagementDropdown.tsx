@@ -4,8 +4,7 @@ import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { useRunner } from '@/hooks/use-runner'
 import { UpdateRunnerButton } from './UpdateRunner'
-import { ShutdownRunnerButton } from './ShutdownRunner'
-import { ShutdownMngRunnerButton } from './ShutdownMngRunner'
+import { ShutdownRunnerControl } from './ShutdownRunnerControl'
 import { ShutdownInstanceButton } from './ShutdownInstance'
 import { DeprovisionRunnerButton } from './DeprovisionRunner'
 import { PruneRunnerTokensButton } from './PruneRunnerTokens'
@@ -13,14 +12,12 @@ import type { TRunnerSettings } from '@/types'
 
 export const ManagementDropdown = ({
   isInstallRunner = false,
-  isManagedRunner = false,
   settings,
 }: {
   isInstallRunner?: boolean
-  isManagedRunner?: boolean
   settings: TRunnerSettings
 }) => {
-  const { runner } = useRunner()
+  const { runner, isManaged } = useRunner()
   if (!runner) return null
   return (
     <Dropdown
@@ -39,13 +36,9 @@ export const ManagementDropdown = ({
           <UpdateRunnerButton settings={settings} isMenuButton />
         ) : null}
 
-        {isInstallRunner && isManagedRunner ? (
-          <ShutdownMngRunnerButton isMenuButton />
-        ) : (
-          <ShutdownRunnerButton isMenuButton />
-        )}
+        <ShutdownRunnerControl isMenuButton runnerId={runner.id} />
 
-        {isInstallRunner && isManagedRunner ? (
+        {isInstallRunner && isManaged ? (
           <ShutdownInstanceButton isMenuButton />
         ) : null}
 

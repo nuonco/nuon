@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/mng/shutdown-vm", s.MngVMShutDown)
 	api.POST("/v1/runners/:runner_id/mng/shutdown", s.MngShutDown)
 	api.POST("/v1/runners/:runner_id/mng/update", s.MngUpdate)
+	api.POST("/v1/runners/:runner_id/mng/restart", s.MngRestart)
 	api.POST("/v1/runners/:runner_id/mng/fetch-token", s.MngFetchToken)
 	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
 

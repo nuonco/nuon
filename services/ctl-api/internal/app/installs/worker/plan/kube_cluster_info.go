@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallStack, state *state.State) (*kube.ClusterInfo, error) {
+func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallStack, state *state.State, cloudAuth *CloudAuth) (*kube.ClusterInfo, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
@@ -47,25 +47,34 @@ func (p *Planner) getKubeClusterInfo(ctx workflow.Context, stack *app.InstallSta
 	obj := &kube.ClusterInfo{}
 	switch {
 	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		if cloudAuth.AWS == nil {
+			return nil, errors.New("aws auth information not provided")
+		}
 		obj = &kube.ClusterInfo{
 			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
 			Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
 			CAData:   "{{.nuon.sandbox.outputs.cluster.certificate_authority_data}}",
+			AWSAuth:  cloudAuth.AWS,
 		}
 	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		if cloudAuth.Azure == nil {
+			return nil, errors.New("azure auth information not provided")
+		}
 		obj = &kube.ClusterInfo{
-			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
-			Endpoint: "{{.nuon.sandbox.outputs.cluster.host}}",
-			CAData:   "{{.nuon.sandbox.outputs.cluster.cluster_ca_certificate}}",
+			ID:        "{{.nuon.sandbox.outputs.cluster.name}}",
+			Endpoint:  "{{.nuon.sandbox.outputs.cluster.host}}",
+			CAData:    "{{.nuon.sandbox.outputs.cluster.cluster_ca_certificate}}",
+			AzureAuth: cloudAuth.Azure,
 		}
 	case stack.InstallStackOutputs.GCPStackOutputs != nil:
 		obj = &kube.ClusterInfo{
 			ID:       "{{.nuon.sandbox.outputs.cluster.name}}",
 			Endpoint: "{{.nuon.sandbox.outputs.cluster.endpoint}}",
 			CAData:   "{{.nuon.sandbox.outputs.cluster.certificate_authority_data}}",
-			GCPAuth:  true,
+			GCPAuth:  cloudAuth.GCP,
 		}
 	}
+
 	if err := render.RenderStruct(obj, stateData); err != nil {
 		l.Error("error rendering cluster info",
 			zap.Any("cluster-info", obj),

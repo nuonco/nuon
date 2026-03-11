@@ -63,6 +63,7 @@ func (s *service) Index(c *gin.Context) {
 		"Email":           email,
 		"Providers":       options,
 		"RedirectURL":     redirectURLEncoded,
+		"DashboardURL":    s.cfg.AppURL,
 	})
 }
 

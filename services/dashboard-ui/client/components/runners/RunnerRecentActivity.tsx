@@ -33,11 +33,13 @@ interface IRunnerRecentActivity
   extends Omit<ITimeline<TRunnerJob>, 'events' | 'renderEvent' | 'pagination'> {
   shouldPoll?: boolean
   pollInterval?: number
+  jobDetailBasePath?: string
 }
 
 export const RunnerRecentActivity = ({
   shouldPoll = false,
   pollInterval = 20000,
+  jobDetailBasePath,
   ...props
 }: IRunnerRecentActivity) => {
   const { org } = useOrg()
@@ -82,14 +84,18 @@ export const RunnerRecentActivity = ({
       }}
       renderEvent={(job) => {
         const jobHref = getJobHref(job)
+        const resolvedHref =
+          jobHref === '' && jobDetailBasePath
+            ? `${jobDetailBasePath}/jobs/${job.id}`
+            : jobHref
         const jobTitle =
-          jobHref === '' ? (
+          resolvedHref === '' ? (
             <>
               {getJobName(job)} {getJobExecutionStatus(job)}
             </>
           ) : (
             <>
-              <Link href={jobHref}>{getJobName(job)}</Link>{' '}
+              <Link href={resolvedHref}>{getJobName(job)}</Link>{' '}
               {getJobExecutionStatus(job)}
             </>
           )

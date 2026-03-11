@@ -11,9 +11,13 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/principal"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string) (*plantypes.ActionWorkflowRunPlan, error) {
@@ -71,7 +75,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get override env vars")
 	}
 
-	var attrs map[string]string = make(map[string]string, 0)
+	attrs := make(map[string]string, 0)
 	if !run.ActionWorkflowConfigID.Empty() {
 		attrs["action.name"] = run.ActionWorkflowConfig.ActionWorkflow.Name
 		attrs["action.id"] = run.ActionWorkflowConfig.ActionWorkflow.ID
@@ -81,6 +85,16 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		attrs["action.id"] = run.ID
 	}
 
+	cloudAuth, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
+	}
+
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
 		InstallID:       run.InstallID,
 		ID:              runID,
@@ -88,11 +102,10 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		BuiltinEnvVars:  builtInEnvVars,
 		OverrideEnvVars: overrideEnvVars,
 		Attrs:           attrs,
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err == nil {
-		plan.ClusterInfo = clusterInfo
+		ClusterInfo:     clusterInfo,
+		AzureAuth:       cloudAuth.Azure,
+		AWSAuth:         cloudAuth.AWS,
+		GCPAuth:         cloudAuth.GCP,
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {
@@ -133,4 +146,91 @@ func hstoreToMap(hstore pgtype.Hstore) map[string]string {
 		result[key] = *value
 	}
 	return result
+}
+
+func (p *Planner) getRoleForAction(
+	l *zap.Logger,
+	appCfg *app.AppConfig,
+	run *app.InstallActionWorkflowRun,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*operationroles.RoleSelection, app.OperationType, error) {
+	operation := app.OperationTrigger
+
+	var entityRoles map[app.OperationType]string
+	if run.ActionWorkflowConfig.Role != "" {
+		entityRoles = map[app.OperationType]string{
+			operation: run.ActionWorkflowConfig.Role,
+		}
+	}
+
+	var breakGlassRole string
+	if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
+		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
+	}
+
+	selectionCtx := &operationroles.SelectionContext{
+		Operation:      operation,
+		PrincipalType:  principal.TypeAction,
+		PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
+		RuntimeRole:    run.Role,
+		EntityRoles:    entityRoles,
+		MatrixRules:    appCfg.OperationRoleConfig.Rules,
+		DefaultRole:    appCfg.PermissionsConfig.MaintenanceRole.Name,
+		AppConfig:      appCfg,
+		StackOutputs:   &stack.InstallStackOutputs,
+		BreakGlassRole: breakGlassRole,
+		InstallState:   installState,
+	}
+
+	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
+	if err != nil {
+		l.Warn("dynamic role selection failed, falling back to default role",
+			zap.Error(err),
+			zap.String("default_role", selectionCtx.DefaultRole),
+		)
+
+		var fallbackErr error
+		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
+		if fallbackErr != nil {
+			l.Error("unable to get default role", zap.Error(fallbackErr))
+			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		}
+
+		l.Warn("using default role for action",
+			zap.String("role_name", roleSelection.RoleName),
+			zap.String("role_arn", roleSelection.RoleARN),
+		)
+	}
+
+	return roleSelection, operation, nil
+}
+
+func (p *Planner) getAuthForActionWorkflowRun(
+	ctx workflow.Context,
+	outputs app.InstallStackOutputs,
+	run *app.InstallActionWorkflowRun,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*CloudAuth, error) {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	roleSelection, operation, err := p.getRoleForAction(l, appCfg, run, stack, installState)
+	if err != nil {
+		return nil, err
+	}
+
+	l.Info("selected role for action workflow run plan",
+		zap.String("role_name", roleSelection.RoleName),
+		zap.String("role_arn", roleSelection.RoleARN),
+		zap.String("source", string(roleSelection.Source)),
+		zap.String("operation", string(operation)),
+		zap.String("run_id", run.ID),
+	)
+
+	return getCloudAuth(roleSelection, &outputs, fmt.Sprintf("action-workflow-%s", run.ID))
 }

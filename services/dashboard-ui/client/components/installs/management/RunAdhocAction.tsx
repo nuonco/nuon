@@ -10,6 +10,7 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ResumeDraftModal } from '@/components/installs/forms/shared/ResumeDraftModal'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { useFormPersistence } from '@/hooks/use-form-persistence'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -31,6 +32,7 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
   const [customEnvVars, setCustomEnvVars] = useState<number[]>([])
   const [inputMode, setInputMode] = useState<'command' | 'script'>('command')
   const [scriptContent, setScriptContent] = useState('')
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const {
     hasDraft,
@@ -141,6 +143,7 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
       name: (formDataObj.name as string) || undefined,
       timeout: formDataObj.timeout ? Number(formDataObj.timeout) : undefined,
       env_vars: Object.keys(env_vars).length > 0 ? env_vars : undefined,
+      ...(selectedRole && { role: selectedRole }),
     }
 
     if (inputMode === 'command') {
@@ -334,6 +337,14 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
             </fieldset>
           ))}
         </div>
+
+        <RoleSelector
+          installId={install.id}
+          orgId={org.id}
+          operationType="trigger"
+          principalType="action"
+          onChange={setSelectedRole}
+        />
       </form>
     </Modal>
   )

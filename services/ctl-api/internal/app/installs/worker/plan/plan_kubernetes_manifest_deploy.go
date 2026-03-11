@@ -15,36 +15,23 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	types "github.com/nuonco/nuon/pkg/types/components/plan"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.KubernetesManifestDeployPlan, error) {
+func (p *Planner) createKubernetesManifestDeployPlan(
+	ctx workflow.Context,
+	req *CreateDeployPlanRequest,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	state *state.State,
+	installDeploy *app.InstallDeploy,
+) (*plantypes.KubernetesManifestDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
-	}
-
-	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
 	stateData, err := state.WorkflowSafeAsMap(ctx)
@@ -52,7 +39,10 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
+		ctx,
+		installDeploy.ComponentBuildID,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -86,11 +76,6 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 		return nil, errors.Wrap(err, "unable to render namespace")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
-	}
-
 	// Build OCI artifact reference from the install deploy's synced artifact
 	// The manifest content is pulled from this artifact at runtime by the runner
 	ociArtifact := installDeploy.OCIArtifact
@@ -103,6 +88,24 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 		zap.String("tag", ociArtifact.Tag),
 		zap.String("digest", ociArtifact.Digest))
 
+	cloudAuth, err := p.getAuthForDeploy(
+		ctx,
+		installDeploy,
+		compBuild,
+		appCfg,
+		stack,
+		state,
+		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for deploy")
+	}
+
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster info")
+	}
+
 	return &plantypes.KubernetesManifestDeployPlan{
 		ClusterInfo: clusterInfo,
 		Namespace:   renderedNamespace,
@@ -112,10 +115,15 @@ func (p *Planner) createKubernetesManifestDeployPlan(ctx workflow.Context, req *
 			Tag:    ociArtifact.Tag,
 			Digest: ociArtifact.Digest,
 		},
+		AWSAuth:   cloudAuth.AWS,
+		AzureAuth: cloudAuth.Azure,
+		GCPAuth:   cloudAuth.GCP,
 	}, nil
 }
 
-func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(req *plantypes.KubernetesManifestDeployPlan) (*plantypes.KubernetesSandboxMode, error) {
+func (p *Planner) createKubernetesManifestDeployPlanSandboxMode(
+	req *plantypes.KubernetesManifestDeployPlan,
+) (*plantypes.KubernetesSandboxMode, error) {
 	obj := types.KubernetesManifestPlanContents{
 		Plan: "{\n  \"diff\": [\n    {\n      \"_version\": \"2\",\n      \"name\": \"demo\",\n      \"namespace\": \"default\",\n      \"kind\": \"ConfigMap\",\n      \"api\": \"/v1\",\n      \"resource\": \"configmaps\",\n      \"op\": \"apply\",\n      \"type\": 3,\n      \"dry_run\": true,\n      \"entries\": [\n        {\n          \"path\": \"data.sample_data\",\n          \"original\": \"3\",\n          \"applied\": \"4\",\n          \"type\": 3,\n          \"payload\": \"  map[string]any{\\n  \\t\\\"apiVersion\\\": string(\\\"v1\\\"),\\n- \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"3\\\")},\\n+ \\t\\\"data\\\":       map[string]any{\\\"sample_data\\\": string(\\\"4\\\")},\\n  \\t\\\"kind\\\":       string(\\\"ConfigMap\\\"),\\n  \\t\\\"metadata\\\":   map[string]any{\\\"name\\\": string(\\\"demo\\\"), ...},\\n  }\\n\"\n        }\n      ]\n    }\n  ]\n}",
 		Op:   "apply",

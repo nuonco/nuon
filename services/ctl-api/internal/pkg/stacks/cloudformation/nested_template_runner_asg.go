@@ -11,9 +11,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-// VPCNestedStack returns a nested stack template for VPC resources
-func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) *nestedcloudformation.Stack {
-	tags := []tags.Tag{
+// getRunnerASGNestedStack returns a nested stack template for runner ASG resources.
+// It fetches the runner template to discover its parameters, conditionally including
+// RunnerApiToken only if the template defines it.
+func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, error) {
+	// fetch the runner template to inspect its declared parameters
+	tmpl, err := a.fetchTemplate(inp.AppCfg.StackConfig.RunnerNestedTemplateURL)
+	if err != nil {
+		return nil, fmt.Errorf("runner ASG nested stack: %w", err)
+	}
+
+	stackTags := []tags.Tag{
 		{
 			Key:   "Name",
 			Value: fmt.Sprintf("%s-runner-instance", inp.Install.ID),
@@ -32,22 +40,33 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		},
 	}
 
+	params := map[string]string{
+		"SubnetId":            cloudformation.GetAtt("VPC", "Outputs.RunnerSubnet"),
+		"RunnerEgressGroupId": cloudformation.Ref("RunnerSecurityGroup"),
+		"InstallId":           inp.Install.ID,
+		"RunnerId":            inp.Runner.ID,
+		"RunnerApiUrl":        a.cfg.RunnerAPIURL,
+		"InstanceType":        "t3a.medium",            // NOTE(fd): this may be a good thing to make configurable later
+		"RootVolumeSize":      "30",                    // NOTE(fd): this may be a good thing to make configurable later
+		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
+	}
+
+	// conditionally include RunnerApiToken if the nested template defines it as a parameter
+	if _, ok := tmpl.Parameters["RunnerApiToken"]; ok {
+		params["RunnerApiToken"] = inp.APIToken
+		stackTags = append(stackTags, tags.Tag{
+			Key:   "nuon_runner_api_token",
+			Value: inp.APIToken,
+		})
+	}
+
 	return &nestedcloudformation.Stack{
-		Parameters: map[string]string{
-			"SubnetId":            cloudformation.GetAtt("VPC", "Outputs.RunnerSubnet"),
-			"RunnerEgressGroupId": cloudformation.Ref("RunnerSecurityGroup"),
-			"InstallId":           inp.Install.ID,
-			"RunnerId":            inp.Runner.ID,
-			"RunnerApiUrl":        a.cfg.RunnerAPIURL,
-			"InstanceType":        "t3a.medium",            // NOTE(fd): this may be a good thing to make configurable later
-			"RootVolumeSize":      "30",                    // NOTE(fd): this may be a good thing to make configurable later
-			"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
-		},
+		Parameters: params,
 		TemplateURL: cloudformation.Join("", []interface{}{
 			inp.AppCfg.StackConfig.RunnerNestedTemplateURL,
 		}),
-		Tags: t.apply(tags, "runner"),
-	}
+		Tags: t.apply(stackTags, "runner"),
+	}, nil
 }
 
 // VPCNestedStackParameters returns the parameters for the VPC nested stack

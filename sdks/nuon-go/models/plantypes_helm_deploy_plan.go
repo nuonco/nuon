@@ -20,11 +20,22 @@ import (
 // swagger:model plantypes.HelmDeployPlan
 type PlantypesHelmDeployPlan struct {
 
+	// Auth for cloud providers
+	AwsAuth struct {
+		GithubComNuoncoNuonPkgAwsCredentialsConfig
+	} `json:"aws_auth,omitempty"`
+
+	// azure auth
+	AzureAuth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"azure_auth,omitempty"`
+
 	// cluster info
 	ClusterInfo *KubeClusterInfo `json:"cluster_info,omitempty"`
 
 	// create namespace
 	CreateNamespace bool `json:"create_namespace,omitempty"`
+
+	// gcp auth
+	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
 
 	// helm chart id
 	HelmChartID string `json:"helm_chart_id,omitempty"`
@@ -53,7 +64,19 @@ type PlantypesHelmDeployPlan struct {
 func (m *PlantypesHelmDeployPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAwsAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAzureAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateClusterInfo(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -64,6 +87,37 @@ func (m *PlantypesHelmDeployPlan) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) validateAwsAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.AwsAuth) { // not required
+		return nil
+	}
+
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) validateAzureAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.AzureAuth) { // not required
+		return nil
+	}
+
+	if m.AzureAuth != nil {
+		if err := m.AzureAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -81,6 +135,29 @@ func (m *PlantypesHelmDeployPlan) validateClusterInfo(formats strfmt.Registry) e
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) validateGcpAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAuth) { // not required
+		return nil
+	}
+
+	if m.GcpAuth != nil {
+		if err := m.GcpAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err
@@ -124,7 +201,19 @@ func (m *PlantypesHelmDeployPlan) validateValues(formats strfmt.Registry) error 
 func (m *PlantypesHelmDeployPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAwsAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAzureAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateClusterInfo(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -135,6 +224,36 @@ func (m *PlantypesHelmDeployPlan) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) contextValidateAwsAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) contextValidateAzureAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AzureAuth != nil {
+
+		if swag.IsZero(m.AzureAuth) { // not required
+			return nil
+		}
+
+		if err := m.AzureAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -154,6 +273,31 @@ func (m *PlantypesHelmDeployPlan) contextValidateClusterInfo(ctx context.Context
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesHelmDeployPlan) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAuth != nil {
+
+		if swag.IsZero(m.GcpAuth) { // not required
+			return nil
+		}
+
+		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

@@ -149,7 +149,7 @@ cd install-stacks/gcp`
 
         <Card>
           <Text variant="subtext">
-            Generate a runner API token below. Each token expires in 2 hours —
+            Generate a runner API token below. Each token is valid for 90 days —
             click again to rotate.
           </Text>
 

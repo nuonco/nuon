@@ -7,7 +7,7 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
-import { RoleSelector } from '@/components/common/form/RoleSelector'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -224,7 +224,7 @@ export const TeardownComponentModal = ({
             operationType="teardown"
             principalType="component"
             value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
+            onChange={setSelectedRole}
             name="role"
           />
         </div>

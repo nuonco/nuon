@@ -64,63 +64,9 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to create json")
 	}
 
-	appConfig, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get app config")
-		return fmt.Errorf("unable to get app config: %w", err)
-	}
-
-	// Get install stack for auth configuration
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, install.ID)
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install stack")
-		return errors.Wrap(err, "unable to get install stack")
-	}
-
-	// Get install state for role name rendering
-	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to get install state")
-		return fmt.Errorf("unable to get install state: %w", err)
-	}
-
 	compositePlan := plantypes.CompositePlan{
 		SandboxRunPlan: runPlan,
 	}
-
-	roleSelection, operation, err := w.getRoleForSandbox(l, appConfig, sandboxRun, stack, installState)
-	if err != nil {
-		l.Error("unable to evaluate role for sandbox operation", zap.Error(err))
-		w.updateRunStatusWithoutStatusSync(
-			ctx,
-			sandboxRun.ID,
-			app.SandboxRunStatusError,
-			"unable to select role",
-		)
-		return errors.Wrap(err, "unable to evaluate role for sandbox run ")
-	}
-
-	l.Info("selected role for sandbox run",
-		zap.String("role_name", roleSelection.RoleName),
-		zap.String("role_arn", roleSelection.RoleARN),
-		zap.String("source", string(roleSelection.Source)),
-		zap.String("operation", string(operation)),
-		zap.String("run_type", string(sandboxRun.RunType)),
-	)
-
-	planAuth, err := plan.CreatePlanAuth(
-		stack.InstallStackOutputs,
-		roleSelection.RoleARN,
-		fmt.Sprintf("sandbox-run-%s", sandboxRun.ID),
-	)
-	if err != nil {
-		l.Error("unable to build plan auth for sandbox operation", zap.Error(err))
-		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to create auth config")
-		return errors.Wrap(err, "unable to create plan auth")
-	}
-	compositePlan.Auth = planAuth
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:         runnerJob.ID,
@@ -216,6 +162,7 @@ func (w *Workflows) getRoleForSandbox(
 		var fallbackErr error
 		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
 		if fallbackErr != nil {
+			l.Error("unable to get default role", zap.Error(fallbackErr))
 			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 

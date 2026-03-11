@@ -206,18 +206,33 @@ docker exec -i clickhouse-01 clickhouse-client \
 When working with Go code in this repository, agents should follow these practices:
 
 ### Code Formatting
-- **Always run `go fmt` after editing Go files** to ensure consistent formatting
-- **Also run `goimports -w` on edited Go files** to keep imports clean and grouped
+- **CRITICAL: Always run formatting tools after making ANY Go code changes**
+- **Use `gofmt` and `goimports` on directories/packages, not individual files**
+- Run these commands automatically after each change to prevent import and formatting issues
+- **Do NOT manually manage imports** - let `goimports` handle it
 - This prevents formatting inconsistencies and maintains code quality
-- Example workflow:
-  ```bash
-  # After making changes to a Go file
-  go fmt ./path/to/file.go
-  goimports -w ./path/to/file.go
 
-  # Or format entire directory
-  go fmt ./services/ctl-api/...
+**Recommended workflow after making Go changes:**
+  ```bash
+  # Format and fix imports for entire package/directory (PREFERRED)
+  gofmt -w ./services/ctl-api/internal/app/installs/worker/plan/
+  goimports -w ./services/ctl-api/internal/app/installs/worker/plan/
+
+  # Or format recursively from a parent directory
+  gofmt -w ./services/ctl-api/...
+  goimports -w ./services/ctl-api/...
+
+  # For pkg/ changes
+  gofmt -w ./pkg/plans/types/
+  goimports -w ./pkg/plans/types/
   ```
+
+**Why this matters:**
+- `gofmt` ensures consistent code style across the codebase
+- `goimports` automatically adds missing imports and removes unused ones
+- Running on directories catches all changed files in one pass
+- Prevents compilation errors from missing or incorrectly ordered imports
+- Avoids the need to manually add/remove import statements
 
 ### Code Quality
 - Follow existing code patterns and conventions in each service

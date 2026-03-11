@@ -9,15 +9,25 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
-import { useRunner } from '@/hooks/use-runner'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { shutdownRunner } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
-export const ShutdownRunnerButton = ({ ...props }: IButtonAsButton) => {
+interface IShutdownRunnerButton extends IButtonAsButton {
+  runnerId: string
+  showRunnerLabel?: boolean
+}
+
+interface IShutdownRunnerModal extends IModal {
+  runnerId: string
+  showRunnerLabel?: boolean
+}
+
+export const ShutdownRunnerButton = ({ runnerId, showRunnerLabel, ...props }: IShutdownRunnerButton) => {
   const { addModal } = useSurfaces()
-  const modal = <ShutdownRunnerModal />
+  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
+  const modal = <ShutdownRunnerModal runnerId={runnerId} showRunnerLabel={showRunnerLabel} />
   return (
     <Button
       onClick={() => {
@@ -26,16 +36,16 @@ export const ShutdownRunnerButton = ({ ...props }: IButtonAsButton) => {
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="ArrowClockwise" />}
-      Restart process
+      {label}
       {props?.isMenuButton ? <Icon variant="ArrowClockwise" /> : null}
     </Button>
   )
 }
 
-export const ShutdownRunnerModal = ({ ...props }: IModal) => {
+export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: IShutdownRunnerModal) => {
+  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
   const { user } = useAuth()
   const { org } = useOrg()
-  const { runner } = useRunner()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
@@ -47,7 +57,7 @@ export const ShutdownRunnerModal = ({ ...props }: IModal) => {
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: () => shutdownRunner({ runnerId: runner.id, orgId: org.id, force }),
+    mutationFn: () => shutdownRunner({ runnerId, orgId: org.id, force }),
     onSuccess: () => {
       addToast(
         <Toast heading="Restart runner process started" theme="success">
@@ -76,7 +86,7 @@ export const ShutdownRunnerModal = ({ ...props }: IModal) => {
         event: 'runner_shutdown',
         status: 'error',
         user,
-        props: { orgId: org.id, runnerId: runner.id, err: error?.error },
+        props: { orgId: org.id, runnerId, err: error?.error },
       })
     }
     if (isShutdown) {
@@ -84,10 +94,10 @@ export const ShutdownRunnerModal = ({ ...props }: IModal) => {
         event: 'runner_shutdown',
         status: 'ok',
         user,
-        props: { orgId: org.id, runnerId: runner.id },
+        props: { orgId: org.id, runnerId },
       })
     }
-  }, [isShutdown, error, org.id, runner.id, user])
+  }, [isShutdown, error, org.id, runnerId, user])
 
   return (
     <Modal
@@ -100,7 +110,7 @@ export const ShutdownRunnerModal = ({ ...props }: IModal) => {
             theme="warn"
           >
             <Icon variant="ArrowClockwise" size="24" />
-            Restart process?
+            {label}?
           </Text>
         </div>
       }
@@ -113,7 +123,7 @@ export const ShutdownRunnerModal = ({ ...props }: IModal) => {
         ) : (
           <span className="flex items-center gap-2">
             <Icon variant="ArrowClockwise" />
-            Restart process
+            {label}
           </span>
         ),
         disabled: isLoading,
