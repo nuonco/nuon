@@ -27,8 +27,8 @@ func (c *cli) orgsCmd() *cobra.Command {
 		GroupID:           AdditionalGroup.ID,
 	}
 
-	currentCmd := &cobra.Command{
-		Use:   "current",
+	getCmd := &cobra.Command{
+		Use:   "get",
 		Short: "Get current org",
 		Long:  "Get the org you are currently authenticated with",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
@@ -36,7 +36,17 @@ func (c *cli) orgsCmd() *cobra.Command {
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
 	}
-	// TODO(sdboyer) remove this eventually, obviated by marking current in the list cmd
+	orgsCmd.AddCommand(getCmd)
+
+	currentCmd := &cobra.Command{
+		Use:        "current",
+		Deprecated: "Use `nuon orgs get` instead",
+		Short:      "Get current org (deprecated)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.Current(cmd.Context(), PrintJSON)
+		}),
+	}
 	currentCmd.Hidden = true
 	orgsCmd.AddCommand(currentCmd)
 

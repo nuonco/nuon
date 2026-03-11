@@ -73,6 +73,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	getCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(getCmd)
 
+	currentCmd := &cobra.Command{
+		Use:        "current",
+		Deprecated: "Use `nuon installs get` instead",
+		Short:      "Get current install (deprecated)",
+		Hidden:     true,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Get(cmd.Context(), c.cfg.GetString("install_id"), PrintJSON)
+		}),
+	}
+	installsCmds.AddCommand(currentCmd)
+
 	generateConfigCmd := &cobra.Command{
 		Use:   "generate-config",
 		Short: "Generate config for an existing install",
