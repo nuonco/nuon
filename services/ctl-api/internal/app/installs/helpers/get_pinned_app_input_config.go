@@ -17,6 +17,7 @@ func (h *Helpers) GetPinnedAppInputConfig(ctx context.Context, appID, appConfigI
 		}).
 		Preload("InputConfig").
 		Preload("InputConfig.AppInputs").
+		Preload("InputConfig.AppInputs.AppInputGroup").
 		First(&parentAppConfig, "id = ?", appConfigID)
 
 	if res.Error != nil {

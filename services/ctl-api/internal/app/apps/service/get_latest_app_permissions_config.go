@@ -50,7 +50,7 @@ func (s *service) getLatestAppPermissionsConfig(ctx context.Context, appID strin
 		Where(app.AppPermissionsConfig{
 			AppID: appID,
 		}).
-		Preload("AWSIAMRoles").
+		Preload("Roles").
 		Order("created_at desc").
 		Limit(1).
 		First(&appPermissionsCfg)
