@@ -7,8 +7,8 @@ A full-screen, step-based wizard with a top nav bar, animated step transitions, 
 | File | Purpose |
 |------|---------|
 | `OnboardingWizard.tsx` | Main entry point — renders the full-screen layout |
-| `WizardNav.tsx` | Top nav bar with step dots, prev/next arrows, and close button |
-| `WizardStepView.tsx` | Renders the current step's heading and component |
+| `WizardNav.tsx` | Stratus stepper — step dots with labels and animated progress lines |
+| `WizardStepView.tsx` | Renders the current step's heading, back/skip buttons, and component |
 | `../../providers/onboarding-wizard-provider.tsx` | Context, provider, and all shared types |
 | `../../hooks/use-onboarding-wizard.ts` | `useOnboardingWizard()` hook for accessing wizard state |
 
@@ -31,6 +31,7 @@ const STEPS = [
   {
     id: 'welcome',
     title: 'Welcome',
+    navLabel: 'Get Started',
     description: 'A quick intro.',
     component: WelcomeStep,
   },
@@ -68,7 +69,8 @@ Each step is a plain object:
 ```ts
 interface IWizardStepDef {
   id: string                                        // Unique identifier
-  title: string                                     // Shown as heading and in dot tooltip
+  title: string                                     // Shown as page heading
+  navLabel?: string                                 // Short label shown below the stepper dot (falls back to title)
   description?: string                              // Shown below the heading
   component: ComponentType<IWizardStepComponentProps>
   data?: unknown                                    // Optional static config passed to the component
@@ -126,10 +128,11 @@ const InstallStep = ({ sharedData, onAdvance }: IWizardStepComponentProps) => {
 
 ## Navigation Rules
 
-- **Next arrow** is disabled until the current step calls `onAdvance()`.
-- **Back arrow** is always enabled (except on step 1).
+- **Back button** appears in the content area (above the title) on step 2+.
+- **Skip onboarding** link appears top-right once the org is created.
 - **Step dots** are clickable for the current step and any already-completed steps.
-- Completed dots show a check icon; the active dot is highlighted in primary blue.
+- Completed dots show a check icon; the active dot has a purple ring with inner dot.
+- Connecting lines animate from 0% to 100% width when a step completes.
 
 ---
 

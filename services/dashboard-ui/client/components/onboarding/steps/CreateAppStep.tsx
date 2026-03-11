@@ -77,7 +77,7 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-md border shadow-sm cursor-pointer transition-colors',
                   isSelected
-                    ? '!border-primary-600 dark:!border-primary-400 bg-primary-50 dark:bg-primary-950'
+                    ? '!border-primary-600 dark:!border-primary-400 bg-primary-50 dark:bg-primary-950/40'
                     : 'hover:!border-primary-300 dark:hover:!border-primary-700'
                 )}
               >

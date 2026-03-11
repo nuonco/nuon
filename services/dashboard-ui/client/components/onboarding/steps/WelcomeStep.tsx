@@ -3,7 +3,6 @@ import { useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Card } from '@/components/common/Card'
 import { Input } from '@/components/common/form/Input'
 import { Textarea } from '@/components/common/form/Textarea'
 import { UserProfile } from '@/components/users/UserProfile'
@@ -37,12 +36,12 @@ export const WelcomeStep = ({ onAdvance, setSharedData, nextStepTitle }: IWizard
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <Card className="w-fit">
+      <div className="flex items-center justify-between">
+        <Text variant="body" theme="neutral">
+          Before we get started, tell us a bit about yourself.
+        </Text>
         <UserProfile />
-      </Card>
-      <Text variant="body" theme="neutral">
-        Before we get started, tell us a bit about yourself.
-      </Text>
+      </div>
       <div className="flex flex-col gap-4">
         <Input
           id="jobTitle"
