@@ -80,6 +80,7 @@ func (ig InputGroup) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (ig InputGroup) MarshalTOML() ([]byte, error) {
 	return toml.Marshal(ig.Inputs)
 }
+
 func (ig InputGroup) MarshalJSON() ([]byte, error) {
 	// Marshal as flat map to match the JSONSchemaExtend definition
 	if ig.Inputs == nil {
@@ -103,7 +104,7 @@ func (ig *InputGroup) UnmarshalTOML(data []byte) error {
 }
 
 func (ig InputGroup) TOMLComment() string {
-	return fmt.Sprintf("input.group : %s", ig.Group)
+	return fmt.Sprintf("input.group: %s", ig.Group)
 }
 
 // Install is a flattened configuration type that allows us to define installs for an app.
