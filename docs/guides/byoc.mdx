@@ -91,10 +91,6 @@ Create a GitHub App so Nuon can clone code for components from private repos.
 
 Nuon must be configured to use your IdP for authentication.
 
-<Note>
-  Nuon BYOC only supports Google as an IdP at this time. We will be adding support for more IdPs in the future.
-</Note>
-
 #### Google
 
 To use Google as your IdP, set up a client in Google Auth Platform. You will need a Google Cloud Platform account.
@@ -105,7 +101,20 @@ To use Google as your IdP, set up a client in Google Auth Platform. You will nee
 1. Save the client ID and secret.
 1. Add an authorized redirect URI with the value, `https://auth.<your-root-domain>/auth`.
 
-### Auth0 (DEPRECATED)
+
+#### Okta
+
+To use Okta as your IdP, set up an OIDC Application in Okta.
+
+1. In the Okta Admin Console, navigate to Applications and create a new OIDC application.
+  a. For Sign-in method: Select OIDC - OpenID Connect
+  a. For Application type: Select Web Application
+1. Set the **Sign In Redirect** to `https://auth.<your-root-domain>/auth`
+1. Set **Trusted Origins** to `<your-root-domain>`
+1. Save the client id and secret.
+
+
+#### Auth0 (DEPRECATED)
 
 <Warning>
 Nuon BYOC previously required Auth0 for authentication, but this dependency has been removed. This documentation is retained for anyone still using Auth0, but new Nuon BYOC installs should use the new IdP integration documented above.
@@ -186,35 +195,7 @@ Create a Native Application for CLI authentication.
 | Allow Cross-Origin Authentication | `true` |
 | Device Code (Advanced > Grant Types) | Checked |
 
-Finally, you can optionally enable additional identity providers.
 
-__Okta__
-
-Create an OIDC Application in Okta.
-
-1. In Okta, create a new OIDC application
-2. Set the **Sign In Redirect** to `<your-auth0-tenant>/login/callback`
-3. Set **Trusted Origins** to `<your-root-domain>`
-4. Note the **Client ID** and **Client Secret**
-
-Create an Enterprise Connection in Auth0.
-
-1. Go to **Authentication > Enterprise > Okta Workforce > Create**
-2. Configure:
-   - Connection name: Choose a unique name
-   - Okta domain: Your Okta tenant domain
-   - Client ID/Secret: From Step 1
-3. Enable **Sync user profiles at each login**
-4. Set User Mapping:
-
-```json
-{
-  "attributes": {
-    "email": "${context.tokenset.email}"
-  },
-  "mapping_mode": "use_map"
-}
-```
 
 ## Inputs
 
@@ -224,7 +205,7 @@ After configuring all dependencies, update your install inputs in the customer d
 
 | Input              | Value                                  |
 | ------------------ | -------------------------------------- |
-| Auth Provider Type | `google`                               |
+| Auth Provider Type | `google` or `oidc`                     |
 | Auth Client ID     | `[secret]`                             |
 | Auth Client Secret | `[secret]`                             |
 | Auth Redirect URL  | `https://auth.<your-root-domain>/auth` |
