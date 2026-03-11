@@ -16,7 +16,7 @@ import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings } from '@/lib'
 import type { TRunnerGroup } from '@/types'
 
-const RunnerContent = ({ runnerId }: { runnerId: string }) => {
+const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: string }) => {
   const { org } = useOrg()
 
   const { data: settingsResult, isLoading: isLoadingSettings } = useQuery({
@@ -69,7 +69,7 @@ const RunnerContent = ({ runnerId }: { runnerId: string }) => {
         <Text variant="base" weight="strong">
           Recent activity
         </Text>
-        <RunnerRecentActivity shouldPoll />
+        <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/installs/${installId}/runner`} />
       </div>
     </>
   )
@@ -125,7 +125,7 @@ export const Runner = () => {
             },
           ]}
         />
-        <RunnerContent runnerId={install.runner_id} />
+        <RunnerContent runnerId={install.runner_id} installId={install.id} />
       </PageSection>
       </SurfacesProvider>
     </RunnerProvider>
