@@ -5,6 +5,7 @@ export type TRunAdhocActionBody = {
   env_vars?: Record<string, string>
   inline_contents?: string
   name?: string
+  role?: string
   timeout?: number
 }
 

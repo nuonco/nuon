@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import { RoleSelector } from '@/components/common/form/RoleSelector'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -226,7 +226,7 @@ export const DeployComponentModal = ({
           operationType="deploy"
           principalType="component"
           value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
+          onChange={setSelectedRole}
           name="role"
         />
       </div>
