@@ -14,6 +14,28 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+func (s *Service) workflowsJSON(ctx context.Context, installID, workflowID string) error {
+	if installID == "" {
+		return ui.PrintError(fmt.Errorf("--install-id is required when using --json"))
+	}
+	if workflowID == "" {
+		return ui.PrintError(fmt.Errorf("--workflow-id is required when using --json"))
+	}
+
+	installID, err := lookup.InstallID(ctx, s.api, installID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
+	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
+	ui.PrintJSON(workflow)
+	return nil
+}
+
 func (s *Service) WorkflowsList(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {

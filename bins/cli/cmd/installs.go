@@ -451,7 +451,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsTUI(cmd.Context(), id, workflowID)
+			return svc.WorkflowsTUI(cmd.Context(), id, workflowID, PrintJSON)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
