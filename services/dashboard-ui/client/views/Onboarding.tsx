@@ -13,18 +13,21 @@ const STEPS = [
   {
     id: 'step-1',
     title: 'Welcome to Nuon',
+    navLabel: 'Get Started',
     description: "Let's setup your account.",
     component: WelcomeStep,
   },
   {
     id: 'step-2',
     title: 'Create your org',
+    navLabel: 'Create Org',
     description: 'Set up your organization.',
     component: CreateOrgStep,
   },
   {
     id: 'step-3',
     title: 'Download the Nuon CLI',
+    navLabel: 'Nuon CLI',
     description:
       'Download the Nuon CLI to create and manage your apps from the terminal.',
     component: DownloadCliStep,
@@ -32,6 +35,7 @@ const STEPS = [
   {
     id: 'step-4',
     title: 'Create your first app',
+    navLabel: 'Create App',
     description:
       'Choose an example app to get started. You can customize it later.',
     component: CreateAppStep,
@@ -39,6 +43,7 @@ const STEPS = [
   {
     id: 'step-5',
     title: 'Sync your app config',
+    navLabel: 'Sync App',
     description:
       'Syncing pushes your app config to Nuon and triggers a build. Run this from inside your cloned app directory.',
     component: SyncAppStep,
@@ -46,6 +51,7 @@ const STEPS = [
   {
     id: 'step-6',
     title: 'Create an install',
+    navLabel: 'Deploy Install',
     description: 'Create an install to deploy your app to a cloud account.',
     component: CreateInstallStep,
   },

@@ -12,6 +12,7 @@ export interface IWizardStepComponentProps {
 export interface IWizardStepDef<TData = unknown> {
   id: string
   title: string
+  navLabel?: string
   description?: string
   component: ComponentType<IWizardStepComponentProps>
   data?: TData

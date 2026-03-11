@@ -7,7 +7,7 @@ export function OnboardingWizard(props: IOnboardingWizardProps) {
     <OnboardingWizardProvider {...props}>
       <div className="h-screen flex flex-col bg-background">
         <WizardNav />
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto px-8 pt-14 pb-8">
           <div className="max-w-2xl mx-auto">
             <WizardStepView />
           </div>
