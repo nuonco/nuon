@@ -44,7 +44,7 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
           <Link
             href={`/${org.id}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
           >
-            View run <Icon variant="CaretRight" />
+            View run logs <Icon variant="CaretRight" />
           </Link>
         </Text>
       </div>
