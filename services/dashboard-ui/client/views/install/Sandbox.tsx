@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -9,7 +10,7 @@ import {
   SandboxConfigCard,
   SandboxConfigCardSkeleton,
 } from '@/components/sandbox/SandboxConfigCard'
-import { TerraformWorkspaceCard } from '@/components/sandbox/TerraformWorkspaceCard'
+import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -43,6 +44,13 @@ export const Sandbox = () => {
 
   const sandboxConfig = configResult?.sandbox
 
+  const latestSandboxRunId = install?.install_sandbox_runs?.at(0)?.id
+  const driftedObject = install?.drifted_objects?.find(
+    (d) =>
+      d?.target_type === 'install_sandbox_run' &&
+      d?.target_id === latestSandboxRunId
+  )
+
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Sandbox | ${install?.name}`} />
@@ -70,6 +78,8 @@ export const Sandbox = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
         <div className="md:col-span-8 flex flex-col gap-6">
+          {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+
           {sandboxConfig ? (
             <SandboxConfigCard config={sandboxConfig} />
           ) : (

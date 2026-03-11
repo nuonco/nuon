@@ -371,6 +371,13 @@ export type TTerraformState = {
   }
 }
 
+// available roles
+export type TAvailableRole = components['schemas']['service.AvailableRole']
+export type TAvailableRolesResponse =
+  components['schemas']['service.AvailableRolesResponse']
+export type TOperationType = components['schemas']['app.OperationType']
+export type TPrincipalType = 'component' | 'sandbox' | 'action'
+
 // auth
 export type TMe = {
   id: string

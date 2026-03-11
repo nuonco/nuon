@@ -7,6 +7,7 @@ import (
 
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/management/noop"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/management/restart"
 	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/shutdown"
 	update "github.com/nuonco/nuon/bins/runner/internal/jobs/management/update"
 	vmshutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/management/vm_shutdown"
@@ -19,6 +20,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("management", fetchtoken.New)),
 		fx.Provide(jobs.AsJobHandler("management", noop.New)),
 		fx.Provide(jobs.AsJobHandler("management", update.New)),
+		fx.Provide(jobs.AsJobHandler("management", restart.New)),
 		fx.Provide(jobs.AsJobHandler("management", shutdown.New)),
 		fx.Provide(jobs.AsJobHandler("management", vmshutdown.New)),
 		fx.Provide(jobloop.AsManagementJobLoop(NewJobLoop)),

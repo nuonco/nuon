@@ -94,7 +94,7 @@ export const BuildRunner = () => {
               <Text variant="base" weight="strong">
                 Recent activity
               </Text>
-              <RunnerRecentActivity shouldPoll />
+              <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/runner`} />
             </PageSection>
           </div>
         </PageContent>

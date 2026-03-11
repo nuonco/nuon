@@ -75,6 +75,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationMngUpdate: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitMngUpdate(ctx, input)
 		},
+		signals.OperationMngRestart: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitMngRestart(ctx, input)
+		},
 		signals.OperationMngFetchToken: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitMngFetchToken(ctx, input)
 		},

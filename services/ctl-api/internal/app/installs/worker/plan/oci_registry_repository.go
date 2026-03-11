@@ -13,55 +13,48 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
-func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {
+func (p *Planner) getInstallRegistryRepositoryConfig(
+	ctx workflow.Context,
+	installDeploy *app.InstallDeploy,
+	compBuild *app.ComponentBuild,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	installState *state.State,
+) (*configs.OCIRegistryRepository, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	installStack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	state, err := activities.AwaitGetInstallStateByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
-	}
-
-	stack, err := activities.AwaitGetInstallStackOutputs(ctx, installStack.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack outputs")
-	}
-
-	stateData, err := state.WorkflowSafeAsMap(ctx)
+	stateData, err := installState.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "state data")
 	}
 
+	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
+	cloudAuth, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get auth for install registry")
+	}
+
 	cfg := &configs.OCIRegistryRepository{
-		RegistryType: "",
-		Plugin:       "oci",
-		Repository:   "",
-		LoginServer:  "",
-		Region:       "",
-		ECRAuth:      nil,
-		ACRAuth:      nil,
+		Plugin: "oci",
 	}
 
 	// NOTE(jm): this is mainly a relic of not having the outputs properly passed from the install sandbox, or a
 	// good way of "cataloging" resources.
 	switch {
-	case stack.AWSStackOutputs != nil:
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeECR
 		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.ecr.repository_url}}", stateData)
@@ -84,16 +77,10 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 			return nil, errors.Wrap(err, "unable to render acr login server")
 		}
 		cfg.LoginServer = loginServer
-		cfg.Region = stack.AWSStackOutputs.Region
-		cfg.ECRAuth = &credentials.Config{
-			Region: stack.AWSStackOutputs.Region,
-			AssumeRole: &credentials.AssumeRoleConfig{
-				RoleARN:     stack.AWSStackOutputs.MaintenanceIAMRoleARN,
-				SessionName: fmt.Sprintf("oci-sync-%s-%s", installID, deployID),
-			},
-		}
+		cfg.Region = stack.InstallStackOutputs.AWSStackOutputs.Region
+		cfg.ECRAuth = cloudAuth.AWS
 
-	case stack.AzureStackOutputs != nil:
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeACR
 		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.name}}", stateData)
@@ -120,7 +107,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 			UseDefault: true,
 		}
 
-	case stack.GCPStackOutputs != nil:
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
 
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
 		repositoryStr, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.repository_url}}", stateData)
@@ -144,7 +131,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(ctx workflow.Context, insta
 			return nil, errors.Wrap(err, "unable to render gar login server")
 		}
 		cfg.LoginServer = loginServer
-		cfg.Region = stack.GCPStackOutputs.Region
+		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
 	}
 
 	return cfg, nil

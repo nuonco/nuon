@@ -141,6 +141,17 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
+	// update gcp account from stack outputs
+	if outputs.GCPStackOutputs != nil && outputs.GCPStackOutputs.Region != "" {
+		if err := activities.AwaitUpdateGCPAccountRegion(ctx, &activities.UpdateGCPAccountRegion{
+			InstallID: install.ID,
+			Region:    outputs.GCPStackOutputs.Region,
+			ProjectID: outputs.GCPStackOutputs.ProjectID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update gcp account from stack outputs")
+		}
+	}
+
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
 	err = validateRegion(*install, outputs)

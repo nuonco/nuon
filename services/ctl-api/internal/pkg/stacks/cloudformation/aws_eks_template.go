@@ -30,7 +30,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	// NOTE(fd): we branch here to choose the cf stack based on
 	// NOTE(fd): this uses the configurable nested runner asg cf stack
-	tmpl.Resources["RunnerAutoScalingGroup"] = t.getRunnerASGNestedStack(inp, tb)
+	runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
+	if err != nil {
+		return nil, err
+	}
+	tmpl.Resources["RunnerAutoScalingGroup"] = runnerASG
 
 	// runner ASG and launch template
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp)

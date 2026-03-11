@@ -8,7 +8,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	"text/template"
 
@@ -21,7 +23,6 @@ import (
 const (
 	ConfigDirectory     = "/opt/nuon/runner"
 	ImageConfigFilename = "/opt/nuon/runner/image"
-	RunnerTokenFilename = "/opt/nuon/runner/token"
 	// systemd
 	RunnerServiceDir  = "/etc/systemd/system"
 	RunnerServiceName = "nuon-runner.service"
@@ -31,9 +32,6 @@ var defaultSystemctlOpts = systemctl.Options{UserMode: false}
 
 //go:embed templates/image.env
 var imageConfigTemplate string
-
-//go:embed templates/token.env
-var runnerTokenTemplate string
 
 //go:embed templates/runner-service.aws.service
 var runnerServiceAWS string
@@ -61,7 +59,7 @@ func (h *Monitor) checkRunnerService(ctx context.Context) error {
 		return err
 	}
 
-	err = h.ensureRunnerTokenFile(ctx)
+	err = h.ensureRunnerTokenValid(ctx)
 	if err != nil {
 		h.l.Error(err.Error())
 		return err
@@ -92,7 +90,7 @@ func (h *Monitor) whoami(ctx context.Context) error {
 }
 
 func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
-	h.l.Info(fmt.Sprintf("ensuring config directory exists: %s", ConfigDirectory))
+	h.l.Debug(fmt.Sprintf("ensuring config directory exists: %s", ConfigDirectory))
 	// ensure the config dir exists: this dir may be created by the init script
 	_, err := os.Stat(ConfigDirectory)
 	if err != nil {
@@ -112,7 +110,7 @@ func (h *Monitor) ensureConfigDirectories(ctx context.Context) error {
 func (h *Monitor) ensureImageConfigFile(ctx context.Context) error {
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
-	h.l.Info(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
+	h.l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)
 	if err != nil {
@@ -126,24 +124,42 @@ func (h *Monitor) ensureImageConfigFile(ctx context.Context) error {
 	return nil
 }
 
-func (h *Monitor) ensureRunnerTokenFile(ctx context.Context) error {
-	// NOTE(fd): this config is special - this method only checks to see if it exists,
-	// it doesn't try to create it. that's for two reasons: 1) the token this runner
-	// process has in-hand is expected to already be set in the token file and 2) the
-	// file should only ever be over-written in case of token refresh and we haven't
-	// written that code yet.
-	h.l.Info(fmt.Sprintf("ensuring runner token file exists: %s", RunnerTokenFilename))
-	_, err := os.Stat(RunnerTokenFilename)
-	if err != nil {
-		return errors.Wrap(err, "unable to stat runner token file")
+func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
+	h.l.Debug("ensuring runner token is valid")
+	_, err := h.apiClient.GetRunner(ctx)
+	if err == nil {
+		return nil
 	}
+
+	if !nuonrunner.IsUnauthorized(err) && !nuonrunner.IsForbidden(err) {
+		return errors.Wrap(err, "unable to validate runner token")
+	}
+
+	h.l.Warn("runner token is invalid - fetching new token via IMDS")
+	unauthClient, err := nuonrunner.New(
+		nuonrunner.WithURL(h.settings.Cfg.RunnerAPIURL),
+	)
+	if err != nil {
+		return errors.Wrap(err, "unable to create unauthenticated client")
+	}
+
+	result, err := fetchtoken.FetchToken(ctx, unauthClient)
+	if err != nil {
+		return errors.Wrap(err, "unable to fetch new token")
+	}
+
+	// Update the in-memory token on both the API client and config.
+	h.apiClient.SetAuthToken(result.Token)
+	h.settings.Cfg.RunnerAPIToken = result.Token
+
+	h.l.Info(fmt.Sprintf("successfully refreshed runner token for runner %s", result.RunnerID))
 	return nil
 }
 
 func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	// NOTE(fd): we need to pivot on the runner platform to grab the right template
 	path := filepath.Join(RunnerServiceDir, RunnerServiceName)
-	h.l.Info(fmt.Sprintf("ensuring runner unit file exists: %s", path))
+	h.l.Debug(fmt.Sprintf("ensuring runner unit file exists: %s", path))
 
 	// dynamically choose the template
 	var tmpl *template.Template
@@ -207,7 +223,7 @@ func (h *Monitor) writeNuonRunnerService(tmpl *template.Template, path string) e
 // this method encapsulates all of the logic to ensure the service is running.
 // NOTE: we use start instead of enable
 func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
-	h.l.Info("ensuring runner service is active")
+	h.l.Debug("ensuring runner service is active")
 	isActive, err := systemctl.IsActive(ctx, RunnerServiceName, defaultSystemctlOpts)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine if unit is active")
@@ -228,44 +244,10 @@ func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
 	return nil
 }
 
-// WriteRunnerTokenFile writes the runner token to the token file using the token template
-func WriteRunnerTokenFile(token string) error {
-	// Ensure the directory exists
-	dir := filepath.Dir(RunnerTokenFilename)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return errors.Wrap(err, "unable to create token directory")
-	}
-
-	// Create and render the template
-	tmpl := template.Must(template.New("").Parse(runnerTokenTemplate))
-	f, err := os.Create(RunnerTokenFilename)
-	if err != nil {
-		return errors.Wrap(err, "unable to create token file")
-	}
-	defer f.Close()
-
-	// Set restrictive permissions
-	if err := os.Chmod(RunnerTokenFilename, 0600); err != nil {
-		return errors.Wrap(err, "unable to set token file permissions")
-	}
-
-	// Execute the template with the token
-	data := struct {
-		RunnerAPIToken string
-	}{
-		RunnerAPIToken: token,
-	}
-	if err := tmpl.Execute(f, data); err != nil {
-		return errors.Wrap(err, "unable to execute template for token file")
-	}
-
-	return nil
-}
-
 func EnsureImageConfigFile(ctx context.Context, l *zap.Logger, settings *settings.Settings) error {
 	// NOTE(fd): this method just writes the settings no matter what
 	// TODO: we should really be comparing the settings to the contents of the file and writing only when they have changed
-	l.Info(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
+	l.Debug(fmt.Sprintf("ensuring runner image config file exists: %s", ImageConfigFilename))
 	tmpl := template.Must(template.New("").Parse(imageConfigTemplate))
 	f, err := os.Create(ImageConfigFilename)
 	if err != nil {

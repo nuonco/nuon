@@ -35,6 +35,19 @@ func (c *client) GetInstallSandboxRuns(ctx context.Context, installID string, qu
 	return resp.Payload, false, nil
 }
 
+func (c *client) GetInstallSandboxRun(ctx context.Context, installID, runID string) (*models.AppInstallSandboxRun, error) {
+	resp, err := c.genClient.Operations.GetInstallSandboxRunV2(&operations.GetInstallSandboxRunV2Params{
+		InstallID: installID,
+		RunID:     runID,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string) error {
 	_, err := c.genClient.Operations.DeprovisionInstallSandbox(&operations.DeprovisionInstallSandboxParams{
 		InstallID: installID,

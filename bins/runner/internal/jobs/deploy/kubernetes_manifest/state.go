@@ -6,6 +6,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
@@ -27,7 +28,7 @@ type handlerState struct {
 	kubeClient *kubernetesClient
 
 	// cloud auth information
-	auth *plantypes.PlanAuth
+	auth *pkgplantypes.PlanAuth
 
 	// OCI artifact archive (for pulling manifest from registry)
 	arch   ociarchive.Archive

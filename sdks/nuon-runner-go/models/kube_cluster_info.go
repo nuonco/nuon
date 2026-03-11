@@ -38,7 +38,7 @@ type KubeClusterInfo struct {
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
 	// gcp auth
-	GcpAuth bool `json:"gcp_auth,omitempty"`
+	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
 
 	// ID is the ID of the EKS cluster
 	ID string `json:"id,omitempty"`
@@ -63,6 +63,10 @@ func (m *KubeClusterInfo) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -103,6 +107,29 @@ func (m *KubeClusterInfo) validateAzureAuth(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *KubeClusterInfo) validateGcpAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAuth) { // not required
+		return nil
+	}
+
+	if m.GcpAuth != nil {
+		if err := m.GcpAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this kube cluster info based on the context it is used
 func (m *KubeClusterInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -112,6 +139,10 @@ func (m *KubeClusterInfo) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateAzureAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,6 +173,31 @@ func (m *KubeClusterInfo) contextValidateAzureAuth(ctx context.Context, formats 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *KubeClusterInfo) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAuth != nil {
+
+		if swag.IsZero(m.GcpAuth) { // not required
+			return nil
+		}
+
+		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

@@ -1,33 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
-import { getTerraformWorkspaceLock } from '@/lib'
 import { DriftScanSandboxButton } from './DriftScanSandbox'
 import { ReprovisionSandboxButton } from './ReprovisionSandbox'
 import { DeprovisionSandboxButton } from './DeprovisionSandbox'
-import { UnlockSandboxTerraformStateButton } from './UnlockSandboxTerraformState'
 
 export const ManagementDropdown = ({
   alignment = 'right',
   ...props
 }: Omit<IDropdown, 'id' | 'buttonText' | 'children'>) => {
-  const { org } = useOrg()
   const { install } = useInstall()
   const workspaceId = install?.sandbox?.terraform_workspace?.id
-
-  const { data: lock } = useQuery({
-    queryKey: ['terraform-workspace-lock', org?.id, workspaceId],
-    queryFn: () =>
-      getTerraformWorkspaceLock({
-        orgId: org.id,
-        workspaceId: workspaceId!,
-      }),
-    enabled: !!org?.id && !!workspaceId,
-  })
 
   return (
     <Dropdown
@@ -49,8 +35,12 @@ export const ManagementDropdown = ({
 
         <DriftScanSandboxButton isMenuButton />
         <ReprovisionSandboxButton isMenuButton />
-        {lock ? (
-          <UnlockSandboxTerraformStateButton isMenuButton />
+        {workspaceId ? (
+          <UnlockTerraformWorkspaceButton
+            workspaceId={workspaceId}
+            description="the sandbox"
+            isMenuButton
+          />
         ) : null}
 
         <hr />

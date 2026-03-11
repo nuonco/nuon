@@ -35,15 +35,11 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	l.Info("fetching composite plan for the job")
-	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get job composite plan")
-	}
-
-	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
-	if err != nil {
-		return errors.Wrap(err, "unable to build plan auth for job")
+	// Auth is now stored in the plan itself, not the composite plan
+	h.state.auth = &pkgplantypes.PlanAuth{
+		AWSAuth:   plan.AWSAuth,
+		AzureAuth: plan.AzureAuth,
+		GCPAuth:   plan.GCPAuth,
 	}
 
 	h.state.jobID = job.ID

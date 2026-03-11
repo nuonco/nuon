@@ -5,18 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
-
-type PlanAuth struct {
-	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
-	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth,omitempty"`
-}
 
 type CompositePlan struct {
 	BuildPlan              *BuildPlan              `json:"build_plan,omitempty"`
@@ -26,9 +17,6 @@ type CompositePlan struct {
 	SyncOCIPlan            *SyncOCIPlan            `json:"sync_oci_plan,omitempty"`
 	FetchImageMetadataPlan *FetchImageMetadataPlan `json:"fetch_image_metadata_plan,omitempty"`
 	SandboxRunPlan         *SandboxRunPlan         `json:"sandbox_run_plan,omitempty"`
-
-	// Auth for cloud providers
-	Auth *PlanAuth `json:"plan_auth,omitempty"`
 }
 
 func (cp CompositePlan) Value() (driver.Value, error) {

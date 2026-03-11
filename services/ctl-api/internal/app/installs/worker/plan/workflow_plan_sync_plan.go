@@ -15,12 +15,39 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, deploy.ComponentBuildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component build")
+	}
+
 	srcCfg, err := p.getOrgRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org registry repository")
 	}
 
-	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, req.InstallID, req.InstallDeployID)
+	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install stack")
+	}
+
+	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install state")
+	}
+
+	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}

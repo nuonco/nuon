@@ -34,21 +34,10 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	l.Info("fetching composite plan for the job")
-	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get job plan")
-	}
-
-	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
-	if err != nil {
-		return errors.Wrap(err, "unable to build plan auth for job")
-	}
-
-	if h.state.plan.ClusterInfo != nil {
-		h.state.plan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
-		h.state.plan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
-		h.state.plan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
+	h.state.auth = &pkgplantypes.PlanAuth{
+		AWSAuth:   plan.AWSAuth,
+		AzureAuth: plan.AzureAuth,
+		GCPAuth:   plan.GCPAuth,
 	}
 
 	// fetch the run object

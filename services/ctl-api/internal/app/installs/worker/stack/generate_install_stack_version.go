@@ -123,10 +123,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to update stack version")
 	}
 
-	// GCP uses a static Terraform module with tfvars and a short-lived bootstrap token.
-	// AWS and Azure use the existing full-template flow with long-lived tokens.
+	// GCP uses a static Terraform module with tfvars.
+	// Use a long-lived token (90 days) since GCP runners don't yet have an
+	// IMDS-based token refresh flow like AWS runners do.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
-		bootstrapToken, err := activities.AwaitCreateRunnerBootstrapTokenRequestByRunnerID(ctx, install.RunnerID)
+		bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to create bootstrap token")
 		}

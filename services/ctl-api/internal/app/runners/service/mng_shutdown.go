@@ -16,7 +16,7 @@ import (
 type MngShutDownRequest struct{}
 
 // @ID						ShutDownRunnerMng
-// @Summary				shut down an install runner management process
+// @Summary				shut down an install runner's mng process. does not shut down the install runner process.
 // @Param					runner_id	path	string						true	"runner ID"
 // @Param					req			body	MngShutDownRequest	true	"Input"
 // @Tags					runners

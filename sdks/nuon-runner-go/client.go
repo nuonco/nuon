@@ -17,6 +17,7 @@ import (
 //go:generate ./generate.sh
 type Client interface {
 	SetRunnerID(runnerID string)
+	SetAuthToken(token string)
 
 	GetSettings(ctx context.Context) (*models.AppRunnerGroupSettings, error)
 
@@ -59,6 +60,9 @@ type Client interface {
 
 	LockTerraformWorkspace(ctx context.Context, workspaceID string, jobID *string, reqBody any) error
 	UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error
+
+	// runner
+	GetRunner(ctx context.Context) (*models.AppRunner, error)
 
 	// authentication
 	RunnerAuthAWS(ctx context.Context, req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse, error)

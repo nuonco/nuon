@@ -13,10 +13,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
+// TODO(fd): should we make this endpoint accept a payload which updates the rsg?
 type MngUpdateRequest struct{}
 
 // @ID						UpdateRunnerMng
-// @Summary				update an install runner via the mng process
+// @Summary				update an install runner via the mng process. this is practically a restart.
 // @Param					runner_id	path	string						true	"runner ID"
 // @Param					req			body	MngUpdateRequest	true	"Input"
 // @Tags					runners

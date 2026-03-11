@@ -12,6 +12,7 @@ export * from './get-install-current-inputs'
 export * from './get-install-readme'
 export * from './get-install-drifted-objects'
 export * from './get-available-roles'
+export * from './get-install-app-permissions-config'
 
 // workflows
 export * from './get-install-workflows'

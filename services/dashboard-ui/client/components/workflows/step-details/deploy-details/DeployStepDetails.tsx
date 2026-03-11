@@ -50,7 +50,7 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
               <Link
                 href={`/${org.id}/installs/${step.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
               >
-                View deploy <Icon variant="CaretRight" />
+                View deploy logs <Icon variant="CaretRight" />
               </Link>
             </Text>
           </>

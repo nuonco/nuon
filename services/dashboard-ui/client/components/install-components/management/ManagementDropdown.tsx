@@ -6,7 +6,7 @@ import { DeployComponentButton } from '@/components/install-components/managemen
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
-import { UnlockTerraformStateButton } from '@/components/install-components/management/UnlockTerraformState'
+import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
 import type { TComponent, TInstallComponent } from '@/types'
 
 export const ManagementDropdown = ({
@@ -20,6 +20,8 @@ export const ManagementDropdown = ({
   currentDeployStatus?: string
   installComponent?: TInstallComponent
 }) => {
+  const workspaceId = installComponent?.terraform_workspace?.id
+
   return (
     <Dropdown
       id={`component-${component.id}-mgmt`}
@@ -44,10 +46,10 @@ export const ManagementDropdown = ({
           currentDeployStatus={currentDeployStatus}
           isMenuButton
         />
-        {component?.type === 'terraform_module' && installComponent?.terraform_workspace?.id ? (
-          <UnlockTerraformStateButton
-            component={component}
-            installComponent={installComponent}
+        {component?.type === 'terraform_module' && workspaceId ? (
+          <UnlockTerraformWorkspaceButton
+            workspaceId={workspaceId}
+            description={component.name}
             isMenuButton
           />
         ) : null}

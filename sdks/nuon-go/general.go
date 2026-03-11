@@ -8,6 +8,17 @@ import (
 )
 
 // general methods
+func (c *client) GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error) {
+	resp, err := c.genClient.Operations.GetAuthMe(&operations.GetAuthMeParams{
+		Context: ctx,
+	}, c.getApiKeyAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetCurrentUser(ctx context.Context) (*models.AppAccount, error) {
 	resp, err := c.genClient.Operations.GetCurrentUser(&operations.GetCurrentUserParams{
 		Context: ctx,

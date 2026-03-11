@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -31,6 +32,7 @@ func (c *cli) registerMng() error {
 		Long:  "Authenticate with AWS using instance credentials and store the runner token.",
 		Run:   c.runFetchToken,
 	}
+	fetchTokenCmd.Flags().Bool("json", false, "Output result as JSON (does not write token to disk)")
 
 	mngCmd.AddCommand(fetchTokenCmd)
 	rootCmd.AddCommand(mngCmd)
@@ -63,10 +65,11 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 
 func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	ctx := context.Background()
+	jsonOutput, _ := cmd.Flags().GetBool("json")
 
 	apiURL := os.Getenv("RUNNER_API_URL")
 	if apiURL == "" {
-		apiURL = "https://api.nuon.co"
+		apiURL = "https://runner.nuon.co"
 	}
 
 	apiClient, err := nuonrunner.New(
@@ -77,6 +80,22 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
+	if jsonOutput {
+		result, err := fetchtoken.FetchToken(ctx, apiClient)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to fetch token: %v\n", err)
+			os.Exit(1)
+		}
+
+		enc := json.NewEncoder(os.Stdout)
+		if err := enc.Encode(result); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to encode result: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// NOTE(fd) we keep this because we'll let this new approach cook for some time so they will co-exist
 	result, err := fetchtoken.FetchAndStoreToken(ctx, apiClient)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch token: %v\n", err)

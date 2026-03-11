@@ -3,7 +3,7 @@ import React, { useRef, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
-import { RoleSelector } from '@/components/common/form/RoleSelector'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -172,7 +172,7 @@ export const InstallActionManualRunModal = ({
           operationType="trigger"
           principalType="action"
           value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
+          onChange={setSelectedRole}
           name="role"
         />
         <Expand

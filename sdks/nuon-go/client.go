@@ -102,6 +102,7 @@ type Client interface {
 	DeleteAppSecret(ctx context.Context, appID, secretID string) (bool, error)
 
 	// general methods
+	GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error)
 	GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error)
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
@@ -150,6 +151,7 @@ type Client interface {
 	DeprovisionInstallSandbox(ctx context.Context, installID string) error
 	ReprovisionInstallSandbox(ctx context.Context, installID string) (string, error)
 	GetInstallSandboxRuns(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallSandboxRun, bool, error)
+	GetInstallSandboxRun(ctx context.Context, installID, runID string) (*models.AppInstallSandboxRun, error)
 
 	// install inputs
 	GetInstallInputs(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallInputs, bool, error)
@@ -168,6 +170,14 @@ type Client interface {
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 	RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error)
+
+	// install runner
+	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
+
+	// runner management
+	RunnerMngRestart(ctx context.Context, runnerID string) error
+	RunnerMngShutDown(ctx context.Context, runnerID string) error
+	RunnerMngVMShutDown(ctx context.Context, runnerID string) error
 
 	// runner job plan
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
