@@ -162,6 +162,7 @@ func (w *Workflows) getRoleForSandbox(
 		var fallbackErr error
 		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
 		if fallbackErr != nil {
+			l.Error("unable to get default role selection", zap.Error(fallbackErr))
 			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 

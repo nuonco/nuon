@@ -167,15 +167,6 @@ func (p *Planner) getRoleForAction(
 		}
 	}
 
-	var defaultRole string
-	switch {
-	case stack.InstallStackOutputs.AWSStackOutputs != nil:
-		defaultRole = appCfg.PermissionsConfig.MaintenanceRole.Name
-	case stack.InstallStackOutputs.AzureStackOutputs != nil:
-		defaultRole = "azure-maintainence-mock-role-name"
-	default:
-	}
-
 	var breakGlassRole string
 	if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
 		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
@@ -188,7 +179,7 @@ func (p *Planner) getRoleForAction(
 		RuntimeRole:    run.Role,
 		EntityRoles:    entityRoles,
 		MatrixRules:    appCfg.OperationRoleConfig.Rules,
-		DefaultRole:    defaultRole,
+		DefaultRole:    appCfg.PermissionsConfig.MaintenanceRole.Name,
 		AppConfig:      appCfg,
 		StackOutputs:   &stack.InstallStackOutputs,
 		BreakGlassRole: breakGlassRole,
@@ -205,6 +196,7 @@ func (p *Planner) getRoleForAction(
 		var fallbackErr error
 		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
 		if fallbackErr != nil {
+			l.Error("unable to get default role selection", zap.Error(fallbackErr))
 			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
 		}
 
