@@ -3,6 +3,7 @@ package kube
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -57,6 +58,45 @@ func (c *ClusterInfo) WithAzureAuth(auth *azurecredentials.Config) {
 
 func (c *ClusterInfo) WithGCPAuth(auth *gcpcredentials.Config) {
 	c.GCPAuth = auth
+}
+
+// UnmarshalJSON handles backward compatibility where gcp_auth was previously a bool.
+// Old data has "gcp_auth": true/false; new data has "gcp_auth": {...} or null.
+// A bool false (or missing) maps to nil; bool true maps to an empty Config.
+func (c *ClusterInfo) UnmarshalJSON(data []byte) error {
+	type clusterInfo ClusterInfo
+
+	// First, unmarshal into a raw map to inspect gcp_auth's type
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Check if gcp_auth is a boolean
+	gcpRaw, hasGCP := raw["gcp_auth"]
+	if hasGCP {
+		var b bool
+		if json.Unmarshal(gcpRaw, &b) == nil {
+			// It's a bool — remove it so the struct unmarshal doesn't choke
+			delete(raw, "gcp_auth")
+
+			// Re-marshal the cleaned map and unmarshal into the struct
+			cleaned, err := json.Marshal(raw)
+			if err != nil {
+				return err
+			}
+			if err := json.Unmarshal(cleaned, (*clusterInfo)(c)); err != nil {
+				return err
+			}
+
+			if b {
+				c.GCPAuth = &gcpcredentials.Config{}
+			}
+			return nil
+		}
+	}
+
+	return json.Unmarshal(data, (*clusterInfo)(c))
 }
 
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
