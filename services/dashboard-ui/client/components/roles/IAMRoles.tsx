@@ -10,6 +10,7 @@ import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal } from '@/components/surfaces/Modal'
@@ -244,9 +245,9 @@ export const InstallIAMRoles = ({
                 </Badge>
               </LabeledValue>
               <LabeledValue label="Status">
-                <Badge theme={role.enabled ? 'success' : 'neutral'} size="sm">
+                <Status status={role.enabled ? 'active' : 'inactive'}>
                   {role.enabled ? 'Provisioned' : 'Not provisioned'}
-                </Badge>
+                </Status>
               </LabeledValue>
               <LabeledValue label="ARN">
                 {role.enabled && role.arn ? (

@@ -85,65 +85,110 @@ func (s *service) GetInstallAppPermissionsConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
+// renderRole renders the template fields (Name, DisplayName, Description) on a role config using the install state.
+func renderRole(role app.AppAWSIAMRoleConfig, stateMap map[string]any) (app.AppAWSIAMRoleConfig, error) {
+	rendered, err := render.RenderV2(role.Name, stateMap)
+	if err != nil {
+		return role, fmt.Errorf("unable to render role name: %w", err)
+	}
+	role.Name = rendered
+
+	rendered, err = render.RenderV2(role.DisplayName, stateMap)
+	if err != nil {
+		return role, fmt.Errorf("unable to render role display name: %w", err)
+	}
+	role.DisplayName = rendered
+
+	rendered, err = render.RenderV2(role.Description, stateMap)
+	if err != nil {
+		return role, fmt.Errorf("unable to render role description: %w", err)
+	}
+	role.Description = rendered
+
+	return role, nil
+}
+
 func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, installStack *app.InstallStack, installState *state.State) (*InstallAppPermissionsConfigResponse, error) {
 	resp := &InstallAppPermissionsConfigResponse{
 		BreakGlassRoles: []InstallPermissionsRoleStatus{},
 		CustomRoles:     []InstallPermissionsRoleStatus{},
 	}
 
-	// If no stack outputs exist yet, return roles with Enabled: false and empty ARNs.
-	if installStack == nil || installStack.InstallStackOutputs.AWSStackOutputs == nil {
-		provisionRole := InstallPermissionsRoleStatus{
-			AppAWSIAMRoleConfig: appCfg.PermissionsConfig.ProvisionRole,
-			Enabled:             false,
-			ARN:                 "",
+	// Resolve the StackOutput interface from whichever cloud provider is present.
+	var stackOutput app.StackOutput
+	if installStack != nil {
+		outputs := installStack.InstallStackOutputs
+		switch {
+		case outputs.AWSStackOutputs != nil:
+			stackOutput = outputs.AWSStackOutputs
+		case outputs.GCPStackOutputs != nil:
+			stackOutput = outputs.GCPStackOutputs
+		case outputs.AzureStackOutputs != nil:
+			stackOutput = outputs.AzureStackOutputs
 		}
-		resp.ProvisionRole = &provisionRole
-
-		deprovisionRole := InstallPermissionsRoleStatus{
-			AppAWSIAMRoleConfig: appCfg.PermissionsConfig.DeprovisionRole,
-			Enabled:             false,
-			ARN:                 "",
-		}
-		resp.DeprovisionRole = &deprovisionRole
-
-		maintenanceRole := InstallPermissionsRoleStatus{
-			AppAWSIAMRoleConfig: appCfg.PermissionsConfig.MaintenanceRole,
-			Enabled:             false,
-			ARN:                 "",
-		}
-		resp.MaintenanceRole = &maintenanceRole
-
-		for _, role := range appCfg.BreakGlassConfig.Roles {
-			resp.BreakGlassRoles = append(resp.BreakGlassRoles, InstallPermissionsRoleStatus{
-				AppAWSIAMRoleConfig: role,
-				Enabled:             false,
-				ARN:                 "",
-			})
-		}
-
-		for _, role := range appCfg.PermissionsConfig.CustomRoles {
-			resp.CustomRoles = append(resp.CustomRoles, InstallPermissionsRoleStatus{
-				AppAWSIAMRoleConfig: role,
-				Enabled:             false,
-				ARN:                 "",
-			})
-		}
-
-		return resp, nil
 	}
-
-	awsOutputs := installStack.InstallStackOutputs.AWSStackOutputs
 
 	stateMap, err := installState.AsMap()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state map: %w", err)
 	}
 
+	// If no stack outputs exist yet, return roles with rendered names but Enabled: false.
+	if stackOutput == nil {
+		provisionRole, err := renderRole(appCfg.PermissionsConfig.ProvisionRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("provision role: %w", err)
+		}
+		resp.ProvisionRole = &InstallPermissionsRoleStatus{
+			AppAWSIAMRoleConfig: provisionRole,
+		}
+
+		deprovisionRole, err := renderRole(appCfg.PermissionsConfig.DeprovisionRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("deprovision role: %w", err)
+		}
+		resp.DeprovisionRole = &InstallPermissionsRoleStatus{
+			AppAWSIAMRoleConfig: deprovisionRole,
+		}
+
+		maintenanceRole, err := renderRole(appCfg.PermissionsConfig.MaintenanceRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("maintenance role: %w", err)
+		}
+		resp.MaintenanceRole = &InstallPermissionsRoleStatus{
+			AppAWSIAMRoleConfig: maintenanceRole,
+		}
+
+		for _, role := range appCfg.BreakGlassConfig.Roles {
+			rendered, err := renderRole(role, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("break glass role: %w", err)
+			}
+			resp.BreakGlassRoles = append(resp.BreakGlassRoles, InstallPermissionsRoleStatus{
+				AppAWSIAMRoleConfig: rendered,
+			})
+		}
+
+		for _, role := range appCfg.PermissionsConfig.CustomRoles {
+			rendered, err := renderRole(role, stateMap)
+			if err != nil {
+				return nil, fmt.Errorf("custom role: %w", err)
+			}
+			resp.CustomRoles = append(resp.CustomRoles, InstallPermissionsRoleStatus{
+				AppAWSIAMRoleConfig: rendered,
+			})
+		}
+
+		return resp, nil
+	}
+
 	// Provision role
 	{
-		role := appCfg.PermissionsConfig.ProvisionRole
-		arn := awsOutputs.ProvisionIAMRoleARN
+		role, err := renderRole(appCfg.PermissionsConfig.ProvisionRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("provision role: %w", err)
+		}
+		arn, _ := stackOutput.ProvisionRoleID()
 		resp.ProvisionRole = &InstallPermissionsRoleStatus{
 			AppAWSIAMRoleConfig: role,
 			Enabled:             arn != "",
@@ -153,8 +198,11 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 
 	// Deprovision role
 	{
-		role := appCfg.PermissionsConfig.DeprovisionRole
-		arn := awsOutputs.DeprovisionIAMRoleARN
+		role, err := renderRole(appCfg.PermissionsConfig.DeprovisionRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("deprovision role: %w", err)
+		}
+		arn, _ := stackOutput.DeprovisionRoleID()
 		resp.DeprovisionRole = &InstallPermissionsRoleStatus{
 			AppAWSIAMRoleConfig: role,
 			Enabled:             arn != "",
@@ -164,8 +212,11 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 
 	// Maintenance role
 	{
-		role := appCfg.PermissionsConfig.MaintenanceRole
-		arn := awsOutputs.MaintenanceIAMRoleARN
+		role, err := renderRole(appCfg.PermissionsConfig.MaintenanceRole, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("maintenance role: %w", err)
+		}
+		arn, _ := stackOutput.MaintenanceRoleID()
 		resp.MaintenanceRole = &InstallPermissionsRoleStatus{
 			AppAWSIAMRoleConfig: role,
 			Enabled:             arn != "",
@@ -175,13 +226,13 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 
 	// Break glass roles (array, keyed by rendered name in stack outputs)
 	for _, role := range appCfg.BreakGlassConfig.Roles {
-		rendered, err := render.RenderV2(role.Name, stateMap)
+		rendered, err := renderRole(role, stateMap)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render break glass role name: %w", err)
+			return nil, fmt.Errorf("break glass role: %w", err)
 		}
-		arn := awsOutputs.BreakGlassRoleARNs[rendered]
+		arn, _ := stackOutput.BreakGlassRoleID(rendered.Name)
 		resp.BreakGlassRoles = append(resp.BreakGlassRoles, InstallPermissionsRoleStatus{
-			AppAWSIAMRoleConfig: role,
+			AppAWSIAMRoleConfig: rendered,
 			Enabled:             arn != "",
 			ARN:                 arn,
 		})
@@ -189,13 +240,13 @@ func (s *service) buildInstallAppPermissionsConfig(appCfg *app.AppConfig, instal
 
 	// Custom roles (array, keyed by rendered name in stack outputs)
 	for _, role := range appCfg.PermissionsConfig.CustomRoles {
-		rendered, err := render.RenderV2(role.Name, stateMap)
+		rendered, err := renderRole(role, stateMap)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render custom role name: %w", err)
+			return nil, fmt.Errorf("custom role: %w", err)
 		}
-		arn := awsOutputs.CustomRoleARNs[rendered]
+		arn, _ := stackOutput.CustomRoleID(rendered.Name)
 		resp.CustomRoles = append(resp.CustomRoles, InstallPermissionsRoleStatus{
-			AppAWSIAMRoleConfig: role,
+			AppAWSIAMRoleConfig: rendered,
 			Enabled:             arn != "",
 			ARN:                 arn,
 		})

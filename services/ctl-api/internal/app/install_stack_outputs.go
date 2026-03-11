@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -39,6 +40,14 @@ type InstallStackOutputs struct {
 	GCPStackOutputs   *GCPStackOutputs   `json:"gcp,omitzero" gorm:"-" temporaljson:"gcp_stack_outputs,omitzero,omitempty"`
 }
 
+type StackOutput interface {
+	ProvisionRoleID() (string, error)
+	DeprovisionRoleID() (string, error)
+	MaintenanceRoleID() (string, error)
+	CustomRoleID(string) (string, error)
+	BreakGlassRoleID(string) (string, error)
+}
+
 type AWSStackOutputs struct {
 	AccountID             string            `json:"account_id,omitzero" mapstructure:"account_id" temporaljson:"account_id,omitzero,omitempty"`
 	Region                string            `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
@@ -53,6 +62,26 @@ type AWSStackOutputs struct {
 	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
 	CustomRoleARNs        map[string]string `json:"custom_role_arns,omitzero" mapstructure:"custom_role_arns" temporaljson:"custom_role_arns,omitzero,omitempty"`
 	InstallInputs         map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
+}
+
+func (a *AWSStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionIAMRoleARN, nil }
+func (a *AWSStackOutputs) DeprovisionRoleID() (string, error) { return a.DeprovisionIAMRoleARN, nil }
+func (a *AWSStackOutputs) MaintenanceRoleID() (string, error) { return a.MaintenanceIAMRoleARN, nil }
+
+func (a *AWSStackOutputs) CustomRoleID(name string) (string, error) {
+	arn, ok := a.CustomRoleARNs[name]
+	if !ok {
+		return "", fmt.Errorf("custom role %q does not exist in stack outputs", name)
+	}
+	return arn, nil
+}
+
+func (a *AWSStackOutputs) BreakGlassRoleID(name string) (string, error) {
+	arn, ok := a.BreakGlassRoleARNs[name]
+	if !ok {
+		return "", fmt.Errorf("break glass role %q does not exist in stack outputs", name)
+	}
+	return arn, nil
 }
 
 type AzureStackOutputs struct {
@@ -76,6 +105,18 @@ type AzureStackOutputs struct {
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
 }
 
+func (a *AzureStackOutputs) ProvisionRoleID() (string, error)   { return "", nil }
+func (a *AzureStackOutputs) DeprovisionRoleID() (string, error) { return "", nil }
+func (a *AzureStackOutputs) MaintenanceRoleID() (string, error) { return "", nil }
+
+func (a *AzureStackOutputs) CustomRoleID(_ string) (string, error) {
+	return "", fmt.Errorf("not supported on azure")
+}
+
+func (a *AzureStackOutputs) BreakGlassRoleID(_ string) (string, error) {
+	return "", fmt.Errorf("not supported on azure")
+}
+
 type GCPStackOutputs struct {
 	ProjectID                 string `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
 	Region                    string `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
@@ -89,6 +130,18 @@ type GCPStackOutputs struct {
 	MaintenanceSAEmail        string `json:"maintenance_sa_email,omitzero" mapstructure:"maintenance_sa_email" temporaljson:"maintenance_sa_email,omitzero,omitempty"`
 	DeprovisionSAEmail        string `json:"deprovision_sa_email,omitzero" mapstructure:"deprovision_sa_email" temporaljson:"deprovision_sa_email,omitzero,omitempty"`
 	BreakGlassSAEmail         string `json:"break_glass_sa_email,omitzero" mapstructure:"break_glass_sa_email" temporaljson:"break_glass_sa_email,omitzero,omitempty"`
+}
+
+func (a *GCPStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionSAEmail, nil }
+func (a *GCPStackOutputs) DeprovisionRoleID() (string, error) { return a.DeprovisionSAEmail, nil }
+func (a *GCPStackOutputs) MaintenanceRoleID() (string, error) { return a.MaintenanceSAEmail, nil }
+
+func (a *GCPStackOutputs) CustomRoleID(_ string) (string, error) {
+	return "", fmt.Errorf("not supported on GCP")
+}
+
+func (a *GCPStackOutputs) BreakGlassRoleID(_ string) (string, error) {
+	return "", fmt.Errorf("not supported on GCP")
 }
 
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
