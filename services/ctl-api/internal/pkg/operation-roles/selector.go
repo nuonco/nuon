@@ -63,9 +63,8 @@ const (
 
 type RoleSelection struct {
 	RoleName string
-	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
-	RoleARN string
-	Source  RoleSelectionSource
+	RoleARN  string
+	Source   RoleSelectionSource
 }
 
 // SelectRole determines which role to use based on precedence rules
@@ -196,16 +195,11 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 	}
 
 	// 4. Matrix rules
-	roleName, found, err := findMatrixRole(
+	if roleName, found := findMatrixRole(
 		ctx.MatrixRules,
 		ctx.PrincipalType,
 		ctx.PrincipalName,
-		ctx.Operation,
-		ctx.InstallState)
-	if err != nil {
-		return nil, fmt.Errorf("unable to evaluate matrix rules: %w", err)
-	}
-	if found {
+		ctx.Operation); found {
 		renderedMatrixRole, err := renderRoleName(roleName, ctx.InstallState)
 		if err != nil {
 			return nil, fmt.Errorf("unable to render matrix role name: %w", err)
@@ -238,13 +232,7 @@ func findMatrixRole(
 	principalType principal.Type,
 	principalName string,
 	operation app.OperationType,
-	installState *state.State,
-) (string, bool, error) {
-	renderedPrincipalName, err := renderRoleName(principalName, installState)
-	if err != nil {
-		return "", false, fmt.Errorf("unable to render principal name %q: %w", principalName, err)
-	}
-
+) (string, bool) {
 	// Find matching rule
 	for _, rule := range rules {
 		if rule.Operation != operation {
@@ -257,24 +245,17 @@ func findMatrixRole(
 
 		switch principalType {
 		case principal.TypeComponent, principal.TypeAction:
-			if rule.PrincipalName == "*" {
-				return rule.Role, true, nil
-			}
-			renderedRulePrincipalName, err := renderRoleName(rule.PrincipalName, installState)
-			if err != nil {
-				return "", false, fmt.Errorf("unable to render rule principal name %q: %w", rule.PrincipalName, err)
-			}
-			if renderedRulePrincipalName == renderedPrincipalName {
-				return rule.Role, true, nil
+			if rule.PrincipalName == principalName || rule.PrincipalName == "*" {
+				return rule.Role, true
 			}
 		case principal.TypeSandbox:
 			if rule.PrincipalName == "" {
-				return rule.Role, true, nil
+				return rule.Role, true
 			}
 		}
 	}
 
-	return "", false, nil
+	return "", false
 }
 
 // renderRoleName renders a role name template using install state

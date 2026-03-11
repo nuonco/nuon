@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"maps"
 
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -14,14 +15,11 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
-	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
@@ -43,11 +41,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
-	}
-
-	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
 	l.Info("configuring environment variables to execute terraform run as")
@@ -124,12 +117,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, errors.Wrap(err, "unable to get sandbox run git source")
 	}
 
-	l.Info("getting auth with role selection")
-	cloudAuth, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run auth")
-	}
-
 	plan := &plantypes.SandboxRunPlan{
 		AppID:       install.AppID,
 		AppConfigID: install.AppConfigID,
@@ -147,10 +134,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
 		},
-
-		AWSAuth:   cloudAuth.AWS,
-		AzureAuth: cloudAuth.Azure,
-		GCPAuth:   cloudAuth.GCP,
 
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: true,
@@ -209,7 +192,9 @@ func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, er
 
 func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string {
 	envVars := make(map[string]string, 0)
-	maps.Copy(envVars, generics.ToStringMap(appCfg.SandboxConfig.EnvVars))
+	for k, v := range generics.ToStringMap(appCfg.SandboxConfig.EnvVars) {
+		envVars[k] = v
+	}
 
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
@@ -262,101 +247,47 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 		return vars, nil
 	}
 
-	maps.Copy(vars, builtin)
+	for k, v := range builtin {
+		vars[k] = v
+	}
 
 	return vars, nil
 }
 
-func (p *Planner) getRoleForSandbox(
-	l *zap.Logger,
-	appCfg *app.AppConfig,
-	run *app.InstallSandboxRun,
-	stack *app.InstallStack,
-	installState *state.State,
-) (*operationroles.RoleSelection, app.OperationType, error) {
-	// Determine operation type based on run type
-	var operation app.OperationType
-	switch run.RunType {
-	case app.SandboxRunTypeProvision:
-		operation = app.OperationProvision
-	case app.SandboxRunTypeReprovision:
-		operation = app.OperationReprovision
-	case app.SandboxRunTypeDeprovision:
-		operation = app.OperationDeprovision
-	default:
-		operation = app.OperationProvision
-	}
-
-	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
-	if operation == app.OperationDeprovision {
-		defaultRole = appCfg.PermissionsConfig.DeprovisionRole.Name
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeSandbox,
-		PrincipalName: "", // Sandboxes don't have names
-		RuntimeRole:   run.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			appCfg.SandboxConfig.OperationRoles,
-		),
-		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  defaultRole,
-		AppConfig:    appCfg,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	// Select role using operation roles engine
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+func (p *Planner) getAuth(outputs app.InstallStackOutputs, run *app.InstallSandboxRun) (*awscredentials.Config, *azurecredentials.Config, error) {
+	switch {
+	case outputs.AWSStackOutputs != nil:
+		awsOutputs := outputs.AWSStackOutputs
+		roleARN := awsOutputs.ProvisionIAMRoleARN
+		switch run.RunType {
+		case app.SandboxRunTypeReprovision:
+			roleARN = outputs.AWSStackOutputs.ProvisionIAMRoleARN
+		case app.SandboxRunTypeDeprovision:
+			roleARN = outputs.AWSStackOutputs.DeprovisionIAMRoleARN
 		}
 
-		l.Warn("using default role for sandbox",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
+		return &awscredentials.Config{
+			Region: outputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("sandbox-run-%s", run.ID),
+				RoleARN:     roleARN,
+			},
+		}, nil, nil
+	case outputs.AzureStackOutputs != nil:
+		azureOutputs := outputs.AzureStackOutputs
+		return nil, &azurecredentials.Config{
+			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+				SubscriptionID:       azureOutputs.SubscriptionID,
+				SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
+			},
+			UseDefault: true,
+		}, nil
+	case outputs.GCPStackOutputs != nil:
+		// GCP runner uses attached service account on GCE instance — no explicit credentials needed
+		return nil, nil, nil
 	}
 
-	return roleSelection, operation, nil
-}
-
-func (p *Planner) getAuthForSandbox(
-	ctx workflow.Context,
-	outputs app.InstallStackOutputs,
-	run *app.InstallSandboxRun,
-	appCfg *app.AppConfig,
-	stack *app.InstallStack,
-	installState *state.State,
-) (*CloudAuth, error) {
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
-	if err != nil {
-		return nil, err
-	}
-
-	l.Info("selected role for sandbox run plan",
-		zap.String("role_name", roleSelection.RoleName),
-		zap.String("role_arn", roleSelection.RoleARN),
-		zap.String("source", string(roleSelection.Source)),
-		zap.String("operation", string(operation)),
-		zap.String("run_type", string(run.RunType)),
-	)
-
-	return getCloudAuth(roleSelection, &outputs, fmt.Sprintf("sandbox-run-%s", run.ID))
+	return nil, nil, errors.New("unable to get auth data from stack outputs")
 }
 
 // TODO(ja): flesh out sandbox mode for azure

@@ -75,8 +75,9 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return &plantypes.SyncSecretsPlan{}, nil
 	}
 
-	if stack.InstallStackOutputs.AWSStackOutputs == nil {
-		return nil, errors.New("secret sync not supported on current cloud provider")
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
 	if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
@@ -85,30 +86,22 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, err
 	}
 
-	awsAuth := &awscredentials.Config{
-		Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-		AssumeRole: &awscredentials.AssumeRoleConfig{
-			SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
-			RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
-		},
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, &CloudAuth{AWS: awsAuth})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster information")
-	}
-
 	plan := &plantypes.SyncSecretsPlan{
-		ClusterInfo:       clusterInfo,
-		AWSAuth:           awsAuth,
+		ClusterInfo: clusterInfo,
+		AWSAuth: &awscredentials.Config{
+			Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+			AssumeRole: &awscredentials.AssumeRoleConfig{
+				SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
+				RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
+			},
+		},
 		KubernetesSecrets: secrets,
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
+	org, err := activities.AwaitGetOrgByInstallID(ctx, install.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org")
 	}
-
 	if org.SandboxMode {
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,

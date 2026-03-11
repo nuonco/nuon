@@ -1,4 +1,4 @@
-package plan
+package sandbox
 
 import (
 	"testing"
@@ -15,7 +15,8 @@ import (
 )
 
 func TestGetRoleForSandbox(t *testing.T) {
-	p := &Planner{}
+	// Create a workflows instance for testing
+	w := &Workflows{}
 	l := zap.NewNop()
 
 	tests := []struct {
@@ -445,6 +446,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup test data
 			appConfig := &app.AppConfig{
 				SandboxConfig: app.AppSandboxConfig{
 					OperationRoles: tt.sandboxEntityRoles,
@@ -511,12 +513,14 @@ func TestGetRoleForSandbox(t *testing.T) {
 				},
 			}
 
+			// Create mock install state for testing
 			installState := &state.State{
 				ID:   "test-install",
 				Name: "test-install",
 			}
 
-			roleSelection, operation, err := p.getRoleForSandbox(
+			// Execute the function under test
+			roleSelection, operation, err := w.getRoleForSandbox(
 				l,
 				appConfig,
 				sandboxRun,
@@ -524,6 +528,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 				installState,
 			)
 
+			// Assertions
 			require.NoError(t, err, "getRoleForSandbox should not return error for test: %s", tt.description)
 			assert.Equal(t, tt.expectedOperation, operation, "Operation type mismatch: %s", tt.description)
 			assert.Equal(t, tt.expectedRoleSource, roleSelection.Source, "Role source mismatch: %s", tt.description)

@@ -1,8 +1,6 @@
 package plantypes
 
-import (
-	"github.com/nuonco/nuon/pkg/plugins/configs"
-)
+import "github.com/nuonco/nuon/pkg/plugins/configs"
 
 type SyncOCIPlan struct {
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`

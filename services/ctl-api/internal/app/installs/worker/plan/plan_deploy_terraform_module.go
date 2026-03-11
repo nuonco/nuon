@@ -3,7 +3,6 @@ package plan
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -12,10 +11,9 @@ import (
 
 	_ "embed"
 
+	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
-	"github.com/nuonco/nuon/pkg/types/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -30,36 +28,47 @@ var FakeTerraformPlanContents string
 //go:embed fake_terraform_plan_display_contents.json
 var FakeTerraformPlanDisplayContents string
 
-func (p *Planner) createTerraformDeployPlan(
-	ctx workflow.Context,
-	req *CreateDeployPlanRequest,
-	appCfg *app.AppConfig,
-	stack *app.InstallStack,
-	state *state.State,
-	installDeploy *app.InstallDeploy,
-) (*plantypes.TerraformDeployPlan, error) {
+func (p *Planner) createTerraformDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.TerraformDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	installComp, err := activities.AwaitGetInstallComponentByID(
-		ctx,
-		installDeploy.InstallComponentID,
-	)
+	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install id")
+	}
+
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install stack")
+	}
+
+	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install deploy")
+	}
+
+	installComp, err := activities.AwaitGetInstallComponentByID(ctx, installDeploy.InstallComponentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
+
+	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
+		InstallID: install.ID,
+	})
 
 	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
-	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(
-		ctx,
-		installDeploy.ComponentBuildID,
-	)
+	compBuild, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component build")
 	}
@@ -83,6 +92,14 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
+	var clusterInfo *kube.ClusterInfo
+	if !org.SandboxMode {
+		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state)
+		if err != nil {
+			l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
+		}
+	}
+
 	envVars := generics.ToStringMap(cfg.EnvVars)
 
 	if err := render.RenderMap(&envVars, stateData); err != nil {
@@ -92,24 +109,6 @@ func (p *Planner) createTerraformDeployPlan(
 			zap.Any("state", stateData),
 		)
 		return nil, errors.Wrap(err, "unable to render environment variables")
-	}
-
-	cloudAuth, err := p.getAuthForDeploy(
-		ctx,
-		installDeploy,
-		compBuild,
-		appCfg,
-		stack,
-		state,
-		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get auth for deploy")
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
-	if err != nil {
-		l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
 	}
 
 	// construct plan from rendered values
@@ -122,9 +121,6 @@ func (p *Planner) createTerraformDeployPlan(
 		TerraformBackend: &plantypes.TerraformBackend{
 			WorkspaceID: installComp.TerraformWorkspace.ID,
 		},
-		AzureAuth:   cloudAuth.Azure,
-		AWSAuth:     cloudAuth.AWS,
-		GCPAuth:     cloudAuth.GCP,
 		ClusterInfo: clusterInfo,
 		Hooks: &plantypes.TerraformDeployHooks{
 			Enabled: false,
@@ -132,10 +128,7 @@ func (p *Planner) createTerraformDeployPlan(
 	}, nil
 }
 
-func (p *Planner) createTerraformDeploySandboxMode(
-	ctx workflow.Context,
-	req *plantypes.TerraformDeployPlan,
-) (*plantypes.TerraformSandboxMode, error) {
+func (p *Planner) createTerraformDeploySandboxMode(ctx workflow.Context, req *plantypes.TerraformDeployPlan) (*plantypes.TerraformSandboxMode, error) {
 	pdcJSONByts := new(bytes.Buffer)
 	if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
 		return nil, errors.Wrap(err, "unable to get json")

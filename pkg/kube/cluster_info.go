@@ -17,7 +17,6 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 )
 
 type ClusterInfo struct {
@@ -37,7 +36,7 @@ type ClusterInfo struct {
 	// them in the environment.
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth", hcl:gcp_auth,block`
+	GCPAuth   bool                     `json:"gcp_auth"`
 
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline"`
@@ -55,8 +54,8 @@ func (c *ClusterInfo) WithAzureAuth(auth *azurecredentials.Config) {
 	c.AzureAuth = auth
 }
 
-func (c *ClusterInfo) WithGCPAuth(auth *gcpcredentials.Config) {
-	c.GCPAuth = auth
+func (c *ClusterInfo) WithGCPAuth(enabled bool) {
+	c.GCPAuth = enabled
 }
 
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
@@ -69,7 +68,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		return config, nil
 	}
 
-	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil && cInfo.GCPAuth == nil {
+	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil && !cInfo.GCPAuth {
 		return nil, fmt.Errorf("missing auth configuration")
 	}
 
@@ -165,7 +164,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		}
 	}
 
-	if cInfo.GCPAuth != nil {
+	if cInfo.GCPAuth {
 		cfg.ExecProvider = &clientcmdapi.ExecConfig{
 			APIVersion:      "client.authentication.k8s.io/v1beta1",
 			Command:         "gke-gcloud-auth-plugin",

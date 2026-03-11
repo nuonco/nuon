@@ -35,10 +35,21 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	h.state.auth = &pkgplantypes.PlanAuth{
-		AWSAuth:   plan.TerraformDeployPlan.AWSAuth,
-		AzureAuth: plan.TerraformDeployPlan.AzureAuth,
-		GCPAuth:   plan.TerraformDeployPlan.GCPAuth,
+	l.Info("fetching composite plan for the job")
+	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job composite plan")
+	}
+
+	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
+	if err != nil {
+		return errors.Wrap(err, "unable to build plan auth for job")
+	}
+
+	if h.state.plan.TerraformDeployPlan.ClusterInfo != nil {
+		h.state.plan.TerraformDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.TerraformDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+		h.state.plan.TerraformDeployPlan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	l.Info("fetching app config")
