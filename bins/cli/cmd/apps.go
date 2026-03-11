@@ -133,13 +133,25 @@ func (c *cli) appsCmd() *cobra.Command {
 	selectAppCmd.Flags().StringVar(&appID, "app", "", "The ID of the app you want to use")
 	appsCmd.AddCommand(selectAppCmd)
 
-	unsetCurrentAppCmd := &cobra.Command{
-		Use:   "unset-current",
-		Short: "Unset your current app",
-		Long:  "Unset your current app.",
+	deselectAppCmd := &cobra.Command{
+		Use:   "deselect",
+		Short: "Deselect your current app",
+		Long:  "Deselect your current app",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.UnsetCurrent(cmd.Context())
+			return svc.Deselect(cmd.Context())
+		}),
+	}
+	appsCmd.AddCommand(deselectAppCmd)
+
+	unsetCurrentAppCmd := &cobra.Command{
+		Use:        "unset-current",
+		Deprecated: "Use `nuon apps deselect` instead",
+		Short:      "Unset your current app (deprecated)",
+		Hidden:     true,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.Deselect(cmd.Context())
 		}),
 	}
 	appsCmd.AddCommand(unsetCurrentAppCmd)

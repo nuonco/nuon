@@ -322,13 +322,25 @@ func (c *cli) installsCmd() *cobra.Command {
 	selectInstallCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	installsCmds.AddCommand(selectInstallCmd)
 
-	unsetCurrentInstallCmd := &cobra.Command{
-		Use:   "unset-current",
-		Short: "Unset your current install selection",
-		Long:  "Unset your current install selection.",
+	deselectInstallCmd := &cobra.Command{
+		Use:   "deselect",
+		Short: "Deselect your current install",
+		Long:  "Deselect your current install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.UnsetCurrent(cmd.Context())
+			return svc.Deselect(cmd.Context())
+		}),
+	}
+	installsCmds.AddCommand(deselectInstallCmd)
+
+	unsetCurrentInstallCmd := &cobra.Command{
+		Use:        "unset-current",
+		Deprecated: "Use `nuon installs deselect` instead",
+		Short:      "Unset your current install selection (deprecated)",
+		Hidden:     true,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Deselect(cmd.Context())
 		}),
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
