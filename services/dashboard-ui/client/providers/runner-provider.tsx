@@ -1,13 +1,14 @@
 import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getRunner } from '@/lib'
+import { getRunner, getRunnerLatestHeartbeat } from '@/lib'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import type { TRunner } from '@/types'
 
 type RunnerContextValue = {
   runner: TRunner
+  isManaged: boolean
 }
 
 export const RunnerContext = createContext<RunnerContextValue | undefined>(
@@ -34,12 +35,18 @@ export function RunnerProvider({
     enabled: !!org.id && !!runnerId,
   })
 
+  const { data: heartbeat } = useQuery({
+    queryKey: ['runner-heartbeat-check', org.id, runnerId],
+    queryFn: () => getRunnerLatestHeartbeat({ orgId: org.id!, runnerId }),
+    enabled: !!org.id && !!runnerId,
+  })
+
   if (error) return <ProviderError error={error} />
 
   if (isLoading || !runner) return <ProviderLoading />
 
   return (
-    <RunnerContext.Provider value={{ runner }}>
+    <RunnerContext.Provider value={{ runner, isManaged: Boolean(heartbeat?.mng) }}>
       {children}
     </RunnerContext.Provider>
   )

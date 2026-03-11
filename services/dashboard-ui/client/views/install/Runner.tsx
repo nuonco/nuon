@@ -13,7 +13,7 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getRunnerSettings, getRunnerLatestHeartbeat } from '@/lib'
+import { getRunnerSettings } from '@/lib'
 import type { TRunnerGroup } from '@/types'
 
 const RunnerContent = ({ runnerId }: { runnerId: string }) => {
@@ -25,16 +25,7 @@ const RunnerContent = ({ runnerId }: { runnerId: string }) => {
     enabled: !!org?.id && !!runnerId,
   })
 
-  const { data: heartbeatResult } = useQuery({
-    queryKey: ['runner-heartbeat-check', org?.id, runnerId],
-    queryFn: () => getRunnerLatestHeartbeat({ orgId: org.id, runnerId }),
-    refetchInterval: 20000,
-    enabled: !!org?.id && !!runnerId,
-  })
-
   const settings = settingsResult
-  const heartbeat = heartbeatResult
-  const isManagedRunner = Boolean(heartbeat?.mng)
 
   return (
     <>
@@ -48,7 +39,6 @@ const RunnerContent = ({ runnerId }: { runnerId: string }) => {
           <ManagementDropdown
             settings={settings}
             isInstallRunner
-            isManagedRunner={isManagedRunner}
           />
         ) : null}
       </div>
