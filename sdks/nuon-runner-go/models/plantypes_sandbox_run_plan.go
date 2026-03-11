@@ -40,9 +40,6 @@ type PlantypesSandboxRunPlan struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
-	// gcp auth
-	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
-
 	// git source
 	GitSource *PlantypesGitSource `json:"git_source,omitempty"`
 
@@ -83,10 +80,6 @@ func (m *PlantypesSandboxRunPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAuth(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -157,29 +150,6 @@ func (m *PlantypesSandboxRunPlan) validateAzureAuth(formats strfmt.Registry) err
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_auth")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *PlantypesSandboxRunPlan) validateGcpAuth(formats strfmt.Registry) error {
-	if swag.IsZero(m.GcpAuth) { // not required
-		return nil
-	}
-
-	if m.GcpAuth != nil {
-		if err := m.GcpAuth.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_auth")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_auth")
 			}
 
 			return err
@@ -339,10 +309,6 @@ func (m *PlantypesSandboxRunPlan) ContextValidate(ctx context.Context, formats s
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateGitSource(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -414,31 +380,6 @@ func (m *PlantypesSandboxRunPlan) contextValidateAzureAuth(ctx context.Context, 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_auth")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *PlantypesSandboxRunPlan) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.GcpAuth != nil {
-
-		if swag.IsZero(m.GcpAuth) { // not required
-			return nil
-		}
-
-		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("gcp_auth")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

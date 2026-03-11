@@ -1,4 +1,4 @@
-package plan
+package actions
 
 import (
 	"testing"
@@ -14,7 +14,8 @@ import (
 )
 
 func TestGetRoleForAction(t *testing.T) {
-	p := &Planner{}
+	// Create a workflows instance for testing
+	w := &Workflows{}
 	l := zap.NewNop()
 
 	tests := []struct {
@@ -340,6 +341,7 @@ func TestGetRoleForAction(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup test data
 			appConfig := &app.AppConfig{
 				PermissionsConfig: app.AppPermissionsConfig{
 					ProvisionRole: app.AppAWSIAMRoleConfig{
@@ -419,12 +421,14 @@ func TestGetRoleForAction(t *testing.T) {
 				}
 			}
 
+			// Create mock install state for testing
 			installState := &state.State{
 				ID:   "test-install",
 				Name: "test-install",
 			}
 
-			roleSelection, operation, err := p.getRoleForAction(
+			// Execute the function under test
+			roleSelection, operation, err := w.getRoleForAction(
 				l,
 				appConfig,
 				run,
@@ -432,6 +436,7 @@ func TestGetRoleForAction(t *testing.T) {
 				installState,
 			)
 
+			// Assertions
 			require.NoError(t, err, "getRoleForAction should not return error for test: %s", tt.description)
 			assert.Equal(t, tt.expectedOperation, operation, "Operation type mismatch: %s", tt.description)
 			assert.Equal(t, tt.expectedRoleSource, roleSelection.Source, "Role source mismatch: %s", tt.description)
@@ -445,7 +450,7 @@ func TestGetRoleForAction(t *testing.T) {
 				assert.Contains(t, roleSelection.RoleARN, tt.expectedRoleName, "Role ARN should contain role name: %s", tt.description)
 			}
 
-			t.Logf("%s: Got role=%s (source=%s, operation=%s)",
+			t.Logf("✓ %s: Got role=%s (source=%s, operation=%s)",
 				tt.name,
 				roleSelection.RoleName,
 				roleSelection.Source,

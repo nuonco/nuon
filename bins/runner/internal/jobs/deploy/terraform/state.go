@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
-	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
@@ -23,7 +22,7 @@ type handlerState struct {
 	terraformCfg *models.AppTerraformModuleComponentConfig
 
 	// cloud auth information
-	auth *pkgplantypes.PlanAuth
+	auth *plantypes.PlanAuth
 
 	srcCfg  *configs.OCIRegistryRepository
 	srcTag  string

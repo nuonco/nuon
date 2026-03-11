@@ -88,7 +88,7 @@ export const InstallActionRunHeader = ({
       </div>
 
       <Card>
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           <LabeledValue
             label={`Triggered via ${installActionRun?.triggered_by_type}`}
           >
@@ -113,7 +113,6 @@ export const InstallActionRunHeader = ({
             <Duration nanoseconds={installActionRun?.execution_time} />
           </LabeledValue>
 
-          {/*
           <LabeledValue label="Execution role">
             {installActionRun?.runner_job?.json?.composite_plan?.plan_auth
               ?.aws_auth?.assume_role?.role_arn ? (
@@ -129,7 +128,6 @@ export const InstallActionRunHeader = ({
               </Text>
             )}
           </LabeledValue>
-              */}
         </div>
       </Card>
 

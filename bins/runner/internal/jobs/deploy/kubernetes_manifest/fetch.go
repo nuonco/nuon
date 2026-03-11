@@ -35,10 +35,21 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	}
 	h.state.plan = &plan
 
-	h.state.auth = &pkgplantypes.PlanAuth{
-		AWSAuth:   plan.KubernetesManifestDeployPlan.AWSAuth,
-		AzureAuth: plan.KubernetesManifestDeployPlan.AzureAuth,
-		GCPAuth:   plan.KubernetesManifestDeployPlan.GCPAuth,
+	l.Info("fetching composite plan for the job")
+	compositePlan, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get job composite plan")
+	}
+
+	h.state.auth, err = pkgplantypes.PlanAuthFromSDK(&compositePlan.PlanAuth.PlantypesPlanAuth)
+	if err != nil {
+		return errors.Wrap(err, "unable to build plan auth for job")
+	}
+
+	if h.state.plan.KubernetesManifestDeployPlan.ClusterInfo != nil {
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAWSAuth(h.state.auth.AWSAuth)
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithAzureAuth(h.state.auth.AzureAuth)
+		h.state.plan.KubernetesManifestDeployPlan.ClusterInfo.WithGCPAuth(h.state.auth.GCPAuth != nil)
 	}
 
 	l.Info("fetching app config")

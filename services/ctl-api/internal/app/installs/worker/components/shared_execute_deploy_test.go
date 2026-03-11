@@ -1,4 +1,4 @@
-package plan
+package components
 
 import (
 	"testing"
@@ -13,7 +13,8 @@ import (
 )
 
 func TestGetRoleForDeploy(t *testing.T) {
-	p := &Planner{}
+	// Create a workflows instance for testing
+	w := &Workflows{}
 
 	tests := []struct {
 		name               string
@@ -385,13 +386,14 @@ func TestGetRoleForDeploy(t *testing.T) {
 			for op, role := range tt.componentRoles {
 				opRole[string(op)] = &role
 			}
-			compBuild := &app.ComponentBuild{
+			build := &app.ComponentBuild{
 				ComponentConfigConnection: app.ComponentConfigConnection{
 					OperationRoles: opRole,
-					Component: app.Component{
-						Name: "test-component",
-					},
 				},
+			}
+
+			comp := &app.Component{
+				Name: "test-component",
 			}
 
 			stack := &app.InstallStack{
@@ -421,16 +423,18 @@ func TestGetRoleForDeploy(t *testing.T) {
 				},
 			}
 
+			// Create mock install state for testing
 			installState := &state.State{
 				ID:   "test-install",
 				Name: "test-install",
 			}
 
-			roleSelection, operation, err := p.getRoleForDeploy(
+			roleSelection, operation, err := w.getRoleForDeploy(
 				zap.NewNop(),
 				appConfig,
 				installDeploy,
-				compBuild,
+				build,
+				comp,
 				stack,
 				installState,
 			)

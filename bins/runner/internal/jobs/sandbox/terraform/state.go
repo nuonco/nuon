@@ -5,7 +5,6 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
@@ -29,7 +28,7 @@ type handlerState struct {
 	appCfg     *models.AppAppConfig
 	sandboxCfg *models.AppAppSandboxConfig
 
-	auth *pkgplantypes.PlanAuth
+	auth *plantypes.PlanAuth
 
 	// Legacy
 	// set during the fetch/validate phase

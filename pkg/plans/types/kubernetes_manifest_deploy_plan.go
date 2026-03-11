@@ -1,19 +1,11 @@
 package plantypes
 
 import (
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
-	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type KubernetesManifestDeployPlan struct {
 	ClusterInfo *kube.ClusterInfo `json:"cluster_info,block"`
-
-	// Auth for cloud providers
-	AWSAuth   *awscredentials.Config   `json:"aws_auth,omitempty"`
-	AzureAuth *azurecredentials.Config `json:"azure_auth,omitempty"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth,omitempty"`
 
 	Namespace string `json:"namespace"`
 

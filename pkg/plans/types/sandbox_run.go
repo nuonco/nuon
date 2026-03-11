@@ -4,7 +4,6 @@ import (
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
-	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/types/state"
 )
 
@@ -33,18 +32,15 @@ type SandboxRunPlan struct {
 	AppID       string `json:"app_id"`
 	AppConfigID string `json:"app_config_id"`
 
-	Vars             map[string]any         `json:"vars" faker:"-"`
-	EnvVars          map[string]string      `json:"env_vars"`
-	VarsFiles        []string               `json:"vars_files"`
-	GitSource        *GitSource             `json:"git_source"`
-	LocalArchive     *TerraformLocalArchive `json:"local_archive"`
-	TerraformBackend *TerraformBackend      `json:"terraform_backend"`
-
-	AzureAuth *azurecredentials.Config `json:"azure_auth"`
-	AWSAuth   *awscredentials.Config   `json:"aws_auth"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth"`
-
-	Hooks *TerraformDeployHooks `json:"hooks"`
+	Vars             map[string]any           `json:"vars" faker:"-"`
+	EnvVars          map[string]string        `json:"env_vars"`
+	VarsFiles        []string                 `json:"vars_files"`
+	GitSource        *GitSource               `json:"git_source"`
+	LocalArchive     *TerraformLocalArchive   `json:"local_archive"`
+	TerraformBackend *TerraformBackend        `json:"terraform_backend"`
+	AzureAuth        *azurecredentials.Config `json:"azure_auth"`
+	AWSAuth          *awscredentials.Config   `json:"aws_auth"`
+	Hooks            *TerraformDeployHooks    `json:"hooks"`
 
 	Policies map[string]string `json:"policies"`
 

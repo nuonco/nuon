@@ -62,7 +62,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	}
 
 	authVars, err := authvars.New(h.v,
-		authvars.WithAWSAuth(h.state.auth.AWSAuth),
+		authvars.WithAWSAuth(h.state.auth.AWSAuth), // NOTE(fd): from top of composite plan
 		authvars.WithAzureAuth(h.state.auth.AzureAuth),
 		authvars.WithGCPAuth(h.state.auth.GCPAuth),
 	)
