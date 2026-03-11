@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 
 export function WizardStepView() {
-  const { steps, currentStepIndex, completedSteps, sharedData, setSharedData, goNext, markComplete } =
+  const { steps, currentStepIndex, completedSteps, sharedData, setSharedData, goNext, goPrev, markComplete } =
     useOnboardingWizard()
 
-  const stepDef = steps[currentStepIndex]
   const [visibleIndex, setVisibleIndex] = useState(currentStepIndex)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const prevIndexRef = useRef(currentStepIndex)
@@ -28,6 +29,7 @@ export function WizardStepView() {
   if (!visibleStep) return null
 
   const StepComponent = visibleStep.component
+  const canGoBack = currentStepIndex > 0
 
   return (
     <div
@@ -35,6 +37,14 @@ export function WizardStepView() {
         isTransitioning ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
       }`}
     >
+      <div className="mb-6">
+        {canGoBack && (
+          <Button variant="secondary" size="sm" onClick={goPrev}>
+            <Icon variant="ArrowLeft" size={14} />
+            Back
+          </Button>
+        )}
+      </div>
       <div className="mb-8">
         <Text variant="h2" role="heading" level={2} className="mb-2">
           {visibleStep.title}

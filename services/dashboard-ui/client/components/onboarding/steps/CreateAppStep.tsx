@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { cn } from '@/utils/classnames'
@@ -68,35 +67,37 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
-          {EXAMPLE_APPS.map((app) => (
-            <button
-              key={app.id}
-              type="button"
-              onClick={() => handleSelect(app)}
-              className="text-left"
-            >
-              <Card
+        <fieldset className="grid grid-cols-2 gap-2">
+          {EXAMPLE_APPS.map((app) => {
+            const isSelected = selectedApp?.id === app.id
+            return (
+              <label
+                key={app.id}
+                htmlFor={app.id}
                 className={cn(
-                  'cursor-pointer transition-colors',
-                  selectedApp?.id === app.id
-                    ? 'border-primary-500 dark:border-primary-400 bg-primary-50 dark:bg-[#1B1026]'
-                    : 'hover:border-primary-300 dark:hover:border-primary-600'
+                  'flex items-center gap-3 px-4 py-3 rounded-md border shadow-sm cursor-pointer transition-colors',
+                  isSelected
+                    ? '!border-primary-600 dark:!border-primary-400 bg-primary-50 dark:bg-primary-950/40'
+                    : 'hover:!border-primary-300 dark:hover:!border-primary-700'
                 )}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <Text variant="body" weight="strong">{app.name}</Text>
-                    <Text variant="subtext" theme="neutral">{app.description}</Text>
-                  </div>
-                  {selectedApp?.id === app.id && (
-                    <div className="w-4 h-4 rounded-full bg-primary-500 flex-shrink-0" />
-                  )}
+                <input
+                  type="radio"
+                  id={app.id}
+                  name="example-app"
+                  value={app.id}
+                  checked={isSelected}
+                  onChange={() => handleSelect(app)}
+                  className="accent-primary-600 flex-shrink-0"
+                />
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <Text variant="body" weight="strong">{app.name}</Text>
+                  <Text variant="subtext" theme="neutral" className="!block truncate">{app.description}</Text>
                 </div>
-              </Card>
-            </button>
-          ))}
-        </div>
+              </label>
+            )
+          })}
+        </fieldset>
       </div>
 
       {selectedApp && (
