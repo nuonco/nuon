@@ -13,5 +13,7 @@ func (s *Service) Deselect(ctx context.Context) error {
 		return view.Error(err)
 	}
 
+	ui.PrintLn("current org is now unset")
+
 	return nil
 }

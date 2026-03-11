@@ -40,7 +40,6 @@ func (s *Service) unsetOrgID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
 	s.cfg.Set("app_id", "")
 	s.cfg.Set("org_id", "")
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current org is now unset"))
 	return s.cfg.WriteConfig()
 }
 
