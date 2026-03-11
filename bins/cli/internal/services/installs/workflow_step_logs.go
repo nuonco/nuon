@@ -50,6 +50,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		}
 
 		url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s?target=%s", cfg.DashboardURL, s.cfg.OrgID, workflow.OwnerID, workflowID, stepID)
+		fmt.Println(url)
 		browser.OpenURL(url)
 		return nil
 	}
