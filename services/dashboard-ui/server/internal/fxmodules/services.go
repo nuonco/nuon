@@ -26,4 +26,5 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewConnectHandler)),
 	fx.Provide(asService(handlers.NewWorkflowsHandler)),
 	fx.Provide(asService(handlers.NewLogStreamsHandler)),
+	fx.Provide(asService(handlers.NewProxyHandler)),
 )

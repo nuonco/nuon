@@ -1,0 +1,192 @@
+package handlers
+
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+)
+
+type ProxyHandler struct {
+	cfg *internal.Config
+	l   *zap.Logger
+}
+
+func NewProxyHandler(cfg *internal.Config, l *zap.Logger) *ProxyHandler {
+	return &ProxyHandler{cfg: cfg, l: l}
+}
+
+func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
+	// HTML/asset proxy: strips frontend prefix and adds /docs so the page is
+	// served from {upstream}/docs/{path}. ModifyResponse rewrites the embedded
+	// absolute spec URL so it routes through the proxy instead of hitting the
+	// upstream directly.
+	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.APIUrl, "/public/swagger")
+	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, "/admin/swagger")
+
+	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
+
+	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
+	e.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
+
+	authed := e.Group("/", h.requireAuth())
+	nuonOnly := authed.Group("/", h.requireNuonEmail())
+	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
+	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
+	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
+
+	return nil
+}
+
+// newProxy builds a reverse proxy that strips stripPrefix and prepends addPrefix.
+func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			path := strings.TrimPrefix(req.URL.Path, stripPrefix)
+			req.URL.Path = addPrefix + path
+			req.Host = target.Host
+			req.Header.Del("Accept-Encoding")
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+}
+
+// newSwaggerProxy builds a reverse proxy for Swagger UI HTML/assets. It strips
+// the frontend prefix and adds /docs so assets are fetched from the upstream
+// docs path. ModifyResponse rewrites the embedded absolute spec URL (/oapi/v2)
+// to route through the proxy's dedicated spec routes instead.
+func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	specURLOld := []byte("url: '/oapi/v2'")
+	specURLNew := []byte("url: '" + frontendPrefix + "/oapi/v2'")
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			path := strings.TrimPrefix(req.URL.Path, frontendPrefix)
+			if path == "/oapi/v2" || path == "/oapi/v3" {
+				req.URL.Path = path
+			} else {
+				req.URL.Path = "/docs" + path
+			}
+			req.Host = target.Host
+			req.Header.Del("Accept-Encoding")
+		},
+		ModifyResponse: func(resp *http.Response) error {
+			if !strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+				return nil
+			}
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+			rewritten := bytes.ReplaceAll(body, specURLOld, specURLNew)
+			resp.Body = io.NopCloser(bytes.NewReader(rewritten))
+			resp.ContentLength = int64(len(rewritten))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
+			return nil
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+}
+
+var cspMetaRe = regexp.MustCompile(`(?i)<meta\s+http-equiv=["']content-security-policy["'][^>]*>`)
+
+func (h *ProxyHandler) newTemporalProxy(upstreamBase string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	baseOld := []byte(`base: ""`)
+	baseNew := []byte(`base: "/admin/temporal"`)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/admin/temporal")
+			if req.URL.Path == "" {
+				req.URL.Path = "/"
+			}
+			req.Host = target.Host
+			req.Header.Del("Accept-Encoding")
+		},
+		ModifyResponse: func(resp *http.Response) error {
+			if !strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+				return nil
+			}
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+			rewritten := bytes.ReplaceAll(body, baseOld, baseNew)
+			rewritten = cspMetaRe.ReplaceAll(rewritten, nil)
+			resp.Body = io.NopCloser(bytes.NewReader(rewritten))
+			resp.ContentLength = int64(len(rewritten))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
+			return nil
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+}
+
+func (h *ProxyHandler) proxyTemporalCodecDecode(c *gin.Context) {
+	target := h.cfg.AdminAPIUrl + "/v1/general/temporal-codec/decode"
+	body, _ := io.ReadAll(c.Request.Body)
+	req, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, target, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.Status(http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
+	loginURL := h.cfg.AuthServiceUrl + "/?url=" + h.cfg.AppUrl
+	return func(c *gin.Context) {
+		token, err := c.Cookie(authCookie)
+		if err != nil || token == "" {
+			c.Redirect(http.StatusFound, loginURL)
+			c.Abort()
+			return
+		}
+		client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+		if err != nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
+			c.Redirect(http.StatusFound, loginURL)
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+func (h *ProxyHandler) requireNuonEmail() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, _ := c.Cookie(authCookie)
+		client, _ := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+		me, err := client.GetAuthMe(c.Request.Context())
+		if err != nil || !strings.HasSuffix(me.Email, "@nuon.co") {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		c.Next()
+	}
+}
