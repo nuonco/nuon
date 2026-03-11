@@ -12856,7 +12856,7 @@ func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo run
 }
 
 /*
-ShutDownRunnerMng shuts down an install runner management process
+ShutDownRunnerMng shuts down an install runner s mng process does not shut down the install runner process
 */
 func (a *Client) ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -13878,7 +13878,7 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 }
 
 /*
-UpdateRunnerMng updates an install runner via the mng process
+UpdateRunnerMng updates an install runner via the mng process this is practically a restart
 */
 func (a *Client) UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error) {
 	// NOTE: parameters are not validated before sending
