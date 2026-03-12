@@ -3,12 +3,14 @@ package worker
 import (
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error {
@@ -26,10 +28,18 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 			return AwaitForget(ctx, input)
 		},
 		signals.OperationExecuteFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitExecuteFlow(ctx, input)
+			err := AwaitExecuteFlow(ctx, input)
+			if err != nil {
+				updateWorkflowStatusOnError(ctx, input, err)
+			}
+			return err
 		},
 		signals.OperationRerunFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitRerunFlow(ctx, input)
+			err := AwaitRerunFlow(ctx, input)
+			if err != nil {
+				updateWorkflowStatusOnError(ctx, input, err)
+			}
+			return err
 		},
 		signals.OperationWorkflowApproveAll: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitWorkflowApproveAll(ctx, input)
@@ -91,4 +101,27 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 	}
 
 	return l.Run(ctx, req, pendingSignals)
+}
+
+// updateWorkflowStatusOnError updates the workflow status, so it's not stuck in "pending" indefinitely.
+func updateWorkflowStatusOnError(ctx workflow.Context, input signals.RequestSignal, handlerErr error) {
+	workflowID := ""
+	switch {
+	case input.InstallWorkflowID != "":
+		workflowID = input.InstallWorkflowID
+	case input.FlowID != "":
+		workflowID = input.FlowID
+	default:
+		return
+	}
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: workflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: "failed to execute workflow",
+			Metadata: map[string]any{
+				"error_message": handlerErr.Error(),
+			},
+		},
+	})
 }
