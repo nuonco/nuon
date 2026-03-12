@@ -15,7 +15,7 @@ export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
   const adhocConfig = firstStep?.adhoc_config
 
   return (
-    <>
+    <>    
       <div className="flex flex-col gap-2">
         <Text weight="strong">Action step</Text>
         <div className="py-2 px-4 border rounded-md flex flex-col gap-2">
