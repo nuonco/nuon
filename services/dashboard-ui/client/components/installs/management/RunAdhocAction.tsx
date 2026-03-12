@@ -18,21 +18,42 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { runAdhocAction, type TRunAdhocActionBody } from '@/lib'
 
-interface IRunAdhocAction {}
+interface IRunAdhocAction {
+  initialValues?: TRunAdhocActionBody
+}
 
-export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
+export const RunAdhocActionModal = ({
+  initialValues,
+  ...props
+}: IRunAdhocAction & IModal) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
   const { removeModal, addModal } = useSurfaces()
   const { addToast } = useToast()
 
+  const initialEnvVarEntries = Object.entries(initialValues?.env_vars || {})
+
   const formRef = useRef<HTMLFormElement>(null)
   const draftShownRef = useRef(false)
-  const [customEnvVars, setCustomEnvVars] = useState<number[]>([])
-  const [inputMode, setInputMode] = useState<'command' | 'script'>('command')
-  const [scriptContent, setScriptContent] = useState('')
-  const [selectedRole, setSelectedRole] = useState<string>('')
+  const [customEnvVars, setCustomEnvVars] = useState<number[]>(
+    initialEnvVarEntries.map((_, i) => i)
+  )
+  const [inputMode, setInputMode] = useState<'command' | 'script'>(
+    initialValues?.inline_contents ? 'script' : 'command'
+  )
+  const [scriptContent, setScriptContent] = useState(
+    initialValues?.inline_contents || ''
+  )
+  const [selectedRole, setSelectedRole] = useState<string>(
+    initialValues?.role || ''
+  )
+
+  const initialEnvVarValues: Record<string, string> = {}
+  initialEnvVarEntries.forEach(([key, value], i) => {
+    initialEnvVarValues[`custom:${i}:name`] = key
+    initialEnvVarValues[`custom:${i}:value`] = value
+  })
 
   const {
     hasDraft,
@@ -71,7 +92,14 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
       )
       modalId = addModal(modal)
     }
-  }, [hasDraft, draftTimestamp, restoreDraft, clearDraft, addModal, removeModal])
+  }, [
+    hasDraft,
+    draftTimestamp,
+    restoreDraft,
+    clearDraft,
+    addModal,
+    removeModal,
+  ])
 
   useEffect(() => {
     if (draftValues) {
@@ -91,14 +119,18 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
     }
   }, [draftValues])
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const {
+    mutate,
+    isPending: isLoading,
+    error,
+  } = useMutation({
     mutationFn: (body: TRunAdhocActionBody) =>
       runAdhocAction({
         body,
         installId: install.id,
         orgId: org.id,
       }),
-    onSuccess: (result) => {      
+    onSuccess: (result) => {
       addToast(
         <Toast heading="Adhoc action started" theme="success">
           <Text>Adhoc action is running.</Text>
@@ -176,6 +208,8 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
             <Icon variant="Loading" />
             Running action
           </span>
+        ) : initialValues ? (
+          'Rerun action'
         ) : (
           'Run action'
         ),
@@ -206,7 +240,7 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
             type="text"
             placeholder="Display name for this action"
             maxLength={255}
-            defaultValue={draftValues?.['name'] || ''}
+            defaultValue={draftValues?.['name'] || initialValues?.name || ''}
           />
         </label>
 
@@ -239,7 +273,9 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
               type="text"
               placeholder="echo 'Hello, world!'"
               required
-              defaultValue={draftValues?.['command'] || ''}
+              defaultValue={
+                draftValues?.['command'] || initialValues?.command || ''
+              }
             />
             <Text variant="subtext">Single-line shell command to execute</Text>
           </label>
@@ -267,7 +303,11 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
           <Input
             name="timeout"
             type="number"
-            defaultValue={draftValues?.['timeout'] || '300'}
+            defaultValue={
+              draftValues?.['timeout'] ||
+              initialValues?.timeout?.toString() ||
+              '300'
+            }
             min={1}
             max={3600}
           />
@@ -310,7 +350,11 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
                   type="text"
                   placeholder="VAR_NAME"
                   required
-                  defaultValue={draftValues?.[`custom:${cv}:name`] || ''}
+                  defaultValue={
+                    draftValues?.[`custom:${cv}:name`] ||
+                    initialEnvVarValues[`custom:${cv}:name`] ||
+                    ''
+                  }
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -320,7 +364,11 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
                   type="text"
                   placeholder="value"
                   required
-                  defaultValue={draftValues?.[`custom:${cv}:value`] || ''}
+                  defaultValue={
+                    draftValues?.[`custom:${cv}:value`] ||
+                    initialEnvVarValues[`custom:${cv}:value`] ||
+                    ''
+                  }
                 />
               </label>
               <Button
@@ -340,9 +388,9 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
 
         <RoleSelector
           installId={install.id}
-          orgId={org.id}
           operationType="trigger"
           principalType="action"
+          value={selectedRole}
           onChange={setSelectedRole}
         />
       </form>
@@ -351,10 +399,12 @@ export const RunAdhocActionModal = ({ ...props }: IRunAdhocAction & IModal) => {
 }
 
 export const RunAdhocActionButton = ({
+  initialValues,
+  children,
   ...props
 }: IRunAdhocAction & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RunAdhocActionModal />
+  const modal = <RunAdhocActionModal initialValues={initialValues} />
 
   return (
     <Button
@@ -363,8 +413,12 @@ export const RunAdhocActionButton = ({
       }}
       {...props}
     >
-      Run adhoc action
-      <Icon variant="TerminalWindowIcon" />
+      {children ?? (
+        <>
+          Run adhoc action
+          <Icon variant="TerminalWindowIcon" />
+        </>
+      )}
     </Button>
   )
 }

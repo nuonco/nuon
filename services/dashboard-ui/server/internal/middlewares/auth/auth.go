@@ -32,7 +32,11 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/assets/") {
+		// Skip auth for static assets and public SPA routes that must be
+		// accessible without authentication (e.g. the login page).
+		if strings.HasPrefix(c.Request.URL.Path, "/assets/") ||
+			c.Request.URL.Path == "/login" ||
+			strings.HasPrefix(c.Request.URL.Path, "/auth/") {
 			c.Next()
 			return
 		}

@@ -171,7 +171,7 @@ export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
       {appConfig?.permissions?.aws_iam_roles?.map((role) => (
         <div className="flex flex-col gap-4 pb-8" key={role?.id}>
           <div className="flex flex-col">
-            <Text variant="h3" weight="strong">
+            <Text variant="h3" weight="strong" id={role?.display_name}>
               {role?.display_name}
             </Text>
             <Text variant="subtext" theme="neutral">
@@ -224,7 +224,7 @@ export const InstallIAMRoles = ({
       {roles.map((role) => (
         <div className="flex flex-col gap-4 pb-8" key={role.id}>
           <div className="flex flex-col">
-            <Text variant="h3" weight="strong">
+            <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
               {role.display_name}
             </Text>
             <Text variant="subtext" theme="neutral">

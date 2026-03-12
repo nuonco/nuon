@@ -135,55 +135,40 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		})
 	}
 
-	switch operationType {
-	case "provision", "reprovision":
-		if installStackOutput.ProvisionIAMRoleARN != "" {
-			rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
-			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name: %w", err)
-			}
-			roles = append(roles, AvailableRole{
-				Name:     rendered,
-				ARN:      installStackOutput.ProvisionIAMRoleARN,
-				RoleType: "provision",
-			})
+	if installStackOutput.ProvisionIAMRoleARN != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render provision role name: %w", err)
 		}
-	case "deprovision":
-		if installStackOutput.DeprovisionIAMRoleARN != "" {
-			rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
-			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name: %w", err)
-			}
-			roles = append(roles, AvailableRole{
-				Name:     rendered,
-				ARN:      installStackOutput.DeprovisionIAMRoleARN,
-				RoleType: "deprovision",
-			})
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.ProvisionIAMRoleARN,
+			RoleType: "provision",
+		})
+	}
+
+	if installStackOutput.DeprovisionIAMRoleARN != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
 		}
-	case "deploy", "teardown":
-		if installStackOutput.MaintenanceIAMRoleARN != "" {
-			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name: %s", err)
-			}
-			roles = append(roles, AvailableRole{
-				Name:     rendered,
-				ARN:      installStackOutput.MaintenanceIAMRoleARN,
-				RoleType: "maintenance",
-			})
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.DeprovisionIAMRoleARN,
+			RoleType: "deprovision",
+		})
+	}
+
+	if installStackOutput.MaintenanceIAMRoleARN != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render maintenance role name: %s", err)
 		}
-	case "trigger":
-		if installStackOutput.MaintenanceIAMRoleARN != "" {
-			rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-			if err != nil {
-				return nil, fmt.Errorf("unable to render provision role name: %w", err)
-			}
-			roles = append(roles, AvailableRole{
-				Name:     rendered,
-				ARN:      installStackOutput.MaintenanceIAMRoleARN,
-				RoleType: "maintenance",
-			})
-		}
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.MaintenanceIAMRoleARN,
+			RoleType: "maintenance",
+		})
 	}
 
 	return roles, nil
