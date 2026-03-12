@@ -32,7 +32,7 @@ const EXAMPLE_APPS: IExampleApp[] = [
     dir: 'example-app-configs/aws-lambda',
   },
   {
-    id: 'aws-ec2-httpbin',
+    id: 'httpbin',
     name: 'AWS EC2 / httpbin',
     description: 'HTTP testing service running on EC2',
     repo: 'https://github.com/nuonco/example-app-configs',
