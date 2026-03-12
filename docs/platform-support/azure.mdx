@@ -14,7 +14,7 @@ started. You will need to set some vars to configure the sandbox. Create inputs 
 since those will be different for each install.
 
 ```toml sandbox.toml
-# sandbox
+#:schema https://api.nuon.co/v1/general/config-schema?source=sandbox
 
 terraform_version = "1.11.3"
 
@@ -34,7 +34,7 @@ public_subnet_names = "{{.nuon.install_stack.outputs.public_subnet_names}}"
 ```
 
 ```toml runner.toml
-# runner
+#:schema https://api.nuon.co/v1/general/config-schema?source=runner
 
 runner_type = "azure"
 helm_driver = "configmap"
