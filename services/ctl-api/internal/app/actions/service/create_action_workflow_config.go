@@ -175,7 +175,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	//validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
+	// validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
 	for _, step := range c.Steps {
 		// Check if multiple VCS configs are set
 		vcsConfigCount := 0

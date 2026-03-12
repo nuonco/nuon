@@ -79,22 +79,10 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.New("secret sync not supported on current cloud provider")
 	}
 
-	// Perform role selection for secret sync
-	// Secret sync is part of provisioning/deployment, so use OperationDeploy
-	operation := app.OperationDeploy
-	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeSandbox, // Secrets are synced at install level, use sandbox type
-		PrincipalName: "",                    // No specific principal name for secret sync
-		RuntimeRole:   "",                    // No runtime role for secret sync
-		EntityRoles:   nil,                   // No entity-specific operation roles for secrets
-		MatrixRules:   appCfg.OperationRoleConfig.Rules,
-		DefaultRole:   defaultRole,
-		AppConfig:     appCfg,
-		StackOutputs:  &stack.InstallStackOutputs,
-		InstallState:  state,
+	if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
+		err := fmt.Errorf("provision role not enabled in install stack")
+		l.Error("provision role not enabled in install stack", zap.Error(err))
+		return nil, err
 	}
 
 	awsAuth := &awscredentials.Config{

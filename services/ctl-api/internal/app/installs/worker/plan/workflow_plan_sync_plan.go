@@ -52,39 +52,6 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
-	// Get context for role selection
-	l, err := log.WorkflowLogger(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
-	}
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
-	}
-
-	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
-		InstallID: install.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
-	}
-
-	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install registry repository")
-	}
-
 	pln := &plantypes.SyncOCIPlan{
 		Src:    srcCfg,
 		SrcTag: deploy.ComponentBuildID,
