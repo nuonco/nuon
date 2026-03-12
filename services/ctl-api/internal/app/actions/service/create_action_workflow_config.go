@@ -291,8 +291,6 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 
 	enableKubeConfig := generics.NewNullBoolFromPtr(req.EnableKubeConfig)
 
-	fmt.Println("smk ekc %v", enableKubeConfig, req.EnableKubeConfig)
-
 	awc := app.ActionWorkflowConfig{
 		AppID:                  parentApp.ID,
 		AppConfigID:            req.AppConfigID,

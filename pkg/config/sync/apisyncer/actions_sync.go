@@ -2,7 +2,6 @@ package apisyncer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -65,8 +64,6 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 	if action.EnableKubeConfig != nil {
 		enableKubeConfig = *action.EnableKubeConfig
 	}
-
-	fmt.Println("smk enable kube config", enableKubeConfig)
 
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
 		AppConfigID:       generics.ToPtr(s.state.CfgID),
