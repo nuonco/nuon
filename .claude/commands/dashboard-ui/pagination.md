@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-pagination
-description: Use this skill when adding pagination to a list view in the dashboard-ui.
-model: sonnet
-color: blue
+name: dashboard-ui:pagination
+description: Use when adding pagination to a list view in the dashboard-ui
 ---
 
 This skill enforces URL-driven pagination using useSearchParams for offset, keepPreviousData to prevent flash, and the Table or Timeline pagination prop.

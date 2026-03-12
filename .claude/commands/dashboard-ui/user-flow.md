@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-user-flow
-description: Use this skill when implementing a button → modal → confirmation action in the dashboard-ui.
-model: sonnet
-color: blue
+name: dashboard-ui:user-flow
+description: Use when implementing a button → modal → confirmation action in the dashboard-ui
 ---
 
 This skill enforces the two-component (Button + Modal) pattern using useSurfaces, Modal from surfaces/, and useMutation — never raw fetch or bespoke modal divs.

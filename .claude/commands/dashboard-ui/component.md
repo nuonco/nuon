@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-component
-description: Use this skill when adding or using a UI component in the dashboard-ui client/ SPA.
-model: sonnet
-color: blue
+name: dashboard-ui:component
+description: Use when adding or using a UI component in the dashboard-ui client/ SPA
 ---
 
 This skill enforces checking existing components before creating new ones and reading TypeScript interfaces before using component props.

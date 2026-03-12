@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-view
-description: Use this skill when adding a new page or view to the dashboard-ui client/ SPA.
-model: sonnet
-color: blue
+name: dashboard-ui:view
+description: Use when adding a new page or view to the dashboard-ui client/ SPA
 ---
 
 This skill enforces correct route registration, layout-aware provider usage, and a guarded useQuery pattern when adding a new view.

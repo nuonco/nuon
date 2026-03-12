@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-api
-description: Use this skill when creating a new API function in client/lib/ctl-api/.
-model: sonnet
-color: blue
+name: dashboard-ui:api
+description: Use when creating a new API function in client/lib/ctl-api/
 ---
 
 This skill enforces creating a lib/ctl-api API function and its co-located unit test together, plus adding the barrel export.

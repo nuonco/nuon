@@ -1,8 +1,6 @@
 ---
-name: dashboard-ui-form
-description: Use this skill when building a form inside a modal in the dashboard-ui.
-model: sonnet
-color: blue
+name: dashboard-ui:form
+description: Use when building a form inside a modal in the dashboard-ui
 ---
 
 This skill enforces useMutation for form submission, FormData extraction from the submit event, requestSubmit for HTML5 validation, and Toast/Banner for feedback.
@@ -41,7 +39,7 @@ This skill enforces useMutation for form submission, FormData extraction from th
 
 6. Show success feedback via `addToast` from `useToast()`, then close the modal via `removeModal(props.modalId)`.
 
-7. Always spread `{...props}` onto `<Modal>` — see `dashboard-ui-user-flow` skill for why this is required.
+7. Always spread `{...props}` onto `<Modal>` — see `dashboard-ui:user-flow` for why this is required.
 
 ## Anti-Patterns
 
