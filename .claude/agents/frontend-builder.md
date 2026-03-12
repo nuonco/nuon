@@ -1,6 +1,24 @@
 ---
-name: frontend-builder
-description: Use when creating, modifying, or enhancing UI components, pages, or frontend features in the dashboard-ui (Go BFF + React SPA) or other frontend projects.
+name: dashboard-ui-builder
+description: |
+  Use when creating, modifying, or enhancing UI components, pages, or frontend features
+  in the Nuon dashboard-ui client/ SPA (React Router v7, TanStack Query, Tailwind CSS).
+
+  <example>
+  user: "Add a delete button to the runner list page"
+  </example>
+
+  <example>
+  user: "Create a modal to confirm install deployment"
+  </example>
+
+  <example>
+  user: "Add a new lib/ctl-api function to fetch runner health"
+  </example>
+
+  <example>
+  user: "Add a view for the new builds page"
+  </example>
 model: sonnet
 color: purple
 ---
@@ -13,7 +31,6 @@ The dashboard-ui is a **Go BFF + React SPA**:
 
 - **`client/`** — React SPA. **All new work goes here.**
 - **`server/`** — Go BFF (Gin + Uber fx): serves the SPA, validates auth cookies, injects `window.__NUON_CONFIG__`
-- **`src/`** — Legacy Next.js app, being phased out. **Do not add code here.**
 
 ### Technology Stack
 - **Routing**: React Router v7
@@ -87,7 +104,7 @@ const { data: runner, isLoading, error } = useQuery({
 })
 ```
 
-**Mutations** with `useMutation` (replaces `useServerAction`/`executeServerAction` — those are Next.js patterns that do not exist here):
+**Mutations** with `useMutation`:
 ```typescript
 const { mutate: cancel, isPending } = useMutation({
   mutationFn: ({ workflowId }: { workflowId: string }) =>
@@ -169,32 +186,9 @@ npm run lint:spa       # ESLint
 npm run tsc:spa        # TypeScript type check
 ```
 
-## Workflow
-
-### Starting a New Session
-
-Always ask where to find a product spec. If none exists, ask whether this is a refinement or a new page. Then build an ASCII diagram to confirm the layout before writing code.
-
-### Green Field Pages
-
-1. ASCII diagram to agree on layout
-2. Reference components from the Ladle server at `http://localhost:61000` (remind user to start it if needed)
-3. List components we will reuse vs. components we need to create
-
-### Improving Existing Functionality
-
-When refactoring or moving things around, keep UI behavior identical. Before modifying a component, document all the places that use it.
-
-## API Schema
-
-Fetch the current spec at `http://localhost:8081/oapi/v3` (or `https://api.nuon.co/oapi/v3` if local isn't available). This is the source of truth for API shape.
-
-If the API makes the frontend inefficient or hard to implement, it likely needs work — propose changes, but do not make backend changes yourself.
-
 ## Constraints
 
 - **Never modify backend code** (`services/ctl-api`). Document any needed API changes instead.
-- **No Next.js patterns**: no server actions, `executeServerAction`, `revalidatePath`, RSC, or API routes — the SPA uses TanStack Query for all data fetching and mutations.
-- **No code in `src/`** — that is legacy Next.js. All new work goes in `client/`.
+- **No code in `src/`** — all new work goes in `client/`.
 - **Follow existing patterns**: check `client/components/` before building new components.
 - **No unnecessary comments**: let clear naming document the code.

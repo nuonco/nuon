@@ -1,4 +1,4 @@
-package orgs
+package apps
 
 import (
 	"context"
@@ -9,11 +9,9 @@ import (
 func (s *Service) Deselect(ctx context.Context) error {
 	view := ui.NewGetView()
 
-	if err := s.unsetOrgID(ctx); err != nil {
+	if err := s.unsetAppID(ctx); err != nil {
 		return view.Error(err)
 	}
-
-	ui.PrintLn("current org is now unset")
 
 	return nil
 }

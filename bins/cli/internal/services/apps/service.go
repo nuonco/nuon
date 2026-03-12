@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
@@ -48,10 +49,13 @@ func (s *Service) setAppID(ctx context.Context, appID string) error {
 }
 
 func (s *Service) unsetAppID(ctx context.Context) error {
-	// unset install_id
+	hadInstall := s.cfg.GetString("install_id") != ""
 	s.cfg.Set("install_id", "")
 	s.cfg.Set("app_id", "")
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current app is now unset"))
+	ui.PrintLn("current app is now unset")
+	if hadInstall {
+		ui.PrintLn("the install has also been unset")
+	}
 	return s.cfg.WriteConfig()
 }
 

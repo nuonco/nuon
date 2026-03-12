@@ -7,13 +7,11 @@ The **Dashboard UI** is the primary web application frontend for the Nuon platfo
 ```
 services/dashboard-ui/
 ├── client/     ← React SPA (ALL new work goes here)
-├── server/     ← Go BFF (Gin + Uber fx)
-└── src/        ← LEGACY Next.js app (do not add code here)
+└── server/     ← Go BFF (Gin + Uber fx)
 ```
 
 - **`client/`** — React SPA built with React Router v7, TanStack Query, Tailwind CSS, ESBuild
 - **`server/`** — Go BFF that serves the SPA, validates auth cookies, injects runtime config, and provides streaming API handlers
-- **`src/`** — Legacy Next.js app, being phased out. **Do not add new code here.**
 
 ## Go BFF Server (`server/`)
 
@@ -155,7 +153,7 @@ const { data: runner, isLoading, error } = useQuery({
 })
 ```
 
-**Mutations (`useMutation`)** — use this instead of `useServerAction`/`executeServerAction` (those are Next.js patterns that do not exist here):
+**Mutations (`useMutation`)**:
 ```typescript
 const { mutate: cancel, isPending } = useMutation({
   mutationFn: ({ workflowId }: { workflowId: string }) =>
@@ -318,9 +316,3 @@ npm run lint:spa       # ESLint for the SPA
 npm run tsc:spa        # TypeScript type check for the SPA
 ```
 
-## Important Notes
-
-- **All new work goes in `client/`** — `src/` is legacy Next.js and is being phased out
-- **No server actions** — `executeServerAction`, `useServerAction`, `revalidatePath` are Next.js patterns that do not exist in the SPA
-- **No RSC** — there are no React Server Components; everything in `client/` is client-side
-- **No API routes** — there are no Next.js API routes; the Go BFF handles server-side concerns

@@ -31,13 +31,14 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		return func(c *gin.Context) { c.Next() }
 	}
 
-	loginURL := m.cfg.AuthServiceUrl + "/?url=" + m.cfg.AppUrl
-
 	return func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/assets/") {
 			c.Next()
 			return
 		}
+
+		returnURL := m.cfg.AppUrl + c.Request.URL.RequestURI()
+		loginURL := m.cfg.AuthServiceUrl + "/?url=" + returnURL
 
 		token, err := c.Cookie(cookieName)
 		if err != nil || token == "" {

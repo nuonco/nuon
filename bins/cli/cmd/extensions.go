@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/mitchellh/go-homedir"
@@ -352,10 +353,46 @@ func (c *cli) extensionProxyCmd(ext extensions.InstalledExtension) *cobra.Comman
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
 		Annotations:        skipAuthAnnotation(),
-		PersistentPreRunE:  c.persistentPreRunE,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// With DisableFlagParsing, Cobra skips all flag parsing
+			// including the root's persistent flags (e.g. -f ~/.stage).
+			// Manually parse them so the config is loaded correctly.
+			if preArgs := argsBeforeCommand(ext.Name); len(preArgs) > 0 {
+				cmd.Root().PersistentFlags().Parse(preArgs)
+			}
+			return c.persistentPreRunE(cmd, args)
+		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
-			return mgr.Exec(ext.Name, args, c.extensionEnv())
+			// When DisableFlagParsing is true, Cobra passes all unparsed
+			// args including parent persistent flags (e.g. -f ~/.stage)
+			// that precede the extension name. Extract only the args that
+			// appear after the extension command name in os.Args.
+			extArgs := argsAfterCommand(ext.Name)
+			return mgr.Exec(ext.Name, extArgs, c.extensionEnv())
 		}),
 	}
+}
+
+// argsBeforeCommand returns the slice of os.Args[1:] that precedes the first
+// occurrence of the given command name (i.e. parent flags like "-f ~/.stage").
+func argsBeforeCommand(name string) []string {
+	for i, arg := range os.Args[1:] {
+		if arg == name {
+			return os.Args[1 : i+1]
+		}
+	}
+	return nil
+}
+
+// argsAfterCommand returns the slice of os.Args that follows the first
+// occurrence of the given command name. This ensures that parent flags
+// preceding the command (e.g. "-f ~/.stage") are not forwarded.
+func argsAfterCommand(name string) []string {
+	for i, arg := range os.Args {
+		if arg == name {
+			return os.Args[i+1:]
+		}
+	}
+	return nil
 }
