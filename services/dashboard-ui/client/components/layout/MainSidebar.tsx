@@ -55,7 +55,7 @@ export const MainSidebar = ({
           />
         </div>
       </div>
-      {true ? (
+      {isSidebarOpen ? (
         <TransitionDiv
           className="flex flex-col gap-0 items-end p-4 fade"
           isVisible={true}
