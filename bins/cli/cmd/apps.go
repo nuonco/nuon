@@ -144,6 +144,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(unsetCurrentAppCmd)
 
 	syncCmd := &cobra.Command{
+		Deprecated:        "use `nuon sync` instead",
 		Use:               "sync",
 		Short:             "Sync nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
@@ -164,29 +165,6 @@ func (c *cli) appsCmd() *cobra.Command {
 		}),
 	}
 	appsCmd.AddCommand(syncCmd)
-
-	syncDirCmd := &cobra.Command{
-		Deprecated:        "use `nuon sync` instead",
-		Use:               "sync",
-		Short:             "Sync nuon app directory (deprecated)",
-		PersistentPreRunE: c.persistentPreRunE,
-		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			var dirName string
-			if len(args) > 0 {
-				dirName = args[0]
-			} else {
-				var err error
-				dirName, err = os.Getwd()
-				if err != nil {
-					return errors.Wrap(err, "unable to get directory name")
-				}
-			}
-
-			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version)
-		}),
-	}
-	appsCmd.AddCommand(syncDirCmd)
 
 	validateCmd := &cobra.Command{
 		Use:               "validate",
