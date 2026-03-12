@@ -2,6 +2,7 @@ import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -16,7 +17,7 @@ import { ViewStateButton } from './ViewState'
 
 export const QuickManagementDropdown = ({ install }: { install: TInstall }) => {
   return (
-    <InstallProvider installId={install?.id}  shouldPoll={false}>
+    <InstallProvider installId={install?.id}  shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />}>
       <SurfacesProvider>
         <Dropdown
           alignment="right"
