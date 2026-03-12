@@ -60,15 +60,11 @@ export const MainNavLink = ({
       className="w-full"
       position="right"
       tipContentClassName={cn('hidden', {
-        'md:flex': !isSidebarOpen,
+        'md:flex w-max': !isSidebarOpen,
       })}
       tipContent={
         <Text variant="subtext" weight="stronger">
-          {text
-            .trim()
-            .split(' ')
-            .at(-1)
-            ?.replace(/^./, (char) => char.toUpperCase())}
+          {text}
         </Text>
       }
     >
