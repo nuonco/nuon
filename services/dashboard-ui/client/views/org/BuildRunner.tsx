@@ -21,7 +21,7 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 const heading = (
   <HeadingGroup>
     <Text variant="h3" weight="strong" level={1}>
-      Builds
+      Build runner
     </Text>
     <Text theme="neutral">
       View your organizations build runner performance and activities.
@@ -41,11 +41,11 @@ export const BuildRunner = () => {
 
   const breadcrumbs = (
     <>
-      <PageTitle title={`Builds | ${org?.name}`} />
+      <PageTitle title={`Build runner | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
-          { path: `/${org.id}/runner`, text: 'Builds' },
+          { path: `/${org.id}/runner`, text: 'Build runner' },
         ]}
       />
     </>

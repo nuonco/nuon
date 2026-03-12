@@ -53,15 +53,11 @@ export const SubNavLink = ({
       position="right"
       tipContent={
         <Text variant="subtext" weight="stronger">
-          {text
-            .trim()
-            .split(' ')
-            .at(-1)
-            ?.replace(/^./, (char) => char.toUpperCase())}
+          {text}
         </Text>
       }
       tipContentClassName={cn('hidden', {
-        'md:flex': !isPageSidebarOpen,
+        'md:flex w-max': !isPageSidebarOpen,
       })}
     >
       {link}
