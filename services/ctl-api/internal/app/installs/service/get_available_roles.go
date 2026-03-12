@@ -150,7 +150,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 	if installStackOutput.DeprovisionIAMRoleARN != "" {
 		rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render provision role name: %w", err)
+			return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
 		}
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
@@ -162,7 +162,7 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 	if installStackOutput.MaintenanceIAMRoleARN != "" {
 		rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render provision role name: %s", err)
+			return nil, fmt.Errorf("unable to render maintenance role name: %s", err)
 		}
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
