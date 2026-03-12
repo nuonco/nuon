@@ -91,7 +91,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
 	}
 	var clusterInfo *kube.ClusterInfo
-	if run.EnableKubeConfig {
+	if run.EnableKubeConfig.Valid && run.EnableKubeConfig.Bool {
 		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get cluster info")

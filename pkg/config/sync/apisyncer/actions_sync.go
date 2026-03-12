@@ -2,6 +2,7 @@ package apisyncer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -65,6 +66,8 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		enableKubeConfig = *action.EnableKubeConfig
 	}
 
+	fmt.Println("smk enable kube config", enableKubeConfig)
+
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
 		AppConfigID:       generics.ToPtr(s.state.CfgID),
 		Timeout:           timeout.Nanoseconds(),
@@ -72,7 +75,6 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		BreakGlassRoleArn: action.BreakGlassRole,
 		Role:              action.Role,
 		EnableKubeConfig:  enableKubeConfig,
-		// : action.KubeconfigEnabled,
 	}
 
 	for _, ref := range action.References {
