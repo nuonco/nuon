@@ -1,0 +1,21 @@
+---
+name: integration-test-poc
+"on":
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - .github/workflows/integration-test-poc.yml
+
+jobs:
+  integration-test-poc:
+    name: poc
+    runs-on: build-run
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose -f .github/integration-test/docker-compose.yml up -d --wait
+
+      - name: Hit web service
+        run: |
+          curl --fail --retry 5 --retry-delay 1 http://localhost:8080
