@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -57,7 +58,7 @@ type ActionWorkflowConfig struct {
 	BreakGlassRoleARN generics.NullString `json:"break_glass_role_arn,omitzero" gorm:"default:null" temporaljson:"break_glass_role_arn,omitzero,omitempty" swaggertype:"string"`
 	Role              string              `json:"role,omitzero" gorm:"default:null" temporaljson:"role,omitzero,omitempty"`
 
-	EnableKubeConfig bool `json:"enable_kube_config,omitzero" gorm:"default:true" temporaljson:"enable_kube_config,omitzero,omitempty"`
+	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
 }
 
 func (a *ActionWorkflowConfig) Indexes(db *gorm.DB) []migrations.Index {
