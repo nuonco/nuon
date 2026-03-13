@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
 )
 
 type handler struct {
@@ -19,6 +20,10 @@ type handler struct {
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
+	ociCopy     ocicopy.Copier
+
+	// state is populated per-job and must not be shared across jobs.
+	state *handlerState
 }
 
 var _ jobs.JobHandler = (*handler)(nil)
@@ -30,6 +35,7 @@ type HandlerParams struct {
 	APIClient   nuonrunner.Client
 	Config      *internal.Config
 	ErrRecorder *errs.Recorder
+	OCICopy     ocicopy.Copier
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -38,6 +44,7 @@ func New(params HandlerParams) (*handler, error) {
 		apiClient:   params.APIClient,
 		cfg:         params.Config,
 		errRecorder: params.ErrRecorder,
+		ociCopy:     params.OCICopy,
 	}, nil
 }
 
@@ -54,36 +61,5 @@ func (h *handler) JobStatus() models.AppRunnerJobStatus {
 }
 
 func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
-	return nil
-}
-
-func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	return nil
-}
-
-func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	return nil
-}
-
-func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	return nil
-}
-
-func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// TODO: implement sandbox build execution (clone VCS repo, run terraform plan)
-	return nil
-}
-
-func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	return map[string]interface{}{}, nil
-}
-
-func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	resultReq := &models.ServiceCreateRunnerJobExecutionResultRequest{
-		Success: true,
-	}
-	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
-		h.errRecorder.Record("write job execution result", err)
-	}
 	return nil
 }
