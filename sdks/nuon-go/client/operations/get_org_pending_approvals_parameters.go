@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewGetOrgPendingApprovalsParams creates a new GetOrgPendingApprovalsParams object,
@@ -60,6 +61,27 @@ GetOrgPendingApprovalsParams contains all the parameters to send to the API endp
 	Typically these are written to a http.Request.
 */
 type GetOrgPendingApprovalsParams struct {
+
+	/* Limit.
+
+	   limit of results to return
+
+	   Default: 10
+	*/
+	Limit *int64
+
+	/* Offset.
+
+	   offset of results to return
+	*/
+	Offset *int64
+
+	/* Page.
+
+	   page number of results to return
+	*/
+	Page *int64
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -77,7 +99,24 @@ func (o *GetOrgPendingApprovalsParams) WithDefaults() *GetOrgPendingApprovalsPar
 //
 // All values with no default are reset to their zero value.
 func (o *GetOrgPendingApprovalsParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		limitDefault = int64(10)
+
+		offsetDefault = int64(0)
+
+		pageDefault = int64(0)
+	)
+
+	val := GetOrgPendingApprovalsParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Page:   &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get org pending approvals params
@@ -113,6 +152,39 @@ func (o *GetOrgPendingApprovalsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithLimit adds the limit to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) WithLimit(limit *int64) *GetOrgPendingApprovalsParams {
+	o.SetLimit(limit)
+	return o
+}
+
+// SetLimit adds the limit to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) SetLimit(limit *int64) {
+	o.Limit = limit
+}
+
+// WithOffset adds the offset to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) WithOffset(offset *int64) *GetOrgPendingApprovalsParams {
+	o.SetOffset(offset)
+	return o
+}
+
+// SetOffset adds the offset to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) SetOffset(offset *int64) {
+	o.Offset = offset
+}
+
+// WithPage adds the page to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) WithPage(page *int64) *GetOrgPendingApprovalsParams {
+	o.SetPage(page)
+	return o
+}
+
+// SetPage adds the page to the get org pending approvals params
+func (o *GetOrgPendingApprovalsParams) SetPage(page *int64) {
+	o.Page = page
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetOrgPendingApprovalsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +192,57 @@ func (o *GetOrgPendingApprovalsParams) WriteToRequest(r runtime.ClientRequest, r
 		return err
 	}
 	var res []error
+
+	if o.Limit != nil {
+
+		// query param limit
+		var qrLimit int64
+
+		if o.Limit != nil {
+			qrLimit = *o.Limit
+		}
+		qLimit := swag.FormatInt64(qrLimit)
+		if qLimit != "" {
+
+			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Offset != nil {
+
+		// query param offset
+		var qrOffset int64
+
+		if o.Offset != nil {
+			qrOffset = *o.Offset
+		}
+		qOffset := swag.FormatInt64(qrOffset)
+		if qOffset != "" {
+
+			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Page != nil {
+
+		// query param page
+		var qrPage int64
+
+		if o.Page != nil {
+			qrPage = *o.Page
+		}
+		qPage := swag.FormatInt64(qrPage)
+		if qPage != "" {
+
+			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

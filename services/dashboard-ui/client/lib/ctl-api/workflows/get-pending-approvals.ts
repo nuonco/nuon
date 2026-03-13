@@ -3,6 +3,6 @@ import type { TWorkflowStepApproval } from '@/types'
 
 export const getPendingApprovals = ({ orgId }: { orgId: string }) =>
   api<TWorkflowStepApproval[]>({
-    path: `workflows/pending-approvals`,
+    path: `workflows/pending-approvals?limit=100`,
     orgId,
   })

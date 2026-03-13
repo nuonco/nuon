@@ -8,6 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	db "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID									GetOrgPendingApprovals
@@ -17,6 +19,9 @@ import (
 // @Produce								json
 // @Security							APIKey
 // @Security							OrgID
+// @Param								offset	query	int	false	"offset of results to return"	Default(0)
+// @Param								limit	query	int	false	"limit of results to return"	Default(10)
+// @Param								page	query	int	false	"page number of results to return"	Default(0)
 // @Failure								400	{object}	stderr.ErrResponse
 // @Failure								401	{object}	stderr.ErrResponse
 // @Failure								403	{object}	stderr.ErrResponse
@@ -42,6 +47,7 @@ func (s *service) GetOrgPendingApprovals(ctx *gin.Context) {
 func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.WorkflowStepApproval, error) {
 	var approvals []app.WorkflowStepApproval
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Joins("LEFT JOIN install_workflow_step_approval_responses resp ON resp.install_workflow_step_approval_id = install_workflow_step_approvals.id AND resp.deleted_at = 0").
 		Where("install_workflow_step_approvals.org_id = ?", orgID).
 		Where("install_workflow_step_approvals.deleted_at = 0").
@@ -52,5 +58,11 @@ func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get pending approvals")
 	}
+
+	approvals, err := db.HandlePaginatedResponse(ctx, approvals)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to handle paginated response")
+	}
+
 	return approvals, nil
 }
