@@ -19,6 +19,7 @@ The Go server (Gin + Uber fx) handles:
 - Serving the compiled SPA from `dist/`
 - Auth middleware: validates the cookie set by the external auth service
 - Runtime config injection: writes `window.__NUON_CONFIG__` into the HTML before serving
+- **Reverse proxy**: all `/v1/*` requests from the SPA are forwarded to ctl-api — the BFF extracts the `X-Nuon-Auth` cookie server-side and sets `Authorization: Bearer <token>` so the browser never needs to send the cookie cross-domain
 - Streaming API handlers (e.g., log streaming)
 
 ## Client SPA (`client/`)
@@ -182,7 +183,7 @@ const { addModal, removeModal } = useSurfaces()
 
 ## Authentication
 
-The external auth service sets a cookie. The Go BFF validates the cookie before serving the SPA. On the client, `AuthProvider` calls `getMe()` at startup to load the current account. On 401 API responses, `api.ts` automatically redirects to the login page.
+The external auth service sets a `X-Nuon-Auth` httponly cookie scoped to the app domain. The Go BFF validates the cookie on page loads and extracts the token server-side when reverse-proxying `/v1/*` API requests — the browser never sends the cookie to ctl-api directly. On the client, `AuthProvider` calls `getMe()` at startup to load the current account. On 401 API responses, `api.ts` automatically redirects to the login page.
 
 ## Runtime Config (`useConfig()`)
 

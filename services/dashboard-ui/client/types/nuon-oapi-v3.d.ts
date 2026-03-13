@@ -257,13 +257,11 @@ export interface paths {
   "/v1/apps/{app_id}/components/{component_id}": {
     /**
      * delete a component
-     * @deprecated
      * @description Delete a component.
      */
     delete: operations["DeleteAppComponent"];
     /**
      * update a component
-     * @deprecated
      * @description Update a component's configuration.
      */
     patch: operations["UpdateAppComponent"];
@@ -2601,7 +2599,7 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerConfigHelmDriverType": "secret" | "configmap" | "";
     /** @enum {string} */
-    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure" | "gcp";
+    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure";
     "app.AppSandboxConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -7529,7 +7527,6 @@ export interface operations {
   };
   /**
    * delete a component
-   * @deprecated
    * @description Delete a component.
    */
   DeleteAppComponent: {
@@ -7582,7 +7579,6 @@ export interface operations {
   };
   /**
    * update a component
-   * @deprecated
    * @description Update a component's configuration.
    */
   UpdateAppComponent: {
