@@ -324,19 +324,29 @@ func (c *cli) extensionEnv() map[string]string {
 	}
 
 	if c.cfg != nil {
-		if c.cfg.APIURL != "" {
+		if apiURL := c.cfg.GetString("api_url"); apiURL != "" {
+			env["NUON_API_URL"] = apiURL
+		} else if c.cfg.APIURL != "" {
 			env["NUON_API_URL"] = c.cfg.APIURL
 		}
-		if c.cfg.OrgID != "" {
+		if orgID := c.cfg.GetString("org_id"); orgID != "" {
+			env["NUON_ORG_ID"] = orgID
+		} else if c.cfg.OrgID != "" {
 			env["NUON_ORG_ID"] = c.cfg.OrgID
 		}
-		if c.cfg.AppID != "" {
+		if appID := c.cfg.GetString("app_id"); appID != "" {
+			env["NUON_APP_ID"] = appID
+		} else if c.cfg.AppID != "" {
 			env["NUON_APP_ID"] = c.cfg.AppID
 		}
-		if c.cfg.InstallID != "" {
+		if installID := c.cfg.GetString("install_id"); installID != "" {
+			env["NUON_INSTALL_ID"] = installID
+		} else if c.cfg.InstallID != "" {
 			env["NUON_INSTALL_ID"] = c.cfg.InstallID
 		}
-		if c.cfg.APIToken != "" {
+		if apiToken := c.cfg.GetString("api_token"); apiToken != "" {
+			env["NUON_API_TOKEN"] = apiToken
+		} else if c.cfg.APIToken != "" {
 			env["NUON_API_TOKEN"] = c.cfg.APIToken
 		}
 	}

@@ -105,7 +105,7 @@ var keys = keyMap{
 
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
-		key.WithHelp("↳", "select"),
+		key.WithHelp("↳", "select/expand"),
 	),
 	Copy: key.NewBinding(
 		key.WithKeys("c"),
