@@ -33,6 +33,13 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		Operation: "sandbox-provision",
+	}
+}
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.cfg = params.Cfg
