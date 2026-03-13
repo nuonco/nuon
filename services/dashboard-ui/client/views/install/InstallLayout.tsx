@@ -26,7 +26,7 @@ export const InstallLayout = () => {
   const params = useParams()
 
   return (
-    <InstallProvider installId={params?.installId} shouldPoll>
+    <InstallProvider installId={params?.installId} shouldPoll pollInterval={5000}>
       <PageSidebarProvider>
         <ToastProvider>
           <SurfacesProvider>

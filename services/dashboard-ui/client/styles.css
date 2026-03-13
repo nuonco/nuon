@@ -184,6 +184,29 @@ body {
   color: var(--foreground);
 }
 
+.topology-canvas {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark .topology-canvas {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+}
+
+/* Topology node status glow */
+.node-glow-running {
+  box-shadow: 0 0 0 1.5px rgba(103, 146, 244, 0.4), 0 0 20px rgba(103, 146, 244, 0.18);
+}
+.node-glow-error {
+  box-shadow: 0 0 0 1.5px rgba(239, 68, 68, 0.4), 0 0 18px rgba(239, 68, 68, 0.14);
+}
+.node-glow-warn {
+  box-shadow: 0 0 0 1.5px rgba(249, 115, 22, 0.35), 0 0 16px rgba(249, 115, 22, 0.12);
+}
+.node-glow-success {
+  box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.3), 0 0 14px rgba(34, 197, 94, 0.1);
+}
+
 .disable-ligatures {
   font-variant-ligatures: no-contextual !important;
 }
@@ -274,4 +297,22 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+@keyframes approval-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0px   color-mix(in srgb, var(--color-orange-400) 0%, transparent),
+      0 0 6px 1px  color-mix(in srgb, var(--color-orange-400) 40%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px   color-mix(in srgb, var(--color-orange-400) 8%, transparent),
+      0 0 14px 4px color-mix(in srgb, var(--color-orange-400) 20%, transparent);
+  }
+}
+
+.approval-pulse {
+  animation: approval-pulse 2.4s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--color-orange-400) 60%, transparent) !important;
 }
