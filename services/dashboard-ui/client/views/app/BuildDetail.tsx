@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -29,6 +30,20 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
   return (
     <>
       <BuildHeader component={component as TComponent} />
+      {build?.status_v2?.metadata?.duplicate_build ? (
+        <Banner theme="warn" className="mx-6 mt-4">
+          <div className="flex flex-col">
+            <Text weight="strong" variant="base">
+              Duplicate build
+            </Text>
+            <Text theme="neutral">
+              This build was triggered against the same commit and config as a
+              previous build. Push new changes to your branch to create a unique
+              build.
+            </Text>
+          </div>
+        </Banner>
+      ) : null}
       <PageSection id={CONTAINER_ID} isScrollable>
         {build?.log_stream ? (
           <LogStreamProvider
