@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -52,6 +53,8 @@ type InstallActionWorkflowRun struct {
 
 	// Role to be used when running this action
 	Role string `json:"role,omitempty" gorm:"column:role"`
+
+	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
 
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`

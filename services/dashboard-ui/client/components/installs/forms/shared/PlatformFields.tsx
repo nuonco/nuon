@@ -1,6 +1,6 @@
 import { Select } from '@/components/common/form/Select'
 import { Text } from '@/components/common/Text'
-import { AWS_REGIONS, AZURE_REGIONS, GCP_REGIONS } from '@/configs/cloud-regions'
+import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
 import type { IPlatformFields } from './types'
 
@@ -101,40 +101,6 @@ const AzureFields = ({
   )
 }
 
-const GCPFields = ({
-  draftValues,
-}: {
-  draftValues?: Record<string, string> | null
-}) => {
-  const options = GCP_REGIONS.map((region) => ({
-    value: region.value,
-    label: region?.iconVariant
-      ? `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text} [${region.value}]`
-      : region.text,
-  }))
-
-  return (
-    <fieldset className="flex flex-col gap-6 border-t pt-6">
-      <legend className="text-lg font-semibold mb-3 pr-6">
-        Set GCP configuration{' '}
-        <Text className="ml-1" variant="subtext" theme="error">
-          (required)
-        </Text>
-      </legend>
-
-      <FieldWrapper labelText="Select GCP region">
-        <Select
-          name="gcp_region"
-          options={options}
-          placeholder="Choose GCP region"
-          required
-          defaultValue={draftValues?.gcp_region || ''}
-        />
-      </FieldWrapper>
-    </fieldset>
-  )
-}
-
 export const PlatformFields = ({
   platform,
   draftValues,
@@ -145,10 +111,6 @@ export const PlatformFields = ({
 
   if (platform === 'azure') {
     return <AzureFields draftValues={draftValues} />
-  }
-
-  if (platform === 'gcp') {
-    return <GCPFields draftValues={draftValues} />
   }
 
   return null

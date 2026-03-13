@@ -119,7 +119,7 @@ const useUnifiedLogData = ({
   }
 
   const { data: staticResult, isLoading: staticIsLoading } = useQuery({
-    queryKey: ['log-stream-logs-static', logStream?.id, org.id, offset, staticTrigger],
+    queryKey: ['log-stream-logs-static', logStream?.id, org.id, staticTrigger],
     queryFn: () => getLogStreamLogsWithMeta({ logStreamId: logStream!.id, orgId: org.id, offset, order: 'desc' }),
     enabled: staticEnabled && !isStreamOpen && !!logStream?.id,
   })

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -29,12 +30,8 @@ func (h *RootHandler) RegisterRoutes(e *gin.Engine) error {
 
 func (h *RootHandler) Handle(c *gin.Context) {
 	token, err := c.Cookie(authCookie)
-	if err != nil || token == "" {
-		loginURL := "/login"
-		if h.cfg.AuthServiceUrl != "" {
-			loginURL = h.cfg.AuthServiceUrl + "/?url=" + h.cfg.AppUrl
-		}
-		c.Redirect(http.StatusFound, loginURL)
+	if (err != nil || token == "") && h.cfg.AuthServiceUrl != "" {
+		c.Redirect(http.StatusFound, h.cfg.AuthServiceUrl+"/?url="+url.QueryEscape(h.cfg.AppUrl))
 		return
 	}
 

@@ -69,7 +69,7 @@ const InstallTemplate = () => {
               {
                 path: `/runner`,
                 iconVariant: 'SneakerMove',
-                text: 'Runner',
+                text: 'Install runner',
               },
               {
                 path: '/sandbox',
@@ -196,7 +196,7 @@ const InstallTemplate = () => {
                 {
                   path: `/runner`,
                   iconVariant: 'SneakerMove',
-                  text: 'Runner',
+                  text: 'Install runner',
                 },
                 {
                   path: '/sandbox', //`/sandbox/${install?.install_sandbox_runs?.at(0)?.id || ""}`,

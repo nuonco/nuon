@@ -74,8 +74,6 @@ export const StackVersionDetails = ({
       <div className="flex flex-col gap-12 my-8">
         <StackVersionLinks version={version} />
 
-        <StackVersionOutputs version={version} />
-
         <StackVersionRuns version={version} />
       </div>
 
@@ -122,57 +120,46 @@ const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
   )
 }
 
-const StackVersionOutputs = ({ version }: { version: TStackVersion }) => {
-  return (
-    <div className="flex flex-col gap-4">
-      <Text variant="base" weight="strong">
-        Run outputs
-      </Text>
-
-      {version?.runs?.length ? (
-        version?.runs?.map((run, idx) => (
-          <div key={run?.id} className="flex flex-col">
-            <Text className="!flex items-center justify-between">
-              <Text variant="body" weight="strong">
-                {indexToOrdinal(idx)} run
-              </Text>
-              <ClickToCopyButton
-                className="w-fit self-end"
-                textToCopy={JSON.stringify(
-                  run?.data_contents || run?.data || {}
-                )}
-              />
-            </Text>
-            <div className="overflow-auto max-h-[600px]">
-              <KeyValueList
-                values={objectToKeyValueArray(run?.data_contents || {})}
-              />
-            </div>
-          </div>
-        ))
-      ) : (
-        <Text variant="subtext">No outputs for this stack version.</Text>
-      )}
-    </div>
-  )
-}
-
 const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
+  const reversedRuns = version?.runs ? [...version.runs].reverse() : []
   return (
     <div className="flex flex-col gap-4">
       <Text variant="base" weight="strong">
-        Run history
+        Runs
       </Text>
 
-      {version?.runs?.length ? (
-        version?.runs?.map((run, idx) => (
-          <div key={run?.id} className="flex items-center gap-4">
-            <Text variant="subtext">
-              {indexToOrdinal(idx)} run at{' '}
-              <Time variant="subtext" time={run?.created_at} />
-            </Text>
-          </div>
-        ))
+      {reversedRuns.length ? (
+        reversedRuns.map((run, displayIdx) => {
+          const originalIdx = version.runs.length - 1 - displayIdx
+          return (
+            <Expand
+              key={run?.id}
+              id={`run-${run?.id}`}
+              className="border rounded-md"
+              isOpen={displayIdx === 0}
+              heading={
+                <Text variant="base">
+                  {indexToOrdinal(originalIdx)} run &middot;{' '}
+                  <Time variant="subtext" time={run?.created_at} />
+                </Text>
+              }
+            >
+              <div className="border-t p-4 flex flex-col gap-2">
+                <ClickToCopyButton
+                  className="w-fit self-end"
+                  textToCopy={JSON.stringify(
+                    run?.data_contents || run?.data || {}
+                  )}
+                />
+                <div className="overflow-auto max-h-[600px]">
+                  <KeyValueList
+                    values={objectToKeyValueArray(run?.data_contents || {})}
+                  />
+                </div>
+              </div>
+            </Expand>
+          )
+        })
       ) : (
         <Text variant="subtext">No runs for this stack version.</Text>
       )}

@@ -2,6 +2,8 @@ FROM alpine:3.21 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
+# --- Node deps + SPA source ---
+
 FROM node:20-alpine AS deps
 
 WORKDIR /src
@@ -14,7 +16,6 @@ COPY \
     vitest.config.ts \
     vitest.setup.ts \
     package-lock.json \
-    next.config.mjs \
     postcss.config.js \
     tailwind.config.ts \
     package.json \
@@ -27,28 +28,25 @@ COPY test test
 COPY scripts scripts
 COPY public public
 COPY src src
+COPY client client
+
+# --- Lint targets ---
 
 FROM deps AS lint
 
-RUN npm run lint
+RUN npm run lint:spa
+
+FROM deps AS lint-local-spec
+
+RUN npm run lint:spa
+
+# --- Test targets ---
 
 FROM deps AS test
 
 ENV NUON_API_URL=https://api.stage.nuon.co
 
 RUN npm run test -- -t=30000
-
-FROM deps AS build
-
-ARG NUON_API_URL=https://api.stage.nuon.co
-ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
-ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
-
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build -- --no-lint
-
-FROM deps AS lint-local-spec
-
-RUN npm run lint
 
 FROM deps AS test-local-spec
 
@@ -57,16 +55,49 @@ ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
 RUN npm run test -- -t=30000
 
-FROM build AS final
+# --- Build SPA static assets ---
 
-ENV NEXT_PUBLIC_PROFILE_ROUTE=/api/auth/profile
-ENV NEXT_PUBLIC_ACCESS_TOKEN_ROUTE=/api/auth/access-token
+FROM deps AS build-spa
+
+ARG NUON_API_URL=https://api.stage.nuon.co
+
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build:spa
+
+# --- Build Go server ---
+
+FROM golang:1.25.4-alpine AS build-server
+
+WORKDIR /src
+
+RUN apk add --no-cache git
+
+COPY go.mod go.sum ./
+COPY pkg pkg
+COPY sdks sdks
+COPY server services/dashboard-ui/server
+
+RUN go build -o /dashboard-server ./services/dashboard-ui/server
+
+# --- Final image ---
+
+FROM alpine:3.21 AS final
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=build-spa /src/dist /app/dist
+COPY --from=deps /src/public /app/public
+COPY --from=build-server /dashboard-server /app/dashboard-server
+
+WORKDIR /app
 
 ARG VERSION
 ARG GIT_REF
 ENV VERSION=$VERSION
 ENV DD_VERSION=$VERSION
 ENV GIT_REF=$GIT_REF
+ENV DIST_DIR=./dist
+ENV PUBLIC_DIR=./public
+ENV HTTP_PORT=4000
 
 EXPOSE 4000
-ENTRYPOINT ["npm", "run", "start"]
+ENTRYPOINT ["/app/dashboard-server", "serve"]

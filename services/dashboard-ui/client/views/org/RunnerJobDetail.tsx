@@ -19,7 +19,7 @@ const RunnerJobDetailContent = () => {
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
-          { path: `/${org?.id}/runner`, text: 'Builds' },
+          { path: `/${org?.id}/runner`, text: 'Build runner' },
           { path: '', text: getJobName(job) },
         ]}
       />

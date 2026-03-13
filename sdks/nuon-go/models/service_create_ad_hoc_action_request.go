@@ -22,6 +22,9 @@ type ServiceCreateAdHocActionRequest struct {
 	// command
 	Command string `json:"command,omitempty"`
 
+	// enable kube config
+	EnableKubeConfig *bool `json:"enable_kube_config,omitempty"`
+
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 

@@ -35,7 +35,7 @@ export const ActionRunHeader = ({
           </Text>
           <Text variant="subtext">
             <Link
-              href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.config?.action_workflow_id}/${actionRun?.id}`}
+              href={`/${org.id}/installs/${step.owner_id}/actions/${actionRun?.config?.action_workflow_id}/runs/${actionRun?.id}`}
             >
               View run details <Icon variant="CaretRight" />
             </Link>

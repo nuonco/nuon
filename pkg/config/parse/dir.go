@@ -131,6 +131,27 @@ func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
 	}, nil
 }
 
+func (c *ConfigDir) getBreakGlass() (*config.BreakGlass, error) {
+	if c.BreakGlass == nil && len(c.BreakGlassDir) < 1 {
+		return nil, nil
+	}
+
+	if c.BreakGlass != nil && len(c.BreakGlassDir) > 0 {
+		return nil, ParseErr{
+			Description: "Can not provide break_glass both with a break_glass.toml and break_glass/ directory",
+			Err:         errors.New("Can not provide break_glass both with a break_glass.toml and break_glass/ directory"),
+		}
+	}
+
+	if c.BreakGlass != nil {
+		return c.BreakGlass, nil
+	}
+
+	return &config.BreakGlass{
+		Roles: c.BreakGlassDir,
+	}, nil
+}
+
 func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	permissions, err := c.getPermissions()
 	if err != nil {
@@ -153,12 +174,16 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	breakGlass, err := c.getBreakGlass()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &config.AppConfig{
 		Components:     c.Components,
 		Actions:        c.Actions,
 		Installs:       c.Installs,
-		BreakGlass:     c.BreakGlass,
+		BreakGlass:     breakGlass,
 		Secrets:        secrets,
 		Branch:         c.Branch,
 		Inputs:         inputs,

@@ -20,14 +20,23 @@ export function InstallProvider({
   installId,
   pollInterval = 20000,
   shouldPoll = false,
+  isSkeletonLoading = false,
+  loadingElement = <ProviderLoading />,
 }: {
   children: ReactNode
   installId: string
   pollInterval?: number
   shouldPoll?: boolean
+  isSkeletonLoading?: boolean
+  loadingElement?: ReactNode
 }) {
   const { org } = useOrg()
-  const { data: install, isLoading, error, refetch } = useQuery({
+  const {
+    data: install,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['install', org.id!, installId],
     queryFn: () => getInstall({ orgId: org.id!, installId }),
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -36,7 +45,7 @@ export function InstallProvider({
 
   if (error) return <ProviderError error={error} />
 
-  if (isLoading || !install) return <ProviderLoading />
+  if (isLoading || !install) return loadingElement
 
   return (
     <InstallContext.Provider value={{ install, refresh: refetch }}>

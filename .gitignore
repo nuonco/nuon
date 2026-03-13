@@ -88,5 +88,7 @@ bins/nuonctl/nuonctl
 bins/lsp/lsp
 *.vsix
 
-
+# ignore workspaces
+ws-*/
+agent-day2/
 agent-day2/*

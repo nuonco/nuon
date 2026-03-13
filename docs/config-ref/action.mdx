@@ -18,6 +18,7 @@ title: 'Action'
 | **`dependencies`**<br/>array | component dependencies referenced in this action Automatically extracted from template references in steps (e.g., \{\{.component.component_name\}\}) | **Optional** | `"database"`, `"api-server"` |
 | **`break_glass_role`**<br/>string | IAM role for break-glass access to this action When set, allows the action to use a break glass role for elevated permissions during critical operations. Break glass roles are defined in CloudForma... | **Optional** | `"bucket-operations-break-glass"`, `"database-migration-break-glass"` |
 | **`role`**<br/>string | IAM role name for action execution Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specif... | **Optional** | `"{{.nuon.install.id}}-maintenance"` |
+| **`enable_kube_config`**<br/>boolean | whether to fetch and inject kubeconfig for this action When set to false, the action runner will not fetch the install's kubeconfig or set the KUBECONFIG env var. Defaults to true. Set to false for... | **Optional** | `"true"`, `"false"` |
 
 ### `triggers`
 

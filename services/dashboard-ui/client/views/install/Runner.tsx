@@ -82,7 +82,7 @@ export const Runner = () => {
   if (!install?.runner_id) {
     return (
       <PageSection isScrollable>
-        <PageTitle title={`Runner | ${install?.name}`} />
+        <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },
@@ -93,7 +93,7 @@ export const Runner = () => {
             },
             {
               path: `/${org?.id}/installs/${install?.id}/runner`,
-              text: 'Runner',
+              text: 'Install runner',
             },
           ]}
         />
@@ -110,7 +110,7 @@ export const Runner = () => {
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
       <PageSection className="@container" isScrollable>
-        <PageTitle title={`Runner | ${install?.name}`} />
+        <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },
@@ -121,7 +121,7 @@ export const Runner = () => {
             },
             {
               path: `/${org?.id}/installs/${install?.id}/runner`,
-              text: 'Runner',
+              text: 'Install runner',
             },
           ]}
         />

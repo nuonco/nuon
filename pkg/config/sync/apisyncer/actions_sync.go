@@ -60,12 +60,18 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		}
 	}
 
+	enableKubeConfig := true
+	if action.EnableKubeConfig != nil {
+		enableKubeConfig = *action.EnableKubeConfig
+	}
+
 	request := &models.ServiceCreateActionWorkflowConfigRequest{
 		AppConfigID:       generics.ToPtr(s.state.CfgID),
 		Timeout:           timeout.Nanoseconds(),
 		Dependencies:      action.Dependencies,
 		BreakGlassRoleArn: action.BreakGlassRole,
 		Role:              action.Role,
+		EnableKubeConfig:  &enableKubeConfig,
 	}
 
 	for _, ref := range action.References {

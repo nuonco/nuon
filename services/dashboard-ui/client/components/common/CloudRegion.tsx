@@ -1,9 +1,9 @@
-import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
+import { AWS_REGIONS, AZURE_REGIONS, GCP_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
 import { Text, IText } from './Text'
 
 interface ICloudRegion extends Omit<IText, 'children'> {
-  platform: 'aws' | 'azure'
+  platform: 'aws' | 'azure' | 'gcp'
   location?: string
   region?: string
 }
@@ -17,7 +17,9 @@ export const CloudRegion = ({
   const cloudRegion =
     platform === 'azure'
       ? AZURE_REGIONS.find((r) => r.value === location)
-      : AWS_REGIONS.find((r) => r.value === region)
+      : platform === 'gcp'
+        ? GCP_REGIONS.find((r) => r.value === region)
+        : AWS_REGIONS.find((r) => r.value === region)
 
   return (
     <Text {...props}>
