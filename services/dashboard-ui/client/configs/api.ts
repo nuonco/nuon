@@ -1,8 +1,8 @@
 function getApiUrl(): string {
-  if (typeof window !== 'undefined' && window.__NUON_CONFIG__?.apiUrl) {
-    return window.__NUON_CONFIG__.apiUrl
+  if (typeof window !== 'undefined' && window.__NUON_CONFIG__ !== undefined) {
+    return window.__NUON_CONFIG__.apiUrl ?? ''
   }
-  return 'https://api.nuon.co'
+  return ''
 }
 
 export const API_URL = getApiUrl()
