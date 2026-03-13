@@ -504,6 +504,8 @@ type ClientService interface {
 
 	GetOrgInvites(params *GetOrgInvitesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgInvitesOK, error)
 
+	GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgPendingApprovalsOK, error)
+
 	GetOrgRunnerGroup(params *GetOrgRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgRunnerGroupOK, error)
 
 	GetOrgStats(params *GetOrgStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgStatsOK, error)
@@ -10453,6 +10455,50 @@ func (a *Client) GetOrgInvites(params *GetOrgInvitesParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetOrgInvites: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetOrgPendingApprovals gets all pending workflow step approvals for the org
+*/
+func (a *Client) GetOrgPendingApprovals(params *GetOrgPendingApprovalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgPendingApprovalsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOrgPendingApprovalsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOrgPendingApprovals",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/pending-approvals",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOrgPendingApprovalsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOrgPendingApprovalsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOrgPendingApprovals: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

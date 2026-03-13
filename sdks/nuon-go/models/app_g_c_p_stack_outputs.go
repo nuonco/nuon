@@ -17,11 +17,17 @@ import (
 // swagger:model app.GCPStackOutputs
 type AppGCPStackOutputs struct {
 
-	// break glass sa email
-	BreakGlassSaEmail string `json:"break_glass_sa_email,omitempty"`
+	// break glass sa emails
+	BreakGlassSaEmails map[string]string `json:"break_glass_sa_emails,omitempty"`
+
+	// custom sa emails
+	CustomSaEmails map[string]string `json:"custom_sa_emails,omitempty"`
 
 	// deprovision sa email
 	DeprovisionSaEmail string `json:"deprovision_sa_email,omitempty"`
+
+	// install inputs
+	InstallInputs map[string]string `json:"install_inputs,omitempty"`
 
 	// maintenance sa email
 	MaintenanceSaEmail string `json:"maintenance_sa_email,omitempty"`
