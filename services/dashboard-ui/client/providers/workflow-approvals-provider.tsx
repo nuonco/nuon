@@ -1,0 +1,89 @@
+import { createContext, useEffect, useRef, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getPendingApprovals } from '@/lib'
+import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
+import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
+import { Toast } from '@/components/surfaces/Toast'
+import { toSentenceCase } from '@/utils/string-utils'
+import type { TWorkflowStepApproval } from '@/types'
+
+type WorkflowApprovalsContextValue = {
+  approvals: TWorkflowStepApproval[]
+  isLoading: boolean
+  refresh: () => void
+}
+
+export const WorkflowApprovalsContext = createContext<
+  WorkflowApprovalsContextValue | undefined
+>(undefined)
+
+export function WorkflowApprovalsProvider({
+  children,
+}: {
+  children: ReactNode
+}) {
+  const { org } = useOrg()
+  const { addToast } = useToast()
+  const seenIds = useRef<Set<string>>(new Set())
+  const initialized = useRef(false)
+
+  const {
+    data: approvals,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['workflow-approvals', org.id],
+    queryFn: () => getPendingApprovals({ orgId: org.id }),
+    refetchInterval: 20_000,
+  })
+
+  useEffect(() => {
+    if (!approvals) return
+
+    if (!initialized.current) {
+      for (const approval of approvals) {
+        seenIds.current.add(approval.id)
+      }
+      initialized.current = true
+      return
+    }
+
+    for (const approval of approvals) {
+      if (!seenIds.current.has(approval.id)) {
+        seenIds.current.add(approval.id)
+        const step = approval.workflow_step
+        const stepName = step?.name
+        const workflowUrl =
+          step?.owner_id && step?.install_workflow_id
+            ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
+            : null
+        addToast(
+          <Toast
+            heading={stepName ? toSentenceCase(stepName) : 'Approval required'}
+            theme="warn"
+          >
+            <Text>Workflow step needs approved.</Text>
+            {workflowUrl ? (
+              <Link href={workflowUrl}>
+                View details <Icon variant="CaretRight" />
+              </Link>
+            ) : (
+              'A workflow step is waiting for your approval.'
+            )}
+          </Toast>
+        )
+      }
+    }
+  }, [approvals])
+
+  return (
+    <WorkflowApprovalsContext.Provider
+      value={{ approvals: approvals ?? [], isLoading, refresh: refetch }}
+    >
+      {children}
+    </WorkflowApprovalsContext.Provider>
+  )
+}

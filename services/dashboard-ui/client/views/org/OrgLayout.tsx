@@ -8,6 +8,7 @@ import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
 import { PageTitleProvider } from '@/providers/page-title-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
 import { OrgProvider } from '@/providers/org-provider'
+import { WorkflowApprovalsProvider } from '@/providers/workflow-approvals-provider'
 import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
@@ -26,21 +27,23 @@ export const OrgLayout = () => {
             <PageTitleProvider>
               <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
                 <ToastProvider>
-                  <SurfacesProvider>
-                    <MainLayout
-                      versions={{
-                        api: {
-                          git_ref: versions?.api?.git_ref ?? '',
-                          version: versions?.api?.version ?? '',
-                        },
-                        ui: {
-                          version: versions?.ui?.version ?? '',
-                        },
-                      }}
-                    >
-                      <Outlet />
-                    </MainLayout>
-                  </SurfacesProvider>
+                  <WorkflowApprovalsProvider>
+                    <SurfacesProvider>
+                      <MainLayout
+                        versions={{
+                          api: {
+                            git_ref: versions?.api?.git_ref ?? '',
+                            version: versions?.api?.version ?? '',
+                          },
+                          ui: {
+                            version: versions?.ui?.version ?? '',
+                          },
+                        }}
+                      >
+                        <Outlet />
+                      </MainLayout>
+                    </SurfacesProvider>
+                  </WorkflowApprovalsProvider>
                 </ToastProvider>
               </SidebarProvider>
             </PageTitleProvider>

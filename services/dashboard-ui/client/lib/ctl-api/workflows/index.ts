@@ -1,6 +1,7 @@
 export * from './approve-all-workflow-steps'
 export * from './approve-workflow-step'
 export * from './cancel-workflow'
+export * from './get-pending-approvals'
 export * from './get-workflow'
 export * from './get-workflow-steps'
 export * from './get-workflow-step'
