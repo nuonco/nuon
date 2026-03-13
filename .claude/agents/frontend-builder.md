@@ -30,7 +30,7 @@ You are an expert frontend developer specializing in modern React applications w
 The dashboard-ui is a **Go BFF + React SPA**:
 
 - **`client/`** — React SPA. **All new work goes here.**
-- **`server/`** — Go BFF (Gin + Uber fx): serves the SPA, validates auth cookies, injects `window.__NUON_CONFIG__`
+- **`server/`** — Go BFF (Gin + Uber fx): serves the SPA, validates auth cookies, injects `window.__NUON_CONFIG__`, and reverse-proxies all `/v1/*` ctl-api requests (extracts the `X-Nuon-Auth` cookie server-side, forwards with `Authorization: Bearer` header)
 
 ### Technology Stack
 - **Routing**: React Router v7
