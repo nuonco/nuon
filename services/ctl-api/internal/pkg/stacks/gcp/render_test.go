@@ -46,9 +46,50 @@ func testInputWithBreakGlass() *stacks.TemplateInput {
 			{
 				CloudPlatform: "gcp",
 				Type:          app.AWSIAMRoleTypeBreakGlass,
+				Name:          "emergency-access",
 				Policies: []app.AppAWSIAMPolicyConfig{
 					{GCPPermissions: []string{"iam.roles.get"}},
 				},
+			},
+		},
+	}
+	return inp
+}
+
+func testInputWithMultipleBreakGlass() *stacks.TemplateInput {
+	inp := testInput()
+	inp.AppCfg.BreakGlassConfig = app.AppBreakGlassConfig{
+		Roles: []app.AppAWSIAMRoleConfig{
+			{
+				CloudPlatform: "gcp",
+				Type:          app.AWSIAMRoleTypeBreakGlass,
+				Name:          "emergency-access",
+				Policies: []app.AppAWSIAMPolicyConfig{
+					{GCPPermissions: []string{"iam.roles.get"}},
+				},
+			},
+			{
+				CloudPlatform: "gcp",
+				Type:          app.AWSIAMRoleTypeBreakGlass,
+				Name:          "admin-access",
+				Policies: []app.AppAWSIAMPolicyConfig{
+					{GCPPermissions: []string{"compute.instances.list", "storage.buckets.list"}},
+				},
+			},
+		},
+	}
+	return inp
+}
+
+func testInputWithCustomRoles() *stacks.TemplateInput {
+	inp := testInput()
+	inp.AppCfg.PermissionsConfig.CustomRoles = []app.AppAWSIAMRoleConfig{
+		{
+			CloudPlatform: "gcp",
+			Type:          app.AWSIAMRoleTypeCustom,
+			Name:          "db-reader",
+			Policies: []app.AppAWSIAMPolicyConfig{
+				{GCPPermissions: []string{"cloudsql.instances.list"}},
 			},
 		},
 	}
@@ -106,8 +147,7 @@ func TestRenderPermissions(t *testing.T) {
 		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
-		assert.Contains(t, tfvars, "has_break_glass          = false")
-		assert.NotContains(t, tfvars, "break_glass_permissions")
+		assert.Contains(t, tfvars, "break_glass_roles = {\n}")
 	})
 
 	t.Run("with break glass", func(t *testing.T) {
@@ -116,12 +156,40 @@ func TestRenderPermissions(t *testing.T) {
 
 		tfvars := extractTfvars(t, out)
 
-		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions", "break_glass_permissions"} {
+		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
-		assert.Contains(t, tfvars, "has_break_glass          = true")
+		assert.Contains(t, tfvars, `"emergency-access"`)
 		assert.Contains(t, tfvars, `["iam.roles.get"]`)
+		assert.Contains(t, tfvars, "enabled         = false")
 	})
+}
+
+func TestRenderMultipleBreakGlassRoles(t *testing.T) {
+	out, _, err := Render(testInputWithMultipleBreakGlass())
+	require.NoError(t, err)
+
+	tfvars := extractTfvars(t, out)
+
+	assert.Contains(t, tfvars, `"emergency-access"`)
+	assert.Contains(t, tfvars, `"admin-access"`)
+	assert.Contains(t, tfvars, `["iam.roles.get"]`)
+	assert.Contains(t, tfvars, `["compute.instances.list","storage.buckets.list"]`)
+
+	// Both should be disabled by default
+	count := strings.Count(tfvars, "enabled         = false")
+	assert.Equal(t, 2, count, "both breakglass roles should be disabled by default")
+}
+
+func TestRenderCustomRoles(t *testing.T) {
+	out, _, err := Render(testInputWithCustomRoles())
+	require.NoError(t, err)
+
+	tfvars := extractTfvars(t, out)
+
+	assert.Contains(t, tfvars, `"db-reader"`)
+	assert.Contains(t, tfvars, `["cloudsql.instances.list"]`)
+	assert.Contains(t, tfvars, "enabled         = true")
 }
 
 func TestRenderPredefinedRoles(t *testing.T) {
@@ -134,42 +202,30 @@ func TestRenderPredefinedRoles(t *testing.T) {
 		for _, v := range []string{"provision_predefined_role", "maintenance_predefined_role", "deprovision_predefined_role"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
-		assert.NotContains(t, tfvars, "break_glass_predefined_role")
 	})
 
-	t.Run("with break glass", func(t *testing.T) {
-		out, _, err := Render(testInputWithBreakGlass())
-		require.NoError(t, err)
-
-		tfvars := extractTfvars(t, out)
-
-		for _, v := range []string{"provision_predefined_role", "maintenance_predefined_role", "deprovision_predefined_role", "break_glass_predefined_role"} {
-			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
+	t.Run("with break glass predefined role", func(t *testing.T) {
+		inp := testInput()
+		inp.AppCfg.BreakGlassConfig = app.AppBreakGlassConfig{
+			Roles: []app.AppAWSIAMRoleConfig{
+				{
+					CloudPlatform: "gcp",
+					Type:          app.AWSIAMRoleTypeBreakGlass,
+					Name:          "elevated-access",
+					Policies: []app.AppAWSIAMPolicyConfig{
+						{GCPPredefinedRole: "roles/editor"},
+					},
+				},
+			},
 		}
-	})
-}
 
-func TestRenderBreakGlassConditional(t *testing.T) {
-	t.Run("without break glass omits break glass vars", func(t *testing.T) {
-		out, _, err := Render(testInput())
+		out, _, err := Render(inp)
 		require.NoError(t, err)
 
 		tfvars := extractTfvars(t, out)
 
-		assert.Contains(t, tfvars, "has_break_glass          = false")
-		assert.NotContains(t, tfvars, "break_glass_permissions")
-		assert.NotContains(t, tfvars, "break_glass_predefined_role")
-	})
-
-	t.Run("with break glass includes break glass vars", func(t *testing.T) {
-		out, _, err := Render(testInputWithBreakGlass())
-		require.NoError(t, err)
-
-		tfvars := extractTfvars(t, out)
-
-		assert.Contains(t, tfvars, "has_break_glass          = true")
-		assert.Contains(t, tfvars, "break_glass_permissions")
-		assert.Contains(t, tfvars, "break_glass_predefined_role")
+		assert.Contains(t, tfvars, `"elevated-access"`)
+		assert.Contains(t, tfvars, `predefined_role = "roles/editor"`)
 	})
 }
 

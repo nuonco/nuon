@@ -75,6 +75,7 @@ export type TOrgStats = {
 // install
 export type TInstall = components['schemas']['app.Install'] & {
   app?: components['schemas']['app.App']
+  gcp_account?: { project_id?: string; region?: string }
   org_id?: string
 }
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']

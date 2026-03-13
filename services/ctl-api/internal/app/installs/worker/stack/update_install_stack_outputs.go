@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
@@ -108,6 +109,10 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		}
 	case app.AppRunnerTypeGCP:
 		decoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToSliceHookFunc(","),
+				pkggenerics.StringToMapDecodeHook(),
+			),
 			WeaklyTypedInput: true,
 			Result:           &outputs.GCPStackOutputs,
 		}
@@ -159,14 +164,17 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return errors.Wrap(err, "unable to validate region")
 	}
 
-	// TODO(sk): this can be aws or azure
-	data, err := stacks.DecodeAWSStackOutputData(run.Data)
-	if err != nil {
-		return errors.Wrap(err, "unable to decode run data")
+	// extract install_inputs from stack outputs
+	var inputValues map[string]string
+	if outputs.GCPStackOutputs != nil {
+		inputValues = outputs.GCPStackOutputs.InstallInputs
+	} else {
+		data, err := stacks.DecodeAWSStackOutputData(run.Data)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode run data")
+		}
+		inputValues = extractAppInputsFromStackOutputs(data)
 	}
-
-	// extract app_inputs from stack outputs for install_stack sourced inputs
-	inputValues := extractAppInputsFromStackOutputs(data)
 	if len(inputValues) > 0 {
 		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
 			InstallID:             install.ID,
