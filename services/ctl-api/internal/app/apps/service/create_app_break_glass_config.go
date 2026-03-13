@@ -78,6 +78,7 @@ func (s *service) createAppBreakGlassConfig(ctx context.Context, appID string, r
 	for _, role := range req.Roles {
 		obj.Roles = append(obj.Roles, app.AppAWSIAMRoleConfig{
 			AppConfigID:             req.AppConfigID,
+			CloudPlatform:           role.CloudPlatform,
 			Type:                    app.AWSIAMRoleTypeBreakGlass,
 			Name:                    role.Name,
 			Description:             role.Description,
