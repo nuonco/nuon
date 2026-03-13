@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//	helpers concerned with the cross-domain nuon auth cookie
+// helpers concerned with the cross-domain nuon auth cookie
 func (s *service) clearCookie(c *gin.Context) {
 	http.SetCookie(c.Writer, &http.Cookie{
 		Name:     NuonAuthCookieName,
