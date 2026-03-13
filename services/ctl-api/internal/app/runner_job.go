@@ -83,6 +83,7 @@ const (
 	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
 	RunnerJobTypeKubernetesManifestBuild RunnerJobType = "kubernetes-manifest-build"
 	RunnerJobTypeNOOPBuild               RunnerJobType = "noop-build"
+	RunnerJobTypeSandboxBuild            RunnerJobType = "sandbox-build"
 
 	// sync job types
 	RunnerJobTypeOCISync            RunnerJobType = "oci-sync"
@@ -136,7 +137,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeNOOPBuild,
 		RunnerJobTypeTerraformModuleBuild,
 		RunnerJobTypeHelmChartBuild,
-		RunnerJobTypeKubernetesManifestBuild:
+		RunnerJobTypeKubernetesManifestBuild,
+		RunnerJobTypeSandboxBuild:
 		return RunnerJobGroupBuild
 
 		// syncing
