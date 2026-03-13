@@ -322,8 +322,8 @@ export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 
 // api version
 export type TAPIVersion = {
-  git_ref: string
-  version: string
+  ui: { version: string; git_ref: string }
+  api: { version: string; git_ref: string }
 }
 
 // terraform workspaces
