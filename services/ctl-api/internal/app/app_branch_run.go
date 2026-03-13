@@ -53,6 +53,10 @@ type AppBranchRun struct {
 	// AppConfigID is the app config that was created/synced during this run
 	AppConfigID string `json:"app_config_id,omitempty" temporaljson:"app_config_id,omitzero,omitempty"`
 
+	// LogStreamID is the log stream created during this run for event tracking
+	LogStreamID *string    `json:"log_stream_id,omitempty" temporaljson:"log_stream_id,omitzero,omitempty"`
+	LogStream   *LogStream `json:"log_stream,omitempty" temporaljson:"log_stream,omitzero,omitempty"`
+
 	// CommitSHA is the VCS commit that triggered or is associated with this run
 	// DEPRECATED: Use VCSConnectionCommit relationship instead
 	CommitSHA string `json:"commit_sha,omitzero" temporaljson:"commit_sha,omitzero,omitempty"`

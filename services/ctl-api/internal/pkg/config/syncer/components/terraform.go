@@ -201,12 +201,9 @@ func validateTerraformComponent(comp *config.Component) error {
 	// Note: In the API, if version is empty it defaults to latest from tfClient.GetLatestVersion()
 	// For now, we'll allow empty and let GORM default handle it
 	if comp.TerraformModule.TerraformVersion != "" {
-		// Validate version is within min/max bounds
-		// TODO: Get latest version dynamically from tfClient.GetLatestVersion()
-		// For now, using hardcoded values that match the API
-		minVersion := "1.8.0"
-		maxVersion := "1.10.5" // This should come from tfClient
-		if err := validation.ValidateTerraformVersion(comp.TerraformModule.TerraformVersion, minVersion, maxVersion); err != nil {
+		// Validate only the minimum version bound; no upper bound since the DB syncer
+		// does not have access to tfClient.GetLatestVersion().
+		if err := validation.ValidateTerraformMinVersion(comp.TerraformModule.TerraformVersion); err != nil {
 			return err
 		}
 	}

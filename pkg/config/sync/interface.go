@@ -33,6 +33,12 @@ type Syncer interface {
 	// This should only be called after a successful Sync() operation.
 	GetComponentStateIds() []string
 
+	// GetActionStateIds returns the IDs of all actions that were synced
+	// during the most recent sync operation.
+	//
+	// This should only be called after a successful Sync() operation.
+	GetActionStateIds() []string
+
 	// GetComponentsScheduled returns the components that had builds scheduled
 	// during the most recent sync operation.
 	//
