@@ -247,24 +247,22 @@ func (m *model) setSelected() []tea.Cmd {
 	m.populateStepDetailView(true)
 
 	// enable actions for install stack
-	switch m.selectedStep.StepTargetType {
-	case "install_stack_versions":
+	if m.selectedStep.StepTargetType == "install_stack_versions" {
 		m.keys.OpenQuickLink.SetEnabled(true)
 		m.keys.OpenTemplateLink.SetEnabled(true)
-	case "install_deploys":
-		if m.selectedStep.Approval != nil {
-			m.setLogMessage(
-				fmt.Sprintf(
-					"[%02d] id:%s fetching approval contents",
-					m.stepsList.Index(),
-					m.selectedStep.ID,
-				),
-				"info",
-			)
-			m.approvalContents.loading = true
-			cmds = append(cmds, m.getWorkflowStepApprovalContentsCmd)
-		}
+	}
 
+	if m.stepHasPlanDiff(m.selectedStep) && m.selectedStep.Approval != nil {
+		m.setLogMessage(
+			fmt.Sprintf(
+				"[%02d] id:%s fetching approval contents",
+				m.stepsList.Index(),
+				m.selectedStep.ID,
+			),
+			"info",
+		)
+		m.approvalContents.loading = true
+		cmds = append(cmds, m.getWorkflowStepApprovalContentsCmd)
 	}
 
 	m.focus = "detail"
