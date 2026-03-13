@@ -70,6 +70,8 @@ func init() {
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
 	config.RegisterDefault("evaluation_journey_enabled", true)
+	config.RegisterDefault("webhook_urls", []string{})
+	config.RegisterDefault("webhook_timeout", "5s")
 
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
 
@@ -208,6 +210,10 @@ type Config struct {
 	LoopsAPIKey             string `config:"loops_api_key" validate:"required"`
 	InternalSlackWebhookURL string `config:"internal_slack_webhook_url" validate:"required"`
 	DisableNotifications    bool   `config:"disable_notifications"`
+
+	// webhook configuration
+	WebhookURLs    []string      `config:"webhook_urls"`
+	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
 	// configuration for runners
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
