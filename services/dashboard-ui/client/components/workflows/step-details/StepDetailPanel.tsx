@@ -7,6 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useWorkflow } from '@/hooks/use-workflow'
 import { getWorkflowStep } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from './action-run-details/ActionRunStepDetails'
@@ -96,13 +97,15 @@ export const StepDetailPanel = ({
 
 export const StepDetailPanelButton = ({
   step,
+  approvalPrompt,
   planOnly = false,
 }: {
   approvalPrompt?: boolean
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const { addPanel } = useSurfaces()
+  const { addPanel, panels } = useSurfaces()
+  const { workflow } = useWorkflow()
   const [searchParams] = useSearchParams()
 
   const panel = (
@@ -119,8 +122,30 @@ export const StepDetailPanelButton = ({
 
   const handleAddPanel = () => addPanel(panel, step.id)
 
+  const isPendingApproval =
+    approvalPrompt &&
+    step.execution_type === 'approval' &&
+    !step.approval?.response &&
+    step.status?.status !== 'discarded'
+
+  const isPendingAwaitStack =
+    step.step_target_type === 'install_stack_versions' &&
+    step.name !== 'generate install stack' &&
+    !!step.started_at &&
+    !step.finished
+
+  const workflowCancelled = workflow?.status?.status === 'cancelled'
+
   useEffect(() => {
     if (step.id && step.id === searchParams?.get('panel')) {
+      handleAddPanel()
+      return
+    }
+    if (
+      !workflowCancelled &&
+      (isPendingApproval || isPendingAwaitStack) &&
+      !panels.some((p) => p.key === step.id)
+    ) {
       handleAddPanel()
     }
   }, [])

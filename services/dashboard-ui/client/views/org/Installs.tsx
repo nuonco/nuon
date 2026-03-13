@@ -13,7 +13,7 @@ export const Installs = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout>
+    <PageLayout isScrollable>
       <PageTitle title={`Installs | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

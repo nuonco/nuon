@@ -75,6 +75,7 @@ export type TOrgStats = {
 // install
 export type TInstall = components['schemas']['app.Install'] & {
   app?: components['schemas']['app.App']
+  gcp_account?: { project_id?: string; region?: string }
   org_id?: string
 }
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']
@@ -321,8 +322,8 @@ export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 
 // api version
 export type TAPIVersion = {
-  git_ref: string
-  version: string
+  ui: { version: string; git_ref: string }
+  api: { version: string; git_ref: string }
 }
 
 // terraform workspaces

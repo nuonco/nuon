@@ -13,19 +13,27 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+// GCPRoleTemplateInput holds the per-role data rendered into the template.
+type GCPRoleTemplateInput struct {
+	Name           string
+	Permissions    string
+	PredefinedRole string
+}
+
 // GCPTemplateInput extends TemplateInput with pre-marshaled GCP IAM permission lists.
 type GCPTemplateInput struct {
 	*stacks.TemplateInput
 	ProvisionPermissions   string
 	MaintenancePermissions string
 	DeprovisionPermissions string
-	BreakGlassPermissions  string
-	HasBreakGlass          bool
 
 	ProvisionPredefinedRole   string
 	MaintenancePredefinedRole string
 	DeprovisionPredefinedRole string
-	BreakGlassPredefinedRole  string
+
+	BreakGlassRoles []GCPRoleTemplateInput
+	CustomRoles     []GCPRoleTemplateInput
+	InstallInputs   []string
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
@@ -34,18 +42,30 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", errors.Wrap(err, "unable to parse gcp template")
 	}
 
-	prov, maint, deprov, bg, provPredefined, maintPredefined, deprovPredefined, bgPredefined := extractGCPPermissions(inputs.AppCfg)
+	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPermissions(inputs.AppCfg)
+	breakGlassRoles := extractGCPRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
+	customRoles := extractGCPRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
+
+	var installInputs []string
+	if inputs.AppCfg != nil {
+		for _, input := range inputs.AppCfg.InputConfig.AppInputs {
+			if input.Source == app.AppInputSourceCustomer {
+				installInputs = append(installInputs, input.Name)
+			}
+		}
+	}
+
 	gcpInputs := &GCPTemplateInput{
 		TemplateInput:             inputs,
 		ProvisionPermissions:      prov,
 		MaintenancePermissions:    maint,
 		DeprovisionPermissions:    deprov,
-		BreakGlassPermissions:     bg,
-		HasBreakGlass:             bg != "[]",
 		ProvisionPredefinedRole:   provPredefined,
 		MaintenancePredefinedRole: maintPredefined,
 		DeprovisionPredefinedRole: deprovPredefined,
-		BreakGlassPredefinedRole:  bgPredefined,
+		BreakGlassRoles:           breakGlassRoles,
+		CustomRoles:               customRoles,
+		InstallInputs:             installInputs,
 	}
 
 	var buf bytes.Buffer
@@ -68,36 +88,22 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	return res, checksum, nil
 }
 
-// extractGCPPermissions reads GCP IAM permissions from the app config for each role type.
-// Returns empty arrays for any role type that has no GCP permissions configured.
-func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, breakGlass, provPredefined, maintPredefined, deprovPredefined, bgPredefined string) {
+// extractGCPStandardPermissions reads GCP IAM permissions for the standard roles (provision, maintenance, deprovision).
+func extractGCPStandardPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, provPredefined, maintPredefined, deprovPredefined string) {
 	provision = "[]"
 	maintenance = "[]"
 	deprovision = "[]"
-	breakGlass = "[]"
-	provPredefined = ""
-	maintPredefined = ""
-	deprovPredefined = ""
-	bgPredefined = ""
 
 	if appCfg == nil {
 		return
 	}
 
-	allRoles := append(appCfg.PermissionsConfig.Roles, appCfg.BreakGlassConfig.Roles...)
-	for _, role := range allRoles {
+	for _, role := range appCfg.PermissionsConfig.Roles {
 		if role.CloudPlatform != "gcp" {
 			continue
 		}
 
-		var perms []string
-		var predefinedRole string
-		for _, policy := range role.Policies {
-			perms = append(perms, policy.GCPPermissions...)
-			if policy.GCPPredefinedRole != "" {
-				predefinedRole = policy.GCPPredefinedRole
-			}
-		}
+		perms, predefinedRole := extractRolePermissions(role)
 		if len(perms) == 0 && predefinedRole == "" {
 			continue
 		}
@@ -115,8 +121,6 @@ func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, depro
 				maintenance = string(b)
 			case app.AWSIAMRoleTypeRunnerDeprovision:
 				deprovision = string(b)
-			case app.AWSIAMRoleTypeBreakGlass, app.AWSIAMRoleTypeRunnerBreakGlass:
-				breakGlass = string(b)
 			}
 		}
 
@@ -127,10 +131,53 @@ func extractGCPPermissions(appCfg *app.AppConfig) (provision, maintenance, depro
 			maintPredefined = predefinedRole
 		case app.AWSIAMRoleTypeRunnerDeprovision:
 			deprovPredefined = predefinedRole
-		case app.AWSIAMRoleTypeBreakGlass, app.AWSIAMRoleTypeRunnerBreakGlass:
-			bgPredefined = predefinedRole
 		}
 	}
 
 	return
+}
+
+// extractGCPRolesFromList converts a slice of role configs into template-ready inputs,
+// filtering to GCP roles only.
+func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateInput {
+	var result []GCPRoleTemplateInput
+	for _, role := range roles {
+		if role.CloudPlatform != "gcp" {
+			continue
+		}
+
+		perms, predefinedRole := extractRolePermissions(role)
+		if len(perms) == 0 && predefinedRole == "" {
+			continue
+		}
+
+		permStr := "[]"
+		if len(perms) > 0 {
+			b, err := json.Marshal(perms)
+			if err != nil {
+				continue
+			}
+			permStr = string(b)
+		}
+
+		result = append(result, GCPRoleTemplateInput{
+			Name:           role.Name,
+			Permissions:    permStr,
+			PredefinedRole: predefinedRole,
+		})
+	}
+
+	return result
+}
+
+func extractRolePermissions(role app.AppAWSIAMRoleConfig) ([]string, string) {
+	var perms []string
+	var predefinedRole string
+	for _, policy := range role.Policies {
+		perms = append(perms, policy.GCPPermissions...)
+		if policy.GCPPredefinedRole != "" {
+			predefinedRole = policy.GCPPredefinedRole
+		}
+	}
+	return perms, predefinedRole
 }

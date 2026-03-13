@@ -93,21 +93,33 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	if installStack == nil || installStack.InstallStackOutputs.AWSStackOutputs == nil {
+	if installStack == nil {
 		ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: []AvailableRole{}})
 		return
 	}
 
-	roles, err := buildAvailableRoles(installStack.InstallStackOutputs.AWSStackOutputs, appCfg, state, operationType)
+	outputs := installStack.InstallStackOutputs
+	var roles []AvailableRole
+
+	switch {
+	case outputs.AWSStackOutputs != nil:
+		roles, err = buildAvailableRolesAWS(outputs.AWSStackOutputs, appCfg, state, operationType)
+	case outputs.GCPStackOutputs != nil:
+		roles, err = buildAvailableRolesGCP(outputs.GCPStackOutputs, appCfg, state, operationType)
+	default:
+		ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: []AvailableRole{}})
+		return
+	}
+
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install stack: %w", err))
+		ctx.Error(fmt.Errorf("unable to build available roles: %w", err))
 		return
 	}
 
 	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
 }
 
-func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
+func buildAvailableRolesAWS(installStackOutput *app.AWSStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
 	roles := []AvailableRole{}
 
 	if installStackOutput == nil {
@@ -167,6 +179,73 @@ func buildAvailableRoles(installStackOutput *app.AWSStackOutputs, appCfg *app.Ap
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
 			ARN:      installStackOutput.MaintenanceIAMRoleARN,
+			RoleType: "maintenance",
+		})
+	}
+
+	return roles, nil
+}
+
+func buildAvailableRolesGCP(installStackOutput *app.GCPStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
+	roles := []AvailableRole{}
+
+	if installStackOutput == nil {
+		return roles, nil
+	}
+
+	stateMap, err := state.AsMap()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install state map: %w", err)
+	}
+
+	for name, email := range installStackOutput.CustomSAEmails {
+		roles = append(roles, AvailableRole{
+			Name:     name,
+			ARN:      email,
+			RoleType: "custom",
+		})
+	}
+
+	for name, email := range installStackOutput.BreakGlassSAEmails {
+		roles = append(roles, AvailableRole{
+			Name:     name,
+			ARN:      email,
+			RoleType: "break_glass",
+		})
+	}
+
+	if installStackOutput.ProvisionSAEmail != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render provision role name: %w", err)
+		}
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.ProvisionSAEmail,
+			RoleType: "provision",
+		})
+	}
+
+	if installStackOutput.DeprovisionSAEmail != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
+		}
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.DeprovisionSAEmail,
+			RoleType: "deprovision",
+		})
+	}
+
+	if installStackOutput.MaintenanceSAEmail != "" {
+		rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render maintenance role name: %w", err)
+		}
+		roles = append(roles, AvailableRole{
+			Name:     rendered,
+			ARN:      installStackOutput.MaintenanceSAEmail,
 			RoleType: "maintenance",
 		})
 	}

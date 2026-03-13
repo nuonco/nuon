@@ -41,6 +41,9 @@ type AppActionWorkflowConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// enable kube config
+	EnableKubeConfig *SQLNullBool `json:"enable_kube_config,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -70,6 +73,10 @@ type AppActionWorkflowConfig struct {
 func (m *AppActionWorkflowConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateEnableKubeConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateRefs(formats); err != nil {
 		res = append(res, err)
 	}
@@ -85,6 +92,29 @@ func (m *AppActionWorkflowConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppActionWorkflowConfig) validateEnableKubeConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.EnableKubeConfig) { // not required
+		return nil
+	}
+
+	if m.EnableKubeConfig != nil {
+		if err := m.EnableKubeConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enable_kube_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enable_kube_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -182,6 +212,10 @@ func (m *AppActionWorkflowConfig) validateTriggers(formats strfmt.Registry) erro
 func (m *AppActionWorkflowConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEnableKubeConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateRefs(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -197,6 +231,31 @@ func (m *AppActionWorkflowConfig) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppActionWorkflowConfig) contextValidateEnableKubeConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EnableKubeConfig != nil {
+
+		if swag.IsZero(m.EnableKubeConfig) { // not required
+			return nil
+		}
+
+		if err := m.EnableKubeConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enable_kube_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enable_kube_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

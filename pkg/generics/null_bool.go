@@ -8,3 +8,14 @@ func NewNullBool(val bool) sql.NullBool {
 		Valid: true,
 	}
 }
+
+func NewNullBoolFromPtr(val *bool) sql.NullBool {
+	if val == nil {
+		return sql.NullBool{Valid: true}
+	}
+
+	return sql.NullBool{
+		Bool:  *val,
+		Valid: true,
+	}
+}

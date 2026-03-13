@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,9 +33,23 @@ func (h *HealthHandler) Readyz(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
+type versionInfo struct {
+	Version string `json:"version"`
+	GitRef  string `json:"git_ref"`
+}
+
 func (h *HealthHandler) Version(c *gin.Context) {
+	apiVersion := versionInfo{}
+	if resp, err := http.Get(h.cfg.APIUrl + "/version"); err == nil {
+		defer resp.Body.Close()
+		json.NewDecoder(resp.Body).Decode(&apiVersion)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"version": h.cfg.Version,
-		"git_ref": h.cfg.GitRef,
+		"ui": versionInfo{
+			Version: h.cfg.Version,
+			GitRef:  h.cfg.GitRef,
+		},
+		"api": apiVersion,
 	})
 }

@@ -21,6 +21,8 @@ type ActionConfig struct {
 	Dependencies   []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 	BreakGlassRole string     `mapstructure:"break_glass_role,omitempty" toml:"break_glass_role,omitempty"`
 	Role           string     `mapstructure:"role,omitempty" toml:"role,omitempty"`
+
+	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
 }
 
 type ActionTriggerConfig struct {
@@ -68,7 +70,11 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("database-migration-break-glass").
 		Field("role").Short("IAM role name for action execution").
 		Long("Name of the IAM role to use when executing this action. The role must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, the default maintenance role is used. This is the preferred way to specify custom roles; break_glass_role is deprecated").
-		Example("{{.nuon.install.id}}-maintenance")
+		Example("{{.nuon.install.id}}-maintenance").
+		Field("enable_kube_config").Short("whether to fetch and inject kubeconfig for this action").
+		Long("When set to false, the action runner will not fetch the install's kubeconfig or set the KUBECONFIG env var. Defaults to true. Set to false for actions that do not need Kubernetes access to avoid the overhead of fetching cluster credentials").
+		Example("true").
+		Example("false")
 }
 
 func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

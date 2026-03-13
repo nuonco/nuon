@@ -16,7 +16,7 @@ export const Dashboard = () => {
   }, [])
 
   return (
-    <PageLayout>
+    <PageLayout isScrollable>
       <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
