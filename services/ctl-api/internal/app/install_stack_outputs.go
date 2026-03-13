@@ -118,30 +118,40 @@ func (a *AzureStackOutputs) BreakGlassRoleID(_ string) (string, error) {
 }
 
 type GCPStackOutputs struct {
-	ProjectID                 string `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
-	Region                    string `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
-	NetworkName               string `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
-	NetworkID                 string `json:"network_id,omitzero" mapstructure:"network_id" temporaljson:"network_id,omitzero,omitempty"`
-	PublicSubnetName          string `json:"public_subnet_name,omitzero" mapstructure:"public_subnet_name" temporaljson:"public_subnet_name,omitzero,omitempty"`
-	PrivateSubnetName         string `json:"private_subnet_name,omitzero" mapstructure:"private_subnet_name" temporaljson:"private_subnet_name,omitzero,omitempty"`
-	RunnerSubnetName          string `json:"runner_subnet_name,omitzero" mapstructure:"runner_subnet_name" temporaljson:"runner_subnet_name,omitzero,omitempty"`
-	RunnerServiceAccountEmail string `json:"runner_service_account_email,omitzero" mapstructure:"runner_service_account_email" temporaljson:"runner_service_account_email,omitzero,omitempty"`
-	ProvisionSAEmail          string `json:"provision_sa_email,omitzero" mapstructure:"provision_sa_email" temporaljson:"provision_sa_email,omitzero,omitempty"`
-	MaintenanceSAEmail        string `json:"maintenance_sa_email,omitzero" mapstructure:"maintenance_sa_email" temporaljson:"maintenance_sa_email,omitzero,omitempty"`
-	DeprovisionSAEmail        string `json:"deprovision_sa_email,omitzero" mapstructure:"deprovision_sa_email" temporaljson:"deprovision_sa_email,omitzero,omitempty"`
-	BreakGlassSAEmail         string `json:"break_glass_sa_email,omitzero" mapstructure:"break_glass_sa_email" temporaljson:"break_glass_sa_email,omitzero,omitempty"`
+	ProjectID                 string            `json:"project_id,omitzero" mapstructure:"project_id" temporaljson:"project_id,omitzero,omitempty"`
+	Region                    string            `json:"region,omitzero" mapstructure:"region" temporaljson:"region,omitzero,omitempty"`
+	NetworkName               string            `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
+	NetworkID                 string            `json:"network_id,omitzero" mapstructure:"network_id" temporaljson:"network_id,omitzero,omitempty"`
+	PublicSubnetName          string            `json:"public_subnet_name,omitzero" mapstructure:"public_subnet_name" temporaljson:"public_subnet_name,omitzero,omitempty"`
+	PrivateSubnetName         string            `json:"private_subnet_name,omitzero" mapstructure:"private_subnet_name" temporaljson:"private_subnet_name,omitzero,omitempty"`
+	RunnerSubnetName          string            `json:"runner_subnet_name,omitzero" mapstructure:"runner_subnet_name" temporaljson:"runner_subnet_name,omitzero,omitempty"`
+	RunnerServiceAccountEmail string            `json:"runner_service_account_email,omitzero" mapstructure:"runner_service_account_email" temporaljson:"runner_service_account_email,omitzero,omitempty"`
+	ProvisionSAEmail          string            `json:"provision_sa_email,omitzero" mapstructure:"provision_sa_email" temporaljson:"provision_sa_email,omitzero,omitempty"`
+	MaintenanceSAEmail        string            `json:"maintenance_sa_email,omitzero" mapstructure:"maintenance_sa_email" temporaljson:"maintenance_sa_email,omitzero,omitempty"`
+	DeprovisionSAEmail        string            `json:"deprovision_sa_email,omitzero" mapstructure:"deprovision_sa_email" temporaljson:"deprovision_sa_email,omitzero,omitempty"`
+	BreakGlassSAEmails        map[string]string `json:"break_glass_sa_emails,omitzero" mapstructure:"break_glass_sa_emails" temporaljson:"break_glass_sa_emails,omitzero,omitempty"`
+	CustomSAEmails            map[string]string `json:"custom_sa_emails,omitzero" mapstructure:"custom_sa_emails" temporaljson:"custom_sa_emails,omitzero,omitempty"`
+	InstallInputs             map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
 }
 
 func (a *GCPStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionSAEmail, nil }
 func (a *GCPStackOutputs) DeprovisionRoleID() (string, error) { return a.DeprovisionSAEmail, nil }
 func (a *GCPStackOutputs) MaintenanceRoleID() (string, error) { return a.MaintenanceSAEmail, nil }
 
-func (a *GCPStackOutputs) CustomRoleID(_ string) (string, error) {
-	return "", fmt.Errorf("not supported on GCP")
+func (a *GCPStackOutputs) CustomRoleID(name string) (string, error) {
+	email, ok := a.CustomSAEmails[name]
+	if !ok {
+		return "", fmt.Errorf("custom service account %q does not exist in stack outputs", name)
+	}
+	return email, nil
 }
 
-func (a *GCPStackOutputs) BreakGlassRoleID(_ string) (string, error) {
-	return "", fmt.Errorf("not supported on GCP")
+func (a *GCPStackOutputs) BreakGlassRoleID(name string) (string, error) {
+	email, ok := a.BreakGlassSAEmails[name]
+	if !ok {
+		return "", fmt.Errorf("break glass service account %q does not exist in stack outputs", name)
+	}
+	return email, nil
 }
 
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
@@ -165,6 +175,10 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 	if isGCP {
 		var gcpOutputs GCPStackOutputs
 		gcpDecoderConfig := &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToSliceHookFunc(","),
+				generics.StringToMapDecodeHook(),
+			),
 			WeaklyTypedInput: true,
 			Result:           &gcpOutputs,
 		}

@@ -14,7 +14,27 @@ deprovision_permissions  = {{.DeprovisionPermissions}}
 provision_predefined_role    = "{{.ProvisionPredefinedRole}}"
 maintenance_predefined_role  = "{{.MaintenancePredefinedRole}}"
 deprovision_predefined_role  = "{{.DeprovisionPredefinedRole}}"
-has_break_glass          = {{.HasBreakGlass}}{{if .HasBreakGlass}}
-break_glass_permissions  = {{.BreakGlassPermissions}}
-break_glass_predefined_role  = "{{.BreakGlassPredefinedRole}}"{{end}}
+break_glass_roles = {
+{{- range .BreakGlassRoles}}
+  "{{.Name}}" = {
+    permissions     = {{.Permissions}}
+    predefined_role = "{{.PredefinedRole}}"
+    enabled         = false
+  }
+{{- end}}
+}
+custom_roles = {
+{{- range .CustomRoles}}
+  "{{.Name}}" = {
+    permissions     = {{.Permissions}}
+    predefined_role = "{{.PredefinedRole}}"
+    enabled         = true
+  }
+{{- end}}
+}
+install_inputs = {
+{{- range .InstallInputs}}
+  "{{.}}" = ""
+{{- end}}
+}
 `
