@@ -170,11 +170,11 @@ func (m helmDiffExplorerModel) View() string {
 		return styles.TextError.Padding(1).
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(styles.ErrorColor).
-			Render(fmt.Sprintf("unable to parse helm diff contents:\n%s", m.parseErr))
+			Render(fmt.Sprintf("unable to parse diff contents:\n%s", m.parseErr))
 	}
 
 	if !m.hasPlan {
-		return styles.TextSubtle.Padding(1).Render("No helm diff contents available")
+		return styles.TextSubtle.Padding(1).Render("No diff contents available")
 	}
 
 	plan := m.plan
@@ -233,7 +233,7 @@ func (m helmDiffExplorerModel) View() string {
 				BorderForeground(styles.BorderInactiveColor).
 				Width(m.width).
 				Padding(1).
-				Render(styles.TextSubtle.Render("No helm changes found.")),
+				Render(styles.TextSubtle.Render("No changes found.")),
 		)
 
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
@@ -327,7 +327,7 @@ func (m *model) syncHelmDiffExplorer() {
 		return
 	}
 
-	if m.selectedStepDiffType() != componentDiffTypeHelm {
+	if !isInteractivePlanDiffType(m.selectedStepDiffType()) {
 		return
 	}
 
@@ -351,7 +351,7 @@ func (m *model) handleDetailContentKey(msg tea.KeyPressMsg) bool {
 		return false
 	}
 
-	if !m.stepHasPlanDiff(m.selectedStep) || m.selectedStepDiffType() != componentDiffTypeHelm {
+	if !m.stepHasPlanDiff(m.selectedStep) || !isInteractivePlanDiffType(m.selectedStepDiffType()) {
 		return false
 	}
 

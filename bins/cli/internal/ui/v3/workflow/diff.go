@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
@@ -48,27 +49,33 @@ type helmPlanChange struct {
 }
 
 type helmContentDiffEntry struct {
-	Delta   *int   `json:"delta"`
-	Type    *int   `json:"type"`
-	Payload string `json:"payload"`
+	Delta   any            `json:"delta"`
+	Type    any            `json:"type"`
+	Path    flexibleString `json:"path"`
+	Payload flexibleString `json:"payload"`
 }
 
 type helmContentDiff struct {
 	Version   any                    `json:"_version"`
-	API       string                 `json:"api"`
-	Name      string                 `json:"name"`
-	Namespace string                 `json:"namespace"`
-	Kind      string                 `json:"kind"`
-	Before    string                 `json:"before"`
-	After     string                 `json:"after"`
+	API       flexibleString         `json:"api"`
+	Name      flexibleString         `json:"name"`
+	Namespace flexibleString         `json:"namespace"`
+	Kind      flexibleString         `json:"kind"`
+	Resource  flexibleString         `json:"resource"`
+	Op        flexibleString         `json:"op"`
+	Type      flexibleString         `json:"type"`
+	DryRun    any                    `json:"dry_run"`
+	Before    flexibleString         `json:"before"`
+	After     flexibleString         `json:"after"`
 	Entries   []helmContentDiffEntry `json:"entries"`
 }
 
 type helmPlanPayload struct {
-	Op              string            `json:"op"`
-	Plan            string            `json:"plan"`
+	Op              flexibleString    `json:"op"`
+	Plan            flexibleString    `json:"plan"`
 	HelmContentDiff []helmContentDiff `json:"helm_content_diff"`
 	K8sContentDiff  []helmContentDiff `json:"k8s_content_diff"`
+	DryRunOutput    flexibleString    `json:"dry_run_output"`
 }
 
 type parsedHelmPlan struct {
@@ -77,6 +84,7 @@ type parsedHelmPlan struct {
 	summary    helmPlanSummary
 	content    []helmContentDiff
 	planSource string
+	dryRun     string
 }
 
 type componentDiffType string
@@ -97,6 +105,47 @@ type helmRenderedDiffLine struct {
 	indent      int
 	isChanged   bool
 	isContainer bool
+}
+
+type flexibleString string
+
+func (s *flexibleString) UnmarshalJSON(data []byte) error {
+	var value any
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+
+	*s = flexibleString(coerceAnyToString(value))
+	return nil
+}
+
+func coerceAnyToString(value any) string {
+	switch v := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return v
+	case float64:
+		if v == math.Trunc(v) {
+			return strconv.FormatInt(int64(v), 10)
+		}
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(v)
+	case []any, map[string]any:
+		if text := coerceDisplayDiffText(v); text != "" {
+			return text
+		}
+
+		bytes, err := json.Marshal(v)
+		if err != nil {
+			return ""
+		}
+
+		return string(bytes)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 var changeStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(styles.WarningColor)
@@ -208,7 +257,7 @@ func (m *model) stepDetailViewStepDiff() string {
 	}
 
 	hint := "[B] open in browser for full context."
-	if m.selectedStepDiffType() == componentDiffTypeHelm && m.helmDiffExplorer.hasInteractiveRows() {
+	if isInteractivePlanDiffType(m.selectedStepDiffType()) && m.helmDiffExplorer.hasInteractiveRows() {
 		hint = "[j/k] select [enter] expand [↑/↓] scroll [B] browser"
 	}
 
@@ -332,8 +381,44 @@ func (m *model) stepDetailViewHelmDiff() string {
 	return m.renderRawDiffFallback()
 }
 
-func (m model) stepDetailViewKubernetesManifestDiff() string {
-	return m.renderDiffText("Kubernetes manifest diff rendering is not implemented yet.")
+func (m *model) stepDetailViewKubernetesManifestDiff() string {
+	m.syncHelmDiffExplorer()
+
+	if m.approvalContents.loading && !m.helmDiffExplorer.hasPlan {
+		return styles.TextSubtle.Padding(1).Render(m.spinner.View() + " loading kubernetes manifest diff contents...")
+	}
+
+	sections := []string{}
+
+	if m.helmDiffExplorer.parseErr != nil {
+		sections = append(
+			sections,
+			styles.TextError.Padding(1).
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(styles.ErrorColor).
+				Render(fmt.Sprintf("unable to parse kubernetes manifest diff contents:\n%s", m.helmDiffExplorer.parseErr)),
+		)
+	} else if m.helmDiffExplorer.hasPlan {
+		sections = append(sections, m.helmDiffExplorer.View())
+	}
+
+	if len(sections) == 0 {
+		if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
+			sections = append(sections, m.renderDiffText(fullDiff))
+		}
+	}
+
+	if len(sections) == 0 || !m.helmDiffExplorer.hasInteractiveRows() {
+		if dryRunOutput := extractDryRunOutput(m.approvalContents.raw); dryRunOutput != "" {
+			sections = append(sections, renderManifestContextSection("Dry-run manifest output", m.renderDiffTextWithWidth(dryRunOutput, m.stepDetail.Width()-4)))
+		}
+	}
+
+	if len(sections) == 0 {
+		sections = append(sections, m.renderRawDiffFallback())
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
 func parseHelmPlan(value any) (parsedHelmPlan, error) {
@@ -351,6 +436,8 @@ func parseHelmPlan(value any) (parsedHelmPlan, error) {
 		return parsedHelmPlan{}, fmt.Errorf("unable to unmarshal helm payload: %w", err)
 	}
 
+	hydrateNestedPlanPayload(&payload)
+
 	planSource := "helm"
 	content := payload.HelmContentDiff
 	if len(content) == 0 && len(payload.K8sContentDiff) > 0 {
@@ -358,18 +445,71 @@ func parseHelmPlan(value any) (parsedHelmPlan, error) {
 		content = payload.K8sContentDiff
 	}
 
-	changes, summary := parseHelmPlanText(payload.Plan)
+	changes, summary := parseHelmPlanText(string(payload.Plan))
 	if len(changes) == 0 {
 		changes = synthesizeHelmChanges(content)
 	}
 
 	return parsedHelmPlan{
-		op:         payload.Op,
+		op:         strings.TrimSpace(string(payload.Op)),
 		changes:    changes,
 		summary:    summary,
 		content:    content,
 		planSource: planSource,
+		dryRun:     strings.TrimSpace(string(payload.DryRunOutput)),
 	}, nil
+}
+
+func hydrateNestedPlanPayload(payload *helmPlanPayload) {
+	if payload == nil {
+		return
+	}
+
+	nested, ok := parseHelmPlanPayloadString(string(payload.Plan))
+	if !ok {
+		return
+	}
+
+	if strings.TrimSpace(string(payload.Op)) == "" {
+		payload.Op = nested.Op
+	}
+	if len(payload.HelmContentDiff) == 0 && len(nested.HelmContentDiff) > 0 {
+		payload.HelmContentDiff = nested.HelmContentDiff
+	}
+	if len(payload.K8sContentDiff) == 0 && len(nested.K8sContentDiff) > 0 {
+		payload.K8sContentDiff = nested.K8sContentDiff
+	}
+	if strings.TrimSpace(string(payload.DryRunOutput)) == "" {
+		payload.DryRunOutput = nested.DryRunOutput
+	}
+
+	nestedPlan := strings.TrimSpace(string(nested.Plan))
+	if nestedPlan != "" && !looksLikeJSONPayload(nestedPlan) {
+		payload.Plan = flexibleString(nestedPlan)
+	}
+}
+
+func parseHelmPlanPayloadString(plan string) (helmPlanPayload, bool) {
+	trimmed := strings.TrimSpace(plan)
+	if !looksLikeJSONPayload(trimmed) {
+		return helmPlanPayload{}, false
+	}
+
+	var payload helmPlanPayload
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return helmPlanPayload{}, false
+	}
+
+	return payload, true
+}
+
+func looksLikeJSONPayload(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return false
+	}
+
+	return strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[")
 }
 
 func parseHelmPlanText(planText string) ([]helmPlanChange, helmPlanSummary) {
@@ -407,16 +547,16 @@ func parseHelmPlanText(planText string) ([]helmPlanChange, helmPlanSummary) {
 func findHelmDiffForChange(change helmPlanChange, diffs []helmContentDiff) *helmContentDiff {
 	for i := range diffs {
 		diff := diffs[i]
-		if !strings.EqualFold(strings.TrimSpace(diff.Kind), strings.TrimSpace(change.resource)) {
+		if !strings.EqualFold(strings.TrimSpace(string(diff.Kind)), strings.TrimSpace(change.resource)) {
 			continue
 		}
-		if !strings.EqualFold(strings.TrimSpace(diff.Name), strings.TrimSpace(change.release)) {
+		if !strings.EqualFold(strings.TrimSpace(string(diff.Name)), strings.TrimSpace(change.release)) {
 			continue
 		}
-		if !strings.EqualFold(strings.TrimSpace(diff.Namespace), strings.TrimSpace(change.namespace)) {
+		if !strings.EqualFold(strings.TrimSpace(string(diff.Namespace)), strings.TrimSpace(change.namespace)) {
 			continue
 		}
-		if !helmResourceTypeMatches(diff.API, change.resourceType) {
+		if !helmResourceTypeMatches(string(diff.API), change.resourceType) {
 			continue
 		}
 
@@ -449,7 +589,7 @@ func renderHelmDiffText(diff helmContentDiff) string {
 		}
 	}
 
-	if renderedLines := renderHelmBeforeAfterDiff(diff.Before, diff.After); renderedLines != "" {
+	if renderedLines := renderHelmBeforeAfterDiff(string(diff.Before), string(diff.After)); renderedLines != "" {
 		return renderedLines
 	}
 
@@ -476,31 +616,81 @@ func renderHelmDiffEntries(entries []helmContentDiffEntry) string {
 
 	lines := []string{}
 	for _, entry := range entries {
-		payload := strings.TrimSpace(entry.Payload)
-		if payload == "" {
+		entryBody := renderDiffEntryBody(entry)
+		if entryBody == "" {
 			continue
 		}
 
-		diffType := 0
-		if entry.Delta != nil {
-			diffType = *entry.Delta
-		} else if entry.Type != nil {
-			diffType = *entry.Type
-		}
+		diffType := diffEntryType(entry.Delta, entry.Type)
 
-		switch diffType {
-		case 1:
-			lines = append(lines, "- "+payload)
-		case 2:
-			lines = append(lines, "+ "+payload)
-		case 0:
-			lines = append(lines, "  "+payload)
-		default:
-			lines = append(lines, payload)
+		for _, line := range strings.Split(entryBody, "\n") {
+			trimmedLine := strings.TrimSpace(line)
+			if trimmedLine == "" {
+				continue
+			}
+
+			switch diffType {
+			case 1:
+				lines = append(lines, "- "+trimmedLine)
+			case 2:
+				lines = append(lines, "+ "+trimmedLine)
+			case 0:
+				lines = append(lines, "  "+trimmedLine)
+			default:
+				lines = append(lines, trimmedLine)
+			}
 		}
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+func renderDiffEntryBody(entry helmContentDiffEntry) string {
+	path := strings.TrimSpace(string(entry.Path))
+	payload := strings.TrimSpace(string(entry.Payload))
+
+	if path == "" {
+		return payload
+	}
+	if payload == "" {
+		return path
+	}
+
+	return fmt.Sprintf("%s: %s", path, payload)
+}
+
+func diffEntryType(delta any, fallback any) int {
+	if n, ok := coerceDiffTypeNumber(delta); ok {
+		return n
+	}
+
+	if n, ok := coerceDiffTypeNumber(fallback); ok {
+		return n
+	}
+
+	return 0
+}
+
+func coerceDiffTypeNumber(value any) (int, bool) {
+	switch v := value.(type) {
+	case nil:
+		return 0, false
+	case int:
+		return v, true
+	case float64:
+		if v != math.Trunc(v) {
+			return 0, false
+		}
+		return int(v), true
+	case string:
+		n, err := strconv.Atoi(strings.TrimSpace(v))
+		if err != nil {
+			return 0, false
+		}
+		return n, true
+	default:
+		return 0, false
+	}
 }
 
 func renderHelmBeforeAfterDiff(before string, after string) string {
@@ -567,11 +757,21 @@ func renderHelmBeforeAfterDiff(before string, after string) string {
 func synthesizeHelmChanges(content []helmContentDiff) []helmPlanChange {
 	changes := make([]helmPlanChange, 0, len(content))
 	for _, diff := range content {
+		release := strings.TrimSpace(string(diff.Name))
+		if release == "" {
+			release = strings.TrimSpace(string(diff.Resource))
+		}
+
+		resource := strings.TrimSpace(string(diff.Kind))
+		if resource == "" {
+			resource = strings.TrimSpace(string(diff.Resource))
+		}
+
 		changes = append(changes, helmPlanChange{
-			namespace:    diff.Namespace,
-			release:      diff.Name,
-			resource:     diff.Kind,
-			resourceType: diff.API,
+			namespace:    strings.TrimSpace(string(diff.Namespace)),
+			release:      release,
+			resource:     resource,
+			resourceType: strings.TrimSpace(string(diff.API)),
 			action:       inferHelmAction(diff),
 		})
 	}
@@ -580,19 +780,18 @@ func synthesizeHelmChanges(content []helmContentDiff) []helmPlanChange {
 }
 
 func inferHelmAction(diff helmContentDiff) string {
-	hasBefore := strings.TrimSpace(diff.Before) != ""
-	hasAfter := strings.TrimSpace(diff.After) != ""
+	if actionFromOp := strings.TrimSpace(string(diff.Op)); actionFromOp != "" {
+		return normalizeHelmAction(actionFromOp)
+	}
+
+	hasBefore := strings.TrimSpace(string(diff.Before)) != ""
+	hasAfter := strings.TrimSpace(string(diff.After)) != ""
 
 	if len(diff.Entries) > 0 {
 		hasRemoved := false
 		hasAdded := false
 		for _, entry := range diff.Entries {
-			diffType := 0
-			if entry.Delta != nil {
-				diffType = *entry.Delta
-			} else if entry.Type != nil {
-				diffType = *entry.Type
-			}
+			diffType := diffEntryType(entry.Delta, entry.Type)
 
 			switch diffType {
 			case 1:
@@ -637,13 +836,25 @@ func normalizeHelmAction(action string) string {
 	switch strings.ToLower(strings.TrimSpace(action)) {
 	case "add", "added", "create", "created":
 		return "added"
-	case "change", "changed", "update", "updated", "replace", "replaced":
+	case "change", "changed", "update", "updated", "replace", "replaced", "apply", "patch", "patched", "configure", "configured":
 		return "changed"
 	case "destroy", "destroyed", "delete", "deleted", "remove", "removed":
 		return "destroyed"
 	default:
 		return strings.ToLower(strings.TrimSpace(action))
 	}
+}
+
+func isInteractivePlanDiffType(diffType componentDiffType) bool {
+	return diffType == componentDiffTypeHelm || diffType == componentDiffTypeKubernetesManifest
+}
+
+func renderManifestContextSection(title string, body string) string {
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		styles.TextSubtle.Bold(true).Margin(1, 0, 0, 1).Render(title),
+		body,
+	)
 }
 
 func renderDiffHeaderRow(left string, right string, width int) string {
@@ -924,6 +1135,68 @@ func findDisplayDiffText(value any) string {
 				return text
 			}
 		}
+	}
+
+	return ""
+}
+
+func extractDryRunOutput(value any) string {
+	if value == nil {
+		return ""
+	}
+
+	if text := findDryRunOutput(value); text != "" {
+		return text
+	}
+
+	return ""
+}
+
+func findDryRunOutput(value any) string {
+	switch v := value.(type) {
+	case map[string]any:
+		for k, raw := range v {
+			if strings.EqualFold(k, "dry_run_output") {
+				if text := coerceDisplayDiffText(raw); text != "" {
+					return text
+				}
+			}
+		}
+
+		if rawPlan, ok := v["plan"]; ok {
+			if planText := coerceDisplayDiffText(rawPlan); looksLikeJSONPayload(planText) {
+				var nested any
+				if err := json.Unmarshal([]byte(planText), &nested); err == nil {
+					if text := findDryRunOutput(nested); text != "" {
+						return text
+					}
+				}
+			}
+		}
+
+		for _, raw := range v {
+			if text := findDryRunOutput(raw); text != "" {
+				return text
+			}
+		}
+	case []any:
+		for _, raw := range v {
+			if text := findDryRunOutput(raw); text != "" {
+				return text
+			}
+		}
+	case string:
+		trimmed := strings.TrimSpace(v)
+		if !looksLikeJSONPayload(trimmed) {
+			return ""
+		}
+
+		var nested any
+		if err := json.Unmarshal([]byte(trimmed), &nested); err != nil {
+			return ""
+		}
+
+		return findDryRunOutput(nested)
 	}
 
 	return ""

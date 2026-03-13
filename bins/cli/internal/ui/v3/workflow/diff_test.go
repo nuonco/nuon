@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"testing"
@@ -37,6 +38,42 @@ func testHelmPayload() map[string]any {
 				"after":     "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: whoami-v2",
 			},
 		},
+	}
+}
+
+func testKubernetesManifestPayload() map[string]any {
+	nestedPlan := map[string]any{
+		"op": "apply",
+		"k8s_content_diff": []any{
+			map[string]any{
+				"api":       "v1",
+				"name":      "install-secrets",
+				"namespace": "nuon-system",
+				"kind":      "Secret",
+				"resource":  "secrets",
+				"op":        "patch",
+				"entries": []any{
+					map[string]any{
+						"path":    "metadata.labels.app",
+						"type":    0,
+						"payload": "nuon",
+					},
+					map[string]any{
+						"path":    "data.INSTALL_ID",
+						"type":    2,
+						"payload": "inst_123",
+					},
+				},
+			},
+		},
+		"dry_run_output": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: install-secrets",
+	}
+
+	nestedPlanBytes, _ := json.Marshal(nestedPlan)
+
+	return map[string]any{
+		"op":   "apply",
+		"plan": string(nestedPlanBytes),
 	}
 }
 
@@ -195,6 +232,33 @@ func TestParseHelmPlanText(t *testing.T) {
 	}
 }
 
+func TestParseHelmPlanSupportsNestedJSONPlanPayload(t *testing.T) {
+	parsed, err := parseHelmPlan(testKubernetesManifestPayload())
+	if err != nil {
+		t.Fatalf("expected parseHelmPlan to parse nested plan payload, got error: %v", err)
+	}
+
+	if parsed.planSource != "kubernetes" {
+		t.Fatalf("expected kubernetes plan source, got %q", parsed.planSource)
+	}
+
+	if len(parsed.content) != 1 {
+		t.Fatalf("expected 1 kubernetes diff entry, got %d", len(parsed.content))
+	}
+
+	if len(parsed.changes) != 1 {
+		t.Fatalf("expected 1 synthesized change, got %d", len(parsed.changes))
+	}
+
+	if parsed.changes[0].action != "changed" {
+		t.Fatalf("expected action inferred from op=patch to be changed, got %q", parsed.changes[0].action)
+	}
+
+	if !strings.Contains(parsed.dryRun, "kind: Secret") {
+		t.Fatalf("expected dry run output from nested payload, got %q", parsed.dryRun)
+	}
+}
+
 func TestFindHelmDiffForChange(t *testing.T) {
 	change := helmPlanChange{
 		namespace:    "default",
@@ -219,17 +283,16 @@ func TestFindHelmDiffForChange(t *testing.T) {
 		t.Fatalf("expected matching helm diff")
 	}
 
-	if !strings.Contains(matched.After, "apps/v1") {
+	if !strings.Contains(string(matched.After), "apps/v1") {
 		t.Fatalf("expected matched diff contents, got %+v", matched)
 	}
 }
 
 func TestRenderHelmDiffEntries(t *testing.T) {
-	one := 1
-	two := 2
 	entries := []helmContentDiffEntry{
-		{Type: &one, Payload: "old: value"},
-		{Type: &two, Payload: "new: value"},
+		{Type: 1, Payload: "old: value"},
+		{Type: 2, Payload: "new: value"},
+		{Type: 2, Path: "data.INSTALL_ID", Payload: "inst_123"},
 		{Payload: "unchanged: value"},
 	}
 
@@ -239,6 +302,9 @@ func TestRenderHelmDiffEntries(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "+ new: value") {
 		t.Fatalf("expected added line in rendered diff, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "+ data.INSTALL_ID: inst_123") {
+		t.Fatalf("expected path-based added line in rendered diff, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "  unchanged: value") {
 		t.Fatalf("expected unchanged line in rendered diff, got %q", rendered)
@@ -383,6 +449,118 @@ func TestHandleDetailContentKeyRoutesToHelmDiffExplorer(t *testing.T) {
 	}
 }
 
+func TestStepDetailViewKubernetesManifestDiff(t *testing.T) {
+	raw := testKubernetesManifestPayload()
+
+	m := model{
+		approvalContents: approvalContents{raw: raw, contents: raw},
+		selectedStep: &models.AppWorkflowStep{
+			ID:             "step-k8s-1",
+			StepTargetType: "install_deploys",
+			Approval: &models.AppWorkflowStepApproval{
+				Type: models.AppWorkflowStepApprovalTypeKubernetesManifestApproval,
+			},
+		},
+		stepDetail: viewport.New(viewport.WithWidth(120), viewport.WithHeight(30)),
+	}
+
+	view := ansiSeqRe.ReplaceAllString(m.stepDetailViewKubernetesManifestDiff(), "")
+
+	if !strings.Contains(view, "Kubernetes changes overview") {
+		t.Fatalf("expected kubernetes overview heading in view, got %q", view)
+	}
+	if !strings.Contains(view, "Operation: apply") {
+		t.Fatalf("expected operation in view, got %q", view)
+	}
+	if !strings.Contains(view, "▸ install-secrets") {
+		t.Fatalf("expected collapsed indicator in view, got %q", view)
+	}
+	if !strings.Contains(view, "Secret") || !strings.Contains(view, "nuon-system") {
+		t.Fatalf("expected parsed kubernetes metadata in view, got %q", view)
+	}
+	if strings.Contains(view, "+ data.INSTALL_ID: inst_123") {
+		t.Fatalf("expected collapsed diff body by default, got %q", view)
+	}
+
+	if !m.helmDiffExplorer.toggleSelectedExpanded() {
+		t.Fatalf("expected toggleSelectedExpanded to expand selected kubernetes row")
+	}
+
+	expandedView := ansiSeqRe.ReplaceAllString(m.stepDetailViewKubernetesManifestDiff(), "")
+	if !strings.Contains(expandedView, "▾ install-secrets") {
+		t.Fatalf("expected expanded indicator in view, got %q", expandedView)
+	}
+	if !strings.Contains(expandedView, "+ data.INSTALL_ID: inst_123") {
+		t.Fatalf("expected rendered path-based diff in expanded view, got %q", expandedView)
+	}
+}
+
+func TestKubernetesManifestDiffFallsBackToDryRunOutput(t *testing.T) {
+	raw := map[string]any{
+		"op":             "apply",
+		"dry_run_output": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: from-dry-run",
+	}
+
+	m := model{
+		approvalContents: approvalContents{raw: raw, contents: raw},
+		selectedStep: &models.AppWorkflowStep{
+			ID:             "step-k8s-dry-run",
+			StepTargetType: "install_deploys",
+			Approval: &models.AppWorkflowStepApproval{
+				Type: models.AppWorkflowStepApprovalTypeKubernetesManifestApproval,
+			},
+		},
+		stepDetail: viewport.New(viewport.WithWidth(120), viewport.WithHeight(30)),
+	}
+
+	view := ansiSeqRe.ReplaceAllString(m.stepDetailViewKubernetesManifestDiff(), "")
+
+	if !strings.Contains(view, "Dry-run manifest output") {
+		t.Fatalf("expected dry-run section heading, got %q", view)
+	}
+	if !strings.Contains(view, "kind: ConfigMap") {
+		t.Fatalf("expected dry-run manifest YAML in fallback view, got %q", view)
+	}
+}
+
+func TestHandleDetailContentKeyRoutesToKubernetesDiffExplorer(t *testing.T) {
+	raw := testKubernetesManifestPayload()
+
+	m := model{
+		focus: "detail",
+		selectedStep: &models.AppWorkflowStep{
+			ID:             "step-k8s-keys",
+			StepTargetType: "install_deploys",
+			Approval: &models.AppWorkflowStepApproval{
+				Type: models.AppWorkflowStepApprovalTypeKubernetesManifestApproval,
+			},
+		},
+		approvalContents: approvalContents{raw: raw, contents: raw},
+		stepDetail:       viewport.New(viewport.WithWidth(120), viewport.WithHeight(30)),
+	}
+
+	m.syncHelmDiffExplorer()
+
+	if handled := m.handleDetailContentKey(tea.KeyPressMsg{Code: tea.KeyDown}); handled {
+		t.Fatalf("expected down key to be left for viewport scrolling")
+	}
+
+	if handled := m.handleDetailContentKey(tea.KeyPressMsg{Code: 'j', Text: "j"}); !handled {
+		t.Fatalf("expected j key to be consumed by kubernetes diff explorer")
+	}
+	if m.helmDiffExplorer.selectedIndex != 0 {
+		t.Fatalf("expected selected index to remain at 0 for a single row, got %d", m.helmDiffExplorer.selectedIndex)
+	}
+
+	if handled := m.handleDetailContentKey(tea.KeyPressMsg{Code: tea.KeyEnter}); !handled {
+		t.Fatalf("expected enter key to be handled by kubernetes diff explorer")
+	}
+
+	if !m.helmDiffExplorer.expanded[0] {
+		t.Fatalf("expected selected kubernetes diff card to be expanded")
+	}
+}
+
 func TestRenderHelmDiffTextWithWidth(t *testing.T) {
 	rendered := ansiSeqRe.ReplaceAllString(renderHelmDiffTextWithWidth("  unchanged\n- old\n+ new", 80), "")
 	if !strings.Contains(rendered, "  unchanged") || !strings.Contains(rendered, "- old") || !strings.Contains(rendered, "+ new") {
@@ -440,13 +618,5 @@ func TestCollapseHelmDiffTextSkipsShortDiffs(t *testing.T) {
 	collapsed := collapseHelmDiffText(input)
 	if collapsed != input {
 		t.Fatalf("expected short diff to remain unchanged, got %q", collapsed)
-	}
-}
-
-func TestStubbedKubernetesManifestRenderer(t *testing.T) {
-	m := model{}
-
-	if got := m.stepDetailViewKubernetesManifestDiff(); !(strings.Contains(got, "Kubernetes") && strings.Contains(got, "manifest diff") && strings.Contains(got, "implemented yet.")) {
-		t.Fatalf("expected kubernetes manifest stub message, got %q", got)
 	}
 }
