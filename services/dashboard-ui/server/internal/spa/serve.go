@@ -38,7 +38,7 @@ type clientConfig struct {
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	return clientConfig{
-		APIUrl:                "",
+		APIUrl:                cfg.APIUrl,
 		AdminAPIUrl:           cfg.AdminAPIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
