@@ -75,19 +75,14 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	steps = append(steps, step)
 
 	// Step 3.5: Build sandbox (conditional — only if an AppSandboxConfig exists for this app)
-	if appCfg, appCfgErr := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, configID); appCfgErr == nil {
-		if _, sbErr := activities.AwaitGetLatestAppSandboxConfigByAppID(ctx, appCfg.AppID); sbErr == nil {
-			sg.nextGroup()
-			step, err = sg.appBranchSignalStep(ctx, appBranchID, "build sandbox", pgtype.Hstore{}, &sandboxbuild.Signal{
-				AppBranchID: appBranchID,
-				RunID:       runID,
-			}, WithSkippable(false))
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to create sandbox build step")
-			}
-			steps = append(steps, step)
-		}
+	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build sandbox", pgtype.Hstore{}, &sandboxbuild.Signal{
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create sandbox build step")
 	}
+	steps = append(steps, step)
 
 	// Step 4: Deploy to install groups in order
 	// Fetch install groups for this config, ordered by the order field

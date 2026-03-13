@@ -64,6 +64,9 @@ type ComponentBuild struct {
 
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
+
+	// QueueSignal is the signal enqueued when this build was created via the queue path
+	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 }
 
 func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {

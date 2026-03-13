@@ -36,6 +36,7 @@ func (w *Workflows) All() []any {
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{
+		w.BuildSandbox,
 		w.Created,
 		w.Deprovision,
 		w.ExecuteFlow,

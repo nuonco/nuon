@@ -154,11 +154,11 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// 4. ENQUEUE SIMPLIFIED SIGNAL (just run_id)
-	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+	// 4. ENQUEUE SIGNAL and associate the QueueSignal with this run via polymorphic owner
+	enqResp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: branch.Queue.ID,
 		Signal: &runsignal.Signal{
-			RunID: run.ID, // SIMPLIFIED: only pass run_id
+			RunID: run.ID,
 		},
 	})
 	if err != nil {
@@ -168,6 +168,15 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		s.db.WithContext(ctx).Save(run)
 
 		ctx.Error(fmt.Errorf("unable to enqueue run signal: %w", err))
+		return
+	}
+	if res = s.db.WithContext(ctx).Model(&app.QueueSignal{}).
+		Where("id = ?", enqResp.ID).
+		Updates(map[string]any{
+			"owner_id":   run.ID,
+			"owner_type": s.db.NamingStrategy.TableName("AppBranchRun"),
+		}); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to associate queue signal with run: %w", res.Error))
 		return
 	}
 

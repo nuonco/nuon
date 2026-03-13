@@ -73,11 +73,12 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
-	// Mark config as active with component IDs
+	// Mark config as active with component and action IDs
 	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
 		"status":             app.AppConfigStatusActive,
 		"status_description": "synced successfully",
 		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
+		"action_ids":         pq.StringArray(s.GetActionStateIds()),
 	})
 
 	return &SyncAppConfigOutput{

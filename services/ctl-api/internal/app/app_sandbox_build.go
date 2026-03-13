@@ -35,11 +35,11 @@ type AppSandboxBuild struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppID              string          `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
-	App                App             `json:"-" temporaljson:"app,omitzero,omitempty"`
-	AppConfigID        string          `json:"app_config_id,omitzero" gorm:"notnull" temporaljson:"app_config_id,omitzero,omitempty"`
-	AppConfig          AppConfig       `json:"-" temporaljson:"app_config,omitzero,omitempty"`
-	AppSandboxConfigID string          `json:"app_sandbox_config_id,omitzero" gorm:"notnull" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
+	AppID              string           `json:"app_id,omitzero" gorm:"notnull" temporaljson:"app_id,omitzero,omitempty"`
+	App                App              `json:"-" temporaljson:"app,omitzero,omitempty"`
+	AppConfigID        string           `json:"app_config_id,omitzero" gorm:"notnull" temporaljson:"app_config_id,omitzero,omitempty"`
+	AppConfig          AppConfig        `json:"-" temporaljson:"app_config,omitzero,omitempty"`
+	AppSandboxConfigID string           `json:"app_sandbox_config_id,omitzero" gorm:"notnull" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
 
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`

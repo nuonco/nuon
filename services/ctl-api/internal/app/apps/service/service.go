@@ -93,6 +93,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.GET("/:config_id/graph", s.GetAppConfigGraphV2)
 		}
 
+		// app sandbox builds
+		app.POST("/sandbox/builds", s.CreateAppSandboxBuild)
+
 		// app sandbox management
 		sandboxConfig := app.Group("/sandbox-config")
 		{

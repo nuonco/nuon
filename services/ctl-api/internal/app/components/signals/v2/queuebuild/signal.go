@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -14,6 +15,7 @@ import (
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
 	AppConfigID string `json:"app_config_id"` // optional; if set, use branch VCS commit when component shares same VCS config
+	BuildID     string `json:"build_id"`      // optional; if set, skip build creation and trigger pre-created build
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -30,6 +32,14 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	// If a pre-created BuildID is provided, delegate directly to the build signal.
+	if s.BuildID != "" {
+		return (&buildsignal.Signal{
+			ComponentID: s.ComponentID,
+			BuildID:     s.BuildID,
+		}).Execute(ctx)
+	}
+
 	cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get component: %w", err)

@@ -64,6 +64,9 @@ type AppBranchRun struct {
 	// VCSConnectionCommit is the full commit record associated with this run
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
+
+	// QueueSignal is the signal that was enqueued to trigger this run
+	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 }
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
