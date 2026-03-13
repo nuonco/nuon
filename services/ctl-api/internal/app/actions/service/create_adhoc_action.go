@@ -25,7 +25,7 @@ type CreateAdHocActionRequest struct {
 	Timeout          int               `json:"timeout,omitempty" validate:"omitempty,min=1,max=3600"`
 	Name             string            `json:"name" validate:"max=255"`
 	Role             string            `json:"role"`
-	EnableKubeConfig *bool             `json:"enable_kube_config,omitempty"`
+	EnableKubeConfig *bool             `json:"enable_kube_config" extensions:"x-nullable"`
 }
 
 func (c *CreateAdHocActionRequest) Validate(v *validator.Validate) error {
@@ -199,7 +199,11 @@ func (s *service) createAdHocActionRun(
 		AdHocConfig: &adHocConfig,
 	}
 
-	enableKubeConfig := generics.NewNullBoolFromPtr(req.EnableKubeConfig)
+	defaultEnableKubeConfig := true
+	enableKubeConfig := generics.NewNullBoolFromPtr(&defaultEnableKubeConfig)
+	if req.EnableKubeConfig != nil {
+		enableKubeConfig = generics.NewNullBoolFromPtr(req.EnableKubeConfig)
+	}
 
 	run := app.InstallActionWorkflowRun{
 		InstallID:         install.ID,

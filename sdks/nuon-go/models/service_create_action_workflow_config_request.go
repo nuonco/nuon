@@ -32,7 +32,7 @@ type ServiceCreateActionWorkflowConfigRequest struct {
 	Dependencies []string `json:"dependencies"`
 
 	// enable kube config
-	EnableKubeConfig bool `json:"enable_kube_config,omitempty"`
+	EnableKubeConfig *bool `json:"enable_kube_config,omitempty"`
 
 	// references
 	References []string `json:"references"`
