@@ -324,6 +324,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 	// approvals section
 	// TODO(fd): handle "install_sandbox_runs",
 	if m.stepHasPlanDiff(step) {
+		m.syncHelmDiffExplorer()
 		diffSection := m.stepDetailViewStepDiff()
 		sections = append(sections, diffSection)
 	}

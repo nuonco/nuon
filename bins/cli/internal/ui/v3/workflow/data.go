@@ -108,6 +108,7 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 		m.selectedStep = item.(listStep).Step()
 
 	}
+	m.syncHelmDiffExplorer()
 
 	// TODO(fd): hoist into an isDone method
 	if generics.SliceContains(m.workflow.Status.Status, []models.AppStatus{models.AppStatusCancelled, models.AppStatusError, models.AppStatusSuccess}) {
@@ -175,14 +176,17 @@ func (m *model) handleGetWorkflowStepApprovalContents(msg getWorkflowStepApprova
 
 	if msg.err != nil {
 		m.approvalContents = approvalContents{error: msg.err, raw: msg.raw, loading: false}
+		m.syncHelmDiffExplorer()
 		return []tea.Cmd{}
 	}
 	contents, err := interfaceToMap(msg.raw)
 	if err != nil {
 		m.approvalContents = approvalContents{error: err, raw: msg.raw, loading: false}
+		m.syncHelmDiffExplorer()
 		return []tea.Cmd{}
 	}
 	m.approvalContents = approvalContents{error: err, raw: msg.raw, loading: false, contents: contents}
+	m.syncHelmDiffExplorer()
 	m.populateStepDetailView(false)
 	m.setLogMessage(
 		fmt.Sprintf("workflow content fetched %02d keys", len(contents)),

@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"charm.land/lipgloss/v2"
 	tfjson "github.com/hashicorp/terraform-json"
@@ -31,6 +33,72 @@ type terraformDiffGroups struct {
 	noops     []*tfjson.ResourceChange
 }
 
+type helmPlanSummary struct {
+	add     int
+	change  int
+	destroy int
+}
+
+type helmPlanChange struct {
+	namespace    string
+	release      string
+	resource     string
+	resourceType string
+	action       string
+}
+
+type helmContentDiffEntry struct {
+	Delta   *int   `json:"delta"`
+	Type    *int   `json:"type"`
+	Payload string `json:"payload"`
+}
+
+type helmContentDiff struct {
+	Version   any                    `json:"_version"`
+	API       string                 `json:"api"`
+	Name      string                 `json:"name"`
+	Namespace string                 `json:"namespace"`
+	Kind      string                 `json:"kind"`
+	Before    string                 `json:"before"`
+	After     string                 `json:"after"`
+	Entries   []helmContentDiffEntry `json:"entries"`
+}
+
+type helmPlanPayload struct {
+	Op              string            `json:"op"`
+	Plan            string            `json:"plan"`
+	HelmContentDiff []helmContentDiff `json:"helm_content_diff"`
+	K8sContentDiff  []helmContentDiff `json:"k8s_content_diff"`
+}
+
+type parsedHelmPlan struct {
+	op         string
+	changes    []helmPlanChange
+	summary    helmPlanSummary
+	content    []helmContentDiff
+	planSource string
+}
+
+type componentDiffType string
+
+const (
+	componentDiffTypeUnknown            componentDiffType = "unknown"
+	componentDiffTypeTerraform          componentDiffType = "terraform"
+	componentDiffTypeHelm               componentDiffType = "helm"
+	componentDiffTypeKubernetesManifest componentDiffType = "kubernetes_manifest"
+
+	helmDiffContextLines      = 1
+	helmDiffCollapseMinLines  = 12
+	helmDiffCollapseMinHidden = 3
+)
+
+type helmRenderedDiffLine struct {
+	raw         string
+	indent      int
+	isChanged   bool
+	isContainer bool
+}
+
 var changeStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(styles.WarningColor)
 var createStyle = lipgloss.NewStyle().Border(lipgloss.NormalBorder()).BorderForeground(styles.SuccessColor)
 
@@ -41,6 +109,10 @@ var diffContentKeys = map[string]struct{}{
 	"diff":                  {},
 	"display":               {},
 }
+
+var ansiEscapeRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+var helmPlanLineRe = regexp.MustCompile(`^([^,]+),\s*([^,]+),\s*([^(]+)\s*\(([^)]+)\)\s*to\s*be\s*(\w+)`)
+var helmSummaryRe = regexp.MustCompile(`Plan:\s*(\d+)\s+to\s+add,\s*(\d+)\s+to\s+change,\s*(\d+)\s+to\s+destroy`)
 
 func collectTerraformDiffGroups(plan tfjson.Plan) terraformDiffGroups {
 	groups := terraformDiffGroups{}
@@ -129,11 +201,17 @@ func (m model) getTerraformDiff() string {
 	return lipgloss.JoinVertical(lipgloss.Left, changesSection...)
 }
 
-func (m model) stepDetailViewStepDiff() string {
+func (m *model) stepDetailViewStepDiff() string {
 	title := styles.TextBold.Render("Resource Changes ")
 	if m.approvalContents.loading {
 		title = m.spinner.View() + " " + title
 	}
+
+	hint := "[B] open in browser for full context."
+	if m.selectedStepDiffType() == componentDiffTypeHelm && m.helmDiffExplorer.hasInteractiveRows() {
+		hint = "[j/k] select [enter] expand [↑/↓] scroll [B] browser"
+	}
+
 	if m.approvalContents.error != nil {
 		errBlock := styles.TextError.Padding(1).
 			Border(lipgloss.NormalBorder()).
@@ -146,25 +224,28 @@ func (m model) stepDetailViewStepDiff() string {
 				lipgloss.JoinHorizontal(
 					lipgloss.Left,
 					title,
-					lipgloss.NewStyle().Foreground(styles.SubtleColor).Render("[B] open in browser for full context."),
+					lipgloss.NewStyle().Foreground(styles.SubtleColor).Render(hint),
 				),
 				errBlock,
 			),
 		)
 	}
 
-	_, isTF := m.approvalContents.contents["terraform_version"]
 	sections := []string{}
-	if isTF {
-		sections = append(sections, m.getTerraformDiff())
-	}
-
-	if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
-		sections = append(sections, m.renderDiffText(fullDiff))
-	}
-
-	if len(sections) == 0 {
-		sections = append(sections, m.renderRawDiffFallback())
+	switch m.selectedStepDiffType() {
+	case componentDiffTypeTerraform:
+		sections = append(sections, m.stepDetailViewTerraformDiff())
+	case componentDiffTypeHelm:
+		sections = append(sections, m.stepDetailViewHelmDiff())
+	case componentDiffTypeKubernetesManifest:
+		sections = append(sections, m.stepDetailViewKubernetesManifestDiff())
+	default:
+		if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
+			sections = append(sections, m.renderDiffText(fullDiff))
+		}
+		if len(sections) == 0 {
+			sections = append(sections, m.renderRawDiffFallback())
+		}
 	}
 
 	diffSection := lipgloss.NewStyle().Padding(1).Render(
@@ -173,7 +254,7 @@ func (m model) stepDetailViewStepDiff() string {
 			lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				title,
-				lipgloss.NewStyle().Foreground(styles.SubtleColor).Render("[B] open in browser for full context."),
+				lipgloss.NewStyle().Foreground(styles.SubtleColor).Render(hint),
 			),
 			lipgloss.JoinVertical(lipgloss.Left, sections...),
 		),
@@ -181,13 +262,606 @@ func (m model) stepDetailViewStepDiff() string {
 	return diffSection
 }
 
+func (m model) selectedStepDiffType() componentDiffType {
+	if m.selectedStep != nil && m.selectedStep.Approval != nil {
+		switch m.selectedStep.Approval.Type {
+		case models.AppWorkflowStepApprovalTypeTerraformPlan:
+			return componentDiffTypeTerraform
+		case models.AppWorkflowStepApprovalTypeHelmApproval:
+			return componentDiffTypeHelm
+		case models.AppWorkflowStepApprovalTypeKubernetesManifestApproval:
+			return componentDiffTypeKubernetesManifest
+		}
+	}
+
+	if _, isTerraform := m.approvalContents.contents["terraform_version"]; isTerraform {
+		return componentDiffTypeTerraform
+	}
+	if _, isHelm := m.approvalContents.contents["helm_content_diff"]; isHelm {
+		return componentDiffTypeHelm
+	}
+	if _, isKubernetesManifest := m.approvalContents.contents["k8s_content_diff"]; isKubernetesManifest {
+		return componentDiffTypeKubernetesManifest
+	}
+
+	return componentDiffTypeUnknown
+}
+
+func (m model) stepDetailViewTerraformDiff() string {
+	sections := []string{m.getTerraformDiff()}
+
+	if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
+		sections = append(sections, m.renderDiffText(fullDiff))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+func (m *model) stepDetailViewHelmDiff() string {
+	m.syncHelmDiffExplorer()
+
+	if m.approvalContents.loading && !m.helmDiffExplorer.hasPlan {
+		return styles.TextSubtle.Padding(1).Render(m.spinner.View() + " loading helm diff contents...")
+	}
+
+	if m.helmDiffExplorer.parseErr != nil {
+		sections := []string{
+			styles.TextError.Padding(1).
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(styles.ErrorColor).
+				Render(fmt.Sprintf("unable to parse helm diff contents:\n%s", m.helmDiffExplorer.parseErr)),
+		}
+
+		if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
+			sections = append(sections, m.renderDiffText(fullDiff))
+		} else {
+			sections = append(sections, m.renderRawDiffFallback())
+		}
+
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	}
+
+	if m.helmDiffExplorer.hasPlan {
+		return m.helmDiffExplorer.View()
+	}
+
+	if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
+		return m.renderDiffText(fullDiff)
+	}
+
+	return m.renderRawDiffFallback()
+}
+
+func (m model) stepDetailViewKubernetesManifestDiff() string {
+	return m.renderDiffText("Kubernetes manifest diff rendering is not implemented yet.")
+}
+
+func parseHelmPlan(value any) (parsedHelmPlan, error) {
+	if value == nil {
+		return parsedHelmPlan{}, fmt.Errorf("empty helm payload")
+	}
+
+	jsonBytes, err := json.Marshal(value)
+	if err != nil {
+		return parsedHelmPlan{}, fmt.Errorf("unable to marshal helm payload: %w", err)
+	}
+
+	var payload helmPlanPayload
+	if err := json.Unmarshal(jsonBytes, &payload); err != nil {
+		return parsedHelmPlan{}, fmt.Errorf("unable to unmarshal helm payload: %w", err)
+	}
+
+	planSource := "helm"
+	content := payload.HelmContentDiff
+	if len(content) == 0 && len(payload.K8sContentDiff) > 0 {
+		planSource = "kubernetes"
+		content = payload.K8sContentDiff
+	}
+
+	changes, summary := parseHelmPlanText(payload.Plan)
+	if len(changes) == 0 {
+		changes = synthesizeHelmChanges(content)
+	}
+
+	return parsedHelmPlan{
+		op:         payload.Op,
+		changes:    changes,
+		summary:    summary,
+		content:    content,
+		planSource: planSource,
+	}, nil
+}
+
+func parseHelmPlanText(planText string) ([]helmPlanChange, helmPlanSummary) {
+	clean := ansiEscapeRe.ReplaceAllString(planText, "")
+	lines := strings.Split(clean, "\n")
+	changes := []helmPlanChange{}
+	summary := helmPlanSummary{}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		if matches := helmPlanLineRe.FindStringSubmatch(trimmed); len(matches) == 6 {
+			changes = append(changes, helmPlanChange{
+				namespace:    strings.TrimSpace(matches[1]),
+				release:      strings.TrimSpace(matches[2]),
+				resource:     strings.TrimSpace(matches[3]),
+				resourceType: strings.TrimSpace(matches[4]),
+				action:       strings.TrimSpace(matches[5]),
+			})
+		}
+
+		if matches := helmSummaryRe.FindStringSubmatch(trimmed); len(matches) == 4 {
+			fmt.Sscanf(matches[1], "%d", &summary.add)
+			fmt.Sscanf(matches[2], "%d", &summary.change)
+			fmt.Sscanf(matches[3], "%d", &summary.destroy)
+		}
+	}
+
+	return changes, summary
+}
+
+func findHelmDiffForChange(change helmPlanChange, diffs []helmContentDiff) *helmContentDiff {
+	for i := range diffs {
+		diff := diffs[i]
+		if !strings.EqualFold(strings.TrimSpace(diff.Kind), strings.TrimSpace(change.resource)) {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(diff.Name), strings.TrimSpace(change.release)) {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(diff.Namespace), strings.TrimSpace(change.namespace)) {
+			continue
+		}
+		if !helmResourceTypeMatches(diff.API, change.resourceType) {
+			continue
+		}
+
+		return &diffs[i]
+	}
+
+	return nil
+}
+
+func helmResourceTypeMatches(api string, resourceType string) bool {
+	left := strings.ToLower(strings.TrimSpace(api))
+	right := strings.ToLower(strings.TrimSpace(resourceType))
+
+	if left == "" || right == "" {
+		return true
+	}
+	if left == right {
+		return true
+	}
+
+	leftFamily := strings.Split(left, "/")[0]
+	rightFamily := strings.Split(right, "/")[0]
+	return leftFamily == rightFamily
+}
+
+func renderHelmDiffText(diff helmContentDiff) string {
+	if isVersionTwo(diff.Version) {
+		if renderedEntries := renderHelmDiffEntries(diff.Entries); renderedEntries != "" {
+			return renderedEntries
+		}
+	}
+
+	if renderedLines := renderHelmBeforeAfterDiff(diff.Before, diff.After); renderedLines != "" {
+		return renderedLines
+	}
+
+	return renderHelmDiffEntries(diff.Entries)
+}
+
+func isVersionTwo(version any) bool {
+	switch v := version.(type) {
+	case string:
+		return strings.TrimSpace(v) == "2"
+	case float64:
+		return v == 2
+	case int:
+		return v == 2
+	}
+
+	return false
+}
+
+func renderHelmDiffEntries(entries []helmContentDiffEntry) string {
+	if len(entries) == 0 {
+		return ""
+	}
+
+	lines := []string{}
+	for _, entry := range entries {
+		payload := strings.TrimSpace(entry.Payload)
+		if payload == "" {
+			continue
+		}
+
+		diffType := 0
+		if entry.Delta != nil {
+			diffType = *entry.Delta
+		} else if entry.Type != nil {
+			diffType = *entry.Type
+		}
+
+		switch diffType {
+		case 1:
+			lines = append(lines, "- "+payload)
+		case 2:
+			lines = append(lines, "+ "+payload)
+		case 0:
+			lines = append(lines, "  "+payload)
+		default:
+			lines = append(lines, payload)
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func renderHelmBeforeAfterDiff(before string, after string) string {
+	before = strings.TrimSpace(before)
+	after = strings.TrimSpace(after)
+
+	if before == "" && after == "" {
+		return ""
+	}
+
+	if before == "" {
+		added := []string{}
+		for _, line := range strings.Split(after, "\n") {
+			added = append(added, "+ "+line)
+		}
+		return strings.Join(added, "\n")
+	}
+
+	if after == "" {
+		removed := []string{}
+		for _, line := range strings.Split(before, "\n") {
+			removed = append(removed, "- "+line)
+		}
+		return strings.Join(removed, "\n")
+	}
+
+	beforeLines := strings.Split(before, "\n")
+	afterLines := strings.Split(after, "\n")
+	max := len(beforeLines)
+	if len(afterLines) > max {
+		max = len(afterLines)
+	}
+
+	lines := []string{}
+	for i := 0; i < max; i++ {
+		beforeLine := ""
+		if i < len(beforeLines) {
+			beforeLine = beforeLines[i]
+		}
+		afterLine := ""
+		if i < len(afterLines) {
+			afterLine = afterLines[i]
+		}
+
+		if beforeLine == afterLine {
+			if afterLine == "" {
+				continue
+			}
+			lines = append(lines, "  "+afterLine)
+			continue
+		}
+
+		if beforeLine != "" {
+			lines = append(lines, "- "+beforeLine)
+		}
+		if afterLine != "" {
+			lines = append(lines, "+ "+afterLine)
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func synthesizeHelmChanges(content []helmContentDiff) []helmPlanChange {
+	changes := make([]helmPlanChange, 0, len(content))
+	for _, diff := range content {
+		changes = append(changes, helmPlanChange{
+			namespace:    diff.Namespace,
+			release:      diff.Name,
+			resource:     diff.Kind,
+			resourceType: diff.API,
+			action:       inferHelmAction(diff),
+		})
+	}
+
+	return changes
+}
+
+func inferHelmAction(diff helmContentDiff) string {
+	hasBefore := strings.TrimSpace(diff.Before) != ""
+	hasAfter := strings.TrimSpace(diff.After) != ""
+
+	if len(diff.Entries) > 0 {
+		hasRemoved := false
+		hasAdded := false
+		for _, entry := range diff.Entries {
+			diffType := 0
+			if entry.Delta != nil {
+				diffType = *entry.Delta
+			} else if entry.Type != nil {
+				diffType = *entry.Type
+			}
+
+			switch diffType {
+			case 1:
+				hasRemoved = true
+			case 2:
+				hasAdded = true
+			}
+		}
+
+		if hasAdded && !hasRemoved {
+			return "added"
+		}
+		if hasRemoved && !hasAdded {
+			return "destroyed"
+		}
+		if hasAdded && hasRemoved {
+			return "changed"
+		}
+	}
+
+	if !hasBefore && hasAfter {
+		return "added"
+	}
+	if hasBefore && !hasAfter {
+		return "destroyed"
+	}
+	return "changed"
+}
+
+func incrementHelmSummaryByAction(summary *helmPlanSummary, action string) {
+	switch normalizeHelmAction(action) {
+	case "added":
+		summary.add += 1
+	case "destroyed":
+		summary.destroy += 1
+	default:
+		summary.change += 1
+	}
+}
+
+func normalizeHelmAction(action string) string {
+	switch strings.ToLower(strings.TrimSpace(action)) {
+	case "add", "added", "create", "created":
+		return "added"
+	case "change", "changed", "update", "updated", "replace", "replaced":
+		return "changed"
+	case "destroy", "destroyed", "delete", "deleted", "remove", "removed":
+		return "destroyed"
+	default:
+		return strings.ToLower(strings.TrimSpace(action))
+	}
+}
+
+func renderDiffHeaderRow(left string, right string, width int) string {
+	contentWidth := width
+	if contentWidth < 20 {
+		contentWidth = 20
+	}
+
+	leftWidth := lipgloss.Width(left)
+	rightWidth := lipgloss.Width(right)
+	if leftWidth+rightWidth+1 > contentWidth {
+		return lipgloss.JoinHorizontal(lipgloss.Left, left, " ", right)
+	}
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		left,
+		strings.Repeat(" ", contentWidth-leftWidth-rightWidth),
+		right,
+	)
+}
+
 func (m model) renderDiffText(text string) string {
+	return m.renderDiffTextWithWidth(text, m.stepDetail.Width()-4)
+}
+
+func renderHelmDiffTextWithWidth(text string, width int) string {
+	content := strings.Trim(text, "\n")
+	if strings.TrimSpace(content) == "" {
+		content = "No diff contents available"
+	}
+
+	content = collapseHelmDiffText(content)
+
+	lines := strings.Split(content, "\n")
+	styledLines := make([]string, 0, len(lines))
+	for _, line := range lines {
+		switch {
+		case strings.HasPrefix(line, "+"):
+			styledLines = append(styledLines, styles.TextSuccess.Render(line))
+		case strings.HasPrefix(line, "-"):
+			styledLines = append(styledLines, styles.TextError.Render(line))
+		default:
+			styledLines = append(styledLines, styles.TextDim.Render(line))
+		}
+	}
+
+	if width < 20 {
+		width = 20
+	}
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Padding(1).
+		Width(width).
+		Render(strings.Join(styledLines, "\n"))
+}
+
+func collapseHelmDiffText(text string) string {
+	content := strings.Trim(text, "\n")
+	if strings.TrimSpace(content) == "" {
+		return text
+	}
+
+	rawLines := strings.Split(content, "\n")
+	if len(rawLines) < helmDiffCollapseMinLines {
+		return content
+	}
+
+	parsedLines := parseHelmRenderedDiffLines(rawLines)
+	changedCount := 0
+	for _, line := range parsedLines {
+		if line.isChanged {
+			changedCount += 1
+		}
+	}
+	if changedCount == 0 {
+		return content
+	}
+
+	keep := make([]bool, len(parsedLines))
+	for i, line := range parsedLines {
+		if !line.isChanged {
+			continue
+		}
+
+		keep[i] = true
+
+		for offset := 1; offset <= helmDiffContextLines; offset++ {
+			if prev := i - offset; prev >= 0 && !parsedLines[prev].isChanged {
+				keep[prev] = true
+			}
+			if next := i + offset; next < len(parsedLines) && !parsedLines[next].isChanged {
+				keep[next] = true
+			}
+		}
+
+		markHelmAncestorContext(keep, parsedLines, i)
+	}
+
+	collapsed, hiddenCount := buildCollapsedHelmDiffLines(parsedLines, keep)
+	if hiddenCount < helmDiffCollapseMinHidden {
+		return content
+	}
+
+	return strings.Join(collapsed, "\n")
+}
+
+func parseHelmRenderedDiffLines(lines []string) []helmRenderedDiffLine {
+	parsed := make([]helmRenderedDiffLine, 0, len(lines))
+	for _, raw := range lines {
+		lineBody := raw
+		isChanged := false
+		switch {
+		case strings.HasPrefix(raw, "+ "):
+			lineBody = raw[2:]
+			isChanged = true
+		case strings.HasPrefix(raw, "- "):
+			lineBody = raw[2:]
+			isChanged = true
+		case strings.HasPrefix(raw, "  "):
+			lineBody = raw[2:]
+		}
+
+		trimmedBody := strings.TrimSpace(lineBody)
+		parsed = append(parsed, helmRenderedDiffLine{
+			raw:         raw,
+			indent:      len(lineBody) - len(strings.TrimLeft(lineBody, " ")),
+			isChanged:   isChanged,
+			isContainer: strings.HasSuffix(trimmedBody, ":"),
+		})
+	}
+
+	return parsed
+}
+
+func markHelmAncestorContext(keep []bool, lines []helmRenderedDiffLine, idx int) {
+	if idx < 0 || idx >= len(lines) {
+		return
+	}
+
+	targetIndent := lines[idx].indent
+	if targetIndent <= 0 {
+		return
+	}
+
+	for j := idx - 1; j >= 0; j-- {
+		line := lines[j]
+		if line.isChanged || !line.isContainer {
+			continue
+		}
+		if line.indent >= targetIndent {
+			continue
+		}
+
+		keep[j] = true
+		targetIndent = line.indent
+		if targetIndent == 0 {
+			return
+		}
+	}
+}
+
+func buildCollapsedHelmDiffLines(lines []helmRenderedDiffLine, keep []bool) ([]string, int) {
+	collapsed := make([]string, 0, len(lines))
+	hiddenCount := 0
+
+	for i := 0; i < len(lines); {
+		if keep[i] {
+			collapsed = append(collapsed, lines[i].raw)
+			i += 1
+			continue
+		}
+
+		rangeStart := i
+		for i < len(lines) && !keep[i] {
+			i += 1
+		}
+		rangeEnd := i - 1
+		hiddenCount += rangeEnd - rangeStart + 1
+
+		ellipsis := renderHelmEllipsisLine(lines, rangeStart, rangeEnd)
+		if len(collapsed) == 0 || collapsed[len(collapsed)-1] != ellipsis {
+			collapsed = append(collapsed, ellipsis)
+		}
+	}
+
+	return collapsed, hiddenCount
+}
+
+func renderHelmEllipsisLine(lines []helmRenderedDiffLine, start int, end int) string {
+	indent := 0
+	hasIndent := false
+
+	if start > 0 {
+		indent = lines[start-1].indent
+		hasIndent = true
+	}
+	if end+1 < len(lines) {
+		nextIndent := lines[end+1].indent
+		if !hasIndent || nextIndent < indent {
+			indent = nextIndent
+			hasIndent = true
+		}
+	}
+	if !hasIndent {
+		indent = 0
+	}
+
+	return "  " + strings.Repeat(" ", indent) + "..."
+}
+
+func (m model) renderDiffTextWithWidth(text string, width int) string {
 	content := strings.TrimSpace(text)
 	if content == "" {
 		content = "No diff contents available"
 	}
 
-	width := m.stepDetail.Width() - 4
 	if width < 20 {
 		width = 20
 	}

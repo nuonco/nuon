@@ -29,6 +29,24 @@ func TestStepHasPlanDiff(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "does not show diff for system image sync steps",
+			step: &models.AppWorkflowStep{
+				ExecutionType:  "system",
+				StepTargetType: "install_deploys",
+				Name:           "sync img_nuon_dashboard_ui",
+			},
+			want: false,
+		},
+		{
+			name: "still shows diff for non-system image sync names",
+			step: &models.AppWorkflowStep{
+				ExecutionType:  "hidden",
+				StepTargetType: "install_deploys",
+				Name:           "sync img_nuon_dashboard_ui",
+			},
+			want: true,
+		},
+		{
 			name: "ignores unrelated steps",
 			step: &models.AppWorkflowStep{StepTargetType: "other", Name: "await install stack"},
 			want: false,

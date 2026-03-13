@@ -25,11 +25,30 @@ func (m model) stepHasPlanDiff(step *models.AppWorkflowStep) bool {
 		return false
 	}
 
+	if isSystemImageSyncStep(step) {
+		return false
+	}
+
 	if step.StepTargetType == "install_deploys" || step.StepTargetType == "install_deploy" {
 		return true
 	}
 
 	return strings.Contains(strings.ToLower(step.Name), "sync and plan")
+}
+
+func isSystemImageSyncStep(step *models.AppWorkflowStep) bool {
+	if step == nil {
+		return false
+	}
+
+	if !strings.EqualFold(strings.TrimSpace(string(step.ExecutionType)), "system") {
+		return false
+	}
+
+	name := strings.ToLower(strings.TrimSpace(step.Name))
+
+	// TODO: this name-based detection is undesirable; step kind should be explicit in API payloads.
+	return strings.HasPrefix(name, "sync img_")
 }
 
 func isTruthyPlanOnly(value any) bool {

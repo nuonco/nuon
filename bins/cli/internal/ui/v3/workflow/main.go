@@ -72,6 +72,7 @@ type model struct {
 
 	approvalContents approvalContents
 	policyNames      map[string]string
+	helmDiffExplorer helmDiffExplorerModel
 
 	// ui components
 	// 1. layout
@@ -144,6 +145,7 @@ func initialModel(
 		// data
 		approvalContents: approvalContents,
 		policyNames:      map[string]string{},
+		helmDiffExplorer: newHelmDiffExplorerModel(minRequiredWidth - 4),
 
 		header:     viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(2)),
 		stepsList:  stepsList,
@@ -201,6 +203,7 @@ func (m *model) resetSelected() {
 	m.selectedIndex = -1
 	m.showJson = false
 	m.approvalContents = approvalContents{loading: false, error: nil}
+	m.helmDiffExplorer.Reset()
 
 	// toggle detail-specific key help
 	m.keys.Esc.SetHelp("esc", "quit")
@@ -219,6 +222,8 @@ func (m *model) setSelected() []tea.Cmd {
 	m.stepApprovalConf = false
 	m.workflowApprovalConf = false
 	m.showJson = false
+	m.approvalContents = approvalContents{loading: false, error: nil}
+	m.helmDiffExplorer.Reset()
 	// grab the item from the list using the cursor
 	items := m.stepsList.Items()
 	if len(items) == 0 {
@@ -261,7 +266,7 @@ func (m *model) setSelected() []tea.Cmd {
 			),
 			"info",
 		)
-		m.approvalContents.loading = true
+		m.approvalContents = approvalContents{loading: true, error: nil}
 		cmds = append(cmds, m.getWorkflowStepApprovalContentsCmd)
 	}
 
@@ -342,6 +347,7 @@ func (m *model) resize() {
 	vpHeight := m.height - vMarginHeight
 	m.stepDetail.SetHeight(vpHeight)
 	m.stepDetail.SetWidth(vpWidth)
+	m.helmDiffExplorer.SetWidth(m.stepDetail.Width() - 4)
 
 	// NOTE: called here to ensure proportions
 	m.populateStepDetailView(true)
@@ -414,6 +420,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// handle keystrokes
 	case tea.KeyPressMsg:
+		if m.handleDetailContentKey(msg) {
+			m.populateStepDetailView(false)
+			return m, tea.Batch(cmds...)
+		}
+
 		switch {
 		case key.Matches(msg, m.keys.Quit): // "ctrl+c", "q"
 			m.setQuitting()
@@ -470,6 +481,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// selection
 		case key.Matches(msg, m.keys.Enter):
+			if m.focus == "detail" {
+				return m, tea.Batch(cmds...)
+			}
+
 			commands := m.setSelected()
 			cmds = append(cmds, commands...)
 			m.stepsList.Update(msg)
