@@ -393,6 +393,9 @@ func getGCPSAMap(appCfg *app.AppConfig, stackOutputs *app.GCPStackOutputs, insta
 
 	availableRoles := make(map[string]string)
 
+	maps.Copy(availableRoles, stackOutputs.BreakGlassSAEmails)
+	maps.Copy(availableRoles, stackOutputs.CustomSAEmails)
+
 	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render provision role name: %w", err)
@@ -410,14 +413,6 @@ func getGCPSAMap(appCfg *app.AppConfig, stackOutputs *app.GCPStackOutputs, insta
 		return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
 	}
 	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionSAEmail
-
-	if appCfg.PermissionsConfig.BreakGlassRole.Name != "" {
-		renderedBreakGlassRoleName, err := render.RenderV2(appCfg.PermissionsConfig.BreakGlassRole.Name, stateMap)
-		if err != nil {
-			return nil, fmt.Errorf("unable to render break glass role name: %w", err)
-		}
-		availableRoles[renderedBreakGlassRoleName] = stackOutputs.BreakGlassSAEmail
-	}
 
 	return availableRoles, nil
 }
