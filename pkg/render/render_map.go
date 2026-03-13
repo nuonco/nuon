@@ -54,6 +54,21 @@ func RenderMap(obj any, data map[string]any) error {
 				}
 				val.SetMapIndex(iter.Key(), reflect.ValueOf([]byte(rendered)))
 			}
+		case reflect.Ptr:
+			// Handle pointer values (e.g. *string in pgtype.Hstore)
+			if mapValue.IsNil() {
+				continue
+			}
+			elem := mapValue.Elem()
+			if elem.Kind() == reflect.String {
+				rendered, err := RenderV2(elem.String(), data)
+				if err != nil {
+					return errors.Wrap(err, "unable to render *string map value")
+				}
+				newVal := reflect.New(elem.Type())
+				newVal.Elem().Set(reflect.ValueOf(rendered))
+				val.SetMapIndex(iter.Key(), newVal)
+			}
 		case reflect.Interface:
 			if mapValue.IsNil() {
 				continue
