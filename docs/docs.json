@@ -185,7 +185,7 @@
           },
           {
             "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions"]
+            "pages": ["guides/notifications", "guides/github-actions", "guides/claude-code-plugin"]
           }
         ]
       },

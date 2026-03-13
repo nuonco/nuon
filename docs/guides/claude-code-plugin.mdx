@@ -1,0 +1,157 @@
+---
+title: 'Claude Code Plugin'
+description: 'Use AI to generate, convert, and validate Nuon app configurations with Claude Code.'
+icon: 'wand-magic-sparkles'
+---
+
+The Nuon Claude Code plugin makes Claude an expert at creating Nuon BYOC app configurations. Describe your application and infrastructure, and the plugin generates production-ready config files with correct TOML structure, Go template wiring, and dependency ordering.
+
+## What it does
+
+- **Scaffolds complete app configs** from a description of your application
+- **Converts existing Helm charts** into Nuon `helm_chart` components with properly templated values
+- **Validates configs** against the Nuon schema, checks template syntax, and runs `nuon apps validate` if the CLI is installed
+- **Real-time feedback** via a PostToolUse hook that catches common TOML errors as Claude edits files
+- **LSP integration** for diagnostics, completion, hover, and formatting on Nuon TOML files
+
+## Requirements
+
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) v2.1+
+- [Nuon CLI](/cli) (strongly recommended, enables `nuon apps validate` feedback loop)
+
+## Install
+
+Install the plugin from the Nuon marketplace:
+
+```sh
+/plugin marketplace add nuonco/nuon-plugin
+/plugin install nuon@nuon-marketplace
+```
+
+After installation, restart Claude Code to activate the LSP server.
+
+<Note>
+The Nuon CLI is strongly recommended. Install it with `brew install nuonco/tap/nuon` to enable the full validation feedback loop.
+</Note>
+
+## Commands
+
+The plugin provides three slash commands:
+
+| Command | Description |
+|---------|-------------|
+| `/nuon:init` | Interactive guided flow to scaffold a new Nuon app config |
+| `/nuon:convert` | Convert existing Helm charts, Terraform, or Docker Compose to Nuon configs |
+| `/nuon:validate` | Validate Nuon config files in the current directory |
+
+## Getting started
+
+### Create a new app config
+
+Start Claude Code and describe your application:
+
+```
+> I have a Node.js app with PostgreSQL and Redis that I want to deploy
+> with Nuon on AWS. The app uses a Helm chart.
+```
+
+Claude will:
+1. Ask clarifying questions about your infrastructure
+2. Plan the component architecture
+3. Generate all config files (metadata, inputs, sandbox, components, permissions, actions)
+4. Validate the output with `nuon apps validate` if the CLI is installed
+
+You can also use the `/nuon:init` command for a more structured guided flow.
+
+### Convert a Helm chart
+
+If you have an existing Helm chart, use `/nuon:convert` or simply ask Claude:
+
+```
+> Convert my Helm chart at ./charts/myapp to a Nuon component
+```
+
+The plugin analyzes your `values.yaml` and classifies each value into the right category:
+
+- **Customer input** — values that vary per install (exposed as [inputs](/concepts/app-inputs))
+- **Infrastructure-derived** — values from the sandbox or other components (wired via Go templates)
+- **Component-derived** — values from other Nuon components (e.g., image tags from a docker build)
+- **Hardcoded default** — values that stay the same across all installs
+
+### Validate existing configs
+
+Run `/nuon:validate` in any directory containing Nuon TOML files. The plugin checks for:
+
+- Schema compliance (valid field names, types, required fields)
+- Go template syntax (matching `{{` and `}}`, valid variable paths)
+- Common typos (e.g., `terrafrom_version`, `.nuon.input.inputs` instead of `.nuon.inputs.inputs`)
+- Unquoted version numbers (e.g., `terraform_version = 1.5.0` should be `"1.5.0"`)
+- Mutually exclusive repo sections (only one of `[public_repo]`, `[connected_repo]`, or `[helm_repo]`)
+- CLI validation via `nuon apps validate` if the Nuon CLI is installed
+
+## Automatic validation hook
+
+The plugin includes a PostToolUse hook that fires every time Claude writes or edits a file. If the file is a Nuon TOML config, Claude automatically checks for the common errors listed above and reports any issues inline. This gives you immediate feedback without needing to run `/nuon:validate` manually.
+
+## LSP integration
+
+The plugin configures the [Nuon Language Server](/configuration-files#language-server-protocol-lsp) to run inside Claude Code. When active, the LSP provides:
+
+- **Diagnostics** — real-time validation of Nuon configs (type mismatches, required fields, mutual exclusivity constraints)
+- **Hover** — inline documentation when hovering over config fields
+- **Completion** — suggests valid field names, schema types, and template variables
+- **Formatting** — auto-formats TOML files (key alignment, section spacing)
+- **Workspace scanning** — validates all TOML files in the workspace at startup
+
+The LSP uses the first-line comment in each TOML file to determine which schema to validate against:
+
+```toml components/deploy.toml
+# helm
+name       = "deploy"
+type       = "helm_chart"
+chart_name = "myapp"
+```
+
+Valid schema type comments include `# app`, `# component`, `# sandbox`, `# terraform`, `# helm`, `# docker-build`, `# container-image`, `# kubernetes-manifest`, `# input`, `# input-group`, `# secret`, `# policy`, and others. See the [configuration files reference](/configuration-files) for more details.
+
+<Note>
+The LSP requires a Claude Code restart to activate after plugin installation. Hot-reload via `/reload-plugins` activates commands, skills, and hooks, but LSP servers need a full restart.
+</Note>
+
+## Agents
+
+The plugin includes two specialized agents that Claude invokes automatically:
+
+- **nuon-config-architect** — primary agent with deep knowledge of Nuon's config schema, templating system, and deployment patterns
+- **helm-analyzer** — specialized agent for analyzing Helm charts, classifying values, and generating Nuon component configs
+
+## Example output
+
+For a typical EKS application, the plugin generates a directory structure like:
+
+```
+your-app/
+├── metadata.toml          # App name, description
+├── inputs.toml            # Customer-facing inputs
+├── sandbox.toml           # EKS sandbox config
+├── components/
+│   ├── certificate.toml   # ACM wildcard cert (terraform)
+│   ├── deploy.toml        # Helm chart deployment
+│   └── alb.toml           # Application load balancer
+└── values/
+    └── deploy.yaml        # Helm values file with Go templates
+```
+
+Each component references the correct sandbox outputs and component dependencies using Go template expressions like `{{.nuon.install.sandbox.outputs.account.region}}` and `{{.nuon.components.certificate.outputs.arn}}`.
+
+## Updating the plugin
+
+When the plugin is updated, refresh your local copy:
+
+```sh
+/plugin marketplace update
+```
+
+## Source code
+
+The plugin is open source under the Apache-2.0 license: [github.com/nuonco/nuon-plugin](https://github.com/nuonco/nuon-plugin)
