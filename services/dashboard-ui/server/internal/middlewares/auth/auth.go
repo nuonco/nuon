@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +43,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		}
 
 		returnURL := m.cfg.AppUrl + c.Request.URL.RequestURI()
-		loginURL := m.cfg.AuthServiceUrl + "/?url=" + returnURL
+		loginURL := m.cfg.AuthServiceUrl + "/?url=" + url.QueryEscape(returnURL)
 
 		token, err := c.Cookie(cookieName)
 		if err != nil || token == "" {
