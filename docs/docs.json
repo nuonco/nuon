@@ -159,7 +159,7 @@
             ]
           },
           {
-            "group": "Support Customer Infrastructure",
+            "group": "Customer Configuration Options",
             "pages": [
               "concepts/installs",
               "concepts/stacks",
@@ -168,7 +168,7 @@
             ]
           },
           {
-            "group": "Continuous Delivery",
+            "group": "Day-2 Operations",
             "pages": [
               "concepts/workflows",
               "concepts/actions",
