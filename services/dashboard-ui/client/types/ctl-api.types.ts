@@ -6,6 +6,19 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+// manually defined — not in OpenAPI spec yet
+export type TAppSandboxBuild = {
+  id: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  app_sandbox_config_id?: string
+  status?: string
+  status_description?: string
+}
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'

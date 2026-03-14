@@ -51,6 +51,11 @@ const AppTemplate = () => {
                 text: 'Overview',
               },
               {
+                path: `/sandbox`,
+                iconVariant: 'Cube',
+                text: 'Sandbox',
+              },
+              {
                 path: `/components`,
                 iconVariant: 'Cards',
                 text: 'Components',
@@ -110,6 +115,11 @@ const AppTemplate = () => {
                   path: `/`,
                   iconVariant: 'HouseSimple',
                   text: 'Overview',
+                },
+                {
+                  path: `/sandbox`,
+                  iconVariant: 'Cube',
+                  text: 'Sandbox',
                 },
                 {
                   path: `/components`,
