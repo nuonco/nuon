@@ -1,5 +1,7 @@
 export * from './actions'
 export * from './create-sandbox-build'
+export * from './get-sandbox-builds'
+export * from './get-sandbox-build'
 export * from './branches'
 export * from './components'
 export * from './installs'

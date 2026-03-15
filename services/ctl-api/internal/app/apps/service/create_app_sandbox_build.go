@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	sandboxbuildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/sandboxbuild"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 // @ID        CreateAppSandboxBuild
@@ -34,33 +34,29 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 		return
 	}
 
-	// get latest app config
+	// Get the latest app config
 	var latestConfig app.AppConfig
-	res := s.db.WithContext(ctx).
+	if res := s.db.WithContext(ctx).
 		Where("app_id = ?", currentApp.ID).
 		Order("created_at DESC").
-		First(&latestConfig)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("no app config found for app %s: %w", appID, gorm.ErrRecordNotFound))
+		First(&latestConfig); res.Error != nil {
+		ctx.Error(fmt.Errorf("no app config found for app %s: %w", appID, res.Error))
 		return
 	}
 
-	// get latest sandbox config
-	var sandboxConfig app.AppSandboxConfig
-	res = s.db.WithContext(ctx).
-		Where("app_id = ?", currentApp.ID).
-		Order("created_at DESC").
-		First(&sandboxConfig)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("no sandbox config found for app %s: %w", appID, gorm.ErrRecordNotFound))
+	// Get the latest sandbox config
+	if len(currentApp.AppSandboxConfigs) == 0 {
+		ctx.Error(fmt.Errorf("no sandbox config found for app %s", appID))
 		return
 	}
+	latestSandboxConfig := currentApp.AppSandboxConfigs[0]
 
-	// create the sandbox build record
+	// Create the build record immediately so the caller gets an ID back
 	build := app.AppSandboxBuild{
 		AppID:              currentApp.ID,
 		AppConfigID:        latestConfig.ID,
-		AppSandboxConfigID: sandboxConfig.ID,
+		AppSandboxConfigID: latestSandboxConfig.ID,
+		OrgID:              currentApp.OrgID,
 		Status:             app.AppSandboxBuildStatusQueued,
 		StatusDescription:  "queued and waiting for runner",
 	}
@@ -69,11 +65,25 @@ func (s *service) CreateAppSandboxBuild(ctx *gin.Context) {
 		return
 	}
 
-	// send signal to trigger the build workflow
-	s.evClient.Send(ctx, currentApp.ID, &signals.Signal{
-		Type:              signals.OperationBuildSandbox,
-		AppSandboxBuildID: build.ID,
+	// Get the app's sandbox queue
+	q, err := s.queueClient.GetQueueByOwner(ctx, currentApp.ID, "apps")
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get sandbox queue for app %s: %w", appID, err))
+		return
+	}
+
+	// Enqueue the signal with the pre-created build ID
+	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal: &sandboxbuildsignal.Signal{
+			AppConfigID:       latestConfig.ID,
+			AppSandboxBuildID: build.ID,
+		},
 	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue sandbox build signal: %w", err))
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, build)
 }

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { AppSandbox as SandboxConfig } from '@/components/apps/config/AppSandbox'
 import { BuildSandboxButton } from '@/components/sandbox/management/BuildSandbox'
+import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -52,22 +53,33 @@ export const Sandbox = () => {
         <BuildSandboxButton variant="primary" />
       </div>
 
-      {isLoading ? (
-        <Card>
-          <Text>Loading...</Text>
-        </Card>
-      ) : appConfig?.sandbox ? (
-        <Card className="flex flex-col gap-4">
-          <Text weight="strong">Sandbox config</Text>
-          <SandboxConfig appConfig={appConfig} />
-        </Card>
-      ) : (
-        <EmptyState
-          variant="diagram"
-          emptyTitle="No sandbox configured"
-          emptyMessage="Configure a sandbox in your application configuration to see it here."
-        />
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
+        <div className="md:col-span-8 flex flex-col gap-6">
+          {isLoading ? (
+            <Card>
+              <Text>Loading...</Text>
+            </Card>
+          ) : appConfig?.sandbox ? (
+            <Card className="flex flex-col gap-4">
+              <Text weight="strong">Sandbox config</Text>
+              <SandboxConfig appConfig={appConfig} />
+            </Card>
+          ) : (
+            <EmptyState
+              variant="diagram"
+              emptyTitle="No sandbox configured"
+              emptyMessage="Configure a sandbox in your application configuration to see it here."
+            />
+          )}
+        </div>
+
+        <div className="md:col-span-4 flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Build history
+          </Text>
+          <SandboxBuildTimeline shouldPoll />
+        </div>
+      </div>
     </PageSection>
   )
 }

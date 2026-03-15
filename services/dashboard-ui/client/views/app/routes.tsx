@@ -12,6 +12,7 @@ import { PolicyDetail } from './PolicyDetail'
 import { Installs } from './Installs'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
+import { SandboxBuildDetail } from './SandboxBuildDetail'
 import { Branches } from './branches/Branches'
 import { BranchDetail } from './branches/BranchDetail'
 import { BranchConfigs } from './branches/BranchConfigs'
@@ -41,6 +42,7 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/branches/:branchId/runs', element: <BranchRuns /> },
       { path: ':orgId/apps/:appId/branches/:branchId/runs/:runId', element: <BranchRunDetail /> },
       { path: ':orgId/apps/:appId/sandbox', element: <Sandbox /> },
+      { path: ':orgId/apps/:appId/sandbox/builds/:buildId', element: <SandboxBuildDetail /> },
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },
       { path: ':orgId/apps/:appId/readme', element: <Readme /> },
     ],
