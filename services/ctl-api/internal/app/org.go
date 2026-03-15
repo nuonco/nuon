@@ -59,6 +59,7 @@ const (
 	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
 	OrgFeatureQueues                  OrgFeature = "queues"
 	OrgFeatureSupportRole             OrgFeature = "support-role"
+	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
 )
 
 type Org struct {
@@ -164,7 +165,11 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
 		OrgFeatureQueues:             false,
+<<<<<<< HEAD
 		OrgFeatureSupportRole:        false,
+=======
+		OrgFeatureParallelRunnerJobs: false,
+>>>>>>> 4baa38ee7 (feat: make runner jobs parallelizable)
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -230,7 +235,11 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDashboardSSE,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureQueues,
+<<<<<<< HEAD
 		OrgFeatureSupportRole,
+=======
+		OrgFeatureParallelRunnerJobs,
+>>>>>>> 4baa38ee7 (feat: make runner jobs parallelizable)
 	}
 }
 
@@ -259,8 +268,12 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTerraformInstaller:      "Enable Terraform-based installer for infrastructure provisioning and management",
 		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+<<<<<<< HEAD
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
+=======
+		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
+>>>>>>> 4baa38ee7 (feat: make runner jobs parallelizable)
 	}
 }
 
