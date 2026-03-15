@@ -25,6 +25,22 @@ func StartHandler(ctx workflow.Context, workflowID string, req HandlerRequest) {
 	workflow.ExecuteChildWorkflow(ctx, (&Workflows{}).Handler, req)
 }
 
+// StartHandlerIfNeeded starts a handler workflow only if one is not already running.
+// Unlike StartHandler, this uses ALLOW_DUPLICATE_FAILED_ONLY so it is a no-op when the
+// handler is still alive (e.g. after a graceful queue stop) but will restart a handler
+// that was terminated or failed (e.g. after a hard queue termination).
+func StartHandlerIfNeeded(ctx workflow.Context, workflowID string, req HandlerRequest) {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:             "api",
+		WorkflowID:            workflowID,
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+		WaitForCancellation:   false,
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	workflow.ExecuteChildWorkflow(ctx, (&Workflows{}).Handler, req)
+}
+
 type HandlerRequest struct {
 	QueueID       string `validate:"required"`
 	QueueSignalID string `validate:"required"`
