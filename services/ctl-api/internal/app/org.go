@@ -58,6 +58,7 @@ const (
 	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
 	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
 	OrgFeatureQueues                  OrgFeature = "queues"
+	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
 )
 
 type Org struct {
@@ -162,6 +163,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
 		OrgFeatureQueues:             false,
+		OrgFeatureParallelRunnerJobs: false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -227,6 +229,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDashboardSSE,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureQueues,
+		OrgFeatureParallelRunnerJobs,
 	}
 }
 
@@ -255,6 +258,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTerraformInstaller:      "Enable Terraform-based installer for infrastructure provisioning and management",
 		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
 	}
 }
 

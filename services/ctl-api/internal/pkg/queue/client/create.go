@@ -24,6 +24,7 @@ type CreateQueueRequest struct {
 	OwnerID   string `validate:"required"`
 	OwnerType string `validate:"required"`
 	Namespace string `validate:"required"`
+	Name      string
 
 	MaxInFlight int
 	MaxDepth    int
@@ -35,6 +36,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	q := app.Queue{
 		OwnerID:     req.OwnerID,
 		OwnerType:   req.OwnerType,
+		Name:        req.Name,
 		MaxInFlight: req.MaxInFlight,
 		MaxDepth:    req.MaxDepth,
 		Workflow: signaldb.WorkflowRef{

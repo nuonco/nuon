@@ -75,6 +75,12 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
+	if install.Org.Features[string(app.OrgFeatureParallelRunnerJobs)] {
+		if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+			return nil, fmt.Errorf("unable to create runner queues: %w", err)
+		}
+	}
+
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
@@ -136,6 +142,12 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	if org.Features[string(app.OrgFeatureParallelRunnerJobs)] {
+		if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+			return nil, fmt.Errorf("unable to create runner queues: %w", err)
+		}
 	}
 
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{

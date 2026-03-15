@@ -28,8 +28,9 @@ type Queue struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	MaxDepth    int `json:"max_depth,omitzero"`
-	MaxInFlight int `json:"max_in_flight,omitzero"`
+	Name        string `json:"name,omitzero" gorm:"default:''" temporaljson:"name,omitzero,omitempty"`
+	MaxDepth    int    `json:"max_depth,omitzero"`
+	MaxInFlight int    `json:"max_in_flight,omitzero"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
