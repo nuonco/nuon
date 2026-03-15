@@ -9,6 +9,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
@@ -86,14 +87,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get org runner: %w", err)
 	}
 
-	// Resolve git source
-	gitSource, err := activities.AwaitGetSandboxBuildGitSource(ctx, activities.GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: sandboxConfig.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to get sandbox build git source: %w", err)
-	}
-
 	// Get or create the sandbox build record
 	build, err := s.getOrCreateBuild(ctx, appConfig, sandboxConfig)
 	if err != nil {
@@ -131,27 +124,25 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
-	// Build the composite plan
-	compositePlan := plantypes.CompositePlan{
-		BuildPlan: &plantypes.BuildPlan{
-			Src: gitSource,
-			TerraformBuildPlan: &plantypes.TerraformBuildPlan{
-				Labels: map[string]string{
-					"app_id":               appConfig.AppID,
-					"app_sandbox_build_id": build.ID,
-				},
-			},
-		},
-	}
-	planJSON, err := json.Marshal(compositePlan)
+	// Build the plan via child workflow
+	buildPlan, err := workerplan.AwaitCreateSandboxBuildPlan(ctx, &workerplan.CreateSandboxBuildPlanRequest{
+		AppSandboxBuildID: build.ID,
+		WorkflowID:        fmt.Sprintf("%s-create-sandbox-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
 	if err != nil {
 		updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to create build plan")
+		return fmt.Errorf("unable to create sandbox build plan: %w", err)
+	}
+
+	planJSON, err := json.Marshal(buildPlan)
+	if err != nil {
+		updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to marshal build plan")
 		return fmt.Errorf("unable to marshal plan: %w", err)
 	}
 
 	if err := activities.AwaitSaveSandboxBuildPlan(ctx, activities.SaveSandboxBuildPlanRequest{
 		JobID:         runnerJob.ID,
-		CompositePlan: compositePlan,
+		CompositePlan: plantypes.CompositePlan{BuildPlan: buildPlan},
 		PlanJSON:      string(planJSON),
 	}); err != nil {
 		updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to save build plan")

@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
+	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/plan"
 )
 
 type Workflows struct {
@@ -28,6 +29,7 @@ func (w *Workflows) All() []any {
 		w.EventLoop,
 		wkflow.ProvisionECRRepository,
 		wkflow.DeprovisionECRRepository,
+		workerplan.CreateSandboxBuildPlan,
 	}
 
 	return append(wkflows, w.ListWorkflowFns()...)

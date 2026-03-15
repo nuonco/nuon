@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/plan"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -24,27 +25,11 @@ func (w *Workflows) BuildSandbox(ctx workflow.Context, sreq signals.RequestSigna
 		return fmt.Errorf("unable to get sandbox build: %w", err)
 	}
 
-	// Get the sandbox config (with VCS preloaded)
-	sandboxConfig, err := branchactivities.AwaitGetAppSandboxConfigByIDByConfigID(ctx, build.AppSandboxConfigID)
-	if err != nil {
-		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to get sandbox config")
-		return fmt.Errorf("unable to get sandbox config: %w", err)
-	}
-
 	// Get org runner
 	runner, err := branchactivities.AwaitGetOrgRunner(ctx, branchactivities.GetOrgRunnerRequest{OrgID: build.OrgID})
 	if err != nil {
 		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to get org runner")
 		return fmt.Errorf("unable to get org runner: %w", err)
-	}
-
-	// Resolve git source
-	gitSource, err := branchactivities.AwaitGetSandboxBuildGitSource(ctx, branchactivities.GetSandboxBuildGitSourceRequest{
-		SandboxConfigID: sandboxConfig.ID,
-	})
-	if err != nil {
-		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to get git source")
-		return fmt.Errorf("unable to get sandbox build git source: %w", err)
 	}
 
 	// Create log stream
@@ -76,27 +61,25 @@ func (w *Workflows) BuildSandbox(ctx workflow.Context, sreq signals.RequestSigna
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
-	// Build composite plan
-	compositePlan := plantypes.CompositePlan{
-		BuildPlan: &plantypes.BuildPlan{
-			Src: gitSource,
-			TerraformBuildPlan: &plantypes.TerraformBuildPlan{
-				Labels: map[string]string{
-					"app_id":               build.AppID,
-					"app_sandbox_build_id": build.ID,
-				},
-			},
-		},
-	}
-	planJSON, err := json.Marshal(compositePlan)
+	// Build the plan via child workflow
+	buildPlan, err := workerplan.AwaitCreateSandboxBuildPlan(ctx, &workerplan.CreateSandboxBuildPlanRequest{
+		AppSandboxBuildID: build.ID,
+		WorkflowID:        fmt.Sprintf("%s-create-sandbox-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	})
 	if err != nil {
 		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to create build plan")
+		return fmt.Errorf("unable to create sandbox build plan: %w", err)
+	}
+
+	planJSON, err := json.Marshal(buildPlan)
+	if err != nil {
+		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to marshal build plan")
 		return fmt.Errorf("unable to marshal plan: %w", err)
 	}
 
 	if err := branchactivities.AwaitSaveSandboxBuildPlan(ctx, branchactivities.SaveSandboxBuildPlanRequest{
 		JobID:         runnerJob.ID,
-		CompositePlan: compositePlan,
+		CompositePlan: plantypes.CompositePlan{BuildPlan: buildPlan},
 		PlanJSON:      string(planJSON),
 	}); err != nil {
 		updateSandboxBuildStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to save build plan")

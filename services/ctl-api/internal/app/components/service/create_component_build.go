@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
-	queuebuildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -85,25 +85,16 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 			return
 		}
 
-		enqResp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID: q.ID,
-			Signal: &queuebuildsignal.Signal{
+		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   q.ID,
+			OwnerID:   bld.ID,
+			OwnerType: "component_builds",
+			Signal: &buildsignal.Signal{
 				ComponentID: cmp.ID,
 				BuildID:     bld.ID,
 			},
-		})
-		if err != nil {
+		}); err != nil {
 			ctx.Error(fmt.Errorf("unable to enqueue build signal: %w", err))
-			return
-		}
-
-		if res := s.db.WithContext(ctx).Model(&app.QueueSignal{}).
-			Where("id = ?", enqResp.ID).
-			Updates(map[string]any{
-				"owner_id":   bld.ID,
-				"owner_type": s.db.NamingStrategy.TableName("ComponentBuild"),
-			}); res.Error != nil {
-			ctx.Error(fmt.Errorf("unable to associate queue signal with build: %w", res.Error))
 			return
 		}
 
