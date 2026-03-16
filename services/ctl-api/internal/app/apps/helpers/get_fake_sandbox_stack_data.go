@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"fmt"
+
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -12,17 +14,19 @@ import (
 func GetFakeSandboxStackData(appCfg *app.AppConfig, region string) map[string]any {
 	breakGlassRoleARNs := make(map[string]string)
 	for _, role := range appCfg.BreakGlassConfig.Roles {
-		breakGlassRoleARNs[role.Name] = "arn:aws:iam::123456789012:role/fake-" + role.Name
+		breakGlassRoleARNs[role.Name] = fmt.Sprintf("arn:aws:iam::123456789012:role/%s-fake-%s", role.Name, generics.GetFakeObj[string]())
 	}
 
 	customRoleARNs := make(map[string]string)
 	for _, role := range appCfg.PermissionsConfig.CustomRoles {
-		customRoleARNs[role.Name] = "arn:aws:iam::123456789012:role/fake-" + role.Name
+		customRoleARNs[role.Name] = fmt.Sprintf("arn:aws:iam::123456789012:role/%s-fake-%s", role.Name, generics.GetFakeObj[string]())
 	}
 
 	installInputs := make(map[string]string)
 	for _, input := range appCfg.InputConfig.AppInputs {
-		installInputs[input.Name] = "fake-" + input.Name
+		if input.Source == app.AppInputSourceCustomer {
+			installInputs[input.Name] = fmt.Sprintf("fake-%s-%s", input.Name, generics.GetFakeObj[string]())
+		}
 	}
 
 	stackRefs := GetStackReferences(appCfg)
