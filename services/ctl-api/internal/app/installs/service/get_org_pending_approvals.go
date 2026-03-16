@@ -47,11 +47,8 @@ func (s *service) GetOrgPendingApprovals(ctx *gin.Context) {
 func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.WorkflowStepApproval, error) {
 	var approvals []app.WorkflowStepApproval
 	res := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
-		Joins("LEFT JOIN install_workflow_step_approval_responses resp ON resp.install_workflow_step_approval_id = install_workflow_step_approvals.id AND resp.deleted_at = 0").
-		Where("install_workflow_step_approvals.org_id = ?", orgID).
-		Where("install_workflow_step_approvals.deleted_at = 0").
-		Where("resp.id IS NULL").
+		Scopes(scopes.WithOverrideTable("install_workflow_step_approvals_pending_v1"), scopes.WithOffsetPagination).
+		Where("org_id = ?", orgID).
 		Preload("InstallWorkflowStep").
 		Preload("Response").
 		Find(&approvals)

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { PoliciesTable, policiesTableColumns } from '@/components/policies/PoliciesTable'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
@@ -9,6 +10,8 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppPoliciesConfigs } from '@/lib'
+
+const CONTAINER_ID = 'app-policies-page'
 
 export const Policies = () => {
   const { org } = useOrg()
@@ -31,7 +34,7 @@ export const Policies = () => {
   const policies = latestConfig?.policies ?? []
 
   return (
-    <PageSection isScrollable>
+    <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Policies | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -58,6 +61,7 @@ export const Policies = () => {
           />
         )}
       </div>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
@@ -11,6 +12,8 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallPolicyReports } from '@/lib'
 import type { TPolicyReportOwnerType, TPolicyReportStatus } from '@/lib/ctl-api/installs/get-install-policy-reports'
+
+const CONTAINER_ID = 'install-policies-page'
 
 export const Policies = () => {
   const { org } = useOrg()
@@ -35,7 +38,7 @@ export const Policies = () => {
   const reports = reportsResult ?? []
 
   return (
-    <PageSection isScrollable>
+    <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Policies | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -67,6 +70,7 @@ export const Policies = () => {
           />
         )}
       </div>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }
