@@ -158,7 +158,11 @@ func (v *varsValidator) getFakeInstallStackState() *state.InstallStackState {
 
 	// TODO: fake the following fields
 	fakeInstallStack.TemplateJSON = "{}"
-	fakeInstallStack.Outputs = make(map[string]interface{})
+	fakeInstallStack.Outputs = map[string]any{
+		"break_glass_role_arns": map[string]string{},
+		"custom_role_arns":      map[string]string{},
+		"install_inputs":        map[string]string{},
+	}
 	return &fakeInstallStack
 }
 
