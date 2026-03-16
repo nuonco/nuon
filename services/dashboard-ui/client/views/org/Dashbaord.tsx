@@ -1,8 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
 import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
-import { RecentActivities, type IActivity } from '@/components/orgs/RecentActivities'
+import {
+  RecentActivities,
+  type IActivity,
+} from '@/components/orgs/RecentActivities'
 import { StatsGrid } from '@/components/orgs/StatsGrid'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -15,8 +19,14 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 import { getOrgStats, getRunnerJobs } from '@/lib'
-import { getJobHref, getJobName, getJobExecutionStatus } from '@/utils/runner-utils'
+import {
+  getJobHref,
+  getJobName,
+  getJobExecutionStatus,
+} from '@/utils/runner-utils'
 import announcementsData from '@/content/dashboard-announcements.json'
+
+const CONTAINER_ID = 'org-dashboard-page'
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
@@ -34,7 +44,9 @@ export const Dashboard = () => {
   useEffect(() => {
     if (!org) return
     if (!org.features?.['org-dashboard']) {
-      navigate(org.features?.['org-runner'] ? `/${org.id}/runner` : `/${org.id}/apps`)
+      navigate(
+        org.features?.['org-runner'] ? `/${org.id}/runner` : `/${org.id}/apps`
+      )
     }
   }, [org])
 
@@ -77,11 +89,9 @@ export const Dashboard = () => {
   }))
 
   return (
-    <PageLayout isScrollable>
+    <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Dashboard | ${org?.name}`} />
-      <Breadcrumbs
-        breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]}
-      />
+      <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
       <PageHeader>
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1}>
@@ -126,6 +136,7 @@ export const Dashboard = () => {
           </PageSection>
         </PageGrid>
       </PageContent>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }
