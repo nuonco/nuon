@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { RunnerJobHeader } from '@/components/runners/job-details/RunnerJobHeader'
 import { RunnerJobLogs } from '@/components/runners/job-details/RunnerJobLogs'
@@ -19,7 +18,7 @@ const RunnerJobDetailContent = () => {
   const { job } = useRunnerJob()
 
   return (
-    <PageLayout>
+    <PageLayout className="pb-6">
       <PageTitle title={`Job | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
