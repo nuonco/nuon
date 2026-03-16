@@ -30,7 +30,7 @@ export const MainLayout = ({
         )}
       >
         <MainSidebar versions={versions} hideOrgContent={hideOrgContent} />
-        {children}
+        <div className="w-full">{children}</div>
       </div>
     </div>
   )

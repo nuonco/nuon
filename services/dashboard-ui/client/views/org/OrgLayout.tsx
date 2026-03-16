@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Outlet } from 'react-router'
 import { MainLayout } from '@/components/layout/MainLayout'
+import { OrgStatusBar } from '@/components/orgs/OrgStatusBar'
 import { getSidebarOpen } from '@/lib/cookies'
 import { getAPIVersion } from '@/lib'
 import { APIHealthProvider } from '@/providers/api-health-provider'
@@ -41,6 +42,7 @@ export const OrgLayout = () => {
                         }}
                       >
                         <Outlet />
+                        <OrgStatusBar />
                       </MainLayout>
                     </SurfacesProvider>
                   </WorkflowApprovalsProvider>

@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
 
 // take ISO timestamp string and return true if it's less than 15 seconds ago
-export function isLessThan15SecondsOld(timestampStr: string) {
+export function isLessThan15SecondsOld(timestampStr: string | undefined) {
+  if (!timestampStr) return false
   const date = DateTime.fromISO(timestampStr)
   const now = DateTime.now()
   const diffInSeconds = now.diff(date, 'seconds').seconds
