@@ -65,14 +65,14 @@ func (s *service) CreateAppComponentBuild(ctx *gin.Context) {
 		return
 	}
 
-	org, err := cctx.OrgFromContext(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("unable to check features: %w", err))
 		return
 	}
 
 	// When both AppBranches and Queues features are enabled, use queue-based path.
-	if org.Features[string(app.OrgFeatureAppBranches)] && org.Features[string(app.OrgFeatureQueues)] {
+	if useQueues {
 		bld, err := s.helpers.CreateComponentBuild(ctx, cmp.ID, req.UseLatest, req.GitRef)
 		if err != nil {
 			ctx.Error(err)
@@ -160,15 +160,43 @@ func (s *service) CreateComponentBuild(ctx *gin.Context) {
 		return
 	}
 
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check features: %w", err))
+		return
+	}
+
 	bld, err := s.helpers.CreateComponentBuild(ctx, cmpID, req.UseLatest, req.GitRef)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, cmpID, &signals.Signal{
-		Type:    signals.OperationBuild,
-		BuildID: bld.ID,
-	})
+
+	if useQueues {
+		q, err := s.queueClient.GetQueueByOwner(ctx, cmpID, "components")
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
+			return
+		}
+
+		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   q.ID,
+			OwnerID:   bld.ID,
+			OwnerType: "component_builds",
+			Signal: &buildsignal.Signal{
+				ComponentID: cmpID,
+				BuildID:     bld.ID,
+			},
+		}); err != nil {
+			ctx.Error(fmt.Errorf("unable to enqueue build signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, cmpID, &signals.Signal{
+			Type:    signals.OperationBuild,
+			BuildID: bld.ID,
+		})
+	}
 
 	ctx.JSON(http.StatusCreated, bld)
 }

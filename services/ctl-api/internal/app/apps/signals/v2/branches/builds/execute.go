@@ -98,6 +98,10 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, componentID
 }
 
 func (s *Signal) buildComponent(ctx workflow.Context, l log.Logger, componentID, appConfigID string) error {
+	if err := activities.AwaitEnsureComponentQueueByComponentID(ctx, componentID); err != nil {
+		return fmt.Errorf("component %s: ensure queue failed: %w", componentID, err)
+	}
+
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   componentID,
 		OwnerType: "components",

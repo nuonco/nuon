@@ -43,3 +43,17 @@ func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (
 
 	return val, nil
 }
+
+// AllFeaturesEnabled returns true only if every provided feature is enabled for the org in context.
+func (f *Features) AllFeaturesEnabled(ctx context.Context, features ...app.OrgFeature) (bool, error) {
+	for _, feature := range features {
+		enabled, err := f.FeatureEnabled(ctx, feature)
+		if err != nil {
+			return false, err
+		}
+		if !enabled {
+			return false, nil
+		}
+	}
+	return true, nil
+}

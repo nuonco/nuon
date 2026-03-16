@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type UpdateAppBranchRequest struct {
@@ -48,14 +49,13 @@ func (s *service) UpdateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Feature flag checks
-	if !org.Features[string(app.OrgFeatureAppBranches)] {
-		ctx.Error(fmt.Errorf("app branches feature not enabled for this organization"))
+	enabled, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check features: %w", err))
 		return
 	}
-
-	if !org.Features[string(app.OrgFeatureQueues)] {
-		ctx.Error(fmt.Errorf("queues feature not enabled for this organization"))
+	if !enabled {
+		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches))
 		return
 	}
 
