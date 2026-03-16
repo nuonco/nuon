@@ -12,17 +12,24 @@ import {
   ComponentsTooltip,
   getContextTooltipItemsFromInstallComponents,
 } from '@/components/components/ComponentsTooltip'
+import { useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
-import type { TInstall, TInstallComponent } from '@/types'
+import { useOrg } from '@/hooks/use-org'
+import { getInstallStack } from '@/lib'
+import type { TInstall, TInstallComponent, TInstallStack } from '@/types'
 import { cn } from '@/utils/classnames'
+import { Time } from '@/components/common/Time'
 import { getInstallStatusTitle } from '@/utils/install-utils'
+import { getStatusTheme } from '@/utils/status-utils'
 import { toSentenceCase } from '@/utils/string-utils'
 
 interface IInstallStatuses
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   isLabelHidden?: boolean
   tooltipPosition?: ITooltip['position']
+  variant?: 'badge' | 'icon'
   install: TInstall
+  stack?: TInstallStack
 }
 
 type TStatusConfig = {
@@ -84,8 +91,14 @@ export const InstallStatuses = ({
   install,
   isLabelHidden = false,
   tooltipPosition = 'bottom',
+  variant = 'badge',
+  stack,
   ...props
 }: IInstallStatuses) => {
+  const driftStatus = install?.drifted_objects?.length ? 'warn' : 'active'
+  const latestStackVersion = stack?.versions?.[0]
+  const stackStatus = latestStackVersion?.composite_status?.status
+
   const driftContent = (
     <ContextTooltip
       title="Drift detection"
@@ -126,16 +139,19 @@ export const InstallStatuses = ({
             ]
       }
     >
-      <Status
-        status={install?.drifted_objects?.length ? 'warn' : 'active'}
-        variant="badge"
-      >
-        {isLabelHidden
-          ? 'Drift'
-          : install.drifted_objects?.length
-            ? 'Drifted'
-            : 'No drift'}
-      </Status>
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(driftStatus)}>
+          <Icon variant="FileDashedIcon" size={14} className="cursor-default" />
+        </Text>
+      ) : (
+        <Status status={driftStatus} variant="badge">
+          {isLabelHidden
+            ? 'Drift'
+            : install.drifted_objects?.length
+              ? 'Drifted'
+              : 'No drift'}
+        </Status>
+      )}
     </ContextTooltip>
   )
 
@@ -163,9 +179,19 @@ export const InstallStatuses = ({
         },
       ]}
     >
-      <Status status={install.runner_status} variant="badge">
-        {isLabelHidden ? 'Runner' : install.runner_status}
-      </Status>
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(install.runner_status ?? '')}>
+          <Icon
+            variant="SneakerMoveIcon"
+            size={14}
+            className="cursor-default"
+          />
+        </Text>
+      ) : (
+        <Status status={install.runner_status} variant="badge">
+          {isLabelHidden ? 'Runner' : install.runner_status}
+        </Status>
+      )}
     </ContextTooltip>
   )
 
@@ -193,9 +219,19 @@ export const InstallStatuses = ({
         },
       ]}
     >
-      <Status status={install.sandbox_status} variant="badge">
-        {isLabelHidden ? 'Sandbox' : install.sandbox_status}
-      </Status>
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(install.sandbox_status ?? '')}>
+          <Icon
+            variant="ShippingContainerIcon"
+            size={14}
+            className="cursor-default"
+          />
+        </Text>
+      ) : (
+        <Status status={install.sandbox_status} variant="badge">
+          {isLabelHidden ? 'Sandbox' : install.sandbox_status}
+        </Status>
+      )}
     </ContextTooltip>
   )
 
@@ -211,48 +247,90 @@ export const InstallStatuses = ({
       )}
       position={tooltipPosition}
     >
-      <Status status={install.composite_component_status} variant="badge">
-        {isLabelHidden ? 'Components' : install.composite_component_status}
-      </Status>
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(install.composite_component_status ?? '')}>
+          <Icon variant="CardsIcon" size={14} className="cursor-default" />
+        </Text>
+      ) : (
+        <Status status={install.composite_component_status} variant="badge">
+          {isLabelHidden ? 'Components' : install.composite_component_status}
+        </Status>
+      )}
     </ComponentsTooltip>
   )
 
+  const stackContent = stackStatus ? (
+    <ContextTooltip
+      title="Stack"
+      position={tooltipPosition}
+      items={[
+        {
+          href: `/${install.org_id}/installs/${install.id}/stacks`,
+          id: latestStackVersion?.id ?? 'stack',
+          title: toSentenceCase(stackStatus),
+          subtitle: latestStackVersion?.created_at ? (
+            <Time
+              time={latestStackVersion.created_at}
+              variant="label"
+              theme="neutral"
+            />
+          ) : (
+            latestStackVersion?.composite_status?.status_human_description
+          ),
+          leftContent: (
+            <Status
+              status={stackStatus}
+              isWithoutText
+              variant="timeline"
+              iconSize={16}
+            />
+          ),
+        },
+      ]}
+    >
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(stackStatus)}>
+          <Icon variant="Stack" size={14} className="cursor-default" />
+        </Text>
+      ) : (
+        <Status status={stackStatus} variant="badge">
+          {isLabelHidden ? 'Stack' : stackStatus}
+        </Status>
+      )}
+    </ContextTooltip>
+  ) : null
+
+  const isIcon = variant === 'icon'
+
+  const wrap = (label: string, content: React.ReactNode) =>
+    isIcon || isLabelHidden ? (
+      content
+    ) : (
+      <LabeledValue label={label}>{content}</LabeledValue>
+    )
+
   return (
     <div className={cn('flex items-center gap-4', className)} {...props}>
-      {install?.drifted_objects ? (
-        isLabelHidden ? (
-          driftContent
-        ) : (
-          <LabeledValue label="Drift detection">{driftContent}</LabeledValue>
-        )
-      ) : null}
-
-      {isLabelHidden ? (
-        runnerContent
-      ) : (
-        <LabeledValue label="Runner">{runnerContent}</LabeledValue>
-      )}
-
-      {isLabelHidden ? (
-        sandboxContent
-      ) : (
-        <LabeledValue label="Sandbox">{sandboxContent}</LabeledValue>
-      )}
-
-      {isLabelHidden ? (
-        componentsContent
-      ) : (
-        <LabeledValue label="Components">{componentsContent}</LabeledValue>
-      )}
+      {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
+      {stackContent ? wrap('Stack', stackContent) : null}
+      {wrap('Runner', runnerContent)}
+      {wrap('Sandbox', sandboxContent)}
+      {wrap('Components', componentsContent)}
     </div>
   )
 }
 
 export const InstallStatusesContainer = (
-  props: Omit<IInstallStatuses, 'install'>
+  props: Omit<IInstallStatuses, 'install' | 'stack'>
 ) => {
+  const { org } = useOrg()
   const { install } = useInstall()
-  return <InstallStatuses install={install} {...props} />
+  const { data: stack } = useQuery({
+    queryKey: ['install-stack', org.id, install.id],
+    queryFn: () => getInstallStack({ installId: install.id, orgId: org.id }),
+    enabled: !!install.id,
+  })
+  return <InstallStatuses install={install} stack={stack} {...props} />
 }
 
 export const SimpleInstallStatuses = ({
