@@ -155,9 +155,8 @@ func (v *varsValidator) getFakeInstallStackState() *state.InstallStackState {
 	fakeInstallStack.QuickLinkURL = "https://fake-quick-link-url.com"
 	fakeInstallStack.TemplateURL = "https://fake-template-url.com"
 	fakeInstallStack.Checksum = "fake-checksum"
-
-	// TODO: fake the following fields
 	fakeInstallStack.TemplateJSON = "{}"
+
 	fakeInstallStack.Outputs = map[string]any{
 		"break_glass_role_arns": map[string]string{},
 		"custom_role_arns":      map[string]string{},

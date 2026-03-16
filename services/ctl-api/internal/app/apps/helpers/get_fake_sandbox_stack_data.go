@@ -12,17 +12,17 @@ import (
 func GetFakeSandboxStackData(appCfg *app.AppConfig, region string) map[string]any {
 	breakGlassRoleARNs := make(map[string]string)
 	for _, role := range appCfg.BreakGlassConfig.Roles {
-		breakGlassRoleARNs[role.Name] = generics.GetFakeObj[string]()
+		breakGlassRoleARNs[role.Name] = "arn:aws:iam::123456789012:role/fake-" + role.Name
 	}
 
 	customRoleARNs := make(map[string]string)
 	for _, role := range appCfg.PermissionsConfig.CustomRoles {
-		customRoleARNs[role.Name] = generics.GetFakeObj[string]()
+		customRoleARNs[role.Name] = "arn:aws:iam::123456789012:role/fake-" + role.Name
 	}
 
 	installInputs := make(map[string]string)
 	for _, input := range appCfg.InputConfig.AppInputs {
-		installInputs[input.Name] = generics.GetFakeObj[string]()
+		installInputs[input.Name] = "fake-" + input.Name
 	}
 
 	stackRefs := GetStackReferences(appCfg)
