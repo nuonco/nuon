@@ -10,6 +10,8 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type WorkflowStepApprovalType string
@@ -96,6 +98,16 @@ func (c *WorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+	}
+}
+
+func (c *WorkflowStepApproval) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &WorkflowStepApproval{}, "pending_v1"),
+			SQL:           viewsql.WorkflowStepApprovalsPendingViewV1,
+			AlwaysReapply: true,
 		},
 	}
 }
