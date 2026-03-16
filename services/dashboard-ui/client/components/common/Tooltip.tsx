@@ -95,7 +95,7 @@ export const Tooltip = ({
       <span
         ref={tooltipRef}
         className={cn(
-          `tooltip-content bg-background text-foreground absolute block px-2 py-1 rounded-md drop-shadow-lg w-fit whitespace-nowrap ${position}`,
+          `tooltip-content bg-background text-foreground absolute block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${position}`,
           {
             enter: isOpen,
             exit: !isOpen,

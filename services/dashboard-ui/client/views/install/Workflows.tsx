@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -10,6 +11,8 @@ import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeF
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 
+const CONTAINER_ID = 'install-workflows-page'
+
 export const Workflows = () => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -19,7 +22,7 @@ export const Workflows = () => {
   const showDrifts = searchParams.get('drifts') !== 'false'
 
   return (
-    <PageSection isScrollable>
+    <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Workflows | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -49,6 +52,7 @@ export const Workflows = () => {
         planonly={showDrifts}
         type={type}
       />
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }
