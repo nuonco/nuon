@@ -1,4 +1,5 @@
 import { AppsTable } from '@/components/apps/AppsTable'
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
@@ -9,11 +10,13 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 
+const CONTAINER_ID = 'org-apps-page'
+
 export const Apps = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout isScrollable>
+    <PageLayout id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Apps | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -42,6 +45,7 @@ export const Apps = () => {
           <AppsTable shouldPoll />
         </PageSection>
       </PageContent>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }

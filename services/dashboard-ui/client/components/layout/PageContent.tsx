@@ -19,7 +19,7 @@ export const PageContent = ({
         'flex-1 flex flex-col',
         {
           'md:flex-row': variant !== 'primary',
-          'h-full overflow-y-auto overflow-x-hidden': isScrollable,
+          'h-full overflow-y-auto overflow-x-hidden pb-7': isScrollable,
         },
         className
       )}

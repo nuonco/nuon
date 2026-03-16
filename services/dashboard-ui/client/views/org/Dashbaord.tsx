@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
 import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
 import { RecentActivities, type IActivity } from '@/components/orgs/RecentActivities'
 import { StatsGrid } from '@/components/orgs/StatsGrid'
@@ -17,6 +18,8 @@ import { useOrg } from '@/hooks/use-org'
 import { getOrgStats, getRunnerJobs } from '@/lib'
 import { getJobHref, getJobName, getJobExecutionStatus } from '@/utils/runner-utils'
 import announcementsData from '@/content/dashboard-announcements.json'
+
+const CONTAINER_ID = 'org-dashboard-page'
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
@@ -77,7 +80,7 @@ export const Dashboard = () => {
   }))
 
   return (
-    <PageLayout isScrollable>
+    <PageLayout id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]}
@@ -126,6 +129,7 @@ export const Dashboard = () => {
           </PageSection>
         </PageGrid>
       </PageContent>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }

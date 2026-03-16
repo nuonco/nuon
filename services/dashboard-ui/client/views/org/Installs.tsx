@@ -1,3 +1,4 @@
+import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallsTable } from '@/components/installs/InstallsTable'
@@ -9,11 +10,13 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 
+const CONTAINER_ID = 'org-installs-page'
+
 export const Installs = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout isScrollable>
+    <PageLayout id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Installs | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -42,6 +45,7 @@ export const Installs = () => {
           <InstallsTable shouldPoll />
         </PageSection>
       </PageContent>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }

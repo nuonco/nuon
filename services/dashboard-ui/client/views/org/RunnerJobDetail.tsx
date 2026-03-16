@@ -1,6 +1,9 @@
 import { useParams } from 'react-router'
+import { BackLink } from '@/components/common/BackLink'
+import { BackToTop } from '@/components/common/BackToTop'
 import { RunnerJobHeader } from '@/components/runners/job-details/RunnerJobHeader'
 import { RunnerJobLogs } from '@/components/runners/job-details/RunnerJobLogs'
+import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -9,12 +12,14 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunnerJob } from '@/hooks/use-runner-job'
 import { getJobName } from '@/utils/runner-utils'
 
+const CONTAINER_ID = 'org-runner-job-page'
+
 const RunnerJobDetailContent = () => {
   const { org } = useOrg()
   const { job } = useRunnerJob()
 
   return (
-    <PageSection isScrollable className="!p-0 !gap-0">
+    <PageLayout>
       <PageTitle title={`Job | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -23,11 +28,14 @@ const RunnerJobDetailContent = () => {
           { path: '', text: getJobName(job) },
         ]}
       />
-      <RunnerJobHeader />
-      <PageSection isScrollable={false} className="!pb-12">
-        <RunnerJobLogs />
+      <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">       
+        <RunnerJobHeader />
+        <PageSection isScrollable={false} className="!pb-12">
+          <RunnerJobLogs />
+          <BackToTop containerId={CONTAINER_ID} />
+        </PageSection>
       </PageSection>
-    </PageSection>
+    </PageLayout>
   )
 }
 

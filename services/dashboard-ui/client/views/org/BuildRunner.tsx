@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -17,6 +18,8 @@ import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
+
+const CONTAINER_ID = 'org-build-runner-page'
 
 const heading = (
   <HeadingGroup>
@@ -72,7 +75,7 @@ export const BuildRunner = () => {
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
       <SurfacesProvider>
-      <PageLayout isScrollable>
+      <PageLayout id={CONTAINER_ID} isScrollable>
         {breadcrumbs}
         <PageHeader className="flex items-center justify-between">
           {heading}
@@ -98,6 +101,7 @@ export const BuildRunner = () => {
             </PageSection>
           </div>
         </PageContent>
+        <BackToTop containerId={CONTAINER_ID} />
       </PageLayout>
       </SurfacesProvider>
     </RunnerProvider>
