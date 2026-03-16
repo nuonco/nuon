@@ -34,6 +34,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		if h.state.workflowCfg != nil {
 			stepCfg = h.state.workflowCfg.Steps[idx]
 			stepName = stepCfg.Name
+
+			// Use interpolated values from the plan so that template variables
+			// (e.g. {{ .nuon.install.id }}) are resolved.
+			if stepPlan.InterpolatedCommand != "" {
+				stepCfg.Command = stepPlan.InterpolatedCommand
+			}
+			if stepPlan.InterpolatedInlineContents != "" {
+				stepCfg.InlineContents = stepPlan.InterpolatedInlineContents
+			}
 		} else if step.AdhocConfig != nil {
 			// For adhoc runs, convert the adhoc config to a regular step config.
 			// Use interpolated values from the plan so that template variables
