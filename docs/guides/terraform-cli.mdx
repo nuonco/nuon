@@ -1,0 +1,152 @@
+---
+title: "Using Terraform CLI"
+description: "Run Terraform commands locally against your Nuon-managed sandbox and component workspaces."
+icon: "terminal"
+keywords: ["terraform cli", "terraform init", "terraform plan", "terraform apply", "terraform backend", "local terraform", "sandbox terraform", "component terraform", "terraform state", "terraform workspace"]
+---
+
+The Nuon dashboard provides a **Use Terraform CLI** option on both the Sandbox and Terraform Component detail pages. This lets you run Terraform commands locally against the remote state managed by Nuon. It's useful for debugging, inspecting resources, importing state, or running targeted plans.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install the Nuon CLI">
+    Install the Nuon CLI if you haven't already:
+
+    ```bash
+    brew install nuonco/tap/nuon
+    ```
+
+    Authenticate with your account:
+
+    ```bash
+    nuon auth login
+    ```
+  </Step>
+  <Step title="Match the Terraform version">
+    You must use the **same Terraform version** configured for the sandbox or component. The version is displayed on the configuration card in the dashboard.
+
+    For sandboxes, this is the `terraform_version` in your `sandbox.toml`. For components, it's the `terraform_version` in the component's `.toml` config.
+
+    Verify your local version matches:
+
+    ```bash
+    terraform version
+    ```
+
+    <Warning>
+    Running a different Terraform version can corrupt state or produce unexpected plan diffs. Use a version manager like [tfenv](https://github.com/tfutils/tfenv) or [asdf](https://github.com/asdf-vm/asdf) to switch versions easily.
+    </Warning>
+  </Step>
+  <Step title="Navigate to the Terraform source code">
+    You must run Terraform commands from within the **same Terraform module directory** that the sandbox or component is configured to use. This is the directory containing your `.tf` files.
+
+    For example, if your sandbox is configured with:
+
+    ```toml sandbox.toml
+    [public_repo]
+    repo      = "nuonco/aws-eks-sandbox"
+    directory = "."
+    branch    = "main"
+    ```
+
+    Then clone and enter that repo:
+
+    ```bash
+    git clone https://github.com/nuonco/aws-eks-sandbox.git
+    cd aws-eks-sandbox
+    ```
+
+    For a component configured with a subdirectory:
+
+    ```toml components/database.toml
+    [public_repo]
+    repo      = "your-org/your-infra"
+    directory = "modules/database"
+    branch    = "main"
+    ```
+
+    Navigate to that subdirectory:
+
+    ```bash
+    cd modules/database
+    ```
+  </Step>
+</Steps>
+
+## Setting Up the Backend
+
+Click the **Use Terraform CLI** button on the Sandbox or Component detail page in the dashboard. This opens a modal with a downloadable `nuon_backend.tf` file containing the HTTP backend configuration for that workspace.
+
+The generated file looks like this:
+
+```hcl nuon_backend.tf
+terraform {
+  backend "http" {
+    lock_method    = "POST"
+    unlock_method  = "POST"
+    address        = "https://api.nuon.co/v1/terraform-backend?workspace_id=<workspace_id>&org_id=<org_id>"
+    lock_address   = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/lock?org_id=<org_id>"
+    unlock_address = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/unlock?org_id=<org_id>"
+  }
+}
+```
+
+Download this file and place it in your Terraform module directory alongside the other `.tf` files.
+
+## Initializing Terraform
+
+Set your API token and initialize the backend:
+
+```bash
+export TF_HTTP_AUTHORIZATION="Bearer $(nuon orgs api-token -j | tr -d '\"')"
+terraform init -reconfigure
+```
+
+The `-reconfigure` flag is required to switch Terraform's backend to the Nuon HTTP backend. After initialization, your local Terraform is connected to the remote workspace state.
+
+<Note>
+`nuon orgs api-token` generates a short-lived API token scoped to your currently selected org. Make sure you've selected the correct org with `nuon orgs select` before running this command. The token is used to authenticate all Terraform backend requests (state, lock, and unlock).
+</Note>
+
+## Running Commands
+
+Once initialized, you can run standard Terraform commands against the workspace:
+
+```bash
+# View current state
+terraform state list
+
+# Inspect a specific resource
+terraform state show <resource_address>
+
+# Preview changes
+terraform plan
+
+# Apply changes
+terraform apply
+
+# Import an existing resource into state
+terraform import <resource_address> <resource_id>
+```
+
+<Warning>
+Running `terraform apply` locally will modify the live install infrastructure. Use caution and prefer `terraform plan` for inspection.
+</Warning>
+
+## Unlocking State
+
+If a Terraform operation is interrupted (e.g., a network failure during apply), the workspace state may remain locked. You can unlock it from the dashboard using the **Unlock Terraform state** button on the Sandbox or Component detail page.
+
+<Note>
+Only force unlock a workspace if you are certain no other operation is actively running. Force unlocking a workspace in use by a running job may cause state corruption.
+</Note>
+
+## Viewing State in the Dashboard
+
+The dashboard displays the current Terraform state for both sandboxes and components, organized into two tabs:
+
+- **Outputs** - all Terraform outputs and their current values
+- **Resources** - all managed resources with their type, provider, mode, and attribute values
+
+This state view updates after each successful sandbox run or component deploy.

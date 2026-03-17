@@ -200,6 +200,7 @@
               "guides/external-image-policies",
               "guides/configuring-policies",
               "guides/terraform-components",
+              "guides/terraform-cli",
               "guides/helm-chart-components",
               "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
@@ -267,8 +268,7 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg",
-    "href": "/get-started/introduction"
+    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "primary": {
