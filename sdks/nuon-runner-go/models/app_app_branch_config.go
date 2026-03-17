@@ -20,8 +20,14 @@ import (
 // swagger:model app.AppBranchConfig
 type AppAppBranchConfig struct {
 
+	// action ids
+	ActionIds []string `json:"action_ids"`
+
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
+
+	// component ids
+	ComponentIds []string `json:"component_ids"`
 
 	// generated view field
 	ConfigNumber int64 `json:"config_number,omitempty"`

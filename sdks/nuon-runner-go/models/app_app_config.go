@@ -20,6 +20,9 @@ import (
 // swagger:model app.AppConfig
 type AppAppConfig struct {
 
+	// action ids
+	ActionIds []string `json:"action_ids"`
+
 	// action workflow configs
 	ActionWorkflowConfigs []*AppActionWorkflowConfig `json:"action_workflow_configs"`
 
