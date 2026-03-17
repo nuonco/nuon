@@ -12,6 +12,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -130,10 +131,26 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
-	s.evClient.Send(ctx, installID, &signals.Signal{
-		Type:           signals.OperationUpdateInstallStackOutputs,
-		InstallStackID: stackVersion.InstallStackID,
-	})
+	useQueues, err := s.useInstallQueues(ctx)
+	if err != nil {
+		return fmt.Errorf("checking features: %w", err)
+	}
+	if useQueues {
+		queueID, err := s.getInstallQueueID(ctx, installID)
+		if err != nil {
+			return err
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
+			InstallStackID: stackVersion.InstallStackID,
+		}); err != nil {
+			return fmt.Errorf("enqueue signal: %w", err)
+		}
+	} else {
+		s.evClient.Send(ctx, installID, &signals.Signal{
+			Type:           signals.OperationUpdateInstallStackOutputs,
+			InstallStackID: stackVersion.InstallStackID,
+		})
+	}
 
 	return nil
 }
