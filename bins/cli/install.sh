@@ -170,7 +170,7 @@ if [ $which_status -ne 0 ]; then
 fi
 
 echo "ensuring version is correct"
-version=$(nuon version -j)
+version=$(nuon version)
 if [ "$version" != "$VERSION" ]; then
   echo "nuon version returned $version, expected $VERSION. This usually means nuon was installed to a separate location outside of this script"
   exit 1
