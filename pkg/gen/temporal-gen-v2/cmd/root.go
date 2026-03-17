@@ -5,11 +5,12 @@ import (
 )
 
 var (
-	validateFlag  bool
-	dryRunFlag    bool
-	cleanupFlag   bool
-	recursiveFlag bool
-	importsFlag   bool
+	validateFlag    bool
+	dryRunFlag      bool
+	cleanupFlag     bool
+	recursiveFlag   bool
+	importsFlag     bool
+	parallelismFlag int
 )
 
 func NewRootCmd() *cobra.Command {
