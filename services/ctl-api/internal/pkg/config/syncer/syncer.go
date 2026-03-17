@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/appconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
@@ -130,6 +131,12 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app",
 			Method:   s.syncApp,
+		},
+		{
+			Resource: "app-config-metadata",
+			Method: func(ctx context.Context) error {
+				return appconfig.Sync(ctx, s.db, s.cfg, s.appConfigID)
+			},
 		},
 		{
 			Resource: "app-inputs",

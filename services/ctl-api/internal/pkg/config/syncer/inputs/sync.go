@@ -3,7 +3,6 @@ package inputs
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 
@@ -53,14 +52,6 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 
 	// Validate inputs
 	if err := validateInputs(cfg); err != nil {
-		return sync.SyncErr{
-			Resource:    "app-inputs",
-			Description: fmt.Sprintf("validation failed: %v", err),
-		}
-	}
-
-	// Validate required inputs with existing installs
-	if err := validateRequiredInputsWithInstalls(ctx, db, cfg, appID); err != nil {
 		return sync.SyncErr{
 			Resource:    "app-inputs",
 			Description: fmt.Sprintf("validation failed: %v", err),
@@ -194,67 +185,6 @@ func validateInputs(cfg *config.AppConfig) error {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid input type: %s", inputType),
 				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string", input.Name, inputType),
-			}
-		}
-	}
-
-	return nil
-}
-
-// validateRequiredInputsWithInstalls ensures new required inputs have default values when installs exist.
-// Duplicates logic from services/ctl-api/internal/app/apps/service/create_app_input_config.go
-func validateRequiredInputsWithInstalls(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID string) error {
-	var installCount int64
-	res := db.WithContext(ctx).
-		Model(&app.Install{}).
-		Where("app_id = ?", appID).
-		Count(&installCount)
-
-	if res.Error != nil {
-		return fmt.Errorf("unable to check install count: %w", res.Error)
-	}
-
-	if installCount == 0 {
-		return nil
-	}
-
-	// Get existing input names
-	var existingInputConfig app.AppInputConfig
-	res = db.WithContext(ctx).
-		Where("app_id = ?", appID).
-		Preload("AppInputs").
-		Order("created_at DESC").
-		First(&existingInputConfig)
-
-	existingInputNames := make(map[string]bool)
-	if res.Error != nil && !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("unable to check existing input config: %w", res.Error)
-	}
-
-	for _, inp := range existingInputConfig.AppInputs {
-		existingInputNames[inp.Name] = true
-	}
-
-	// Validate NEW required inputs have defaults
-	for _, input := range cfg.Inputs.Inputs {
-		if existingInputNames[input.Name] {
-			continue
-		}
-
-		if !input.Required {
-			continue
-		}
-
-		if input.Default == nil || fmt.Sprintf("%v", input.Default) == "" {
-			return stderr.ErrUser{
-				Err: fmt.Errorf("required input '%s' is missing a default value", input.Name),
-				Description: fmt.Sprintf(
-					"Cannot add new required input '%s' without a default value because %d install(s) exist for this app. "+
-						"When existing installs are present, all new required inputs must have default values to ensure "+
-						"data integrity during migration. Existing inputs from previous syncs are not affected. "+
-						"Please add a default value to this input in your app config.",
-					input.Name, installCount,
-				),
 			}
 		}
 	}

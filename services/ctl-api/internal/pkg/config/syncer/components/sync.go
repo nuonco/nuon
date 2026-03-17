@@ -76,7 +76,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 		if err != nil {
 			return err
 		}
-	case "helm":
+	case "helm_chart":
 		configID, checksum, err = SyncHelmComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
@@ -92,6 +92,10 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 		checksum = ""
 	case "job":
 		// TODO: Implement job component sync
+		configID = ""
+		checksum = ""
+	case "kubernetes_manifest":
+		// TODO: Implement kubernetes manifest component sync
 		configID = ""
 		checksum = ""
 	default:

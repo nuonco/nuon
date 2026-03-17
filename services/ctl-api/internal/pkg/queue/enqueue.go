@@ -22,9 +22,18 @@ type EnqueueResponse struct {
 	WorkflowID string
 }
 
+// EnqueueHandlerInput is the input to the enqueue update handler.
+// OwnerID and OwnerType are optional — when set, the created QueueSignal will have
+// its polymorphic owner association populated automatically (e.g. pointing at a ComponentBuild).
+type EnqueueHandlerInput struct {
+	Signal    signal.Signal `json:"signal"`
+	OwnerID   string        `json:"owner_id,omitempty"`
+	OwnerType string        `json:"owner_type,omitempty"`
+}
+
 // @temporal-gen-v2 update
 // @id enqueue
-func (w *queue) enqueueHandler(ctx workflow.Context, sig signal.Signal) (*EnqueueResponse, error) {
+func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) (*EnqueueResponse, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -39,9 +48,11 @@ func (w *queue) enqueueHandler(ctx workflow.Context, sig signal.Signal) (*Enqueu
 		return nil, errors.Wrapf(err, "unable to queue item, depth of %d reached", q.MaxDepth)
 	}
 
-	qSignal, err := activities.AwaitCreateQueueSignal(ctx, activities.CreateQueueSignalRequest{
-		QueueID: q.ID,
-		Signal:  sig,
+	qSignal, err := activities.AwaitCreateQueueSignal(ctx, &activities.CreateQueueSignalRequest{
+		QueueID:   q.ID,
+		Signal:    input.Signal,
+		OwnerID:   input.OwnerID,
+		OwnerType: input.OwnerType,
 	}, &workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
 	})

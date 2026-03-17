@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
@@ -21,6 +22,7 @@ type SyncAppConfigInput struct {
 type SyncAppConfigOutput struct {
 	AppConfigID  string   `json:"app_config_id"`
 	ComponentIDs []string `json:"component_ids"`
+	ActionIDs    []string `json:"action_ids"`
 }
 
 // @temporal-gen-v2 activity
@@ -71,8 +73,17 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
+	// Mark config as active with component and action IDs
+	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
+		"status":             app.AppConfigStatusActive,
+		"status_description": "synced successfully",
+		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
+		"action_ids":         pq.StringArray(s.GetActionStateIds()),
+	})
+
 	return &SyncAppConfigOutput{
 		AppConfigID:  s.GetAppConfigID(),
 		ComponentIDs: s.GetComponentStateIds(),
+		ActionIDs:    s.GetActionStateIds(),
 	}, nil
 }
