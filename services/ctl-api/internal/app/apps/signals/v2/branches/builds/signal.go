@@ -1,4 +1,4 @@
-package buildcomponents
+package builds
 
 import (
 	"github.com/go-playground/validator/v10"
@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "app-branch-build-components"
+const SignalType signal.SignalType = "app-branch-builds"
 
 type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`

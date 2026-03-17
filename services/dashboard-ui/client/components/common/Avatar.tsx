@@ -1,3 +1,4 @@
+import React from 'react'
 import { cn } from '@/utils/classnames'
 import { getInitials } from '@/utils/string-utils'
 
@@ -41,7 +42,13 @@ export const Avatar = ({
   size = 'md',
   ...props
 }: IAvatar) => {
+  const [imageError, setImageError] = React.useState(false)
   const sizeConf = AVATAR_SIZES[size]
+
+  // Reset error state when src changes
+  React.useEffect(() => {
+    setImageError(false)
+  }, [src])
 
   return (
     <span
@@ -57,7 +64,7 @@ export const Avatar = ({
       )}
       {...props}
     >
-      {isLoading ? null : src ? (
+      {isLoading ? null : src && !imageError ? (
         <img
           height={sizeConf.px}
           width={sizeConf.px}
@@ -65,6 +72,8 @@ export const Avatar = ({
           alt={alt || ''}
           referrerPolicy="no-referrer"
           className="h-full w-full object-cover"
+          referrerPolicy="no-referrer"
+          onError={() => setImageError(true)}
         />
       ) : (
         getInitials(name)

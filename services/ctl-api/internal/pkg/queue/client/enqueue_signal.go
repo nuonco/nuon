@@ -12,8 +12,10 @@ import (
 )
 
 type EnqueueSignalRequest struct {
-	QueueID string        `validate:"required"`
-	Signal  signal.Signal `validate:"required"`
+	QueueID   string        `validate:"required"`
+	Signal    signal.Signal `validate:"required"`
+	OwnerID   string
+	OwnerType string
 }
 
 // @temporal-gen-v2 activity
@@ -29,7 +31,11 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		UpdateName:   queue.EnqueueUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		Args: []any{
-			req.Signal,
+			queue.EnqueueHandlerInput{
+				Signal:    req.Signal,
+				OwnerID:   req.OwnerID,
+				OwnerType: req.OwnerType,
+			},
 		},
 	})
 	if err != nil {

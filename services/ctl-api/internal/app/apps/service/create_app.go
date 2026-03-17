@@ -120,5 +120,9 @@ func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org
 		return nil, fmt.Errorf("unable to create app: %w", res.Error)
 	}
 
+	if err := s.helpers.CreateAppSandboxQueue(ctx, newApp.ID); err != nil {
+		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
+	}
+
 	return &newApp, nil
 }

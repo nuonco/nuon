@@ -11,6 +11,13 @@ import { Policies } from './Policies'
 import { PolicyDetail } from './PolicyDetail'
 import { Installs } from './Installs'
 import { Readme } from './Readme'
+import { Sandbox } from './Sandbox'
+import { SandboxBuildDetail } from './SandboxBuildDetail'
+import { Branches } from './branches/Branches'
+import { BranchDetail } from './branches/BranchDetail'
+import { BranchConfigs } from './branches/BranchConfigs'
+import { BranchRuns } from './branches/BranchRuns'
+import { BranchRunDetail } from './branches/BranchRunDetail'
 
 export const appRoutes: RouteObject[] = [
   {
@@ -29,6 +36,13 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
       { path: ':orgId/apps/:appId/policies', element: <Policies /> },
       { path: ':orgId/apps/:appId/policies/:policyId', element: <PolicyDetail /> },
+      { path: ':orgId/apps/:appId/branches', element: <Branches /> },
+      { path: ':orgId/apps/:appId/branches/:branchId', element: <BranchDetail /> },
+      { path: ':orgId/apps/:appId/branches/:branchId/configs', element: <BranchConfigs /> },
+      { path: ':orgId/apps/:appId/branches/:branchId/runs', element: <BranchRuns /> },
+      { path: ':orgId/apps/:appId/branches/:branchId/runs/:runId', element: <BranchRunDetail /> },
+      { path: ':orgId/apps/:appId/sandbox', element: <Sandbox /> },
+      { path: ':orgId/apps/:appId/sandbox/builds/:buildId', element: <SandboxBuildDetail /> },
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },
       { path: ':orgId/apps/:appId/readme', element: <Readme /> },
     ],

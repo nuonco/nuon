@@ -63,6 +63,7 @@ type AppConfig struct {
 	CLIVersion string `json:"cli_version,omitzero" gorm:"default null" temporaljson:"cli_version,omitzero,omitempty"`
 
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
+	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	IntermediateConfig *blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
 

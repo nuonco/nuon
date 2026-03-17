@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -31,6 +32,9 @@ type AppBranchConfig struct {
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 
 	InstallGroups []AppBranchInstallGroup `json:"install_groups,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_groups,omitzero,omitempty"`
+
+	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
+	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 

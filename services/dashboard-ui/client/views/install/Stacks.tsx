@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
+import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -13,6 +14,8 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
+
+const CONTAINER_ID = 'install-stacks-page'
 
 export const Stacks = () => {
   const { org } = useOrg()
@@ -39,7 +42,7 @@ export const Stacks = () => {
   const config = configResult
 
   return (
-    <PageSection isScrollable>
+    <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Stacks | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -132,6 +135,7 @@ export const Stacks = () => {
         <Text weight="strong">Install stack versions</Text>
         <InstallStacksTable shouldPoll />
       </div>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

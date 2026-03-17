@@ -6,6 +6,23 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+export type TAppSandboxBuild = {
+  id: string
+  created_by_id?: string
+  created_by?: { email?: string }
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  app_sandbox_config_id?: string
+  status?: string
+  status_description?: string
+  status_v2?: { status?: string; status_human_description?: string }
+  log_stream?: { id: string; open?: boolean }
+  runner_job?: { id: string }
+  vcs_connection_commit?: { sha?: string; message?: string }
+}
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'

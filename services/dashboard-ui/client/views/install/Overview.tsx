@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Markdown } from '@/components/common/Showdown'
+import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
@@ -9,6 +10,8 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme, getInstallCurrentInputs } from '@/lib'
+
+const CONTAINER_ID = 'install-overview-page'
 
 export const Overview = () => {
   const { org } = useOrg()
@@ -38,7 +41,7 @@ export const Overview = () => {
     : []
 
   return (
-    <PageSection className="!pt-0" isScrollable>
+    <PageSection id={CONTAINER_ID} className="!pt-0" isScrollable>
       <PageTitle title={`Overview | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -87,6 +90,7 @@ export const Overview = () => {
           )}
         </div>
       </div>
+      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

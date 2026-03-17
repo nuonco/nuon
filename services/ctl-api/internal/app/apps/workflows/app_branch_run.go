@@ -9,9 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/appconfig"
-	buildcomponents "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/buildcomponents"
+	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/builds"
 	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/deploygrouptoqueue"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/fetchcommit"
+	sandboxbuild "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/sandboxbuild"
 )
 
 // AppBranchRun builds the workflow steps for an app branch run
@@ -62,14 +63,24 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 	}
 	steps = append(steps, step)
 
-	// Step 3: Build all components in parallel
+	// Step 3: Build all components and sandbox builds in parallel
 	sg.nextGroup()
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build all components", pgtype.Hstore{}, &buildcomponents.Signal{
+	step, err = sg.appBranchSignalStep(ctx, appBranchID, "builds", pgtype.Hstore{}, &builds.Signal{
 		AppBranchID: appBranchID,
 		RunID:       runID,
 	}, WithSkippable(false))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create build components step")
+		return nil, errors.Wrap(err, "unable to create builds step")
+	}
+	steps = append(steps, step)
+
+	// Step 3.5: Build sandbox (conditional — only if an AppSandboxConfig exists for this app)
+	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build sandbox", pgtype.Hstore{}, &sandboxbuild.Signal{
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create sandbox build step")
 	}
 	steps = append(steps, step)
 

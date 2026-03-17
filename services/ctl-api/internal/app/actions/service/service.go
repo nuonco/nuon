@@ -11,7 +11,7 @@ import (
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -26,9 +26,11 @@ type Params struct {
 	Helpers        *actionshelpers.Helpers
 	EvClient       eventloop.Client
 	InstallHelpers *installhelpers.Helpers
+	EndpointAudit  *apiPkg.EndpointAudit
 }
 
 type service struct {
+	apiPkg.RouteRegister
 	v              *validator.Validate
 	db             *gorm.DB
 	cfg            *internal.Config
@@ -39,7 +41,7 @@ type service struct {
 	installHelpers *installhelpers.Helpers
 }
 
-var _ api.Service = (*service)(nil)
+var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// apps
@@ -86,23 +88,23 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// work with actions apps path
 	deprecatedApps := api.Group("/v1/apps/:app_id")
 	{
-		deprecatedApps.POST("/action-workflows", s.CreateAppActionWorkflow)                 // deprecated
-		deprecatedApps.GET("/action-workflows", s.GetAppActionWorkflows)                    // deprecated
-		deprecatedApps.GET("/action-workflows/:action_workflow_id", s.GetAppActionWorkflow) // deprecated
+		s.POST(deprecatedApps, "/action-workflows", s.CreateAppActionWorkflow, apiPkg.APIContextTypePublic, true)
+		s.GET(deprecatedApps, "/action-workflows", s.GetAppActionWorkflows, apiPkg.APIContextTypePublic, true)
+		s.GET(deprecatedApps, "/action-workflows/:action_workflow_id", s.GetAppActionWorkflow, apiPkg.APIContextTypePublic, true)
 	}
 
 	// work with actions directly
 	actionWorkflows := api.Group("/v1/action-workflows")
 	{
-		actionWorkflows.PATCH("/:action_workflow_id", s.UpdateActionWorkflow)  // deprecated
-		actionWorkflows.GET("/:action_workflow_id", s.GetActionWorkflow)       // deprecated
-		actionWorkflows.DELETE("/:action_workflow_id", s.DeleteActionWorkflow) // deprecated
+		s.PATCH(actionWorkflows, "/:action_workflow_id", s.UpdateActionWorkflow, apiPkg.APIContextTypePublic, true)
+		s.GET(actionWorkflows, "/:action_workflow_id", s.GetActionWorkflow, apiPkg.APIContextTypePublic, true)
+		s.DELETE(actionWorkflows, "/:action_workflow_id", s.DeleteActionWorkflow, apiPkg.APIContextTypePublic, true)
 
 		// config versions
-		actionWorkflows.POST("/:action_workflow_id/configs", s.CreateActionWorkflowConfig)         // deprecated
-		actionWorkflows.GET("/:action_workflow_id/configs", s.GetActionWorkflowConfigs)            // deprecated
-		actionWorkflows.GET("/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig) // deprecated
-		actionWorkflows.GET("/configs/:action_workflow_config_id", s.GetActionWorkflowConfig)      // deprecated
+		s.POST(actionWorkflows, "/:action_workflow_id/configs", s.CreateActionWorkflowConfig, apiPkg.APIContextTypePublic, true)
+		s.GET(actionWorkflows, "/:action_workflow_id/configs", s.GetActionWorkflowConfigs, apiPkg.APIContextTypePublic, true)
+		s.GET(actionWorkflows, "/:action_workflow_id/latest-config", s.GetActionWorkflowLatestConfig, apiPkg.APIContextTypePublic, true)
+		s.GET(actionWorkflows, "/configs/:action_workflow_config_id", s.GetActionWorkflowConfig, apiPkg.APIContextTypePublic, true)
 	}
 
 	// install runs (deprecated)
@@ -110,19 +112,19 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		actionWorkflowRuns := deprecatedInstalls.Group("/action-workflows/runs")
 		{
-			actionWorkflowRuns.POST("", s.CreateInstallActionWorkflowRun)                        // deprecated
-			actionWorkflowRuns.GET("", s.GetInstallActionWorkflowRuns)                           // deprecated
-			actionWorkflowRuns.GET("/:run_id", s.GetInstallActionWorkflowRun)                    // deprecated
-			actionWorkflowRuns.GET("/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep) // deprecated
+			s.POST(actionWorkflowRuns, "", s.CreateInstallActionWorkflowRun, apiPkg.APIContextTypePublic, true)
+			s.GET(actionWorkflowRuns, "", s.GetInstallActionWorkflowRuns, apiPkg.APIContextTypePublic, true)
+			s.GET(actionWorkflowRuns, "/:run_id", s.GetInstallActionWorkflowRun, apiPkg.APIContextTypePublic, true)
+			s.GET(actionWorkflowRuns, "/:run_id/steps/:step_id", s.GetInstallActionWorkflowRunStep, apiPkg.APIContextTypePublic, true)
 		}
 
 		// install action workflows (deprecated)
 		installActionWorkflows := deprecatedInstalls.Group("/action-workflows")
 		{
-			installActionWorkflows.GET("", s.GetInstallActionWorkflows)                                          // deprecated
-			installActionWorkflows.GET("/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns) // deprecated
-			installActionWorkflows.GET("/latest-runs", s.GetInstallActionWorkflowsLatestRuns)                    // deprecated
-			installActionWorkflows.GET("/:action_workflow_id", s.GetInstallActionWorkflow)                       // deprecated
+			s.GET(installActionWorkflows, "", s.GetInstallActionWorkflows, apiPkg.APIContextTypePublic, true)
+			s.GET(installActionWorkflows, "/:action_workflow_id/recent-runs", s.GetInstallActionWorkflowRecentRuns, apiPkg.APIContextTypePublic, true)
+			s.GET(installActionWorkflows, "/latest-runs", s.GetInstallActionWorkflowsLatestRuns, apiPkg.APIContextTypePublic, true)
+			s.GET(installActionWorkflows, "/:action_workflow_id", s.GetInstallActionWorkflow, apiPkg.APIContextTypePublic, true)
 		}
 	}
 
@@ -163,6 +165,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: apiPkg.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		cfg:            params.Cfg,
 		v:              params.V,
 		db:             params.DB,

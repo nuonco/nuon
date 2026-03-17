@@ -82,7 +82,7 @@ func (p *Planner) createStepPlan(ctx workflow.Context,
 		}
 
 		l.Debug("successfully rendered command", zap.String("rendered", renderedVal))
-		step.Step.Command = renderedVal
+		plan.InterpolatedCommand = renderedVal
 	}
 
 	return plan, nil

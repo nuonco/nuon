@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
@@ -27,9 +27,11 @@ type Params struct {
 	EvClient      eventloop.Client
 	AccountClient *account.Client
 	Helpers       *helpers.Helpers
+	EndpointAudit *apiPkg.EndpointAudit
 }
 
 type service struct {
+	apiPkg.RouteRegister
 	v          *validator.Validate
 	l          *zap.Logger
 	db         *gorm.DB
@@ -41,7 +43,7 @@ type service struct {
 	helpers    *helpers.Helpers
 }
 
-var _ api.Service = (*service)(nil)
+var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
@@ -87,14 +89,14 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByIDV2)
 	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
 
-	api.POST("/v1/terraform-workspace", s.CreateTerraformWorkspace)                                                            // deprecated
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates)                             // deprecated
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID)                // deprecated
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources) // deprecated
+	s.POST(api, "/v1/terraform-workspace", s.CreateTerraformWorkspace, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/states", s.GetTerraformWorkspaceStates, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/states/:state_id", s.GetTerraformWorkspaceStateByID, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources", s.GetTerraformWorkspaceStateResources, apiPkg.APIContextTypePublic, true)
 
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON)                         // deprecated
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID)           // deprecated
-	api.GET("/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources) // deprecated
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources, apiPkg.APIContextTypePublic, true)
 
 	tfBackendPath := "/v1/terraform-backend"
 	api.GET(tfBackendPath, s.GetTerraformCurrentStateData)
@@ -124,7 +126,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.PATCH("/settings", s.AdminUpdateRunnerSettings)
 
 			// runner lifecycle
-			runner.POST("/reprovision", s.AdminReprovisionRunner)
+			s.POST(runner, "/reprovision", s.AdminReprovisionRunner, apiPkg.APIContextTypeInternal, true)
 			runner.POST("/deprovision", s.AdminDeprovisionRunner)
 			runner.POST("/delete", s.AdminDeleteRunner)
 			runner.POST("/force-delete", s.AdminForceDeleteRunner)
@@ -199,9 +201,9 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
-	runnerJobs.GET("", s.GetRunnerJob)          // deprecated
-	runnerJobs.PATCH("", s.UpdateRunnerJob)     // deprecated
-	runnerJobs.GET("/plan", s.GetRunnerJobPlan) // deprecated
+	s.GET(runnerJobs, "", s.GetRunnerJob, apiPkg.APIContextTypeRunner, true)
+	s.PATCH(runnerJobs, "", s.UpdateRunnerJob, apiPkg.APIContextTypeRunner, true)
+	s.GET(runnerJobs, "/plan", s.GetRunnerJobPlan, apiPkg.APIContextTypeRunner, true)
 	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
 
 	executions := runnerJobs.Group("/executions")
@@ -259,6 +261,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: apiPkg.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		cfg:        params.Cfg,
 		l:          params.L,
 		v:          params.V,
