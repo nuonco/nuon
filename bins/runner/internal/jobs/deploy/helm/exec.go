@@ -123,8 +123,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 		switch helmPlan.Op {
 		case "install":
-			op = "install"
-			rel, err = h.install(ctx, l, actionCfg, kubeCfg)
+			if helm.ShouldUpgrade(prevRel) {
+				l.Info("plan says install but release exists, switching to upgrade",
+					zap.String("status", string(prevRel.Info.Status)),
+					zap.Int("version", prevRel.Version),
+				)
+				op = "upgrade"
+				rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+			} else {
+				op = "install"
+				rel, err = h.install(ctx, l, actionCfg, kubeCfg)
+			}
 		case "upgrade":
 			op = "upgrade"
 			rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
