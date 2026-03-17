@@ -12,28 +12,36 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
+type CreateQueueSignalRequest struct {
+	QueueID string        `json:"queue_id" validate:"required"`
+	Signal  signal.Signal `json:"signal" validate:"required"`
+
+	// OwnerID and OwnerType are optional — when set they populate the polymorphic
+	// owner association on the created QueueSignal so no separate UPDATE is needed.
+	OwnerID   string `json:"owner_id,omitempty"`
+	OwnerType string `json:"owner_type,omitempty"`
+}
+
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-// @as-wrapper
-// @wrapper-prefix QueueInternal
-// @by-field QueueID
-func (a *Activities) createQueueSignal(ctx context.Context, queueID string, signal signal.Signal) (*app.QueueSignal, error) {
+func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSignalRequest) (*app.QueueSignal, error) {
 	info := activity.GetInfo(ctx)
 
 	queueSignal := app.QueueSignal{
 		Signal: signaldb.SignalData{
-			Signal: signal,
+			Signal: req.Signal,
 		},
-		QueueID: queueID,
-		Type:    signal.Type(),
+		QueueID:   req.QueueID,
+		Type:      req.Signal.Type(),
+		OwnerID:   req.OwnerID,
+		OwnerType: req.OwnerType,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  info.WorkflowNamespace,
-			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(signal.Type()),
+			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()),
 		},
 	}
 
-	if res := a.db.WithContext(ctx).
-		Create(&queueSignal); res.Error != nil {
+	if res := a.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create queue")
 	}
 

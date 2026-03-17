@@ -88,6 +88,9 @@ func NewConfig(customFilepath string) (*Config, error) {
 	if cfg.GetString("org_id") != "" {
 		cfg.OrgID = cfg.GetString("org_id")
 	}
+	if cfg.GetString("install_id") != "" {
+		cfg.InstallID = cfg.GetString("install_id")
+	}
 	if cfg.GetString("app_id") != "" {
 		cfg.AppID = cfg.GetString("app_id")
 	}

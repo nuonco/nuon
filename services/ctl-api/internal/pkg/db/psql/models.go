@@ -44,6 +44,7 @@ func AllModels() []any {
 		&app.AppBranchInstallGroup{},
 		&app.AppBranchRun{},
 		&app.AppSandboxConfig{},
+		&app.AppSandboxBuild{},
 		&app.AppRunnerConfig{},
 		&app.AppInput{},
 		&app.AppInputGroup{},

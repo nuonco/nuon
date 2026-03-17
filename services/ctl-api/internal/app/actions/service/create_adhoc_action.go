@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -18,12 +19,13 @@ import (
 )
 
 type CreateAdHocActionRequest struct {
-	InlineContents string            `json:"inline_contents" validate:"required_without=Command"`
-	Command        string            `json:"command" validate:"required_without=InlineContents"`
-	EnvVars        map[string]string `json:"env_vars"`
-	Timeout        int               `json:"timeout,omitempty" validate:"omitempty,min=1,max=3600"`
-	Name           string            `json:"name" validate:"max=255"`
-	Role           string            `json:"role"`
+	InlineContents   string            `json:"inline_contents" validate:"required_without=Command"`
+	Command          string            `json:"command" validate:"required_without=InlineContents"`
+	EnvVars          map[string]string `json:"env_vars"`
+	Timeout          int               `json:"timeout,omitempty" validate:"omitempty,min=1,max=3600"`
+	Name             string            `json:"name" validate:"max=255"`
+	Role             string            `json:"role"`
+	EnableKubeConfig *bool             `json:"enable_kube_config" extensions:"x-nullable"`
 }
 
 func (c *CreateAdHocActionRequest) Validate(v *validator.Validate) error {
@@ -197,6 +199,12 @@ func (s *service) createAdHocActionRun(
 		AdHocConfig: &adHocConfig,
 	}
 
+	defaultEnableKubeConfig := true
+	enableKubeConfig := generics.NewNullBoolFromPtr(&defaultEnableKubeConfig)
+	if req.EnableKubeConfig != nil {
+		enableKubeConfig = generics.NewNullBoolFromPtr(req.EnableKubeConfig)
+	}
+
 	run := app.InstallActionWorkflowRun{
 		InstallID:         install.ID,
 		TriggerType:       app.ActionWorkflowTriggerTypeAdHoc,
@@ -207,6 +215,7 @@ func (s *service) createAdHocActionRun(
 		Steps:             []app.InstallActionWorkflowRunStep{runStep},
 		RunEnvVars:        dbgenerics.ToHstore(req.EnvVars),
 		Role:              req.Role,
+		EnableKubeConfig:  enableKubeConfig,
 	}
 
 	if err := s.db.WithContext(ctx).Create(&run).Error; err != nil {

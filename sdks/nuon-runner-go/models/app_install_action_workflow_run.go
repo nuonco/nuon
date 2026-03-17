@@ -35,6 +35,9 @@ type AppInstallActionWorkflowRun struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// enable kube config
+	EnableKubeConfig *SQLNullBool `json:"enable_kube_config,omitempty"`
+
 	// after query
 	ExecutionTime int64 `json:"execution_time,omitempty"`
 
@@ -111,6 +114,10 @@ func (m *AppInstallActionWorkflowRun) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateEnableKubeConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateInstallActionWorkflow(formats); err != nil {
 		res = append(res, err)
 	}
@@ -182,6 +189,29 @@ func (m *AppInstallActionWorkflowRun) validateCreatedBy(formats strfmt.Registry)
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("created_by")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRun) validateEnableKubeConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.EnableKubeConfig) { // not required
+		return nil
+	}
+
+	if m.EnableKubeConfig != nil {
+		if err := m.EnableKubeConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enable_kube_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enable_kube_config")
 			}
 
 			return err
@@ -369,6 +399,10 @@ func (m *AppInstallActionWorkflowRun) ContextValidate(ctx context.Context, forma
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateEnableKubeConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateInstallActionWorkflow(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -444,6 +478,31 @@ func (m *AppInstallActionWorkflowRun) contextValidateCreatedBy(ctx context.Conte
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("created_by")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflowRun) contextValidateEnableKubeConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EnableKubeConfig != nil {
+
+		if swag.IsZero(m.EnableKubeConfig) { // not required
+			return nil
+		}
+
+		if err := m.EnableKubeConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enable_kube_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enable_kube_config")
 			}
 
 			return err

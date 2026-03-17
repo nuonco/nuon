@@ -58,8 +58,6 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 						huh.NewOption("Clickhouse on AWS EKS", "clickhouse-aws-eks"),
 						huh.NewOption("Grafana on AWS EKS", "grafana-aws-eks"),
 						huh.NewOption("Cockroachdb on AWS EKS", "cockroachdb-aws-eks"),
-						// huh.NewOption("AWS ECS (Elastic Container Service)", "aws-ecs"),
-
 					).
 					Value(&prebuiltTemplate),
 			),
@@ -145,17 +143,21 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 func (c *ConfigInit) RunGeneratorConfigMenu(params *apps.ConfigGenParams) error {
 	var enableDefaults bool
 	var enableComments bool
+	var overwrite bool
 	customForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
 				Title("Enable default values?").
 				Description("Include default values in generated config files").
 				Value(&enableDefaults),
-
 			huh.NewConfirm().
 				Title("Enable comments?").
 				Description("Include helpful comments in generated config files").
 				Value(&enableComments),
+			huh.NewConfirm().
+				Title("Overwrite existing configs?").
+				Description("Include helpful comments in generated config files").
+				Value(&overwrite),
 		),
 	)
 
@@ -166,6 +168,7 @@ func (c *ConfigInit) RunGeneratorConfigMenu(params *apps.ConfigGenParams) error 
 
 	params.EnableDefaults = enableDefaults
 	params.EnableComments = enableComments
+	params.Overwrite = overwrite
 
 	return nil
 }

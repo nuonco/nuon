@@ -12,12 +12,13 @@ import (
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type service struct {
+	apiPkg.RouteRegister
 	v              *validator.Validate
 	l              *zap.Logger
 	db             *gorm.DB
@@ -30,7 +31,7 @@ type service struct {
 	codecs         []converter.PayloadCodec
 }
 
-var _ api.Service = (*service)(nil)
+var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	general := api.Group("/v1/general")
@@ -49,11 +50,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	general := api.Group("/v1/general")
 	{
 		// manage canaries
-		general.POST("/provision-canary", s.ProvisionCanary)
-		general.POST("/deprovision-canary", s.DeprovisionCanary)
-		general.POST("/start-canary-cron", s.StartCanaryCron)
-		general.POST("/stop-canary-cron", s.StopCanaryCron)
-		general.POST("/canary-user", s.CreateCanaryUser)
+		s.POST(general, "/provision-canary", s.ProvisionCanary, apiPkg.APIContextTypeInternal, true)
+		s.POST(general, "/deprovision-canary", s.DeprovisionCanary, apiPkg.APIContextTypeInternal, true)
+		s.POST(general, "/start-canary-cron", s.StartCanaryCron, apiPkg.APIContextTypeInternal, true)
+		s.POST(general, "/stop-canary-cron", s.StopCanaryCron, apiPkg.APIContextTypeInternal, true)
+		s.POST(general, "/canary-user", s.CreateCanaryUser, apiPkg.APIContextTypeInternal, true)
 
 		// manage infra tests
 		infraTests := general.Group("/infra-tests")
@@ -119,10 +120,14 @@ type Params struct {
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
+	EndpointAudit             *apiPkg.EndpointAudit
 }
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: apiPkg.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		l:              params.L,
 		v:              params.V,
 		mw:             params.Mw,

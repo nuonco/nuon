@@ -31,6 +31,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                 text: 'Overview',
               },
               {
+                path: `/sandbox`,
+                iconVariant: 'Cube',
+                text: 'Sandbox',
+              },
+              {
                 path: `/components`,
                 iconVariant: 'Cards',
                 text: 'Components',
@@ -83,6 +88,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
                   path: `/`,
                   iconVariant: 'HouseSimple',
                   text: 'Overview',
+                },
+                {
+                  path: `/sandbox`,
+                  iconVariant: 'Cube',
+                  text: 'Sandbox',
                 },
                 {
                   path: `/components`,

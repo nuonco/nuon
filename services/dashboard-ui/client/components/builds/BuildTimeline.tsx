@@ -73,6 +73,11 @@ export const BuildTimeline = ({
                     drift scan
                   </Badge>
                 ) : null}
+                {build?.status_v2?.metadata?.duplicate_build ? (
+                  <Badge variant="code" size="sm" theme="warn">
+                    duplicate build
+                  </Badge>
+                ) : null}
               </span>
             }
             underline={

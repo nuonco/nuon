@@ -1,5 +1,6 @@
 import { delay, http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
+import { faker } from '@faker-js/faker'
 import {
   handlers,
   getGetBuild200Response,
@@ -9,6 +10,38 @@ import {
   getGetInstallDeploy200Response,
   getGetInstallSandboxRuns200Response,
 } from './mock-api-handlers'
+
+const baseURL = 'https://api.nuon.co'
+
+let _i = 0
+const nextIndex = () => {
+  if (_i === Number.MAX_SAFE_INTEGER - 1) _i = 0
+  return _i++
+}
+
+const pendingApprovalsResultArray = [
+  [
+    Array.from({ length: 3 }, () => ({
+      id: faker.lorem.slug(1),
+      created_at: faker.date.past(),
+      updated_at: faker.date.past(),
+      workflow_step_id: faker.lorem.slug(1),
+      type: faker.helpers.arrayElement(['noop', 'approve-all', 'terraform_plan']),
+    })),
+    { status: 200 },
+  ],
+  [{ description: faker.lorem.slug(1), error: faker.lorem.slug(1), user_error: false }, { status: 400 }],
+  [{ description: faker.lorem.slug(1), error: faker.lorem.slug(1), user_error: false }, { status: 401 }],
+  [{ description: faker.lorem.slug(1), error: faker.lorem.slug(1), user_error: false }, { status: 403 }],
+  [{ description: faker.lorem.slug(1), error: faker.lorem.slug(1), user_error: false }, { status: 404 }],
+  [{ description: faker.lorem.slug(1), error: faker.lorem.slug(1), user_error: false }, { status: 500 }],
+] as const
+
+export const customHandlers = [
+  http.get(`${baseURL}/v1/workflows/pending-approvals`, () => {
+    return HttpResponse.json(...pendingApprovalsResultArray[nextIndex() % pendingApprovalsResultArray.length])
+  }),
+]
 
 export const nextProxyHandlers = [
   http.get('/api/:orgId', async () => {
@@ -57,4 +90,4 @@ export const nextProxyHandlers = [
   }),
 ]
 
-export const server = setupServer(...handlers)
+export const server = setupServer(...customHandlers, ...handlers)

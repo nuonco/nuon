@@ -50,27 +50,27 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 				return errors.Wrap(err, "unable to create config structure")
 			}
 		case "aws-ecs-breakglass":
-			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			c, err = BuildECSBreakglassConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}
 		case "aws-eks-auto":
-			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			c, err = BuildEKSAutoConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}
 		case "clickhouse-aws-eks":
-			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			c, err = BuildClickhouseAWSEKSConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}
 		case "cockroachdb-aws-eks":
-			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			c, err = BuildCockroachdbAWSEKSConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}
 		case "grafana-aws-eks":
-			c, err = BuildECSSimpleConfigStructure(ctx, genParams.Path)
+			c, err = BuildGrafanaAWSEKSConfigStructure(ctx, genParams.Path)
 			if err != nil {
 				return errors.Wrap(err, "unable to create config structure")
 			}

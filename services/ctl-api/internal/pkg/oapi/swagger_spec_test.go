@@ -38,17 +38,17 @@ import (
 func testDomainServices(ea *api.EndpointAudit) []api.Service {
 	return []api.Service{
 		accountsservice.New(accountsservice.Params{}),
-		actionsservice.New(actionsservice.Params{}),
+		actionsservice.New(actionsservice.Params{EndpointAudit: ea}),
 		appsservice.New(appsservice.Params{EndpointAudit: ea}),
-		componentsservice.New(componentsservice.Params{}),
-		generalservice.New(generalservice.Params{}),
+		componentsservice.New(componentsservice.Params{EndpointAudit: ea}),
+		generalservice.New(generalservice.Params{EndpointAudit: ea}),
 		identityprovidersservice.New(identityprovidersservice.Params{}),
 		installsservice.New(installsservice.Params{EndpointAudit: ea}),
 		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
 		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
 		queuesservice.New(queuesservice.Params{}),
 		runnerauthservice.New(runnerauthservice.Params{}),
-		runnersservice.New(runnersservice.Params{}),
+		runnersservice.New(runnersservice.Params{EndpointAudit: ea}),
 		vcsservice.New(vcsservice.Params{}),
 	}
 }

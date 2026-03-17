@@ -62,6 +62,11 @@ type AppComponentBuild struct {
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
 
+	// QueueSignal is the signal enqueued when this build was created via the queue path
+	QueueSignal struct {
+		AppQueueSignal
+	} `json:"queue_signal,omitempty"`
+
 	// releases
 	Releases []*AppComponentRelease `json:"releases"`
 
@@ -107,6 +112,10 @@ func (m *AppComponentBuild) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePolicyReports(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueueSignal(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -261,6 +270,14 @@ func (m *AppComponentBuild) validatePolicyReports(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *AppComponentBuild) validateQueueSignal(formats strfmt.Registry) error {
+	if swag.IsZero(m.QueueSignal) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *AppComponentBuild) validateReleases(formats strfmt.Registry) error {
 	if swag.IsZero(m.Releases) { // not required
 		return nil
@@ -366,6 +383,10 @@ func (m *AppComponentBuild) ContextValidate(ctx context.Context, formats strfmt.
 	}
 
 	if err := m.contextValidatePolicyReports(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueueSignal(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -520,6 +541,11 @@ func (m *AppComponentBuild) contextValidatePolicyReports(ctx context.Context, fo
 		}
 
 	}
+
+	return nil
+}
+
+func (m *AppComponentBuild) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

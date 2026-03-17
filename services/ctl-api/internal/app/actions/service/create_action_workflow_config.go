@@ -94,6 +94,8 @@ type CreateActionWorkflowConfigRequest struct {
 
 	BreakGlassRoleARN string `json:"break_glass_role_arn"`
 	Role              string `json:"role,omitempty"`
+
+	EnableKubeConfig *bool `json:"enable_kube_config" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -173,7 +175,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 		}
 	}
 
-	//validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
+	// validate execution methods: inline_contents is mutually exclusive, command can be used with VCS, only one VCS allowed
 	for _, step := range c.Steps {
 		// Check if multiple VCS configs are set
 		vcsConfigCount := 0
@@ -287,6 +289,12 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
+	defaultEnableKubeConfig := true
+	enableKubeConfig := generics.NewNullBoolFromPtr(&defaultEnableKubeConfig)
+	if req.EnableKubeConfig != nil {
+		enableKubeConfig = generics.NewNullBoolFromPtr(req.EnableKubeConfig)
+	}
+
 	awc := app.ActionWorkflowConfig{
 		AppID:                  parentApp.ID,
 		AppConfigID:            req.AppConfigID,
@@ -297,6 +305,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		References:             pq.StringArray(req.References),
 		BreakGlassRoleARN:      generics.NewNullString(req.BreakGlassRoleARN),
 		Role:                   req.Role,
+		EnableKubeConfig:       enableKubeConfig,
 	}
 
 	res := s.db.WithContext(ctx).

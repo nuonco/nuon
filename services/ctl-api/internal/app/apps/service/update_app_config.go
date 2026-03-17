@@ -93,7 +93,7 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 // @Param					app_config_id	path	string	true	"app config ID"
 // @Security				APIKey
 // @Security				OrgID
-// @Deprecation    true
+// @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

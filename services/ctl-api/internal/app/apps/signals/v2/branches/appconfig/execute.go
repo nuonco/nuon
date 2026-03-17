@@ -19,12 +19,45 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	commitSHA := run.VCSConnectionCommit.SHA
 
+	// Create log stream for this run
+	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
+		AppBranchRunID: s.RunID,
+	})
+	if err != nil {
+		l.Warn("unable to create log stream, continuing without it", "error", err)
+	}
+
+	if logStream != nil {
+		if err := activities.AwaitUpdateAppBranchRunLogStream(ctx, activities.UpdateAppBranchRunLogStreamRequest{
+			Req: &activities.UpdateAppBranchRunLogStreamInput{
+				RunID:       s.RunID,
+				LogStreamID: logStream.ID,
+			},
+		}); err != nil {
+			l.Warn("unable to update run with log stream ID", "error", err)
+		}
+	}
+
+	// Ensure log stream is closed when we're done
+	closeLogStream := func() {
+		if logStream == nil {
+			return
+		}
+		if err := activities.AwaitCloseLogStream(ctx, activities.CloseLogStreamRequest{
+			LogStreamID: logStream.ID,
+		}); err != nil {
+			l.Warn("unable to close log stream", "error", err)
+		}
+	}
+
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
 	if len(branch.Configs) == 0 {
+		closeLogStream()
 		return fmt.Errorf("app branch has no config")
 	}
 
@@ -34,6 +67,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else if cfg := branch.Configs[0].PublicGitVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
 	} else {
+		closeLogStream()
 		return fmt.Errorf("app branch has no VCS config")
 	}
 
@@ -43,6 +77,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		CommitSHA:   commitSHA,
 	})
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to clone repo: %w", err)
 	}
 
@@ -57,6 +92,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		SourceDir: sourceDir,
 	})
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to fetch intermediate config: %w", err)
 	}
 
@@ -68,6 +104,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	configJSON, err := json.Marshal(intermediateConfig)
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to serialize intermediate config: %w", err)
 	}
 
@@ -81,6 +118,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to create app config: %w", err)
 	}
 
@@ -96,12 +134,44 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 	if err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to sync app config: %w", err)
 	}
 
 	l.Info("app config synced",
 		"app_config_id", syncResp.AppConfigID,
-		"component_count", len(syncResp.ComponentIDs))
+		"component_count", len(syncResp.ComponentIDs),
+		"action_count", len(syncResp.ActionIDs))
+
+	// Ensure each component has a Temporal queue so buildcomponents can enqueue signals
+	if len(syncResp.ComponentIDs) > 0 {
+		queueErrCh := workflow.NewChannel(ctx)
+		for _, componentID := range syncResp.ComponentIDs {
+			componentID := componentID
+			workflow.Go(ctx, func(gCtx workflow.Context) {
+				err := activities.AwaitEnsureComponentQueueByComponentID(gCtx, componentID)
+				queueErrCh.Send(gCtx, err)
+			})
+		}
+		for range syncResp.ComponentIDs {
+			var qErr error
+			queueErrCh.Receive(ctx, &qErr)
+			if qErr != nil {
+				l.Warn("unable to ensure component queue", "error", qErr)
+			}
+		}
+	}
+
+	// Update AppBranchConfig with component and action IDs
+	if err := activities.AwaitUpdateAppBranchConfigIDs(ctx, activities.UpdateAppBranchConfigIDsRequest{
+		Req: &activities.UpdateAppBranchConfigIDsInput{
+			AppBranchConfigID: branch.Configs[0].ID,
+			ComponentIDs:      syncResp.ComponentIDs,
+			ActionIDs:         syncResp.ActionIDs,
+		},
+	}); err != nil {
+		l.Warn("unable to update app branch config IDs", "error", err)
+	}
 
 	if err := activities.AwaitUpdateAppBranchRunAppConfig(ctx, activities.UpdateAppBranchRunAppConfigRequest{
 		Req: &activities.UpdateAppBranchRunAppConfigInput{
@@ -109,8 +179,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppConfigID: syncResp.AppConfigID,
 		},
 	}); err != nil {
+		closeLogStream()
 		return fmt.Errorf("unable to update run with app config ID: %w", err)
 	}
 
+	closeLogStream()
 	return nil
 }

@@ -51,6 +51,11 @@ const AppTemplate = () => {
                 text: 'Overview',
               },
               {
+                path: `/sandbox`,
+                iconVariant: 'Cube',
+                text: 'Sandbox',
+              },
+              {
                 path: `/components`,
                 iconVariant: 'Cards',
                 text: 'Components',
@@ -59,6 +64,11 @@ const AppTemplate = () => {
                 path: `/actions`,
                 iconVariant: 'TerminalWindow',
                 text: 'Actions',
+              },
+              {
+                path: `/branches`,
+                iconVariant: 'GitBranch',
+                text: 'Branches',
               },
               {
                 path: `/roles`,
@@ -107,6 +117,11 @@ const AppTemplate = () => {
                   text: 'Overview',
                 },
                 {
+                  path: `/sandbox`,
+                  iconVariant: 'Cube',
+                  text: 'Sandbox',
+                },
+                {
                   path: `/components`,
                   iconVariant: 'Cards',
                   text: 'Components',
@@ -115,6 +130,11 @@ const AppTemplate = () => {
                   path: `/actions`,
                   iconVariant: 'TerminalWindow',
                   text: 'Actions',
+                },
+                {
+                  path: `/branches`,
+                  iconVariant: 'GitBranch',
+                  text: 'Branches',
                 },
                 {
                   path: `/roles`,

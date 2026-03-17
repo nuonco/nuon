@@ -35,6 +35,11 @@ export const Plan = ({ step }: { step: TWorkflowStep }) => {
   const { plan, isLoading, error } = useQueryApprovalPlan({ step })
 
   if (step?.execution_type === 'approval' && !step?.approval) {
+    if (!step?.finished) {
+      return getApprovalPlanSkeleton(
+        (step?.approval?.type as TApprovalType) || 'terraform_plan'
+      )
+    }
     return (
       <EmptyState
         variant="table"

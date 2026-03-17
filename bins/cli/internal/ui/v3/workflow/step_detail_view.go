@@ -9,7 +9,6 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
 	"github.com/nuonco/nuon/pkg/cli/styles"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -324,7 +323,8 @@ func (m *model) populateStepDetailView(goToTop bool) {
 
 	// approvals section
 	// TODO(fd): handle "install_sandbox_runs",
-	if generics.SliceContains(step.StepTargetType, []string{"install_deploys"}) {
+	if m.stepHasPlanDiff(step) {
+		m.syncHelmDiffExplorer()
 		diffSection := m.stepDetailViewStepDiff()
 		sections = append(sections, diffSection)
 	}
