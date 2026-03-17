@@ -14,7 +14,6 @@ import (
 func (a *Activities) getAppConfigByID(ctx context.Context, appConfigID string) (*app.AppConfig, error) {
 	var config app.AppConfig
 	res := a.db.WithContext(ctx).
-		Preload("App").
 		First(&config, "id = ?", appConfigID)
 
 	if res.Error != nil {

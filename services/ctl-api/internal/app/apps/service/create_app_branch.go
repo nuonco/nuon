@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type CreateAppBranchRequest struct {
@@ -37,20 +37,13 @@ func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
 // @Success				201	{object}	app.AppBranch
 // @Router					/v1/apps/{app_id}/branches [post]
 func (s *service) CreateAppBranch(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
+	enabled, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
-		ctx.Error(err)
+		ctx.Error(fmt.Errorf("unable to check features: %w", err))
 		return
 	}
-
-	// Feature flag checks
-	if !org.Features[string(app.OrgFeatureAppBranches)] {
-		ctx.Error(fmt.Errorf("app branches feature not enabled for this organization"))
-		return
-	}
-
-	if !org.Features[string(app.OrgFeatureQueues)] {
-		ctx.Error(fmt.Errorf("queues feature not enabled for this organization"))
+	if !enabled {
+		ctx.Error(features.ErrFeatureNotEnabled(app.OrgFeatureAppBranches))
 		return
 	}
 

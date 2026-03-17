@@ -6,12 +6,16 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
+	AppConfigID string `json:"app_config_id"` // optional; if set, use branch VCS commit when component shares same VCS config
+	BuildID     string `json:"build_id"`      // optional; if set, skip build creation and trigger pre-created build
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -28,19 +32,60 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	// If a pre-created BuildID is provided, delegate directly to the build signal.
+	if s.BuildID != "" {
+		return (&buildsignal.Signal{
+			ComponentID: s.ComponentID,
+			BuildID:     s.BuildID,
+		}).Execute(ctx)
+	}
+
 	cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	_, err = activities.AwaitQueueComponentBuild(ctx, activities.QueueComponentBuildRequest{
+	req := activities.QueueComponentBuildRequest{
 		CreatedByID: cmp.CreatedByID,
 		ComponentID: s.ComponentID,
 		OrgID:       cmp.OrgID,
-	})
+	}
+
+	// If AppConfigID is provided, try to use the branch's VCS commit when the
+	// component shares the same VCS config as the triggering branch run.
+	if s.AppConfigID != "" {
+		run, err := activities.AwaitGetAppBranchRunByAppConfigIDByAppConfigID(ctx, s.AppConfigID)
+		if err == nil && run.VCSConnectionCommit != nil {
+			commitOwnerID := run.VCSConnectionCommit.OwnerID
+			componentVCSConfigID := resolveComponentVCSConfigID(cmp)
+			if componentVCSConfigID != "" && componentVCSConfigID == commitOwnerID {
+				sha := run.VCSConnectionCommit.SHA
+				commitID := run.VCSConnectionCommit.ID
+				req.GitRef = &sha
+				req.VCSConnectionCommitID = &commitID
+			}
+		}
+	}
+
+	_, err = activities.AwaitQueueComponentBuild(ctx, req)
 	if err != nil {
 		return fmt.Errorf("unable to queue component build: %w", err)
 	}
 
 	return nil
+}
+
+// resolveComponentVCSConfigID returns the VCS config ID from the component's latest config,
+// used to compare against the branch run's VCS commit owner.
+func resolveComponentVCSConfigID(cmp *app.Component) string {
+	if cmp.LatestConfig == nil {
+		return ""
+	}
+	if cfg := cmp.LatestConfig.ConnectedGithubVCSConfig; cfg != nil {
+		return cfg.ID
+	}
+	if cfg := cmp.LatestConfig.PublicGitVCSConfig; cfg != nil {
+		return cfg.ID
+	}
+	return ""
 }

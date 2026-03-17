@@ -29,6 +29,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationSyncCustomStacks: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitSyncCustomStacks(ctx, input)
 		},
+		signals.OperationBuildSandbox: func(ctx workflow.Context, input signals.RequestSignal) error {
+			return AwaitBuildSandbox(ctx, input)
+		},
 		signals.OperationDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitDeprovision(ctx, input)
 		},

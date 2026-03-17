@@ -19,7 +19,7 @@ export const UserProfile = () => {
       ) : (
         user && (
           <>
-            <Avatar src={user?.picture} alt={user?.name} />
+            <Avatar src={user?.picture} name={user?.name} alt={user?.name} />
             <div className="flex flex-col gap-0.5 w-full overflow-hidden">
               <Text className="!leading-none" variant="body" weight="strong">
                 {user?.name}

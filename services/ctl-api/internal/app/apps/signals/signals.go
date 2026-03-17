@@ -26,6 +26,7 @@ const (
 	OperationReprovision      eventloop.SignalType = "reprovision"
 	OperationUpdateSandbox    eventloop.SignalType = "update_sandbox"
 	OperationSyncCustomStacks eventloop.SignalType = "sync_custom_stacks"
+	OperationBuildSandbox     eventloop.SignalType = "build_sandbox"
 	OperationExecuteFlow      eventloop.SignalType = "execute-flow"
 )
 
@@ -42,6 +43,9 @@ type Signal struct {
 
 	// required for syncing custom stacks
 	AppStackConfigID string `validate:"required_if=Operation sync_custom_stacks"`
+
+	// required for standalone sandbox builds
+	AppSandboxBuildID string `validate:"required_if=Operation build_sandbox"`
 
 	eventloop.BaseSignal
 }

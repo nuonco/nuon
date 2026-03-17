@@ -1,0 +1,46 @@
+import { createContext, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useOrg } from '@/hooks/use-org'
+import { useApp } from '@/hooks/use-app'
+import { getAppBranch } from '@/lib'
+import { ProviderError } from '@/components/layout/ProviderError'
+import { ProviderLoading } from '@/components/layout/ProviderLoading'
+import type { TAppBranch } from '@/types'
+
+type BranchContextValue = {
+  branch: TAppBranch
+  refresh: () => void
+}
+
+export const BranchContext = createContext<BranchContextValue | undefined>(undefined)
+
+export function BranchProvider({
+  children,
+  branchId,
+  pollInterval = 20000,
+  shouldPoll = false,
+}: {
+  children: ReactNode
+  branchId: string
+  pollInterval?: number
+  shouldPoll?: boolean
+}) {
+  const { org } = useOrg()
+  const { app } = useApp()
+  const { data: branch, isLoading, error, refetch } = useQuery({
+    queryKey: ['app-branch', org.id!, app.id!, branchId, 'with-config'],
+    queryFn: () => getAppBranch({ orgId: org.id!, appId: app.id!, branchId, latestConfig: true }),
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org.id && !!app.id && !!branchId,
+  })
+
+  if (error) return <ProviderError error={error} />
+
+  if (isLoading || !branch) return <ProviderLoading />
+
+  return (
+    <BranchContext.Provider value={{ branch, refresh: refetch }}>
+      {children}
+    </BranchContext.Provider>
+  )
+}

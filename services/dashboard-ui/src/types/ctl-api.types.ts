@@ -187,6 +187,19 @@ export type TInstallDeployPlan = {
 }
 
 // sandbox
+export type TAppSandboxBuild = {
+  id: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  app_id?: string
+  app_config_id?: string
+  app_sandbox_config_id?: string
+  vcs_connection_commit_id?: string | null
+  status: 'queued' | 'planning' | 'building' | 'active' | 'error'
+  status_description?: string
+}
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
