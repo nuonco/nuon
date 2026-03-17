@@ -27,6 +27,23 @@ The Nuon dashboard provides a **Use Terraform CLI** option on both the Sandbox a
     You must use the **same Terraform version** configured for the sandbox or component. The version is displayed on the configuration card in the dashboard.
 
     For sandboxes, this is the `terraform_version` in your `sandbox.toml`. For components, it's the `terraform_version` in the component's `.toml` config.
+    
+    Terraform is deprecated on `brew`. Consider using Terraform version manager `tfenv` to install and use multiple Terraform versions locally. You can install it with:
+    
+    ```bash
+    brew update
+    brew install tfenv
+    ```
+    
+    List remote versions, install specific versions, list versions, and globally select a version
+    
+    ```bash
+    tfenv list-remote
+    tfenv install 1.13.5
+    tfenv install 1.11.3
+    tfenv list
+    tfenv use 1.13.5
+    ```
 
     Verify your local version matches:
 
@@ -76,7 +93,7 @@ The Nuon dashboard provides a **Use Terraform CLI** option on both the Sandbox a
 
 ## Setting Up the Backend
 
-Click the **Use Terraform CLI** button on the Sandbox or Component detail page in the dashboard. This opens a modal with a downloadable `nuon_backend.tf` file containing the HTTP backend configuration for that workspace.
+Click the **\{\} Use Terraform CLI** button on the lower right part of Sandbox or Component detail page in the dashboard. This opens a modal, and click the Download button to retrieve a `nuon_backend.tf` file containing the HTTP backend configuration for that workspace.
 
 The generated file looks like this:
 
@@ -85,21 +102,31 @@ terraform {
   backend "http" {
     lock_method    = "POST"
     unlock_method  = "POST"
-    address        = "https://api.nuon.co/v1/terraform-backend?workspace_id=<workspace_id>&org_id=<org_id>"
-    lock_address   = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/lock?org_id=<org_id>"
-    unlock_address = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/unlock?org_id=<org_id>"
+    address        = "https://api.nuon.co/v1/terraform-backend?workspace_id=<workspace_id>&org_id=<org_id>&token=undefined"
+    lock_address   = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/lock?org_id=<org_id>&token=undefined"
+    unlock_address = "https://api.nuon.co/v1/terraform-workspaces/<workspace_id>/unlock?org_id=<org_id>&token=undefined"
   }
 }
 ```
 
 Download this file and place it in your Terraform module directory alongside the other `.tf` files.
 
-## Initializing Terraform
 
-Set your API token and initialize the backend:
+## Set your Nuon API token
+
+Retrieve your Nuon API token
 
 ```bash
-export TF_HTTP_AUTHORIZATION="Bearer $(nuon orgs api-token -j | tr -d '\"')"
+nuon orgs api-token
+```
+
+Replace the three token `undefined` blocks in `nuon_backend.tf` with your org's API token.
+
+## Initializing Terraform
+
+Initialize the backend:
+
+```bash
 terraform init -reconfigure
 ```
 
