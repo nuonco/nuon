@@ -136,8 +136,58 @@ METHOD               = "HEAD"
 EXPECTED_STATUS_CODE = "200"
 ```
 
+# Adhoc Actions
+
+Adhoc actions let you run a one-off command or bash script on an install without
+defining it in your app's TOML config. This is useful for debugging, running
+database migrations manually, or any other operational task that doesn't need a
+recurring or lifecycle-triggered workflow.
+
+## Running an Adhoc Action
+
+Navigate to an install in the dashboard and click **Manage** > **Run adhoc action**. 
+You'll beprompted to configure the run:
+
+- **Name** (optional) — a display name shown in workflow history.
+- **Single Command / Bash Script** — choose between a single-line shell command
+  or a multi-line bash script.
+- **Timeout** — execution timeout in seconds (1–3600, default: 300).
+- **Environment Variables** — key/value pairs injected into the execution
+  environment. Values support Go template interpolation (see below).
+- **Role** — the IAM role the runner will assume when executing the action.
+
+After submitting, you'll be taken directly to the workflow run to monitor logs and
+status.
+
+## Template Interpolation
+
+Both commands and scripts support Go template syntax for injecting install state
+at execution time. For example:
+
+```bash
+#!/bin/bash
+curl -f "https://{{.nuon.install.sandbox.outputs.public_domain.name}}/health"
+```
+
+Environment variable values also support templates:
+
+```bash
+#!/bin/bash
+curl -f "$HEALTH_ENDPOINT"
+```
+
+```
+HEALTH_ENDPOINT = "https://{{.nuon.install.sandbox.outputs.public_domain.name}}/health"
+```
+
+## Rerunning an Adhoc Action
+
+From the workflow run detail view, you can rerun a previous adhoc action. The
+form will be pre-populated with the original command, script, environment
+variables, and role — you can edit before submitting.
+
 # Monitoring Workflow Runs
 
 Actions workflow runs can be monitored on the "Actions" tab in each install. You
 can see a list of all workflow runs, and inspect each run to see logs, what
-triggered the run, and whether is succeeded or not.
+triggered the run, and whether it succeeded or not.
