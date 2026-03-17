@@ -29,12 +29,6 @@ func newGenerateCmd() *cobra.Command {
 func runGen(cmd *cobra.Command, args []string) error {
 	targetDir := getDir(args)
 
-	if cleanupFlag {
-		if err := runClean(targetDir, false, recursiveFlag); err != nil {
-			return fmt.Errorf("failed to cleanup: %w", err)
-		}
-	}
-
 	loadPattern := temporalgen.BuildLoadPattern(targetDir, recursiveFlag)
 	fmt.Printf("Running %s generator in %s...\n", config.AnnotationPrefix, loadPattern)
 
@@ -42,6 +36,7 @@ func runGen(cmd *cobra.Command, args []string) error {
 	return temporalgen.Generate(ctx, temporalgen.Options{
 		Dir:         targetDir,
 		Recursive:   recursiveFlag,
+		Cleanup:     cleanupFlag,
 		Validate:    validateFlag,
 		Imports:     importsFlag,
 		Parallelism: parallelismFlag,

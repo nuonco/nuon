@@ -157,6 +157,7 @@ func generateTemporal(ctx context.Context) error {
 	return temporalgen.Generate(ctx, temporalgen.Options{
 		Dir:         ".",
 		Recursive:   true,
+		Cleanup:     true,
 		Validate:    true,
 		Imports:     true,
 		Parallelism: runtime.NumCPU(),

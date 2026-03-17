@@ -5,12 +5,14 @@ package temporalgen
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/generator"
@@ -23,6 +25,9 @@ type Options struct {
 
 	// Recursive processes all packages under Dir recursively (equivalent to ./...).
 	Recursive bool
+
+	// Cleanup removes existing generated files before generating new ones.
+	Cleanup bool
 
 	// Validate fails if any annotation validation errors are found.
 	Validate bool
@@ -50,6 +55,12 @@ func Generate(ctx context.Context, opts Options) error {
 	parallelism := opts.Parallelism
 	if parallelism <= 0 {
 		parallelism = runtime.NumCPU()
+	}
+
+	if opts.Cleanup {
+		if err := Clean(targetDir, opts.Recursive); err != nil {
+			return fmt.Errorf("failed to cleanup: %w", err)
+		}
 	}
 
 	loadPattern := BuildLoadPattern(targetDir, opts.Recursive)
@@ -99,6 +110,52 @@ func BuildLoadPattern(targetDir string, recursive bool) string {
 		cleanDir = "./" + cleanDir
 	}
 	return fmt.Sprintf("%s/...", cleanDir)
+}
+
+// Clean removes all generated _gen.go files (matching the watermark) under dir.
+func Clean(dir string, recursive bool) error {
+	if !recursive {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(entry.Name(), "_gen.go") {
+				path := filepath.Join(dir, entry.Name())
+				if err := removeIfGenerated(path); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(path, "_gen.go") {
+			return removeIfGenerated(path)
+		}
+		return nil
+	})
+}
+
+func removeIfGenerated(path string) error {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if strings.Contains(string(content), config.Watermark) {
+		return os.Remove(path)
+	}
+	return nil
 }
 
 func processPackage(ctx context.Context, pkg *dir.Package, strict bool, opts generator.GeneratorOptions) error {
