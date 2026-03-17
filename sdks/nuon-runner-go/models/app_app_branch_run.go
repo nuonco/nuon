@@ -53,6 +53,17 @@ type AppAppBranchRun struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// log stream
+	LogStream *AppLogStream `json:"log_stream,omitempty"`
+
+	// LogStreamID is the log stream created during this run for event tracking
+	LogStreamID string `json:"log_stream_id,omitempty"`
+
+	// QueueSignal is the signal that was enqueued to trigger this run
+	QueueSignal struct {
+		AppQueueSignal
+	} `json:"queue_signal,omitempty"`
+
 	// StartedAt tracks when execution actually began
 	StartedAt string `json:"started_at,omitempty"`
 
@@ -83,6 +94,14 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCreatedBy(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLogStream(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueueSignal(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -169,6 +188,37 @@ func (m *AppAppBranchRun) validateCreatedBy(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validateLogStream(formats strfmt.Registry) error {
+	if swag.IsZero(m.LogStream) { // not required
+		return nil
+	}
+
+	if m.LogStream != nil {
+		if err := m.LogStream.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("log_stream")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
+	if swag.IsZero(m.QueueSignal) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validateVcsConnectionCommit(formats strfmt.Registry) error {
 	if swag.IsZero(m.VcsConnectionCommit) { // not required
 		return nil
@@ -228,6 +278,14 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLogStream(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueueSignal(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -316,6 +374,36 @@ func (m *AppAppBranchRun) contextValidateCreatedBy(ctx context.Context, formats 
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateLogStream(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LogStream != nil {
+
+		if swag.IsZero(m.LogStream) { // not required
+			return nil
+		}
+
+		if err := m.LogStream.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("log_stream")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("log_stream")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
