@@ -116,6 +116,11 @@ func (a *API) lifecycleHooks(shutdowner fx.Shutdowner) fx.Hook {
 					})
 				}
 
+				if len(routes) == 0 {
+					a.l.Warn("endpoint auditing enabled but no routes found", zap.String("name", a.name))
+					return nil
+				}
+
 				ctx := context.Background()
 				if res := a.db.WithContext(ctx).
 					Clauses(clause.OnConflict{

@@ -65,6 +65,11 @@ func (m *baseMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		if m.endpointAudit == nil || m.endpointAudit.Routes == nil {
+			ctx.Next()
+			return
+		}
+
 		// Skip unmatched routes
 		if ctx.FullPath() == "" {
 			ctx.Next()
