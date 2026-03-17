@@ -10,35 +10,45 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
+// StartHandler starts a new handler workflow for a signal. Uses TERMINATE_IF_RUNNING
+// to replace any stale handler, and PARENT_CLOSE_POLICY_ABANDON so the handler
+// survives when the parent queue workflow closes (gracefully or via termination).
 func StartHandler(ctx workflow.Context, workflowID string, req HandlerRequest) {
 	_ = (&Workflows{}).Handler
 	// use this ^ for to go-to-definition jumping in your editor
+
+	disconnectedCtx, _ := workflow.NewDisconnectedContext(ctx)
 
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:             "api",
 		WorkflowID:            workflowID,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
 		WaitForCancellation:   false,
 	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
+	disconnectedCtx = workflow.WithChildOptions(disconnectedCtx, cwo)
 
-	workflow.ExecuteChildWorkflow(ctx, (&Workflows{}).Handler, req)
+	workflow.ExecuteChildWorkflow(disconnectedCtx, (&Workflows{}).Handler, req)
 }
 
 // StartHandlerIfNeeded starts a handler workflow only if one is not already running.
-// Unlike StartHandler, this uses ALLOW_DUPLICATE_FAILED_ONLY so it is a no-op when the
-// handler is still alive (e.g. after a graceful queue stop) but will restart a handler
-// that was terminated or failed (e.g. after a hard queue termination).
+// Uses ALLOW_DUPLICATE so a new handler is started for any previously-closed execution
+// (completed, failed, cancelled, or terminated). If the handler is still running, the
+// start attempt fails silently (fire-and-forget) and the existing handler continues.
+// Uses PARENT_CLOSE_POLICY_ABANDON so the handler survives when the parent queue closes.
 func StartHandlerIfNeeded(ctx workflow.Context, workflowID string, req HandlerRequest) {
+	disconnectedCtx, _ := workflow.NewDisconnectedContext(ctx)
+
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:             "api",
 		WorkflowID:            workflowID,
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
 		WaitForCancellation:   false,
 	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
+	disconnectedCtx = workflow.WithChildOptions(disconnectedCtx, cwo)
 
-	workflow.ExecuteChildWorkflow(ctx, (&Workflows{}).Handler, req)
+	workflow.ExecuteChildWorkflow(disconnectedCtx, (&Workflows{}).Handler, req)
 }
 
 type HandlerRequest struct {
@@ -80,6 +90,12 @@ type handler struct {
 	restarted bool
 	finished  bool
 	canceled  bool
+
+	// validated and executing track whether validate/execute have been performed.
+	// These make the update handlers idempotent: a second validate is a no-op, and
+	// a second execute waits for the in-progress execution to finish.
+	validated bool
+	executing bool
 
 	// cancelable context for execution
 	executingCtx    workflow.Context

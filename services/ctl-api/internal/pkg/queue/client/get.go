@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 
+	"strings"
+
 	"github.com/pkg/errors"
 	tclient "go.temporal.io/sdk/client"
 
@@ -63,6 +65,10 @@ func (c *Client) GetQueueStatus(ctx context.Context, queueID string) (*queue.Sta
 		},
 	})
 	if err != nil {
+		// If the queue workflow has already completed (e.g. gracefully stopped), treat it as stopped.
+		if strings.Contains(err.Error(), "workflow execution already completed") {
+			return &queue.StatusResponse{Stopped: true}, nil
+		}
 		return nil, errors.Wrap(err, "unable to call status handler")
 	}
 

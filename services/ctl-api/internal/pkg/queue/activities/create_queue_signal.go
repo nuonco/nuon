@@ -24,6 +24,7 @@ func (a *Activities) createQueueSignal(ctx context.Context, queueID string, sign
 		Signal: signaldb.SignalData{
 			Signal: signal,
 		},
+		Status:  app.CompositeStatus{Status: app.StatusQueued},
 		QueueID: queueID,
 		Type:    signal.Type(),
 		Workflow: signaldb.WorkflowRef{
