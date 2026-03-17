@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/nuonco/nuon/pkg/command"
 	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
@@ -164,6 +165,10 @@ func generateTemporal(ctx context.Context) error {
 	})
 }
 
+func generateTempl(ctx context.Context) error {
+	return generatecmd.Run(ctx, os.Stdout, os.Stderr, []string{"-path", "./internal/app/admin-dashboard"})
+}
+
 func main() {
 	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,admin,temporal")
 	flag.Parse()
@@ -219,6 +224,13 @@ func main() {
 			})
 		})
 	}
+	if targets.has("templ") {
+		eg.Go(func() error {
+			return recorder.time("Templ gen", func() error {
+				return generateTempl(ctx)
+			})
+		})
+	}
 
 	if err := eg.Wait(); err != nil {
 		log.Fatal(err)
@@ -252,7 +264,7 @@ func parseTargets(flagValue string) targetSet {
 
 	set := targetSet{}
 	if value == "" {
-		for _, target := range []string{"public", "public-v3", "runner", "admin", "temporal"} {
+		for _, target := range []string{"public", "public-v3", "runner", "admin", "temporal", "templ"} {
 			set.add(target)
 		}
 		return set
