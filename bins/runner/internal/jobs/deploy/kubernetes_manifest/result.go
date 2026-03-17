@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	types "github.com/nuonco/nuon/pkg/types/components/plan"
+	types "github.com/nuonco/nuon/pkg/types/approvals"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/pkg/errors"

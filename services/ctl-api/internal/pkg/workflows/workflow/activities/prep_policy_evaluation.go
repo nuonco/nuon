@@ -11,7 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
-	"github.com/nuonco/nuon/pkg/types/components/plan"
+	plan "github.com/nuonco/nuon/pkg/types/approvals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 )

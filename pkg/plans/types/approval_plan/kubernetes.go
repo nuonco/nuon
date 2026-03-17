@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/diff"
-	"github.com/nuonco/nuon/pkg/types/components/plan"
+	plan "github.com/nuonco/nuon/pkg/types/approvals"
 )
 
 type KubernetesApprovalPlan struct {
