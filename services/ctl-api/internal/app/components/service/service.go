@@ -22,11 +22,11 @@ import (
 type Params struct {
 	fx.In
 
-	V           *validator.Validate
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
-	MW          metrics.Writer
-	L           *zap.Logger
+	V              *validator.Validate
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
+	L              *zap.Logger
 	Helpers        *helpers.Helpers
 	VcsHelpers     *vcshelpers.Helpers
 	AppsHelpers    *appshelpers.Helpers
