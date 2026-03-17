@@ -49,13 +49,6 @@ export const BranchRunDetail = () => {
     }
   }, [steps, selectedStep])
 
-  useEffect(() => {
-    if (run) {
-      console.log('Workflow ID:', run.id)
-      console.log('Full run data:', run)
-    }
-  }, [run])
-
   if (isLoadingRuns || !run) {
     return (
       <div className="flex flex-col gap-6 p-6">
