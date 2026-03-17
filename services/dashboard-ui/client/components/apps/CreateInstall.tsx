@@ -123,7 +123,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
     enabled: !!configs?.[0]?.id,
   })
 
-  const { mutate, isPending: isSubmitting, error: actionError } = useMutation({
+  const { mutateAsync, isPending: isSubmitting, error: actionError } = useMutation({
     mutationFn: (formData: FormData) => {
       const formDataObj = Object.fromEntries(formData)
       const inputs = Object.keys(formDataObj).reduce(
@@ -256,7 +256,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           ref={formRef}
           configId={configs[0]?.id}
           config={config}
-          onSubmitAction={(formData: FormData) => mutate(formData)}
+          onSubmitAction={(formData: FormData) => mutateAsync(formData)}
           {...props}
         />
       )}
@@ -269,7 +269,7 @@ const CreateInstallFormContent = forwardRef<
   {
     configId: string
     config: TAppConfig
-    onSubmitAction: (formData: FormData) => void
+    onSubmitAction: (formData: FormData) => Promise<any>
   } & ICreateInstall &
     IModal
 >(({ configId, config, onSubmitAction, ...props }, ref) => {
@@ -301,9 +301,7 @@ const CreateInstallFormContent = forwardRef<
           config?.input?.inputs
         ),
       }}
-      onSubmit={async (formData) => {
-        onSubmitAction(formData)
-      }}
+      onSubmit={(formData) => onSubmitAction(formData)}
       onCancel={() => {
         removeModal(props.modalId)
       }}

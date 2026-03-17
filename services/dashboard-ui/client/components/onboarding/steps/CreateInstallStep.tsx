@@ -116,7 +116,7 @@ function CreateInstallStepContent({
     queryFn: () => getApp({ appId, orgId }),
   })
 
-  const { mutate, isPending } = useMutation({
+  const { mutateAsync, isPending } = useMutation({
     mutationFn: (formData: FormData) => {
       const formDataObj = Object.fromEntries(formData)
       const inputs = Object.keys(formDataObj).reduce(
@@ -220,9 +220,7 @@ function CreateInstallStepContent({
           (app.runner_config?.app_runner_type as 'aws' | 'azure') ?? 'aws'
         }
         inputConfig={app.input_config}
-        onSubmit={async (formData: FormData) => {
-          mutate(formData)
-        }}
+        onSubmit={(formData: FormData) => mutateAsync(formData)}
         onCancel={() => {}}
       />
 

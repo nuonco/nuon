@@ -53,7 +53,7 @@ export const CreateInstallFromApp = ({
     enabled: !!org?.id,
   })
 
-  const { mutate, isPending: isSubmitting } = useMutation({
+  const { mutateAsync, isPending: isSubmitting } = useMutation({
     mutationFn: (formData: FormData) => {
       const formDataObj = Object.fromEntries(formData)
       const inputs = Object.keys(formDataObj).reduce(
@@ -200,9 +200,7 @@ export const CreateInstallFromApp = ({
             config.input?.inputs
           ),
         }}
-        onSubmit={async (formData: FormData) => {
-          mutate(formData)
-        }}
+        onSubmit={(formData: FormData) => mutateAsync(formData)}
         onCancel={onClose}
         onRegisterClearDraft={onRegisterClearDraft}
       />

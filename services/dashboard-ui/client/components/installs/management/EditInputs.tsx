@@ -119,7 +119,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
     enabled: !!install?.app_id && !!install?.app_config_id,
   })
 
-  const { mutate, isPending: isSubmitting, error: actionError } = useMutation({
+  const { mutateAsync, isPending: isSubmitting, error: actionError } = useMutation({
     mutationFn: async (formData: FormData) => {
       if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
         await updateInstall({
@@ -344,9 +344,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               config?.input?.inputs
             ),
           }}
-          onSubmit={async (formData) => {
-            mutate(formData)
-          }}
+          onSubmit={(formData) => mutateAsync(formData)}
           onCancel={() => {
             removeModal(props.modalId)
           }}
