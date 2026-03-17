@@ -52,6 +52,12 @@ client/
 └── main.tsx            ← App entry point
 ```
 
+## Views vs Components (Strict Separation)
+
+- **`views/`** contains **only**: page-level view components (route content), layout components (providers/breadcrumbs/tab nav), and route orchestration.
+- **`views/`** must **never** contain: modals, tables, reusable sub-components, action buttons, or any component meant to be consumed by a view.
+- All feature components belong in `client/components/[domain]/`. If a `components/[domain]/` directory doesn't exist yet, create it.
+
 ## Routing
 
 Routing uses **React Router v7** with nested routes. Route files live in `client/views/` mirroring the URL hierarchy.

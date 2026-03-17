@@ -7,8 +7,8 @@ import { Text } from '@/components/common/Text'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppBranches } from '@/lib'
-import { BranchesTable } from './components/BranchesTable'
-import { CreateBranchModal } from './modals/CreateBranchModal'
+import { BranchesTable } from '@/components/branches/BranchesTable'
+import { CreateBranchModal } from '@/components/branches/CreateBranchModal'
 
 export const Branches = () => {
   const { org } = useOrg()

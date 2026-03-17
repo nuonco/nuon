@@ -12,7 +12,7 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
-import { BranchDetailActions } from './components/BranchDetailActions'
+import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { getBranchWorkflowRuns } from '@/lib'
 
 const BranchDetailContent = () => {

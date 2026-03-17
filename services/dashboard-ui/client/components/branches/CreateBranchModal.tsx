@@ -128,8 +128,7 @@ export const CreateBranchModal = ({
         })
 
         if (response.repositories && Array.isArray(response.repositories)) {
-          // Sort repos alphabetically by full_name
-          const sortedRepos = [...response.repositories].sort((a, b) => 
+          const sortedRepos = [...response.repositories].sort((a, b) =>
             a.full_name.localeCompare(b.full_name)
           )
           setRepos(sortedRepos)

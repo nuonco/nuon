@@ -41,12 +41,10 @@ export const EditBranchNameModal = ({
 
   const [branchName, setBranchName] = useState(branch.name || '')
 
-  // "Connect to Git Repository" checkbox — mirrors CreateBranchModal
   const [useVcs, setUseVcs] = useState(
     !!(currentConfig?.connected_github_vcs_config || currentConfig?.public_git_vcs_config)
   )
 
-  // VCS selector state — mirrors CreateBranchModal
   const [selectedVcsConnectionId, setSelectedVcsConnectionId] = useState('')
   const [repos, setRepos] = useState<TVCSConnectionRepo[]>([])
   const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(null)
@@ -63,7 +61,6 @@ export const EditBranchNameModal = ({
 
   const vcsConnections = org?.vcs_connections || []
 
-  // Initialise state from currentConfig when modal opens
   useEffect(() => {
     if (!isVisible) return
 
@@ -95,14 +92,12 @@ export const EditBranchNameModal = ({
     }
   }, [isVisible, currentConfig])
 
-  // Seed connection when vcsConnections loads (if not already set)
   useEffect(() => {
     if (vcsConnections.length > 0 && !selectedVcsConnectionId && isVisible) {
       setSelectedVcsConnectionId(vcsConnections[0].id)
     }
   }, [vcsConnections, isVisible])
 
-  // Fetch repos when connection changes
   useEffect(() => {
     if (!selectedVcsConnectionId || !isVisible || !useVcs) {
       setRepos([])
@@ -148,7 +143,6 @@ export const EditBranchNameModal = ({
     fetchRepos()
   }, [selectedVcsConnectionId, isVisible, useVcs, org.id])
 
-  // Fetch branches when repo changes
   useEffect(() => {
     if (!selectedRepo || !selectedVcsConnectionId || !isVisible || !useVcs) {
       setBranches([])
@@ -212,7 +206,6 @@ export const EditBranchNameModal = ({
         throw new Error('Please select a repository')
       }
 
-      // Step 1: Update branch name if changed
       if (branchName !== branch.name) {
         try {
           await updateBranch({
@@ -226,7 +219,6 @@ export const EditBranchNameModal = ({
         }
       }
 
-      // Step 2: Build and create new config
       const request: any = {}
 
       if (useVcs && selectedRepo) {
@@ -248,7 +240,6 @@ export const EditBranchNameModal = ({
         }
       }
 
-      // Preserve install groups from currentConfig
       if (currentConfig?.install_groups && currentConfig.install_groups.length > 0) {
         request.install_groups = currentConfig.install_groups.map((g, idx) => ({
           name: g.name,
@@ -316,7 +307,6 @@ export const EditBranchNameModal = ({
       )}
 
       <div className="flex flex-col gap-4">
-        {/* Branch Name */}
         <div className="flex flex-col gap-2">
           <label htmlFor="branch-name" className="text-sm font-medium">
             Branch Name
@@ -333,7 +323,6 @@ export const EditBranchNameModal = ({
           />
         </div>
 
-        {/* VCS Section */}
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <input

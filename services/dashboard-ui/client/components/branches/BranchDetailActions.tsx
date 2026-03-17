@@ -8,8 +8,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useBranch } from '@/hooks/use-branch'
 import type { TAppBranch, TAppBranchConfig } from '@/types'
 import { triggerBranchRun } from '@/lib'
-import { EditBranchNameModal } from '../modals/EditBranchNameModal'
-import { EditInstallGroupsModal } from '../modals/EditInstallGroupsModal'
+import { EditBranchNameModal } from '@/components/branches/EditBranchNameModal'
+import { EditInstallGroupsModal } from '@/components/branches/EditInstallGroupsModal'
 
 interface IBranchDetailActions {
   branch: TAppBranch
