@@ -112,7 +112,7 @@ const columns: ColumnDef<TAppRow>[] = [
   },
 ]
 
-const LIMIT = 5
+const LIMIT = 20
 
 export const AppsTable = ({
   pollInterval = 15000,
