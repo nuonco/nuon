@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -58,10 +60,30 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
+	useQueues, err := s.useInstallQueues(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+			InstallID:         install.ID,
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
+	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 

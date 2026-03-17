@@ -1,12 +1,15 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
 )
 
 // DEPRECATED: This endpoint is deprecated and will be removed in a future release.
@@ -45,14 +48,54 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationForget,
-	})
+	useQueues, err := s.useInstallQueues(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+			InstallID:         install.ID,
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
+	}
+
+	useQueues2, err2 := s.useInstallQueues(ctx)
+	if err2 != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err2))
+		return
+	}
+	if useQueues2 {
+		queueID2, err2 := s.getInstallQueueID(ctx, install.ID)
+		if err2 != nil {
+			ctx.Error(err2)
+			return
+		}
+		if err2 := s.enqueueInstallSignal(ctx, queueID2, &forgotten.Signal{
+			InstallID: install.ID,
+		}); err2 != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err2))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationForget,
+		})
+	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 

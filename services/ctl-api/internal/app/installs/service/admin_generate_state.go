@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	generatestate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 )
 
 type AdminInstallGenerateInstallStateRequest struct{}
@@ -33,8 +35,27 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationGenerateState,
-	})
+	useQueues, err := s.useInstallQueues(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationGenerateState,
+		})
+	}
 	ctx.JSON(http.StatusOK, true)
 }

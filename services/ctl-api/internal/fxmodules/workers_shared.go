@@ -22,6 +22,9 @@ import (
 
 	// Register app branch run signal in catalog (blank import triggers init())
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+
+	// Register install queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 )
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.
