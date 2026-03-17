@@ -7,6 +7,9 @@ import { Badge } from '@/components/common/Badge'
 import { Time } from '@/components/common/Time'
 import { Icon } from '@/components/common/Icon'
 import { Card } from '@/components/common/Card'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { getBranchWorkflowRuns } from '@/lib'
@@ -51,11 +54,11 @@ export const BranchRunDetail = () => {
 
   if (isLoadingRuns || !run) {
     return (
-      <div className="flex flex-col gap-6 p-6">
+      <PageSection>
         <Text variant="body" theme="neutral">
           Loading workflow run...
         </Text>
-      </div>
+      </PageSection>
     )
   }
 
@@ -63,7 +66,19 @@ export const BranchRunDetail = () => {
   const statusDescription = run.status?.status_human_description || ''
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <PageSection isScrollable>
+      <PageTitle title={`Run | ${app?.name}`} />
+      <Breadcrumbs
+        breadcrumbs={[
+          { path: `/${org?.id}`, text: org?.name },
+          { path: `/${org?.id}/apps`, text: 'Apps' },
+          { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
+          { path: `/${org?.id}/apps/${app?.id}/branches`, text: 'Branches' },
+          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`, text: branchId },
+          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs`, text: 'Runs' },
+          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs/${runId}`, text: runId },
+        ]}
+      />
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <HeadingGroup>
@@ -374,6 +389,6 @@ export const BranchRunDetail = () => {
           </div>
         </Card>
       )}
-    </div>
+    </PageSection>
   )
 }

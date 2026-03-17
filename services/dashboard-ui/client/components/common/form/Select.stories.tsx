@@ -342,6 +342,37 @@ export function AWSRegions() {
   )
 }
 
+export function WithSearch() {
+  return (
+    <div className="space-y-6 max-w-md">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Searchable Select</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Use the <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">searchable</code> prop
+          to enable filtering options by typing. Useful for selects with many options like cloud regions.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <Select
+          options={awsRegionOptions}
+          labelProps={{ labelText: 'AWS Region (searchable)' }}
+          placeholder="Choose AWS region"
+          helperText="Type to filter regions"
+          searchable
+        />
+
+        <Select
+          options={awsRegionOptions}
+          labelProps={{ labelText: 'AWS Region (non-searchable)' }}
+          placeholder="Choose AWS region"
+          helperText="No search input"
+        />
+      </div>
+    </div>
+  )
+}
+
 export function AzureRegions() {
   return (
     <div className="space-y-6 max-w-md">

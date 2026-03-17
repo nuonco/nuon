@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -8,8 +7,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useBranch } from '@/hooks/use-branch'
 import type { TAppBranch, TAppBranchConfig } from '@/types'
 import { triggerBranchRun } from '@/lib'
-import { EditBranchNameModal } from '@/components/branches/EditBranchNameModal'
-import { EditInstallGroupsModal } from '@/components/branches/EditInstallGroupsModal'
+import { EditBranchButton } from '@/components/branches/EditBranchNameModal'
+import { EditInstallGroupsButton } from '@/components/branches/EditInstallGroupsModal'
 
 interface IBranchDetailActions {
   branch: TAppBranch
@@ -26,9 +25,6 @@ export const BranchDetailActions = ({
 }: IBranchDetailActions) => {
   const { addToast } = useToast()
   const { refresh } = useBranch()
-  const queryClient = useQueryClient()
-  const [showEditName, setShowEditName] = useState(false)
-  const [showEditGroups, setShowEditGroups] = useState(false)
 
   const triggerRunMutation = useMutation({
     mutationFn: () =>
@@ -79,59 +75,24 @@ export const BranchDetailActions = ({
   }
 
   return (
-    <>
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={() => setShowEditName(true)}
-          variant="secondary"
-          size="sm"
-        >
-          <Icon variant="Edit" size={16} />
-          Edit
-        </Button>
+    <div className="flex items-center gap-3">
+      <EditBranchButton branch={branch} currentConfig={currentConfig} onSuccess={refresh} />
+      <EditInstallGroupsButton branch={branch} currentConfig={currentConfig} onSuccess={refresh} />
 
-        <Button
-          onClick={() => setShowEditGroups(true)}
-          variant="secondary"
-          size="sm"
-        >
-          <Icon variant="Edit" size={16} />
-          Edit Installs
-        </Button>
-
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={!currentConfig || triggerRunMutation.isPending}
-          onClick={handleTriggerRun}
-          title={
-            !currentConfig
-              ? 'Create a configuration first to trigger a run'
-              : 'Trigger a new run with the current configuration'
-          }
-        >
-          <Icon variant="Play" size={16} />
-          {triggerRunMutation.isPending ? 'Triggering...' : 'Trigger Run'}
-        </Button>
-      </div>
-
-      {showEditName && (
-        <EditBranchNameModal
-          isVisible={showEditName}
-          onClose={() => setShowEditName(false)}
-          branch={branch}
-          currentConfig={currentConfig}
-        />
-      )}
-
-      {showEditGroups && (
-        <EditInstallGroupsModal
-          isVisible={showEditGroups}
-          onClose={() => setShowEditGroups(false)}
-          branch={branch}
-          currentConfig={currentConfig}
-        />
-      )}
-    </>
+      <Button
+        variant="primary"
+        size="sm"
+        disabled={!currentConfig || triggerRunMutation.isPending}
+        onClick={handleTriggerRun}
+        title={
+          !currentConfig
+            ? 'Create a configuration first to trigger a run'
+            : 'Trigger a new run with the current configuration'
+        }
+      >
+        <Icon variant="Play" size={16} />
+        {triggerRunMutation.isPending ? 'Triggering...' : 'Trigger run'}
+      </Button>
+    </div>
   )
 }

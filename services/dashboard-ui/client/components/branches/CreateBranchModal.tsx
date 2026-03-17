@@ -2,13 +2,18 @@ import { useNavigate } from 'react-router'
 import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
+import { Select } from '@/components/common/form/Select'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import {
   createAppBranch,
@@ -21,23 +26,22 @@ import {
   type Branch,
 } from '@/lib/ctl-api/vcs/get-connection-branches'
 
-interface ICreateBranchModal extends IModal {
-  isVisible: boolean
-  onClose: () => void
-}
+type ICreateBranchModal = IModal
 
-export const CreateBranchModal = ({
-  isVisible,
-  onClose,
-  ...props
-}: ICreateBranchModal) => {
+export const CreateBranchModal = ({ ...props }: ICreateBranchModal) => {
   const navigate = useNavigate()
   const { app } = useApp()
   const { org } = useOrg()
   const { addToast } = useToast()
+  const { removeModal } = useSurfaces()
+
+  const vcsConnections = org?.vcs_connections || []
+
   const [name, setName] = useState('')
   const [useVcs, setUseVcs] = useState(true)
-  const [selectedVcsConnectionId, setSelectedVcsConnectionId] = useState('')
+  const [selectedVcsConnectionId, setSelectedVcsConnectionId] = useState(
+    vcsConnections[0]?.id || ''
+  )
   const [repos, setRepos] = useState<TVCSConnectionRepo[]>([])
   const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(
     null
@@ -52,30 +56,15 @@ export const CreateBranchModal = ({
   const [reposError, setReposError] = useState<string | null>(null)
   const [branchesError, setBranchesError] = useState<string | null>(null)
 
-  const formatError = (err: any): string => {
-    if (!err) return ''
-    if (typeof err === 'string') return err
-    return (
-      err.user_error ||
-      err.error ||
-      err.description ||
-      err.message ||
-      'An error occurred'
-    )
-  }
-
   const { mutate, isPending: isLoading } = useMutation({
-    mutationFn: async (body: TCreateAppBranchRequest & {
-      vcs_connection_id?: string
-      connected_github_vcs_config?: any
-      public_git_vcs_config?: any
-    }) => {
-      const branch = await createAppBranch({
-        appId: app.id,
-        body,
-        orgId: org.id,
-      })
-      return branch
+    mutationFn: async (
+      body: TCreateAppBranchRequest & {
+        vcs_connection_id?: string
+        connected_github_vcs_config?: any
+        public_git_vcs_config?: any
+      }
+    ) => {
+      return createAppBranch({ appId: app.id, body, orgId: org.id })
     },
     onSuccess: (data) => {
       addToast(
@@ -83,7 +72,7 @@ export const CreateBranchModal = ({
           <Text>Created app branch: {name}</Text>
         </Toast>
       )
-      handleClose()
+      removeModal(props.modalId)
       navigate(`/${org.id}/apps/${app.id}/branches/${data.id}`)
     },
     onError: (error: Error) => {
@@ -96,67 +85,63 @@ export const CreateBranchModal = ({
     },
   })
 
-  const vcsConnections = org?.vcs_connections || []
-
   useEffect(() => {
-    if (
-      isVisible &&
-      vcsConnections.length > 0 &&
-      !selectedVcsConnectionId &&
-      useVcs
-    ) {
-      setSelectedVcsConnectionId(vcsConnections[0].id)
-    }
-  }, [isVisible, vcsConnections, selectedVcsConnectionId, useVcs])
-
-  useEffect(() => {
-    if (!selectedVcsConnectionId || !isVisible || !useVcs) {
+    if (!selectedVcsConnectionId || !useVcs) {
       setRepos([])
       setSelectedRepo(null)
       setReposError(null)
       return
     }
 
+    setSelectedRepo(null)
+
     const fetchRepos = async () => {
       setLoadingRepos(true)
       setValidationError(null)
       setReposError(null)
-      try {
-        const response = await getVCSConnectionRepos({
-          orgId: org.id,
-          connectionId: selectedVcsConnectionId,
-        })
 
-        if (response.repositories && Array.isArray(response.repositories)) {
-          const sortedRepos = [...response.repositories].sort((a, b) =>
-            a.full_name.localeCompare(b.full_name)
-          )
-          setRepos(sortedRepos)
-          setReposError(null)
-          if (sortedRepos.length > 0) {
-            setSelectedRepo(sortedRepos[0])
+      let lastErr: unknown
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt))
+        try {
+          const response = await getVCSConnectionRepos({
+            orgId: org.id,
+            connectionId: selectedVcsConnectionId,
+          })
+
+          if (response.repositories && Array.isArray(response.repositories)) {
+            const sortedRepos = [...response.repositories].sort((a, b) =>
+              a.full_name.localeCompare(b.full_name)
+            )
+            setRepos(sortedRepos)
+            setReposError(null)
+            if (sortedRepos.length > 0) {
+              setSelectedRepo(sortedRepos[0])
+            }
+          } else {
+            setRepos([])
+            setSelectedRepo(null)
           }
-        } else {
-          setRepos([])
-          setSelectedRepo(null)
+          setLoadingRepos(false)
+          return
+        } catch (err) {
+          lastErr = err
         }
-      } catch (err) {
-        setReposError(
-          'Failed to load repositories. Please check your VCS connection.'
-        )
-        setRepos([])
-        setSelectedRepo(null)
-        console.error('Error loading repositories:', err)
-      } finally {
-        setLoadingRepos(false)
       }
+
+      setReposError(
+        'Failed to load repositories. Please check your VCS connection.'
+      )
+      setRepos([])
+      setSelectedRepo(null)
+      setLoadingRepos(false)
     }
 
     fetchRepos()
-  }, [selectedVcsConnectionId, isVisible, org.id, useVcs])
+  }, [selectedVcsConnectionId, org.id, useVcs])
 
   useEffect(() => {
-    if (!selectedRepo || !selectedVcsConnectionId || !isVisible || !useVcs) {
+    if (!selectedRepo || !selectedVcsConnectionId || !useVcs) {
       setBranches([])
       setBranchesError(null)
       return
@@ -169,35 +154,41 @@ export const CreateBranchModal = ({
       setLoadingBranches(true)
       setValidationError(null)
       setBranchesError(null)
-      try {
-        const branches = await getConnectionBranches(
-          org.id,
-          selectedVcsConnectionId,
-          owner,
-          repo
-        )
-        setBranches(branches)
-        setBranchesError(null)
-        const mainBranch = branches.find((b) => b.name === 'main')
-        if (mainBranch) {
-          setSelectedBranch('main')
-        } else if (branches.length > 0) {
-          setSelectedBranch(branches[0].name)
+
+      let lastErr: unknown
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt))
+        try {
+          const fetchedBranches = await getConnectionBranches(
+            org.id,
+            selectedVcsConnectionId,
+            owner,
+            repo
+          )
+          setBranches(fetchedBranches)
+          setBranchesError(null)
+          const mainBranch = fetchedBranches.find((b) => b.name === 'main')
+          if (mainBranch) {
+            setSelectedBranch('main')
+          } else if (fetchedBranches.length > 0) {
+            setSelectedBranch(fetchedBranches[0].name)
+          }
+          setLoadingBranches(false)
+          return
+        } catch (err) {
+          lastErr = err
         }
-      } catch (err) {
-        setBranchesError('Failed to load branches. Please try again.')
-        setBranches([])
-        console.error('Error loading branches:', err)
-      } finally {
-        setLoadingBranches(false)
       }
+
+      setBranchesError('Failed to load branches. Please try again.')
+      setBranches([])
+      setLoadingBranches(false)
     }
 
     fetchBranches()
-  }, [selectedRepo, selectedVcsConnectionId, isVisible, org.id, useVcs])
+  }, [selectedRepo, selectedVcsConnectionId, org.id, useVcs])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = () => {
     setValidationError(null)
 
     if (!name.trim()) {
@@ -210,7 +201,6 @@ export const CreateBranchModal = ({
         setValidationError('Repository is required when using VCS')
         return
       }
-
       if (!selectedBranch) {
         setValidationError('Git branch is required when using VCS')
         return
@@ -221,9 +211,7 @@ export const CreateBranchModal = ({
       vcs_connection_id?: string
       connected_github_vcs_config?: any
       public_git_vcs_config?: any
-    } = {
-      name: name.trim(),
-    }
+    } = { name: name.trim() }
 
     if (useVcs && selectedRepo) {
       if (selectedRepo.private) {
@@ -233,7 +221,6 @@ export const CreateBranchModal = ({
           branch: selectedBranch,
           directory: directory.trim(),
         }
-
         if (pathFilter.trim()) {
           body.connected_github_vcs_config.path_filter = pathFilter.trim()
         }
@@ -243,7 +230,6 @@ export const CreateBranchModal = ({
           branch: selectedBranch,
           directory: directory.trim(),
         }
-
         if (pathFilter.trim()) {
           body.public_git_vcs_config.path_filter = pathFilter.trim()
         }
@@ -253,160 +239,135 @@ export const CreateBranchModal = ({
     mutate(body)
   }
 
-  const handleClose = () => {
-    setName('')
-    setUseVcs(true)
-    setSelectedRepo(null)
-    setSelectedBranch('main')
-    setDirectory('.')
-    setPathFilter('')
-    setValidationError(null)
-    setReposError(null)
-    setBranchesError(null)
-    onClose()
-  }
-
   return (
     <Modal
-      isVisible={isVisible}
-      onClose={handleClose}
       heading="Create App Branch"
+      primaryActionTrigger={{
+        children: isLoading ? 'Creating...' : 'Create branch',
+        disabled:
+          isLoading ||
+          (useVcs &&
+            (loadingRepos ||
+              loadingBranches ||
+              vcsConnections.length === 0 ||
+              !selectedRepo ||
+              !selectedBranch)),
+        onClick: handleSubmit,
+        variant: 'primary',
+      }}
+      secondaryActionTrigger={{
+        children: 'Cancel',
+        onClick: () => removeModal(props.modalId),
+        disabled: isLoading,
+      }}
       {...props}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {validationError && <Banner theme="error">{validationError}</Banner>}
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="branch-name" className="text-sm font-medium">
-            Branch Name
-          </label>
-          <Input
-            id="branch-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="production"
-            required
-            disabled={isLoading}
-          />
-        </div>
+        <Input
+          id="branch-name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="production"
+          required
+          disabled={isLoading}
+          labelProps={{ labelText: 'Branch Name' }}
+        />
 
-        <div className="flex items-center gap-2">
-          <input
-            id="use-vcs"
-            type="checkbox"
-            checked={useVcs}
-            onChange={(e) => {
-              setUseVcs(e.target.checked)
-              if (!e.target.checked && validationError?.includes('VCS')) {
-                setValidationError(null)
-              }
-            }}
-            disabled={isLoading}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="use-vcs" className="text-sm font-medium">
-            Connect to Git Repository
-          </label>
-        </div>
+        <CheckboxInput
+          id="use-vcs"
+          checked={useVcs}
+          onChange={(e) => {
+            setUseVcs(e.target.checked)
+            if (!e.target.checked && validationError?.includes('VCS')) {
+              setValidationError(null)
+            }
+          }}
+          disabled={isLoading}
+          labelProps={{ labelText: 'Connect to Git Repository' }}
+        />
 
         {useVcs && (
           <>
             {vcsConnections.length === 0 ? (
-              <Banner theme="warning">
+              <Banner theme="warn">
                 No VCS connections found. Please connect your GitHub account
                 first.
               </Banner>
             ) : (
               <>
                 {vcsConnections.length > 1 && (
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="vcs-connection"
-                      className="text-sm font-medium"
-                    >
-                      VCS Connection
-                    </label>
-                    <select
-                      id="vcs-connection"
-                      value={selectedVcsConnectionId}
-                      onChange={(e) =>
-                        setSelectedVcsConnectionId(e.target.value)
-                      }
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={isLoading || loadingRepos}
-                    >
-                      {vcsConnections.map((conn) => (
-                        <option key={conn.id} value={conn.id}>
-                          {conn.github_account_name ||
-                            conn.github_install_id ||
-                            conn.id}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    id="vcs-connection"
+                    value={selectedVcsConnectionId}
+                    onChange={(e) => setSelectedVcsConnectionId(e.target.value)}
+                    disabled={isLoading || loadingRepos}
+                    options={vcsConnections.map((conn) => ({
+                      value: conn.id,
+                      label:
+                        conn.github_account_name ||
+                        conn.github_install_id ||
+                        conn.id,
+                    }))}
+                    labelProps={{ labelText: 'VCS Connection' }}
+                  />
                 )}
 
                 {reposError && <Banner theme="error">{reposError}</Banner>}
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="repo" className="text-sm font-medium">
-                    Repository
-                  </label>
-                  {loadingRepos ? (
-                    <div className="px-3 py-2 text-sm text-gray-500">
-                      Loading repositories...
+                {loadingRepos ? (
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <Skeleton width="80px" height="14px" />
+                      <Skeleton height="36px" />
                     </div>
-                  ) : reposError ? (
-                    <div className="px-3 py-2 text-sm text-red-500">
-                      Failed to load repositories
+                    <div className="flex flex-col gap-1">
+                      <Skeleton width="80px" height="14px" />
+                      <Skeleton height="36px" />
                     </div>
-                  ) : repos.length === 0 ? (
-                    <Banner theme="warning">
-                      No connected repositories found. Please update your GitHub
-                      connection to grant access to repositories.
-                    </Banner>
-                  ) : (
-                    <select
-                      id="repo"
-                      value={selectedRepo?.full_name || ''}
-                      onChange={(e) => {
-                        const repo = repos.find(
-                          (r) => r.full_name === e.target.value
-                        )
-                        setSelectedRepo(repo || null)
-                      }}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required={useVcs}
-                      disabled={
-                        isLoading || loadingRepos || loadingBranches || !useVcs
-                      }
-                    >
-                      {Array.isArray(repos) &&
-                        repos.map((repo) => (
-                          <option
-                            key={repo.id || repo.full_name}
-                            value={repo.full_name}
-                          >
-                            {repo.full_name}
-                            {repo.private ? ' 🔒' : ''}
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                </div>
+                  </>
+                ) : reposError ? (
+                  <Banner theme="error">Failed to load repositories</Banner>
+                ) : repos.length === 0 ? (
+                  <Banner theme="warn">
+                    No connected repositories found. Please update your GitHub
+                    connection to grant access to repositories.
+                  </Banner>
+                ) : (
+                  <Select
+                    id="repo"
+                    value={selectedRepo?.full_name || ''}
+                    onChange={(e) => {
+                      const repo = repos.find(
+                        (r) => r.full_name === e.target.value
+                      )
+                      setSelectedRepo(repo || null)
+                    }}
+                    required={useVcs}
+                    disabled={
+                      isLoading || loadingRepos || loadingBranches || !useVcs
+                    }
+                    options={repos.map((repo) => ({
+                      value: repo.full_name,
+                      label: repo.full_name,
+                      badge: repo.private ? { label: 'private' } : undefined,
+                    }))}
+                    labelProps={{ labelText: 'Repository' }}
+                    searchable
+                  />
+                )}
 
-                {branchesError && (
+                {!loadingRepos && branchesError && (
                   <Banner theme="error">{branchesError}</Banner>
                 )}
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="git-branch" className="text-sm font-medium">
-                    Git Branch
-                  </label>
-                  {loadingBranches ? (
-                    <div className="px-3 py-2 text-sm text-gray-500">
-                      Loading branches...
+                {!loadingRepos &&
+                  (loadingBranches ? (
+                    <div className="flex flex-col gap-1">
+                      <Skeleton width="80px" height="14px" />
+                      <Skeleton height="36px" />
                     </div>
                   ) : branchesError ? (
                     <Input
@@ -417,37 +378,34 @@ export const CreateBranchModal = ({
                       placeholder="main"
                       required={useVcs}
                       disabled={isLoading || !useVcs}
+                      labelProps={{ labelText: 'Git Branch' }}
                     />
                   ) : branches.length === 0 && selectedRepo ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="px-3 py-2 text-sm text-gray-500">
-                        No branches found. Enter branch name manually.
-                      </div>
-                      <Input
-                        id="git-branch"
-                        type="text"
-                        value={selectedBranch}
-                        onChange={(e) => setSelectedBranch(e.target.value)}
-                        placeholder="main"
-                        required={useVcs}
-                        disabled={isLoading || !useVcs}
-                      />
-                    </div>
+                    <Input
+                      id="git-branch"
+                      type="text"
+                      value={selectedBranch}
+                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      placeholder="main"
+                      required={useVcs}
+                      disabled={isLoading || !useVcs}
+                      labelProps={{ labelText: 'Git Branch' }}
+                      helperText="No branches found. Enter branch name manually."
+                    />
                   ) : branches.length > 0 ? (
-                    <select
+                    <Select
                       id="git-branch"
                       value={selectedBranch}
                       onChange={(e) => setSelectedBranch(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required={useVcs}
                       disabled={isLoading || loadingBranches || !useVcs}
-                    >
-                      {branches.map((branch) => (
-                        <option key={branch.name} value={branch.name}>
-                          {branch.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={branches.map((b) => ({
+                        value: b.name,
+                        label: b.name,
+                      }))}
+                      labelProps={{ labelText: 'Git Branch' }}
+                      searchable
+                    />
                   ) : (
                     <Input
                       id="git-branch"
@@ -457,76 +415,50 @@ export const CreateBranchModal = ({
                       placeholder="main"
                       required={useVcs}
                       disabled={isLoading || !useVcs}
+                      labelProps={{ labelText: 'Git Branch' }}
                     />
-                  )}
-                </div>
+                  ))}
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="directory" className="text-sm font-medium">
-                    Directory
-                  </label>
-                  <Input
-                    id="directory"
-                    type="text"
-                    value={directory}
-                    onChange={(e) => setDirectory(e.target.value)}
-                    placeholder="."
-                    required
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Path to your application config (use &quot;.&quot; for root)
-                  </p>
-                </div>
+                <Input
+                  id="directory"
+                  type="text"
+                  value={directory}
+                  onChange={(e) => setDirectory(e.target.value)}
+                  placeholder="."
+                  required
+                  disabled={isLoading}
+                  labelProps={{ labelText: 'Directory' }}
+                  helperText='Path to your application config (use "." for root)'
+                />
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="path-filter" className="text-sm font-medium">
-                    Path Filter (Optional)
-                  </label>
-                  <Input
-                    id="path-filter"
-                    type="text"
-                    value={pathFilter}
-                    onChange={(e) => setPathFilter(e.target.value)}
-                    placeholder="^(src/|config/).*"
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Regex pattern to filter which file changes trigger workflow
-                    runs
-                  </p>
-                </div>
+                <Input
+                  id="path-filter"
+                  type="text"
+                  value={pathFilter}
+                  onChange={(e) => setPathFilter(e.target.value)}
+                  placeholder="^(src/|config/).*"
+                  disabled={isLoading}
+                  labelProps={{ labelText: 'Path Filter (Optional)' }}
+                  helperText="Regex pattern to filter which file changes trigger workflow runs"
+                />
               </>
             )}
           </>
         )}
-
-        <div className="flex gap-2 justify-end mt-4">
-          <Button
-            type="button"
-            onClick={handleClose}
-            variant="secondary"
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={
-              isLoading ||
-              (useVcs &&
-                (loadingRepos ||
-                  loadingBranches ||
-                  vcsConnections.length === 0 ||
-                  !selectedRepo ||
-                  !selectedBranch))
-            }
-          >
-            {isLoading ? 'Creating...' : 'Create Branch'}
-          </Button>
-        </div>
-      </form>
+      </div>
     </Modal>
+  )
+}
+
+export const CreateBranchButton = ({
+  ...props
+}: Omit<IButtonAsButton, 'children'>) => {
+  const { addModal } = useSurfaces()
+  const modal = <CreateBranchModal />
+  return (
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
+      <Icon variant="Plus" size={16} />
+      Create branch
+    </Button>
   )
 }

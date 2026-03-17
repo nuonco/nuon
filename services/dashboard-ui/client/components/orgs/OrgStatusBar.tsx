@@ -14,6 +14,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import {
   getApp,
+  getAppBranch,
   getAppConfigs,
   getInstall,
   getInstallStack,
@@ -26,7 +27,7 @@ import { isLessThan15SecondsOld } from '@/utils/time-utils'
 export const OrgStatusBar = () => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
-  const { appId, installId } = useParams()
+  const { appId, branchId, installId } = useParams()
 
   const { data: app } = useQuery({
     queryKey: ['app', org.id, appId],
@@ -41,6 +42,12 @@ export const OrgStatusBar = () => {
     refetchInterval: 30_000,
   })
   const latestConfig = appConfigs?.[0]
+
+  const { data: branch } = useQuery({
+    queryKey: ['app-branch', org.id, appId, branchId],
+    queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: branchId! }),
+    enabled: !!appId && !!branchId,
+  })
 
   const { data: install } = useQuery({
     queryKey: ['install', org.id, installId],
@@ -147,6 +154,18 @@ export const OrgStatusBar = () => {
           <Text family="mono" variant="subtext">
             {app.name}
           </Text>
+
+          {branch && (
+            <>
+              <span className="text-cool-grey-300 dark:text-white/20 text-xs">
+                ›
+              </span>
+              <Icon variant="GitBranch" size={12} className="text-cool-grey-500 dark:text-cool-grey-400" />
+              <Text family="mono" variant="subtext">
+                {branch.name}
+              </Text>
+            </>
+          )}
 
           {latestConfig && (
             <ContextTooltip
