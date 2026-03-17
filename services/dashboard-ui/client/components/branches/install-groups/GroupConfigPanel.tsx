@@ -42,7 +42,6 @@ export const GroupConfigPanel = ({
         </Text>
       </div>
 
-      {/* Group Name */}
       <div className="space-y-2">
         <Text variant="base" weight="strong">
           Name
@@ -55,7 +54,6 @@ export const GroupConfigPanel = ({
         />
       </div>
 
-      {/* Max Parallel */}
       <div className="space-y-2">
         <Text variant="base" weight="strong">
           Max Parallel Deployments
@@ -73,7 +71,6 @@ export const GroupConfigPanel = ({
         </Text>
       </div>
 
-      {/* Options */}
       <div className="space-y-3">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
@@ -110,7 +107,6 @@ export const GroupConfigPanel = ({
         </label>
       </div>
 
-      {/* Installs in Group */}
       <div className="space-y-2">
         <Text variant="base" weight="strong">
           Installs in Group ({groupInstalls.length})
@@ -136,7 +132,6 @@ export const GroupConfigPanel = ({
         )}
       </div>
 
-      {/* Delete Group */}
       <div className="pt-6 border-t dark:border-gray-700">
         <Button
           onClick={onDelete}

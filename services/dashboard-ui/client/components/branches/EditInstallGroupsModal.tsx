@@ -14,22 +14,23 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { Modal } from '@/components/surfaces/Modal'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Text } from '@/components/common/Text'
-import { Button } from '@/components/common/Button'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Banner } from '@/components/common/Banner'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Toast } from '@/components/surfaces/Toast'
 import { createBranchConfig, getAppInstalls } from '@/lib'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useBranch } from '@/hooks/use-branch'
 import { useToast } from '@/hooks/use-toast'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppBranch, TAppBranchConfig, TInstall } from '@/types'
-import { InstallGroupCard } from '../install-groups/InstallGroupCard'
-import { InstallCard } from '../install-groups/InstallCard'
-import { UnassignedInstallsPanel } from '../install-groups/UnassignedInstallsPanel'
-import { GroupConfigPanel } from '../install-groups/GroupConfigPanel'
+import { InstallGroupCard } from './install-groups/InstallGroupCard'
+import { InstallCard } from './install-groups/InstallCard'
+import { UnassignedInstallsPanel } from './install-groups/UnassignedInstallsPanel'
+import { GroupConfigPanel } from './install-groups/GroupConfigPanel'
 
 interface IInstallGroup {
   id: string
@@ -41,26 +42,34 @@ interface IInstallGroup {
   rollback_on_failure: boolean
 }
 
-interface IEditInstallGroupsModal {
-  isVisible: boolean
-  onClose: () => void
+interface IEditInstallGroupsModal extends IModal {
   branch: TAppBranch
   currentConfig?: TAppBranchConfig
+  onSuccess?: () => void
 }
 
 export const EditInstallGroupsModal = ({
-  isVisible,
-  onClose,
   branch,
   currentConfig,
+  onSuccess,
+  ...props
 }: IEditInstallGroupsModal) => {
   const { app } = useApp()
   const { org } = useOrg()
-  const { refresh } = useBranch()
   const { addToast } = useToast()
+  const { removeModal } = useSurfaces()
 
-  // Install Groups State
-  const [groups, setGroups] = useState<IInstallGroup[]>([])
+  const [groups, setGroups] = useState<IInstallGroup[]>(
+    currentConfig?.install_groups?.map((group, idx) => ({
+      id: group.id || `group-${idx}`,
+      name: group.name || '',
+      install_ids: group.install_ids || [],
+      order: group.order || idx,
+      max_parallel: group.max_parallel || 1,
+      requires_approval: group.requires_approval || false,
+      rollback_on_failure: group.rollback_on_failure || false,
+    })) || []
+  )
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [availableInstalls, setAvailableInstalls] = useState<TInstall[]>([])
   const [loadingInstalls, setLoadingInstalls] = useState(false)
@@ -78,7 +87,6 @@ export const EditInstallGroupsModal = ({
     )
   }
 
-  // Save mutation
   const { mutate: saveMutation, isPending: isSaving } = useMutation({
     mutationFn: async () => {
       if (groups.length === 0) {
@@ -100,7 +108,6 @@ export const EditInstallGroupsModal = ({
 
       const request: any = { install_groups: installGroupsForApi }
 
-      // Preserve VCS config if it exists - ALWAYS include VCS config from current config
       if (currentConfig?.connected_github_vcs_config) {
         request.connected_github_vcs_config = {
           vcs_connection_id:
@@ -138,8 +145,8 @@ export const EditInstallGroupsModal = ({
           <Text>Your install group configuration has been updated.</Text>
         </Toast>
       )
-      refresh()
-      onClose()
+      onSuccess?.()
+      removeModal(props.modalId)
     },
     onError: (error: Error) => {
       addToast(
@@ -150,31 +157,7 @@ export const EditInstallGroupsModal = ({
     },
   })
 
-  // Initialize from current config
   useEffect(() => {
-    if (isVisible) {
-      if (currentConfig?.install_groups) {
-        setGroups(
-          currentConfig.install_groups.map((group, idx) => ({
-            id: group.id || `group-${idx}`,
-            name: group.name || '',
-            install_ids: group.install_ids || [],
-            order: group.order || idx,
-            max_parallel: group.max_parallel || 1,
-            requires_approval: group.requires_approval || false,
-            rollback_on_failure: group.rollback_on_failure || false,
-          }))
-        )
-      } else {
-        setGroups([])
-      }
-    }
-  }, [isVisible, currentConfig])
-
-  // Fetch available installs
-  useEffect(() => {
-    if (!isVisible) return
-
     const fetchInstalls = async () => {
       setLoadingInstalls(true)
       const { data, error: installsError } = await getAppInstalls({
@@ -192,9 +175,8 @@ export const EditInstallGroupsModal = ({
     }
 
     fetchInstalls()
-  }, [isVisible, app.id, org.id])
+  }, [app.id, org.id])
 
-  // Drag sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -216,17 +198,14 @@ export const EditInstallGroupsModal = ({
     const activeInstallId = active.id as string
     const overGroupId = over.id as string
 
-    // Find if install is currently in a group
     const sourceGroup = groups.find((g) =>
       g.install_ids.includes(activeInstallId)
     )
 
-    // Dragging to a group
     if (overGroupId.startsWith('group-')) {
       const targetGroup = groups.find((g) => g.id === overGroupId)
       if (!targetGroup) return
 
-      // Remove from source group if exists
       if (sourceGroup) {
         setGroups(
           groups.map((g) => {
@@ -251,7 +230,6 @@ export const EditInstallGroupsModal = ({
           })
         )
       } else {
-        // Add to target group from unassigned
         setGroups(
           groups.map((g) =>
             g.id === targetGroup.id && !g.install_ids.includes(activeInstallId)
@@ -262,7 +240,6 @@ export const EditInstallGroupsModal = ({
       }
     }
 
-    // Dragging to unassigned area
     if (overGroupId === 'unassigned' && sourceGroup) {
       setGroups(
         groups.map((g) =>
@@ -296,14 +273,8 @@ export const EditInstallGroupsModal = ({
   const selectedGroup = groups.find((g) => g.id === selectedGroupId)
   const assignedInstallIds = groups.flatMap((g) => g.install_ids)
 
-  const handleSave = () => {
-    saveMutation()
-  }
-
   return (
     <Modal
-      isVisible={isVisible}
-      onClose={onClose}
       heading={
         <div>
           <Text variant="h3" weight="strong">
@@ -317,16 +288,19 @@ export const EditInstallGroupsModal = ({
       size="full"
       primaryActionTrigger={{
         children: isSaving ? 'Saving...' : 'Save Changes',
-        onClick: handleSave,
+        onClick: () => saveMutation(),
         disabled: isSaving || loadingInstalls,
+        variant: 'primary',
       }}
+      secondaryActionTrigger={{
+        children: 'Cancel',
+        onClick: () => removeModal(props.modalId),
+        disabled: isSaving,
+      }}
+      {...props}
     >
       {loadingInstalls ? (
-        <div className="flex items-center justify-center py-12">
-          <Text variant="base" theme="neutral">
-            Loading installs...
-          </Text>
-        </div>
+        <Skeleton lines={3} />
       ) : availableInstalls.length === 0 ? (
         <Banner theme="info">
           No installs found for this app. Create installs first to configure
@@ -340,13 +314,11 @@ export const EditInstallGroupsModal = ({
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-6 h-[600px]">
-            {/* Left Panel: Unassigned Installs */}
             <UnassignedInstallsPanel
               installs={availableInstalls}
               assignedInstallIds={assignedInstallIds}
             />
 
-            {/* Center Canvas: Install Groups */}
             <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <Text variant="h4" weight="strong">
@@ -400,7 +372,6 @@ export const EditInstallGroupsModal = ({
               )}
             </div>
 
-            {/* Right Panel: Group Configuration */}
             <GroupConfigPanel
               group={selectedGroup}
               availableInstalls={availableInstalls}
@@ -418,7 +389,6 @@ export const EditInstallGroupsModal = ({
             />
           </div>
 
-          {/* Drag Overlay */}
           <DragOverlay>
             {activeId ? (
               <InstallCard
@@ -430,5 +400,21 @@ export const EditInstallGroupsModal = ({
         </DndContext>
       )}
     </Modal>
+  )
+}
+
+export const EditInstallGroupsButton = ({
+  branch,
+  currentConfig,
+  onSuccess,
+  ...props
+}: { branch: TAppBranch; currentConfig?: TAppBranchConfig; onSuccess?: () => void } & Omit<IButtonAsButton, 'children'>) => {
+  const { addModal } = useSurfaces()
+  const modal = <EditInstallGroupsModal branch={branch} currentConfig={currentConfig} onSuccess={onSuccess} />
+  return (
+    <Button variant="secondary" size="sm" onClick={() => addModal(modal)} {...props}>
+      <Icon variant="Edit" size={16} />
+      Edit installs
+    </Button>
   )
 }

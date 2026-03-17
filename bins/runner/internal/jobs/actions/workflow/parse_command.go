@@ -64,5 +64,7 @@ func (h *handler) parseCommand(ctx context.Context, l *zap.Logger, cfg *models.A
 
 	// NOTE(jm): you can not look this up in the path here, because a vendor could easily control the image and add
 	// something else to the env. (IE: by overriding HOME)
-	return pieces[0], pieces[1:], nil
+	// Execute through a shell so that environment variable expansion, pipes, and other
+	// shell features work as expected.
+	return "sh", []string{"-c", cfg.Command}, nil
 }

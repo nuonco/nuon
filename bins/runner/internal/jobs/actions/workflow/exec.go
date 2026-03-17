@@ -8,9 +8,47 @@ import (
 	"github.com/pkg/errors"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
+
+// resolveStepConfig builds the step config for execution, preferring interpolated
+// values from the plan (where Go templates have been rendered) over raw config values.
+func resolveStepConfig(
+	configStepCfg *models.AppActionWorkflowStepConfig,
+	step *models.AppInstallActionWorkflowRunStep,
+	stepPlan *plantypes.ActionWorkflowRunStepPlan,
+) (*models.AppActionWorkflowStepConfig, string) {
+	if configStepCfg != nil {
+		if stepPlan.InterpolatedCommand != "" {
+			configStepCfg.Command = stepPlan.InterpolatedCommand
+		}
+		if stepPlan.InterpolatedInlineContents != "" {
+			configStepCfg.InlineContents = stepPlan.InterpolatedInlineContents
+		}
+		return configStepCfg, configStepCfg.Name
+	}
+
+	if step.AdhocConfig != nil {
+		command := stepPlan.InterpolatedCommand
+		if command == "" {
+			command = step.AdhocConfig.Command
+		}
+		inlineContents := stepPlan.InterpolatedInlineContents
+		if inlineContents == "" {
+			inlineContents = step.AdhocConfig.InlineContents
+		}
+		return &models.AppActionWorkflowStepConfig{
+			Command:        command,
+			InlineContents: inlineContents,
+			Name:           step.AdhocConfig.Name,
+			EnvVars:        step.AdhocConfig.EnvVars,
+		}, step.AdhocConfig.Name
+	}
+
+	return nil, "adhoc step"
+}
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
@@ -27,25 +65,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	defer cancel()
 
 	for idx, step := range h.state.run.Steps {
-		var stepCfg *models.AppActionWorkflowStepConfig
-		var stepName string
-
+		var configStepCfg *models.AppActionWorkflowStepConfig
 		if h.state.workflowCfg != nil {
-			stepCfg = h.state.workflowCfg.Steps[idx]
-			stepName = stepCfg.Name
-		} else if step.AdhocConfig != nil {
-			// For adhoc runs, convert the adhoc config to a regular step config
-			stepCfg = &models.AppActionWorkflowStepConfig{
-				Command:        step.AdhocConfig.Command,
-				InlineContents: step.AdhocConfig.InlineContents,
-				Name:           step.AdhocConfig.Name,
-				EnvVars:        step.AdhocConfig.EnvVars,
-			}
-			stepName = step.AdhocConfig.Name
-		} else {
-			stepName = "adhoc step"
+			configStepCfg = h.state.workflowCfg.Steps[idx]
 		}
 		stepPlan := h.state.plan.Steps[idx]
+		stepCfg, stepName := resolveStepConfig(configStepCfg, step, stepPlan)
 
 		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepName, idx+1, len(h.state.run.Steps)))
 		err := h.executeWorkflowStep(ctx, execCtx, step, stepCfg, stepPlan)

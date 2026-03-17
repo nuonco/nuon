@@ -4,6 +4,7 @@ import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { Badge, type IBadge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
+import { SearchInput } from '@/components/common/SearchInput'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { cn } from '@/utils/classnames'
 import "./Select.css"
@@ -32,6 +33,7 @@ export interface ISelect
   errorMessageProps?: Omit<IText, 'children'>
   size?: 'sm' | 'md' | 'lg'
   placeholder?: string
+  searchable?: boolean
 }
 
 export const Select = forwardRef<HTMLInputElement, ISelect>(
@@ -53,11 +55,13 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       onChange,
       name,
       required,
+      searchable = false,
       ...props
     },
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
     const [internalValue, setInternalValue] = useState<SelectOption | null>(() => {
       const initialValue = value !== undefined ? value : defaultValue
       return options.find(option => option.value === initialValue) || null
@@ -97,6 +101,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
     const closeDropdown = (wasOpen: boolean) => {
       setIsOpen(false)
+      setSearchQuery('')
       if (required && wasOpen) {
         setHasBlurred(true)
         if (validationInputRef.current && !validationInputRef.current.checkValidity()) {
@@ -196,6 +201,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
       setShowValidationMessage(false)
       setIsOpen(false)
+      setSearchQuery('')
     }
 
     const selectComponent = (
@@ -274,6 +280,10 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       </div>
     )
 
+    const filteredOptions = searchable && searchQuery
+      ? options.filter(o => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
+      : options
+
     const dropdownPortal = isOpen && dropdownPosition
       ? createPortal(
           <div
@@ -291,8 +301,26 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
               className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 max-h-72 overflow-x-hidden overflow-y-auto"
             >
               <div className="flex flex-col gap-1">
-                {options.length === 0 && <div className="px-2 py-1 text-sm">No options available</div>}
-                {options.map((option) => (
+                {searchable && (
+                  <div className="pb-1 mb-1 border-b border-cool-grey-200 dark:border-dark-grey-700">
+                    <SearchInput
+                      value={searchQuery}
+                      onChange={setSearchQuery}
+                      placeholder="Search..."
+                      labelClassName="w-full"
+                      className="!min-w-0 w-full h-8 text-xs"
+                      onKeyDown={e => e.stopPropagation()}
+                      autoFocus
+                    />
+                  </div>
+                )}
+                {filteredOptions.length === 0 && searchQuery && (
+                  <div className="px-2 py-1 text-sm text-cool-grey-500 dark:text-cool-grey-400">No results</div>
+                )}
+                {filteredOptions.length === 0 && !searchQuery && (
+                  <div className="px-2 py-1 text-sm">No options available</div>
+                )}
+                {filteredOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"

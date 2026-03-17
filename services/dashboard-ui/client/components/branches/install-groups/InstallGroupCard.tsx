@@ -39,7 +39,6 @@ export const InstallGroupCard = ({
         }
       )}
     >
-      {/* Group header */}
       <div className="flex items-center justify-between mb-3">
         <Text variant="base" weight="strong">
           {index + 1}. {group.name}
@@ -61,7 +60,6 @@ export const InstallGroupCard = ({
         </div>
       </div>
 
-      {/* Install cards */}
       <div className="space-y-2">
         {installs.length > 0 ? (
           installs.slice(0, 5).map((install) => (

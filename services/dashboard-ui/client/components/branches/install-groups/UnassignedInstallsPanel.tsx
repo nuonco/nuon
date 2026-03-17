@@ -35,7 +35,6 @@ export const UnassignedInstallsPanel = ({
         </Text>
       </div>
 
-      {/* Search */}
       <div className="mb-4">
         <Input
           type="text"
@@ -46,7 +45,6 @@ export const UnassignedInstallsPanel = ({
         />
       </div>
 
-      {/* Unassigned installs list */}
       <div className="flex-1 space-y-2 overflow-y-auto">
         {filteredInstalls.length > 0 ? (
           filteredInstalls.map((install) => (
@@ -63,7 +61,6 @@ export const UnassignedInstallsPanel = ({
         )}
       </div>
 
-      {/* Stats */}
       <div className="mt-4 pt-4 border-t dark:border-gray-700">
         <Text variant="subtext" theme="neutral">
           {unassignedInstalls.length} of {installs.length} unassigned
