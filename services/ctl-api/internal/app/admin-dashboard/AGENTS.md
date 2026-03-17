@@ -146,31 +146,47 @@ npx tailwindcss -i ./assets/css/input.css -o ./assets/css/output.css --watch
 ## Project Structure
 
 ```
-services/ctl-api/internal/app/admin_dashboard/
+services/ctl-api/internal/app/admin-dashboard/
 ├── service/              # HTTP handlers and business logic
-│   ├── views/            # Templ templates (.templ files)
-│   │   ├── layout.templ       # Base layout with navigation
-│   │   ├── index.templ        # Homepage
-│   │   ├── orgs.templ         # Organizations table
-│   │   ├── org_detail.templ   # Organization detail page
-│   │   └── *_templ.go         # Generated Go code (DO NOT EDIT)
-│   ├── service.go        # Service struct, route registration
-│   ├── index.go          # Index page handler
-│   ├── orgs.go           # Organizations list handler
-│   ├── org_detail.go     # Organization detail handler
-│   └── livez.go          # Health check handler
-├── components/           # templui components
-│   ├── table/            # Table component
-│   ├── card/             # Card component
-│   ├── button/           # Button component
-│   └── */                # Other installed components
+│   ├── views/            # Templ templates (42 .templ files + generated _templ.go)
+│   │   ├── layout.templ                         # Base layout with navigation
+│   │   ├── index.templ                          # Homepage
+│   │   ├── orgs.templ / orgs_table.templ        # Org list + HTMX table component
+│   │   ├── org_detail.templ                     # Org detail with graph
+│   │   ├── accounts.templ / accounts_table.templ
+│   │   ├── account_detail.templ                 # Account + audit logs
+│   │   ├── account_audit_logs_table.templ       # HTMX audit log table
+│   │   ├── account_installs_table.templ
+│   │   ├── installs.templ / installs_table*.templ
+│   │   ├── install_detail.templ                 # Install detail with activity
+│   │   └── *_templ.go                           # Generated Go code (DO NOT EDIT)
+│   ├── service.go                    # Service struct, FX injection, route registration
+│   ├── index.go                      # Homepage handler
+│   ├── orgs.go / orgs_table.go       # Org list + HTMX polling endpoint
+│   ├── org_detail.go                 # Org detail + graph generation
+│   ├── org_status.go                 # Status badge polling
+│   ├── org_tags.go                   # Tag management (UPDATE/DELETE)
+│   ├── org_support_users.go          # Support user management
+│   ├── accounts.go / accounts_table.go
+│   ├── account_detail.go             # Account detail + UNION activity queries
+│   ├── account_audit_logs_table.go
+│   ├── account_installs_table.go
+│   ├── installs.go                   # Global installs list
+│   ├── installs_table_global.go / installs_table.go
+│   ├── install_detail.go             # Install detail with nested UNION queries
+│   ├── install_component_status.go   # Component status badge
+│   ├── install_runner_status.go      # Runner status badge
+│   ├── install_sandbox_status.go     # Sandbox status badge
+│   ├── install_drift_status.go       # Drift status badge
+│   └── livez.go                      # Health check
+├── components/           # templui components (table, card, button, badge, icon, etc.)
 ├── assets/               # Static assets
 │   ├── css/
 │   │   ├── input.css     # Tailwind source (edit this)
 │   │   └── output.css    # Compiled CSS (generated, do not edit)
-│   └── favicon.svg       # Site favicon
-└── utils/                # Helper utilities
-    └── tailwind.go       # TwMerge utility for class merging
+│   └── favicon.svg
+└── utils/
+    └── templui.go        # TwMerge utility for class merging
 ```
 
 ## Development Patterns
@@ -418,6 +434,146 @@ func statusClass(status app.OrgStatus) string {
     }
 }
 ```
+
+### HTMX Two-Handler Pattern
+
+Every list page uses two handlers: a **page handler** (full layout) and a **table handler** (HTMX polling, returns only the table component). The table handler reuses the same private data method:
+
+```go
+// Page handler — full layout
+func (s *service) Orgs(c *gin.Context) {
+    search, tagFilters, page := parseOrgParams(c)
+    orgs, totalPages, err := s.getOrgs(c.Request.Context(), search, tagFilters, page)
+    // ...
+    component := views.Orgs(orgs, totalPages, page, search, tagFilters)
+    templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+// Table handler — HTMX polling, returns table component only (no layout)
+func (s *service) OrgsTable(c *gin.Context) {
+    search, tagFilters, page := parseOrgParams(c)
+    orgs, totalPages, err := s.getOrgs(c.Request.Context(), search, tagFilters, page)
+    // ...
+    component := views.OrgsTable(orgs, totalPages, page, search, tagFilters)
+    templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+```
+
+In the template, the table div uses `hx-get` to poll the table endpoint and `hx-include` to pass filter params:
+
+```templ
+<div hx-get="/orgs/table"
+     hx-trigger="change from:[name='tag']"
+     hx-target="#orgs-table"
+     hx-swap="outerHTML"
+     hx-include="[name='search'],[name='tag']">
+```
+
+JavaScript in the template listens for `htmx:afterSwap` to update the browser URL with `history.replaceState()`, enabling bookmarking and back-button behavior.
+
+### Pagination Pattern
+
+All list queries use consistent pagination:
+
+```go
+const perPageConst = 8
+
+func (s *service) getOrgs(ctx context.Context, search string, tagFilters []string, page int) ([]*app.Org, int, error) {
+    query := s.db.WithContext(ctx).Model(&app.Org{})
+
+    // Apply filters first, then count
+    var totalCount int64
+    query.Count(&totalCount)
+
+    totalPages := int(math.Ceil(float64(totalCount) / float64(perPageConst)))
+    if totalPages == 0 {
+        totalPages = 1  // Always min 1 page
+    }
+
+    offset := (page - 1) * perPageConst
+    query.Order("created_at desc").Limit(perPageConst).Offset(offset).Find(&results)
+}
+```
+
+**Rules:**
+- Always at least 1 page (even for empty results)
+- Search matches both name (`ILIKE '%term%'`) and exact ID (`id = ?`)
+- Tag filters use PostgreSQL `&&` array overlap operator (OR logic): `WHERE tags && CAST(? AS text[])`
+
+### Aggregation / Count Queries
+
+Use embedded count subqueries with a wrapper struct, then convert back to the base type:
+
+```go
+type OrgWithCounts struct {
+    app.Org
+    AppCount     int `gorm:"column:app_count"`
+    InstallCount int `gorm:"column:install_count"`
+}
+
+var results []OrgWithCounts
+s.db.Select("orgs.*, " +
+    "(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at IS NULL) as app_count, " +
+    "(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id) as install_count").
+    Find(&results)
+
+// Convert wrapper → base type (copy count into base model field)
+orgs := make([]*app.Org, len(results))
+for i := range results {
+    results[i].Org.AppCount = results[i].AppCount
+    orgs[i] = &results[i].Org
+}
+```
+
+### Parallel Fetching Pattern
+
+Detail pages fetch multiple data sources in parallel using `errgroup`:
+
+```go
+func (s *service) OrgDetail(c *gin.Context) {
+    orgID := c.Param("id")
+
+    var org *app.Org
+    var installs []*app.Install
+    var recentApp *app.App
+
+    g, gCtx := errgroup.WithContext(c.Request.Context())
+    g.Go(func() error { var err error; org, err = s.getOrg(gCtx, orgID); return err })
+    g.Go(func() error { var err error; installs, _, err = s.getInstallsForOrg(gCtx, orgID, 1); return err })
+    g.Go(func() error { var err error; recentApp, err = s.getMostRecentApp(gCtx, orgID); return err })
+    if err := g.Wait(); err != nil {
+        // handle error
+        return
+    }
+}
+```
+
+### UNION-Based Activity Log Queries
+
+Activity logs across multiple entity types use raw SQL UNION ALL with dynamic query building:
+
+```go
+var queries []string
+var queryParams []interface{}
+
+for _, entityType := range entityTypes {
+    switch entityType {
+    case "runner_job":
+        queries = append(queries, `SELECT id, 'runner_job' as entity_type, ... FROM runner_jobs WHERE install_id = ?`)
+        queryParams = append(queryParams, installID)
+    case "workflow":
+        queries = append(queries, `SELECT id, 'workflow' as entity_type, ... FROM install_workflows WHERE install_id = ?`)
+        queryParams = append(queryParams, installID)
+    }
+}
+
+query := strings.Join(queries, " UNION ALL ") + " ORDER BY created_at DESC"
+countQuery := "SELECT COUNT(*) FROM (" + query + ") as entries"
+
+s.db.Raw(query+" LIMIT ? OFFSET ?", append(queryParams, limit, offset)...).Scan(&entries)
+```
+
+Default entity types if none specified (e.g., `["runner_job", "workflow"]`). Date range defaults to 30 days. Use `Unscoped()` when the query should include soft-deleted records.
 
 ### Styling Patterns
 
@@ -673,7 +829,7 @@ import "github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 ### Templ Development
 
-1. **Always run `templ generate`** after editing `.templ` files
+1. **NEVER run `templ generate` manually** - let `go build` handle generation
 2. **Never edit `_templ.go` files** - they're auto-generated
 3. **Use type-safe props** - define struct types for component props
 4. **Extract complex logic** - use helper functions for conditional classes
@@ -729,17 +885,9 @@ open http://localhost:8085/
 - ✅ Tables are readable
 - ✅ Status badges show correct colors
 
-## Future Enhancements
+## Current Features
 
-**Potential additions**:
-- Pagination for large datasets
-- Search/filter functionality
-- More detail pages (apps, installs, components)
-- Export functionality (CSV/JSON)
-- Real-time data updates (SSE or WebSocket)
-- Metric visualizations
-- Log viewing
-- Deployment status monitoring
+Pagination, search/filter, detail pages for orgs/accounts/installs, HTMX live-updating tables, status badge polling, tag management, support user management, and org dependency graphs are all implemented.
 
 **Keep it simple**: Only add features when needed. The dashboard should remain lightweight and focused on operational needs.
 

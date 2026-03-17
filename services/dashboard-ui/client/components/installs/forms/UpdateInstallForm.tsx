@@ -125,18 +125,26 @@ export const UpdateInstallForm = forwardRef<
         return
       }
 
-      const formData = new FormData(e.currentTarget)
+      const form = e.currentTarget
+      const firstInvalid = form.querySelector<HTMLElement>(':invalid:not(fieldset):not(form)')
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        firstInvalid.focus()
+        form.reportValidity()
+        return
+      }
+
+      const formData = new FormData(form)
 
       if (onSubmit) {
         try {
           const result = await onSubmit(formData)
           onSuccess?.(result)
+          clearDraft()
         } catch (err) {
           console.error('Form submission error:', err)
         }
       }
-
-      clearDraft()
     }
 
     return (
@@ -150,6 +158,7 @@ export const UpdateInstallForm = forwardRef<
             ref.current = node
           }
         }}
+        noValidate
         onSubmit={handleSubmit}
         className="flex flex-col gap-8 justify-between focus:outline-none relative"
       >
