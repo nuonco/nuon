@@ -8,10 +8,15 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
+
+const CONTAINER_ID = 'branch-detail-page'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { getBranchWorkflowRuns } from '@/lib'
 
@@ -47,7 +52,17 @@ const BranchDetailContent = () => {
       : undefined
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <PageSection id={CONTAINER_ID} isScrollable>
+      <PageTitle title={`${branch?.name ?? 'Branch'} | ${app?.name}`} />
+      <Breadcrumbs
+        breadcrumbs={[
+          { path: `/${org?.id}`, text: org?.name },
+          { path: `/${org?.id}/apps`, text: 'Apps' },
+          { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
+          { path: `/${org?.id}/apps/${app?.id}/branches`, text: 'Branches' },
+          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`, text: branch?.name },
+        ]}
+      />
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <HeadingGroup>
@@ -215,7 +230,7 @@ const BranchDetailContent = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageSection>
   )
 }
 

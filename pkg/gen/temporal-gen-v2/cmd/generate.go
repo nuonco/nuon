@@ -3,15 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"strings"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/generator"
+	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
 
 func newGenerateCmd() *cobra.Command {
@@ -25,73 +22,26 @@ func newGenerateCmd() *cobra.Command {
 	generateCmd.Flags().BoolVar(&cleanupFlag, "cleanup", false, "Cleanup generated files before generating")
 	generateCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively process subdirectories")
 	generateCmd.Flags().BoolVar(&importsFlag, "imports", false, "Process imports using golang.org/x/tools/imports library")
+	generateCmd.Flags().IntVarP(&parallelismFlag, "parallelism", "p", runtime.NumCPU(), "Number of packages to process concurrently per dependency level")
 	return generateCmd
 }
 
 func runGen(cmd *cobra.Command, args []string) error {
 	targetDir := getDir(args)
-	strict := validateFlag
 
-	// Create generator options from flags
-	opts := generator.GeneratorOptions{
-		ProcessImports: importsFlag,
-	}
-
-	if cleanupFlag {
-		if err := runClean(targetDir, false, recursiveFlag); err != nil {
-			return fmt.Errorf("failed to cleanup: %w", err)
-		}
-	}
-
-	loadDir := targetDir
-	if recursiveFlag {
-		cleanDir := filepath.ToSlash(filepath.Clean(targetDir))
-		if cleanDir == "." {
-			loadDir = "./..."
-		} else {
-			if !strings.HasPrefix(cleanDir, "/") && !strings.HasPrefix(cleanDir, "./") {
-				cleanDir = "./" + cleanDir
-			}
-			loadDir = fmt.Sprintf("%s/...", cleanDir)
-		}
-	}
-
-	fmt.Printf("Running %s generator in %s...\n", config.AnnotationPrefix, loadDir)
+	loadPattern := temporalgen.BuildLoadPattern(targetDir, recursiveFlag)
+	fmt.Printf("Running %s generator in %s...\n", config.AnnotationPrefix, loadPattern)
 
 	ctx := context.Background()
-	pkgPaths, err := dir.GetDependencyOrder(ctx, loadDir)
-	if err != nil {
-		return fmt.Errorf("failed to resolve package order: %w", err)
-	}
-	fmt.Printf("Identified %d packages to process\n", len(pkgPaths))
-
-	for _, pkgPath := range pkgPaths {
-		pkg, err := dir.LoadPackage(ctx, pkgPath)
-		if err != nil {
-			return fmt.Errorf("failed to load package %s: %w", pkgPath, err)
-		}
-
-		fmt.Printf("Processing package %s\n", pkg.Pkg.Name)
-		for i, syntax := range pkg.Pkg.Syntax {
-			path := pkg.Pkg.GoFiles[i]
-
-			// Skip generated files
-			if strings.HasSuffix(path, "_gen.go") {
-				continue
-			}
-
-			f, err := file.ProcessFile(pkg, syntax, path, strict)
-			if err != nil {
-				return fmt.Errorf("failed to process file %s: %w", path, err)
-			}
-
-			if f != nil && len(f.Functions) > 0 {
-				if err := generator.GenerateForFile(f, opts); err != nil {
-					return fmt.Errorf("failed to generate code for %s: %w", path, err)
-				}
-			}
-		}
-	}
-
-	return nil
+	return temporalgen.Generate(ctx, temporalgen.Options{
+		Dir:         targetDir,
+		Recursive:   recursiveFlag,
+		Cleanup:     cleanupFlag,
+		Validate:    validateFlag,
+		Imports:     importsFlag,
+		Parallelism: parallelismFlag,
+		OnPackage: func(name string) {
+			fmt.Printf("  processing %s\n", name)
+		},
+	})
 }

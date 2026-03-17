@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -14,11 +15,14 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/command"
+	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
 
 var v *validator.Validate
@@ -149,6 +153,17 @@ func generatePublicOAPI3Spec(ctx context.Context) error {
 	return nil
 }
 
+func generateTemporal(ctx context.Context) error {
+	return temporalgen.Generate(ctx, temporalgen.Options{
+		Dir:         ".",
+		Recursive:   true,
+		Cleanup:     true,
+		Validate:    true,
+		Imports:     true,
+		Parallelism: runtime.NumCPU(),
+	})
+}
+
 func main() {
 	targetsFlag := flag.String("targets", "", "comma-separated targets: public,public-v3,runner,admin,temporal")
 	flag.Parse()
@@ -165,9 +180,9 @@ func main() {
 	ctx, cancelFn := context.WithCancel(ctx)
 	defer cancelFn()
 
-	// Phase 1: Run independent tasks in parallel
 	recorder := newTimingRecorder()
 	eg, ctx := errgroup.WithContext(ctx)
+
 	if targets.has("runner") {
 		eg.Go(func() error {
 			return recorder.time("Runner schema", func() error {
@@ -195,6 +210,13 @@ func main() {
 				})
 			}
 			return nil
+		})
+	}
+	if targets.has("temporal") {
+		eg.Go(func() error {
+			return recorder.time("Temporal gen", func() error {
+				return generateTemporal(ctx)
+			})
 		})
 	}
 
@@ -307,12 +329,22 @@ func (r *timingRecorder) printSummary(out *os.File) {
 		return entries[i].duration > entries[j].duration
 	})
 
-	fmt.Fprintln(out, "")
-	fmt.Fprintf(out, "%-22s | %10s\n", "Step", "Seconds")
-	fmt.Fprintf(out, "%-22s-+-%10s\n", "----------------------", "----------")
+	t := table.NewWriter()
+	t.SetOutputMirror(out)
+	t.SetStyle(table.StyleRounded)
+	t.Style().Options.SeparateRows = false
+	t.AppendHeader(table.Row{"Step", "Seconds"})
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{Number: 1, Align: text.AlignLeft},
+		{Number: 2, Align: text.AlignRight},
+	})
+
 	for _, entry := range entries {
-		fmt.Fprintf(out, "%-22s | %10.1f\n", entry.name, entry.duration.Seconds())
+		t.AppendRow(table.Row{entry.name, fmt.Sprintf("%.1f", entry.duration.Seconds())})
 	}
+
+	fmt.Fprintln(out, "")
+	t.Render()
 
 	longest := entries[0]
 	fmt.Fprintf(out, "\nLongest: %s (%.1fs)\n", longest.name, longest.duration.Seconds())
