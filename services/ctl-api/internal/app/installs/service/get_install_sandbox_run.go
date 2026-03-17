@@ -41,6 +41,7 @@ func (s *service) GetInstallSandboxRunV2(ctx *gin.Context) {
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Deprecated
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

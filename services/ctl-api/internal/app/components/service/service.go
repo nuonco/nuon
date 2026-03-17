@@ -12,7 +12,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -34,9 +34,11 @@ type Params struct {
 	TfClient       terraform.Client
 	QueueClient    *queueclient.Client
 	FeaturesClient *features.Features
+	EndpointAudit  *apiPkg.EndpointAudit
 }
 
 type service struct {
+	apiPkg.RouteRegister
 	v              *validator.Validate
 	l              *zap.Logger
 	db             *gorm.DB
@@ -51,7 +53,7 @@ type service struct {
 	featuresClient *features.Features
 }
 
-var _ api.Service = (*service)(nil)
+var _ apiPkg.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
@@ -112,40 +114,40 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	deprecatedComponents := api.Group("/v1/components/:component_id")
 	{
 		// crud ops for components
-		deprecatedComponents.GET("", s.GetComponent)       // Deprecated
-		deprecatedComponents.PATCH("", s.UpdateComponent)  // Deprecated
-		deprecatedComponents.DELETE("", s.DeleteComponent) // Deprecated
+		s.GET(deprecatedComponents, "", s.GetComponent, apiPkg.APIContextTypePublic, true)
+		s.PATCH(deprecatedComponents, "", s.UpdateComponent, apiPkg.APIContextTypePublic, true)
+		s.DELETE(deprecatedComponents, "", s.DeleteComponent, apiPkg.APIContextTypePublic, true)
 
 		// dependencies
-		deprecatedComponents.GET("/dependencies", s.GetComponentDependencies) // Deprecated
-		deprecatedComponents.GET("/dependents", s.GetComponentDependents)     // Deprecated
+		s.GET(deprecatedComponents, "/dependencies", s.GetComponentDependencies, apiPkg.APIContextTypePublic, true)
+		s.GET(deprecatedComponents, "/dependents", s.GetComponentDependents, apiPkg.APIContextTypePublic, true)
 
 		// component configurations
 		deprecatedConfigs := deprecatedComponents.Group("/configs")
 		{
-			deprecatedConfigs.POST("/terraform-module", s.CreateTerraformModuleComponentConfig)       // Deprecated
-			deprecatedConfigs.POST("/helm", s.CreateHelmComponentConfig)                              // Deprecated
-			deprecatedConfigs.POST("/docker-build", s.CreateDockerBuildComponentConfig)               // Deprecated
-			deprecatedConfigs.POST("/external-image", s.CreateExternalImageComponentConfig)           // Deprecated
-			deprecatedConfigs.POST("/job", s.CreateJobComponentConfig)                                // Deprecated
-			deprecatedConfigs.POST("/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig) // Deprecated
-			deprecatedConfigs.GET("", s.GetComponentConfigs)                                          // Deprecated
-			deprecatedConfigs.GET("/:config_id", s.GetComponentConfig)                                // Deprecated
-			deprecatedConfigs.GET("/latest", s.GetComponentLatestConfig)                              // Deprecated
+			s.POST(deprecatedConfigs, "/terraform-module", s.CreateTerraformModuleComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs, "/helm", s.CreateHelmComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs, "/docker-build", s.CreateDockerBuildComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs, "/external-image", s.CreateExternalImageComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs, "/job", s.CreateJobComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.POST(deprecatedConfigs, "/kubernetes-manifest", s.CreateKubernetesManifestComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs, "", s.GetComponentConfigs, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs, "/:config_id", s.GetComponentConfig, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedConfigs, "/latest", s.GetComponentLatestConfig, apiPkg.APIContextTypePublic, true)
 		}
 
 		// builds
 		deprecatedBuilds := deprecatedComponents.Group("/builds")
 		{
-			deprecatedBuilds.POST("", s.CreateComponentBuild)          // Deprecated
-			deprecatedBuilds.GET("/latest", s.GetComponentLatestBuild) // Deprecated
-			deprecatedBuilds.GET("/:build_id", s.GetComponentBuild)    // Deprecated
+			s.POST(deprecatedBuilds, "", s.CreateComponentBuild, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedBuilds, "/latest", s.GetComponentLatestBuild, apiPkg.APIContextTypePublic, true)
+			s.GET(deprecatedBuilds, "/:build_id", s.GetComponentBuild, apiPkg.APIContextTypePublic, true)
 		}
 	}
 
 	// other deprecated build routes
-	api.GET("/v1/builds", s.GetComponentBuilds)            // deprecated
-	api.GET("/v1/components/builds/:build_id", s.GetBuild) // deprecated
+	s.GET(api, "/v1/builds", s.GetComponentBuilds, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/components/builds/:build_id", s.GetBuild, apiPkg.APIContextTypePublic, true)
 
 	return nil
 }
@@ -180,6 +182,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
+		RouteRegister: apiPkg.RouteRegister{
+			EndpointAudit: params.EndpointAudit,
+		},
 		cfg:            params.Cfg,
 		l:              params.L,
 		v:              params.V,
