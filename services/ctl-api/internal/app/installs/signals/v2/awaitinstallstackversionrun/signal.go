@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -96,22 +95,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 
-		stackRefs := helpers.GetStackReferences(appCfg)
-		data := map[string]any{
-			"account":                  generics.GetFakeObj[string](),
-			"region":                   region,
-			"url":                      generics.GetFakeObj[string](),
-			"maintenance_iam_role_arn": generics.GetFakeObj[string](),
-			"provision_iam_role_arn":   generics.GetFakeObj[string](),
-			"deprovision_iam_role_arn": generics.GetFakeObj[string](),
-			"reprovision_iam_role_arn": generics.GetFakeObj[string](),
-			"vpc_id":                   generics.GetFakeObj[string](),
-			"account_id":               generics.GetFakeObj[string](),
-			"public_subnets":           generics.GetFakeObj[string](),
-			"private_subnets":          generics.GetFakeObj[string](),
-			"runner_subnet":            generics.GetFakeObj[string](),
-		}
-		data = generics.MergeMap(refs.GetFakeRefs(stackRefs), data)
+		data := helpers.GetFakeSandboxStackData(appCfg, region)
 
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,

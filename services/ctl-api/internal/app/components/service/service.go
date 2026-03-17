@@ -14,6 +14,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
@@ -21,31 +22,33 @@ import (
 type Params struct {
 	fx.In
 
-	V           *validator.Validate
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
-	MW          metrics.Writer
-	L           *zap.Logger
-	Helpers     *helpers.Helpers
-	VcsHelpers  *vcshelpers.Helpers
-	AppsHelpers *appshelpers.Helpers
-	EvClient    eventloop.Client
-	TfClient    terraform.Client
-	QueueClient *queueclient.Client
+	V              *validator.Validate
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
+	L              *zap.Logger
+	Helpers        *helpers.Helpers
+	VcsHelpers     *vcshelpers.Helpers
+	AppsHelpers    *appshelpers.Helpers
+	EvClient       eventloop.Client
+	TfClient       terraform.Client
+	QueueClient    *queueclient.Client
+	FeaturesClient *features.Features
 }
 
 type service struct {
-	v           *validator.Validate
-	l           *zap.Logger
-	db          *gorm.DB
-	mw          metrics.Writer
-	cfg         *internal.Config
-	helpers     *helpers.Helpers
-	vcsHelpers  *vcshelpers.Helpers
-	appsHelpers *appshelpers.Helpers
-	evClient    eventloop.Client
-	tfClient    terraform.Client
-	queueClient *queueclient.Client
+	v              *validator.Validate
+	l              *zap.Logger
+	db             *gorm.DB
+	mw             metrics.Writer
+	cfg            *internal.Config
+	helpers        *helpers.Helpers
+	vcsHelpers     *vcshelpers.Helpers
+	appsHelpers    *appshelpers.Helpers
+	evClient       eventloop.Client
+	tfClient       terraform.Client
+	queueClient    *queueclient.Client
+	featuresClient *features.Features
 }
 
 var _ api.Service = (*service)(nil)
@@ -177,16 +180,17 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) *service {
 	return &service{
-		cfg:         params.Cfg,
-		l:           params.L,
-		v:           params.V,
-		db:          params.DB,
-		mw:          params.MW,
-		helpers:     params.Helpers,
-		vcsHelpers:  params.VcsHelpers,
-		appsHelpers: params.AppsHelpers,
-		evClient:    params.EvClient,
-		tfClient:    params.TfClient,
-		queueClient: params.QueueClient,
+		cfg:            params.Cfg,
+		l:              params.L,
+		v:              params.V,
+		db:             params.DB,
+		mw:             params.MW,
+		helpers:        params.Helpers,
+		vcsHelpers:     params.VcsHelpers,
+		appsHelpers:    params.AppsHelpers,
+		evClient:       params.EvClient,
+		tfClient:       params.TfClient,
+		queueClient:    params.QueueClient,
+		featuresClient: params.FeaturesClient,
 	}
 }

@@ -20,7 +20,7 @@ func HelmUpgradeWithLogStreaming(
 	annotationSelectorKey := "meta.helm.sh/release-name"
 	annotationSelectorValue := chart.Metadata.Name
 	labelSelector := "app.kubernetes.io/managed-by=Helm"
-	l.Info(
+	l.Debug(
 		"helmUpgradeWithLogStreaming Reached",
 		zap.String("annotation.selector.key", annotationSelectorKey),
 		zap.String("annotation.selector.value", annotationSelectorValue),

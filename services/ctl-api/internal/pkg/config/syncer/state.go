@@ -23,6 +23,18 @@ func (s *syncer) GetComponentStateIds() []string {
 	return ids
 }
 
+// GetActionStateIds returns the IDs of all actions in the current state.
+func (s *syncer) GetActionStateIds() []string {
+	ids := make([]string, 0)
+	if s.state == nil || s.state.Actions == nil {
+		return ids
+	}
+	for _, action := range s.state.Actions {
+		ids = append(ids, action.ID)
+	}
+	return ids
+}
+
 // GetComponentsScheduled implements sync.Syncer
 func (s *syncer) GetComponentsScheduled() []sync.ComponentState {
 	states := make([]sync.ComponentState, 0)

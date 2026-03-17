@@ -29,7 +29,7 @@ func (h *Helpers) CreateAppBranch(
 		OwnerID:     branch.ID,
 		OwnerType:   plugins.TableName(h.db, app.AppBranch{}),
 		Namespace:   "apps",
-		MaxInFlight: 1,
+		MaxInFlight: 2,
 		MaxDepth:    50,
 	})
 	if err != nil {

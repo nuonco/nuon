@@ -75,7 +75,7 @@ export const BuildRunner = () => {
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
       <SurfacesProvider>
-      <PageLayout id={CONTAINER_ID} isScrollable>
+      <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
         {breadcrumbs}
         <PageHeader className="flex items-center justify-between">
           {heading}
