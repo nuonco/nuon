@@ -134,7 +134,8 @@ export const StepDetailPanelButton = ({
     !!step.started_at &&
     !step.finished
 
-  const workflowCancelled = workflow?.status?.status === 'cancelled'
+  const workflowStatus = workflow?.status?.status
+  const workflowBlocked = workflowStatus === 'cancelled' || workflowStatus === 'error'
 
   useEffect(() => {
     if (step.id && step.id === searchParams?.get('panel')) {
@@ -142,7 +143,7 @@ export const StepDetailPanelButton = ({
       return
     }
     if (
-      !workflowCancelled &&
+      !workflowBlocked &&
       (isPendingApproval || isPendingAwaitStack) &&
       !panels.some((p) => p.key === step.id)
     ) {
