@@ -69,8 +69,5 @@ func (s *Service) WorkflowsTUI(ctx context.Context, installID, workflowID string
 	if asJSON {
 		return s.workflowsJSON(ctx, installID, workflowID)
 	}
-	if !s.cfg.Preview {
-		return nil
-	}
 	return s.workflowsTUI(ctx, installID, workflowID)
 }
