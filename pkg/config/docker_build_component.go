@@ -37,11 +37,13 @@ func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Field("connected_repo").Short("connected repository containing Dockerfile").OneOfRequired("repository_source").
 		Long("Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for Docker build operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for Docker build operations (e.g., \"30m\", \"1h\"). Default: 60m. Max: 1h").
+		Default("60m").
 		Example("30m").
 		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
-		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
+		Default("5m").
 		Example("30m").
 		Example("1h")
 }

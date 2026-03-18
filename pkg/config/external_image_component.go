@@ -68,11 +68,13 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
 		Field("build_timeout").Short("build operation timeout").
-		Long("Duration string for build operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 15m. Max: 1h").
+		Default("15m").
 		Example("30m").
 		Example("1h").
 		Field("deploy_timeout").Short("deploy operation timeout").
-		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\").").
+		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
+		Default("5m").
 		Example("30m").
 		Example("1h")
 }
