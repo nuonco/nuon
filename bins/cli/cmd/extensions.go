@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,20 +45,12 @@ var reservedCommandNames = map[string]bool{
 
 func (c *cli) extensionsCmd() *cobra.Command {
 	extCmd := &cobra.Command{
-		Use:     "extensions",
-		Short:   "Manage CLI extensions [preview]",
-		Aliases: []string{"ext"},
-		GroupID: AdditionalGroup.ID,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.persistentPreRunE(cmd, args); err != nil {
-				return err
-			}
-			if !c.cfg.Preview {
-				return errors.New("[NUON_PREVIEW=false] extensions are a preview feature, set NUON_PREVIEW=true to enable")
-			}
-			return nil
-		},
-		Annotations: skipAuthAnnotation(),
+		Use:               "extensions",
+		Short:             "Manage CLI extensions",
+		Aliases:           []string{"ext"},
+		GroupID:           AdditionalGroup.ID,
+		PersistentPreRunE: c.persistentPreRunE,
+		Annotations:       skipAuthAnnotation(),
 	}
 
 	extCmd.AddCommand(

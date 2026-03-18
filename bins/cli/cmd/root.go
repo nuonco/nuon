@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/extensions"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
 var (
@@ -84,13 +84,11 @@ nuon sync
 		rootCmd.AddCommand(cmd)
 	}
 
-	// Register installed extensions as top-level proxy commands (preview only)
-	if config.Preview() {
-		extMgr := extensions.New(extensionsDir())
-		if exts, err := extMgr.List(); err == nil {
-			for _, ext := range exts {
-				rootCmd.AddCommand(c.extensionProxyCmd(ext))
-			}
+	// Register installed extensions as top-level proxy commands.
+	extMgr := extensions.New(extensionsDir())
+	if exts, err := extMgr.List(); err == nil {
+		for _, ext := range exts {
+			rootCmd.AddCommand(c.extensionProxyCmd(ext))
 		}
 	}
 
@@ -126,7 +124,7 @@ func (c *cli) getLongDescription() string {
 	// Try to validate the token by getting current user
 	_, err := c.apiClient.GetCurrentUser(context.Background())
 	if err != nil {
-		status += "❌ Your session has expired. Run `nuon auth login` to sign in again."
+		status += styles.TextError.Render("Your session has expired. Run `nuon auth login` to sign in again.")
 		return status
 	}
 
