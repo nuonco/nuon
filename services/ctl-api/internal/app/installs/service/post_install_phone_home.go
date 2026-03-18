@@ -131,7 +131,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		return fmt.Errorf("checking features: %w", err)
 	}

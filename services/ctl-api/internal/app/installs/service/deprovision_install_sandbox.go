@@ -72,7 +72,7 @@ func (s *service) DeprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return

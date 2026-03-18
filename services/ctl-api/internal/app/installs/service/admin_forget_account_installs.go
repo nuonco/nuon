@@ -57,12 +57,19 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 		return
 	}
 
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+
 	for _, install := range installs {
-		useQueues, err := s.useInstallQueues(ctx)
+		err = s.forgetInstall(ctx, install.ID)
 		if err != nil {
-			ctx.Error(fmt.Errorf("checking features: %w", err))
+			ctx.Error(err)
 			return
 		}
+
 		if useQueues {
 			queueID, err := s.getInstallQueueID(ctx, install.ID)
 			if err != nil {
@@ -73,35 +80,6 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 				InstallID: install.ID,
 			}); err != nil {
 				ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-				return
-			}
-		} else {
-			s.evClient.Send(ctx, install.ID, &signals.Signal{
-				Type: signals.OperationForget,
-			})
-		}
-
-		err = s.forgetInstall(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-
-		useQueues2, err2 := s.useInstallQueues(ctx)
-		if err2 != nil {
-			ctx.Error(fmt.Errorf("checking features: %w", err2))
-			return
-		}
-		if useQueues2 {
-			queueID2, err2 := s.getInstallQueueID(ctx, install.ID)
-			if err2 != nil {
-				ctx.Error(err2)
-				return
-			}
-			if err2 := s.enqueueInstallSignal(ctx, queueID2, &forgotten.Signal{
-				InstallID: install.ID,
-			}); err2 != nil {
-				ctx.Error(fmt.Errorf("enqueue signal: %w", err2))
 				return
 			}
 		} else {

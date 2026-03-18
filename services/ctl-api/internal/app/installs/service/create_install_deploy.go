@@ -98,7 +98,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
@@ -203,7 +203,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 
-	useQueues2, err2 := s.useInstallQueues(ctx)
+	useQueues2, err2 := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err2 != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err2))
 		return

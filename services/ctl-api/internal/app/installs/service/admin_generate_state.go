@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	generatestate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 )
@@ -35,7 +36,7 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return

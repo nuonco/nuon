@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
 )
@@ -42,7 +43,7 @@ func (s *service) ForgetOrgInstalls(ctx *gin.Context) {
 			return
 		}
 
-		useQueues, err := s.useInstallQueues(ctx)
+		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 		if err != nil {
 			ctx.Error(fmt.Errorf("checking features: %w", err))
 			return

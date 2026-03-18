@@ -9,11 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// useInstallQueues returns true when both AppBranches and Queues features are enabled.
-func (s *service) useInstallQueues(ctx context.Context) (bool, error) {
-	return s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-}
-
 // getInstallQueueID returns the queue ID for the given install.
 func (s *service) getInstallQueueID(ctx context.Context, installID string) (string, error) {
 	var queue app.Queue

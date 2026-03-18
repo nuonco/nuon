@@ -49,7 +49,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
@@ -67,31 +67,17 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type:              signals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
-	}
-
-	useQueues2, err2 := s.useInstallQueues(ctx)
-	if err2 != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err2))
-		return
-	}
-	if useQueues2 {
-		queueID2, err2 := s.getInstallQueueID(ctx, install.ID)
-		if err2 != nil {
-			ctx.Error(err2)
-			return
-		}
-		if err2 := s.enqueueInstallSignal(ctx, queueID2, &forgotten.Signal{
-			InstallID: install.ID,
-		}); err2 != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err2))
-			return
-		}
-	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type: signals.OperationForget,
 		})
