@@ -294,60 +294,26 @@ region = "us-west-2"
 
 ### Install Configs
 
-You can create and manage [installs](/concepts/installs) by creating
-`<install>.toml` files in an `installs` directory managed separately from the
-apps. An install must declare a `name` field and any relevant
-install-specific configuration.
+You can also manage [Installs](/concepts/installs) with config files. This
+allows you to manage installs in your VCS, offering a more streamlined
+experience than the dashboard. By defining these configurations in code,
+you can automate Install updates with your CI system.
 
-Install config files allow you to update multiple installs simultaneously, offering a more streamlined experience than the dashboard. By defining these configurations in code, you can automate your workflow using a CI system like GitHub Actions.
+An install config file requires a name, the aws account region, and
+non-sensitive input values. You can also configure auto-approval.
 
-The inputs are defined as a list of input groups. This is just for logical
-grouping, and inputs from different groups can be defined together. Note that if
-an input is defined multiple times, the last defined value would be used.
+All input values should be defined as strings. They will be parsed into the
+correct type by Nuon. If you define an input multiple times, the last value
+will be used. To avoid storing sensitive input values in plain text, they
+are excluded from input config files. They will not be included in generated
+files, and will not be synced.
 
-Input configs will be grouped together, reflecting the
-input groups you have defined in the app. Sensitive inputs will be excluded, to
-avoid saving them in plain text in version control. When syncing install config
-files, sensitive inputs will be ignored. They can still be managed manually via
-the dashboard.
+```toml installs/example.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=install
 
-<Note>
-	Currently only AWS installs are supported using install config files.
-</Note>
-
-**Generate an Install Config File**
-
-To manage existing installs using CI, use the CLI command
-`nuon installs generate-config` to export an existing install to stdout. Create
-a TOML config file for the install in the `installs` folder of your app's config
-and paste the stout.
-
-```bash
-mkdir -p installs
-touch installs/<install-name>.toml
-nuon installs generate-config -i <install-name> > installs/<install-name>.toml
-```
-
-**Update an Install**
-
-The `nuon installs sync` command can be used with a single install config file
-or with a directory containing multiple install config files.
-
-```bash
-nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
-```
-
-In the dashboard, see the newly-created workflow to track the install's upgrade
-process.
-
-**An Example Install Config File**
-
-```toml installs/install.toml
-# install
 name = "<install-name>"
 
-# configure Auto Approval settings for an install
-approval_option = "prompt" # set this to "approve-all" to enable auto approval
+approval_option = "approve-all" # enabled auto-approval, which you typicall need for automation
 
 [aws_account]
   region = "us-east-1"
@@ -361,7 +327,41 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
   input_json   = '{"key": "value"}'
 ```
 
+**Generate an Install Config File**
+
+You can generate a config file for an Install using the Dashboard or the CLI.
+
+<Tabs>
+<Tab title="Dashboard">
+To generate an install config using the Dashboard, navigate to the install's page, and open the "Manage" menu. First, you need to enable config syncing.
+
+![Enable config sync](/images/enable-config-sync.png)
+
+Then, you can generate a config. Save this to a file locally, and you are ready to sync it using the CLI.
+
+![Generate install config](/images/generate-install-config.png)
+</Tab>
+<Tab title="CLI">
+You can generate a config using the CLI with the `installs generate-config` command.
+
+```bash
+mkdir -p installs
+touch installs/<install-name>.toml
+nuon installs generate-config -i <install-name> > <install-name>.toml
+```
+</Tab>
+</Tabs>
+
+**Update an Install**
+
+Once you have an install config, you can sync it using the CLI. You can sync
+either an individual file, or an entire directoy.
+
+```bash
+nuon installs sync -a <app-name-or-id> -d <path-to-file-or-dir>
+```
+
 <Note>
-	All input values should be defined as strings. They will be parsed into the
-	correct type by Nuon.
+Because the app name is required for syncing, you cannot sync a directory of install
+configs for different apps. If you are syncing a directory, they must be the same app.
 </Note>
