@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackToTop } from '@/components/common/BackToTop'
 import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
+import { PendingApprovals } from '@/components/orgs/PendingApprovals'
 import {
   RecentActivities,
   type IActivity,
@@ -18,6 +19,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
+import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { getOrgStats, getRunnerJobs } from '@/lib'
 import {
   getJobHref,
@@ -39,7 +41,10 @@ function formatDuration(ms: number): string {
 
 export const Dashboard = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
   const { org } = useOrg()
+  const { approvals } = useWorkflowApprovals()
 
   useEffect(() => {
     if (!org) return
@@ -59,15 +64,17 @@ export const Dashboard = () => {
   })
 
   const { data: jobs } = useQuery({
-    queryKey: ['runner-jobs', org?.id, runnerId],
+    queryKey: ['runner-jobs', org?.id, runnerId, offset],
     queryFn: () =>
       getRunnerJobs({
         orgId: org!.id,
         runnerId: runnerId!,
-        groups: ['deploy', 'operations', 'sync'],
+        groups: ['build', 'deploy', 'operations', 'sync'],
         limit: 10,
+        offset,
       }),
     enabled: !!org?.id && !!runnerId,
+    refetchInterval: 20_000,
   })
 
   const recentActivities: IActivity[] = (jobs?.data ?? []).map((job) => ({
@@ -110,18 +117,19 @@ export const Dashboard = () => {
             </Text>
             <StatsGrid
               stats={[
-                { label: 'Total Installs', value: stats?.install_count ?? 0 },
-                { label: 'Active Applications', value: stats?.app_count ?? 0 },
-                { label: 'Active Runner', value: 0 },
-                { label: 'Active Installs', value: stats?.install_count ?? 0 },
+                { label: 'Total installs', value: stats?.install_count ?? 0 },
+                { label: 'Active applications', value: stats?.app_count ?? 0 },
+                { label: 'Active runners', value: org?.runner_group?.runners?.length ?? 0 },
+                { label: 'Pending approvals', value: approvals.length },
               ]}
             />
+            <PendingApprovals />
             <Text variant="h3" weight="strong" className="mt-6">
               Recent activities
             </Text>
             <RecentActivities
               activities={recentActivities}
-              orgId={org?.id ?? ''}
+              pagination={jobs?.pagination}
             />
           </PageSection>
           <PageSection className="w-full">
