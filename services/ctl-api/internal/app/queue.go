@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -27,6 +28,9 @@ type Queue struct {
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+
+	Name     string        `json:"name,omitzero" gorm:"type:text" temporaljson:"name,omitzero,omitempty"`
+	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
 	MaxDepth    int `json:"max_depth,omitzero"`
 	MaxInFlight int `json:"max_in_flight,omitzero"`

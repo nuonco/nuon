@@ -43,13 +43,13 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return

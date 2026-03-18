@@ -197,6 +197,7 @@ func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, inst
 		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   installID,
 			OwnerType: "installs",
+			QueueName: "install-signals",
 			Signal: &componentdeploysyncandplan.Signal{
 				SandboxMode:        true,
 				ComponentID:        componentID,

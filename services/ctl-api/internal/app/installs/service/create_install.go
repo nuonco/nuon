@@ -81,45 +81,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
-	// NOTE(jm): eventually, we may want to move these into the workflow itself, but for now they are really system
-	// details so we're not including them in the user facing workflows.
-	//
-	// Maybe at some point they would be added with a `UserFacing: false` boolean on the step itself.
-	useQueues, err := s.useInstallQueues(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
-		return
-	}
-	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &installscreated.Signal{
-			InstallID: install.ID,
-		}); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &polldependencies.Signal{
-			InstallID: install.ID,
-		}); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationCreated,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationPollDependencies,
-		})
-	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationSyncActionWorkflowTriggers,
-	})
-
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
@@ -131,13 +92,36 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
+	// Send signals: v2 queues or legacy event loop
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
@@ -146,24 +130,31 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationCreated,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationPollDependencies,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type:              signals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
 	}
+	// SyncActionWorkflowTriggers must stay legacy - it starts a child workflow in the event loop
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationSyncActionWorkflowTriggers,
+	})
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
-		// Only update if this is the user's first install (install_created step incomplete)
 		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
-			// Log but don't fail the install creation
 			s.l.Warn("failed to update user journey for first install create", zap.Error(err))
 		}
 	}
 
-	// TODO(jm): these will be deprecated after the workflow tooling is created
 	ctx.JSON(http.StatusCreated, install)
 }
 
@@ -232,45 +223,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	// NOTE(jm): eventually, we may want to move these into the workflow itself, but for now they are really system
-	// details so we're not including them in the user facing workflows.
-	//
-	// Maybe at some point they would be added with a `UserFacing: false` boolean on the step itself.
-	useQueues, err := s.useInstallQueues(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
-		return
-	}
-	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &installscreated.Signal{
-			InstallID: install.ID,
-		}); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &polldependencies.Signal{
-			InstallID: install.ID,
-		}); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationCreated,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationPollDependencies,
-		})
-	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationSyncActionWorkflowTriggers,
-	})
-
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
@@ -282,13 +234,36 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
+	// Send signals: v2 queues or legacy event loop
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
@@ -297,23 +272,30 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationCreated,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationPollDependencies,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type:              signals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
 	}
+	// SyncActionWorkflowTriggers must stay legacy - it starts a child workflow in the event loop
+	s.evClient.Send(ctx, install.ID, &signals.Signal{
+		Type: signals.OperationSyncActionWorkflowTriggers,
+	})
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
-		// Only update if this is the user's first install (install_created step incomplete)
 		if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
-			// Log but don't fail the install creation
 			s.l.Warn("failed to update user journey for first install create", zap.Error(err))
 		}
 	}
 
-	// TODO(jm): these will be deprecated after the workflow tooling is created
 	ctx.JSON(http.StatusCreated, install)
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -12,6 +13,7 @@ import (
 type EnqueueSignalToOwnerRequest struct {
 	OwnerID   string        `json:"owner_id" validate:"required"`
 	OwnerType string        `json:"owner_type" validate:"required"`
+	QueueName string        `json:"queue_name,omitempty"`
 	Signal    signal.Signal `json:"signal" validate:"required"`
 }
 
@@ -29,8 +31,14 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	// Find the queue by owner
-	queue, err := a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+	// Find the queue by owner (and optionally by name for multi-queue owners)
+	var queue *app.Queue
+	var err error
+	if req.QueueName != "" {
+		queue, err = a.queueClient.GetQueueByOwnerAndName(ctx, req.OwnerID, req.OwnerType, req.QueueName)
+	} else {
+		queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to find queue for owner")
 	}

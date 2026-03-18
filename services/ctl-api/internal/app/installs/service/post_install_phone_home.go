@@ -148,7 +148,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return fmt.Errorf("checking features: %w", err)
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, installID)
+		queueID, err := s.getInstallSignalsQueueID(ctx, installID)
 		if err != nil {
 			return err
 		}

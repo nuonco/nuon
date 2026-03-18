@@ -19,10 +19,10 @@ func (a *Activities) getQueueSignals(ctx context.Context, queueID string) ([]*ap
 
 	jdb := generics.NewJSONBQuery(a.db.WithContext(ctx))
 	if res := jdb.WhereJSON(generics.JSONBQuery{
-		Operator: "=",
+		Operator: "IN",
 		Field:    "status",
 		Path:     "status",
-		Value:    app.StatusQueued,
+		Value:    []string{string(app.StatusQueued), string(app.StatusInProgress)},
 	}).Where(app.QueueSignal{
 		QueueID: queueID,
 	}).Order("created_at asc").

@@ -62,13 +62,13 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -25,14 +26,26 @@ type Signal struct {
 	FlowID           string
 	FlowStepID       string
 	SandboxMode      bool
-	DNSRootDomain    string
+
+	cfg *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
 
+func (s *Signal) WithParams(params *signal.Params) {
+	s.cfg = params.Cfg
+}
+
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.FlowStepID = stepID
+	s.FlowID = flowID
+}
+
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallSandboxID == "" {
@@ -69,7 +82,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}()
 
 	l.Info("executing plan")
-	if err := s.executeApplyPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.DNSRootDomain); err != nil {
+	if err := s.executeApplyPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain); err != nil {
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
@@ -139,6 +152,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
@@ -195,8 +209,9 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:      runnerJob.ID,
-		RunnerID:   install.RunnerID,
+		JobID:    runnerJob.ID,
+		RunnerID: install.RunnerID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {

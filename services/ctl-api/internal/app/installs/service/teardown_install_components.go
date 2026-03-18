@@ -95,13 +95,13 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useInstallQueues(ctx)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, installID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 		if err != nil {
 			ctx.Error(err)
 			return

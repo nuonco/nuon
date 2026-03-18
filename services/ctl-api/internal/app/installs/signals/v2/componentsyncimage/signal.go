@@ -36,6 +36,13 @@ func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
 
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+	s.FlowID = flowID
+}
+
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
@@ -177,7 +184,8 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
 		InstallID:       install.ID,
 		InstallDeployID: installDeploy.ID,
-		WorkflowID:      fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-oci-sync-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
@@ -204,8 +212,9 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	// queue job
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusSyncing, "executing sync plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   install.RunnerID,
-		JobID:      runnerJob.ID,
+		RunnerID: install.RunnerID,
+		JobID:    runnerJob.ID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-execute-job", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
@@ -239,16 +248,18 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	// TODO: GenerateStateRequest doesn't have DeployID field - needs InstallID
-	// _, _ = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
-	// 	InstallID: s.InstallID,
-	// })
-
-	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
-	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: message,
+	})
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
-	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: message,
+		SkipStatusSync:    true,
+	})
 }

@@ -19,6 +19,12 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		return nil, errors.Wrap(err, "unable to get queue")
 	}
 
+	// If the DB status already indicates completion (e.g. handler was slept),
+	// return immediately without trying to reach the workflow.
+	if isTerminalStatus(q.Status.Status) {
+		return &handler.FinishedResponse{}, nil
+	}
+
 	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   q.Workflow.ID,
 		UpdateName:   handler.FinishedHandlerName,
@@ -28,6 +34,15 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		},
 	})
 	if err != nil {
+		// Workflow may have been slept/terminated between our DB check and now.
+		// Re-check DB status to confirm.
+		fresh, dbErr := c.getQueueSignal(ctx, queueSignalID)
+		if dbErr != nil {
+			return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
+		}
+		if isTerminalStatus(fresh.Status.Status) {
+			return &handler.FinishedResponse{}, nil
+		}
 		return nil, errors.Wrap(err, "unable to call finished handler")
 	}
 

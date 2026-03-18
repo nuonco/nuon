@@ -31,5 +31,11 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
+	// sleeping means the workflow should terminate completely (no continue-as-new)
+	if h.sleeping {
+		l.Debug("handler is sleeping, terminating workflow")
+		return true, nil
+	}
+
 	return false, nil
 }

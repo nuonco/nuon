@@ -33,9 +33,15 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+	s.InstallWorkflowID = flowID
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -159,7 +165,8 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
-		WorkflowID:          fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
@@ -206,8 +213,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	// now queue and execute the job
 	l.Info("executing runner job")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   run.Install.RunnerID,
-		JobID:      runnerJob.ID,
+		RunnerID: run.Install.RunnerID,
+		JobID:    runnerJob.ID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {

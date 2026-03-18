@@ -50,6 +50,11 @@ func (h *handler) registerHandlers(ctx workflow.Context) error {
 			h.finishedHandler,
 			nil,
 		},
+		SleepUpdateName: {
+			handlerTypeUpdate,
+			h.sleepHandler,
+			nil,
+		},
 	}
 
 	for name, handler := range handlers {
