@@ -22,8 +22,8 @@ title: 'Kubernetes Manifest'
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository with kustomize source Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository with kustomize source Configuration for a Nuon-connected private repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"` |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
-| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 15m. Max: 1h | **Optional**<br/>Default: `"15m"` | `"30m"`, `"1h"` |
 
 ### `operation_roles`
 
