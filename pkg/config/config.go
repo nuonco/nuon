@@ -191,5 +191,59 @@ func (a *AppConfig) Parse() error {
 		}
 	}
 
+	// Default cloud_platform on all roles from runner type if not explicitly set
+	if err := a.defaultCloudPlatformFromRunner(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *AppConfig) defaultCloudPlatformFromRunner() error {
+	if a.Runner == nil || a.Runner.RunnerType == "" {
+		return nil
+	}
+
+	platform := a.Runner.RunnerType
+
+	setDefault := func(role *AppAWSIAMRole) error {
+		if role == nil {
+			return nil
+		}
+		if role.CloudPlatform == "" {
+			role.CloudPlatform = platform
+			return nil
+		}
+		if role.CloudPlatform != platform {
+			display := role.DisplayName
+			if display == "" {
+				display = role.Description
+			}
+			return fmt.Errorf("role %q has cloud_platform %q but runner_type is %q", display, role.CloudPlatform, platform)
+		}
+		return nil
+	}
+
+	if a.Permissions != nil {
+		for _, role := range a.Permissions.Roles {
+			if err := setDefault(role); err != nil {
+				return err
+			}
+		}
+		for _, role := range a.Permissions.CustomRoles {
+			if err := setDefault(role); err != nil {
+				return err
+			}
+		}
+	}
+
+	if a.BreakGlass != nil {
+		for _, role := range a.BreakGlass.Roles {
+			if err := setDefault(role); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }

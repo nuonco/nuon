@@ -17,7 +17,7 @@ import (
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/diff"
 	"github.com/nuonco/nuon/pkg/plans"
-	plantypes "github.com/nuonco/nuon/pkg/types/components/plan"
+	plantypes "github.com/nuonco/nuon/pkg/types/approvals"
 )
 
 type kubernetesResource struct {
