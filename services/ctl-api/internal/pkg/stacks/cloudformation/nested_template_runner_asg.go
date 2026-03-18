@@ -49,6 +49,7 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"InstanceType":        "t3a.medium",            // NOTE(fd): this may be a good thing to make configurable later
 		"RootVolumeSize":      "30",                    // NOTE(fd): this may be a good thing to make configurable later
 		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
+		"RunnerEnvVars":       inp.RunnerEnvVars,
 	}
 
 	// conditionally include RunnerApiToken if the nested template defines it as a parameter
@@ -113,6 +114,11 @@ func (a *Templates) getRunnerASGNestedStackParams() map[string]cloudformation.Pa
 			Default:     "30",
 			MinValue:    ptr(8.0),
 			MaxValue:    ptr(100.0),
+		},
+		"RunnerEnvVars": {
+			Type:        "String",
+			Description: generics.ToPtr("Newline-delimited export statements for runner environment variables"),
+			Default:     "",
 		},
 	}
 }

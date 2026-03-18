@@ -27,6 +27,15 @@ func (j *jobLoop) runWorker() {
 		l.Warn("job loop stopped due to error", zap.Error(err))
 	}
 
+	// If the worker exited due to a drain, return cleanly — the VM shutdown
+	// handler is coordinating the process exit.
+	select {
+	case <-j.drainCh:
+		l.Info("job loop drained cleanly")
+		return
+	default:
+	}
+
 	l.Warn("shutting down runner due to closing job loop")
 	os.Exit(155)
 	if err := j.shutdowner.Shutdown(fx.ExitCode(1)); err != nil {
@@ -38,6 +47,8 @@ func (j *jobLoop) worker() error {
 	for {
 		select {
 		case <-j.ctx.Done():
+			return nil
+		case <-j.drainCh:
 			return nil
 		default:
 		}

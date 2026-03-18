@@ -8,6 +8,7 @@ import (
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/noop"
 	shutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/shutdown"
 	update "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/update"
+	vmshutdown "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/vm_shutdown"
 )
 
 func GetJobs() []fx.Option {
@@ -16,5 +17,6 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("operations", noop.New)),
 		fx.Provide(jobs.AsJobHandler("operations", shutdown.New)),
 		fx.Provide(jobs.AsJobHandler("operations", update.New)),
+		fx.Provide(jobs.AsJobHandler("operations", vmshutdown.New)),
 	}
 }

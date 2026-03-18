@@ -231,7 +231,7 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				var settings app.RunnerGroupSettings
 				err := s.service.DB.Where("runner_group_id = ?", s.testRunnerGrp.ID).First(&settings).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), 86400, settings.AWSMaxInstanceLifetime)
+				assert.Equal(s.T(), 86400, settings.AWSMaxInstanceLifetime) // Deprecated: no longer used by ASG
 			},
 		},
 		{

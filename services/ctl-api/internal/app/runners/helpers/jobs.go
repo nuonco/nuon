@@ -38,6 +38,9 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
 		app.RunnerJobTypeRunnerTerraform:  time.Minute * 15,
 		app.RunnerJobTypeRunnerHelm:       time.Minute * 5,
+
+		// vm shutdown drains all job loops before powering off
+		app.RunnerJobTypeVMShutDown: time.Minute * 60,
 	}
 	timeout, ok := timeouts[typ]
 	if ok {

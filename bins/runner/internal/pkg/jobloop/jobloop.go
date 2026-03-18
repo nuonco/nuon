@@ -21,6 +21,9 @@ import (
 type JobLoop interface {
 	Start() error
 	Stop() error
+	// Drain stops the loop from accepting new jobs and waits for any in-flight
+	// job to finish. If the timeout is reached, in-flight jobs are force-cancelled.
+	Drain(timeout time.Duration)
 	LifecycleHook() fx.Hook
 	// healthcheck
 	GetHealthcheck() (Healthcheck, string)
@@ -50,6 +53,7 @@ type jobLoop struct {
 	shutdowner fx.Shutdowner
 
 	sandboxCtl *sandboxctl.Server
+	drainCh    chan struct{}
 
 	// for healthcheck
 	healthcheck Healthcheck
@@ -67,6 +71,7 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		jobHandlers: handlers,
 
 		pool:       pool.New().WithMaxGoroutines(1),
+		drainCh:    make(chan struct{}),
 		ctx:        ctx,
 		ctxCancel:  cancelFn,
 		l:          params.L,

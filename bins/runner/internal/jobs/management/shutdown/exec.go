@@ -28,7 +28,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return err
 	}
-	l.Info("preparing to gracefully shutting down the runner process")
+	l.Info("preparing to gracefully shut down the runner process")
 
 	return nil
 }

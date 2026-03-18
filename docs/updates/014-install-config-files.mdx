@@ -57,6 +57,10 @@ first.
 
 ## Runner Instance Lifetime
 
+> **Deprecated**: MaxInstanceLifetime is no longer set on the ASG. Instance
+> refresh is now handled by a backend cron that gracefully shuts down the
+> runner before powering off the VM.
+
 As part of the install stack, we now set the MaxInstanceLifetime for Runner
 instances to 7 days by default and recreate it via the autoscaling group. This
 serves as a safety net in case the runner instance becomes unresponsive for some

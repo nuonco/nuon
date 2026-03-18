@@ -1,4 +1,4 @@
-package shutdown
+package vmshutdown
 
 import (
 	"context"
@@ -35,19 +35,28 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 		// executes an os shutdown ↴ via dbus w/ a shell fallback w/ a sudo shell fallback
 		err = pkgshutdown.Shutdown(ctx, l, h.v)
 		if err != nil {
+			panic(err)
 		}
 	}
 
 	return nil
 }
 
-// Exec is a no-op for the management VM shutdown. This is a force-kill path — the VM
-// powers off immediately in Cleanup() via finishJob(), regardless of in-flight jobs.
-// For graceful shutdown that waits for jobs, see the operations/vm_shutdown handler.
+// Exec drains all job loops so in-flight jobs (builds, deploys, etc.) can finish
+// before the VM is powered off. The actual VM shutdown happens in finishJob(),
+// called from Cleanup().
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
+	}
+
+	l.Info("draining job loops before VM shutdown",
+		zap.Int("loop_count", len(h.jobLoops)),
+		zap.Duration("timeout", drainTimeout),
+	)
+	for _, jl := range h.jobLoops {
+		jl.Drain(drainTimeout)
 	}
 
 	l.Info("exec", zap.String("job_type", "vm-shutdown"))

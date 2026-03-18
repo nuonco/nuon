@@ -99,6 +99,7 @@ const (
 
 	// operations job types
 	RunnerJobTypeShutDown      RunnerJobType = "shut-down"
+	RunnerJobTypeVMShutDown    RunnerJobType = "vm-shut-down"
 	RunnerJobTypeUpdateVersion RunnerJobType = "update-version"
 	RunnerJobTypeNOOP          RunnerJobType = "noop"
 
@@ -170,7 +171,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupHealthChecks
 
 		// operations
-	case RunnerJobTypeNOOP, RunnerJobTypeShutDown, RunnerJobTypeUpdateVersion:
+	case RunnerJobTypeNOOP, RunnerJobTypeShutDown, RunnerJobTypeVMShutDown, RunnerJobTypeUpdateVersion:
 		return RunnerJobGroupOperations
 
 		// management

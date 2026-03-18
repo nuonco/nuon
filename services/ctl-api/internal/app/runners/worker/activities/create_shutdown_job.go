@@ -18,6 +18,11 @@ func (a *Activities) CreateShutdownJob(ctx context.Context, req *CreateShutdownJ
 	return a.helpers.CreateShutdownJob(ctx, req.RunnerID, req.RunnerID, req.LogStreamID, req.Metadata)
 }
 
+// @temporal-gen-v2 activity
+func (a *Activities) CreateVMShutdownJob(ctx context.Context, req *CreateShutdownJobRequest) (*app.RunnerJob, error) {
+	return a.helpers.CreateVMShutdownJob(ctx, req.RunnerID, req.RunnerID, req.LogStreamID, req.Metadata)
+}
+
 type CreateMngJobRequest struct {
 	RunnerID    string            `validate:"required"`
 	OwnerID     string            `validate:"required"`
