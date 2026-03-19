@@ -65,9 +65,9 @@ func (s *Service) notFoundErr(id string) error {
 	return fmt.Errorf("install %s was not found", id)
 }
 
-func (s *Service) WorkflowsTUI(ctx context.Context, installID, workflowID string, asJSON bool) error {
+func (s *Service) WorkflowsTUI(ctx context.Context, installID, workflowID string, asJSON bool, autoRetry bool) error {
 	if asJSON {
 		return s.workflowsJSON(ctx, installID, workflowID)
 	}
-	return s.workflowsTUI(ctx, installID, workflowID)
+	return s.workflowsTUI(ctx, installID, workflowID, autoRetry)
 }

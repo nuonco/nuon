@@ -55,7 +55,7 @@ func (s *Service) selectInstallID(ctx context.Context, installID string) (string
 	return lookup.InstallID(ctx, s.api, installID)
 }
 
-func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string) error {
+func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string, autoRetry bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -79,7 +79,7 @@ func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string
 		}
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID, autoRetry)
 	return nil
 }
 
@@ -99,7 +99,7 @@ func (s *Service) workflowsTUILatest(ctx context.Context, installID string) erro
 		return ui.PrintError(errors.New("no workflows found for this install"))
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflows[0].ID)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflows[0].ID, false)
 	return nil
 }
 

@@ -630,6 +630,7 @@ func WorkflowApp(
 	api nuon.Client,
 	install_id string,
 	workflow_id string,
+	autoRetry bool,
 ) {
 	if !cfg.Interactive {
 		workflowPlainText(ctx, api, workflow_id)
@@ -638,6 +639,7 @@ func WorkflowApp(
 
 	// initialize the model
 	m := initialModel(ctx, cfg, api, install_id, workflow_id)
+	m.autoRetryAll = autoRetry
 	// initialize the program
 	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
