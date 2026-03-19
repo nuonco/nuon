@@ -4,10 +4,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   resolve: {
     alias: {
-      "next/image": path.resolve(__dirname, "./.ladle/UnoptimizedImage.tsx"),
-      "next/link": path.resolve(__dirname, "./.ladle/UnoptimizedLink.tsx"),
-      "next/navigation": path.resolve(__dirname, "./.ladle/NextNavigationMocks.tsx"),
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "./client"),
     },
   },
   define: {
@@ -58,29 +55,10 @@ export default defineConfig({
       "react-syntax-highlighter/dist/esm/languages/prism/yaml",
       "react-syntax-highlighter/dist/esm/languages/prism/bash",
     ],
-    exclude: [
-      // Server-side dependencies that shouldn't run in browser
-      "@auth0/nextjs-auth0",
-      "next/server",
-      "next/headers",
-      "next/navigation",
-      "next/cache",
-    ],
   },
   server: {
     fs: {
       allow: [".."],
-    },
-  },
-  build: {
-    rollupOptions: {
-      external: [
-        // External dependencies that shouldn't be bundled
-        "@auth0/nextjs-auth0",
-        "next/server",
-        "next/headers",
-        "next/cache",
-      ],
     },
   },
 });
