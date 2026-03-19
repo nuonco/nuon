@@ -40,21 +40,6 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_deploy")
 		}
-
-		deployStatus := app.InstallDeployStatus(req.Status)
-		if deployStatus == app.InstallDeployStatusActive {
-			var deploy app.InstallDeploy
-			if err := a.db.WithContext(ctx).First(&deploy, "id = ?", step.StepTargetID).Error; err == nil {
-				if res := a.db.WithContext(ctx).
-					Model(&app.InstallComponent{ID: deploy.InstallComponentID}).
-					Updates(app.InstallComponent{
-						Status:            app.DeployStatusToComponentStatus(deployStatus),
-						StatusDescription: req.StatusDescription,
-					}); res.Error != nil {
-					return errors.Wrap(res.Error, "unable to update install component status")
-				}
-			}
-		}
 	case "install_sandbox_runs":
 		obj := &app.InstallSandboxRun{
 			ID: step.StepTargetID,
