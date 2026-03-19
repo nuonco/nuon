@@ -48,6 +48,7 @@ type Config struct {
 	DatadogAPIUrl         string `config:"datadog_api_url"`
 	IsBYOC                bool   `config:"nuon_byoc"`
 	SFTrialEndpoint       string `config:"sf_trial_access_endpoint"`
+	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
 }
 
 func NewConfig() (*Config, error) {

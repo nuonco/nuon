@@ -17,6 +17,7 @@ export type TRuntimeConfig = {
   gitRef?: string
   isByoc: boolean
   sfTrialEndpoint?: string
+  onboardingV2?: boolean
 }
 
 declare global {
@@ -25,15 +26,19 @@ declare global {
   }
 }
 
-export const ConfigContext = createContext<TRuntimeConfig | undefined>(undefined)
+export const ConfigContext = createContext<TRuntimeConfig | undefined>(
+  undefined
+)
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const config = useMemo(() => {
     const cfg = window.__NUON_CONFIG__ ?? ({} as TRuntimeConfig)
     document.getElementById('nuon-config')?.remove()
     delete window.__NUON_CONFIG__
-    return cfg
+    return { ...cfg, onboardingV2: true }
   }, [])
 
-  return <ConfigContext.Provider value={config}>{children}</ConfigContext.Provider>
+  return (
+    <ConfigContext.Provider value={config}>{children}</ConfigContext.Provider>
+  )
 }
