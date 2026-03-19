@@ -4,12 +4,17 @@ import { Plan } from '@/components/approvals/Plan'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { SSELogs } from '@/components/log-stream/SSELogs'
 import { useOrg } from '@/hooks/use-org'
 import { getDeploy } from '@/lib'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TDeploy } from '@/types'
 import type { IStepDetails } from '../types'
-import { DeployApply } from './DeployApply'
+import { DeployApply, DeployLogsSkeleton } from './DeployApply'
 import { useQuery } from '@tanstack/react-query'
 
 export const DeployStepDetails = ({ step }: IStepDetails) => {
@@ -20,7 +25,12 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
     isLoading,
   } = useQuery<TDeploy>({
     queryKey: ['deploy', org?.id, step?.owner_id, step?.step_target_id],
-    queryFn: () => getDeploy({ orgId: org.id, installId: step.owner_id, deployId: step.step_target_id }),
+    queryFn: () =>
+      getDeploy({
+        orgId: org.id,
+        installId: step.owner_id,
+        deployId: step.step_target_id,
+      }),
     enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
 
@@ -57,7 +67,26 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
         )}
       </div>
       {step?.execution_type === 'approval' ? (
-        <Plan step={step} />
+        <Tabs
+          tabs={{
+            plan: (
+              <div className="mt-4">
+                <Plan step={step} />
+              </div>
+            ),
+            logs: deploy?.log_stream ? (
+              <LogStreamProvider shouldPoll logStreamId={deploy.log_stream.id}>
+                <UnifiedLogsProvider>
+                  <LogViewerProvider>
+                    <SSELogs />
+                  </LogViewerProvider>
+                </UnifiedLogsProvider>
+              </LogStreamProvider>
+            ) : (
+              <DeployLogsSkeleton />
+            ),
+          }}
+        />
       ) : (
         <DeployApply initDeploy={deploy} />
       )}
