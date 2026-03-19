@@ -1,4 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
 
 @font-face {
   font-family: 'Hack';
@@ -8,9 +11,6 @@
   font-style: normal;
   font-display: swap;
 }
-
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @theme inline {
   --color-background: var(--background);
