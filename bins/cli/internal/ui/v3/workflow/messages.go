@@ -118,6 +118,36 @@ func (m model) approveAllCmd() tea.Msg {
 	return approveAllMsg{approved: approved, err: nil}
 }
 
+type retryAllMsg struct {
+	retried int
+	err     error
+}
+
+func (m model) retryAllCmd() tea.Msg {
+	// Find the last step (highest Idx) that is in error and retryable.
+	// Using last (not first) avoids retrying from a step where later steps already succeeded.
+	var target *models.AppWorkflowStep
+	for _, step := range m.workflow.Steps {
+		if step.Status == nil || step.Status.Status != models.AppStatusError || !step.Retryable {
+			continue
+		}
+		if target == nil || step.Idx > target.Idx {
+			target = step
+		}
+	}
+	if target == nil {
+		return retryAllMsg{retried: 0, err: nil}
+	}
+	_, err := m.api.RetryOwnerWorkflow(m.ctx, m.workflowID, &models.ServiceRetryWorkflowByIDRequest{
+		Operation: "retry-step",
+		StepID:    target.ID,
+	})
+	if err != nil {
+		return retryAllMsg{retried: 0, err: err}
+	}
+	return retryAllMsg{retried: 1, err: nil}
+}
+
 type getWorkflowStepApprovalContentsMsg struct {
 	raw     interface{}
 	loading bool

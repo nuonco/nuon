@@ -68,6 +68,11 @@ func (m model) actionsOrMessage() string {
 	if cancellable {
 		content += dangerousButtonStyle.Render("[C] Cancel Workflow") + " "
 	}
+	if m.autoRetryAll {
+		content += dangerousButtonStyle.Render("[R] Auto-Retry ✓")
+	} else {
+		content += buttonStyle.Render("[R] Auto-Retry")
+	}
 	return content
 }
 

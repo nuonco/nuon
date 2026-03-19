@@ -100,6 +100,10 @@ type model struct {
 	// approval processing state
 	approvingStep bool // whether an approval request is in flight
 
+	// auto-retry
+	autoRetryAll  bool // when true, failed retryable steps are retried automatically on each poll
+	retryInFlight bool // true after a retry is fired; cleared once the step leaves error state
+
 	// for the footer
 	help help.Model
 
@@ -178,6 +182,15 @@ func (m model) PolicyNameByID(id string) string {
 func (m *model) toggleShowJson() {
 	m.showJson = !m.showJson
 	m.populateStepDetailView(false)
+}
+
+func (m *model) toggleAutoRetryAll() {
+	m.autoRetryAll = !m.autoRetryAll
+	if m.autoRetryAll {
+		m.setLogMessage("auto-retry: on — will retry failed steps on each refresh", "info")
+	} else {
+		m.setLogMessage("auto-retry: off", "warning")
+	}
 }
 
 func (m *model) setLogMessage(message string, level string) {
@@ -396,7 +409,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case workflowFetchedMsg:
-		m.handleWorkflowFetched(msg)
+		cmd = m.handleWorkflowFetched(msg)
+		cmds = append(cmds, cmd)
 
 	case stackFetchedMsg:
 		m.handleStackFetched(msg)
@@ -408,6 +422,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	case approveAllMsg:
 		commands := m.handleApproveAll(msg)
+		cmds = append(cmds, commands...)
+	case retryAllMsg:
+		commands := m.handleRetryAll(msg)
 		cmds = append(cmds, commands...)
 	case getWorkflowStepApprovalContentsMsg:
 		commands := m.handleGetWorkflowStepApprovalContents(msg)
@@ -512,6 +529,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.setWorkflowApprovalConf()
 			}
+		case key.Matches(msg, m.keys.ToggleRetryAll):
+			m.toggleAutoRetryAll()
 
 		case key.Matches(msg, m.keys.Tab):
 			m.toggleFocus()
