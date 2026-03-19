@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
@@ -63,7 +62,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         s.WorkflowStepID,
 		StepTargetID:   runner.ID,
-		StepTargetType: plugins.TableName(nil, runner),
+		StepTargetType: "runners",
 	}); err != nil {
 		return errors.Wrap(err, "unable to update workflow step target")
 	}

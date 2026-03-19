@@ -6,9 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -44,16 +42,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	sreq := signals.RequestSignal{
-		Signal: &signals.Signal{
-			Type:               signals.OperationRerunFlow,
-			InstallWorkflowID:  s.InstallWorkflowID,
-			RerunConfiguration: s.RerunConfiguration,
-		},
-		EventLoopRequest: eventloop.EventLoopRequest{
-			ID: s.InstallID,
-		},
-	}
-
-	return worker.AwaitRerunFlow(ctx, sreq)
+	return s.rerunFlow(ctx)
 }

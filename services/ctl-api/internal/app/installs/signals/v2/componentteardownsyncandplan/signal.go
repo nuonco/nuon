@@ -442,6 +442,10 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
-	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: message,
+		SkipStatusSync:    true,
+	})
 }

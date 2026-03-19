@@ -239,16 +239,18 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	// TODO: GenerateStateRequest doesn't have DeployID field - needs InstallID
-	// _, _ = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
-	// 	InstallID: s.InstallID,
-	// })
-
-	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
-	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: message,
+	})
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	// TODO: AwaitUpdateDeployStatusByDeployID removed - replace with AwaitUpdateDeployStatus
-	// _ = activities.AwaitUpdateDeployStatusByDeployID(ctx, deployID, status, message)
+	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deployID,
+		Status:            status,
+		StatusDescription: message,
+		SkipStatusSync:    true,
+	})
 }
