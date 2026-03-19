@@ -14,17 +14,8 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import {
-  createBranchConfig,
-  updateBranch,
-  getVCSConnectionRepos,
-  type TVCSConnectionRepo,
-} from '@/lib'
-import {
-  getConnectionBranches,
-  type Branch,
-} from '@/lib/ctl-api/vcs/get-connection-branches'
-import type { TAppBranch, TAppBranchConfig } from '@/types'
+import { createBranchConfig, updateBranch, getVCSConnectionRepos, getConnectionBranches } from '@/lib'
+import type { TAppBranch, TAppBranchConfig, TVCSConnectionRepo, TVCSBranch } from '@/types'
 
 interface IEditBranchNameModal extends IModal {
   branch: TAppBranch
@@ -57,7 +48,7 @@ export const EditBranchNameModal = ({
   )
   const [repos, setRepos] = useState<TVCSConnectionRepo[]>([])
   const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(null)
-  const [branches, setBranches] = useState<Branch[]>([])
+  const [branches, setBranches] = useState<TVCSBranch[]>([])
   const [selectedBranch, setSelectedBranch] = useState(
     currentConfig?.connected_github_vcs_config?.branch ||
       currentConfig?.public_git_vcs_config?.branch ||
@@ -343,7 +334,7 @@ export const EditBranchNameModal = ({
         {useVcs && (
           <>
             {vcsConnections.length === 0 ? (
-              <Banner theme="warning">
+              <Banner theme="warn">
                 No VCS connections found. Please connect your GitHub account first.
               </Banner>
             ) : (
@@ -379,7 +370,7 @@ export const EditBranchNameModal = ({
                 ) : reposError ? (
                   <Banner theme="error">Failed to load repositories</Banner>
                 ) : repos.length === 0 ? (
-                  <Banner theme="warning">
+                  <Banner theme="warn">
                     No connected repositories found. Please update your GitHub connection
                     to grant access to repositories.
                   </Banner>
@@ -497,9 +488,9 @@ export const EditBranchButton = ({
   const { addModal } = useSurfaces()
   const modal = <EditBranchNameModal branch={branch} currentConfig={currentConfig} onSuccess={onSuccess} />
   return (
-    <Button variant="secondary" size="sm" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="Edit" size={16} />
-      Edit
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
+      <Icon variant="PencilSimpleLineIcon" size={16} />
+      Edit branch
     </Button>
   )
 }

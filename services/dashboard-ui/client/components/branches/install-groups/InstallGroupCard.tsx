@@ -1,8 +1,8 @@
 import { useDroppable } from '@dnd-kit/core'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
-import { Button } from '@/components/common/Button'
 import { cn } from '@/utils/classnames'
 import type { TInstall, TAppBranchInstallGroup } from '@/types'
 
@@ -33,9 +33,9 @@ export const InstallGroupCard = ({
       className={cn(
         'p-4 rounded-lg border-2 transition-all',
         {
-          'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20': isSelected,
-          'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500': !isSelected,
-          'border-green-400 dark:border-green-500 bg-green-50 dark:bg-green-900/20': isOver,
+          'border-primary-600 dark:border-primary-500 bg-primary-900/10 dark:bg-primary-900/20': isSelected,
+          'border-cool-grey-300 dark:border-dark-grey-600 bg-white dark:bg-dark-grey-800 hover:border-cool-grey-400 dark:hover:border-dark-grey-500': !isSelected,
+          'border-green-500 dark:border-green-400 bg-green-900/10': isOver,
         }
       )}
     >
@@ -45,13 +45,13 @@ export const InstallGroupCard = ({
         </Text>
         <div className="flex items-center gap-2">
           {group.requires_approval && (
-            <Badge theme="warning" size="sm">
-              Requires Approval
+            <Badge theme="warn" size="sm">
+              Requires approval
             </Badge>
           )}
           {group.rollback_on_failure && (
             <Badge theme="info" size="sm">
-              Rollback on Failure
+              Rollback on failure
             </Badge>
           )}
           <Text variant="subtext" theme="neutral">
@@ -63,17 +63,17 @@ export const InstallGroupCard = ({
       <div className="space-y-2">
         {installs.length > 0 ? (
           installs.slice(0, 5).map((install) => (
-            <button
+            <Button
               key={install.id}
+              variant="ghost"
               onClick={onClick}
               className={cn(
                 'w-full flex items-center justify-between gap-3 px-4 py-2.5',
-                'rounded-md border-2 transition-all text-left',
-                'cursor-pointer select-none',
+                'rounded-md border-2 transition-all',
                 'hover:-translate-y-0.5 hover:shadow-md',
                 {
-                  'border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30': isSelected,
-                  'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900': !isSelected,
+                  'border-primary-400 dark:border-primary-600 bg-primary-900/10 dark:bg-primary-900/30': isSelected,
+                  'border-cool-grey-200 dark:border-dark-grey-700 bg-cool-grey-50 dark:bg-dark-grey-900': !isSelected,
                 }
               )}
             >
@@ -85,7 +85,7 @@ export const InstallGroupCard = ({
               </div>
               <Button
                 variant="ghost"
-                size="sm"
+                size="xs"
                 onClick={(e) => {
                   e.stopPropagation()
                   onRemoveInstall(install.id)
@@ -93,10 +93,10 @@ export const InstallGroupCard = ({
               >
                 <Icon variant="X" size={14} />
               </Button>
-            </button>
+            </Button>
           ))
         ) : (
-          <div className="px-4 py-8 bg-gray-50 dark:bg-gray-900 rounded-md text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+          <div className="px-4 py-8 dark:bg-dark-grey-900/50 rounded-md text-center border-2 border-dashed dark:border-dark-grey-600">
             <Text variant="subtext" theme="neutral">
               Drag installs here to add them to this group
             </Text>
@@ -104,7 +104,7 @@ export const InstallGroupCard = ({
         )}
 
         {installs.length > 5 && (
-          <div className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-md text-center">
+          <div className="px-4 py-2.5 dark:bg-dark-grey-800 rounded-md text-center">
             <Text variant="subtext">+{installs.length - 5} more</Text>
           </div>
         )}

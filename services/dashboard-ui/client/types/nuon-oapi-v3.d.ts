@@ -76,6 +76,7 @@ export interface paths {
   "/v1/action-workflows/{action_workflow_id}/configs": {
     /**
      * get action workflow for an app
+     * @deprecated
      * @description Returns all action workflow configurations.
      */
     get: operations["GetActionWorkflowConfigs"];
@@ -140,6 +141,7 @@ export interface paths {
   "/v1/apps/{app_id}/action-workflows/{action_workflow_id}": {
     /**
      * get an app action workflow
+     * @deprecated
      * @description Return an app action workflow by id.
      */
     get: operations["GetAppActionWorkflow"];
@@ -210,12 +212,48 @@ export interface paths {
     /** @description Cancel a runner job. */
     post: operations["CreateAppBranch"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}": {
+    /**
+     * get an app branch
+     * @description Get an app branch by ID. Use `latest_config=true` query parameter to include only the most recent config with its VCS settings and install groups.
+     */
+    get: operations["GetAppBranch"];
+    /**
+     * update app branch metadata
+     * @description Updates app branch metadata (name only). To update configuration, create a new AppBranchConfig via POST /branches/:id/configs
+     */
+    patch: operations["UpdateAppBranch"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/configs": {
     /**
      * get app branch app configs
      * @description Returns all branch configurations for the provided app.
      */
     get: operations["GetAppBranchAppConfigs"];
+    /**
+     * create an app branch config
+     * @description Create a branch configuration for an app.
+     */
+    post: operations["CreateAppBranchConfig"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/latest-config": {
+    /**
+     * get latest app branch config
+     * @description Returns the latest AppBranchConfig ordered by config_number (descending)
+     */
+    get: operations["GetAppBranchLatestConfig"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs": {
+    /**
+     * get app branch workflow runs
+     * @description Returns workflow runs for an app branch ordered by creation time (descending)
+     */
+    get: operations["GetAppBranchRuns"];
+    /**
+     * trigger app branch workflow run
+     * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
+     */
+    post: operations["TriggerAppBranchRun"];
   };
   "/v1/apps/{app_id}/break-glass-configs": {
     /** @description Create a break glass config for an app. */
@@ -386,7 +424,10 @@ export interface paths {
      * @description Fetch an app config by id.
      */
     get: operations["GetAppConfig"];
-    /** @description Update an app config, setting status and state. */
+    /**
+     * @deprecated
+     * @description Update an app config, setting status and state.
+     */
     patch: operations["UpdateAppConfig"];
   };
   "/v1/apps/{app_id}/config/{app_config_id}/graph": {
@@ -560,13 +601,6 @@ export interface paths {
      */
     get: operations["GetAppPoliciesConfig"];
   };
-  "/v1/apps/{app_id}/releases": {
-    /**
-     * get all releases for an app
-     * @description Returns all releases for the provided app.
-     */
-    get: operations["GetAppReleases"];
-  };
   "/v1/apps/{app_id}/runner-configs": {
     /**
      * get app runner configs
@@ -612,6 +646,16 @@ export interface paths {
      * @description Returns the most recent sandbox config for the provided app.
      */
     get: operations["GetAppSandboxLatestConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox/builds": {
+    /** get app sandbox builds */
+    get: operations["GetAppSandboxBuilds"];
+    /** create app sandbox build */
+    post: operations["CreateAppSandboxBuild"];
+  };
+  "/v1/apps/{app_id}/sandbox/builds/{build_id}": {
+    /** get app sandbox build */
+    get: operations["GetAppSandboxBuild"];
   };
   "/v1/apps/{app_id}/secret": {
     /**
@@ -719,6 +763,7 @@ export interface paths {
   "/v1/components/{component_id}": {
     /**
      * get a component
+     * @deprecated
      * @description Return a component by id.
      */
     get: operations["GetComponent"];
@@ -846,18 +891,6 @@ export interface paths {
      */
     get: operations["GetComponentDependents"];
   };
-  "/v1/components/{component_id}/releases": {
-    /**
-     * get all releases for a component
-     * @description Returns all releases for the provided component.
-     */
-    get: operations["GetComponentReleases"];
-    /**
-     * create a release
-     * @description Create a release for a component.
-     */
-    post: operations["CreateComponentRelease"];
-  };
   "/v1/general/cli-config": {
     /**
      * Get config for cli
@@ -974,6 +1007,7 @@ export interface paths {
   "/v1/installs/sandbox-runs/{run_id}": {
     /**
      * get an install sandbox run
+     * @deprecated
      * @description Return a sandbox run for an install by id.
      */
     get: operations["GetInstallSandboxRun"];
@@ -1051,6 +1085,7 @@ export interface paths {
   "/v1/installs/{install_id}/action-workflows/{action_workflow_id}": {
     /**
      * get an install action workflow
+     * @deprecated
      * @description Get an install action workflow.
      */
     get: operations["GetInstallActionWorkflow"];
@@ -1174,6 +1209,10 @@ export interface paths {
      * @description Returns recent workflow runs for an install action workflow.
      */
     get: operations["GetInstallActionRecentRuns"];
+  };
+  "/v1/installs/{install_id}/app-permissions-config": {
+    /** get app permissions config for an install with provisioning status */
+    get: operations["GetInstallAppPermissionsConfig"];
   };
   "/v1/installs/{install_id}/audit_logs": {
     /**
@@ -1365,6 +1404,7 @@ export interface paths {
   "/v1/installs/{install_id}/deploys/latest": {
     /**
      * get an install's latest deploy
+     * @deprecated
      * @description Returns the most recent deployment for an install.
      */
     get: operations["GetInstallLatestDeploy"];
@@ -1496,6 +1536,10 @@ export interface paths {
      * @description Retry a failed workflow execution.
      */
     post: operations["RetryWorkflow"];
+  };
+  "/v1/installs/{install_id}/runner-bootstrap-token": {
+    /** create a bootstrap token for an install's runner */
+    post: operations["CreateRunnerBootstrapToken"];
   };
   "/v1/installs/{install_id}/runner-group": {
     /**
@@ -1717,20 +1761,6 @@ export interface paths {
      */
     get: operations["GetOrgFeatures"];
   };
-  "/v1/releases/{release_id}": {
-    /**
-     * get a release
-     * @description Return a release by id.
-     */
-    get: operations["GetRelease"];
-  };
-  "/v1/releases/{release_id}/steps": {
-    /**
-     * get a release's steps
-     * @description Return a release by id.
-     */
-    get: operations["GetReleaseSteps"];
-  };
   "/v1/runner-jobs/{runner_job_id}": {
     /**
      * get runner job
@@ -1871,8 +1901,12 @@ export interface paths {
     /** fetch authentication token for an install runner via the mng process */
     post: operations["FetchRunnerTokenMng"];
   };
+  "/v1/runners/{runner_id}/mng/restart": {
+    /** restart the runner install process via the mng process */
+    post: operations["RestartRunnerInstall"];
+  };
   "/v1/runners/{runner_id}/mng/shutdown": {
-    /** shut down an install runner management process */
+    /** shut down an install runner's mng process. does not shut down the install runner process. */
     post: operations["ShutDownRunnerMng"];
   };
   "/v1/runners/{runner_id}/mng/shutdown-vm": {
@@ -1880,7 +1914,7 @@ export interface paths {
     post: operations["MngVMShutDown"];
   };
   "/v1/runners/{runner_id}/mng/update": {
-    /** update an install runner via the mng process */
+    /** update an install runner via the mng process. this is practically a restart. */
     post: operations["UpdateRunnerMng"];
   };
   "/v1/runners/{runner_id}/prune-tokens": {
@@ -1929,6 +1963,7 @@ export interface paths {
   "/v1/terraform-workspace": {
     /**
      * create terraform workspace
+     * @deprecated
      * @description Create a terraform workspace.
      */
     post: operations["CreateTerraformWorkspace"];
@@ -2042,6 +2077,13 @@ export interface paths {
      */
     delete: operations["DeleteVCSConnection"];
   };
+  "/v1/vcs/connections/{connection_id}/branches": {
+    /**
+     * List branches for a repository
+     * @description Returns list of branches for the specified repository
+     */
+    get: operations["GetVCSConnectionRepoBranches"];
+  };
   "/v1/vcs/connections/{connection_id}/check-status": {
     /**
      * check the real-time status of a VCS connection
@@ -2121,6 +2163,10 @@ export interface paths {
         };
       };
     };
+  };
+  "/v1/workflows/pending-approvals": {
+    /** get all pending workflow step approvals for the org */
+    get: operations["GetOrgPendingApprovals"];
   };
   "/v1/workflows/{workflow_id}": {
     /**
@@ -2277,6 +2323,7 @@ export interface components {
       component_dependency_ids?: string[];
       created_at?: string;
       created_by_id?: string;
+      enable_kube_config?: components["schemas"]["sql.NullBool"];
       id?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
@@ -2370,6 +2417,7 @@ export interface components {
       name?: string;
       notifications_config?: components["schemas"]["app.NotificationsConfig"];
       org_id?: string;
+      queue_id?: string;
       runner_config?: components["schemas"]["app.AppRunnerConfig"];
       runner_type?: string;
       sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
@@ -2384,6 +2432,8 @@ export interface components {
       contents?: string;
       created_at?: string;
       created_by_id?: string;
+      gcp_permissions?: string[];
+      gcp_predefined_role?: string;
       id?: string;
       managed_policy_name?: string;
       name?: string;
@@ -2392,6 +2442,7 @@ export interface components {
     };
     "app.AppAWSIAMRoleConfig": {
       app_config_id?: string;
+      cloud_platform?: string;
       cloudformation_param_name?: string;
       cloudformation_stack_name?: string;
       created_at?: string;
@@ -2410,14 +2461,81 @@ export interface components {
     };
     "app.AppBranch": {
       app_id?: string;
-      connected_github_vcs_config_id?: string;
+      configs?: components["schemas"]["app.AppBranchConfig"][];
       created_at?: string;
       created_by_id?: string;
       id?: string;
       name?: string;
       org_id?: string;
+      queue?: components["schemas"]["app.Queue"];
       updated_at?: string;
       workflows?: components["schemas"]["app.Workflow"][];
+    };
+    "app.AppBranchConfig": {
+      action_ids?: string[];
+      app_branch_id?: string;
+      component_ids?: string[];
+      /** @description generated view field */
+      config_number?: number;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
+      org_id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      workflows?: components["schemas"]["app.Workflow"][];
+    };
+    "app.AppBranchInstallGroup": {
+      app_branch_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_ids?: string[];
+      max_parallel?: number;
+      name?: string;
+      order?: number;
+      org_id?: string;
+      requires_approval?: boolean;
+      rollback_on_failure?: boolean;
+      updated_at?: string;
+    };
+    "app.AppBranchRun": {
+      app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_config?: components["schemas"]["app.AppBranchConfig"];
+      /** @description AppConfigID is the app config that was created/synced during this run */
+      app_config_id?: string;
+      /**
+       * @description CommitSHA is the VCS commit that triggered or is associated with this run
+       * DEPRECATED: Use VCSConnectionCommit relationship instead
+       */
+      commit_sha?: string;
+      /** @description CompletedAt tracks when execution finished */
+      completed_at?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      /** @description ErrorMessage stores any error that occurred during execution */
+      error_message?: string;
+      /** @description Force indicates if this run was forced (bypassing change detection) */
+      force?: boolean;
+      id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      /** @description LogStreamID is the log stream created during this run for event tracking */
+      log_stream_id?: string;
+      /** @description QueueSignal is the signal that was enqueued to trigger this run */
+      queue_signal?: components["schemas"]["app.QueueSignal"];
+      /** @description StartedAt tracks when execution actually began */
+      started_at?: string;
+      /**
+       * @description Status tracks the current state of the run
+       * Values: pending, running, success, failed, cancelled
+       */
+      status?: string;
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      workflow?: components["schemas"]["app.Workflow"];
     };
     "app.AppBreakGlassConfig": {
       app_config_id?: string;
@@ -2430,6 +2548,7 @@ export interface components {
       updated_at?: string;
     };
     "app.AppConfig": {
+      action_ids?: string[];
       action_workflow_configs?: components["schemas"]["app.ActionWorkflowConfig"][];
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_id?: string;
@@ -2443,6 +2562,7 @@ export interface components {
       created_by_id?: string;
       id?: string;
       input?: components["schemas"]["app.AppInputConfig"];
+      intermediate_config?: components["schemas"]["blobstore.Blob"];
       operation_role_config?: components["schemas"]["app.AppOperationRoleConfig"];
       org_id?: string;
       permissions?: components["schemas"]["app.AppPermissionsConfig"];
@@ -2599,7 +2719,24 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerConfigHelmDriverType": "secret" | "configmap" | "";
     /** @enum {string} */
-    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure";
+    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure" | "gcp";
+    "app.AppSandboxBuild": {
+      app_config_id?: string;
+      app_id?: string;
+      app_sandbox_config_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      vcs_connection_commit_id?: string;
+    };
     "app.AppSandboxConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -2716,7 +2853,7 @@ export interface components {
       subscription_tenant_id?: string;
     };
     /** @enum {string} */
-    "app.CloudPlatform": "aws" | "azure" | "unknown";
+    "app.CloudPlatform": "aws" | "azure" | "gcp" | "unknown";
     "app.CloudPlatformRegion": {
       display_name?: string;
       icon?: string;
@@ -2760,6 +2897,8 @@ export interface components {
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
       log_stream?: components["schemas"]["app.LogStream"];
       policy_reports?: components["schemas"]["app.PolicyReport"][];
+      /** @description QueueSignal is the signal enqueued when this build was created via the queue path */
+      queue_signal?: components["schemas"]["app.QueueSignal"];
       releases?: components["schemas"]["app.ComponentRelease"][];
       /** @description runner details */
       runner_job?: components["schemas"]["app.RunnerJob"];
@@ -2850,6 +2989,7 @@ export interface components {
       created_by_id?: string;
       directory?: string;
       id?: string;
+      path_filter?: string;
       repo?: string;
       repo_name?: string;
       repo_owner?: string;
@@ -2896,6 +3036,36 @@ export interface components {
       image_url?: string;
       tag?: string;
       updated_at?: string;
+    };
+    "app.GCPAccount": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      project_id?: string;
+      region?: string;
+      updated_at?: string;
+    };
+    "app.GCPStackOutputs": {
+      break_glass_sa_emails?: {
+        [key: string]: string;
+      };
+      custom_sa_emails?: {
+        [key: string]: string;
+      };
+      deprovision_sa_email?: string;
+      install_inputs?: {
+        [key: string]: string;
+      };
+      maintenance_sa_email?: string;
+      network_id?: string;
+      network_name?: string;
+      private_subnet_name?: string;
+      project_id?: string;
+      provision_sa_email?: string;
+      public_subnet_name?: string;
+      region?: string;
+      runner_service_account_email?: string;
+      runner_subnet_name?: string;
     };
     "app.HelmChart": {
       created_at?: string;
@@ -2985,6 +3155,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       drifted_objects?: components["schemas"]["app.DriftedObject"][];
+      gcp_account?: components["schemas"]["app.GCPAccount"];
       id?: string;
       install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
       install_components?: components["schemas"]["app.InstallComponent"][];
@@ -3033,6 +3204,7 @@ export interface components {
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
+      enable_kube_config?: components["schemas"]["sql.NullBool"];
       /** @description after query */
       execution_time?: number;
       id?: string;
@@ -3241,6 +3413,7 @@ export interface components {
       data_contents?: {
         [key: string]: unknown;
       };
+      gcp?: components["schemas"]["app.GCPStackOutputs"];
       id?: string;
       install_stack_id?: string;
       install_version_run_id?: string;
@@ -3560,9 +3733,76 @@ export interface components {
       created_by_id?: string;
       directory?: string;
       id?: string;
+      path_filter?: string;
       /** @description actual configuration */
       repo?: string;
       updated_at?: string;
+    };
+    "app.Queue": {
+      created_at?: string;
+      created_by_id?: string;
+      emitters?: components["schemas"]["app.QueueEmitter"][];
+      id?: string;
+      max_depth?: number;
+      max_in_flight?: number;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      queue_signal?: components["schemas"]["app.QueueSignal"][];
+      updated_at?: string;
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    "app.QueueEmitter": {
+      created_at?: string;
+      created_by_id?: string;
+      /**
+       * @description Schedule configuration
+       * For cron mode: cron expression (e.g., "0 * * * *")
+       */
+      cron_schedule?: string;
+      description?: string;
+      emit_count?: number;
+      /** @description For scheduled mode: whether the signal has been fired */
+      fired?: boolean;
+      id?: string;
+      last_emitted_at?: string;
+      /** @description Emitter mode: "cron" for recurring, "scheduled" for one-shot */
+      mode?: components["schemas"]["app.QueueEmitterMode"];
+      /** @description Emitter identity */
+      name?: string;
+      next_emit_at?: string;
+      org_id?: string;
+      /** @description Many-to-one: each emitter belongs to exactly one queue */
+      queue_id?: string;
+      /** @description For scheduled mode: the time to fire the signal */
+      scheduled_at?: string;
+      signal_template?: components["schemas"]["signaldb.SignalData"];
+      /** @description Signal template - the signal to emit on each tick */
+      signal_type?: string;
+      /** @description Runtime state using shared CompositeStatus */
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      /** @description Workflow reference for the emitter's cron workflow */
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    /** @enum {string} */
+    "app.QueueEmitterMode": "cron" | "scheduled";
+    "app.QueueSignal": {
+      created_at?: string;
+      created_by_id?: string;
+      /** @description Optional: if this signal was emitted by an emitter */
+      emitter_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      queue?: components["schemas"]["app.Queue"];
+      queue_id?: string;
+      signal?: components["schemas"]["signaldb.SignalData"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      type?: string;
+      updated_at?: string;
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
     "app.Role": {
       createdBy?: components["schemas"]["app.Account"];
@@ -3774,7 +4014,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "noop-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
+    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
     "app.RunnerOperation": {
       created_at?: string;
       created_by_id?: string;
@@ -3794,7 +4034,7 @@ export interface components {
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     /** @enum {string} */
-    "app.StackType": "aws-cloudformation";
+    "app.StackType": "aws-cloudformation" | "gcp-terraform";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
@@ -3920,6 +4160,9 @@ export interface components {
       created_by_id?: string;
       id?: string;
       message?: string;
+      /** @description Polymorphic ownership - references VCS config that owns this commit */
+      owner_id?: string;
+      owner_type?: string;
       sha?: string;
       updated_at?: string;
       vcs_connection_id?: string;
@@ -3932,6 +4175,7 @@ export interface components {
       updated_at?: string;
     };
     "app.Workflow": {
+      app_branch_runs?: components["schemas"]["app.AppBranchRun"][];
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -4055,6 +4299,7 @@ export interface components {
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
     "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision";
+    "blobstore.Blob": Record<string, never>;
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
@@ -4090,7 +4335,7 @@ export interface components {
       repository?: string;
     };
     /** @enum {string} */
-    "configs.OCIRegistryType": "ecr" | "acr" | "private_oci" | "public_oci";
+    "configs.OCIRegistryType": "ecr" | "acr" | "gar" | "private_oci" | "public_oci";
     "credentials.AssumeRoleConfig": {
       role_arn: string;
       session_duration_seconds?: number;
@@ -4206,6 +4451,11 @@ export interface components {
       service_principal?: components["schemas"]["credentials.ServicePrincipalCredentials"];
       use_default?: boolean;
     };
+    "github_com_nuonco_nuon_pkg_gcp_credentials.Config": {
+      impersonate_service_account?: string;
+      project_id?: string;
+      region?: string;
+    };
     "github_com_nuonco_nuon_pkg_types_state.State": {
       actions?: components["schemas"]["state.ActionsState"];
       app?: components["schemas"]["state.AppState"];
@@ -4227,11 +4477,24 @@ export interface components {
       /** @description loaded from the database but not part of the state itself */
       stale_at?: string;
     };
+    "helpers.ConnectedGithubVCSConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      pathFilter?: string;
+      repo: string;
+    };
     "helpers.CreateInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
     };
     "helpers.InstallMetadata": {
       managed_by?: string;
+    };
+    "helpers.PublicGitVCSConfigRequest": {
+      branch: string;
+      directory: string;
+      pathFilter?: string;
+      repo: string;
     };
     "iam.StaticCredentials": {
       access_key_id?: string;
@@ -4258,6 +4521,7 @@ export interface components {
       env_vars?: {
         [key: string]: string;
       };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       /** @description ID is the ID of the EKS cluster */
       id?: string;
       /** @description If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token */
@@ -4290,11 +4554,13 @@ export interface components {
         [key: string]: string;
       };
       aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       builtin_env_vars?: {
         [key: string]: string;
       };
       /** @description optional fields based on the configuration */
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       id?: string;
       install_id?: string;
       override_env_vars?: {
@@ -4333,8 +4599,6 @@ export interface components {
       build_plan?: components["schemas"]["plantypes.BuildPlan"];
       deploy_plan?: components["schemas"]["plantypes.DeployPlan"];
       fetch_image_metadata_plan?: components["schemas"]["plantypes.FetchImageMetadataPlan"];
-      /** @description Auth for cloud providers */
-      plan_auth?: components["schemas"]["plantypes.PlanAuth"];
       sandbox_run_plan?: components["schemas"]["plantypes.SandboxRunPlan"];
       sync_oci_plan?: components["schemas"]["plantypes.SyncOCIPlan"];
       sync_secrets_plan?: components["schemas"]["plantypes.SyncSecretsPlan"];
@@ -4396,8 +4660,12 @@ export interface components {
       valuesFiles?: string[];
     };
     "plantypes.HelmDeployPlan": {
+      /** @description Auth for cloud providers */
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
       create_namespace?: boolean;
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       helm_chart_id?: string;
       /**
        * @description NOTE(jm): these fields should probably just come from the app config, however we keep them around for
@@ -4437,7 +4705,11 @@ export interface components {
       source_type?: string;
     };
     "plantypes.KubernetesManifestDeployPlan": {
+      /** @description Auth for cloud providers */
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       /**
        * @description Manifest is populated at runtime from the OCI artifact.
        * This field is no longer set during plan creation - it's populated by the runner
@@ -4482,10 +4754,6 @@ export interface components {
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
     };
-    "plantypes.PlanAuth": {
-      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
-      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
-    };
     "plantypes.SandboxMode": {
       enabled?: boolean;
       helm?: components["schemas"]["plantypes.HelmSandboxMode"];
@@ -4507,6 +4775,7 @@ export interface components {
       env_vars?: {
         [key: string]: string;
       };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       git_source?: components["schemas"]["plantypes.GitSource"];
       hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
       install_id?: string;
@@ -4558,6 +4827,7 @@ export interface components {
       env_vars?: {
         [key: string]: string;
       };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
       plan_json?: number[];
       policies?: {
@@ -4591,10 +4861,14 @@ export interface components {
     "refs.RefType": "sandbox" | "install_stack" | "component" | "inputs" | "install_inputs" | "secrets" | "actions";
     "service.AppAWSIAMPolicyConfig": {
       contents?: string;
+      gcp_permissions?: string[];
+      gcp_predefined_role?: string;
       managed_policy_name?: string;
       name?: string;
     };
     "service.AppAWSIAMRoleConfig": {
+      /** @enum {string} */
+      cloud_platform?: "aws" | "gcp";
       description: string;
       display_name: string;
       name: string;
@@ -4674,6 +4948,9 @@ export interface components {
     "service.AvailableRolesResponse": {
       roles?: components["schemas"]["service.AvailableRole"][];
     };
+    "service.Branch": {
+      name?: string;
+    };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
       auth_audience?: string;
@@ -4699,16 +4976,11 @@ export interface components {
       gitRef?: string;
       repo: string;
     };
-    "service.ConnectedGithubVCSSandboxConfigRequest": {
-      branch?: string;
-      directory: string;
-      gitRef?: string;
-      repo: string;
-    };
     "service.CreateActionWorkflowConfigRequest": {
       app_config_id: string;
       break_glass_role_arn?: string;
       dependencies?: string[];
+      enable_kube_config?: boolean | null;
       references?: string[];
       role?: string;
       steps: components["schemas"]["service.CreateActionWorkflowConfigStepRequest"][];
@@ -4734,6 +5006,7 @@ export interface components {
     };
     "service.CreateAdHocActionRequest": {
       command?: string;
+      enable_kube_config?: boolean | null;
       env_vars?: {
         [key: string]: string;
       };
@@ -4757,8 +5030,12 @@ export interface components {
     "service.CreateAppActionWorkflowRequest": {
       name?: string;
     };
+    "service.CreateAppBranchConfigRequest": {
+      connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
+      install_groups?: components["schemas"]["service.InstallGroupRequest"][];
+      public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+    };
     "service.CreateAppBranchRequest": {
-      connected_github_vcs_config_id: string;
       name: string;
     };
     "service.CreateAppBreakGlassConfigRequest": {
@@ -4812,7 +5089,7 @@ export interface components {
     };
     "service.CreateAppSandboxConfigRequest": {
       app_config_id?: string;
-      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSSandboxConfigRequest"];
+      connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       drift_schedule?: string;
       env_vars: {
         [key: string]: string;
@@ -4820,7 +5097,7 @@ export interface components {
       operation_roles?: {
         [key: string]: string;
       };
-      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSSandboxConfigRequest"];
+      public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
       references?: string[];
       terraform_version: string;
       variables: {
@@ -4848,15 +5125,6 @@ export interface components {
     "service.CreateComponentBuildRequest": {
       git_ref?: string;
       use_latest?: boolean;
-    };
-    "service.CreateComponentReleaseRequest": {
-      auto_build?: boolean;
-      build_id?: string;
-      install_ids?: string[];
-      strategy?: {
-        delay?: string;
-        installs_per_step?: number;
-      };
     };
     "service.CreateComponentRequest": {
       dependencies?: string[];
@@ -4966,6 +5234,10 @@ export interface components {
       azure_account?: {
         location?: string;
       };
+      gcp_account?: {
+        project_id?: string;
+        region?: string;
+      };
       inputs?: {
         [key: string]: string;
       };
@@ -4980,6 +5252,10 @@ export interface components {
       };
       azure_account?: {
         location?: string;
+      };
+      gcp_account?: {
+        project_id?: string;
+        region?: string;
       };
       inputs?: {
         [key: string]: string;
@@ -5033,11 +5309,15 @@ export interface components {
     };
     "service.CreateOrgRequest": {
       name: string;
-      /** @description These fields are used to control the behaviour of the org. */
+      tags?: string[];
       use_sandbox_mode?: boolean;
     };
     "service.CreateOrgUserRequest": {
       user_id?: string;
+    };
+    "service.CreateRunnerBootstrapTokenResponse": {
+      expires_at?: string;
+      token?: string;
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
@@ -5105,6 +5385,42 @@ export interface components {
       repo_url: string;
       version?: string;
     };
+    "service.InstallAppPermissionsConfigResponse": {
+      break_glass_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
+      custom_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
+      deprovision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+      maintenance_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+      provision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+    };
+    "service.InstallGroupRequest": {
+      install_ids?: string[];
+      max_parallel?: number;
+      name: string;
+      order?: number;
+      requires_approval?: boolean;
+      rollback_on_failure?: boolean;
+    };
+    "service.InstallPermissionsRoleStatus": {
+      app_config_id?: string;
+      arn?: string;
+      cloud_platform?: string;
+      cloudformation_param_name?: string;
+      cloudformation_stack_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      enabled?: boolean;
+      id?: string;
+      name?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      permissions_boundary?: string;
+      policies?: components["schemas"]["app.AppAWSIAMPolicyConfig"][];
+      type?: components["schemas"]["app.AWSIAMRoleType"];
+      updated_at?: string;
+    };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
     };
@@ -5118,6 +5434,7 @@ export interface components {
       [key: string]: components["schemas"]["app.LatestRunnerHeartBeat"];
     };
     "service.MngFetchTokenRequest": Record<string, never>;
+    "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
     "service.MngVMShutDownRequest": Record<string, never>;
@@ -5138,11 +5455,6 @@ export interface components {
       repo: string;
     };
     "service.PublicGitVCSConfigRequest": {
-      branch: string;
-      directory: string;
-      repo: string;
-    };
-    "service.PublicGitVCSSandboxConfigRequest": {
       branch: string;
       directory: string;
       repo: string;
@@ -5204,8 +5516,17 @@ export interface components {
       plan_only?: boolean;
       role?: string;
     };
+    "service.TriggerAppBranchRunRequest": {
+      /** @description optional - use latest if not provided */
+      config_id?: string;
+      /** @description force run even if no changes detected */
+      force?: boolean;
+    };
     "service.UpdateActionWorkflowRequest": {
       name?: string;
+    };
+    "service.UpdateAppBranchRequest": {
+      name: string;
     };
     "service.UpdateAppConfigInstallsRequest": {
       installIDs?: string[];
@@ -5308,6 +5629,18 @@ export interface components {
       aws_region?: string;
       iam_role_arn?: string;
     };
+    "signaldb.SignalData": {
+      signal?: unknown;
+    };
+    "signaldb.WorkflowRef": {
+      id?: string;
+      namespace?: string;
+    };
+    "sql.NullBool": {
+      bool?: boolean;
+      /** @description Valid is true if Bool is not NULL */
+      valid?: boolean;
+    };
     "state.AWSCloudAccount": {
       region?: string;
     };
@@ -5340,11 +5673,16 @@ export interface components {
     "state.CloudAccount": {
       aws?: components["schemas"]["state.AWSCloudAccount"];
       azure?: components["schemas"]["state.AzureCloudAccount"];
+      gcp?: components["schemas"]["state.GCPCloudAccount"];
     };
     "state.DomainState": {
       internal_domain?: string;
       populated?: boolean;
       public_domain?: string;
+    };
+    "state.GCPCloudAccount": {
+      project_id?: string;
+      region?: string;
     };
     "state.InputsState": {
       inputs?: {
@@ -5923,6 +6261,7 @@ export interface operations {
   };
   /**
    * get action workflow for an app
+   * @deprecated
    * @description Returns all action workflow configurations.
    */
   GetActionWorkflowConfigs: {
@@ -6469,6 +6808,7 @@ export interface operations {
   };
   /**
    * get an app action workflow
+   * @deprecated
    * @description Return an app action workflow by id.
    */
   GetAppActionWorkflow: {
@@ -7133,6 +7473,120 @@ export interface operations {
     };
   };
   /**
+   * get an app branch
+   * @description Get an app branch by ID. Use `latest_config=true` query parameter to include only the most recent config with its VCS settings and install groups.
+   */
+  GetAppBranch: {
+    parameters: {
+      query?: {
+        /** @description include only the latest config */
+        latest_config?: boolean;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update app branch metadata
+   * @description Updates app branch metadata (name only). To update configuration, create a new AppBranchConfig via POST /branches/:id/configs
+   */
+  UpdateAppBranch: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppBranchRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get app branch app configs
    * @description Returns all branch configurations for the provided app.
    */
@@ -7158,6 +7612,234 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.AppConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app branch config
+   * @description Create a branch configuration for an app.
+   */
+  CreateAppBranchConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppBranchConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app branch config
+   * @description Returns the latest AppBranchConfig ordered by config_number (descending)
+   */
+  GetAppBranchLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app branch workflow runs
+   * @description Returns workflow runs for an app branch ordered by creation time (descending)
+   */
+  GetAppBranchRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * trigger app branch workflow run
+   * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
+   */
+  TriggerAppBranchRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.TriggerAppBranchRunRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchRun"];
         };
       };
       /** @description Bad Request */
@@ -8593,7 +9275,10 @@ export interface operations {
       };
     };
   };
-  /** @description Update an app config, setting status and state. */
+  /**
+   * @deprecated
+   * @description Update an app config, setting status and state.
+   */
   UpdateAppConfig: {
     parameters: {
       path: {
@@ -10062,64 +10747,6 @@ export interface operations {
     };
   };
   /**
-   * get all releases for an app
-   * @description Returns all releases for the provided app.
-   */
-  GetAppReleases: {
-    parameters: {
-      query?: {
-        /** @description offset of results to return */
-        offset?: number;
-        /** @description limit of results to return */
-        limit?: number;
-        /** @description page number of results to return */
-        page?: number;
-      };
-      path: {
-        /** @description app ID */
-        app_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.ComponentRelease"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * get app runner configs
    * @description Returns all runner configurations for the provided app.
    */
@@ -10486,6 +11113,137 @@ export interface operations {
       };
       /** @description Forbidden */
       403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app sandbox builds */
+  GetAppSandboxBuilds: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create app sandbox build */
+  CreateAppSandboxBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app sandbox build */
+  GetAppSandboxBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description sandbox build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -11247,6 +12005,7 @@ export interface operations {
   };
   /**
    * get a component
+   * @deprecated
    * @description Return a component by id.
    */
   GetComponent: {
@@ -12171,120 +12930,6 @@ export interface operations {
     };
   };
   /**
-   * get all releases for a component
-   * @description Returns all releases for the provided component.
-   */
-  GetComponentReleases: {
-    parameters: {
-      query?: {
-        /** @description offset of results to return */
-        offset?: number;
-        /** @description limit of results to return */
-        limit?: number;
-        /** @description page number of results to return */
-        page?: number;
-      };
-      path: {
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.ComponentRelease"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * create a release
-   * @description Create a release for a component.
-   */
-  CreateComponentRelease: {
-    parameters: {
-      path: {
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateComponentReleaseRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.ComponentRelease"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * Get config for cli
    * @description Returns CLI configuration and settings.
    */
@@ -12938,6 +13583,7 @@ export interface operations {
   };
   /**
    * get an install sandbox run
+   * @deprecated
    * @description Return a sandbox run for an install by id.
    */
   GetInstallSandboxRun: {
@@ -13544,6 +14190,7 @@ export interface operations {
   };
   /**
    * get an install action workflow
+   * @deprecated
    * @description Get an install action workflow.
    */
   GetInstallActionWorkflow: {
@@ -14180,6 +14827,53 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app permissions config for an install with provisioning status */
+  GetInstallAppPermissionsConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallAppPermissionsConfigResponse"];
         };
       };
       /** @description Bad Request */
@@ -15285,6 +15979,7 @@ export interface operations {
   };
   /**
    * get an install's latest deploy
+   * @deprecated
    * @description Returns the most recent deployment for an install.
    */
   GetInstallLatestDeploy: {
@@ -16275,6 +16970,53 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["service.RetryWorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a bootstrap token for an install's runner */
+  CreateRunnerBootstrapToken: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CreateRunnerBootstrapTokenResponse"];
         };
       };
       /** @description Bad Request */
@@ -17645,114 +18387,6 @@ export interface operations {
     };
   };
   /**
-   * get a release
-   * @description Return a release by id.
-   */
-  GetRelease: {
-    parameters: {
-      path: {
-        /** @description release ID */
-        release_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.ComponentRelease"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * get a release's steps
-   * @description Return a release by id.
-   */
-  GetReleaseSteps: {
-    parameters: {
-      query?: {
-        /** @description offset of results to return */
-        offset?: number;
-        /** @description limit of results to return */
-        limit?: number;
-        /** @description page number of results to return */
-        page?: number;
-      };
-      path: {
-        /** @description release ID */
-        release_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.ComponentReleaseStep"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * get runner job
    * @deprecated
    * @description Return a runner job.
@@ -18730,7 +19364,60 @@ export interface operations {
       };
     };
   };
-  /** shut down an install runner management process */
+  /** restart the runner install process via the mng process */
+  RestartRunnerInstall: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngRestartRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** shut down an install runner's mng process. does not shut down the install runner process. */
   ShutDownRunnerMng: {
     parameters: {
       path: {
@@ -18836,7 +19523,7 @@ export interface operations {
       };
     };
   };
-  /** update an install runner via the mng process */
+  /** update an install runner via the mng process. this is practically a restart. */
   UpdateRunnerMng: {
     parameters: {
       path: {
@@ -19208,6 +19895,7 @@ export interface operations {
   };
   /**
    * create terraform workspace
+   * @deprecated
    * @description Create a terraform workspace.
    */
   CreateTerraformWorkspace: {
@@ -20141,6 +20829,62 @@ export interface operations {
     };
   };
   /**
+   * List branches for a repository
+   * @description Returns list of branches for the specified repository
+   */
+  GetVCSConnectionRepoBranches: {
+    parameters: {
+      query: {
+        /** @description repository owner */
+        owner: string;
+        /** @description repository name */
+        repo: string;
+      };
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.Branch"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * check the real-time status of a VCS connection
    * @description Check the real-time status of a VCS (GitHub App) connection.
    *
@@ -20199,6 +20943,51 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all pending workflow step approvals for the org */
+  GetOrgPendingApprovals: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepApproval"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

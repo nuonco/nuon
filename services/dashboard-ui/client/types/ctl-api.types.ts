@@ -1,5 +1,13 @@
 import { components } from '@/types/nuon-oapi-v3'
 
+// app branches
+export type TAppBranch = components['schemas']['app.AppBranch']
+export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
+export type TAppBranchInstallGroup = components['schemas']['app.AppBranchInstallGroup']
+export type TAppBranchRun = components['schemas']['app.AppBranchRun']
+export type TCreateAppBranchRequest = components['schemas']['service.CreateAppBranchRequest']
+export type TVCSBranch = { name: string }
+
 // app
 export type TApp = components['schemas']['app.App']
 export type TAppConfig = components['schemas']['app.AppConfig']
@@ -61,6 +69,10 @@ export type TAppPoliciesConfig = {
   app_config_id?: string
   policies?: TAppPolicyConfig[]
 }
+
+export type TAppBranch = components['schemas']['app.AppBranch']
+export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
+export type TAppBranchInstallGroup = components['schemas']['app.AppBranchInstallGroup']
 
 // policy reports
 export type TPolicyReport = components['schemas']['app.PolicyReport']

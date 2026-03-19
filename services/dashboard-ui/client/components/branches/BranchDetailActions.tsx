@@ -81,7 +81,6 @@ export const BranchDetailActions = ({
 
       <Button
         variant="primary"
-        size="sm"
         disabled={!currentConfig || triggerRunMutation.isPending}
         onClick={handleTriggerRun}
         title={
