@@ -45,12 +45,14 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		if deployStatus == app.InstallDeployStatusActive {
 			var deploy app.InstallDeploy
 			if err := a.db.WithContext(ctx).First(&deploy, "id = ?", step.StepTargetID).Error; err == nil {
-				a.db.WithContext(ctx).
+				if res := a.db.WithContext(ctx).
 					Model(&app.InstallComponent{ID: deploy.InstallComponentID}).
 					Updates(app.InstallComponent{
 						Status:            app.DeployStatusToComponentStatus(deployStatus),
 						StatusDescription: req.StatusDescription,
-					})
+					}); res.Error != nil {
+					return errors.Wrap(res.Error, "unable to update install component status")
+				}
 			}
 		}
 	case "install_sandbox_runs":

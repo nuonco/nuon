@@ -667,9 +667,14 @@ func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Cont
 		return errors.Wrap(err, "unable to update step target status")
 	}
 
-	activities.AwaitSyncNoopDeployOutputs(ctx, &activities.SyncNoopDeployOutputsRequest{
+	if err := activities.AwaitSyncNoopDeployOutputs(ctx, &activities.SyncNoopDeployOutputsRequest{
 		StepID: step.ID,
-	})
+	}); err != nil {
+		l, _ := log.WorkflowLogger(ctx)
+		if l != nil {
+			l.Warn("unable to sync noop deploy outputs", zap.Error(err))
+		}
+	}
 
 	return nil
 }
