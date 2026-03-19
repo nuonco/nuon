@@ -23,8 +23,8 @@ title: 'Terraform'
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository configuration Configuration for a public repository accessible without authentication | **Optional** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository configuration Configuration for a private repository connected to the Nuon platform | **Optional** | - |
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating | **Optional** | `"0 2 * * *"`, `"*/10 * * * *"` |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
-| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | `"30m"`, `"1h"` |
 | **`var`**<br/>[array](#var) | deprecated: use vars map instead Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead | **Optional** | - |
 | **`env_var`**<br/>[array](#env_var) | deprecated: use env_vars map instead Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead | **Optional** | - |
 

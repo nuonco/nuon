@@ -20,8 +20,8 @@ title: 'Docker Build'
 | **`env_vars`**<br/>object | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | **Optional** | `"GOLANG_VERSION"`, `"NODE_ENV"` |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository containing Dockerfile Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository containing Dockerfile Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). | **Optional** | `"30m"`, `"1h"` |
-| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). | **Optional** | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
 
 ### `operation_roles`
 
