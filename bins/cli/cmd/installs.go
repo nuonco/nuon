@@ -465,6 +465,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	reprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use (shows selector if omitted)")
 	installsCmds.AddCommand(reprovisionInstallSandboxCmd)
 
+	var autoRetry bool
 	workflowsCmd := &cobra.Command{
 		Use:   "workflows",
 		Short: "Manage workflows",
@@ -475,11 +476,12 @@ By default, launches an interactive TUI to view workflows.`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsTUI(cmd.Context(), id, workflowID, PrintJSON)
+			return svc.WorkflowsTUI(cmd.Context(), id, workflowID, PrintJSON, autoRetry)
 		}),
 	}
 	workflowsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	workflowsCmd.Flags().StringVarP(&workflowID, "workflow-id", "w", "", "The ID of a specific workflow to view")
+	workflowsCmd.Flags().BoolVarP(&autoRetry, "auto-retry", "r", false, "Automatically retry failed steps")
 	installsCmds.AddCommand(workflowsCmd)
 
 	workflowsListCmd := &cobra.Command{

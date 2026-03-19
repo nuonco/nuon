@@ -30,7 +30,7 @@ func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, asJS
 	}
 
 	if workflowID != "" && s.cfg.Preview {
-		return s.workflowsTUI(ctx, installID, workflowID)
+		return s.workflowsTUI(ctx, installID, workflowID, false)
 	}
 
 	return nil

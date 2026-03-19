@@ -64,16 +64,30 @@ func (m *model) updateListSpinnerViews() {
 	m.stepsList.SetItems(items)
 }
 
+// hasRetryableCurrentStep returns true when any step is in error and retryable.
+// Mirrors the target selection logic in retryAllCmd.
+func (m *model) hasRetryableCurrentStep() bool {
+	if m.workflow == nil {
+		return false
+	}
+	for _, step := range m.workflow.Steps {
+		if step.Status != nil && step.Status.Status == models.AppStatusError && step.Retryable {
+			return true
+		}
+	}
+	return false
+}
+
 // TODO: put this in a goroutine
-func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
+func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) tea.Cmd {
 	workflow := msg.workflow
 	err := msg.err
 	if err != nil {
 		m.setLogMessage(fmt.Sprintf("[error] failed to fetch data: %s", err), "error")
-		return
+		return nil
 	} else if workflow == nil {
 		m.setLogMessage("something unexpected has taken place", "error")
-		return
+		return nil
 	}
 	m.workflow = workflow
 	if msg.policies != nil {
@@ -118,6 +132,15 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) {
 	m.populateStepDetailView(false)
 	m.loading = false
 
+	if m.autoRetryAll && !m.retryInFlight && m.hasRetryableCurrentStep() {
+		m.retryInFlight = true
+		return m.retryAllCmd
+	}
+	// clear the in-flight flag once the step is no longer in error
+	if m.retryInFlight && !m.hasRetryableCurrentStep() {
+		m.retryInFlight = false
+	}
+	return nil
 }
 
 func (m *model) handleStackFetched(msg stackFetchedMsg) {
@@ -168,6 +191,21 @@ func (m *model) handleApproveAll(msg approveAllMsg) []tea.Cmd {
 		cmds = append(cmds, m.fetchWorkflowCmd)
 	} else {
 		m.setLogMessage("nothing to approve", "warning")
+	}
+	return cmds
+}
+
+func (m *model) handleRetryAll(msg retryAllMsg) []tea.Cmd {
+	cmds := []tea.Cmd{}
+	if msg.err != nil {
+		m.retryInFlight = false // allow a retry attempt on the next poll
+		m.setLogMessage(fmt.Sprintf("retry error: %s", msg.err), "error")
+	}
+	if msg.retried > 0 {
+		m.setLogMessage("retrying from last failed step", "success")
+		cmds = append(cmds, m.fetchWorkflowCmd)
+	} else if msg.err == nil {
+		m.setLogMessage("no retryable failed steps found", "warning")
 	}
 	return cmds
 }

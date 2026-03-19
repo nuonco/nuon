@@ -39,6 +39,7 @@ type keyMap struct {
 	ApproveStep    key.Binding
 	CancelWorkflow key.Binding
 	ApproveAll     key.Binding
+	ToggleRetryAll key.Binding
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -51,6 +52,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.ToggleJson},
 		{k.OpenQuickLink, k.OpenTemplateLink},
 		{k.ApproveAll, k.CancelWorkflow},
+		{k.ToggleRetryAll},
 	}
 }
 
@@ -145,6 +147,10 @@ var keys = keyMap{
 	ApproveAll: key.NewBinding(
 		key.WithKeys("A"),
 		key.WithHelp("A", "approve all"),
+	),
+	ToggleRetryAll: key.NewBinding(
+		key.WithKeys("R"),
+		key.WithHelp("R", "toggle retry all"),
 	),
 	// step detail display options
 	ToggleJson: key.NewBinding(
