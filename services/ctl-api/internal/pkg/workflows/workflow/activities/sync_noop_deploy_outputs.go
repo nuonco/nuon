@@ -61,6 +61,7 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		OrgID:             planJob.OrgID,
 		OwnerID:           planJob.OwnerID,
 		OwnerType:         planJob.OwnerType,
+		LogStreamID:       planJob.LogStreamID,
 		Status:            app.RunnerJobStatusFinished,
 		StatusDescription: "noop apply - outputs synced from plan",
 		Type:              planJob.Type,
