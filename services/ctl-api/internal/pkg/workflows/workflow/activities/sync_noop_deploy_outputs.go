@@ -56,6 +56,7 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 	// Create a finished apply job with the plan's outputs so the deploy
 	// has outputs in the same structure the rest of the system expects.
 	applyJob := &app.RunnerJob{
+		CreatedByID:       planJob.CreatedByID,
 		RunnerID:          planJob.RunnerID,
 		OrgID:             planJob.OrgID,
 		OwnerID:           planJob.OwnerID,
