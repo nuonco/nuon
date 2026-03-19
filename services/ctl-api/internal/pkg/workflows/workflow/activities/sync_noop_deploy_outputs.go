@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -29,7 +30,7 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		return errors.Wrap(err, "unable to get step")
 	}
 
-	if step.StepTargetType != "install_deploys" {
+	if step.StepTargetType != string(app.WorkflowStepTargetTypeInstallDeploys) {
 		return nil
 	}
 
@@ -55,10 +56,12 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 	// Create a finished apply job with the plan's outputs so the deploy
 	// has outputs in the same structure the rest of the system expects.
 	applyJob := &app.RunnerJob{
+		CreatedByID:       planJob.CreatedByID,
 		RunnerID:          planJob.RunnerID,
 		OrgID:             planJob.OrgID,
 		OwnerID:           planJob.OwnerID,
 		OwnerType:         planJob.OwnerType,
+		LogStreamID:       planJob.LogStreamID,
 		Status:            app.RunnerJobStatusFinished,
 		StatusDescription: "noop apply - outputs synced from plan",
 		Type:              planJob.Type,
@@ -70,26 +73,28 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		MaxExecutions:     1,
 	}
 
-	if err := a.db.WithContext(ctx).Create(applyJob).Error; err != nil {
-		return errors.Wrap(err, "unable to create noop apply job")
-	}
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(applyJob).Error; err != nil {
+			return errors.Wrap(err, "unable to create noop apply job")
+		}
 
-	execution := &app.RunnerJobExecution{
-		RunnerJobID: applyJob.ID,
-		Status:      app.RunnerJobExecutionStatusFinished,
-	}
-	if err := a.db.WithContext(ctx).Create(execution).Error; err != nil {
-		return errors.Wrap(err, "unable to create noop apply execution")
-	}
+		execution := &app.RunnerJobExecution{
+			RunnerJobID: applyJob.ID,
+			Status:      app.RunnerJobExecutionStatusFinished,
+		}
+		if err := tx.Create(execution).Error; err != nil {
+			return errors.Wrap(err, "unable to create noop apply execution")
+		}
 
-	executionOutputs := &app.RunnerJobExecutionOutputs{
-		RunnerJobExecutionID: execution.ID,
-		OrgID:                planJob.OrgID,
-		Outputs:              outputsJSON,
-	}
-	if err := a.db.WithContext(ctx).Create(executionOutputs).Error; err != nil {
-		return errors.Wrap(err, "unable to create noop apply outputs")
-	}
+		executionOutputs := &app.RunnerJobExecutionOutputs{
+			RunnerJobExecutionID: execution.ID,
+			OrgID:                planJob.OrgID,
+			Outputs:              outputsJSON,
+		}
+		if err := tx.Create(executionOutputs).Error; err != nil {
+			return errors.Wrap(err, "unable to create noop apply outputs")
+		}
 
-	return nil
+		return nil
+	})
 }
