@@ -15,6 +15,15 @@ This skill enforces checking existing components before creating new ones and re
 6. For a new domain-specific component: place the file in `client/components/<domain>/MyComponent.tsx`.
 7. Use a directory (`client/components/common/MyComponent/`) only when the component has internal sub-components that should not be exported directly.
 
+## Text & Copy Style
+
+Use sentence case for all UI text (headings, buttons, labels, tab labels). Never title case. See AGENTS.md for details.
+
+- ✅ "Create your org" / "Connect a cloud account"
+- ❌ "Create Your Org" / "Connect A Cloud Account"
+
+For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowercases everything after the first character — always write keys all-lowercase (`'create your own app'`, not `'Create Your Own App'`).
+
 ## Anti-Patterns
 
 - **Do not** create `LoadingSpinner.tsx` if `Spinner.tsx` already exists in `common/` — always check existing components first

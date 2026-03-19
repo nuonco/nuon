@@ -235,6 +235,18 @@ export type TNewResource = components['schemas']['app.NewResource']
 
 Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs. Read the component's TypeScript interface and any `.stories.tsx` file to understand the correct props before using it.
 
+### `Tabs` Component — Key Casing
+
+The `Tabs` component renders tab labels by running each object key through `toSentenceCase(camelToWords(key))`. `toSentenceCase` capitalizes the first character and **lowercases everything else**. Always write tab keys in all-lowercase so the rendered label is correct:
+
+```tsx
+// ✅ Correct — keys are all-lowercase, rendered as "Create your own app" / "Demo using a sample app"
+<Tabs tabs={{ 'create your own app': <CustomTab />, 'demo using a sample app': <DemoTab /> }} />
+
+// ❌ Wrong — title case keys render incorrectly: "Create your own app" loses capitals mid-string
+<Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
+```
+
 ### File Organization
 
 **Flat files (preferred for most components)**:
@@ -308,7 +320,16 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 - Create the modal instance before passing to `addModal`: `const modal = <MyModal />` then `addModal(modal)`
 - Close modals on success via `removeModal(props.modalId)`
 
-## Code Style
+## Text & Copy Style
+
+**Always use sentence case, never title case.** This applies to all UI text: headings, buttons, labels, tab labels, empty states, tooltips, and any other copy.
+
+- ✅ "Create your org" / "Connect a cloud account" / "Generate random name"
+- ❌ "Create Your Org" / "Connect A Cloud Account" / "Generate Random Name"
+
+The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
+
+
 
 Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does (no "// loop through items", "// close modal", "// fetch data" style comments). Let clear naming and structure document the code.
 
