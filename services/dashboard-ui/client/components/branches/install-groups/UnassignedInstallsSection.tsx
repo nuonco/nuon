@@ -1,19 +1,18 @@
 import { useState } from 'react'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
-import { Icon } from '@/components/common/Icon'
+import { SearchInput } from '@/components/common/SearchInput'
 import type { TInstall } from '@/types'
 import { InstallCard } from './InstallCard'
 
-interface IUnassignedInstallsPanel {
+interface IUnassignedInstallsSection {
   installs: TInstall[]
   assignedInstallIds: string[]
 }
 
-export const UnassignedInstallsPanel = ({
+export const UnassignedInstallsSection = ({
   installs,
   assignedInstallIds,
-}: IUnassignedInstallsPanel) => {
+}: IUnassignedInstallsSection) => {
   const [searchQuery, setSearchQuery] = useState('')
 
   const unassignedInstalls = installs.filter(
@@ -25,10 +24,10 @@ export const UnassignedInstallsPanel = ({
   )
 
   return (
-    <div className="w-80 flex flex-col border-r dark:border-gray-700 pr-6">
-      <div className="mb-4">
-        <Text variant="h4" weight="strong" className="mb-2">
-          Available Installs
+    <div className="w-80 flex flex-col border-r dark:border-dark-grey-700 pr-6">
+      <div className="mb-4 flex flex-col">
+        <Text variant="h2" weight="strong" className="mb-2">
+          Available installs
         </Text>
         <Text variant="subtext" theme="neutral">
           Drag installs to groups
@@ -36,12 +35,12 @@ export const UnassignedInstallsPanel = ({
       </div>
 
       <div className="mb-4">
-        <Input
-          type="text"
+        <SearchInput
           placeholder="Search installs..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          leftIcon={<Icon variant="Search" size={16} />}
+          onChange={setSearchQuery}
+          className="md:!min-w-full"
+          labelClassName="w-full"
         />
       </div>
 
@@ -61,7 +60,7 @@ export const UnassignedInstallsPanel = ({
         )}
       </div>
 
-      <div className="mt-4 pt-4 border-t dark:border-gray-700">
+      <div className="mt-4 pt-4 border-t dark:border-dark-grey-700">
         <Text variant="subtext" theme="neutral">
           {unassignedInstalls.length} of {installs.length} unassigned
         </Text>

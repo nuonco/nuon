@@ -8,6 +8,8 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Timeline } from '@/components/common/Timeline'
+import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -15,10 +17,14 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
+import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { getWorkflowBadge } from '@/utils/workflow-utils'
 
 const CONTAINER_ID = 'branch-detail-page'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
-import { getBranchWorkflowRuns } from '@/lib'
+import { InstallGroupsSection } from '@/components/branches/install-groups/InstallGroupsSection'
+import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
+import type { TInstall } from '@/types'
 
 const BranchDetailContent = () => {
   const { org } = useOrg()
@@ -29,7 +35,20 @@ const BranchDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
 
-  // Fetch recent runs (limit to 5 for preview)
+  const { data: appInstallsResult } = useQuery({
+    queryKey: ['app-installs', orgId, appId],
+    queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
+    enabled: !!orgId && !!appId,
+  })
+
+  const installsById = (appInstallsResult?.data ?? []).reduce<Record<string, TInstall>>(
+    (acc, install) => {
+      acc[install.id] = install
+      return acc
+    },
+    {}
+  )
+
   const { data: runs = [] } = useQuery({
     queryKey: ['branch-runs', orgId, appId, branchId],
     queryFn: () =>
@@ -40,10 +59,9 @@ const BranchDetailContent = () => {
         limit: 5,
       }),
     enabled: !!orgId && !!appId && !!branchId,
-    refetchInterval: 5000, // Poll every 5 seconds
+    refetchInterval: 5000,
   })
 
-  // Get current config (most recent)
   const currentConfig =
     branch.configs && branch.configs.length > 0
       ? branch.configs.sort(
@@ -63,14 +81,13 @@ const BranchDetailContent = () => {
           { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`, text: branch?.name },
         ]}
       />
-      {/* Page Header */}
       <div className="flex items-start justify-between">
         <HeadingGroup>
-          <Text variant="h3" weight="stronger">
+          <Text variant="h3" weight="strong">
             {branch.name}
           </Text>
           <ID>{branch.id}</ID>
-          <Text variant="subtext" theme="info">
+          <Text variant="subtext" theme="neutral">
             Created <Time time={branch?.created_at} format="relative" />
           </Text>
         </HeadingGroup>
@@ -85,11 +102,10 @@ const BranchDetailContent = () => {
         </div>
       </div>
 
-      {/* Install Groups Section */}
       <Card className="mb-6">
-        <div className="p-6">
+        <div>
           <div className="flex items-center justify-between mb-4">
-            <Text variant="h4" weight="strong">
+            <Text variant="h3" weight="strong">
               Install Groups
             </Text>
             {currentConfig && (
@@ -105,129 +121,61 @@ const BranchDetailContent = () => {
                 No configuration yet. Click "Edit" above to set up install groups.
               </Text>
             </div>
-          ) : currentConfig.install_groups &&
-            currentConfig.install_groups.length > 0 ? (
-            <div className="space-y-3">
-              {currentConfig.install_groups.map((group, idx) => (
-                <div
-                  key={group.id || idx}
-                  className="p-4 bg-gray-50 dark:bg-gray-900 rounded-md"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <Text variant="base" weight="strong">
-                      {idx + 1}. {group.name}
-                    </Text>
-                    <div className="flex items-center gap-2">
-                      {group.requires_approval && (
-                        <Badge theme="warning" size="sm">
-                          Requires Approval
-                        </Badge>
-                      )}
-                      {group.rollback_on_failure && (
-                        <Badge theme="info" size="sm">
-                          Rollback on Failure
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <Text variant="subtext" theme="neutral">
-                        {group.install_ids?.length || 0} install
-                        {group.install_ids?.length !== 1 ? 's' : ''}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text variant="subtext" theme="neutral">
-                        Max {group.max_parallel || 1} parallel
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
           ) : (
-            <div className="text-center py-8">
-              <Text variant="body" theme="neutral">
-                No install groups configured. Click "Edit" above to add
-                deployment groups.
-              </Text>
-            </div>
+            <InstallGroupsSection
+              config={currentConfig}
+              installsById={installsById}
+              orgId={orgId}
+            />
           )}
         </div>
       </Card>
 
-      {/* Workflow Runs Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <Text variant="h4" weight="strong">
-            Workflow Runs
+          <Text variant="h3" weight="strong">
+            Workflow runs
           </Text>
           <Link href={`/${orgId}/apps/${appId}/branches/${branchId}/runs`}>
-            View All <Icon variant="CaretRightIcon" />
+            View all <Icon variant="CaretRight" />
           </Link>
         </div>
 
         {runs.length === 0 ? (
-          <div className="text-center py-8 border border-dashed border-gray-300 dark:border-gray-700 rounded-md">
+          <div className="text-center py-8 border border-dashed border-cool-grey-300 dark:border-dark-grey-600 rounded-md">
             <Text variant="body" theme="neutral">
               No workflow runs yet. Click "Trigger Run" above to start a deployment.
             </Text>
           </div>
         ) : (
-          <div className="space-y-2">
-            {runs.map((run) => {
-              const status = run.status?.status || 'unknown'
-              const statusDescription = run.status?.status_human_description || ''
-              
-              // Get commit info from app_branch_runs if available
-              const branchRun = run.app_branch_runs?.[0]
-              const commitId = branchRun?.commit_sha || branchRun?.commit_id
-              
+          <Timeline
+            events={runs as any}
+            pagination={{ hasNext: false, offset: 0, limit: 5 }}
+            renderEvent={(run: any) => {
+              const commitSha = run.app_branch_runs?.[0]?.commit_sha
               return (
-                <Link
+                <TimelineEvent
                   key={run.id}
-                  href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${run.id}`}
-                  className="block p-4 border border-gray-200 dark:border-gray-800 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Badge
-                          theme={
-                            status === 'success' || status === 'completed'
-                              ? 'success'
-                              : status === 'failed' || status === 'error'
-                              ? 'error'
-                              : status === 'running' || status === 'in-progress'
-                              ? 'info'
-                              : 'neutral'
-                          }
-                          size="sm"
-                        >
-                          {status}
-                        </Badge>
-                        <Text variant="base" weight="strong" className="truncate">
-                          {statusDescription || `Run #${run.id?.substring(0, 8)}`}
-                        </Text>
-                      </div>
-                      {commitId && (
-                        <div className="flex items-center gap-2">
-                          <Icon variant="GitCommit" size={14} />
-                          <Text variant="subtext" theme="neutral" className="font-mono text-xs">
-                            {commitId.substring(0, 7)}
-                          </Text>
-                        </div>
-                      )}
-                    </div>
-                    <Text variant="subtext" theme="neutral" className="flex-shrink-0">
-                      <Time time={run.created_at} format="relative" />
-                    </Text>
-                  </div>
-                </Link>
+                  status={run.status?.status}
+                  createdAt={run.created_at}
+                  createdBy={run.created_by?.email}
+                  badge={getWorkflowBadge(run)}
+                  title={
+                    <Link href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${run.id}`}>
+                      {run.name || toSentenceCase(snakeToWords(run.type)) || `Run #${run.id?.substring(0, 8)}`}
+                    </Link>
+                  }
+                  caption={<ID>{run.id}</ID>}
+                  underline={commitSha ? (
+                    <span className="flex items-center gap-1.5">
+                      <Icon variant="GitCommit" size={12} />
+                      {commitSha.substring(0, 7)}
+                    </span>
+                  ) : undefined}
+                />
               )
-            })}
-          </div>
+            }}
+          />
         )}
       </div>
     </PageSection>

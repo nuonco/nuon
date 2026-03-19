@@ -29,8 +29,8 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TAppBranch, TAppBranchConfig, TInstall } from '@/types'
 import { InstallGroupCard } from './install-groups/InstallGroupCard'
 import { InstallCard } from './install-groups/InstallCard'
-import { UnassignedInstallsPanel } from './install-groups/UnassignedInstallsPanel'
-import { GroupConfigPanel } from './install-groups/GroupConfigPanel'
+import { UnassignedInstallsSection } from './install-groups/UnassignedInstallsSection'
+import { GroupConfigSection } from './install-groups/GroupConfigSection'
 
 interface IInstallGroup {
   id: string
@@ -126,18 +126,12 @@ export const EditInstallGroupsModal = ({
         }
       }
 
-      const response = await createBranchConfig({
+      return createBranchConfig({
         appId: app.id,
         branchId: branch.id || '',
         orgId: org.id,
         request,
       })
-
-      if (response.error) {
-        throw new Error(formatError(response.error))
-      }
-
-      return response.data
     },
     onSuccess: () => {
       addToast(
@@ -160,16 +154,15 @@ export const EditInstallGroupsModal = ({
   useEffect(() => {
     const fetchInstalls = async () => {
       setLoadingInstalls(true)
-      const { data, error: installsError } = await getAppInstalls({
-        appId: app.id,
-        orgId: org.id,
-        limit: 100,
-      })
-
-      if (installsError) {
-        console.error('Failed to fetch installs:', installsError)
-      } else {
+      try {
+        const { data } = await getAppInstalls({
+          appId: app.id,
+          orgId: org.id,
+          limit: 100,
+        })
         setAvailableInstalls(data || [])
+      } catch {
+        // installs unavailable, leave list empty
       }
       setLoadingInstalls(false)
     }
@@ -276,9 +269,9 @@ export const EditInstallGroupsModal = ({
   return (
     <Modal
       heading={
-        <div>
+        <div className="flex flex-col gap-0.5">
           <Text variant="h3" weight="strong">
-            Edit Install Groups
+            Edit install groups
           </Text>
           <Text variant="subtext" theme="neutral">
             Drag and drop installs to organize deployment groups
@@ -287,7 +280,7 @@ export const EditInstallGroupsModal = ({
       }
       size="full"
       primaryActionTrigger={{
-        children: isSaving ? 'Saving...' : 'Save Changes',
+        children: isSaving ? 'Saving...' : 'Save changes',
         onClick: () => saveMutation(),
         disabled: isSaving || loadingInstalls,
         variant: 'primary',
@@ -314,19 +307,19 @@ export const EditInstallGroupsModal = ({
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-6 h-[600px]">
-            <UnassignedInstallsPanel
+            <UnassignedInstallsSection
               installs={availableInstalls}
               assignedInstallIds={assignedInstallIds}
             />
 
             <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <Text variant="h4" weight="strong">
-                  Install Groups ({groups.length})
+                <Text variant="h3" weight="strong">
+                  Install groups ({groups.length})
                 </Text>
                 <Button onClick={addNewGroup} variant="secondary" size="sm">
                   <Icon variant="Plus" size={16} />
-                  Add Group
+                  Add group
                 </Button>
               </div>
 
@@ -363,16 +356,16 @@ export const EditInstallGroupsModal = ({
               </SortableContext>
 
               {groups.length === 0 && (
-                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                <div className="text-center py-12 border-2 border-dashed rounded-lg dark:border-dark-grey-600">
                   <Text variant="base" theme="neutral">
-                    No install groups yet. Click &quot;Add Group&quot; to create
+                    No install groups yet. Click &quot;Add group&quot; to create
                     one.
                   </Text>
                 </div>
               )}
             </div>
 
-            <GroupConfigPanel
+            <GroupConfigSection
               group={selectedGroup}
               availableInstalls={availableInstalls}
               onUpdate={(updates) => {
@@ -412,9 +405,9 @@ export const EditInstallGroupsButton = ({
   const { addModal } = useSurfaces()
   const modal = <EditInstallGroupsModal branch={branch} currentConfig={currentConfig} onSuccess={onSuccess} />
   return (
-    <Button variant="secondary" size="sm" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="Edit" size={16} />
-      Edit installs
+    <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
+      <Icon variant="SlidersHorizontalIcon" size={16} />
+      Manage installs
     </Button>
   )
 }

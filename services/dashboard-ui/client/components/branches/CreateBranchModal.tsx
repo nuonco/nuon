@@ -15,16 +15,8 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import {
-  createAppBranch,
-  getVCSConnectionRepos,
-  type TCreateAppBranchRequest,
-  type TVCSConnectionRepo,
-} from '@/lib'
-import {
-  getConnectionBranches,
-  type Branch,
-} from '@/lib/ctl-api/vcs/get-connection-branches'
+import { createAppBranch, getVCSConnectionRepos, getConnectionBranches } from '@/lib'
+import type { TCreateAppBranchRequest, TVCSConnectionRepo, TVCSBranch } from '@/types'
 
 type ICreateBranchModal = IModal
 
@@ -46,7 +38,7 @@ export const CreateBranchModal = ({ ...props }: ICreateBranchModal) => {
   const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(
     null
   )
-  const [branches, setBranches] = useState<Branch[]>([])
+  const [branches, setBranches] = useState<TVCSBranch[]>([])
   const [selectedBranch, setSelectedBranch] = useState('main')
   const [directory, setDirectory] = useState('.')
   const [pathFilter, setPathFilter] = useState('')

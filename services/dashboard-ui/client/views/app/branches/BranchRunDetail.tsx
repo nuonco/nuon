@@ -7,6 +7,9 @@ import { Badge } from '@/components/common/Badge'
 import { Time } from '@/components/common/Time'
 import { Icon } from '@/components/common/Icon'
 import { Card } from '@/components/common/Card'
+import { Loading } from '@/components/common/Loading'
+import { Button } from '@/components/common/Button'
+import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -26,7 +29,6 @@ export const BranchRunDetail = () => {
   const runId = params.runId as string
   const [selectedStep, setSelectedStep] = useState<TInstallWorkflowStep | null>(null)
 
-  // Fetch all runs and find the specific one, poll every 5 seconds
   const { data: runs = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['branch-runs', orgId, appId, branchId],
     queryFn: () =>
@@ -36,17 +38,16 @@ export const BranchRunDetail = () => {
         branchId,
       }),
     enabled: !!orgId && !!appId && !!branchId,
-    refetchInterval: 5000, // Poll every 5 seconds for live updates
+    refetchInterval: 5000,
   })
 
   const run = runs.find((r) => r.id === runId)
   const steps = run?.steps || []
 
-  // Auto-select the first in-progress step or the first step
   useEffect(() => {
     if (steps.length > 0 && !selectedStep) {
       const inProgressStep = steps.find(
-        (step) => step.status?.status === 'in-progress' || step.status?.status === 'running'
+        (step) => step.status?.status === 'in-progress'
       )
       setSelectedStep(inProgressStep || steps[0])
     }
@@ -66,7 +67,7 @@ export const BranchRunDetail = () => {
   const statusDescription = run.status?.status_human_description || ''
 
   return (
-    <PageSection isScrollable>
+    <PageSection className="max-w-full" isScrollable>
       <PageTitle title={`Run | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -79,21 +80,20 @@ export const BranchRunDetail = () => {
           { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs/${runId}`, text: runId },
         ]}
       />
-      {/* Page Header */}
       <div className="flex items-start justify-between">
         <HeadingGroup>
-          <Text variant="h3" weight="stronger">
+          <Text variant="h3" weight="strong">
             Workflow Run
           </Text>
           <ID>{runId}</ID>
           <div className="flex items-center gap-3 mt-2">
             <Badge
               theme={
-                status === 'success' || status === 'completed'
+                status === 'success'
                   ? 'success'
-                  : status === 'failed' || status === 'error'
+                  : status === 'error'
                   ? 'error'
-                  : status === 'running' || status === 'in-progress'
+                  : status === 'in-progress'
                   ? 'info'
                   : 'neutral'
               }
@@ -125,29 +125,28 @@ export const BranchRunDetail = () => {
         </div>
       </div>
 
-      {/* Horizontal Workflow Canvas */}
       <Card>
-        <div className="p-6">
+        <div className="p-6 min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <Text variant="h4" weight="strong">
+            <Text variant="h3" weight="strong">
               Workflow Progress
             </Text>
             <Text variant="subtext" theme="neutral">
               Scroll horizontally or use trackpad to navigate
             </Text>
           </div>
-          
+
           {steps.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+              <Loading variant="large" />
               <Text variant="body" theme="neutral">
                 Generating workflow steps...
               </Text>
             </div>
           ) : (
-            <div 
+            <div
               className="relative overflow-x-auto overflow-y-hidden"
-              style={{ 
+              style={{
                 scrollbarWidth: 'thin',
                 scrollBehavior: 'smooth',
               }}
@@ -155,33 +154,31 @@ export const BranchRunDetail = () => {
               <div className="flex items-center gap-6 py-6 px-4 min-w-max">
                 {steps.map((step, idx) => {
                   const stepStatus = step.status?.status || 'pending'
-                  const isInProgress = stepStatus === 'in-progress' || stepStatus === 'running'
-                  const isSuccess = stepStatus === 'success' || stepStatus === 'completed'
-                  const isError = stepStatus === 'error' || stepStatus === 'failed'
+                  const isInProgress = stepStatus === 'in-progress'
+                  const isSuccess = stepStatus === 'success'
+                  const isError = stepStatus === 'error'
                   const isPending = !isInProgress && !isSuccess && !isError
-                  
+
                   return (
                     <div key={step.id || idx} className="flex items-center gap-4">
-                      {/* Step Card */}
                       <div
                         className={`flex flex-col items-center min-w-[240px] p-8 rounded-lg transition-all cursor-pointer border-2 ${
                           selectedStep?.id === step.id
-                            ? 'ring-4 ring-purple-500 shadow-2xl scale-105 bg-purple-100 dark:bg-purple-900/20 border-purple-500'
+                            ? 'ring-2 ring-primary-300 dark:ring-primary-700 shadow-2xl scale-105 bg-primary-50 dark:bg-dark-grey-900 border-primary-200 dark:border-primary-400/50'
                             : isInProgress
-                            ? 'ring-2 ring-blue-500 shadow-xl hover:shadow-2xl bg-blue-100 dark:bg-blue-900/20 border-blue-500'
+                            ? 'ring-2 ring-blue-200 dark:ring-blue-800 shadow-xl hover:shadow-2xl bg-blue-50 dark:bg-dark-grey-900 border-blue-400 dark:border-blue-500/40'
                             : isSuccess
-                            ? 'shadow-lg hover:shadow-xl bg-green-100 dark:bg-green-900/20 border-green-500'
+                            ? 'shadow-lg hover:shadow-xl bg-green-50 dark:bg-dark-grey-900 border-green-400 dark:border-green-500/40'
                             : isError
-                            ? 'shadow-lg hover:shadow-xl bg-red-100 dark:bg-red-900/20 border-red-500'
-                            : 'border-dashed border-cool-grey-300 dark:border-dark-grey-600 hover:border-solid hover:shadow-md bg-cool-grey-100 dark:bg-dark-grey-800/50'
+                            ? 'shadow-lg hover:shadow-xl bg-red-50 dark:bg-dark-grey-900 border-red-300 dark:border-red-500/40'
+                            : 'border-dashed border-cool-grey-300 dark:border-dark-grey-600 hover:border-solid hover:shadow-md bg-cool-grey-50 dark:bg-dark-grey-900'
                         }`}
                         onClick={() => setSelectedStep(step)}
                       >
-                        {/* Step Icon */}
                         <div
                           className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all ${
                             isInProgress
-                              ? 'bg-blue-500 dark:bg-blue-600 text-white animate-pulse shadow-lg'
+                              ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-lg'
                               : isSuccess
                               ? 'bg-green-500 dark:bg-green-600 text-white shadow-md'
                               : isError
@@ -194,51 +191,49 @@ export const BranchRunDetail = () => {
                           ) : isSuccess ? (
                             <Icon variant="Check" size={32} />
                           ) : isError ? (
-                            <Icon variant="Close" size={32} />
+                            <Icon variant="X" size={32} />
                           ) : (
                             <Icon variant="Clock" size={28} />
                           )}
                         </div>
 
-                        {/* Step Info */}
-                        <Text variant="h5" weight="stronger" className="text-center mb-2">
+                        <Text variant="base" weight="stronger" className="text-center mb-2">
                           Step {idx + 1}
                         </Text>
                         <Text variant="base" theme="neutral" className="text-center mb-3 max-w-[200px]">
                           {step.name || 'Unknown'}
                         </Text>
-                        
+
                         <div className="flex flex-col gap-2 items-center w-full">
                           {step.group_idx !== undefined && (
-                            <Badge 
+                            <Badge
                               theme={
-                                isInProgress ? 'info' 
-                                : isSuccess ? 'success' 
-                                : isError ? 'error' 
+                                isInProgress ? 'info'
+                                : isSuccess ? 'success'
+                                : isError ? 'error'
                                 : 'neutral'
-                              } 
+                              }
                               size="md"
                             >
                               Group {step.group_idx}
                             </Badge>
                           )}
                           {step.execution_time && (
-                            <Text variant="base" theme="neutral" className="font-mono font-semibold">
+                            <Text variant="base" theme="neutral" family="mono" weight="strong">
                               {(step.execution_time / 1000000000).toFixed(1)}s
                             </Text>
                           )}
                         </div>
                       </div>
 
-                      {/* Connector Arrow */}
                       {idx < steps.length - 1 && (
                         <div className="flex items-center">
                           <Icon
                             variant="ArrowRight"
                             size={36}
                             className={`transition-colors ${
-                              isSuccess 
-                                ? 'text-green-500 dark:text-green-400' 
+                              isSuccess
+                                ? 'text-green-500 dark:text-green-400'
                                 : 'text-cool-grey-400 dark:text-dark-grey-500'
                             }`}
                           />
@@ -253,37 +248,32 @@ export const BranchRunDetail = () => {
         </div>
       </Card>
 
-      {/* Selected Step Details */}
       {selectedStep && (
         <Card>
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <Text variant="h4" weight="strong">
+              <Text variant="h3" weight="strong">
                 Step Details
               </Text>
-              <button
-                onClick={() => setSelectedStep(null)}
-                className="text-cool-grey-600 dark:text-dark-grey-300 hover:text-cool-grey-900 dark:hover:text-white"
-              >
-                <Icon variant="Close" size={20} />
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedStep(null)}>
+                <Icon variant="X" size={20} />
+              </Button>
             </div>
-            
+
             <div className="space-y-4">
-              {/* Step Header */}
               <div className="flex items-start justify-between">
                 <div>
-                  <Text variant="h5" weight="strong" className="mb-2">
+                  <Text variant="base" weight="strong" className="mb-2">
                     {selectedStep.name || 'Unknown step'}
                   </Text>
                   <div className="flex items-center gap-3">
                     <Badge
                       theme={
-                        selectedStep.status?.status === 'success' || selectedStep.status?.status === 'completed'
+                        selectedStep.status?.status === 'success'
                           ? 'success'
-                          : selectedStep.status?.status === 'error' || selectedStep.status?.status === 'failed'
+                          : selectedStep.status?.status === 'error'
                           ? 'error'
-                          : selectedStep.status?.status === 'in-progress' || selectedStep.status?.status === 'running'
+                          : selectedStep.status?.status === 'in-progress'
                           ? 'info'
                           : 'neutral'
                       }
@@ -316,7 +306,6 @@ export const BranchRunDetail = () => {
                 </div>
               </div>
 
-              {/* Status Description */}
               {selectedStep.status?.status_human_description && (
                 <div className="p-4 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
                   <Text variant="label" theme="neutral" className="mb-1">
@@ -328,7 +317,6 @@ export const BranchRunDetail = () => {
                 </div>
               )}
 
-              {/* Additional Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Text variant="label" theme="neutral" className="mb-1">
@@ -364,7 +352,6 @@ export const BranchRunDetail = () => {
                 )}
               </div>
 
-              {/* Links */}
               {selectedStep.links && (
                 <div>
                   <Text variant="label" theme="neutral" className="mb-2">
@@ -372,15 +359,13 @@ export const BranchRunDetail = () => {
                   </Text>
                   <div className="flex flex-wrap gap-2">
                     {selectedStep.links.event_loop_ui && (
-                      <a
-                        href={selectedStep.links.event_loop_ui}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                      <Link
+                        href={selectedStep.links.event_loop_ui as string}
+                        isExternal
                       >
-                        <Icon variant="ExternalLink" size={16} />
+                        <Icon variant="ArrowSquareOut" size={16} />
                         <Text variant="label">View in Temporal</Text>
-                      </a>
+                      </Link>
                     )}
                   </div>
                 </div>

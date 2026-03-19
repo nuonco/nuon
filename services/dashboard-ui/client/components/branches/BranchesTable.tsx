@@ -11,7 +11,6 @@ import type { TAppBranch } from '@/types'
 type TBranchRow = {
   branchId: string
   branchName: string
-  lastCommit: string | null
   workflowCount: number
   createdAt: string
   href: string
@@ -25,7 +24,6 @@ function parseBranchesToTableData(
   return branches.map((branch) => ({
     branchId: branch.id || '',
     branchName: branch.name || '',
-    lastCommit: branch.last_synced_commit || null,
     workflowCount: branch.workflows?.length || 0,
     createdAt: branch.created_at || '',
     href: `/${orgId}/apps/${appId}/branches/${branch.id}`,
@@ -45,20 +43,6 @@ const columns: ColumnDef<TBranchRow>[] = [
       </span>
     ),
     enableSorting: true,
-  },
-  {
-    accessorKey: 'lastCommit',
-    header: 'Last Synced Commit',
-    cell: (info) => {
-      const commit = info.getValue() as string | null
-      return commit ? (
-        <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-          {commit.slice(0, 7)}
-        </code>
-      ) : (
-        <Text variant="subtext">Not synced yet</Text>
-      )
-    },
   },
   {
     accessorKey: 'workflowCount',
@@ -85,7 +69,7 @@ const columns: ColumnDef<TBranchRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+          View <Icon variant="CaretRight" />
         </Link>
       </Text>
     ),

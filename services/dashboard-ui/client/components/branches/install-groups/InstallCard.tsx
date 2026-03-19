@@ -40,10 +40,10 @@ export const InstallCard = ({ install, isDragging, isDisabled }: IInstallCard) =
       className={cn(
         'flex items-center gap-3 px-4 py-2.5 min-w-[280px] rounded-md border-2 transition-all cursor-grab active:cursor-grabbing',
         {
-          'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md':
+          'border-cool-grey-300 dark:border-dark-grey-600 bg-white dark:bg-dark-grey-800 hover:border-cool-grey-400 dark:hover:border-dark-grey-500 hover:shadow-md':
             !isDragging && !isSortableDragging && !isDisabled,
-          'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-lg': isDragging || isSortableDragging,
-          'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 opacity-50 cursor-not-allowed': isDisabled,
+          'border-primary-500 dark:border-primary-400 bg-primary-900/10 dark:bg-primary-900/20 shadow-lg': isDragging || isSortableDragging,
+          'border-cool-grey-200 dark:border-dark-grey-700 bg-cool-grey-100 dark:bg-dark-grey-900 opacity-50 cursor-not-allowed': isDisabled,
         }
       )}
     >
