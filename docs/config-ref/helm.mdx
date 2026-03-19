@@ -26,8 +26,8 @@ title: 'Helm'
 | **`storage_driver`**<br/>string | Helm storage driver Backend storage driver for Helm release metadata. Defaults to configmap | **Optional**<br/>`"configmap"`, `"secret"` | `"configmap"` |
 | **`take_ownership`**<br/>boolean | adopt existing Helm releases If true, Nuon will adopt an existing Helm release with the same name and namespace that was not originally managed by Nuon. Useful when migrating existing deployments t... | **Optional** | - |
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"` |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
-| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h") | **Optional** | `"30m"`, `"1h"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 30m. Max: 1h | **Optional**<br/>Default: `"30m"` | `"30m"`, `"1h"` |
 | **`value`**<br/>[array](#value) | deprecated: use values map instead Deprecated: Array of name/value pairs for Helm values. Use the values map instead | **Optional** | - |
 
 ### `operation_roles`

@@ -167,3 +167,28 @@ nuon builds logs -b <build-id> -c component_name
 ```
 
 ![Component Build](../images/concepts/components/component-build-logs.png)
+
+### Build and Deploy Timeouts
+
+Each component has configurable timeouts for build and deploy operations.
+If an operation exceeds its timeout, it will be marked as failed. You can
+override these in your component TOML file:
+
+```toml
+build_timeout  = "30m"
+deploy_timeout = "1h"
+```
+
+The maximum allowed value for both is `1h`. The defaults vary by component
+type:
+
+| Component Type      | Build Default | Deploy Default |
+| ------------------- | ------------- | -------------- |
+| Helm Chart          | 5m            | 30m            |
+| Terraform Module    | 5m            | 60m            |
+| Docker Build        | 60m           | 5m             |
+| Container Image     | 15m           | 5m             |
+| Kubernetes Manifest | 5m            | 15m            |
+
+See the [configuration reference](/config-ref) for full details on each
+component type.
