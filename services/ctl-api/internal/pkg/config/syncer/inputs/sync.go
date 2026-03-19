@@ -133,7 +133,6 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 				Default:          defaultVal,
 				Sensitive:        input.Sensitive,
 				Type:             app.AppInputType(inputType),
-				Internal:         input.Internal,
 				Index:            idx,
 				Source:           source,
 			})

@@ -27,9 +27,8 @@ type AppInputRequest struct {
 	Index       int    `json:"index" validate:"required"`
 
 	// New, optional fields
-	Internal bool               `json:"internal"`
-	Type     string             `json:"type"`
-	Source   app.AppInputSource `json:"source"`
+	Type   string             `json:"type"`
+	Source app.AppInputSource `json:"source"`
 }
 
 type AppGroupRequest struct {
@@ -200,7 +199,6 @@ func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, 
 			Default:          input.Default,
 			Sensitive:        input.Sensitive,
 			Type:             app.AppInputType(input.Type),
-			Internal:         input.Internal,
 			Index:            input.Index,
 			Source:           source,
 		})

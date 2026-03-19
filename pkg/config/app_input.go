@@ -19,16 +19,17 @@ const (
 )
 
 type AppInput struct {
-	Name             string `mapstructure:"name" toml:"name"`
-	DisplayName      string `mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
-	Description      string `mapstructure:"description" toml:"description" jsonschema:"required"`
-	Group            string `mapstructure:"group" toml:"group" jsonschema:"required"`
-	Default          any    `mapstructure:"default,omitempty" toml:"default,omitempty"`
-	Required         bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
-	Sensitive        bool   `mapstructure:"sensitive" toml:"sensitive"`
-	Type             string `mapstructure:"type" toml:"type"`
-	Internal         bool   `mapstructure:"internal" toml:"internal"`
-	UserConfigurable bool   `mapstructure:"user_configurable" toml:"user_configurable"`
+	Name        string `mapstructure:"name" toml:"name"`
+	DisplayName string `mapstructure:"display_name" toml:"display_name" jsonschema:"required"`
+	Description string `mapstructure:"description" toml:"description" jsonschema:"required"`
+	Group       string `mapstructure:"group" toml:"group" jsonschema:"required"`
+	Default     any    `mapstructure:"default,omitempty" toml:"default,omitempty"`
+	Required    bool   `mapstructure:"required,omitempty" toml:"required,omitempty"`
+	Sensitive   bool   `mapstructure:"sensitive" toml:"sensitive"`
+	Type        string `mapstructure:"type" toml:"type"`
+	// Deprecated: this field has no effect and will be ignored.
+	Internal         bool `mapstructure:"internal" toml:"internal"`
+	UserConfigurable bool `mapstructure:"user_configurable" toml:"user_configurable"`
 }
 
 func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -63,8 +64,7 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("number").
 		Example("json").
 		Example("bool").
-		Field("internal").Short("whether input is internal-only").
-		Long("If true, input is only settable via the admin panel and not shown to regular users").
+		Field("internal").Short("Deprecated: this field has no effect and will be ignored.").
 		Field("user_configurable").Short("whether input is user configurable").
 		Long("If true, input can be modified by end users after installation")
 }

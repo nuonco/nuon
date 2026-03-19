@@ -53,7 +53,8 @@ type AppInput struct {
 	Required    bool   `json:"required,omitzero" temporaljson:"required,omitzero,omitempty"`
 	Sensitive   bool   `json:"sensitive,omitzero" temporaljson:"sensitive,omitzero,omitempty"`
 
-	Index    int            `json:"index,omitzero"`
+	Index int `json:"index,omitzero"`
+	// Deprecated: this field was never enforced and has no effect.
 	Internal bool           `json:"internal,omitzero"`
 	Type     AppInputType   `json:"type,omitzero" swaggertype:"string"`
 	Source   AppInputSource `json:"source,omitzero" gorm:"not null;default:'vendor'" swaggertype:"string" temporaljson:"source"`
