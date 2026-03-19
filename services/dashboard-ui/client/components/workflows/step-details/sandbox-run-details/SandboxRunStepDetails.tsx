@@ -3,8 +3,13 @@
 import { Plan } from '@/components/approvals/Plan'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { SSELogs } from '@/components/log-stream/SSELogs'
 import { useOrg } from '@/hooks/use-org'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 import { useQuery } from '@tanstack/react-query'
 import { getInstallSandboxRun } from '@/lib'
@@ -23,7 +28,8 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
 
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({
     queryKey: ['sandbox-run', org?.id, step?.step_target_id],
-    queryFn: () => getInstallSandboxRun({ orgId: org.id, runId: step!.step_target_id }),
+    queryFn: () =>
+      getInstallSandboxRun({ orgId: org.id, runId: step!.step_target_id }),
     enabled: !!org?.id && !!step?.step_target_id,
   })
 
@@ -50,7 +56,29 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
       </div>
 
       {step?.execution_type === 'approval' ? (
-        <Plan step={step} />
+        <Tabs
+          tabs={{
+            plan: (
+              <div className="mt-4">
+                <Plan step={step} />
+              </div>
+            ),
+            logs: sandboxRun?.log_stream ? (
+              <LogStreamProvider
+                shouldPoll
+                logStreamId={sandboxRun.log_stream.id}
+              >
+                <UnifiedLogsProvider>
+                  <LogViewerProvider>
+                    <SSELogs />
+                  </LogViewerProvider>
+                </UnifiedLogsProvider>
+              </LogStreamProvider>
+            ) : (
+              <SandboxRunLogsSkeleton />
+            ),
+          }}
+        />
       ) : isLoading && !sandboxRun ? (
         <div className="flex flex-col gap-4">
           <SandboxRunApplySkeleton />
