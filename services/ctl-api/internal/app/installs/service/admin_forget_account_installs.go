@@ -71,7 +71,7 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 		}
 
 		if useQueues {
-			queueID, err := s.getInstallQueueID(ctx, install.ID)
+			queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 			if err != nil {
 				ctx.Error(err)
 				return

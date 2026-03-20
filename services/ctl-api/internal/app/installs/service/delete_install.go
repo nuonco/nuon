@@ -55,19 +55,24 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
 			InstallID: install.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))

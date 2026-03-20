@@ -240,6 +240,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		install := installs.Group("/:install_id")
 		{
 			install.POST("/admin-restart", s.RestartInstall)
+			install.POST("/admin-restart-queues", s.RestartInstallQueues)
 			install.GET("/admin-get", s.AdminGetInstall)
 			install.GET("/admin-get-runner-group", s.AdminGetInstallRunnerGroup)
 			install.GET("/admin-get-runner", s.AdminGetInstallRunner)

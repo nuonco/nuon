@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 const (
@@ -75,6 +76,18 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     runnerGroup.Runners[0].ID,
+		OwnerType:   "runners",
+		Namespace:   "runners",
+		Name:        "runner-signals",
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create runner queue: %w", err)
+	}
+
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
@@ -136,6 +149,18 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     runnerGroup.Runners[0].ID,
+		OwnerType:   "runners",
+		Namespace:   "runners",
+		Name:        "runner-signals",
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create runner queue: %w", err)
 	}
 
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{

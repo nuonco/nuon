@@ -63,7 +63,7 @@ func (s *service) AdminUpdateInstallRunner(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return

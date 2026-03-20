@@ -48,6 +48,23 @@ func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string)
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
+func (c *Client) GetQueueByOwnerAndName(ctx context.Context, ownerID, ownerType, name string) (*app.Queue, error) {
+	var q app.Queue
+	if res := c.db.WithContext(ctx).
+		Where(&app.Queue{
+			OwnerID:   ownerID,
+			OwnerType: ownerType,
+			Name:      name,
+		}).
+		First(&q); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get queue by owner and name")
+	}
+
+	return &q, nil
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) GetQueueStatus(ctx context.Context, queueID string) (*queue.StatusResponse, error) {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {

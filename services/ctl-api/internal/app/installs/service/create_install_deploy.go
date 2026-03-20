@@ -104,7 +104,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, installID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 		if err != nil {
 			ctx.Error(err)
 			return
@@ -209,7 +209,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 		return
 	}
 	if useQueues2 {
-		queueID, err := s.getInstallQueueID(ctx, installID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 		if err != nil {
 			ctx.Error(err)
 			return

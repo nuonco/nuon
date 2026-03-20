@@ -15,6 +15,14 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
+const (
+	// InstallWorkflowsQueueName is the queue that orchestrates install workflow execution.
+	InstallWorkflowsQueueName = "install-workflows"
+
+	// InstallSignalsQueueName is the queue that handles individual install signal execution.
+	InstallSignalsQueueName = "install-signals"
+)
+
 type Params struct {
 	fx.In
 

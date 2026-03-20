@@ -117,18 +117,23 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, install.ID)
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &updated.Signal{
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
 			InstallID: install.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {

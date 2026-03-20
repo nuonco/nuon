@@ -101,7 +101,7 @@ func (s *service) TeardownInstallComponents(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, installID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 		if err != nil {
 			ctx.Error(err)
 			return

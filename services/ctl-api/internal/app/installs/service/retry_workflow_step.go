@@ -198,7 +198,7 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallQueueID(ctx, workflow.OwnerID)
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, workflow.OwnerID)
 		if err != nil {
 			ctx.Error(err)
 			return
