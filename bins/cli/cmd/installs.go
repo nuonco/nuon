@@ -339,6 +339,19 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	sandboxRunLogsCmd.Flags().StringVarP(&installCompID, "install-comp-id", "c", "", "The ID of the install component to view logs for")
 	installsCmds.AddCommand(sandboxRunLogsCmd)
 
+	sandboxOutputsCmd := &cobra.Command{
+		Use:   "sandbox-outputs",
+		Short: "View sandbox outputs",
+		Long:  "View the latest sandbox outputs for an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SandboxOutputs(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	sandboxOutputsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxOutputsCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(sandboxOutputsCmd)
+
 	currentInputs := &cobra.Command{
 		Use:   "current-inputs",
 		Short: "View current inputs",
