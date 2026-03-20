@@ -140,11 +140,12 @@ func (w *Workflows) executeHealthCheck(ctx workflow.Context, runnerID string) (a
 	}
 	if heartbeat == nil {
 		newStatus = app.RunnerStatusError
-	}
-
-	minHeartBeatTS := workflow.Now(ctx).Add(-heartBeatTimeout)
-	if heartbeat.CreatedAt.Before(minHeartBeatTS) {
-		newStatus = app.RunnerStatusError
+	} else {
+		// Only check timestamp if heartbeat exists
+		minHeartBeatTS := workflow.Now(ctx).Add(-heartBeatTimeout)
+		if heartbeat.CreatedAt.Before(minHeartBeatTS) {
+			newStatus = app.RunnerStatusError
+		}
 	}
 
 	isChanged := runner.Status != newStatus
