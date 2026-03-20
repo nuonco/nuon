@@ -19,7 +19,7 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 		return fmt.Errorf("extension %q is not installed", name)
 	}
 
-	// Check auth requirements and warn (not hard fail)
+	// Check auth/context requirements and warn (not hard fail)
 	if ext.RequiresToken {
 		if env["NUON_API_TOKEN"] == "" {
 			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an API token but none is configured\n", name)
@@ -28,6 +28,16 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 	if ext.RequiresOrg {
 		if env["NUON_ORG_ID"] == "" {
 			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an org to be selected but none is configured\n", name)
+		}
+	}
+	if ext.RequiresApp {
+		if env["NUON_APP_ID"] == "" {
+			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an app to be selected but none is configured\n", name)
+		}
+	}
+	if ext.RequiresInstall {
+		if env["NUON_INSTALL_ID"] == "" {
+			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an install to be selected but none is configured\n", name)
 		}
 	}
 
