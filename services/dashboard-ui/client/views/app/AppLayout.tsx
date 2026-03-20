@@ -13,6 +13,7 @@ import { AppProvider } from '@/providers/app-provider'
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
+import type { TNavLink } from '@/types/dashboard.types'
 
 export const AppLayout = () => {
   const params = useParams()
@@ -35,8 +36,29 @@ const AppTemplate = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const isThirdLevel = location.pathname.split('/').length > 5
+  const hasAppBranches = !!org?.features?.['app-branches']
 
   if (!app) return null
+
+  const navLinks = [
+    { path: `/`, iconVariant: 'HouseSimple' as const, text: 'Overview' },
+    hasAppBranches && {
+      path: `/sandbox`,
+      iconVariant: 'ShippingContainerIcon' as const,
+      text: 'Sandbox builds',
+    },
+    { path: `/components`, iconVariant: 'Cards' as const, text: 'Components' },
+    { path: `/actions`, iconVariant: 'TerminalWindow' as const, text: 'Actions' },
+    hasAppBranches && {
+      path: `/branches`,
+      iconVariant: 'GitBranch' as const,
+      text: 'Branches',
+    },
+    { path: `/roles`, iconVariant: 'FileLock' as const, text: 'Roles' },
+    { path: `/policies`, iconVariant: 'ShieldCheck' as const, text: 'Policies' },
+    { path: `/installs`, iconVariant: 'Cube' as const, text: 'Installs' },
+    { path: `/readme`, iconVariant: 'BookOpen' as const, text: 'README' },
+  ].filter((link): link is TNavLink => !!link)
 
   return (
     <PageLayout>
@@ -44,53 +66,7 @@ const AppTemplate = () => {
         <PageContent className="border-t" isScrollable variant="secondary">
           <SubNav
             basePath={`/${org?.id}/apps/${app?.id}`}
-            links={[
-              {
-                path: `/`,
-                iconVariant: 'HouseSimple',
-                text: 'Overview',
-              },
-              {
-                path: `/sandbox`,
-                iconVariant: 'Cube',
-                text: 'Sandbox',
-              },
-              {
-                path: `/components`,
-                iconVariant: 'Cards',
-                text: 'Components',
-              },
-              {
-                path: `/actions`,
-                iconVariant: 'TerminalWindow',
-                text: 'Actions',
-              },
-              {
-                path: `/branches`,
-                iconVariant: 'GitBranch',
-                text: 'Branches',
-              },
-              {
-                path: `/roles`,
-                iconVariant: 'FileLock',
-                text: 'Roles',
-              },
-              {
-                path: `/policies`,
-                iconVariant: 'ShieldCheck',
-                text: 'Policies',
-              },
-              {
-                path: `/installs`,
-                iconVariant: 'Cube',
-                text: 'Installs',
-              },
-              {
-                path: `/readme`,
-                iconVariant: 'BookOpen',
-                text: 'README',
-              },
-            ]}
+            links={navLinks}
           />
           <div className="flex flex-col w-full">
             <Outlet />
@@ -110,53 +86,7 @@ const AppTemplate = () => {
           <PageContent className="border-t" isScrollable variant="secondary">
             <SubNav
               basePath={`/${org?.id}/apps/${app?.id}`}
-              links={[
-                {
-                  path: `/`,
-                  iconVariant: 'HouseSimple',
-                  text: 'Overview',
-                },
-                {
-                  path: `/sandbox`,
-                  iconVariant: 'Cube',
-                  text: 'Sandbox',
-                },
-                {
-                  path: `/components`,
-                  iconVariant: 'Cards',
-                  text: 'Components',
-                },
-                {
-                  path: `/actions`,
-                  iconVariant: 'TerminalWindow',
-                  text: 'Actions',
-                },
-                {
-                  path: `/branches`,
-                  iconVariant: 'GitBranch',
-                  text: 'Branches',
-                },
-                {
-                  path: `/roles`,
-                  iconVariant: 'FileLock',
-                  text: 'Roles',
-                },
-                {
-                  path: `/policies`,
-                  iconVariant: 'ShieldCheck',
-                  text: 'Policies',
-                },
-                {
-                  path: `/installs`,
-                  iconVariant: 'Cube',
-                  text: 'Installs',
-                },
-                {
-                  path: `/readme`,
-                  iconVariant: 'BookOpen',
-                  text: 'README',
-                },
-              ]}
+              links={navLinks}
             />
             <Outlet />
           </PageContent>
