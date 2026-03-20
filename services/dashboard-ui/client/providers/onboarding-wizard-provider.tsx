@@ -6,6 +6,7 @@ export interface IWizardStepComponentProps {
   sharedData: Record<string, unknown>
   setSharedData: (key: string, val: unknown) => void
   onAdvance: () => void
+  onGoBack?: () => void
   nextStepTitle?: string
 }
 

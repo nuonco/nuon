@@ -23,7 +23,7 @@ const NEXT_STEP_CARDS: { icon: TIconVariant; title: string; description: string 
   },
 ]
 
-export const NextStepsStep = ({ onAdvance }: IWizardStepComponentProps) => (
+export const NextStepsStep = ({ onAdvance, onGoBack }: IWizardStepComponentProps) => (
   <div className="flex flex-col gap-6">
     <div className="flex flex-col items-center gap-3 py-4">
       <Icon variant="CheckCircle" size={48} weight="fill" />
@@ -47,7 +47,12 @@ export const NextStepsStep = ({ onAdvance }: IWizardStepComponentProps) => (
       ))}
     </div>
 
-    <div className="flex self-end">
+    <div className="flex justify-between">
+      {onGoBack ? (
+        <Button type="button" variant="secondary" onClick={onGoBack}>
+          <Icon variant="CaretLeft" weight="bold" /> Back
+        </Button>
+      ) : <div />}
       <Button type="button" variant="primary" onClick={onAdvance}>
         Go to dashboard <Icon variant="ArrowRight" weight="bold" />
       </Button>

@@ -78,7 +78,8 @@ const STEPS_V2 = [
   },
   {
     id: 'v2-step-3',
-    title: 'Set up cloud',
+    title: 'Connect your cloud account',
+    description: "Connect a runner to deploy into a real cloud environment, or let Nuon spin up a sandbox so you can explore the platform first.",
     navLabel: 'Cloud setup',
     component: CloudSetupStep,
   },

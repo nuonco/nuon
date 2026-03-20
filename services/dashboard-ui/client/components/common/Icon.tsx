@@ -12,7 +12,7 @@ import {
 import { VscAzure } from 'react-icons/vsc'
 import * as PhosphorIcons from '@phosphor-icons/react'
 import { Loading } from './Loading'
-import { AWSColor, AzureColor, GCPColor } from './CloudProviderColorIcons'
+import { AWSColor, AzureColor, GCPColor } from './CloudPlatformColorIcons'
 import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 

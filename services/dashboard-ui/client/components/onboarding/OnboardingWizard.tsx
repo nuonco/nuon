@@ -29,7 +29,7 @@ function WizardLayout() {
       )}
       <WizardNav isScrolled={isScrolled} />
       <div className="flex-1 overflow-y-auto px-6 pt-14 pb-8" onScroll={handleScroll}>
-        <div className="max-w-2xl mx-auto w-full">
+        <div className="max-w-4xl mx-auto w-full">
           <WizardStepView />
         </div>
       </div>

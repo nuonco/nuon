@@ -37,6 +37,7 @@ function generateOrgName() {
 
 export const WelcomeNameOrgStep = ({
   onAdvance,
+  onGoBack,
   setSharedData,
   nextStepTitle,
 }: IWizardStepComponentProps) => {
@@ -70,7 +71,12 @@ export const WelcomeNameOrgStep = ({
           Generate random name
         </Button>
       </div>
-      <div className="flex self-end">
+      <div className="flex justify-between">
+        {onGoBack ? (
+          <Button type="button" variant="secondary" onClick={onGoBack}>
+            <Icon variant="CaretLeft" weight="bold" /> Back
+          </Button>
+        ) : <div />}
         <Button type="submit" variant="primary" disabled={!orgName.trim()}>
           {nextStepTitle ?? 'Continue'}{' '}
           <Icon variant="CaretRight" weight="bold" />

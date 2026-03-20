@@ -12,7 +12,7 @@ const PROVISION_STEPS = [
   'Active',
 ]
 
-export const ProvisioningStep = ({ onAdvance, nextStepTitle }: IWizardStepComponentProps) => {
+export const ProvisioningStep = ({ onAdvance, onGoBack, nextStepTitle }: IWizardStepComponentProps) => {
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
@@ -49,7 +49,12 @@ export const ProvisioningStep = ({ onAdvance, nextStepTitle }: IWizardStepCompon
         })}
       </div>
 
-      <div className="flex self-end">
+      <div className="flex justify-between">
+        {onGoBack ? (
+          <Button type="button" variant="secondary" onClick={onGoBack}>
+            <Icon variant="CaretLeft" weight="bold" /> Back
+          </Button>
+        ) : <div />}
         <Button type="button" variant="primary" disabled={!isDone} onClick={onAdvance}>
           {nextStepTitle ?? 'Continue'} <Icon variant="CaretRight" weight="bold" />
         </Button>
