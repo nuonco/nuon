@@ -39,7 +39,13 @@ function parseComponentToTableData(
     return {
       componentId: component.id,
       componentName: component.name,
-      componentType: <ComponentType type={component.type} variant="subtext" />,
+      componentType: (
+        <ComponentType
+          type={component.type}
+          variant="subtext"
+          colorVariant="color"
+        />
+      ),
       buildStatus: (
         <Tooltip
           position="top"
@@ -150,15 +156,23 @@ export const ComponentsTable = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['components', org.id, app.id, offset, searchParams.get('q'), searchParams.get('types')],
-    queryFn: () => getComponents({
-      orgId: org.id,
-      appId: app.id,
+    queryKey: [
+      'components',
+      org.id,
+      app.id,
       offset,
-      limit: LIMIT,
-      q: searchParams.get('q') || undefined,
-      types: searchParams.get('types') || undefined,
-    }),
+      searchParams.get('q'),
+      searchParams.get('types'),
+    ],
+    queryFn: () =>
+      getComponents({
+        orgId: org.id,
+        appId: app.id,
+        offset,
+        limit: LIMIT,
+        q: searchParams.get('q') || undefined,
+        types: searchParams.get('types') || undefined,
+      }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
   })
@@ -183,7 +197,11 @@ export const ComponentsTable = ({
         emptyMessage: 'No components found or configured.',
         emptyTitle: 'No components',
       }}
-      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
       searchPlaceholder="Search component name..."
     />
   )

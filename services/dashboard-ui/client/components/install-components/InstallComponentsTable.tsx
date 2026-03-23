@@ -52,7 +52,11 @@ function parseInstallComponentSummaryToTableData(
       componentId: component.component_id,
       componentName: component.component?.name,
       componentType: (
-        <ComponentType type={component?.component?.type} variant="subtext" />
+        <ComponentType
+          type={component?.component?.type}
+          variant="subtext"
+          colorVariant="color"
+        />
       ),
       deployStatus: (
         <Tooltip
@@ -211,7 +215,11 @@ export const InstallComponentsTable = ({
   })
 
   const components = componentsResult?.data ?? []
-  const pagination = { hasNext: componentsResult?.pagination?.hasNext ?? false, offset, limit: LIMIT }
+  const pagination = {
+    hasNext: componentsResult?.pagination?.hasNext ?? false,
+    offset,
+    limit: LIMIT,
+  }
 
   const deps: TComponentDeps[] = components.map((ic) => ({
     id: ic?.id,
