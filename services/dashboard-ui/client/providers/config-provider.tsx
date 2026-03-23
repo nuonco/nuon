@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useMemo } from 'react'
 
 export type TRuntimeConfig = {
   apiUrl: string
@@ -17,6 +17,7 @@ export type TRuntimeConfig = {
   gitRef?: string
   isByoc: boolean
   sfTrialEndpoint?: string
+  onboardingV2?: boolean
 }
 
 declare global {
@@ -25,7 +26,9 @@ declare global {
   }
 }
 
-export const ConfigContext = createContext<TRuntimeConfig | undefined>(undefined)
+export const ConfigContext = createContext<TRuntimeConfig | undefined>(
+  undefined
+)
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const config = useMemo(() => {
@@ -35,5 +38,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     return cfg
   }, [])
 
-  return <ConfigContext.Provider value={config}>{children}</ConfigContext.Provider>
+  return (
+    <ConfigContext.Provider value={config}>{children}</ConfigContext.Provider>
+  )
 }
