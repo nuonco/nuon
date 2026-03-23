@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -11,16 +12,26 @@ import { BranchesTable } from '@/components/branches/BranchesTable'
 import { CreateBranchButton } from '@/components/branches/CreateBranchModal'
 
 const CONTAINER_ID = 'app-branches-page'
+const LIMIT = 20
 
 export const Branches = () => {
   const { org } = useOrg()
   const { app } = useApp()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: branches, isLoading } = useQuery({
-    queryKey: ['app-branches', org.id, app.id],
-    queryFn: () => getAppBranches({ orgId: org.id!, appId: app.id! }),
+  const { data: result, isLoading } = useQuery({
+    queryKey: ['app-branches', org.id, app.id, offset],
+    queryFn: () => getAppBranches({ orgId: org.id!, appId: app.id!, limit: LIMIT, offset }),
     enabled: !!org.id && !!app.id,
   })
+
+  const branches = result?.data ?? []
+  const pagination = {
+    hasNext: result?.pagination?.hasNext ?? false,
+    offset,
+    limit: LIMIT,
+  }
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
@@ -44,7 +55,7 @@ export const Branches = () => {
         </HeadingGroup>
         <CreateBranchButton />
       </div>
-      <BranchesTable branches={branches || []} isLoading={isLoading} />
+      <BranchesTable branches={branches} isLoading={isLoading} pagination={pagination} />
     </PageSection>
   )
 }
