@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
-import type { TAppBranch } from '@/types'
+import type { TAppBranch, TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getAppBranches = ({
   appId,
@@ -9,10 +10,9 @@ export const getAppBranches = ({
 }: {
   appId: string
   orgId: string
-  limit?: number
-  offset?: number
-}) =>
+} & TPaginationParams) =>
   api<TAppBranch[]>({
-    path: `apps/${appId}/branches`,
+    path: `apps/${appId}/branches${buildQueryParams({ limit, offset })}`,
     orgId,
+    paginated: true,
   })

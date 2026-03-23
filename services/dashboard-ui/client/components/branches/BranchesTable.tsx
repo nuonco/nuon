@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -79,9 +79,10 @@ const columns: ColumnDef<TBranchRow>[] = [
 interface IBranchesTable {
   branches: TAppBranch[]
   isLoading: boolean
+  pagination?: { hasNext: boolean; offset: number; limit: number }
 }
 
-export const BranchesTable = ({ branches, isLoading }: IBranchesTable) => {
+export const BranchesTable = ({ branches, isLoading, pagination }: IBranchesTable) => {
   const params = useParams()
   const orgId = params.orgId as string
   const appId = params.appId as string
@@ -99,6 +100,7 @@ export const BranchesTable = ({ branches, isLoading }: IBranchesTable) => {
           'Create your first app branch to get started with version management.',
         emptyTitle: 'No branches yet',
       }}
+      pagination={pagination}
       searchPlaceholder="Search branch name..."
     />
   )
