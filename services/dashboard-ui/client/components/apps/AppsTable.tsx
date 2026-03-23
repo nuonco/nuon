@@ -93,6 +93,7 @@ const columns: ColumnDef<TAppRow>[] = [
         displayVariant="icon-only"
         iconSize="24"
         platform={info?.getValue() as TCloudPlatform}
+        colorVariant="color"
       />
     ),
     enableSorting: true,

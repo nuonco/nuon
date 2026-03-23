@@ -50,6 +50,7 @@ function parseInstallsToTableData(
       <CloudPlatform
         platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
         variant="subtext"
+        colorVariant="color"
       />
     ),
   }))
