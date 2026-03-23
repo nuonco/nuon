@@ -60,7 +60,6 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 		"maintenance_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerMaintenance)],
 		"provision_iam_role_arn":   roleArnByType[string(app.AWSIAMRoleTypeRunnerProvision)],
 		"deprovision_iam_role_arn": roleArnByType[string(app.AWSIAMRoleTypeRunnerDeprovision)],
-		"runner_iam_role_arn":      cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole"),
 
 		"install_inputs":        installInputValues,
 		"break_glass_role_arns": breakGlassRoleArns,
@@ -75,6 +74,12 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 		// account and region details
 		"account_id": cloudformation.RefPtr("AWS::AccountId"),
 		"region":     cloudformation.RefPtr("AWS::Region"),
+	}
+
+	// runner_iam_role_arn references the ASG nested stack output, only available
+	// when not using local runners
+	if !a.cfg.UseLocalRunners {
+		lambdaprops["runner_iam_role_arn"] = cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole")
 	}
 
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
