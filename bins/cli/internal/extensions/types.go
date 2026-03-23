@@ -25,28 +25,32 @@ type ExtensionMeta struct {
 
 // ExtensionAuth holds the auth requirements from [extension.auth] in nuon-ext.toml.
 type ExtensionAuth struct {
-	RequiresToken bool `toml:"requires_token"`
-	RequiresOrg   bool `toml:"requires_org"`
+	RequiresToken   bool `toml:"requires_token"`
+	RequiresOrg     bool `toml:"requires_org"`
+	RequiresApp     bool `toml:"requires_app"`
+	RequiresInstall bool `toml:"requires_install"`
 }
 
 // InstalledExtension represents a locally installed extension.
 // This is the schema for manifest.json stored in each extension's directory.
 type InstalledExtension struct {
-	Name          string  `json:"name"`
-	Description   string  `json:"description"`
-	Repo          string  `json:"repo"`
-	Version       string  `json:"version"`
-	Tag           string  `json:"tag"`
-	Ref           string  `json:"ref,omitempty"`
-	InstalledAt   string  `json:"installed_at"`
-	UpdatedAt     string  `json:"updated_at"`
-	Binary        string  `json:"binary"`
-	Type          ExtType `json:"type"`
-	Entrypoint    string  `json:"entrypoint,omitempty"`
-	Platform      string  `json:"platform"`
-	MinCLIVersion string  `json:"min_cli_version"`
-	RequiresToken bool    `json:"requires_token"`
-	RequiresOrg   bool    `json:"requires_org"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description"`
+	Repo            string  `json:"repo"`
+	Version         string  `json:"version"`
+	Tag             string  `json:"tag"`
+	Ref             string  `json:"ref,omitempty"`
+	InstalledAt     string  `json:"installed_at"`
+	UpdatedAt       string  `json:"updated_at"`
+	Binary          string  `json:"binary"`
+	Type            ExtType `json:"type"`
+	Entrypoint      string  `json:"entrypoint,omitempty"`
+	Platform        string  `json:"platform"`
+	MinCLIVersion   string  `json:"min_cli_version"`
+	RequiresToken   bool    `json:"requires_token"`
+	RequiresOrg     bool    `json:"requires_org"`
+	RequiresApp     bool    `json:"requires_app"`
+	RequiresInstall bool    `json:"requires_install"`
 }
 
 // AvailableExtension represents an extension available for installation from GitHub.

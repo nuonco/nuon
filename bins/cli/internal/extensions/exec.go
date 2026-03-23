@@ -19,16 +19,18 @@ func (m *Manager) Exec(name string, args []string, env map[string]string) error 
 		return fmt.Errorf("extension %q is not installed", name)
 	}
 
-	// Check auth requirements and warn (not hard fail)
-	if ext.RequiresToken {
-		if env["NUON_API_TOKEN"] == "" {
-			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an API token but none is configured\n", name)
-		}
+	// Check auth/context requirements and warn (not hard fail)
+	if ext.RequiresToken && env["NUON_API_TOKEN"] == "" {
+		ui.PrintWarning(fmt.Sprintf("extension %q requires an API token but none is configured", name))
 	}
-	if ext.RequiresOrg {
-		if env["NUON_ORG_ID"] == "" {
-			fmt.Fprintf(os.Stderr, "Warning: extension %q requires an org to be selected but none is configured\n", name)
-		}
+	if ext.RequiresOrg && env["NUON_ORG_ID"] == "" {
+		ui.PrintWarning(fmt.Sprintf("extension %q requires an org to be selected but none is configured", name))
+	}
+	if ext.RequiresApp && env["NUON_APP_ID"] == "" {
+		ui.PrintWarning(fmt.Sprintf("extension %q requires an app to be selected but none is configured", name))
+	}
+	if ext.RequiresInstall && env["NUON_INSTALL_ID"] == "" {
+		ui.PrintWarning(fmt.Sprintf("extension %q requires an install to be selected but none is configured", name))
 	}
 
 	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
