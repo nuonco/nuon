@@ -1,23 +1,41 @@
-import React from 'react'
+import { Fragment } from 'react'
+import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Logo } from '@/components/common/Logo'
 import { Text } from '@/components/common/Text'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import { cn } from '@/utils/classnames'
 
 export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
-  const {
-    steps,
-    currentStepIndex,
-    completedSteps,
-    goToStep,
-  } = useOnboardingWizard()
+  const { steps, currentStepIndex, completedSteps, goToStep } =
+    useOnboardingWizard()
 
   return (
-    <div className={cn(
-      'flex items-center px-6 pt-8 pb-7 bg-white dark:bg-dark-grey-900 z-10 transition-shadow duration-200',
-      isScrolled && 'shadow-sm'
-    )}>
-      <div className="flex items-center flex-1 min-w-0 max-w-2xl mx-auto">
+    <div
+      className={cn(
+        'flex flex-col gap-4 px-6 pt-4 pb-12 z-10 transition-shadow duration-200',
+        isScrolled && 'shadow-sm border-b'
+      )}
+    >
+      <div className="flex justify-between w-full">
+        <Logo />
+
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" href="https://docs.nuon.co" size="sm">
+            <Icon variant="BookOpenIcon" size={14} /> Docs
+          </Button>
+          {currentStepIndex >= 1 ? (
+            <Button variant="ghost" size="sm" href="/">
+              <Icon variant="SkipForwardIcon" size={14} /> Skip
+            </Button>
+          ) : null}
+
+          <Text variant="subtext" theme="neutral">
+            {completedSteps?.size} / {steps?.length}
+          </Text>
+        </div>
+      </div>
+      <div className="flex items-center w-full min-w-0 max-w-2xl mx-auto">
         {steps.map((step, index) => {
           const isActive = index === currentStepIndex
           const isComplete = completedSteps.has(step.id)
@@ -25,7 +43,7 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
           const isLast = index === steps.length - 1
 
           return (
-            <React.Fragment key={step.id}>
+            <Fragment key={step.id}>
               <div className="relative flex-shrink-0">
                 <button
                   type="button"
@@ -85,7 +103,7 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
                   />
                 </div>
               )}
-            </React.Fragment>
+            </Fragment>
           )
         })}
       </div>

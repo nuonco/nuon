@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useMemo } from 'react'
 
 export type TRuntimeConfig = {
   apiUrl: string
@@ -35,7 +35,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     const cfg = window.__NUON_CONFIG__ ?? ({} as TRuntimeConfig)
     document.getElementById('nuon-config')?.remove()
     delete window.__NUON_CONFIG__
-    return { ...cfg, onboardingV2: true }
+    return cfg
   }, [])
 
   return (

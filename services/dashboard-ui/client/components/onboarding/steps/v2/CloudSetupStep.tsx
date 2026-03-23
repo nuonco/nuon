@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CloudPlatform as CloudPlatformDisplay } from '@/components/common/CloudPlatform'
@@ -19,7 +21,13 @@ const CLOUD_LABELS: Record<CloudPlatform, string> = {
 
 const MOCK_CURL_COMMAND = `curl -sSL https://install.nuon.co/runner | bash -s -- --token <YOUR_TOKEN>`
 
-export const CloudSetupStep = ({ onAdvance, onGoBack, sharedData, setSharedData, nextStepTitle }: IWizardStepComponentProps) => {
+export const CloudSetupStep = ({
+  onAdvance,
+  onGoBack,
+  sharedData,
+  setSharedData,
+  nextStepTitle,
+}: IWizardStepComponentProps) => {
   const [selected, setSelected] = useState<CloudSetupOption | null>(null)
   const cloudPlatform = sharedData.cloudPlatform as CloudPlatform | null
   const cloudLabel = cloudPlatform ? CLOUD_LABELS[cloudPlatform] : null
@@ -32,35 +40,33 @@ export const CloudSetupStep = ({ onAdvance, onGoBack, sharedData, setSharedData,
 
   return (
     <div className="flex flex-col gap-6">
-      {cloudLabel && (
-        <div className="flex items-center gap-2">
-          <CloudPlatformDisplay
-            platform={cloudPlatform!}
-            colorVariant="color"
-            displayVariant="icon-only"
-            iconSize="36"
-          />
-          <Text theme="neutral">Deploying to {cloudLabel}</Text>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-12">
         <Button
           type="button"
           variant="ghost"
           onClick={() => setSelected('cloud')}
-          className="w-full !h-full !p-0"
+          className="w-full !h-full !p-0 focus:!bg-transparent"
         >
           <div
             className={cn(
               'flex flex-col w-full gap-3 p-5 border rounded-md text-left',
-              selected === 'cloud' && '!bg-code/10 !border-primary-600'
+              selected === 'cloud' && '!border-primary-600'
             )}
           >
-            <div className="flex items-center gap-3">
-              <Icon variant="CloudArrowUp" size={22} />
+            <div className="flex items-center gap-4">
+              {cloudLabel ? (
+                <CloudPlatformDisplay
+                  platform={cloudPlatform!}
+                  colorVariant="color"
+                  displayVariant="icon-only"
+                  iconSize="36"
+                />
+              ) : (
+                <Icon variant="CloudArrowUp" size="24" />
+              )}
               <Text variant="base">
-                Connect {cloudLabel ? `your ${cloudLabel} account` : 'a cloud account'}
+                Connect{' '}
+                {cloudLabel ? `your ${cloudLabel} account` : 'a cloud account'}
               </Text>
             </div>
             <Text variant="body" theme="neutral" className="whitespace-normal">
@@ -70,11 +76,16 @@ export const CloudSetupStep = ({ onAdvance, onGoBack, sharedData, setSharedData,
             </Text>
             {selected === 'cloud' && (
               <div className="flex flex-col gap-2 mt-1 w-full">
-                <Text variant="label" theme="neutral">Run this command to install the runner:</Text>
+                <Text variant="label" theme="neutral">
+                  Run this command to install the runner:
+                </Text>
                 <div className="relative w-full">
                   <CodeBlock language="bash">{MOCK_CURL_COMMAND}</CodeBlock>
                   <div className="absolute top-3 right-1">
-                    <ClickToCopyButton className="bg-background" textToCopy={MOCK_CURL_COMMAND} />
+                    <ClickToCopyButton
+                      className="bg-background"
+                      textToCopy={MOCK_CURL_COMMAND}
+                    />
                   </div>
                 </div>
               </div>
@@ -82,24 +93,30 @@ export const CloudSetupStep = ({ onAdvance, onGoBack, sharedData, setSharedData,
           </div>
         </Button>
 
+        <Divider dividerWord="Or" />
+
         <Button
           type="button"
           variant="ghost"
           onClick={() => setSelected('sandbox')}
-          className="w-full !h-full !p-0"
+          className="w-full !h-full !p-0 focus:!bg-transparent"
         >
           <div
             className={cn(
               'flex flex-col w-full gap-3 p-5 border rounded-md text-left',
-              selected === 'sandbox' && '!bg-code !border-primary-600'
+              selected === 'sandbox' && '!border-primary-600'
             )}
           >
-            <div className="flex items-center gap-3">
-              <Icon variant="TestTube" size={22} />
+            <div className="flex items-center gap-4">
+              <Icon variant="TestTube" size="24" />
               <Text variant="base">Use demo mode</Text>
+              <Badge size="sm" theme="brand">
+                Recommended
+              </Badge>
             </div>
             <Text variant="body" theme="neutral" className="whitespace-normal">
-              We'll spin up a managed demo environment — no cloud account needed.
+              We'll spin up a managed demo environment — no cloud account
+              needed.
             </Text>
           </div>
         </Button>
@@ -110,9 +127,17 @@ export const CloudSetupStep = ({ onAdvance, onGoBack, sharedData, setSharedData,
           <Button type="button" variant="secondary" onClick={onGoBack}>
             <Icon variant="CaretLeft" weight="bold" /> Back
           </Button>
-        ) : <div />}
-        <Button type="button" variant="primary" disabled={!selected} onClick={handleAdvance}>
-          {nextStepTitle ?? 'Continue'} <Icon variant="CaretRight" weight="bold" />
+        ) : (
+          <div />
+        )}
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!selected}
+          onClick={handleAdvance}
+        >
+          {nextStepTitle ?? 'Continue'}{' '}
+          <Icon variant="CaretRight" weight="bold" />
         </Button>
       </div>
     </div>

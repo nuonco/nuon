@@ -1,61 +1,198 @@
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Card } from '@/components/common/Card'
 import type { TIconVariant } from '@/components/common/Icon'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
-const NEXT_STEP_CARDS: { icon: TIconVariant; title: string; description: string }[] = [
+type NextStepLink = {
+  icon: TIconVariant
+  title: string
+  description: string
+  href: string
+  badge?: string
+}
+
+type NextStepSection = {
+  icon: TIconVariant
+  title: string
+  step: number
+  description: string
+  links: NextStepLink[]
+}
+
+const NEXT_STEP_SECTIONS: NextStepSection[] = [
   {
-    icon: 'SquaresFour',
-    title: 'Explore your app',
-    description: 'View your app config, builds, and deployment history.',
+    icon: 'Plugs',
+    title: 'Connect your app',
+    step: 1,
+    description:
+      'Wire your SaaS into Nuon — define install inputs, connect your CI/CD pipeline, and configure component sources.',
+    links: [
+      {
+        icon: 'BookOpen',
+        title: 'App inputs & config',
+        description: 'Define what customers provide at install time',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Connect CI/CD',
+        description: 'Trigger deploys from GitHub Actions, etc.',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Component sources',
+        description: 'Helm, Terraform, Docker, raw manifests',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'nuon apps init',
+        description: 'Pull your app config locally with the CLI',
+        href: 'https://docs.nuon.co',
+      },
+    ],
   },
   {
-    icon: 'Users',
-    title: 'Invite your team',
-    description: 'Add teammates and set up roles for your organization.',
+    icon: 'ShieldCheck',
+    title: 'Day 2 operations',
+    step: 2,
+    description:
+      'Keep customer installs healthy, secure, and auditable after go-live.',
+    links: [
+      {
+        icon: 'BookOpen',
+        title: 'Drift detection',
+        description: 'Detect & auto-reconcile config drift across installs',
+        href: 'https://docs.nuon.co',
+        badge: 'Reliability',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Break-glass access',
+        description: 'Audited emergency access to customer infrastructure',
+        href: 'https://docs.nuon.co',
+        badge: 'Security',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Policies',
+        description: 'OPA rules that gate installs and deployments',
+        href: 'https://docs.nuon.co',
+        badge: 'Governance',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Approvals',
+        description: 'Require human sign-off before risky changes apply',
+        href: 'https://docs.nuon.co',
+        badge: 'Automation',
+      },
+    ],
   },
   {
-    icon: 'BookOpen',
-    title: 'Read the docs',
-    description: 'Learn more about Nuon workflows and advanced configuration.',
+    icon: 'Browser',
+    title: 'Create an installer',
+    step: 3,
+    description:
+      'Give customers a self-service portal to install, configure, and manage their own instance.',
+    links: [
+      {
+        icon: 'BookOpen',
+        title: 'Installer overview',
+        description: 'What the customer-facing portal looks like',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Portal branding',
+        description: 'Custom domain, logo, colours, and copy',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Customer inputs',
+        description: 'What you ask customers to provide before install',
+        href: 'https://docs.nuon.co',
+      },
+      {
+        icon: 'BookOpen',
+        title: 'Embed the installer',
+        description: 'Drop the portal into your app or docs site',
+        href: 'https://docs.nuon.co',
+      },
+    ],
   },
 ]
 
-export const NextStepsStep = ({ onAdvance, onGoBack }: IWizardStepComponentProps) => (
-  <div className="flex flex-col gap-6">
-    <div className="flex flex-col items-center gap-3 py-4">
-      <Icon variant="CheckCircle" size={48} weight="fill" />
-      <Text variant="heading" className="text-center">
-        You're all set!
-      </Text>
-      <Text variant="body" theme="neutral" className="text-center max-w-sm">
-        Your environment is ready. Here's what you can do next.
+export const NextStepsStep = ({ onAdvance }: IWizardStepComponentProps) => (
+  <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-2">
+      <Text variant="h2">What's next</Text>
+      <Text variant="body" theme="neutral">
+        Your environment is provisioned. Here are some ways to get the most out
+        of Nuon.
       </Text>
     </div>
 
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {NEXT_STEP_CARDS.map((card) => (
-        <Card key={card.title} className="gap-3 p-4">
-          <Icon variant={card.icon} size={20} />
-          <Text variant="label">{card.title}</Text>
+    {NEXT_STEP_SECTIONS.map((section) => (
+      <div key={section.title} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Icon variant={section.icon} size={20} />
+            <Text variant="label">{section.title}</Text>
+            <Badge size="sm" theme="neutral">
+              Step {section.step}
+            </Badge>
+          </div>
           <Text variant="body" theme="neutral">
-            {card.description}
+            {section.description}
           </Text>
-        </Card>
-      ))}
-    </div>
+        </div>
 
-    <div className="flex justify-between">
-      {onGoBack ? (
-        <Button type="button" variant="secondary" onClick={onGoBack}>
-          <Icon variant="CaretLeft" weight="bold" /> Back
-        </Button>
-      ) : <div />}
-      <Button type="button" variant="primary" onClick={onAdvance}>
-        Go to dashboard <Icon variant="ArrowRight" weight="bold" />
-      </Button>
-    </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {section.links.map((link) => (
+            <a
+              key={link.title}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="no-underline"
+            >
+              <Card className="gap-2 p-4 h-full hover:border-cool-grey-500 transition-colors relative">
+                {link.badge && (
+                  <Badge
+                    size="sm"
+                    theme="default"
+                    className="absolute top-3 right-3"
+                  >
+                    {link.badge}
+                  </Badge>
+                )}
+                <div className="flex items-center gap-2">
+                  <Icon variant={link.icon} size={16} />
+                  <Text variant="label">{link.title}</Text>
+                </div>
+                <Text variant="body" theme="neutral">
+                  {link.description}
+                </Text>
+              </Card>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+
+    <Button
+      type="button"
+      variant="primary"
+      onClick={onAdvance}
+      className="self-center"
+    >
+      <Icon variant="SquaresFour" /> Open control plane
+    </Button>
   </div>
 )
