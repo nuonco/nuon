@@ -83,7 +83,7 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
       }}
       {...props}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
         {error ? (
           <Banner theme="error">
             {error?.error ||
