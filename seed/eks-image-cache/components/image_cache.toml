@@ -1,0 +1,22 @@
+# Terraform module that creates an EBS snapshot with pre-pulled container images.
+# The snapshot is used by the EC2NodeClass below so Karpenter nodes launch with
+# images already in containerd — no multi-GB pulls on every scale-out.
+
+name              = "image_cache"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+
+[public_repo]
+repo      = "nuonco/karpenter-image-cache"
+directory = "."
+branch    = "main"
+
+[vars]
+region         = "{{.nuon.install_stack.outputs.region}}"
+vpc_id         = "{{.nuon.install.sandbox.outputs.vpc.id}}"
+subnet_id      = "{{.nuon.install.sandbox.outputs.vpc.runner_subnet_id}}"
+volume_size_gb = "150"
+instance_type  = "m5.xlarge"
+images         = <<-EOT
+  ["your-registry.com/big-app:v2.1", "your-registry.com/sidecar:v1.0", "your-registry.com/init:v1.0"]
+EOT

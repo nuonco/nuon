@@ -1,0 +1,9 @@
+# EC2NodeClass that mounts the pre-cached image EBS snapshot as a secondary
+# volume. The userData script copies cached containerd data before the EKS
+# bootstrap starts containerd, so images are available without a registry pull.
+
+name      = "node_class"
+type      = "kubernetes_manifest"
+namespace = "kube-system"
+
+manifest = "./manifests/ec2nodeclass.yaml"

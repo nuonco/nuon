@@ -1,0 +1,9 @@
+# NodePool that uses the "cached" EC2NodeClass with pre-baked images.
+# Workload pods scheduled on this pool's nodes get instant image availability.
+
+name         = "node_pool"
+type         = "kubernetes_manifest"
+namespace    = "kube-system"
+dependencies = ["node_class"]
+
+manifest = "./manifests/nodepool.yaml"

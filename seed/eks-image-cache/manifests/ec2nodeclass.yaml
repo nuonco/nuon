@@ -1,0 +1,65 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: cached
+spec:
+  amiSelectorTerms:
+    - alias: al2023@latest
+  role: "{{.nuon.install.sandbox.outputs.karpenter.instance_profile.name}}"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "{{.nuon.install.sandbox.outputs.cluster.name}}"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "{{.nuon.install.sandbox.outputs.cluster.name}}"
+  blockDeviceMappings:
+    # Root volume
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 20Gi
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+    # Pre-cached image volume (from snapshot)
+    - deviceName: /dev/xvdf
+      ebs:
+        snapshotID: "{{.nuon.components.image_cache.outputs.snapshot_id}}"
+        volumeSize: "{{.nuon.components.image_cache.outputs.volume_size_gb}}Gi"
+        volumeType: gp3
+        encrypted: true
+        deleteOnTermination: true
+  userData: |
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+    --BOUNDARY
+    Content-Type: text/x-shellscript; charset="us-ascii"
+
+    #!/bin/bash
+    # Mount the pre-cached image snapshot and seed containerd's data directory.
+    # This script runs BEFORE the EKS bootstrap, so containerd has not started yet.
+    # By the time kubelet brings up pods, all cached images are already present.
+
+    set -euo pipefail
+
+    DEVICE="/dev/xvdf"
+
+    # Wait for the EBS device to appear (up to 60 seconds)
+    for i in $(seq 1 60); do [ -b "$DEVICE" ] && break; sleep 1; done
+
+    if [ -b "$DEVICE" ]; then
+      mkdir -p /tmp/image-cache
+      mount -o ro "$DEVICE" /tmp/image-cache
+
+      if [ -d /tmp/image-cache/containerd ]; then
+        mkdir -p /var/lib/containerd
+        cp -a /tmp/image-cache/containerd/* /var/lib/containerd/ 2>/dev/null || true
+        echo "[image-cache] Seeded containerd data from snapshot"
+      fi
+
+      umount /tmp/image-cache
+    else
+      echo "[image-cache] WARNING: cache device $DEVICE not found, images will be pulled normally"
+    fi
+
+    --BOUNDARY--

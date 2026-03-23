@@ -1,0 +1,23 @@
+# Example workload component that depends on the cached node pool.
+# Pods from this helm chart will be scheduled on nodes with pre-cached images.
+
+name         = "app"
+type         = "helm_chart"
+chart_name   = "big-app"
+namespace    = "app"
+dependencies = ["node_pool"]
+
+[public_repo]
+repo      = "your-org/your-app"
+directory = "charts/big-app"
+branch    = "main"
+
+[values]
+image_repository = "your-registry.com/big-app"
+image_tag        = "v2.1"
+
+# Toleration + nodeSelector to land on the cached node pool
+node_selector_key   = "nuon.co/node-pool"
+node_selector_value = "cached"
+tolerations_key     = "nuon.co/node-pool"
+tolerations_value   = "cached"

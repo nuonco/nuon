@@ -1,0 +1,113 @@
+#!/bin/bash
+set -euo pipefail
+
+DEVICE="/dev/xvdf"
+MOUNT="/mnt/image-cache"
+SOCK="/tmp/builder-containerd.sock"
+
+log() { echo "[image-cache-builder] $(date '+%H:%M:%S') $*"; }
+
+log "Starting image cache builder"
+
+# -------------------------------------------------------------------
+# 1. Wait for the secondary EBS volume device to appear
+# -------------------------------------------------------------------
+log "Waiting for device $DEVICE..."
+for i in $(seq 1 120); do
+  [ -b "$DEVICE" ] && break
+  sleep 2
+done
+if [ ! -b "$DEVICE" ]; then
+  log "ERROR: $DEVICE not found after 4 minutes"
+  shutdown -h now
+  exit 1
+fi
+
+# -------------------------------------------------------------------
+# 2. Format and mount the cache volume
+# -------------------------------------------------------------------
+mkfs.ext4 -L image-cache "$DEVICE"
+mkdir -p "$MOUNT"
+mount "$DEVICE" "$MOUNT"
+log "Mounted $DEVICE at $MOUNT"
+
+# -------------------------------------------------------------------
+# 3. Install containerd
+# -------------------------------------------------------------------
+dnf install -y containerd aws-cli-2 jq 2>&1 | tail -5
+log "Installed containerd"
+
+# -------------------------------------------------------------------
+# 4. Start a dedicated containerd instance rooted on the cache volume
+#    Images are pulled into the k8s.io namespace so kubelet recognises
+#    them on Karpenter nodes without re-pulling.
+# -------------------------------------------------------------------
+mkdir -p "$MOUNT/containerd" /tmp/builder-containerd-state
+
+cat > /tmp/builder-containerd-config.toml <<CONF
+version = 2
+root   = "$MOUNT/containerd"
+state  = "/tmp/builder-containerd-state"
+
+[grpc]
+  address = "$SOCK"
+CONF
+
+containerd --config /tmp/builder-containerd-config.toml &
+CONTAINERD_PID=$!
+
+for i in $(seq 1 30); do [ -S "$SOCK" ] && break; sleep 1; done
+if [ ! -S "$SOCK" ]; then
+  log "ERROR: containerd socket not available"
+  shutdown -h now
+  exit 1
+fi
+log "containerd running (pid $CONTAINERD_PID)"
+
+# -------------------------------------------------------------------
+# 5. Pull every image
+# -------------------------------------------------------------------
+pull_image() {
+  local img="$1"
+
+  # Auto-detect ECR images and authenticate
+  if [[ "$img" == *".dkr.ecr."*".amazonaws.com/"* ]]; then
+    local ecr_region
+    ecr_region=$(echo "$img" | grep -oP '\.dkr\.ecr\.\K[^.]+')
+    local password
+    password=$(aws ecr get-login-password --region "$ecr_region" 2>/dev/null || true)
+    if [ -n "$password" ]; then
+      log "Pulling (ECR, $ecr_region): $img"
+      ctr -n k8s.io -a "$SOCK" images pull --user "AWS:$password" "$img" && return 0
+    fi
+  fi
+
+  log "Pulling: $img"
+  ctr -n k8s.io -a "$SOCK" images pull "$img"
+}
+
+FAIL=0
+%{ for img in images ~}
+pull_image "${img}" || { log "WARNING: failed to pull ${img}"; FAIL=1; }
+%{ endfor ~}
+
+if [ "$FAIL" -eq 1 ]; then
+  log "Some images failed to pull — snapshot will contain partial cache"
+fi
+
+# -------------------------------------------------------------------
+# 6. List cached images for audit trail in cloud-init logs
+# -------------------------------------------------------------------
+log "Cached images:"
+ctr -n k8s.io -a "$SOCK" images ls -q 2>/dev/null || true
+
+# -------------------------------------------------------------------
+# 7. Tear down and shutdown
+# -------------------------------------------------------------------
+kill "$CONTAINERD_PID" 2>/dev/null || true
+wait "$CONTAINERD_PID" 2>/dev/null || true
+
+sync
+umount "$MOUNT"
+log "Volume unmounted. Shutting down."
+shutdown -h now
