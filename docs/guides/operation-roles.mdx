@@ -79,15 +79,15 @@ Use an `[[operation_roles]]` array to map sandbox operations to roles.
 ```toml sandbox.toml
 [[operation_roles]]
 operation = "provision"
-role      = "{{.nuon.install.id}}-provision-role"
+role      = "{{.nuon.install.id}}-sandbox-deploy-role"
 
 [[operation_roles]]
 operation = "reprovision"
-role      = "{{.nuon.install.id}}-provision-role"
+role      = "{{.nuon.install.id}}-sandbox-update-role"
 
 [[operation_roles]]
 operation = "deprovision"
-role      = "{{.nuon.install.id}}-destroy-role"
+role      = "{{.nuon.install.id}}-sandbox-teardown-role"
 ```
 
 Valid operations for sandbox: `provision`, `reprovision`, and `deprovision`.
@@ -98,11 +98,15 @@ Use the same `[[operation_roles]]` array on any component config file.
 
 ```toml components/my_lambda.toml
 [[operation_roles]]
-operation = "deploy"
+operation = "provision"
 role      = "{{.nuon.install.id}}-deploy-role"
 
 [[operation_roles]]
-operation = "teardown"
+operation = "reprovision"
+role      = "{{.nuon.install.id}}-update-role"
+
+[[operation_roles]]
+operation = "deprovision"
 role      = "{{.nuon.install.id}}-teardown-role"
 ```
 
