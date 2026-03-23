@@ -9,7 +9,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { createOrg, getOrg } from '@/lib'
+import { createOrg, getOrg, adminAddSupportUsersToOrg } from '@/lib'
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
@@ -24,7 +24,7 @@ export const CreateOrgStep = ({
 }: IWizardStepComponentProps) => {
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
   const { user } = useAuth()
-  const { isByoc, sfTrialEndpoint } = useConfig()
+  const { isByoc, sfTrialEndpoint, adminApiUrl } = useConfig()
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
 
   const orgCreated = isStepComplete('org_created')
@@ -38,6 +38,14 @@ export const CreateOrgStep = ({
     onSuccess: (org) => {
       setCreatedOrg(org)
       setSharedData('orgId', org.id)
+
+      if (!isByoc && adminApiUrl) {
+        adminAddSupportUsersToOrg({
+          orgId: org.id,
+          adminApiUrl,
+          adminEmail: user?.email ?? '',
+        }).catch(() => {})
+      }
 
       if (!isByoc && sfTrialEndpoint) {
         const nameParts = (user?.name ?? '').split(' ')
