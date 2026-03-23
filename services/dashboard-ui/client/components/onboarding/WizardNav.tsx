@@ -3,12 +3,14 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Logo } from '@/components/common/Logo'
 import { Text } from '@/components/common/Text'
+import { useConfig } from '@/hooks/use-config'
 import { useOnboardingWizard } from '@/hooks/use-onboarding-wizard'
 import { cn } from '@/utils/classnames'
 
 export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
   const { steps, currentStepIndex, completedSteps, goToStep } =
     useOnboardingWizard()
+  const { onboardingV2 } = useConfig()
 
   return (
     <div
@@ -17,24 +19,26 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
         isScrolled && 'shadow-sm border-b'
       )}
     >
-      <div className="flex justify-between w-full">
-        <Logo />
-
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" href="https://docs.nuon.co" size="sm">
-            <Icon variant="BookOpenIcon" size={14} /> Docs
-          </Button>
-          {currentStepIndex >= 1 ? (
-            <Button variant="ghost" size="sm" href="/">
-              <Icon variant="SkipForwardIcon" size={14} /> Skip
+      {onboardingV2 ? (
+        <div className="flex justify-between w-full">
+          <Logo />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" href="https://docs.nuon.co" size="sm">
+              <Icon variant="BookOpenIcon" size={14} /> Docs
             </Button>
-          ) : null}
+            {currentStepIndex >= 1 ? (
+              <Button variant="ghost" size="sm" href="/">
+                <Icon variant="SkipForwardIcon" size={14} /> Skip
+              </Button>
+            ) : null}
 
-          <Text variant="subtext" theme="neutral">
-            {completedSteps?.size} / {steps?.length}
-          </Text>
+            <Text variant="subtext" theme="neutral">
+              {completedSteps?.size} / {steps?.length}
+            </Text>
+          </div>
         </div>
-      </div>
+      ) : null}
+
       <div className="flex items-center w-full min-w-0 max-w-2xl mx-auto">
         {steps.map((step, index) => {
           const isActive = index === currentStepIndex
