@@ -39,9 +39,6 @@ type ServiceAppInputRequest struct {
 	// Required: true
 	Index *int64 `json:"index"`
 
-	// New, optional fields
-	Internal bool `json:"internal,omitempty"`
-
 	// required
 	Required bool `json:"required,omitempty"`
 
@@ -51,7 +48,7 @@ type ServiceAppInputRequest struct {
 	// source
 	Source AppAppInputSource `json:"source,omitempty"`
 
-	// type
+	// New, optional fields
 	Type string `json:"type,omitempty"`
 }
 

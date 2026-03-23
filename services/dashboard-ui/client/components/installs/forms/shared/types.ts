@@ -23,6 +23,8 @@ export interface IUpdateInstallForm {
   error?: any
   onFormSubmit?: () => void
   onRegisterClearDraft?: (clearFn: () => void) => void
+  selectedRole?: string
+  onRoleChange?: (role: string) => void
 }
 
 export interface IPlatformFields {

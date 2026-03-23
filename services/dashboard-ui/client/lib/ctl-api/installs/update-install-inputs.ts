@@ -3,6 +3,7 @@ import type { TInstallInputs } from '@/types'
 
 export type TUpdateInstallInputsBody = {
   inputs?: Record<string, string>
+  role?: string
 }
 
 export const updateInstallInputs = ({
