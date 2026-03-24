@@ -70,7 +70,16 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 
-		data := helpers.GetFakeSandboxStackData(appCfg, region)
+		installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install state for sandbox")
+		}
+		stateMap, err := installState.WorkflowSafeAsMap(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to convert install state to map")
+		}
+
+		data := helpers.GetFakeSandboxStackData(appCfg, region, stateMap)
 
 		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
 			StackVersionID: version.ID,

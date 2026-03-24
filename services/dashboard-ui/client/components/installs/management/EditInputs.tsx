@@ -102,6 +102,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   const { addToast } = useToast()
   const formRef = useRef<HTMLFormElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const {
     data: config,
@@ -147,7 +148,10 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
       return updateInstallInputs({
         installId: install.id,
         orgId: org.id,
-        body: { inputs },
+        body: {
+          inputs,
+          ...(selectedRole && { role: selectedRole }),
+        },
       })
     },
     onSuccess: (result) => {
@@ -351,6 +355,8 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
           onRegisterClearDraft={(fn) => {
             clearDraftRef.current = fn
           }}
+          selectedRole={selectedRole}
+          onRoleChange={setSelectedRole}
         />
       )}
     </Modal>

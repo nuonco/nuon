@@ -5,6 +5,7 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
@@ -33,10 +34,12 @@ export const Workflows = () => {
         ]}
       />
 
+      <ActiveWorkflows installId={install?.id} />
+
       <div className="flex items-center gap-4 justify-between">
         <HeadingGroup>
           <Text variant="base" weight="strong">
-            Workflows
+            Workflow history
           </Text>
         </HeadingGroup>
 

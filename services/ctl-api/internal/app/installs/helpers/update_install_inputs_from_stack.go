@@ -109,7 +109,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 	}
 
 	// Send signals to notify that inputs have been updated from stack outputs
-	_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs)
+	_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "")
 	if err != nil {
 		return errors.Wrap(err, "unable to update inputs from install stack output")
 	}

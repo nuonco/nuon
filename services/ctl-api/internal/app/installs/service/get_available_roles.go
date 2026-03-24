@@ -101,16 +101,18 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	outputs := installStack.InstallStackOutputs
 	var roles []AvailableRole
 
+	var stackOutput app.StackOutput
 	switch {
 	case outputs.AWSStackOutputs != nil:
-		roles, err = buildAvailableRolesAWS(outputs.AWSStackOutputs, appCfg, state, operationType)
+		stackOutput = outputs.AWSStackOutputs
 	case outputs.GCPStackOutputs != nil:
-		roles, err = buildAvailableRolesGCP(outputs.GCPStackOutputs, appCfg, state, operationType)
+		stackOutput = outputs.GCPStackOutputs
 	default:
 		ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: []AvailableRole{}})
 		return
 	}
 
+	roles, err = buildAvailableRoles(stackOutput, appCfg, state, operationType)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to build available roles: %w", err))
 		return
@@ -119,10 +121,10 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
 }
 
-func buildAvailableRolesAWS(installStackOutput *app.AWSStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
+func buildAvailableRoles(stackOutputs app.StackOutput, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
 	roles := []AvailableRole{}
 
-	if installStackOutput == nil {
+	if stackOutputs == nil {
 		return roles, nil
 	}
 
@@ -131,121 +133,82 @@ func buildAvailableRolesAWS(installStackOutput *app.AWSStackOutputs, appCfg *app
 		return nil, fmt.Errorf("unable to get install state map: %w", err)
 	}
 
-	for name, arn := range installStackOutput.CustomRoleARNs {
+	customRoles, err := stackOutputs.CustomRoles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch custom roles %w", err)
+	}
+	for name, arn := range customRoles {
+		rendered, err := render.RenderV2(name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render provision role name: %w", err)
+		}
 		roles = append(roles, AvailableRole{
-			Name:     name,
+			Name:     rendered,
 			ARN:      arn,
 			RoleType: "custom",
 		})
 	}
 
-	for name, arn := range installStackOutput.BreakGlassRoleARNs {
+	breakGlassRoles, err := stackOutputs.BreakGlassRoles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch break glass roles %w", err)
+	}
+	for name, arn := range breakGlassRoles {
+		rendered, err := render.RenderV2(name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render provision role name: %w", err)
+		}
 		roles = append(roles, AvailableRole{
-			Name:     name,
+			Name:     rendered,
 			ARN:      arn,
 			RoleType: "break_glass",
 		})
 	}
 
-	if installStackOutput.ProvisionIAMRoleARN != "" {
+	provisionRoleID, err := stackOutputs.ProvisionRoleID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch provision role %w", err)
+	}
+	if provisionRoleID != "" {
 		rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
 		if err != nil {
 			return nil, fmt.Errorf("unable to render provision role name: %w", err)
 		}
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
-			ARN:      installStackOutput.ProvisionIAMRoleARN,
+			ARN:      provisionRoleID,
 			RoleType: "provision",
 		})
 	}
 
-	if installStackOutput.DeprovisionIAMRoleARN != "" {
+	deprovisionRoleID, err := stackOutputs.DeprovisionRoleID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch deprovision role %w", err)
+	}
+	if deprovisionRoleID != "" {
 		rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
 		if err != nil {
 			return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
 		}
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
-			ARN:      installStackOutput.DeprovisionIAMRoleARN,
+			ARN:      deprovisionRoleID,
 			RoleType: "deprovision",
 		})
 	}
 
-	if installStackOutput.MaintenanceIAMRoleARN != "" {
+	maintenanceRoleID, err := stackOutputs.MaintenanceRoleID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch maintenance role %w", err)
+	}
+	if maintenanceRoleID != "" {
 		rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
 		if err != nil {
 			return nil, fmt.Errorf("unable to render maintenance role name: %s", err)
 		}
 		roles = append(roles, AvailableRole{
 			Name:     rendered,
-			ARN:      installStackOutput.MaintenanceIAMRoleARN,
-			RoleType: "maintenance",
-		})
-	}
-
-	return roles, nil
-}
-
-func buildAvailableRolesGCP(installStackOutput *app.GCPStackOutputs, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {
-	roles := []AvailableRole{}
-
-	if installStackOutput == nil {
-		return roles, nil
-	}
-
-	stateMap, err := state.AsMap()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get install state map: %w", err)
-	}
-
-	for name, email := range installStackOutput.CustomSAEmails {
-		roles = append(roles, AvailableRole{
-			Name:     name,
-			ARN:      email,
-			RoleType: "custom",
-		})
-	}
-
-	for name, email := range installStackOutput.BreakGlassSAEmails {
-		roles = append(roles, AvailableRole{
-			Name:     name,
-			ARN:      email,
-			RoleType: "break_glass",
-		})
-	}
-
-	if installStackOutput.ProvisionSAEmail != "" {
-		rendered, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
-		if err != nil {
-			return nil, fmt.Errorf("unable to render provision role name: %w", err)
-		}
-		roles = append(roles, AvailableRole{
-			Name:     rendered,
-			ARN:      installStackOutput.ProvisionSAEmail,
-			RoleType: "provision",
-		})
-	}
-
-	if installStackOutput.DeprovisionSAEmail != "" {
-		rendered, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
-		if err != nil {
-			return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
-		}
-		roles = append(roles, AvailableRole{
-			Name:     rendered,
-			ARN:      installStackOutput.DeprovisionSAEmail,
-			RoleType: "deprovision",
-		})
-	}
-
-	if installStackOutput.MaintenanceSAEmail != "" {
-		rendered, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-		if err != nil {
-			return nil, fmt.Errorf("unable to render maintenance role name: %w", err)
-		}
-		roles = append(roles, AvailableRole{
-			Name:     rendered,
-			ARN:      installStackOutput.MaintenanceSAEmail,
+			ARN:      maintenanceRoleID,
 			RoleType: "maintenance",
 		})
 	}

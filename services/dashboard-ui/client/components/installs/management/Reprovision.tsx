@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -20,13 +22,17 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
+  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const { mutate, isPending: isLoading, error } = useMutation({
     mutationFn: () =>
       reprovisionInstall({
         orgId: org.id,
         installId: install.id,
-        body: { plan_only: false },
+        body: {
+          plan_only: false,
+          ...(selectedRole && { role: selectedRole }),
+        },
       }),
     onSuccess: (result) => {
       addToast(
@@ -84,13 +90,27 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
               'An error happened, please refresh the page and try again.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="strong">
-          Are you sure you want to reprovision {}?
-        </Text>
-        <Text variant="base">
-          Reprovisioning will recreate all resources and deploy all components
-          again.
-        </Text>
+        <div className="flex flex-col gap-1">
+          <Text variant="base" weight="strong">
+            Are you sure you want to reprovision {}?
+          </Text>
+          <Text variant="base">
+            Reprovisioning will recreate all resources and deploy all components
+            again.
+          </Text>
+        </div>
+
+        <RoleSelector
+          installId={install?.id}
+          // TODO(sk): remove operationtype and principalType params, mark them deprecated
+          // this is just place holder, these two params are not needed anymore since they are not being used at
+          // at the backene. to be removed from everywhere.
+          operationType="reprovision"
+          principalType="sandbox"
+          value={selectedRole}
+          onChange={setSelectedRole}
+          name="role"
+        />
       </div>
     </Modal>
   )
