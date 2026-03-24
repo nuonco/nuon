@@ -84,8 +84,10 @@ func (s *AdminRestartRunnersTestSuite) SetupTest() {
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
-		L:  s.service.L,
-		DB: s.service.DB,
+		L:       s.service.L,
+		DB:      s.service.DB,
+		TestOrg: s.testOrg,
+		TestAcc: s.testAcc,
 	})
 	err := s.service.RunnersService.RegisterInternalRoutes(s.router)
 	require.NoError(s.T(), err)
@@ -195,10 +197,9 @@ func (s *AdminRestartRunnersTestSuite) TestAdminRestartRunners() {
 			requestBody:  AdminRestartRunnersRequest{},
 			expectedCode: http.StatusOK,
 			validateFunc: func(runnerIDs []string) {
-				// Handler has query bugs (Order after Find, no WithContext) that cause it to find zero runners
-				// even though runners exist with correct org_type. Testing that it returns 200 without crashing.
+				// Handler correctly finds runners for non-sandbox orgs and sends restart signals
 				signals := s.mockEvClient.GetSignals()
-				assert.Len(s.T(), signals, 0, "handler query bug causes no runners found, so no signals sent")
+				assert.Len(s.T(), signals, 2, "should send restart signal for each runner")
 			},
 		},
 		{

@@ -11,18 +11,33 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
+
+// mockWorkflowRun implements tclient.WorkflowRun for mock return values.
+type mockWorkflowRun struct{}
+
+func (m *mockWorkflowRun) GetID() string    { return "mock-workflow-id" }
+func (m *mockWorkflowRun) GetRunID() string { return "mock-run-id" }
+func (m *mockWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error {
+	return nil
+}
+func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface{}, options tclient.WorkflowRunGetOptions) error {
+	return nil
+}
 
 // ComponentsTestDeps holds all fx-injected dependencies for components service tests.
 type ComponentsTestDeps struct {
@@ -50,6 +65,7 @@ type ComponentsServiceTestSuite struct {
 	testApp           *app.App
 	testAppConfig     *app.AppConfig
 	mockEvClient      *tests.MockEventLoopClient
+	mockTC            *temporal.MockClient
 }
 
 func TestComponentsServiceSuite(t *testing.T) {
@@ -65,13 +81,23 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create fake event loop client for testing
+	// Create mock clients for testing
 	s.mockEvClient = tests.NewMockEventLoopClient()
+	ctrl := gomock.NewController(s.T())
+	s.mockTC = temporal.NewMockClient(ctrl)
+
+	// Queue creation is a side effect of component creation — allow it in all tests.
+	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
+			T: s.T(),
+			Mocks: &tests.TestMocks{
+				MockEv: s.mockEvClient,
+				MockTC: s.mockTC,
+			},
 			CustomValidator: true,
 		}),
 		// Service under test

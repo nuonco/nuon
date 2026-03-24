@@ -160,9 +160,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "default-org-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
@@ -193,9 +194,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "default-org-force-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeDefault,
 					NotificationsConfig: app.NotificationsConfig{
@@ -226,9 +228,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "integration-org-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -256,9 +259,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "integration-org-force-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeIntegration,
 					NotificationsConfig: app.NotificationsConfig{
@@ -286,9 +290,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "sandbox-org-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeSandbox,
 					NotificationsConfig: app.NotificationsConfig{
@@ -319,9 +324,10 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+				orgID := domains.NewOrgID()
 				org := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "legacy-org-test",
+					ID:          orgID,
+					Name:        fmt.Sprintf("del-%s", orgID),
 					SandboxMode: true,
 					OrgType:     app.OrgTypeLegacy,
 					NotificationsConfig: app.NotificationsConfig{
@@ -478,7 +484,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 
 			org := &app.Org{
 				ID:          domains.NewOrgID(),
-				Name:        "request-test-org",
+				Name:        fmt.Sprintf("req-%s", domains.NewOrgID()),
 				SandboxMode: true,
 				OrgType:     app.OrgTypeDefault,
 				NotificationsConfig: app.NotificationsConfig{

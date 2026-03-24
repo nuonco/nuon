@@ -173,8 +173,17 @@ func (s *GetAllOrgsTestSuite) TestGetAllOrgs() {
 				return []string{org1.ID, org2.ID}
 			},
 			queryParams:   "?type=",
-			expectedCount: 2,
+			expectedCount: -1, // shared DB may have other orgs
 			expectedCode:  http.StatusOK,
+			validateFunc: func(orgs []app.Org) {
+				// Verify both our created orgs are in the response
+				ids := make(map[string]bool)
+				for _, o := range orgs {
+					ids[o.Name] = true
+				}
+				require.True(s.T(), ids["sandbox-org"], "sandbox-org should be in response")
+				require.True(s.T(), ids["default-org"], "default-org should be in response")
+			},
 		},
 		{
 			name: "respects pagination limit",

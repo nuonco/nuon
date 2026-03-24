@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +55,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithSingleIdentity() {
 	identity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
 		ProviderType: app.ProviderTypeGoogle,
-		Sub:          "google-oauth2|111222333",
+		Sub:          fmt.Sprintf("google-oauth2|%s", s.testAcc.ID),
 		Name:         "Test User",
 		Picture:      "https://example.com/photo.jpg",
 	}
@@ -88,14 +89,14 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeWithMultipleIdentities() {
 		{
 			AccountID:    s.testAcc.ID,
 			ProviderType: app.ProviderTypeGoogle,
-			Sub:          "google-oauth2|aaa111",
+			Sub:          fmt.Sprintf("google-oauth2|multi-%s", s.testAcc.ID),
 			Name:         "Google User",
 			Picture:      "https://google.com/photo.jpg",
 		},
 		{
 			AccountID:    s.testAcc.ID,
 			ProviderType: app.ProviderTypeGitHub,
-			Sub:          "github|bbb222",
+			Sub:          fmt.Sprintf("github|multi-%s", s.testAcc.ID),
 			Name:         "GitHub User",
 			Picture:      "https://github.com/avatar.png",
 		},
@@ -143,7 +144,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIdentityFieldsFiltered() {
 	identity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
 		ProviderType: app.ProviderTypeOIDC,
-		Sub:          "oidc|sensitive-sub-claim",
+		Sub:          fmt.Sprintf("oidc|%s", s.testAcc.ID),
 		Name:         "OIDC User",
 		Picture:      "https://idp.example.com/avatar.png",
 	}
@@ -193,7 +194,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIsolatesIdentitiesByAccount() {
 	ownIdentity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
 		ProviderType: app.ProviderTypeGoogle,
-		Sub:          "google-oauth2|own-account",
+		Sub:          fmt.Sprintf("google-oauth2|own-%s", s.testAcc.ID),
 		Name:         "Own Account User",
 		Picture:      "https://example.com/own.jpg",
 	}
@@ -208,7 +209,7 @@ func (s *AccountsServiceTestSuite) TestGetAuthMeIsolatesIdentitiesByAccount() {
 	otherIdentity := app.AccountIdentity{
 		AccountID:    otherAcc.ID,
 		ProviderType: app.ProviderTypeGitHub,
-		Sub:          "github|other-account",
+		Sub:          fmt.Sprintf("github|other-%s", otherAcc.ID),
 		Name:         "Other Account User",
 		Picture:      "https://example.com/other.jpg",
 	}
