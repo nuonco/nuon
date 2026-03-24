@@ -142,17 +142,19 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 	}
 
 	// interpolate the state into the readme md
-	stateMap, err := installState.AsMap()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to convert state to json")
-	}
+	if len(installActionWorkflow.ActionWorkflow.Configs) > 0 {
+		stateMap, err := installState.AsMap()
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to convert state to json")
+		}
 
-	installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String, _, err = render.RenderWithWarnings(
-		installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String,
-		stateMap,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to render")
+		installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String, _, err = render.RenderWithWarnings(
+			installActionWorkflow.ActionWorkflow.Configs[0].BreakGlassRoleARN.String,
+			stateMap,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to render")
+		}
 	}
 
 	installActionWorkflow.Runs, err = db.HandlePaginatedResponse(ctx, installActionWorkflow.Runs)

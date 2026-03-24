@@ -30,9 +30,9 @@ func (s *GeneralPublicTestSuite) TestGetConfigSchema() {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "returns schema for full type",
+			name:         "returns error for unknown full type",
 			queryParams:  "?type=full",
-			expectedCode: http.StatusOK,
+			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "returns error when type is missing",

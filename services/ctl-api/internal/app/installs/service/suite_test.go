@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
@@ -20,12 +21,27 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	tclient "go.temporal.io/sdk/client"
+
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
+
+// mockWorkflowRun implements tclient.WorkflowRun for mock return values.
+type mockWorkflowRun struct{}
+
+func (m *mockWorkflowRun) GetID() string    { return "mock-workflow-id" }
+func (m *mockWorkflowRun) GetRunID() string { return "mock-run-id" }
+func (m *mockWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error {
+	return nil
+}
+func (m *mockWorkflowRun) GetWithOptions(ctx context.Context, valuePtr interface{}, options tclient.WorkflowRunGetOptions) error {
+	return nil
+}
 
 // InstallsTestDeps holds all fx-injected dependencies for installs service tests.
 type InstallsTestDeps struct {
@@ -53,6 +69,8 @@ type InstallsServiceTestSuite struct {
 	testApp         *app.App
 	testAppConfig   *app.AppConfig
 	mockEvClient    *tests.MockEventLoopClient
+	ctrl            *gomock.Controller
+	mockTC          *temporal.MockClient
 }
 
 func TestInstallsServiceSuite(t *testing.T) {
@@ -68,13 +86,18 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create fake event loop client for testing
+	// Create mock clients for testing
 	s.mockEvClient = tests.NewMockEventLoopClient()
+	s.ctrl = gomock.NewController(s.T())
+	s.mockTC = temporal.NewMockClient(s.ctrl)
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
+			T: s.T(),
+			Mocks: &tests.TestMocks{
+				MockEv: s.mockEvClient,
+				MockTC: s.mockTC,
+			},
 			CustomValidator: true,
 		}),
 		// Service under test
@@ -109,8 +132,24 @@ func (s *InstallsServiceTestSuite) SetupTest() {
 	require.NoError(s.T(), err)
 }
 
+func (s *InstallsServiceTestSuite) TearDownTest() {
+	s.ctrl.Finish()
+}
+
 func (s *InstallsServiceTestSuite) TearDownSuite() {
 	s.fxApp.RequireStop()
+}
+
+// expectQueueCreation sets up the mock expectation for queue creation via temporal.
+// Call this before any operation that creates an install via the API.
+func (s *InstallsServiceTestSuite) expectQueueCreation() {
+	s.mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), // ctx
+		gomock.Any(), // namespace
+		gomock.Any(), // options
+		gomock.Any(), // workflow
+		gomock.Any(), // args
+	).Return(&mockWorkflowRun{}, nil)
 }
 
 func (s *InstallsServiceTestSuite) setupTestData() {
@@ -164,6 +203,8 @@ type testInstallWithWorkflow struct {
 }
 
 func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWorkflow {
+	s.expectQueueCreation()
+
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{

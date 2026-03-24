@@ -223,11 +223,15 @@ func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallSta
 }
 
 func (h *Helpers) toInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
+	if inputs == nil {
+		return nil
+	}
+
 	inputValues := inputs.Values
 	if redacted {
 		inputValues = inputs.ValuesRedacted
 	}
-	if inputs == nil || len(inputValues) < 1 {
+	if len(inputValues) < 1 {
 		return nil
 	}
 
