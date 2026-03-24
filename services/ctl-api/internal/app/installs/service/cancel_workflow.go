@@ -74,6 +74,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 	}
 	if wf.Status.Status == app.StatusPending {
 		ctx.JSON(http.StatusAccepted, true)
+		return
 	}
 
 	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
@@ -93,6 +94,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
 		} else {
 			ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
+			return
 		}
 	}
 
@@ -155,9 +157,9 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 	if wf.Status.Status == app.StatusPending {
 		ctx.JSON(http.StatusAccepted, true)
+		return
 	}
 
-	// TODO: cancellation should support workflows by owner type
 	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
 		EventLoopRequest: eventloop.EventLoopRequest{
 			ID: wf.OwnerID,
