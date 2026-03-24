@@ -21,7 +21,7 @@ func cronShutdownVMWorkflowID(runnerID string) string {
 func (w *Workflows) startCronShutdownVMWorkflow(ctx workflow.Context, req CronShutdownVMRequest) {
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            cronShutdownVMWorkflowID(req.RunnerID),
-		CronSchedule:          "*/10 * * * *", // 4am PST (5am PDT) every Sunday
+		CronSchedule:          "0 12 * * 0", // 4am PST (5am PDT) every Sunday
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
