@@ -27,7 +27,11 @@ export const ActiveWorkflows = ({
 }) => {
   const { org } = useOrg()
 
-  if (!workflows.length) return null
+  const inProgressWorkflows = workflows.filter(
+    (w) => w?.status?.status === 'in-progress'
+  )
+
+  if (!inProgressWorkflows.length) return null
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,7 +39,7 @@ export const ActiveWorkflows = ({
         Active workflows
       </Text>
       <Timeline<TWorkflow>
-        events={workflows}
+        events={inProgressWorkflows}
         groupByDate={false}
         pagination={{ hasNext: false, offset: 0, limit: 50 }}
         renderEvent={(workflow) => {
