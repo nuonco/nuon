@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -40,6 +40,7 @@ export const CreateInstallFromApp = ({
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const internalFormRef = useRef<HTMLFormElement>(null)
   const formRef = externalFormRef || internalFormRef
 
@@ -102,6 +103,8 @@ export const CreateInstallFromApp = ({
           <Text>Install created successfully!</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''

@@ -15,12 +15,12 @@ export const PendingApprovals = () => {
   if (approvals.length === 0) return null
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center gap-2 mb-3">
-        <Text variant="h3" weight="strong">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-2">
+        <Text variant="base" weight="strong">
           Pending approvals
         </Text>
-        <Badge theme="warn" size="sm">
+        <Badge theme="warn" size="sm" variant="code">
           {approvals.length}
         </Badge>
       </div>
@@ -31,7 +31,9 @@ export const PendingApprovals = () => {
             step?.owner_id && step?.install_workflow_id
               ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
               : undefined
-          const name = step?.name ? toSentenceCase(step.name) : 'Approval required'
+          const name = step?.name
+            ? toSentenceCase(step.name)
+            : 'Approval required'
 
           return (
             <div
@@ -41,7 +43,7 @@ export const PendingApprovals = () => {
               <div className="flex items-center gap-3 min-w-0">
                 <Status status="pending-approval" variant="badge" />
                 {href ? (
-                  <Link href={href} className="truncate">
+                  <Link href={href} className="truncate text-sm font-strong">
                     {name}
                   </Link>
                 ) : (
