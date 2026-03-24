@@ -40,6 +40,7 @@ export const TimelineEvent = ({
         "[&:before]:content-[''] [&:before]:absolute [&:before]:top-0 [&:before]:left-[0.813rem] [&:before]:w-px [&:before]:h-full [&:before]:border-l [&:before]:border-solid",
         '[&:first-child:before]:h-[calc(100%-1.5rem)] [&:first-child:before]:top-[1.5rem]',
         '[&:last-child:before]:h-[1.5rem]',
+        '[&:only-child:before]:h-0',
         className
       )}
       {...props}
@@ -66,12 +67,12 @@ export const TimelineEvent = ({
             {title}
           </Text>
 
-          <span className="flex items-center gap-2">
-            {actions ? <span>{actions}</span> : null}
+          <span className="flex items-center gap-2">           
             <Text variant="subtext" theme="neutral">
               <Time time={createdAt} format="relative" variant="subtext" />{' '}
               {createdBy ? `by ${createdBy}` : null}
             </Text>
+             {actions ? <span>{actions}</span> : null}
           </span>
         </hgroup>
         <span className="flex items-center gap-2">
