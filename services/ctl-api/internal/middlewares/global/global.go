@@ -28,6 +28,13 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/account/user-journeys/:journey_name/reset"}:             {},
 	{"POST", "/v1/account/user-journeys/:journey_name/complete"}:          {},
 	{"GET", "/v1/auth/me"}:                                                {},
+
+	// onboarding (pre-org steps are global; post-org steps require org auth)
+	{"GET", "/v1/onboarding/example-apps"}:                {},
+	{"POST", "/v1/onboarding"}:                            {},
+	{"GET", "/v1/onboarding/current"}:                     {},
+	{"POST", "/v1/onboarding/current/steps/organization"}: {},
+	{"DELETE", "/v1/onboarding/current"}:                  {},
 }
 
 type middleware struct {

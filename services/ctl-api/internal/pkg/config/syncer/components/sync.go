@@ -54,6 +54,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 	updates := app.Component{
 		Name:    comp.Name,
 		VarName: comp.VarName,
+		Type:    app.ComponentType(comp.Type.APIType()),
 	}
 
 	res := db.WithContext(ctx).

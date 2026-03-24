@@ -20,8 +20,13 @@ import (
 	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 
-	// Register app branch run signal in catalog (blank import triggers init())
+	// Register signal types in catalog (blank imports trigger init())
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_install"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
+
+	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 )
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.
@@ -41,6 +46,7 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(handleractivities.New),
 	fx.Provide(statusactivities.New),
 	fx.Provide(activities.New),
+	fx.Provide(onboardingactivities.New),
 
 	// workflows
 	fx.Provide(job.New),
