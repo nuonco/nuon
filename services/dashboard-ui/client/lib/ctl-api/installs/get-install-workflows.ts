@@ -4,6 +4,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstallWorkflows = ({
   installId,
+  finished,
   limit,
   offset,
   orgId,
@@ -11,12 +12,13 @@ export const getInstallWorkflows = ({
   type = '',
 }: {
   installId: string
+  finished?: boolean
   orgId: string
   planonly?: boolean
   type?: string
 } & TPaginationParams) =>
   api<TWorkflow[]>({
-    path: `installs/${installId}/workflows${buildQueryParams({ limit, offset, planonly, type })}`,
+    path: `installs/${installId}/workflows${buildQueryParams({ limit, offset, planonly, type, finished })}`,
     orgId,
     paginated: true
   })

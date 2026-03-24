@@ -1,9 +1,13 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
@@ -111,7 +115,36 @@ export const WorkflowTimeline = ({
               </span>
             }
             badge={getWorkflowBadge(workflow)}
-            caption={<ID>{workflow?.id}</ID>}
+            caption={
+              <span className="flex items-center gap-6">
+                <ID>{workflow?.id}</ID>
+                <Text className="!flex gap-1" variant="subtext" theme="neutral">
+                  <Icon variant="CalendarBlankIcon" />{' '}
+                  <Time time={workflow?.created_at} variant="subtext" />
+                </Text>
+                <Text className="!flex gap-1" variant="subtext" theme="neutral">
+                  <Icon variant="ClockClockwiseIcon" />{' '}
+                  <Time
+                    time={workflow?.updated_at}
+                    variant="subtext"
+                    format="relative"
+                  />
+                </Text>
+                {workflow?.finished ? (
+                  <Text
+                    className="!flex gap-1"
+                    variant="subtext"
+                    theme="neutral"
+                  >
+                    <Icon variant="TimerIcon" />{' '}
+                    <Duration
+                      nanoseconds={workflow?.execution_time}
+                      variant="subtext"
+                    />
+                  </Text>
+                ) : null}
+              </span>
+            }
             createdAt={workflow?.created_at}
             createdBy={workflow?.created_by?.email}
             status={workflow?.status?.status}

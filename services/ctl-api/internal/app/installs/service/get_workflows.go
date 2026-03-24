@@ -23,6 +23,7 @@ import (
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param					planonly					query	bool	false	"exclude plan only workflows when set to false"	Default(true)
 // @Param					type						query	string	false	"filter by workflow type"
+// @Param					finished					query	bool	false	"filter by finished state"
 // @Param					created_at_gte				query	string	false	"filter workflows created after timestamp (RFC3339 format)"
 // @Param					created_at_lte				query	string	false	"filter workflows created before timestamp (RFC3339 format)"
 // @Tags					installs
@@ -53,6 +54,17 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 
 	workflowType := ctx.Query("type")
 
+	var finished *bool
+	finishedParam := ctx.Query("finished")
+	if finishedParam != "" {
+		f, err := strconv.ParseBool(finishedParam)
+		if err != nil {
+			ctx.Error(errors.Wrap(err, "invalid finished parameter"))
+			return
+		}
+		finished = &f
+	}
+
 	var createdAtGte *time.Time
 	createdAtGteParam := ctx.Query("created_at_gte")
 	if createdAtGteParam != "" {
@@ -75,7 +87,7 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 		createdAtLte = &parsedTime
 	}
 
-	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowType, createdAtGte, createdAtLte)
+	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowType, finished, createdAtGte, createdAtLte)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflows"))
 		return
@@ -84,7 +96,7 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, workflows)
 }
 
-func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowType string, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
+func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowType string, finished *bool, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
 	var workflows []app.Workflow
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -98,6 +110,14 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 
 	if !excludePlanOnly {
 		query = query.Where("plan_only = ?", false)
+	}
+
+	if finished != nil {
+		if *finished {
+			query = query.Where("finished_at IS NOT NULL")
+		} else {
+			query = query.Where("finished_at IS NULL")
+		}
 	}
 
 	if workflowType != "" {
