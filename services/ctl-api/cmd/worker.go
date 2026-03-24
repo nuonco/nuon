@@ -95,6 +95,10 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.ActionsWorkerModule)
 	}
 
+	if (namespace == "all" || namespace == "onboardings") && !shouldSkipNamespace("onboardings") {
+		providers = append(providers, fxmodules.OnboardingsWorkerModule)
+	}
+
 	// Add worker healthcheck server
 	providers = append(providers,
 		fx.Provide(health.NewWorkerHealthcheck),

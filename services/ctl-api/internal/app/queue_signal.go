@@ -23,8 +23,8 @@ type QueueSignal struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
-	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
+	OrgID *string `json:"org_id,omitempty" temporaljson:"org_id,omitzero,omitempty"`
+	Org   *Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	QueueID string `json:"queue_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"queue_id,omitzero,omitempty"`
 	Queue   Queue  `json:"queue"`
@@ -66,8 +66,10 @@ func (r *QueueSignal) BeforeCreate(tx *gorm.DB) error {
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
-	if r.OrgID == "" {
-		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	if r.OrgID == nil {
+		if orgID := orgIDFromContext(tx.Statement.Context); orgID != "" {
+			r.OrgID = &orgID
+		}
 	}
 
 	return nil
