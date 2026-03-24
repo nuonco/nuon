@@ -31,6 +31,7 @@ func HealthcheckCheckRestartWorkflowsID(req *HealthcheckCheckRestartRequest) str
 // @temporal-gen-v2 workflow
 // @execution-timeout 3m
 // @task-timeout 5m
+// @id-generator HealthcheckCheckRestartWorkflowsID
 func (w *Workflows) HealthcheckCheckRestart(
 	ctx workflow.Context,
 	req *HealthcheckCheckRestartRequest,

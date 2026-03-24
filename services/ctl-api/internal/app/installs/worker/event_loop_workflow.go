@@ -26,9 +26,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 			return AwaitForget(ctx, input)
 		},
 		signals.OperationExecuteFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitExecuteFlow(ctx, input, &workflow.ChildWorkflowOptions{
-				WorkflowID: ExecuteWorkflowIDCallback(input),
-			})
+			return AwaitExecuteFlow(ctx, input)
 		},
 		signals.OperationRerunFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitRerunFlow(ctx, input)
