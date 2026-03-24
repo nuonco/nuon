@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -13,7 +13,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { reprovisionSandbox } from '@/lib'
+import { getAppConfig, reprovisionSandbox } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
 export const ReprovisionSandboxButton = ({
@@ -46,6 +46,25 @@ export const ReprovisionSandboxModal = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+
+  const { data: appConfig } = useQuery({
+    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id, 'recurse'],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: install.app_config_id,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!install?.app_config_id,
+  })
+
+  const sandboxOperationRoles = appConfig?.sandbox?.operation_roles
+  const defaultRole = sandboxOperationRoles?.reprovision
+    ?.replace('{{.nuon.install.id}}', install.id)
+  const mappedRoleNames = sandboxOperationRoles
+    ? Object.values(sandboxOperationRoles).map((r) => r.replace('{{.nuon.install.id}}', install.id))
+    : undefined
 
   const [selectedRole, setSelectedRole] = useState<string>('')
 
@@ -146,6 +165,8 @@ export const ReprovisionSandboxModal = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
+          defaultRoleName={defaultRole}
+          mappedRoleNames={mappedRoleNames}
         />
       </div>
     </Modal>
