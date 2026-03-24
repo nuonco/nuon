@@ -99,7 +99,6 @@ const (
 
 	// operations job types
 	RunnerJobTypeShutDown      RunnerJobType = "shut-down"
-	RunnerJobTypeVMShutDown    RunnerJobType = "vm-shut-down"
 	RunnerJobTypeUpdateVersion RunnerJobType = "update-version"
 	RunnerJobTypeNOOP          RunnerJobType = "noop"
 

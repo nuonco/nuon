@@ -38,8 +38,6 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
 		app.RunnerJobTypeRunnerTerraform:  time.Minute * 15,
 		app.RunnerJobTypeRunnerHelm:       time.Minute * 5,
-
-		app.RunnerJobTypeMngVMShutDown: time.Minute * 10,
 	}
 	timeout, ok := timeouts[typ]
 	if ok {

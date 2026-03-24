@@ -41,16 +41,19 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 	return nil
 }
 
-// Exec is a no-op for the management VM shutdown. This is a force-kill path — the VM
-// powers off immediately in Cleanup() via finishJob(), regardless of in-flight jobs.
-// For graceful shutdown that waits for jobs, see the operations/vm_shutdown handler.
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	// 1. shutdown the runner systemd service
+	// 2. send shutdown signal to the VM w/ enough of a delay for this process to finish (cleanup)
+	// 3. TODO: in cleanup, consider stopping the `runner mng` systemd (although we do lose recoverability in case of shutdown failure)
+
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
 
-	l.Info("exec", zap.String("job_type", "vm-shutdown"))
+	l.Info("exec", zap.String("job_type", "shutdown"))
+
+	// NOTE: this job shuts down the whole VM so we execute the work from within the cleanup. see `finishJob`.
 
 	return nil
 }

@@ -2,7 +2,6 @@ package jobloop
 
 import (
 	"context"
-	"time"
 
 	"go.uber.org/fx"
 )
@@ -18,23 +17,6 @@ func (j *jobLoop) Stop() error {
 	j.pool.Wait()
 	j.setStopped()
 	return nil
-}
-
-func (j *jobLoop) Drain(timeout time.Duration) {
-	close(j.drainCh)
-
-	done := make(chan struct{})
-	go func() {
-		j.pool.Wait()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(timeout):
-		j.ctxCancel()
-		j.pool.Wait()
-	}
 }
 
 func (j *jobLoop) LifecycleHook() fx.Hook {

@@ -93,7 +93,7 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
-			w.startInstanceRefreshWorkflow(ctx, InstanceRefreshRequest{
+			w.startCronShutdownVMWorkflow(ctx, CronShutdownVMRequest{
 				RunnerID: req.ID,
 			})
 			return nil

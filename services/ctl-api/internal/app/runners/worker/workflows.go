@@ -42,7 +42,7 @@ func (w *Workflows) All() []any {
 		w.GracefulShutdown,
 		w.HealthcheckCheckRestart,
 		w.HealthcheckJobRunner,
-		w.InstanceRefresh,
+		w.CronShutdownVM,
 		w.HealthcheckUpdateNeeded,
 		w.InstallStackVersionRun,
 		w.MngFetchToken,
