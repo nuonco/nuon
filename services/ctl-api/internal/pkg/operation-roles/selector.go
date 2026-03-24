@@ -163,13 +163,13 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		}, nil
 	}
 
-	// 1.1 for testing purposes we keep sandbox mode at lower priority so we can select roles on runtime
-	if ctx.SandboxMode {
-		return &RoleSelection{
-			RoleName: renderedDefaultRole,
-			Source:   RoleSelectionSourceDefault,
-		}, nil
-	}
+	// // 1.1 for testing purposes we keep sandbox mode at lower priority so we can select roles on runtime
+	// if ctx.SandboxMode {
+	// 	return &RoleSelection{
+	// 		RoleName: renderedDefaultRole,
+	// 		Source:   RoleSelectionSourceDefault,
+	// 	}, nil
+	// }
 
 	// 2. Break glass situation, we should respect break glass role definition
 	if ctx.BreakGlassRole != "" {
@@ -298,31 +298,27 @@ func renderRoleName(roleName string, installState *state.State) (string, error) 
 
 // ResolveRoleARN looks up the ARN for a given role name from stack outputs.
 // Currently mostly does heavy lifting for AWS since Azure is not yet supported.
-func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs *app.InstallStackOutputs, installState *state.State) (string, error) {
-	if stackOutputs == nil {
+func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, installStackOutputs *app.InstallStackOutputs, installState *state.State) (string, error) {
+	if installStackOutputs == nil {
 		return "", fmt.Errorf("stack outputs are required")
 	}
 
-	var availableRoles map[string]string
-	var err error
-
-	// Try Azure first
-	if stackOutputs.AzureStackOutputs != nil {
-		availableRoles = getAzureRoleMap(appCfg, stackOutputs.AzureStackOutputs)
-	} else if stackOutputs.AWSStackOutputs != nil {
+	var stackOutput app.StackOutput
+	if installStackOutputs.AzureStackOutputs != nil {
+		return "", nil
+	} else if installStackOutputs.AWSStackOutputs != nil {
 		// Try AWS second
-		availableRoles, err = getAWSRoleMap(appCfg, stackOutputs.AWSStackOutputs, installState)
-		if err != nil {
-			return "", fmt.Errorf("unable to get AWS role map: %w", err)
-		}
-	} else if stackOutputs.GCPStackOutputs != nil {
+		stackOutput = installStackOutputs.AWSStackOutputs
+	} else if installStackOutputs.GCPStackOutputs != nil {
 		// Try GCP third
-		availableRoles, err = getGCPSAMap(appCfg, stackOutputs.GCPStackOutputs, installState)
-		if err != nil {
-			return "", fmt.Errorf("unable to get GCP SA map: %w", err)
-		}
+		stackOutput = installStackOutputs.GCPStackOutputs
 	} else {
 		return "", errors.New("stack outputs must have either AWS, Azure, or GCP outputs")
+	}
+
+	availableRoles, err := getRoleMap(appCfg, stackOutput, installState)
+	if err != nil {
+		return "", fmt.Errorf("unable to get AWS role map: %w", err)
 	}
 
 	roleARN, ok := availableRoles[renderedRoleName]
@@ -333,8 +329,8 @@ func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, stackOutputs
 	return roleARN, nil
 }
 
-// getAWSRoleMAP returns a map of renderRoleName role name to role arn
-func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, installState *state.State) (map[string]string, error) {
+// getRoleMap returns a map of renderRoleName role name to role arn
+func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installState *state.State) (map[string]string, error) {
 	if appCfg == nil {
 		return nil, fmt.Errorf("app config is required")
 	}
@@ -344,8 +340,18 @@ func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, ins
 
 	availableRoles := make(map[string]string)
 
-	maps.Copy(availableRoles, stackOutputs.CustomRoleARNs)
-	maps.Copy(availableRoles, stackOutputs.BreakGlassRoleARNs)
+	customRoles, err := stackOutputs.CustomRoles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch customRoles role %w", err)
+	}
+	maps.Copy(availableRoles, customRoles)
+
+	breakGlassRoles, err := stackOutputs.BreakGlassRoles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch break glass role %w", err)
+	}
+	maps.Copy(availableRoles, breakGlassRoles)
+
 	stateMap, err := installState.AsMap()
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
@@ -355,64 +361,31 @@ func getAWSRoleMap(appCfg *app.AppConfig, stackOutputs *app.AWSStackOutputs, ins
 	if err != nil {
 		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.ProvisionRole.Name, err)
 	}
-	availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionIAMRoleARN
+	provisionRoleID, err := stackOutputs.ProvisionRoleID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch provision role %w", err)
+	}
+	availableRoles[renderedProvisionRoleName] = provisionRoleID
 
 	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.DeprovisionRole.Name, err)
 	}
-	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionIAMRoleARN
+	deprovisionRoleID, err := stackOutputs.DeprovisionRoleID()
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch deprovision role %w", err)
+	}
+	availableRoles[renderedDeprovisionRoleName] = deprovisionRoleID
 
 	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
 	if err != nil {
 		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.MaintenanceRole.Name, err)
 	}
-	availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceIAMRoleARN
-
-	return availableRoles, nil
-}
-
-func getAzureRoleMap(appCfg *app.AppConfig, stackOutputs *app.AzureStackOutputs) map[string]string {
-	availableRoles := make(map[string]string)
-	return availableRoles
-}
-
-// getGCPSAMap returns a map of rendered role name to GCP service account email.
-func getGCPSAMap(appCfg *app.AppConfig, stackOutputs *app.GCPStackOutputs, installState *state.State) (map[string]string, error) {
-	if appCfg == nil {
-		return nil, fmt.Errorf("app config is required")
-	}
-	if installState == nil {
-		return nil, fmt.Errorf("install state is required for role rendering")
-	}
-
-	stateMap, err := installState.AsMap()
+	maintenanceRoleID, err := stackOutputs.MaintenanceRoleID()
 	if err != nil {
-		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
+		return nil, fmt.Errorf("unable to fetch maintenance role %w", err)
 	}
-
-	availableRoles := make(map[string]string)
-
-	maps.Copy(availableRoles, stackOutputs.BreakGlassSAEmails)
-	maps.Copy(availableRoles, stackOutputs.CustomSAEmails)
-
-	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render provision role name: %w", err)
-	}
-	availableRoles[renderedProvisionRoleName] = stackOutputs.ProvisionSAEmail
-
-	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render maintenance role name: %w", err)
-	}
-	availableRoles[renderedMaintenanceRoleName] = stackOutputs.MaintenanceSAEmail
-
-	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render deprovision role name: %w", err)
-	}
-	availableRoles[renderedDeprovisionRoleName] = stackOutputs.DeprovisionSAEmail
+	availableRoles[renderedMaintenanceRoleName] = maintenanceRoleID
 
 	return availableRoles, nil
 }

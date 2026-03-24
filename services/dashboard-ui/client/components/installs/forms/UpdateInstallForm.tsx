@@ -6,6 +6,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { InputConfigFields } from './shared/InputConfigFields'
 import { ResumeDraftModal } from './shared/ResumeDraftModal'
 import type { IUpdateInstallForm } from './shared/types'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 
 const UpdateInstallOptions = () => {
   return (
@@ -57,6 +58,8 @@ export const UpdateInstallForm = forwardRef<
       onCancel,
       onFormSubmit,
       onRegisterClearDraft,
+      selectedRole,
+      onRoleChange,
     },
     ref
   ) => {
@@ -186,6 +189,14 @@ export const UpdateInstallForm = forwardRef<
           )}
 
           <UpdateInstallOptions />
+          <RoleSelector
+            installId={install?.id}
+            operationType="reprovision"
+            principalType="sandbox"
+            value={selectedRole || ''}
+            onChange={onRoleChange || (() => {})}
+            name="role"
+          />
         </div>
       </form>
     )

@@ -46,6 +46,12 @@ type StackOutput interface {
 	MaintenanceRoleID() (string, error)
 	CustomRoleID(string) (string, error)
 	BreakGlassRoleID(string) (string, error)
+	// returns list of custom roles along with their identifier
+	CustomRoles() (map[string]string, error)
+	// returns list of break glass roles along with their identifier
+	BreakGlassRoles() (map[string]string, error)
+	// returns list of customer install inputs along with their values in the stack
+	InstallInputValues() (map[string]string, error)
 }
 
 type AWSStackOutputs struct {
@@ -84,6 +90,18 @@ func (a *AWSStackOutputs) BreakGlassRoleID(name string) (string, error) {
 	return arn, nil
 }
 
+func (a *AWSStackOutputs) CustomRoles() (map[string]string, error) {
+	return a.CustomRoleARNs, nil
+}
+
+func (a *AWSStackOutputs) BreakGlassRoles() (map[string]string, error) {
+	return a.BreakGlassRoleARNs, nil
+}
+
+func (a *AWSStackOutputs) InstallInputValues() (map[string]string, error) {
+	return a.InstallInputs, nil
+}
+
 type AzureStackOutputs struct {
 	ResourceGroupID       string `json:"resource_group_id,omitzero" mapstructure:"resource_group_id" temporaljson:"resource_group_id,omitzero,omitempty"`
 	ResourceGroupName     string `json:"resource_group_name,omitzero" mapstructure:"resource_group_name" temporaljson:"resource_group_name,omitzero,omitempty"`
@@ -115,6 +133,18 @@ func (a *AzureStackOutputs) CustomRoleID(_ string) (string, error) {
 
 func (a *AzureStackOutputs) BreakGlassRoleID(_ string) (string, error) {
 	return "", fmt.Errorf("not supported on azure")
+}
+
+func (a *AzureStackOutputs) CustomRoles() (map[string]string, error) {
+	return nil, nil
+}
+
+func (a *AzureStackOutputs) BreakGlassRoles() (map[string]string, error) {
+	return nil, nil
+}
+
+func (a *AzureStackOutputs) InstallInputValues() (map[string]string, error) {
+	return nil, nil
 }
 
 type GCPStackOutputs struct {
@@ -152,6 +182,18 @@ func (a *GCPStackOutputs) BreakGlassRoleID(name string) (string, error) {
 		return "", fmt.Errorf("break glass service account %q does not exist in stack outputs", name)
 	}
 	return email, nil
+}
+
+func (a *GCPStackOutputs) CustomRoles() (map[string]string, error) {
+	return a.BreakGlassSAEmails, nil
+}
+
+func (a *GCPStackOutputs) BreakGlassRoles() (map[string]string, error) {
+	return a.CustomSAEmails, nil
+}
+
+func (a *GCPStackOutputs) InstallInputValues() (map[string]string, error) {
+	return a.InstallInputs, nil
 }
 
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {

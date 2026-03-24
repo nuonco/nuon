@@ -55,7 +55,7 @@ type AppAppInput struct {
 	// index
 	Index int64 `json:"index,omitempty"`
 
-	// internal
+	// Deprecated: this field was never enforced and has no effect.
 	Internal bool `json:"internal,omitempty"`
 
 	// name

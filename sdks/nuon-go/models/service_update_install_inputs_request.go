@@ -22,6 +22,9 @@ type ServiceUpdateInstallInputsRequest struct {
 	// inputs
 	// Required: true
 	Inputs map[string]string `json:"inputs"`
+
+	// role
+	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service update install inputs request
