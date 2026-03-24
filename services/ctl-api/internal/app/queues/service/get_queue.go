@@ -38,7 +38,7 @@ func (s *service) GetQueue(ctx *gin.Context) {
 	}
 
 	// Verify queue belongs to the org
-	if queue.OrgID != org.ID {
+	if queue.OrgID == nil || *queue.OrgID != org.ID {
 		ctx.Error(stderr.ErrNotFound{
 			Err:         errors.New("queue does not belong to organization"),
 			Description: "Queue not found",
