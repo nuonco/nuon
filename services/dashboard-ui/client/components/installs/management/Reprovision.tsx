@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { RoleSelector } from '@/components/roles/RoleSelector'
@@ -22,6 +22,7 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
   const { mutate, isPending: isLoading, error } = useMutation({
@@ -40,6 +41,8 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
           <Text>Reprovisioning {install.name} workflow was created.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       if (workflowId) {

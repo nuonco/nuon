@@ -61,8 +61,6 @@ export const ActiveWorkflows = ({
             </span>
           )
 
-          console.log(workflow?.metadata)
-
           return (
             <TimelineEvent
               key={workflow.id}
