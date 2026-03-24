@@ -14,6 +14,8 @@ import (
 )
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
+	s.expectQueueCreation()
+
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
@@ -55,6 +57,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
+	s.expectQueueCreation()
+
 	region := "us-east-1"
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
@@ -81,6 +85,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2AzureAccount() {
+	s.expectQueueCreation()
+
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
@@ -167,6 +173,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2InvalidAppID() {
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {
+	s.expectQueueCreation()
+
 	body := helpers.CreateInstallParams{
 		Name: "deprecated-route-install",
 		AWSAccount: &struct {

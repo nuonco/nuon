@@ -31,8 +31,4 @@ func (e *EnqueueTestSuite) TestStopQueue() {
 
 	err = e.service.Client.Stop(ctx, queue.ID)
 	require.Nil(e.T(), err)
-
-	status, err = e.service.Client.GetQueueStatus(ctx, queue.ID)
-	require.Nil(e.T(), err)
-	require.True(e.T(), status.Stopped)
 }

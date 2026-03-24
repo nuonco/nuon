@@ -178,7 +178,7 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 		validateFunc func(*app.InstallActionWorkflow)
 	}{
 		{
-			name: "returns null when action has no configs",
+			name: "returns workflow when action has no configs",
 			setupFunc: func() (string, string) {
 				install := s.createInstall(s.testApp.ID)
 				action := s.createActionWorkflow(s.testApp.ID, "test-action")
@@ -188,8 +188,8 @@ func (s *GetInstallActionWorkflowRecentRunsTestSuite) TestGetInstallActionRecent
 			queryParams:  "",
 			expectedCode: http.StatusOK,
 			validateFunc: func(iaw *app.InstallActionWorkflow) {
-				// Handler returns null when action has no configs (can't render BreakGlassRoleARN)
-				require.Empty(s.T(), iaw.ID)
+				require.NotEmpty(s.T(), iaw.ID)
+				require.Empty(s.T(), iaw.ActionWorkflow.Configs, "should have no configs")
 			},
 		},
 		{

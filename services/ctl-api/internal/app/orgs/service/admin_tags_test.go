@@ -107,7 +107,7 @@ func (s *AdminAddTagsTestSuite) setupTestData() {
 	testAcc := &app.Account{
 		ID:          testAccID,
 		Email:       fmt.Sprintf("%s@test.nuon.co", testAccID),
-		Subject:     "admin-add-tags-test-subject",
+		Subject:     fmt.Sprintf("add-tags-%s", testAccID),
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -118,9 +118,10 @@ func (s *AdminAddTagsTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "admin-add-tags-test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("add-tags-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
@@ -439,7 +440,7 @@ func (s *AdminRemoveTagsTestSuite) setupTestData() {
 	testAcc := &app.Account{
 		ID:          testAccID,
 		Email:       fmt.Sprintf("%s@test.nuon.co", testAccID),
-		Subject:     "admin-remove-tags-test-subject",
+		Subject:     fmt.Sprintf("rm-tags-%s", testAccID),
 		AccountType: app.AccountTypeAuth0,
 	}
 	err := s.service.DB.Create(testAcc).Error
@@ -450,9 +451,10 @@ func (s *AdminRemoveTagsTestSuite) setupTestData() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, testAcc)
 
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "admin-remove-tags-test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("rm-tags-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",

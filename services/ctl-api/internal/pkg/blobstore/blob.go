@@ -68,7 +68,7 @@ func (b *Blob) Scan(value interface{}) error {
 // Value implements driver.Valuer
 // Returns the blob metadata as JSONB to store in database
 func (b *Blob) Value() (driver.Value, error) {
-	if b.metadata.BlobID == "" {
+	if b == nil || b.metadata.BlobID == "" {
 		return nil, nil
 	}
 
@@ -87,6 +87,9 @@ func (b Blob) GormDataType() string {
 
 // BeforeSave implements GORM hook for automatic S3 upload
 func (b *Blob) BeforeCreate(tx *gorm.DB) error {
+	if b == nil {
+		return nil
+	}
 	// Skip if not dirty (no changes)
 	if !b.dirty {
 		return nil
