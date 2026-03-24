@@ -1,8 +1,15 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
+
+const fetchRandomName = async () => {
+  const res = await fetch('/api/random-name')
+  const data = await res.json()
+  return data.name as string
+}
 
 export const WelcomeNameOrgStep = ({
   onAdvance,
@@ -11,11 +18,10 @@ export const WelcomeNameOrgStep = ({
 }: IWizardStepComponentProps) => {
   const [orgName, setOrgName] = useState('')
 
-  const generateName = async () => {
-    const res = await fetch('/api/random-name')
-    const { name } = await res.json()
-    setOrgName(name)
-  }
+  const { mutate: generateName } = useMutation({
+    mutationFn: fetchRandomName,
+    onSuccess: (name) => setOrgName(name),
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +45,7 @@ export const WelcomeNameOrgStep = ({
           className="!px-1"
           type="button"
           variant="ghost"
-          onClick={generateName}
+          onClick={() => generateName()}
         >
           <Icon variant="SparkleIcon" />
           Generate random name

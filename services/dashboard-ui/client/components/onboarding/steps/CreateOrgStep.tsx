@@ -69,11 +69,14 @@ export const CreateOrgStep = ({
     },
   })
 
-  const generateName = async () => {
-    const res = await fetch('/api/random-name')
-    const { name } = await res.json()
-    setOrgName(name)
-  }
+  const { mutate: generateName } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/random-name')
+      const data = await res.json()
+      return data.name as string
+    },
+    onSuccess: (name) => setOrgName(name),
+  })
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -127,7 +130,7 @@ export const CreateOrgStep = ({
               className="!px-1"
               type="button"
               variant="ghost"
-              onClick={generateName}
+              onClick={() => generateName()}
             >
               <Icon variant="SparkleIcon" />
               Generate random name
