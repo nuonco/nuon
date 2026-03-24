@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -108,9 +109,10 @@ func (s *AdminUpdateOrgFeaturesTestSuite) setupTestData() {
 	// Create test org with account context (required by BeforeCreate hook)
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+	orgID := domains.NewOrgID()
 	testOrg := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "admin-update-features-test-org",
+		ID:          orgID,
+		Name:        fmt.Sprintf("admin-upd-feat-%s", orgID),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",

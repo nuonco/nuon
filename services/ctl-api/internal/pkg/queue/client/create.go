@@ -46,6 +46,10 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		return nil, errors.Wrap(res.Error, "unable to create queue")
 	}
 
+	if c.tClient == nil {
+		return &q, nil
+	}
+
 	wkflowReq := queue.QueueWorkflowRequest{
 		QueueID: q.ID,
 		Version: c.cfg.Version,

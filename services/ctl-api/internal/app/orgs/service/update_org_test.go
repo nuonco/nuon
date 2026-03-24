@@ -129,6 +129,13 @@ func (s *UpdateOrgTestSuite) makeRequest(method, path string, body interface{}) 
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrg() {
+	// Generate unique names for each test case to avoid cross-run collisions
+	updatedName := fmt.Sprintf("updated-name-%s", domains.NewOrgID()[:8])
+	originalName := fmt.Sprintf("original-name-%s", domains.NewOrgID()[:8])
+	updatedCurrentOrg := fmt.Sprintf("updated-current-org-%s", domains.NewOrgID()[:8])
+	specialCharsName := fmt.Sprintf("Test Org - Production (%s)", domains.NewOrgID()[:8])
+	unicodeName := fmt.Sprintf("Org 🚀 %s", domains.NewOrgID()[:8])
+
 	testCases := []struct {
 		name           string
 		setupFunc      func() *app.Org
@@ -144,7 +151,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 
 				org := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "original-name",
+					Name:        originalName,
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -159,7 +166,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				return org
 			},
 			requestBody: UpdateOrgRequest{
-				Name: "updated-name",
+				Name: updatedName,
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
@@ -167,7 +174,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "updated-name", dbOrg.Name)
+				assert.Equal(s.T(), updatedName, dbOrg.Name)
 			},
 		},
 		{
@@ -229,7 +236,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				return s.testOrg
 			},
 			requestBody: UpdateOrgRequest{
-				Name: "updated-current-org",
+				Name: updatedCurrentOrg,
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
@@ -237,7 +244,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var currentOrg app.Org
 				err := s.service.DB.First(&currentOrg, "id = ?", s.testOrg.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "updated-current-org", currentOrg.Name)
+				assert.Equal(s.T(), updatedCurrentOrg, currentOrg.Name)
 
 				// Verify other org was NOT updated (still has its original name)
 				var otherOrg app.Org
@@ -252,7 +259,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				return s.testOrg
 			},
 			requestBody: UpdateOrgRequest{
-				Name: "Test Org - Production (2024)",
+				Name: specialCharsName,
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
@@ -260,7 +267,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "Test Org - Production (2024)", dbOrg.Name)
+				assert.Equal(s.T(), specialCharsName, dbOrg.Name)
 			},
 		},
 		{
@@ -269,7 +276,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				return s.testOrg
 			},
 			requestBody: UpdateOrgRequest{
-				Name: "組織名前 🚀",
+				Name: unicodeName,
 			},
 			expectedStatus: http.StatusOK,
 			validateFunc: func(org *app.Org) {
@@ -277,7 +284,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrg() {
 				var dbOrg app.Org
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
-				assert.Equal(s.T(), "組織名前 🚀", dbOrg.Name)
+				assert.Equal(s.T(), unicodeName, dbOrg.Name)
 			},
 		},
 	}
@@ -388,6 +395,7 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgNonExistentOrg() {
 }
 
 func (s *UpdateOrgTestSuite) TestUpdateOrgWhitespaceHandling() {
+	suffix := domains.NewOrgID()[:8]
 	testCases := []struct {
 		name           string
 		orgName        string
@@ -396,21 +404,21 @@ func (s *UpdateOrgTestSuite) TestUpdateOrgWhitespaceHandling() {
 	}{
 		{
 			name:           "preserves leading whitespace",
-			orgName:        "  leading-space",
+			orgName:        fmt.Sprintf("  leading-space-%s", suffix),
 			expectedStatus: http.StatusOK,
-			expectedName:   "  leading-space",
+			expectedName:   fmt.Sprintf("  leading-space-%s", suffix),
 		},
 		{
 			name:           "preserves trailing whitespace",
-			orgName:        "trailing-space  ",
+			orgName:        fmt.Sprintf("trailing-space-%s  ", suffix),
 			expectedStatus: http.StatusOK,
-			expectedName:   "trailing-space  ",
+			expectedName:   fmt.Sprintf("trailing-space-%s  ", suffix),
 		},
 		{
 			name:           "preserves internal whitespace",
-			orgName:        "name   with   spaces",
+			orgName:        fmt.Sprintf("name   with   spaces-%s", suffix),
 			expectedStatus: http.StatusOK,
-			expectedName:   "name   with   spaces",
+			expectedName:   fmt.Sprintf("name   with   spaces-%s", suffix),
 		},
 	}
 
