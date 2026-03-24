@@ -23,6 +23,7 @@ export const CreateOrgStep = ({
   sharedData,
 }: IWizardStepComponentProps) => {
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
+  const [orgName, setOrgName] = useState('')
   const { user } = useAuth()
   const { isByoc, sfTrialEndpoint, adminApiUrl } = useConfig()
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
@@ -68,10 +69,18 @@ export const CreateOrgStep = ({
     },
   })
 
+  const { mutate: generateName } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/random-name')
+      const data = await res.json()
+      return data.name as string
+    },
+    onSuccess: (name) => setOrgName(name),
+  })
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    mutate(formData.get('orgName') as string)
+    mutate(orgName)
   }
 
   if (orgCreated && journeyOrgId && !createdOrg) {
@@ -107,15 +116,28 @@ export const CreateOrgStep = ({
                 'Failed to create organization. Please try again.'}
             </Banner>
           )}
-          <Input
-            id="org-name"
-            name="orgName"
-            placeholder="e.g. acme-corp"
-            required
-            labelProps={{ labelText: 'Organization name' }}
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              id="org-name"
+              name="orgName"
+              placeholder="e.g. swift-harbor-ridge"
+              required
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              labelProps={{ labelText: 'Organization name' }}
+            />
+            <Button
+              className="!px-1"
+              type="button"
+              variant="ghost"
+              onClick={() => generateName()}
+            >
+              <Icon variant="SparkleIcon" />
+              Generate random name
+            </Button>
+          </div>
           <div className="flex justify-end">
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" disabled={!orgName.trim()}>
               Create organization
             </Button>
           </div>
