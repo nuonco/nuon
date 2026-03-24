@@ -94,20 +94,6 @@ jobs:
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
 
       # Services that need k8s charts deploy via mono repo
-      - name: 🚪 Dry-Run Deploy Stage (k8s services)
-        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
-        run: |
-          gh workflow run deploy-public-services.yml \
-            --repo nuonco/mono \
-            --field service=${{inputs.service}} \
-            --field env=stage \
-            --field tag=${{inputs.tag}} \
-            --field dry_run=true \
-            --field source_repo=${{ github.repository }} \
-            --field source_run_id=${{ github.run_id }}
-        env:
-          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
-
       - name: ⬆️ Deploy Stage (k8s services)
         if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
         run: |
@@ -116,21 +102,6 @@ jobs:
             --field service=${{inputs.service}} \
             --field env=stage \
             --field tag=${{inputs.tag}} \
-            --field dry_run=false \
-            --field source_repo=${{ github.repository }} \
-            --field source_run_id=${{ github.run_id }}
-        env:
-          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
-
-      - name: 🚪 Dry-Run Deploy Prod (k8s services)
-        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp"]'), inputs.service) }}
-        run: |
-          gh workflow run deploy-public-services.yml \
-            --repo nuonco/mono \
-            --field service=${{inputs.service}} \
-            --field env=prod \
-            --field tag=${{inputs.tag}} \
-            --field dry_run=true \
             --field source_repo=${{ github.repository }} \
             --field source_run_id=${{ github.run_id }}
         env:
@@ -144,7 +115,6 @@ jobs:
             --field service=${{inputs.service}} \
             --field env=prod \
             --field tag=${{inputs.tag}} \
-            --field dry_run=false \
             --field source_repo=${{ github.repository }} \
             --field source_run_id=${{ github.run_id }}
         env:
