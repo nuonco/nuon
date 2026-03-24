@@ -4,43 +4,18 @@ import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
-const ADJECTIVES = [
-  'swift',
-  'bold',
-  'bright',
-  'calm',
-  'clear',
-  'crisp',
-  'keen',
-  'light',
-  'quick',
-  'sharp',
-]
-const NOUNS = [
-  'harbor',
-  'peak',
-  'river',
-  'cloud',
-  'ridge',
-  'grove',
-  'meadow',
-  'stone',
-  'creek',
-  'birch',
-]
-
-function generateOrgName() {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]
-  return `${adj}-${noun}`
-}
-
 export const WelcomeNameOrgStep = ({
   onAdvance,
   setSharedData,
   nextStepTitle,
 }: IWizardStepComponentProps) => {
   const [orgName, setOrgName] = useState('')
+
+  const generateName = async () => {
+    const res = await fetch('/api/random-name')
+    const { name } = await res.json()
+    setOrgName(name)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +30,7 @@ export const WelcomeNameOrgStep = ({
         <Input
           id="orgName"
           name="orgName"
-          placeholder="e.g. swift-harbor"
+          placeholder="e.g. swift-harbor-ridge"
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
           labelProps={{ labelText: 'Organization name' }}
@@ -64,7 +39,7 @@ export const WelcomeNameOrgStep = ({
           className="!px-1"
           type="button"
           variant="ghost"
-          onClick={() => setOrgName(generateOrgName())}
+          onClick={generateName}
         >
           <Icon variant="SparkleIcon" />
           Generate random name
