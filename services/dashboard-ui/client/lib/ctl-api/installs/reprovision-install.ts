@@ -2,6 +2,7 @@ import { api } from '@/lib/api'
 
 export type TReprovisionInstallBody = {
   plan_only: boolean
+  role?: string
 }
 
 export async function reprovisionInstall({
