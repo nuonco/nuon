@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -36,6 +36,7 @@ export const DenyPlanModal = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const removePanelByKey = useRemovePanelByKey()
+  const queryClient = useQueryClient()
 
   const modalCopy = DENY_MODAL_COPY[step.approval.type]
 
@@ -54,6 +55,9 @@ export const DenyPlanModal = ({
           <Text>The plan has been denied and will not be applied.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },

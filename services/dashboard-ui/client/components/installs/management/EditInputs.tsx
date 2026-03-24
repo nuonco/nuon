@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -100,6 +100,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
   const [selectedRole, setSelectedRole] = useState<string>('')
@@ -160,6 +161,8 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
           <Text>Install inputs updated successfully!</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       if (workflowId) {

@@ -16,7 +16,10 @@ import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
 import type { TWorkflow } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { getWorkflowBadge } from '@/utils/workflow-utils'
+import {
+  getWorkflowBadge,
+  getPendingApprovalCount,
+} from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 const LIMIT = 10
@@ -68,15 +71,28 @@ export const WorkflowTimeline = ({
       pagination={pagination}
       renderEvent={(workflow) => {
         const workflowTitle = (
-          <Link
-            className="inline-flex gap-2 items-center"
-            href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
-          >
-            {workflow?.type === 'action_workflow_run' &&
-            workflow?.metadata?.adhoc_action
-              ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-              : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
-          </Link>
+          <span className="flex items-center gap-4 mb-1">
+            <Link
+              className="inline-flex gap-2 items-center"
+              href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
+            >
+              {workflow?.type === 'action_workflow_run' &&
+              workflow?.metadata?.adhoc_action
+                ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
+                : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+            </Link>
+            {workflow?.status?.status === 'in-progress' ? (
+              <Badge size="sm" theme="info">
+                In progress
+              </Badge>
+            ) : null}
+            {workflow?.approval_option === 'prompt' &&
+            getPendingApprovalCount(workflow) ? (
+              <Badge size="sm" theme="warn">
+                Pending approval
+              </Badge>
+            ) : null}
+          </span>
         )
 
         return (
@@ -115,14 +131,22 @@ export const WorkflowTimeline = ({
               </span>
             }
             badge={getWorkflowBadge(workflow)}
-            caption={
-              <span className="flex items-center gap-6">
-                <ID>{workflow?.id}</ID>
-                <Text className="!flex gap-1" variant="subtext" theme="neutral">
+            caption={<ID>{workflow?.id}</ID>}
+            underline={
+              <span className="flex items-center gap-6 mt-1">
+                <Text
+                  className="!flex items-center gap-1"
+                  variant="subtext"
+                  theme="neutral"
+                >
                   <Icon variant="CalendarBlankIcon" />{' '}
                   <Time time={workflow?.created_at} variant="subtext" />
                 </Text>
-                <Text className="!flex gap-1" variant="subtext" theme="neutral">
+                <Text
+                  className="!flex items-center gap-1"
+                  variant="subtext"
+                  theme="neutral"
+                >
                   <Icon variant="ClockClockwiseIcon" />{' '}
                   <Time
                     time={workflow?.updated_at}
@@ -132,7 +156,7 @@ export const WorkflowTimeline = ({
                 </Text>
                 {workflow?.finished ? (
                   <Text
-                    className="!flex gap-1"
+                    className="!flex items-center gap-1"
                     variant="subtext"
                     theme="neutral"
                   >

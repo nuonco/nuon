@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -37,6 +37,7 @@ export const DeployAllComponentsModal = ({ ...props }: IModal) => {
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const [isKickedOff, setIsKickedOff] = useState(false)
 
   const { mutate: execute, isPending: isLoading, error } = useMutation({
@@ -61,6 +62,8 @@ export const DeployAllComponentsModal = ({ ...props }: IModal) => {
           <Text>Deploy all components workflow was created.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       if (workflowId) {
