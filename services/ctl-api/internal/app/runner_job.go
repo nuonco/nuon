@@ -106,8 +106,7 @@ const (
 	// TODO(fd): revisit these names
 	// management job types
 	// RunnerJobTypeMngVMStats             RunnerJobType = "mng-vm-stats"          // log some vm stats/metrics
-	RunnerJobTypeMngDrainVM             RunnerJobType = "mng-drain-vm"              // drain runner process via SIGUSR1, then shut down the vm
-	RunnerJobTypeMngVMShutDown          RunnerJobType = "mng-vm-shut-down"          // shut down the vm (force, no drain)
+	RunnerJobTypeMngVMShutDown          RunnerJobType = "mng-vm-shut-down"          // shut down the vm
 	RunnerJobTypeMngShutDown            RunnerJobType = "mng-shut-down"             // shutdown the runner mng process (usually triggers restart)
 	RunnerJobTypeMngRunnerUpdateVersion RunnerJobType = "mng-runner-update-version" // update the runner image/version (check for changes and update)
 	RunnerJobTypeMngRunnerRestart       RunnerJobType = "mng-runner-restart"        // restart the runner systemctl service (technically, a duplicate. runner can restart self.)
@@ -176,7 +175,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		return RunnerJobGroupOperations
 
 		// management
-	case RunnerJobTypeMngDrainVM, RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart, RunnerJobTypeMngFetchToken:
+	case RunnerJobTypeMngVMShutDown, RunnerJobTypeMngShutDown, RunnerJobTypeMngRunnerUpdateVersion, RunnerJobTypeMngRunnerRestart, RunnerJobTypeMngFetchToken:
 		return RunnerJobGroupManagement
 
 	case RunnerJobTypeActionsWorkflowRun:

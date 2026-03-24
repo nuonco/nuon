@@ -22,7 +22,7 @@ func instanceRefreshWorkflowID(runnerID string) string {
 func (w *Workflows) startInstanceRefreshWorkflow(ctx workflow.Context, req InstanceRefreshRequest) {
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            instanceRefreshWorkflowID(req.RunnerID),
-		CronSchedule:          "*/10 * * * *", // 3am PST (4am PDT)
+		CronSchedule:          "0 12 * * 0", // 4am PST (5am PDT) every Sunday
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
@@ -42,10 +42,6 @@ func (w *Workflows) InstanceRefresh(ctx workflow.Context, req *InstanceRefreshRe
 	if err != nil {
 		return errors.Wrap(err, "unable to get logger")
 	}
-
-	l.Info("executing instance refresh",
-		zap.String("runner_id", req.RunnerID),
-	)
 
 	runner, err := activities.AwaitGetByRunnerID(ctx, req.RunnerID)
 	if err != nil {
@@ -77,12 +73,17 @@ func (w *Workflows) InstanceRefresh(ctx workflow.Context, req *InstanceRefreshRe
 		return nil
 	}
 
-	runnerJob, err := w.createMngJob(ctx, req.RunnerID, app.RunnerJobTypeMngDrainVM, map[string]string{
-		"shutdown_type": "drain",
+	runnerJob, err := w.createMngJob(ctx, req.RunnerID, app.RunnerJobTypeMngVMShutDown, map[string]string{
+		"shutdown_type": "vm",
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create instance refresh job")
 	}
+
+	l.Info("dispatching instance refresh vm shutdown",
+		zap.String("runner_id", req.RunnerID),
+		zap.String("job_id", runnerJob.ID),
+	)
 
 	if err := activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
 		JobID:             runnerJob.ID,
