@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -34,12 +33,7 @@ func (h *Workflows) toInstallStackState(stack *app.InstallStack) *state.InstallS
 	is.TemplateJSON = string(version.Contents)
 	is.Checksum = version.Checksum
 	is.Status = string(version.Status.Status)
-
-	outputData, err := stacks.DecodeAWSStackOutputData(stack.InstallStackOutputs.Data)
-	if err != nil {
-		return nil
-	}
-	is.Outputs = outputData
+	is.Outputs = stack.InstallStackOutputs.DataContents
 
 	return is
 }
