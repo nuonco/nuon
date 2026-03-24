@@ -22,7 +22,7 @@ func instanceRefreshWorkflowID(runnerID string) string {
 func (w *Workflows) startInstanceRefreshWorkflow(ctx workflow.Context, req InstanceRefreshRequest) {
 	cwo := workflow.ChildWorkflowOptions{
 		WorkflowID:            instanceRefreshWorkflowID(req.RunnerID),
-		CronSchedule:          "*/5 * * * *", // 3am PST (4am PDT)
+		CronSchedule:          "*/10 * * * *", // 3am PST (4am PDT)
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
 	}
