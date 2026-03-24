@@ -74,6 +74,12 @@ type GetWorkflowsParams struct {
 	*/
 	CreatedAtLte *string
 
+	/* Finished.
+
+	   filter by finished state
+	*/
+	Finished *bool
+
 	/* InstallID.
 
 	   install ID
@@ -209,6 +215,17 @@ func (o *GetWorkflowsParams) SetCreatedAtLte(createdAtLte *string) {
 	o.CreatedAtLte = createdAtLte
 }
 
+// WithFinished adds the finished to the get workflows params
+func (o *GetWorkflowsParams) WithFinished(finished *bool) *GetWorkflowsParams {
+	o.SetFinished(finished)
+	return o
+}
+
+// SetFinished adds the finished to the get workflows params
+func (o *GetWorkflowsParams) SetFinished(finished *bool) {
+	o.Finished = finished
+}
+
 // WithInstallID adds the installID to the get workflows params
 func (o *GetWorkflowsParams) WithInstallID(installID string) *GetWorkflowsParams {
 	o.SetInstallID(installID)
@@ -312,6 +329,23 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if qCreatedAtLte != "" {
 
 			if err := r.SetQueryParam("created_at_lte", qCreatedAtLte); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Finished != nil {
+
+		// query param finished
+		var qrFinished bool
+
+		if o.Finished != nil {
+			qrFinished = *o.Finished
+		}
+		qFinished := swag.FormatBool(qrFinished)
+		if qFinished != "" {
+
+			if err := r.SetQueryParam("finished", qFinished); err != nil {
 				return err
 			}
 		}
