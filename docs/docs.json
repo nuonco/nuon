@@ -287,11 +287,7 @@
       "linkedin": "https://www.linkedin.com/company/nuonco/"
     }
   },
-  "integrations": {
-    "segment": {
-      "key": "4kncfCQZQU22093f1Z3BxMlGJd4iNQzs"
-    }
-  },
+  "integrations": {},
   "redirects": [
     {
       "source": "/api-ref",
