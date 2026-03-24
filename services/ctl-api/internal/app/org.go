@@ -255,6 +255,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTerraformInstaller:      "Enable Terraform-based installer for infrastructure provisioning and management",
 		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 	}
 }
 

@@ -218,9 +218,10 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create a second org to avoid unique index conflict on owner_id
+				noSettingsOrgID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "no-settings-org",
+					ID:          noSettingsOrgID,
+					Name:        fmt.Sprintf("no-settings-org-%s", noSettingsOrgID[:8]),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -297,9 +298,10 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	// Create a second org to avoid unique index conflict on (deleted_at, owner_id)
+	multiRunnerOrgID := domains.NewOrgID()
 	org2 := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "multi-runner-org",
+		ID:          multiRunnerOrgID,
+		Name:        fmt.Sprintf("multi-runner-org-%s", multiRunnerOrgID[:8]),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/bar",
