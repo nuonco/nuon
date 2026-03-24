@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/api/serviceerror"
@@ -192,7 +193,8 @@ func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) 
 	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
 	res := s.db.WithContext(ctx).Model(&obj).Updates(
 		map[string]any{
-			"status": status,
+			"status":      status,
+			"finished_at": time.Now(),
 		})
 	if res.Error != nil {
 		return pkgerrors.Wrap(res.Error, "unable to update")
