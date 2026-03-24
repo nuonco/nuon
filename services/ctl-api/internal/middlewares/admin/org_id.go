@@ -36,8 +36,11 @@ var mapper map[string]func(db *gorm.DB, id string) (string, error) = map[string]
 		if res.Error != nil {
 			return "", errors.Wrap(res.Error, "unable to fetch queue")
 		}
+		if obj.OrgID == nil {
+			return "", errors.New("queue has no org")
+		}
 
-		return obj.OrgID, nil
+		return *obj.OrgID, nil
 	},
 	"rgr": func(db *gorm.DB, id string) (string, error) {
 		var obj app.RunnerGroup

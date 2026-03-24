@@ -390,6 +390,10 @@ func NewPolicyReportID() string {
 	return shortid.NewNanoID("pvr")
 }
 
+func NewOnboardingID() string {
+	return shortid.NewNanoID("obd")
+}
+
 func NewBlobID() string {
 	return shortid.NewNanoID("blb")
 }

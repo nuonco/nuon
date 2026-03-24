@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -69,7 +69,11 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		return
 	}
 
-	newOrg, err := s.createOrg(ctx, acct, &req)
+	newOrg, err := s.helpers.CreateOrg(ctx, acct, &orgshelpers.CreateOrgParams{
+		Name:           req.Name,
+		UseSandboxMode: req.UseSandboxMode,
+		Tags:           req.Tags,
+	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create org: %w", err))
 		return
@@ -93,67 +97,4 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, newOrg)
-}
-
-func (s *service) createOrg(ctx context.Context, acct *app.Account, req *CreateOrgRequest) (*app.Org, error) {
-	orgTyp := app.OrgTypeDefault
-	if req.UseSandboxMode {
-		orgTyp = app.OrgTypeSandbox
-	}
-	if acct.AccountType == app.AccountTypeIntegration {
-		orgTyp = app.OrgTypeIntegration
-	}
-	if s.cfg.ForceSandboxMode {
-		orgTyp = app.OrgTypeSandbox
-	}
-
-	notificationsCfg := app.NotificationsConfig{
-		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
-		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
-		InternalSlackWebhookURL:  s.cfg.InternalSlackWebhookURL,
-	}
-	org := app.Org{
-		Name:                req.Name,
-		Status:              "queued",
-		StatusDescription:   "waiting for event loop to start and provision org",
-		SandboxMode:         req.UseSandboxMode,
-		OrgType:             orgTyp,
-		NotificationsConfig: notificationsCfg,
-		Tags:                req.Tags,
-	}
-	if s.cfg.ForceSandboxMode {
-		org.SandboxMode = true
-	}
-	if s.cfg.ForceDebugMode {
-		org.DebugMode = true
-	}
-
-	if err := s.db.WithContext(ctx).Create(&org).Error; err != nil {
-		return nil, fmt.Errorf("unable to create org: %w", err)
-	}
-
-	// make sure the notifications config orgID is set
-	if res := s.db.WithContext(ctx).
-		Where(&app.NotificationsConfig{
-			OwnerID: org.ID,
-		}).
-		Updates(app.NotificationsConfig{
-			OrgID: org.ID,
-		}); res.Error != nil {
-		return nil, fmt.Errorf("unable to set org ID on notifications config: %w", res.Error)
-	}
-
-	if err := s.authzClient.CreateOrgRoles(ctx, org.ID); err != nil {
-		return nil, fmt.Errorf("unable to create org roles: %w", err)
-	}
-
-	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, org.ID, acct.ID); err != nil {
-		return nil, fmt.Errorf("unable to add user to org: %w", err)
-	}
-
-	if _, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
-		return nil, fmt.Errorf("unable to create org runner group: %w", err)
-	}
-
-	return &org, nil
 }

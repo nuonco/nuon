@@ -159,5 +159,8 @@ func AllModels() []any {
 		&app.PSQLTableSize{},
 
 		&app.TemporalPayload{},
+
+		// onboarding
+		&app.Onboarding{},
 	}
 }
