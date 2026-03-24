@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -22,6 +22,7 @@ export const RetryPlanModal = ({ step, ...props }: IRetryPlan & IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const removePanelByKey = useRemovePanelByKey()
+  const queryClient = useQueryClient()
 
   const modalCopy = RETRY_MODAL_COPY[step.approval.type]
 
@@ -43,6 +44,9 @@ export const RetryPlanModal = ({ step, ...props }: IRetryPlan & IModal) => {
           </Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },

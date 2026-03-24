@@ -173,10 +173,8 @@ export function getPolicyViolationCounts(
   step: TWorkflowStep
 ): PolicyViolationCounts {
   const metadata = step?.status?.metadata
-  const denyViolations =
-    (metadata?.deny_violations as PolicyViolation[]) || []
-  const warnViolations =
-    (metadata?.warn_violations as PolicyViolation[]) || []
+  const denyViolations = (metadata?.deny_violations as PolicyViolation[]) || []
+  const warnViolations = (metadata?.warn_violations as PolicyViolation[]) || []
   const denyCount = denyViolations.length
   const warnCount = warnViolations.length
   const hasPolicyData =
@@ -192,4 +190,16 @@ export function getPolicyViolationCounts(
     hasPolicyData,
     hasViolations,
   }
+}
+
+export function getPendingApprovalCount(workflow: TWorkflow): number {
+  return (
+    workflow?.steps?.filter(
+      (s) =>
+        s?.execution_type === 'approval' &&
+        s?.status?.status === 'approval-awaiting' &&
+        s?.approval &&
+        !s?.approval?.response
+    )?.length || 0
+  )
 }

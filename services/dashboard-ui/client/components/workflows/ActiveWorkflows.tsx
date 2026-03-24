@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
@@ -8,40 +7,25 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
-import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallWorkflows } from '@/lib'
-import type { TWorkflow } from '@/types'
+import type { TInstall, TWorkflow } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { getWorkflowBadge } from '@/utils/workflow-utils'
+import {
+  getWorkflowBadge,
+  getPendingApprovalCount,
+} from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
-const POLL_INTERVAL = 20000
-
-export const ActiveWorkflows = ({ installId }: { installId: string }) => {
+export const ActiveWorkflows = ({
+  workflows,
+  install,
+  hasDivider = false,
+}: {
+  workflows: TWorkflow[]
+  install?: TInstall
+  hasDivider?: boolean
+}) => {
   const { org } = useOrg()
-  const { install } = useInstall()
-
-  const { data } = useQuery({
-    queryKey: ['install-active-workflows', org?.id, installId],
-    queryFn: () =>
-      getInstallWorkflows({
-        orgId: org.id,
-        installId,
-        finished: false,
-        limit: 50,
-        offset: 0,
-      }),
-    refetchInterval: POLL_INTERVAL,
-    enabled: !!org?.id && !!installId,
-  })
-
-  const workflows = (data?.data ?? []).filter(
-    (w) =>
-      w.status?.status &&
-      w.status.status !== 'pending' &&
-      w.status.status !== 'queued'
-  )
 
   if (!workflows.length) return null
 
@@ -55,16 +39,26 @@ export const ActiveWorkflows = ({ installId }: { installId: string }) => {
         groupByDate={false}
         pagination={{ hasNext: false, offset: 0, limit: 50 }}
         renderEvent={(workflow) => {
+          const installId = workflow.owner_id
           const workflowTitle = (
-            <Link
-              className="inline-flex gap-2 items-center"
-              href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
-            >
-              {workflow?.type === 'action_workflow_run' &&
-              workflow?.metadata?.adhoc_action
-                ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-                : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
-            </Link>
+            <span className="flex items-center gap-4">
+              <Link
+                className="inline-flex gap-2 items-center"
+                href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
+              >
+                {workflow?.type === 'action_workflow_run' &&
+                workflow?.metadata?.adhoc_action
+                  ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
+                  : workflow.name ||
+                    toSentenceCase(snakeToWords(workflow.type))}
+              </Link>
+              {workflow?.approval_option === 'prompt' &&
+              getPendingApprovalCount(workflow) ? (
+                <Badge size="sm" theme="warn">
+                  Pending approval
+                </Badge>
+              ) : null}
+            </span>
           )
 
           return (
@@ -104,7 +98,7 @@ export const ActiveWorkflows = ({ installId }: { installId: string }) => {
               }
               badge={getWorkflowBadge(workflow)}
               caption={
-                <span className="flex items-center gap-6">
+                <span className="flex items-center gap-6 mt-2">
                   <ID>{workflow?.id}</ID>
                   <Text
                     className="!flex gap-1"
@@ -136,7 +130,7 @@ export const ActiveWorkflows = ({ installId }: { installId: string }) => {
           )
         }}
       />
-      <Divider />
+      {hasDivider ? <Divider /> : null}
     </div>
   )
 }
