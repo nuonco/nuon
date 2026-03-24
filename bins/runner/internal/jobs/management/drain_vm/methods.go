@@ -1,4 +1,4 @@
-package vmshutdown
+package drainvm
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return err
 	}
 
-	l.Info("validating", zap.String("job_type", "vm-shutdown"))
+	l.Info("validating", zap.String("job_type", "drain-vm"))
 	if err := jobs.Matches(job, h); err != nil {
 		return err
 	}

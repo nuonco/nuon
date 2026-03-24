@@ -223,6 +223,11 @@ func (h *Monitor) writeNuonRunnerService(tmpl *template.Template, path string) e
 // this method encapsulates all of the logic to ensure the service is running.
 // NOTE: we use start instead of enable
 func (h *Monitor) ensureRunnerServiceIsActive(ctx context.Context) error {
+	if h.draining.Load() {
+		h.l.Info("draining — skipping runner service restart")
+		return nil
+	}
+
 	h.l.Debug("ensuring runner service is active")
 	isActive, err := systemctl.IsActive(ctx, RunnerServiceName, defaultSystemctlOpts)
 	if err != nil {

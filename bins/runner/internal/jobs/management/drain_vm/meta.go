@@ -1,13 +1,13 @@
-package vmshutdown
+package drainvm
 
 import "github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 func (h *handler) Name() string {
-	return "vm-shutdown"
+	return "drain-vm"
 }
 
 func (h *handler) JobType() models.AppRunnerJobType {
-	return models.AppRunnerJobTypeVMDashShutDashDown
+	return models.AppRunnerJobTypeMngDashDrainDashVM
 }
 
 func (h *handler) JobStatus() models.AppRunnerJobStatus {

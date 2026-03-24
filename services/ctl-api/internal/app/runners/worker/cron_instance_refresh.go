@@ -77,8 +77,8 @@ func (w *Workflows) InstanceRefresh(ctx workflow.Context, req *InstanceRefreshRe
 		return nil
 	}
 
-	runnerJob, err := w.createRunnerVMShutDownJob(ctx, req.RunnerID, map[string]string{
-		"shutdown_type": "vm",
+	runnerJob, err := w.createMngJob(ctx, req.RunnerID, app.RunnerJobTypeMngDrainVM, map[string]string{
+		"shutdown_type": "drain",
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create instance refresh job")

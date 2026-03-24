@@ -1,8 +1,7 @@
-package vmshutdown
+package drainvm
 
 import (
 	"context"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
@@ -12,18 +11,17 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 )
-
-const drainTimeout = 60 * time.Minute
 
 type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	settings    *settings.Settings
+	shutdowner  fx.Shutdowner
 	errRecorder *errs.Recorder
-	jobLoops    []jobloop.JobLoop
+	monitor     *monitor.Monitor
 }
 
 var _ jobs.JobHandler = (*handler)(nil)
@@ -34,8 +32,9 @@ type HandlerParams struct {
 	V           *validator.Validate
 	APIClient   nuonrunner.Client
 	Settings    *settings.Settings
+	Shutdowner  fx.Shutdowner
 	ErrRecorder *errs.Recorder
-	JobLoops    []jobloop.JobLoop `group:"job_loops"`
+	Monitor     *monitor.Monitor
 }
 
 func New(params HandlerParams) *handler {
@@ -43,8 +42,9 @@ func New(params HandlerParams) *handler {
 		apiClient:   params.APIClient,
 		v:           params.V,
 		settings:    params.Settings,
+		shutdowner:  params.Shutdowner,
 		errRecorder: params.ErrRecorder,
-		jobLoops:    params.JobLoops,
+		monitor:     params.Monitor,
 	}
 }
 

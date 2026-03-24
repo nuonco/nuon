@@ -24,24 +24,6 @@ func (h *Helpers) CreateShutdownJob(ctx context.Context,
 	)
 }
 
-func (h *Helpers) CreateVMShutdownJob(ctx context.Context,
-	runnerID string,
-	ownerID string,
-	logStreamID string,
-	metadata map[string]string,
-) (*app.RunnerJob, error) {
-	return h.CreateRunnerJob(
-		ctx,
-		runnerID,
-		"runners",
-		ownerID,
-		app.RunnerJobTypeVMShutDown,
-		app.RunnerJobOperationTypeExec,
-		logStreamID,
-		metadata,
-	)
-}
-
 // These are for management mode and they should all be consolidated into a single helper
 func (h *Helpers) CreateMngJob(ctx context.Context,
 	runnerID string,

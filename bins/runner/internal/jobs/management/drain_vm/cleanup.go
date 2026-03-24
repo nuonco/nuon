@@ -1,4 +1,4 @@
-package vmshutdown
+package drainvm
 
 import (
 	"context"
@@ -14,7 +14,7 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		return err
 	}
 
-	l.Info("shutting down the vm")
+	l.Info("shutting down the vm after drain")
 	if err := h.finishJob(ctx, job, jobExecution); err != nil {
 		h.errRecorder.Record("update job execution", err)
 	}

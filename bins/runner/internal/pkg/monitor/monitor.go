@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/conc"
@@ -37,6 +38,14 @@ type Monitor struct {
 	wg       *conc.WaitGroup
 	startTS  time.Time
 	mw       metrics.Writer
+
+	draining atomic.Bool
+}
+
+// SetDraining prevents the monitor from restarting nuon-runner.service.
+// Called by the drain_vm handler before sending SIGUSR1 to the runner process.
+func (h *Monitor) SetDraining() {
+	h.draining.Store(true)
 }
 
 func New(params Params) (*Monitor, error) {

@@ -67,6 +67,10 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
 
+			// SIGUSR1 drain handler — mng sends this signal to gracefully
+			// drain all job loops before powering off the VM.
+			fx.Invoke(jobloop.RegisterDrainSignalHandler),
+
 			// sandbox control API
 			fx.Provide(sandboxctl.New),
 			fx.Invoke(func(*sandboxctl.Server) {}),
