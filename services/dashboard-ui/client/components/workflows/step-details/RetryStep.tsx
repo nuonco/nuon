@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -22,6 +22,7 @@ export const RetryStepModal = ({ step, ...props }: IRetryStep & IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const removePanelByKey = useRemovePanelByKey()
+  const queryClient = useQueryClient()
 
   const { mutate: execute, isPending: isLoading, error } = useMutation<unknown, TAPIError>({
     mutationFn: () =>
@@ -36,6 +37,9 @@ export const RetryStepModal = ({ step, ...props }: IRetryStep & IModal) => {
           <Text>{toSentenceCase(step.name)} is being retried.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },

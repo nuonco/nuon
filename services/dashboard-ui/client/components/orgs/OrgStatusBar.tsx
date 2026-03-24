@@ -10,6 +10,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
+import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import {
@@ -20,13 +21,14 @@ import {
   getInstallStack,
   getRunnerLatestHeartbeat,
 } from '@/lib'
-import { toSentenceCase } from '@/utils/string-utils'
+import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { isLessThan15SecondsOld } from '@/utils/time-utils'
 
 export const OrgStatusBar = () => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
+  const { activeWorkflows } = useActiveWorkflows()
   const { appId, branchId, installId } = useParams()
 
   const { data: app } = useQuery({
@@ -74,6 +76,23 @@ export const OrgStatusBar = () => {
     heartbeats?.install ?? heartbeats?.org ?? heartbeats?.build ?? undefined
   const runnerConnected = isLessThan15SecondsOld(runnerHeartbeat?.created_at)
   const runnerStatus = runnerConnected ? 'connected' : 'not-connected'
+
+  const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
+    id: workflow.id ?? '',
+    title: workflow.name || toSentenceCase(snakeToWords(workflow.type)),
+    subtitle: workflow.status?.status ?? undefined,
+    href: workflow.owner_id
+      ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
+      : undefined,
+    leftContent: (
+      <Status
+        status={workflow.status?.status ?? ''}
+        isWithoutText
+        variant="timeline"
+        iconSize={16}
+      />
+    ),
+  }))
 
   const approvalItems: TContextTooltipItem[] = approvals.map((approval) => {
     const step = approval.workflow_step
@@ -145,6 +164,26 @@ export const OrgStatusBar = () => {
           {approvals.length}
         </Text>
       </ContextTooltip>
+
+      {activeWorkflows.length > 0 && (
+        <ContextTooltip
+          position="top"
+          title="Active workflows"
+          showCount
+          width="w-72"
+          items={workflowItems}
+        >
+          <Text
+            theme="info"
+            family="mono"
+            variant="subtext"
+            className="!flex gap-1.5 items-center cursor-default"
+          >
+            <Icon variant="TreeStructureIcon" size={14} />
+            {activeWorkflows.length}
+          </Text>
+        </ContextTooltip>
+      )}
 
       {app && (
         <>

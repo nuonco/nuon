@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -23,6 +23,7 @@ export const CancelWorkflowModal = ({
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
 
   const { mutate: execute, isPending: isLoading, error } = useMutation<unknown, TAPIError>({
     mutationFn: () => cancelWorkflow({ orgId: org.id, workflowId: workflow.id }),
@@ -32,6 +33,8 @@ export const CancelWorkflowModal = ({
           <Text>Cancelled the {workflow.type} workflow.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
     },
     onError: (err) => {

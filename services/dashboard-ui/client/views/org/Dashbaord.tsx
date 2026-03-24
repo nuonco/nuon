@@ -18,6 +18,8 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
+import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { getOrgStats, getRunnerJobs } from '@/lib'
@@ -45,6 +47,7 @@ export const Dashboard = () => {
   const offset = Number(searchParams.get('offset') ?? 0)
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
+  const { activeWorkflows } = useActiveWorkflows()
 
   useEffect(() => {
     if (!org) return
@@ -101,7 +104,7 @@ export const Dashboard = () => {
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
       <PageHeader>
         <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
+          <Text variant="h3" weight="stronger" level={1} className="mb-4">
             Welcome to {org?.name}!
           </Text>
           <Text theme="neutral">
@@ -111,26 +114,34 @@ export const Dashboard = () => {
       </PageHeader>
       <PageContent>
         <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
-          <PageSection className="flex-1 border-r">
-            <Text variant="h3" weight="strong">
-              Overview
-            </Text>
-            <StatsGrid
-              stats={[
-                { label: 'Total installs', value: stats?.install_count ?? 0 },
-                { label: 'Active applications', value: stats?.app_count ?? 0 },
-                { label: 'Active runners', value: org?.runner_group?.runners?.length ?? 0 },
-                { label: 'Pending approvals', value: approvals.length },
-              ]}
-            />
+          <PageSection className="flex-1 border-r !gap-12">
+            <div className="flex flex-col gap-4">
+              <Text variant="h3" weight="strong">
+                Overview
+              </Text>
+              <StatsGrid
+                stats={[
+                  { label: 'Total installs', value: stats?.install_count ?? 0 },
+                  {
+                    label: 'Active applications',
+                    value: stats?.app_count ?? 0,
+                  },
+                  { label: 'Active workflows', value: activeWorkflows.length },
+                  { label: 'Pending approvals', value: approvals.length },
+                ]}
+              />
+            </div>
             <PendingApprovals />
-            <Text variant="h3" weight="strong" className="mt-6">
-              Recent activities
-            </Text>
-            <RecentActivities
-              activities={recentActivities}
-              pagination={jobs?.pagination}
-            />
+            <ActiveWorkflows workflows={activeWorkflows} />
+            <div className="flex flex-col gap-4">
+              <Text variant="base" weight="strong">
+                Recent activities
+              </Text>
+              <RecentActivities
+                activities={recentActivities}
+                pagination={jobs?.pagination}
+              />
+            </div>
           </PageSection>
           <PageSection className="w-full">
             <div className="flex flex-col gap-6">

@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -24,6 +24,7 @@ export const ApproveAllModal = ({
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
 
   const { mutate: execute, isPending: isLoading, error } = useMutation({
     mutationFn: () =>
@@ -40,6 +41,9 @@ export const ApproveAllModal = ({
           </Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
       removeModal(props.modalId)
     },
     onError: (err: any) => {
