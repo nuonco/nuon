@@ -29,9 +29,9 @@ The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse pr
 **Log streams** (`log_streams.go`):
 - `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/sse` — SSE streaming endpoint for real-time logs
 - `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/download` — Download logs as a text file
-  - `?user_output=true` — Filter to user application output only (skips logs where `LogAttributes` is non-empty)
+  - `?job_output=true` — Filter to job output only (keeps only logs with `ScopeName == "oteljob"`)
 
-**User vs internal logs**: Log records with an empty `LogAttributes` map (`{}`) are user application output. Records with populated `LogAttributes` are internal runner/platform logs. The `user_output=true` query param leverages this distinction.
+**User vs internal logs**: The runner emits logs with two OTEL scope names — `oteljob` for job execution output (builds, deploys, actions) and `system` for internal runner logs. The `user_output=true` filter keeps only records where `ScopeName == "oteljob"`.
 
 ## Client SPA (`client/`)
 

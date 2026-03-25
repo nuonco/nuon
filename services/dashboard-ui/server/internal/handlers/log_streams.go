@@ -167,7 +167,7 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="logs-%s.txt"`, logStreamID))
 	c.Writer.WriteHeader(http.StatusOK)
 
-	userOutputOnly := c.Query("user_output") == "true"
+	jobOutputOnly := c.Query("job_output") == "true"
 
 	for {
 		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset)
@@ -177,7 +177,7 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 		}
 
 		for _, log := range logs {
-			if userOutputOnly && len(log.LogAttributes) > 0 {
+			if jobOutputOnly && log.ScopeName != "oteljob" {
 				continue
 			}
 			fmt.Fprintf(c.Writer, "[%s] [%s] [%s] %s\n", log.Timestamp, log.SeverityText, log.ServiceName, log.Body)

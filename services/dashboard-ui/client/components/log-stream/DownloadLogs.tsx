@@ -27,7 +27,7 @@ export const DownloadLogsModal = ({
 
   const { mutate: download, isPending } = useMutation({
     mutationFn: async () => {
-      const params = mode === 'user' ? '?user_output=true' : ''
+      const params = mode === 'user' ? '?job_output=true' : ''
       const resp = await fetch(
         `/api/orgs/${orgId}/log-streams/${logStreamId}/logs/download${params}`
       )
@@ -84,7 +84,7 @@ export const DownloadLogsModal = ({
           value="user"
           checked={mode === 'user'}
           onChange={() => setMode('user')}
-          labelProps={{ labelText: 'User output only' }}
+          labelProps={{ labelText: 'Job output only' }}
         />
       </div>
     </Modal>
