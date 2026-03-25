@@ -14,6 +14,8 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
+const maxDownloadLogs = 50000
+
 const (
 	streamingThreshold = 40
 	streamingDelay     = 200 * time.Millisecond
@@ -32,6 +34,7 @@ func NewLogStreamsHandler(cfg *internal.Config, l *zap.Logger) *LogStreamsHandle
 
 func (h *LogStreamsHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/api/orgs/:orgId/log-streams/:logStreamId/logs/sse", h.StreamLogs)
+	e.GET("/api/orgs/:orgId/log-streams/:logStreamId/logs/download", h.DownloadLogs)
 	return nil
 }
 
@@ -132,5 +135,59 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 			return
 		case <-time.After(pollInterval):
 		}
+	}
+}
+
+func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
+	orgID := c.Param("orgId")
+	logStreamID := c.Param("logStreamId")
+
+	token, err := c.Cookie(authCookie)
+	if err != nil || token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	client, err := nuon.New(
+		nuon.WithURL(h.cfg.APIUrl),
+		nuon.WithAuthToken(token),
+		nuon.WithOrgID(orgID),
+	)
+	if err != nil {
+		h.l.Error("failed to create nuon client", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create client"})
+		return
+	}
+
+	ctx := c.Request.Context()
+	var offset string
+	totalLogs := 0
+
+	c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="logs-%s.txt"`, logStreamID))
+	c.Writer.WriteHeader(http.StatusOK)
+
+	jobOutputOnly := c.Query("job_output") == "true"
+
+	for {
+		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset)
+		if err != nil {
+			h.l.Error("failed to read log stream logs", zap.Error(err), zap.String("logStreamID", logStreamID))
+			break
+		}
+
+		for _, log := range logs {
+			if jobOutputOnly && log.ScopeName != "oteljob" {
+				continue
+			}
+			fmt.Fprintf(c.Writer, "[%s] [%s] [%s] %s\n", log.Timestamp, log.SeverityText, log.ServiceName, log.Body)
+		}
+		c.Writer.Flush()
+
+		totalLogs += len(logs)
+		if nextOffset == "" || totalLogs >= maxDownloadLogs {
+			break
+		}
+		offset = nextOffset
 	}
 }
