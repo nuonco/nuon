@@ -10,9 +10,10 @@ JOIN install_workflows w
   ON w.id = s.install_workflow_id
   AND w.deleted_at = 0
   AND w.finished_at IS NULL
+  AND (w.status->>'status') NOT IN ('cancelled', 'error')
 JOIN installs i
   ON i.id = w.owner_id
   AND i.deleted_at = 0
 WHERE a.deleted_at = 0
   AND resp.id IS NULL
-  AND (s.status->>'status') != 'auto-skipped'
+  AND (s.status->>'status') NOT IN ('auto-skipped', 'cancelled', 'error')
