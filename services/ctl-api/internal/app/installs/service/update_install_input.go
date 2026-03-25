@@ -17,6 +17,7 @@ import (
 
 type UpdateInstallInputsRequest struct {
 	Inputs map[string]*string `json:"inputs" validate:"required,gte=1"`
+	Role   string             `json:"role"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -102,7 +103,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(ctx, install.ID, *changedInputs)
+	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(ctx, install.ID, *changedInputs, req.Role)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return

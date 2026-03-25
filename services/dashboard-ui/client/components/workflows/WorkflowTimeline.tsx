@@ -1,9 +1,13 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
@@ -12,7 +16,10 @@ import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
 import type { TWorkflow } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { getWorkflowBadge } from '@/utils/workflow-utils'
+import {
+  getWorkflowBadge,
+  getPendingApprovalCount,
+} from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 const LIMIT = 10
@@ -64,15 +71,28 @@ export const WorkflowTimeline = ({
       pagination={pagination}
       renderEvent={(workflow) => {
         const workflowTitle = (
-          <Link
-            className="inline-flex gap-2 items-center"
-            href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
-          >
-            {workflow?.type === 'action_workflow_run' &&
-            workflow?.metadata?.adhoc_action
-              ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-              : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
-          </Link>
+          <span className="flex items-center gap-4 mb-1">
+            <Link
+              className="inline-flex gap-2 items-center"
+              href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
+            >
+              {workflow?.type === 'action_workflow_run' &&
+              workflow?.metadata?.adhoc_action
+                ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
+                : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+            </Link>
+            {workflow?.status?.status === 'in-progress' ? (
+              <Badge size="sm" theme="info">
+                In progress
+              </Badge>
+            ) : null}
+            {workflow?.approval_option === 'prompt' &&
+            getPendingApprovalCount(workflow) ? (
+              <Badge size="sm" theme="warn">
+                Pending approval
+              </Badge>
+            ) : null}
+          </span>
         )
 
         return (
@@ -112,6 +132,43 @@ export const WorkflowTimeline = ({
             }
             badge={getWorkflowBadge(workflow)}
             caption={<ID>{workflow?.id}</ID>}
+            underline={
+              <span className="flex items-center gap-6 mt-1">
+                <Text
+                  className="!flex items-center gap-1"
+                  variant="subtext"
+                  theme="neutral"
+                >
+                  <Icon variant="CalendarBlankIcon" />{' '}
+                  <Time time={workflow?.created_at} variant="subtext" />
+                </Text>
+                <Text
+                  className="!flex items-center gap-1"
+                  variant="subtext"
+                  theme="neutral"
+                >
+                  <Icon variant="ClockClockwiseIcon" />{' '}
+                  <Time
+                    time={workflow?.updated_at}
+                    variant="subtext"
+                    format="relative"
+                  />
+                </Text>
+                {workflow?.finished ? (
+                  <Text
+                    className="!flex items-center gap-1"
+                    variant="subtext"
+                    theme="neutral"
+                  >
+                    <Icon variant="TimerIcon" />{' '}
+                    <Duration
+                      nanoseconds={workflow?.execution_time}
+                      variant="subtext"
+                    />
+                  </Text>
+                ) : null}
+              </span>
+            }
             createdAt={workflow?.created_at}
             createdBy={workflow?.created_by?.email}
             status={workflow?.status?.status}

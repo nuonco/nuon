@@ -1,5 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
+import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline } from '@/components/common/Timeline'
@@ -45,6 +47,16 @@ export const SandboxBuildTimeline = ({
     ? { hasNext: result.pagination.hasNext, offset, limit: LIMIT }
     : { hasNext: false, offset, limit: LIMIT }
 
+  if (builds.length === 0 && offset === 0) {
+    return (
+      <EmptyState
+        emptyTitle="No sandbox builds"
+        emptyMessage="Sandbox builds will appear here once triggered."
+        variant="history"
+      />
+    )
+  }
+
   return (
     <Timeline<TAppSandboxBuild>
       events={builds}
@@ -57,11 +69,23 @@ export const SandboxBuildTimeline = ({
             createdAt={build?.created_at}
             status={build?.status}
             title={
-              <Link
-                href={`/${org.id}/apps/${app.id}/sandbox/builds/${build.id}`}
-              >
-                Sandbox build
-              </Link>
+              <span className="flex items-center gap-2">
+                <Link
+                  href={`/${org.id}/apps/${app.id}/sandbox/builds/${build.id}`}
+                >
+                  Sandbox build
+                </Link>
+                {build?.status_v2?.status === 'drifted' ? (
+                  <Badge variant="code" size="sm">
+                    drift scan
+                  </Badge>
+                ) : null}
+                {build?.status_v2?.metadata?.duplicate_build ? (
+                  <Badge variant="code" size="sm" theme="warn">
+                    duplicate build
+                  </Badge>
+                ) : null}
+              </span>
             }
             underline={
               <span className="flex flex-col mt-2">

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 import { Text } from '@/components/common/Text'
@@ -13,6 +14,8 @@ interface IRoleSelector {
   onChange?: (value: string) => void
   name?: string
   disabled?: boolean
+  defaultRoleName?: string
+  mappedRoleNames?: string[]
 }
 
 const ROLE_TYPE_CONFIG = {
@@ -23,6 +26,15 @@ const ROLE_TYPE_CONFIG = {
   maintenance: { theme: 'success' as const, label: 'Maintenance' },
 }
 
+const OPERATION_DEFAULT_ROLE_TYPE: Partial<Record<TOperationType, string>> = {
+  provision: 'provision',
+  reprovision: 'provision',
+  deprovision: 'deprovision',
+  teardown: 'deprovision',
+  deploy: 'maintenance',
+  trigger: 'maintenance',
+}
+
 export const RoleSelector = ({
   installId,
   operationType,
@@ -31,6 +43,8 @@ export const RoleSelector = ({
   onChange,
   name,
   disabled,
+  defaultRoleName,
+  mappedRoleNames,
 }: IRoleSelector) => {
   const { org } = useOrg()
 
@@ -43,7 +57,35 @@ export const RoleSelector = ({
 
   const roles = data?.roles ?? []
 
-  const options: SelectOption[] = roles.map((role) => ({
+  useEffect(() => {
+    if (defaultRoleName && defaultRoleName !== value) {
+      onChange?.(defaultRoleName)
+      return
+    }
+
+    if (!value && roles.length > 0) {
+      const defaultRoleType = OPERATION_DEFAULT_ROLE_TYPE[operationType]
+      if (defaultRoleType) {
+        const match = roles.find((r) => r.role_type === defaultRoleType)
+        if (match) {
+          onChange?.(match.name)
+        }
+      }
+    }
+  }, [roles, defaultRoleName, operationType, value, onChange])
+
+  const mappedSet = new Set(mappedRoleNames)
+
+  const sortedRoles = [...roles].sort((a, b) => {
+    const priority = (r: typeof a) => {
+      if (mappedSet.size > 0 && mappedSet.has(r.name)) return 0
+      if (r.role_type === 'break_glass') return 1
+      return 2
+    }
+    return priority(a) - priority(b)
+  })
+
+  const options: SelectOption[] = sortedRoles.map((role) => ({
     value: role.name,
     label: role.name,
     badge: {
@@ -51,6 +93,18 @@ export const RoleSelector = ({
       theme: ROLE_TYPE_CONFIG[role.role_type]?.theme,
     },
   }))
+
+  if (defaultRoleName && !roles.find((r) => r.name === defaultRoleName)) {
+    options.push({
+      value: defaultRoleName,
+      label: defaultRoleName,
+      disabled: true,
+      badge: {
+        label: 'Not provisioned',
+        theme: 'warn',
+      },
+    })
+  }
 
   return (
     <div className="flex flex-col gap-1">
@@ -65,7 +119,7 @@ export const RoleSelector = ({
         <Text variant="subtext" theme="neutral">
           Failed to load available roles
         </Text>
-      ) : roles.length === 0 ? (
+      ) : roles.length === 0 && !defaultRoleName ? (
         <Text variant="subtext" theme="neutral">
           No roles available from install stack outputs
         </Text>

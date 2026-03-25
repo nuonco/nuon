@@ -248,7 +248,7 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
   )
 
   // Resource Drift (new section)
-  if (plan.resource_drift) {
+  if (Array.isArray(plan.resource_drift)) {
     for (const rd of plan.resource_drift) {
       const mergedAfter = mergeAfterUnknown(
         rd.change.after,
@@ -275,7 +275,7 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
   }
 
   // Resource Changes (existing logic)
-  for (const rc of plan.resource_changes) {
+  for (const rc of plan.resource_changes ?? []) {
     const mergedAfter = mergeAfterUnknown(
       rc.change.after,
       rc.change.after_unknown

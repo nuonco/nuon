@@ -119,6 +119,11 @@ func (s *CreateOrgTestSuite) makeRequest(method, path string, body interface{}) 
 }
 
 func (s *CreateOrgTestSuite) TestCreateOrg() {
+	// Generate unique names for each test case to avoid cross-run collisions
+	minimalName := fmt.Sprintf("test-org-minimal-%s", domains.NewOrgID()[:8])
+	sandboxName := fmt.Sprintf("test-org-sandbox-%s", domains.NewOrgID()[:8])
+	notificationsName := fmt.Sprintf("test-org-notifications-%s", domains.NewOrgID()[:8])
+
 	testCases := []struct {
 		name           string
 		request        CreateOrgRequest
@@ -129,11 +134,11 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 		{
 			name: "successfully creates org with minimal data",
 			request: CreateOrgRequest{
-				Name: "test-org-minimal",
+				Name: minimalName,
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(org *app.Org) {
-				require.Equal(s.T(), "test-org-minimal", org.Name)
+				require.Equal(s.T(), minimalName, org.Name)
 				// OrgType has json:"-" tag, so it's not returned in API response
 				// Check database record instead
 				var dbOrg app.Org
@@ -155,12 +160,12 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 		{
 			name: "successfully creates org with sandbox mode",
 			request: CreateOrgRequest{
-				Name:           "test-org-sandbox",
+				Name:           sandboxName,
 				UseSandboxMode: true,
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(org *app.Org) {
-				require.Equal(s.T(), "test-org-sandbox", org.Name)
+				require.Equal(s.T(), sandboxName, org.Name)
 				// OrgType has json:"-" tag, so it's not returned in API response
 				// Check database record instead
 				var dbOrg app.Org
@@ -179,11 +184,11 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 		{
 			name: "successfully creates org with notifications config",
 			request: CreateOrgRequest{
-				Name: "test-org-notifications",
+				Name: notificationsName,
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(org *app.Org) {
-				require.Equal(s.T(), "test-org-notifications", org.Name)
+				require.Equal(s.T(), notificationsName, org.Name)
 
 				// Verify notifications config was created
 				var notifConfig app.NotificationsConfig
@@ -318,7 +323,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 
 	// Make request
 	request := CreateOrgRequest{
-		Name: "service-org",
+		Name: fmt.Sprintf("service-org-%s", domains.NewOrgID()[:8]),
 	}
 	jsonBytes, err := json.Marshal(request)
 	require.NoError(s.T(), err)
@@ -337,7 +342,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgServiceAccountRestriction() {
 
 func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 	request := CreateOrgRequest{
-		Name: "test-org-runner-group",
+		Name: fmt.Sprintf("test-org-runner-group-%s", domains.NewOrgID()[:8]),
 	}
 
 	// Reset mock
@@ -365,7 +370,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 
 func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 	request := CreateOrgRequest{
-		Name: "test-org-roles",
+		Name: fmt.Sprintf("test-org-roles-%s", domains.NewOrgID()[:8]),
 	}
 
 	// Reset mock
@@ -428,7 +433,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 
 	// Make request
 	request := CreateOrgRequest{
-		Name: "integration-org",
+		Name: fmt.Sprintf("integration-org-%s", domains.NewOrgID()[:8]),
 	}
 	jsonBytes, err := json.Marshal(request)
 	require.NoError(s.T(), err)
@@ -465,9 +470,10 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
+	dupName := fmt.Sprintf("duplicate-org-%s", domains.NewOrgID()[:8])
 	existingOrg := &app.Org{
 		ID:          domains.NewOrgID(),
-		Name:        "duplicate-org",
+		Name:        dupName,
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/test",
@@ -481,7 +487,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgDuplicateName() {
 
 	// Try to create org with same name
 	request := CreateOrgRequest{
-		Name: "duplicate-org",
+		Name: dupName,
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
@@ -503,7 +509,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgWithoutAccountContext() {
 	require.NoError(s.T(), err)
 
 	request := CreateOrgRequest{
-		Name: "no-context-org",
+		Name: fmt.Sprintf("no-context-org-%s", domains.NewOrgID()[:8]),
 	}
 	jsonBytes, err := json.Marshal(request)
 	require.NoError(s.T(), err)

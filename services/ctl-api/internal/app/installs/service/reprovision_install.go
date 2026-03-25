@@ -13,7 +13,8 @@ import (
 )
 
 type ReprovisionInstallRequest struct {
-	PlanOnly bool `json:"plan_only"`
+	PlanOnly bool   `json:"plan_only"`
+	Role     string `json:"role"`
 }
 
 // @ID						ReprovisionInstall
@@ -48,11 +49,12 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateWorkflow(ctx,
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovision,
 		map[string]string{},
 		req.PlanOnly,
+		req.Role,
 	)
 	if err != nil {
 		ctx.Error(err)

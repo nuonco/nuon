@@ -10,7 +10,6 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/outputs"
-	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -212,22 +211,21 @@ func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallSta
 	is.TemplateJSON = string(version.Contents)
 	is.Checksum = version.Checksum
 	is.Status = string(version.Status.Status)
-
-	stackOutput, err := stacks.DecodeAWSStackOutputData(stack.InstallStackOutputs.Data)
-	if err != nil {
-		return nil
-	}
-	is.Outputs = stackOutput
+	is.Outputs = stack.InstallStackOutputs.DataContents
 
 	return is
 }
 
 func (h *Helpers) toInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
+	if inputs == nil {
+		return nil
+	}
+
 	inputValues := inputs.Values
 	if redacted {
 		inputValues = inputs.ValuesRedacted
 	}
-	if inputs == nil || len(inputValues) < 1 {
+	if len(inputValues) < 1 {
 		return nil
 	}
 

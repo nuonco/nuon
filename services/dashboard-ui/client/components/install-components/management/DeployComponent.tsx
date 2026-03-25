@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useEffect, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -14,7 +14,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { deployComponent } from '@/lib'
+import { deployComponent, getAppConfig } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 import type { TComponent } from '@/types'
 import { BuildSelect } from './BuildSelect'
@@ -67,6 +67,29 @@ export const DeployComponentModal = ({
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
+
+  const { data: appConfig } = useQuery({
+    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id, 'recurse'],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: install.app_config_id,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!install?.app_config_id,
+  })
+
+  const componentConfig = appConfig?.component_config_connections?.find(
+    (c) => c.component_id === component.id
+  )
+  const componentOperationRoles = componentConfig?.operation_roles
+  const defaultRole = componentOperationRoles?.deploy
+    ?.replace('{{.nuon.install.id}}', install.id)
+  const mappedRoleNames = componentOperationRoles
+    ? Object.values(componentOperationRoles).map((r) => r.replace('{{.nuon.install.id}}', install.id))
+    : undefined
 
   const [buildId, setBuildId] = useState<string>()
   const [deployDependents, setDeployDependents] = useState(false)
@@ -96,6 +119,8 @@ export const DeployComponentModal = ({
           <Text>Deploy for {component.name} was started.</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       if (workflowId) {
@@ -228,6 +253,8 @@ export const DeployComponentModal = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
+          defaultRoleName={defaultRole}
+          mappedRoleNames={mappedRoleNames}
         />
       </div>
     </Modal>

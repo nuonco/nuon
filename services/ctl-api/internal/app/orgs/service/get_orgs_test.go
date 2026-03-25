@@ -115,6 +115,13 @@ func (s *OrgsTestSuite) makeRequest(method, path string) *httptest.ResponseRecor
 }
 
 func (s *OrgsTestSuite) TestGetOrgs() {
+	// Generate unique names for each test case to avoid cross-run collisions
+	org1Name := fmt.Sprintf("test-org-1-%s", domains.NewOrgID()[:8])
+	org2Name := fmt.Sprintf("test-org-2-%s", domains.NewOrgID()[:8])
+	searchSuffix := domains.NewOrgID()[:8]
+	frontendName := fmt.Sprintf("frontend-team-%s", searchSuffix)
+	backendName := fmt.Sprintf("backend-team-%s", searchSuffix)
+
 	testCases := []struct {
 		name          string
 		setupFunc     func() []string // Returns org IDs that should be accessible
@@ -138,7 +145,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 
 				org1 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "test-org-1",
+					Name:        org1Name,
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -146,7 +153,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				}
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "test-org-2",
+					Name:        org2Name,
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -171,8 +178,8 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 			expectedCount: 2,
 			validateFunc: func(orgs []app.Org) {
 				orgNames := []string{orgs[0].Name, orgs[1].Name}
-				require.Contains(s.T(), orgNames, "test-org-1")
-				require.Contains(s.T(), orgNames, "test-org-2")
+				require.Contains(s.T(), orgNames, org1Name)
+				require.Contains(s.T(), orgNames, org2Name)
 			},
 		},
 		{
@@ -183,7 +190,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 
 				org1 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "frontend-team",
+					Name:        frontendName,
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -191,7 +198,7 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 				}
 				org2 := &app.Org{
 					ID:          domains.NewOrgID(),
-					Name:        "backend-team",
+					Name:        backendName,
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -212,10 +219,10 @@ func (s *OrgsTestSuite) TestGetOrgs() {
 
 				return []string{org1.ID, org2.ID}
 			},
-			queryParams:   "?q=frontend",
+			queryParams:   fmt.Sprintf("?q=frontend-team-%s", searchSuffix),
 			expectedCount: 1,
 			validateFunc: func(orgs []app.Org) {
-				require.Equal(s.T(), "frontend-team", orgs[0].Name)
+				require.Equal(s.T(), frontendName, orgs[0].Name)
 			},
 		},
 		{

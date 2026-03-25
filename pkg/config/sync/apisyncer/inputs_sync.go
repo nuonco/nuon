@@ -51,7 +51,6 @@ func (s *syncer) getAppInputRequest() *models.ServiceCreateAppInputConfigRequest
 			Group:       &input.Group,
 			Required:    input.Required,
 			Sensitive:   input.Sensitive,
-			Internal:    input.Internal,
 			Type:        generics.ValOrDefault(input.Type, "string"),
 			Source:      inputSource,
 			Index:       generics.ToPtr(int64(idx)),

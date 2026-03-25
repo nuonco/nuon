@@ -41,6 +41,7 @@ type ExecuteJobRequest struct {
 // @execution-timeout 1h
 // @task-timeout 1m
 // @task-queue "api"
+// @id-generator WorkflowIDCallback
 func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
 	if workflow.GetInfo(ctx).ContinuedExecutionRunID != "" {
 		return w.pollJob(ctx, req)

@@ -20,6 +20,7 @@ import (
 	installssandboxworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
 	installsstackworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	onboardingworker "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/worker"
 	orgsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	runnersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker"
@@ -79,4 +80,9 @@ var ActionsWorkerModule = fx.Module("worker-actions",
 	fx.Provide(actionsactivities.New),
 	fx.Provide(actionsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(actionsworker.New)),
+)
+
+// OnboardingsWorkerModule provides the onboardings namespace worker.
+var OnboardingsWorkerModule = fx.Module("worker-onboardings",
+	fx.Provide(worker.AsWorker(onboardingworker.New)),
 )

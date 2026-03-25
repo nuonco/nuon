@@ -54,7 +54,8 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	steps = append(steps, step)
 
 	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationUpdateInstallStackOutputs,
+		Type:                    signals.OperationUpdateInstallStackOutputs,
+		SkipInputUpdateWorkflow: true,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
@@ -80,6 +81,9 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationReprovisionSandboxPlan,
+		SandboxSubSignal: signals.SandboxSubSignal{
+			Role: flw.Role,
+		},
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
@@ -89,6 +93,9 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	if !flw.PlanOnly {
 		step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply plan", pgtype.Hstore{}, &signals.Signal{
 			Type: signals.OperationReprovisionSandboxApplyPlan,
+			SandboxSubSignal: signals.SandboxSubSignal{
+				Role: flw.Role,
+			},
 		}, flw.PlanOnly)
 		if err != nil {
 			return nil, err

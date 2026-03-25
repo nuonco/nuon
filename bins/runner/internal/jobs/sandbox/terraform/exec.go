@@ -91,11 +91,9 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		l.Info("creating terraform plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.Plan(ctx)
-		p.createJobExecutionResultRequest(ctx, wkspace, hlog)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		l.Info("creating terraform teardown plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.DestroyPlan(ctx)
-		p.createJobExecutionResultRequest(ctx, wkspace, hlog)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info("executing terraform apply plan", zap.String("operation", string(job.Operation)))
 		err = tfRun.ApplyPlan(ctx)
@@ -109,6 +107,16 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	switch job.Operation {
+	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
+		if err := p.createJobExecutionResultRequest(ctx, wkspace, hlog); err != nil {
+			p.writeErrorResult(ctx, "failed to create sandbox-run install plan", err)
+			return err
+		}
+	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
+		if err := p.createJobExecutionResultRequest(ctx, wkspace, hlog); err != nil {
+			p.writeErrorResult(ctx, "failed to create sandbox-run teardown plan", err)
+			return err
+		}
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		if err := p.updateTerraformState(ctx, wkspace, hlog); err != nil {
 			p.writeErrorResult(ctx, "terraform show", err)

@@ -205,6 +205,68 @@ export const TextVariants = () => (
   </div>
 )
 
+export const ColorVariants = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">CloudPlatform color variants</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        The{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          colorVariant
+        </code>{' '}
+        prop switches between monochrome (default) and full brand-color icons.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Mono (default)</h4>
+      <div className="flex items-center gap-6 p-4 border rounded">
+        <CloudPlatform platform="aws" colorVariant="mono" />
+        <CloudPlatform platform="azure" colorVariant="mono" />
+        <CloudPlatform platform="gcp" colorVariant="mono" />
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Monochrome icons that adapt to the current text color
+      </Text>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Color</h4>
+      <div className="flex items-center gap-6 p-4 border rounded">
+        <CloudPlatform platform="aws" colorVariant="color" />
+        <CloudPlatform platform="azure" colorVariant="color" />
+        <CloudPlatform platform="gcp" colorVariant="color" />
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Full brand colors for visual emphasis and provider recognition
+      </Text>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Color with display variants</h4>
+      <div className="flex items-center gap-6 p-4 border rounded flex-wrap">
+        <CloudPlatform platform="aws" colorVariant="color" displayVariant="icon-only" />
+        <CloudPlatform platform="aws" colorVariant="color" displayVariant="abbr" />
+        <CloudPlatform platform="aws" colorVariant="color" displayVariant="name" />
+      </div>
+      <Text variant="subtext" theme="neutral">
+        Color variant works alongside all display variants
+      </Text>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
+      <div>
+        <strong>mono:</strong> Inherits current text color, blends into any
+        context (default)
+      </div>
+      <div>
+        <strong>color:</strong> Official brand colors for high visual
+        distinction
+      </div>
+    </div>
+  </div>
+)
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">

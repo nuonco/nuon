@@ -34,6 +34,7 @@ type clientConfig struct {
 	GitRef                string `json:"gitRef,omitempty"`
 	IsBYOC                bool   `json:"isByoc"`
 	SFTrialEndpoint       string `json:"sfTrialEndpoint,omitempty"`
+	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -54,6 +55,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		GitRef:                cfg.GitRef,
 		IsBYOC:                cfg.IsBYOC,
 		SFTrialEndpoint:       cfg.SFTrialEndpoint,
+		OnboardingV2:          cfg.OnboardingV2,
 	}
 }
 

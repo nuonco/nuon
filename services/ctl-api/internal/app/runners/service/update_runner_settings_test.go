@@ -158,7 +158,7 @@ func (s *UpdateRunnerSettingsTestSuite) setupTestData() {
 		LoggingLevel:             "info",
 		OrgK8sServiceAccountName: "test-sa",
 		OrgAWSIAMRoleARN:         "arn:aws:iam::123456789:role/test-role",
-		AWSMaxInstanceLifetime:   604800, // 7 days (default)
+		AWSMaxInstanceLifetime:   604800, // Deprecated: no longer used by ASG
 	}
 	err = s.service.DB.WithContext(ctx).Create(testSettings).Error
 	require.NoError(s.T(), err)
@@ -263,11 +263,11 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			},
 		},
 		{
-			name: "update with AWS max instance lifetime",
+			name: "update with AWS max instance lifetime (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
 				maxLifetime := 86400 // 1 day
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
-					AWSMaxInstanceLifetime: &maxLifetime,
+					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
 			},
 			expectedCode: http.StatusOK,
@@ -345,11 +345,11 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			errorSubstring: "unable to get runner",
 		},
 		{
-			name: "invalid AWS max instance lifetime - too low",
+			name: "invalid AWS max instance lifetime - too low (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
 				maxLifetime := 60 // Less than minimum (86400)
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
-					AWSMaxInstanceLifetime: &maxLifetime,
+					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
 			},
 			expectedCode:   http.StatusBadRequest,
@@ -357,11 +357,11 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			errorSubstring: "min",
 		},
 		{
-			name: "invalid AWS max instance lifetime - too high",
+			name: "invalid AWS max instance lifetime - too high (deprecated)",
 			setupFunc: func() (string, UpdateRunnerSettingsRequest) {
 				maxLifetime := 40000000 // More than maximum (31536000)
 				return s.testRunner.ID, UpdateRunnerSettingsRequest{
-					AWSMaxInstanceLifetime: &maxLifetime,
+					AWSMaxInstanceLifetime: &maxLifetime, // Deprecated: no longer used by ASG
 				}
 			},
 			expectedCode:   http.StatusBadRequest,
@@ -498,6 +498,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsFullUpdate() {
 	assert.Equal(s.T(), "arn:aws:iam::111111111:role/full-role", settings.OrgAWSIAMRoleARN)
 }
 
+// Deprecated: AWSMaxInstanceLifetime is no longer used by ASG. Instance refresh is handled by a backend cron.
 func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsValidAWSMaxInstanceLifetime() {
 	testCases := []struct {
 		name     string

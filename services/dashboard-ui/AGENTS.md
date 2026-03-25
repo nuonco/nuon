@@ -20,7 +20,18 @@ The Go server (Gin + Uber fx) handles:
 - Auth middleware: validates the cookie set by the external auth service
 - Runtime config injection: writes `window.__NUON_CONFIG__` into the HTML before serving
 - **Reverse proxy**: all `/v1/*` requests from the SPA are forwarded to ctl-api — the BFF extracts the `X-Nuon-Auth` cookie server-side and sets `Authorization: Bearer <token>` so the browser never needs to send the cookie cross-domain
-- Streaming API handlers (e.g., log streaming)
+- Streaming API handlers (e.g., log streaming, log download)
+
+### BFF API Endpoints (`server/internal/handlers/`)
+
+The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse proxy). These handlers authenticate via the `X-Nuon-Auth` cookie and create a nuon-go client server-side.
+
+**Log streams** (`log_streams.go`):
+- `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/sse` — SSE streaming endpoint for real-time logs
+- `GET /api/orgs/:orgId/log-streams/:logStreamId/logs/download` — Download logs as a text file
+  - `?job_output=true` — Filter to job output only (keeps only logs with `ScopeName == "oteljob"`)
+
+**User vs internal logs**: The runner emits logs with two OTEL scope names — `oteljob` for job execution output (builds, deploys, actions) and `system` for internal runner logs. The `user_output=true` filter keeps only records where `ScopeName == "oteljob"`.
 
 ## Client SPA (`client/`)
 
@@ -235,6 +246,18 @@ export type TNewResource = components['schemas']['app.NewResource']
 
 Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs. Read the component's TypeScript interface and any `.stories.tsx` file to understand the correct props before using it.
 
+### `Tabs` Component — Key Casing
+
+The `Tabs` component renders tab labels by running each object key through `toSentenceCase(camelToWords(key))`. `toSentenceCase` capitalizes the first character and **lowercases everything else**. Always write tab keys in all-lowercase so the rendered label is correct:
+
+```tsx
+// ✅ Correct — keys are all-lowercase, rendered as "Create your own app" / "Demo using a sample app"
+<Tabs tabs={{ 'create your own app': <CustomTab />, 'demo using a sample app': <DemoTab /> }} />
+
+// ❌ Wrong — title case keys render incorrectly: "Create your own app" loses capitals mid-string
+<Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
+```
+
 ### File Organization
 
 **Flat files (preferred for most components)**:
@@ -308,7 +331,16 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 - Create the modal instance before passing to `addModal`: `const modal = <MyModal />` then `addModal(modal)`
 - Close modals on success via `removeModal(props.modalId)`
 
-## Code Style
+## Text & Copy Style
+
+**Always use sentence case, never title case.** This applies to all UI text: headings, buttons, labels, tab labels, empty states, tooltips, and any other copy.
+
+- ✅ "Create your org" / "Connect a cloud account" / "Generate random name"
+- ❌ "Create Your Org" / "Connect A Cloud Account" / "Generate Random Name"
+
+The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
+
+
 
 Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does (no "// loop through items", "// close modal", "// fetch data" style comments). Let clear naming and structure document the code.
 

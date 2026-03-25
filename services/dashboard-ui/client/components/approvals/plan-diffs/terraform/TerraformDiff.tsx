@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
 import type {
@@ -29,15 +30,25 @@ const EMPTY_PARSED_PLAN = {
 }
 
 export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
-  const { drift, resources, outputs } = useMemo(() => {
+  const { drift, resources, outputs, parseError } = useMemo(() => {
     if (!plan) {
       return {
         drift: EMPTY_PARSED_PLAN,
         resources: EMPTY_PARSED_PLAN,
         outputs: EMPTY_PARSED_PLAN,
+        parseError: false,
       }
     }
-    return parseTerraformPlan(plan)
+    try {
+      return { ...parseTerraformPlan(plan), parseError: false }
+    } catch {
+      return {
+        drift: EMPTY_PARSED_PLAN,
+        resources: EMPTY_PARSED_PLAN,
+        outputs: EMPTY_PARSED_PLAN,
+        parseError: true,
+      }
+    }
   }, [plan])
 
   const driftFilter = useTerraformResourceFilter<TTerraformResourceChange>(
@@ -50,18 +61,15 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
     outputs.changes
   )
 
-  // Show loading/empty state if plan is undefined
   if (!plan) {
     return (
-      <div className="flex flex-col gap-6">
-        <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 text-center">
-            <Text variant="base" theme="neutral">
-              No Terraform plan data available
-            </Text>
-          </div>
-        </Card>
-      </div>
+      <Banner theme="neutral">No Terraform plan data available</Banner>
+    )
+  }
+
+  if (parseError) {
+    return (
+      <Banner theme="warn">Unable to parse Terraform plan</Banner>
     )
   }
 

@@ -120,26 +120,32 @@ func (s *GetOrgAccountsTestSuite) makeRequest(method, path string) *httptest.Res
 	return rr
 }
 
-// cleanupAccountsAndRoles removes all accounts except testAcc and their associated roles
-// Used to prevent data pollution between subtests
-func (s *GetOrgAccountsTestSuite) cleanupAccountsAndRoles() {
-	// Delete in correct FK dependency order to avoid constraint violations:
-
-	// 1. Delete account_roles first (has FK to both accounts and roles)
-	err := s.service.DB.Exec("DELETE FROM account_roles").Error
+// cleanupOrgRoles removes roles, policies, and account_roles for testOrg only.
+// Scoped to testOrg to avoid FK violations from broad deletes.
+// Account cleanup is handled by per-account s.T().Cleanup() functions.
+func (s *GetOrgAccountsTestSuite) cleanupOrgRoles() {
+	// 1. Delete account_roles for this org's roles only
+	err := s.service.DB.Exec(
+		"DELETE FROM account_roles WHERE role_id IN (SELECT id FROM roles WHERE org_id = ?)",
+		s.testOrg.ID,
+	).Error
 	require.NoError(s.T(), err)
 
-	// 2. Delete policies (has FK to roles)
+	// 2. Delete policies for testOrg
 	err = s.service.DB.Unscoped().Where("org_id = ?", s.testOrg.ID).Delete(&app.Policy{}).Error
 	require.NoError(s.T(), err)
 
-	// 3. Delete roles (has FK to orgs, but policies are now deleted)
+	// 3. Delete roles for testOrg
 	err = s.service.DB.Unscoped().Where("org_id = ?", s.testOrg.ID).Delete(&app.Role{}).Error
 	require.NoError(s.T(), err)
+}
 
-	// 4. Delete all accounts except testAcc
-	err = s.service.DB.Unscoped().Where("id != ?", s.testAcc.ID).Delete(&app.Account{}).Error
-	require.NoError(s.T(), err)
+// cleanupAccount registers cleanup to delete an account and its account_roles.
+func (s *GetOrgAccountsTestSuite) cleanupAccount(acc *app.Account) {
+	s.T().Cleanup(func() {
+		s.service.DB.Exec("DELETE FROM account_roles WHERE account_id = ?", acc.ID)
+		s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc.ID)
+	})
 }
 
 func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
@@ -191,9 +197,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc1).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc1.ID)
-				})
+				s.cleanupAccount(acc1)
 
 				acc2ID := domains.NewAccountID()
 				acc2 := &app.Account{
@@ -204,9 +208,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc2).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-				})
+				s.cleanupAccount(acc2)
 
 				// Assign accounts to org admin role
 				accountRole1 := &app.AccountRole{
@@ -259,10 +261,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					}
 					err = s.service.DB.Create(acc).Error
 					require.NoError(s.T(), err)
-					cleanupID := acc.ID
-					s.T().Cleanup(func() {
-						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", cleanupID)
-					})
+					s.cleanupAccount(acc)
 
 					// Assign to org admin role
 					accountRole := &app.AccountRole{
@@ -286,8 +285,8 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "respects pagination - offset parameter",
 			setupFunc: func() []string {
-				// Clean up accounts from previous subtests
-				s.cleanupAccountsAndRoles()
+				// Clean up roles from previous subtests
+				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -312,10 +311,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 					}
 					err = s.service.DB.Create(acc).Error
 					require.NoError(s.T(), err)
-					cleanupID := acc.ID
-					s.T().Cleanup(func() {
-						s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", cleanupID)
-					})
+					s.cleanupAccount(acc)
 
 					// Assign to org admin role
 					accountRole := &app.AccountRole{
@@ -339,8 +335,8 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "filters nuon.co emails for non-nuon users",
 			setupFunc: func() []string {
-				// Clean up accounts from previous subtests
-				s.cleanupAccountsAndRoles()
+				// Clean up roles from previous subtests
+				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -358,15 +354,13 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				nonNuonAccID := domains.NewAccountID()
 				nonNuonAcc := &app.Account{
 					ID:          nonNuonAccID,
-					Email:       fmt.Sprintf("%s@test.nuon.co", nonNuonAccID),
+					Email:       fmt.Sprintf("%s@example.com", nonNuonAccID),
 					Subject:     "requester-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
 				err = s.service.DB.Create(nonNuonAcc).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", nonNuonAcc.ID)
-				})
+				s.cleanupAccount(nonNuonAcc)
 
 				// Recreate router with non-nuon account context
 				testRouter := tests.NewTestRouter(tests.RouterOptions{
@@ -379,19 +373,17 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				require.NoError(s.T(), err)
 				s.router = testRouter
 
-				// Create regular user account
+				// Create regular user account (non-nuon email)
 				acc1ID := domains.NewAccountID()
 				acc1 := &app.Account{
 					ID:          acc1ID,
-					Email:       fmt.Sprintf("%s@test.nuon.co", acc1ID),
+					Email:       fmt.Sprintf("%s@example.com", acc1ID),
 					Subject:     "user-subject",
 					AccountType: app.AccountTypeAuth0,
 				}
 				err = s.service.DB.Create(acc1).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc1.ID)
-				})
+				s.cleanupAccount(acc1)
 
 				// Create Nuon employee account
 				acc2 := &app.Account{
@@ -402,9 +394,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc2).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-				})
+				s.cleanupAccount(acc2)
 
 				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
@@ -438,24 +428,23 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "shows all accounts including nuon.co for nuon.co users",
 			setupFunc: func() []string {
-				// Clean up accounts from previous subtests
-				s.cleanupAccountsAndRoles()
+				// Clean up roles from previous subtests
+				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 
 				// CRITICAL: Create new nuon.co account instead of modifying s.testAcc
 				// Modifying s.testAcc causes database constraint violations in later tests
+				nuonAdminAccID := domains.NewAccountID()
 				nuonAdminAcc := &app.Account{
-					ID:          domains.NewAccountID(),
-					Email:       "admin-nuon-test@nuon.co",
-					Subject:     "admin-nuon-test-subject",
+					ID:          nuonAdminAccID,
+					Email:       fmt.Sprintf("%s@nuon.co", nuonAdminAccID),
+					Subject:     fmt.Sprintf("admin-nuon-%s", nuonAdminAccID),
 					AccountType: app.AccountTypeAuth0,
 				}
 				err := s.service.DB.Create(nuonAdminAcc).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", nuonAdminAcc.ID)
-				})
+				s.cleanupAccount(nuonAdminAcc)
 
 				ctx = cctx.SetAccountContext(ctx, nuonAdminAcc)
 
@@ -478,9 +467,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc1).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc1.ID)
-				})
+				s.cleanupAccount(acc1)
 
 				// Create another Nuon employee account
 				acc2ID := domains.NewAccountID()
@@ -492,9 +479,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc2).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-				})
+				s.cleanupAccount(acc2)
 
 				// Assign both to org admin role
 				accountRole1 := &app.AccountRole{
@@ -510,6 +495,17 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(accountRole2).Error
 				require.NoError(s.T(), err)
+
+				// Recreate router with nuon.co account context
+				testRouter := tests.NewTestRouter(tests.RouterOptions{
+					L:       s.service.L,
+					DB:      s.service.DB,
+					TestOrg: s.testOrg,
+					TestAcc: nuonAdminAcc,
+				})
+				err = s.orgsService.RegisterPublicRoutes(testRouter)
+				require.NoError(s.T(), err)
+				s.router = testRouter
 
 				// For nuon.co user, all accounts should be visible
 				return []string{acc1.ID, acc2.ID}
@@ -531,8 +527,8 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 		{
 			name: "only returns accounts for current org",
 			setupFunc: func() []string {
-				// Clean up accounts from previous subtests
-				s.cleanupAccountsAndRoles()
+				// Clean up roles from previous subtests
+				s.cleanupOrgRoles()
 
 				ctx := context.Background()
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
@@ -550,6 +546,10 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				err := s.service.DB.WithContext(ctx).Create(org2).Error
 				require.NoError(s.T(), err)
 				s.T().Cleanup(func() {
+					// Clean up org2's roles/policies/account_roles before deleting org
+					s.service.DB.Exec("DELETE FROM account_roles WHERE role_id IN (SELECT id FROM roles WHERE org_id = ?)", org2.ID)
+					s.service.DB.Unscoped().Where("org_id = ?", org2.ID).Delete(&app.Policy{})
+					s.service.DB.Unscoped().Where("org_id = ?", org2.ID).Delete(&app.Role{})
 					s.service.DB.Unscoped().Delete(&app.Org{}, "id = ?", org2.ID)
 				})
 
@@ -579,9 +579,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc1).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc1.ID)
-				})
+				s.cleanupAccount(acc1)
 
 				// Create account for other org
 				acc2ID := domains.NewAccountID()
@@ -593,9 +591,7 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 				}
 				err = s.service.DB.Create(acc2).Error
 				require.NoError(s.T(), err)
-				s.T().Cleanup(func() {
-					s.service.DB.Unscoped().Delete(&app.Account{}, "id = ?", acc2.ID)
-				})
+				s.cleanupAccount(acc2)
 
 				// Assign to respective org admin roles
 				accountRole1 := &app.AccountRole{
@@ -625,38 +621,15 @@ func (s *GetOrgAccountsTestSuite) TestGetOrgAccounts() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Setup test data
+			// Setup test data (setupFunc may reassign s.router for tests that need different context)
 			expectedAccountIDs := tc.setupFunc()
 
-			// For "shows all accounts including nuon.co" test, we need to recreate the router
-			// with the nuon.co account context since router middleware captures context at creation
-			var testRouter *gin.Engine
-			if tc.name == "shows all accounts including nuon.co for nuon.co users" {
-				// Get the nuon.co admin account we created in setupFunc
-				var nuonAdminAcc app.Account
-				err := s.service.DB.Where("email = ?", "admin-nuon-test@nuon.co").First(&nuonAdminAcc).Error
-				require.NoError(s.T(), err)
-
-				// Create new router with nuon.co account context
-				testRouter = tests.NewTestRouter(tests.RouterOptions{
-					L:       s.service.L,
-					DB:      s.service.DB,
-					TestOrg: s.testOrg,
-					TestAcc: &nuonAdminAcc,
-				})
-				err = s.orgsService.RegisterPublicRoutes(testRouter)
-				require.NoError(s.T(), err)
-			} else {
-				// Use the default router for other tests
-				testRouter = s.router
-			}
-
-			// Make request with appropriate router
+			// Make request using s.router (may have been reassigned by setupFunc)
 			req, err := http.NewRequest(http.MethodGet, "/v1/orgs/current/accounts"+tc.queryParams, nil)
 			require.NoError(s.T(), err)
 
 			rr := httptest.NewRecorder()
-			testRouter.ServeHTTP(rr, req)
+			s.router.ServeHTTP(rr, req)
 
 			if rr.Code != http.StatusOK {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())

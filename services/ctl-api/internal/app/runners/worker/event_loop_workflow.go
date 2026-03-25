@@ -93,6 +93,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
 				RunnerID: req.ID,
 			})
+			w.startCronShutdownVMWorkflow(ctx, CronShutdownVMRequest{
+				RunnerID: req.ID,
+			})
 			return nil
 		},
 		ExistsHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) (bool, error) {

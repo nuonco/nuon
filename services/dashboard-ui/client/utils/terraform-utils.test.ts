@@ -452,6 +452,37 @@ describe('terraform-utils', () => {
       expect(result.outputs.summary.create).toBe(0)
     })
 
+    test('should handle missing resource_changes', () => {
+      const mockPlan = {} as TTerraformPlan
+
+      const result = parseTerraformPlan(mockPlan)
+
+      expect(result.resources.changes).toEqual([])
+      expect(result.outputs.changes).toEqual([])
+      expect(result.resources.summary.create).toBe(0)
+    })
+
+    test('should handle null resource_changes', () => {
+      const mockPlan = { resource_changes: null } as unknown as TTerraformPlan
+
+      const result = parseTerraformPlan(mockPlan)
+
+      expect(result.resources.changes).toEqual([])
+      expect(result.resources.summary.create).toBe(0)
+    })
+
+    test('should handle non-array resource_drift gracefully', () => {
+      const mockPlan = {
+        resource_changes: [],
+        resource_drift: 'not an array',
+      } as unknown as TTerraformPlan
+
+      const result = parseTerraformPlan(mockPlan)
+
+      expect(result.drift.changes).toEqual([])
+      expect(result.drift.summary.create).toBe(0)
+    })
+
     test('should handle null module_address', () => {
       const mockPlan: TTerraformPlan = {
         resource_changes: [

@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/stretchr/testify/assert"
@@ -57,7 +58,7 @@ func (s *AccountsServiceTestSuite) TestGetCurrentAccountDoesNotLeakIdentities() 
 	identity := app.AccountIdentity{
 		AccountID:    s.testAcc.ID,
 		ProviderType: app.ProviderTypeGoogle,
-		Sub:          "google-oauth2|123456789",
+		Sub:          fmt.Sprintf("google-oauth2|leak-%s", s.testAcc.ID),
 		Name:         "Test User",
 		Picture:      "https://example.com/photo.jpg",
 	}

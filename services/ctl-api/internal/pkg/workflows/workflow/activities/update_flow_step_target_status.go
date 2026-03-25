@@ -54,6 +54,18 @@ func (a *Activities) PkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx context.Cont
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to update install_sandbox_run")
 		}
+	case "install_stack_versions":
+		obj := &app.InstallStackVersion{
+			ID: step.StepTargetID,
+		}
+		res := a.db.WithContext(ctx).
+			Model(obj).
+			Updates(map[string]any{
+				"status": app.NewCompositeStatus(ctx, req.Status),
+			})
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "unable to update install_stack_version")
+		}
 	}
 
 	return nil

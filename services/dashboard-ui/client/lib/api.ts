@@ -131,7 +131,8 @@ export async function api<T>({
       return data as T
     } else {
       if (response.status === 401) {
-        window.location.href = '/login'
+        window.location.reload()
+        return
       }
 
       if (response.status === 502) {

@@ -324,6 +324,78 @@ export const CustomEventRendering = () => {
   )
 }
 
+export const WithoutDateGrouping = () => {
+  const multiDayEvents = [
+    {
+      created_at: '2024-07-15T14:00:00Z',
+      title: 'Deployment completed',
+      status: 'success',
+      caption: 'Application deployed to production',
+      additionalCaption: 'v2.1.0',
+      created_by: 'deploy-bot',
+    },
+    {
+      created_at: '2024-07-14T10:00:00Z',
+      title: 'Tests passed',
+      status: 'success',
+      caption: 'All integration tests completed',
+      created_by: 'ci-system',
+    },
+    {
+      created_at: '2024-07-13T16:30:00Z',
+      title: 'Build failed',
+      status: 'failed',
+      caption: 'Compilation error in module',
+      created_by: 'ci-system',
+    },
+    {
+      created_at: '2024-07-12T09:00:00Z',
+      title: 'Code committed',
+      status: 'success',
+      caption: 'Feature branch merged to main',
+      additionalCaption: 'commit abc123f',
+      created_by: 'developer',
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Without date grouping</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Set <code>groupByDate=&#123;false&#125;</code> to render events as a
+          flat list without date headers. Useful when events are already sorted
+          or when date grouping adds unnecessary visual noise.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium">Flat event list</h4>
+        <Timeline
+          events={multiDayEvents}
+          groupByDate={false}
+          pagination={{
+            limit: 10,
+            offset: 0,
+            hasNext: false,
+          }}
+          renderEvent={(event) => (
+            <TimelineEvent
+              key={`${event.created_at}-${event.title}`}
+              createdAt={event.created_at}
+              caption={event.caption}
+              createdBy={event.created_by}
+              status={event.status}
+              title={event.title}
+              additionalCaption={event.additionalCaption}
+            />
+          )}
+        />
+      </div>
+    </div>
+  )
+}
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">

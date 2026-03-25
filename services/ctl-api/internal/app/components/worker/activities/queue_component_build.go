@@ -40,6 +40,17 @@ func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponent
 		build.VCSConnectionCommitID = req.VCSConnectionCommitID
 	}
 
+	// Ensure the component event loop is running before sending the build signal.
+	// In the normal flow, the event loop is started by OperationCreated when the component
+	// is created via the HTTP API. But in the onboarding flow (and other paths that create
+	// components through SyncAppConfig), the event loop may not exist yet.
+	// OperationRestart has Restart()=true, so evClient.Send checks the workflow status
+	// and starts the event loop if it's not running. The Restarted handler is a no-op
+	// (just sets component status to active).
+	a.evClient.Send(ctx, req.ComponentID, &signals.Signal{
+		Type: signals.OperationRestart,
+	})
+
 	a.evClient.Send(ctx, req.ComponentID, &signals.Signal{
 		Type:    signals.OperationBuild,
 		BuildID: build.ID,

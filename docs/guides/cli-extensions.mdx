@@ -2,11 +2,13 @@
 title: 'CLI Extensions'
 description: 'Extend the Nuon CLI with community and first-party plugins.'
 icon: 'puzzle-piece'
-keywords: ["CLI plugins", "extend CLI", "custom commands", "community plugins", "nuon extensions"]
+keywords: ['CLI plugins', 'extend CLI', 'custom commands', 'community plugins', 'nuon extensions']
 ---
 
 Extensions let you add new commands to the `nuon` CLI. Once installed, an extension called `policies` is available as
 `nuon policies`, just like a built-in command.
+
+Extensions are generally available and do not require preview flags.
 
 The extension system was heavily inspired by
 [GitHub CLI extensions](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions).
@@ -35,7 +37,7 @@ nuon ext browse
 nuon ext install nuonco/nuon-ext-policies
 
 # Install at a specific branch, tag, or commit
-nuon ext install nuonco/nuon-ext-demo@main
+nuon ext install nuonco/nuon-ext-api@main
 
 # Install from a local directory (for development)
 nuon ext install ./nuon-ext-my-tool
@@ -56,7 +58,8 @@ nuon ext browse
 
 This queries the `nuonco` GitHub organization for repositories matching the `nuon-ext-*` naming convention and shows
 which ones you already have installed. Extensions can be installed from any GitHub organization, but `browse` lists
-Nuon-authored extensions by default.
+Nuon-authored extensions by default. Browse results are filtered to repositories with the `nuon-extensions` GitHub
+topic.
 
 ### Installing an extension
 
@@ -85,14 +88,16 @@ another org, use the full `org/nuon-ext-name` format.
 The install behavior depends on the extension type:
 
 - **Compiled extensions:** The CLI checks the latest GitHub Release for a platform-specific binary asset (e.g.
-  `nuon-ext-policies-darwin-arm64`). If a match is found, it downloads the binary directly. No clone is needed.
+  `nuon-ext-policies-darwin-arm64`). It also supports release archives like `nuon-ext-policies-darwin-arm64.tar.gz` and
+  `nuon-ext-policies-darwin-arm64.zip`. If a match is found, it downloads and installs the binary directly. No clone is
+  needed.
 
 - **Interpreted extensions:** If no release asset matches your platform, the CLI clones the repository and detects the
   extension type from the directory contents (`pyproject.toml` for python, executable `nuon-ext-<name>` for script).
 
-When `@ref` is specified (e.g. `demo@main`, `nuonco/nuon-ext-demo@v1.0`), the CLI always clones the repo at that exact
-ref, skipping release detection entirely. This is the standard way to install interpreted extensions and to pin compiled
-extensions to a specific source revision.
+When `@ref` is specified (e.g. `demo@main`, `nuonco/nuon-ext-demo@v1.0`), the CLI first checks for a release at that tag
+and installs a matching binary asset if one exists. If no matching release asset is found (for example when using a
+branch name or commit SHA), it clones the repo at that exact ref.
 
 #### Local install
 
@@ -104,8 +109,8 @@ Local installs create a symlink from the extensions directory to your source dir
 loop: rebuild the binary or edit a script and the changes take effect immediately. The directory must contain a
 `nuon-ext.toml` and the directory name must match `nuon-ext-<name>`.
 
-If the extension is already installed, the command fails and you will need to use the `nuon ext upgrade` command
-instead. However, we strongly reccomend uninstalling and re-installing from source when the dev work is complete.
+If the extension is already installed, the command fails. For local development installs, remove and re-install from
+source to refresh the symlinked install.
 
 ### Listing installed extensions
 
@@ -121,6 +126,9 @@ machine-readable output.
 ```sh
 # Upgrade a specific extension
 nuon ext upgrade policies
+
+# Force re-download even if already at the latest version
+nuon ext upgrade policies --force
 
 # Upgrade all installed extensions
 nuon ext upgrade
@@ -155,7 +163,8 @@ cases, you can run extensions directly as top-level commands (e.g. `nuon policie
 When the CLI starts, it scans the extensions directory and registers each installed extension as a top-level command.
 This means `nuon policies` works the same as `nuon ext exec policies`.
 
-All flags and arguments are passed through to the extension unchanged.
+When using top-level extension commands, Nuon root flags (for example `-f` / `--config`) are handled by the CLI, and
+only arguments after the extension command are forwarded to the extension process.
 
 ### Environment variables
 
@@ -172,7 +181,8 @@ When running an extension, the CLI provides context through environment variable
 | `NUON_EXT_DIR`     | Path to the extension's local directory |
 | `NUON_CONFIG_FILE` | Path to the Nuon config file            |
 
-Extensions can use these variables to interact with the Nuon API or read the local configuration.
+Extensions can use these variables to interact with the Nuon API or read the local configuration. These values are
+populated from your active CLI config/context.
 
 ### Authentication
 
@@ -244,6 +254,13 @@ Create GitHub releases with assets following this naming scheme:
 
 ```
 nuon-ext-<name>-<os>-<arch>[.exe]
+```
+
+Archive variants are also supported with the same base name:
+
+```
+nuon-ext-<name>-<os>-<arch>[.exe].tar.gz
+nuon-ext-<name>-<os>-<arch>[.exe].zip
 ```
 
 For example:

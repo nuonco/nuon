@@ -12,6 +12,7 @@ import type { TInstall } from '@/types'
 import { EditInputsButton } from './EditInputs'
 import { EnableAutoApproveButton } from './EnableAutoApprove'
 import { ReprovisionButton } from './Reprovision'
+import { ForgetButton } from './Forget'
 import { SyncSecretsButton } from './SyncSecrets'
 import { ViewStateButton } from './ViewState'
 
@@ -55,6 +56,13 @@ const QuickManagementMenu = () => {
       </Text>
       <ReprovisionButton isMenuButton />
       <SyncSecretsButton isMenuButton />
+      <hr />
+      <Text variant="label" theme="neutral">
+        Danger
+      </Text>
+      <span>
+        <ForgetButton isMenuButton />
+      </span>
     </Menu>
   )
 }

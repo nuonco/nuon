@@ -27,7 +27,7 @@ title: 'Inputs'
 | **`required`**<br/>boolean | whether input is required If true, customer must provide a value during installation. If false, can be skipped | **Optional** | - |
 | **`sensitive`**<br/>boolean | whether input is sensitive If true, the value will be masked/hidden in the UI and logs after the install is created. Use for passwords, tokens, and API keys | **Optional** | - |
 | **`type`**<br/>string | input type Data type for the input. Supported types: string, number, list, json, bool | **Optional** | `"string"`, `"number"`, `"json"`, `"bool"` |
-| **`internal`**<br/>boolean | whether input is internal-only If true, input is only settable via the admin panel and not shown to regular users | **Optional** | - |
+| **`internal`**<br/>boolean | Deprecated: this field has no effect and will be ignored. | **Optional** | - |
 | **`user_configurable`**<br/>boolean | whether input is user configurable If true, input can be modified by end users after installation | **Optional** | - |
 
 ### `group`

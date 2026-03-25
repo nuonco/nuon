@@ -138,21 +138,21 @@ Create `policies.toml` at your app root to register each policy:
 type       = "container_image"
 engine     = "opa"
 components = ["api_image"]
-contents   = "./require-signed-images.rego"
+contents   = "./policies/require-signed-images.rego"
 
 # Terraform policy - evaluated at deploy time
 [[policy]]
 type       = "terraform_module"
 engine     = "opa"
 components = ["*"]
-contents   = "./require-encryption.rego"
+contents   = "./policies/require-encryption.rego"
 
 # Helm chart policy - evaluated at deploy time
 [[policy]]
 type       = "helm_chart"
 engine     = "opa"
 components = ["api"]
-contents   = "./require-resource-limits.rego"
+contents   = "./policies/require-resource-limits.rego"
 ```
 
 | Field | Description |

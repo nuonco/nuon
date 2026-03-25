@@ -160,8 +160,11 @@ type Signal struct {
 	// used for awaiting the run
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
 
-	// used for install stack output update via phoen home
+	// used for install stack output update via phone home
 	InstallStackID string `json:"install_stack_id"`
+
+	// when true, skip triggering the input update workflow after updating install inputs from stack outputs
+	SkipInputUpdateWorkflow bool `json:"skip_input_update_workflow"`
 
 	eventloop.BaseSignal
 }

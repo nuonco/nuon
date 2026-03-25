@@ -91,7 +91,12 @@ export const InstallComponentDetail = () => {
         <HeadingGroup>
           <BackLink className="mb-6" />
           <span className="flex items-center gap-2">
-            <ComponentType type={component?.type} displayVariant="icon-only" />
+            <ComponentType
+              type={component?.type}
+              displayVariant="icon-only"
+              colorVariant="color"
+              iconSize="24"
+            />
             <Text variant="base" weight="strong">
               {component?.name}
             </Text>

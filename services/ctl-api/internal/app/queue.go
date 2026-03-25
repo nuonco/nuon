@@ -22,8 +22,8 @@ type Queue struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
-	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
+	OrgID *string `json:"org_id,omitempty" temporaljson:"org_id,omitzero,omitempty"`
+	Org   *Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
@@ -59,8 +59,10 @@ func (r *Queue) BeforeCreate(tx *gorm.DB) error {
 	if r.CreatedByID == "" {
 		r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
-	if r.OrgID == "" {
-		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	if r.OrgID == nil {
+		if orgID := orgIDFromContext(tx.Statement.Context); orgID != "" {
+			r.OrgID = &orgID
+		}
 	}
 
 	return nil

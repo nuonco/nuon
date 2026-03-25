@@ -146,7 +146,7 @@ func (s *GetRunnerSettingsTestSuite) setupTestData() {
 		LoggingLevel:             "info",
 		OrgK8sServiceAccountName: "test-sa",
 		OrgAWSIAMRoleARN:         "arn:aws:iam::123456789:role/test-role",
-		AWSMaxInstanceLifetime:   604800, // 7 days (default)
+		AWSMaxInstanceLifetime:   604800, // Deprecated: no longer used by ASG
 	}
 	err = s.service.DB.WithContext(ctx).Create(testSettings).Error
 	require.NoError(s.T(), err)
@@ -200,7 +200,7 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				assert.Equal(s.T(), s.testSettings.EnableMetrics, settings.EnableMetrics)
 				assert.Equal(s.T(), s.testSettings.EnableLogging, settings.EnableLogging)
 				assert.Equal(s.T(), s.testSettings.LoggingLevel, settings.LoggingLevel)
-				assert.Equal(s.T(), s.testSettings.AWSMaxInstanceLifetime, settings.AWSMaxInstanceLifetime)
+				assert.Equal(s.T(), s.testSettings.AWSMaxInstanceLifetime, settings.AWSMaxInstanceLifetime) // Deprecated: no longer used by ASG
 			},
 		},
 		{
@@ -218,9 +218,10 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettings() {
 				ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 				// Create a second org to avoid unique index conflict on owner_id
+				noSettingsOrgID := domains.NewOrgID()
 				org2 := &app.Org{
-					ID:          domains.NewOrgID(),
-					Name:        "no-settings-org",
+					ID:          noSettingsOrgID,
+					Name:        fmt.Sprintf("no-settings-org-%s", noSettingsOrgID[:8]),
 					SandboxMode: true,
 					NotificationsConfig: app.NotificationsConfig{
 						InternalSlackWebhookURL: "https://hooks.slack.com/foo",
@@ -297,9 +298,10 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 
 	// Create a second org to avoid unique index conflict on (deleted_at, owner_id)
+	multiRunnerOrgID := domains.NewOrgID()
 	org2 := &app.Org{
-		ID:          domains.NewOrgID(),
-		Name:        "multi-runner-org",
+		ID:          multiRunnerOrgID,
+		Name:        fmt.Sprintf("multi-runner-org-%s", multiRunnerOrgID[:8]),
 		SandboxMode: true,
 		NotificationsConfig: app.NotificationsConfig{
 			InternalSlackWebhookURL: "https://hooks.slack.com/bar",
@@ -328,7 +330,7 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 		ContainerImageTag:      "v2.5.0",
 		RunnerAPIURL:           "https://api.different.com",
 		SandboxMode:            false,
-		AWSMaxInstanceLifetime: 86400, // 1 day
+		AWSMaxInstanceLifetime: 86400, // 1 day. Deprecated: no longer used by ASG
 		AWSInstanceType:        "t3.large",
 	}
 	err = s.service.DB.WithContext(ctx).Create(settings2).Error
@@ -364,7 +366,7 @@ func (s *GetRunnerSettingsTestSuite) TestGetRunnerSettingsMultipleRunners() {
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), settings2.ID, settings2Result.ID)
 	assert.Equal(s.T(), settings2.ContainerImageTag, settings2Result.ContainerImageTag)
-	assert.Equal(s.T(), settings2.AWSMaxInstanceLifetime, settings2Result.AWSMaxInstanceLifetime)
+	assert.Equal(s.T(), settings2.AWSMaxInstanceLifetime, settings2Result.AWSMaxInstanceLifetime) // Deprecated: no longer used by ASG
 	assert.Equal(s.T(), settings2.AWSInstanceType, settings2Result.AWSInstanceType)
 
 	// Verify settings are different

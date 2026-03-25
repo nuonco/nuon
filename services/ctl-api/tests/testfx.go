@@ -35,6 +35,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
@@ -128,6 +129,9 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(authz.New),
 		fx.Provide(analytics.New),
 		fx.Provide(account.New),
+
+		// Queue client (uses mock temporal client)
+		fx.Provide(queueclient.New),
 
 		// Helpers (order matters due to dependencies)
 		fx.Provide(accountshelpers.New),

@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
@@ -70,28 +69,25 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 
-		data := helpers.GetFakeSandboxStackData(appCfg, region)
-
-		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
-			StackVersionID: version.ID,
-			Data:           generics.ToStringMap(data),
-		})
+		installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
 		if err != nil {
-			return errors.Wrap(err, "unable to create sandbox version run")
+			return errors.Wrap(err, "unable to get install state for sandbox")
 		}
-		w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-			Type:                     runnersignals.OperationInstallStackVersionRun,
-			InstallStackVersionRunID: run.ID,
-		})
+		stateMap, err := installState.WorkflowSafeAsMap(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to convert install state to map")
+		}
 
-		if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     version.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
+		data := helpers.GetFakeSandboxStackData(appCfg, region, stateMap)
+
+		// Fire phone home HTTP call to exercise the full production code path
+		if err := activities.AwaitFireSandboxPhoneHome(ctx, &activities.FireSandboxPhoneHomeRequest{
+			InstallID:   install.ID,
+			PhoneHomeID: version.PhoneHomeID,
+			Data:        data,
 		}); err != nil {
-			return errors.Wrap(err, "unable to update status")
+			return errors.Wrap(err, "unable to fire sandbox phone home")
 		}
-
-		return nil
 	}
 
 	var run *app.InstallStackVersionRun

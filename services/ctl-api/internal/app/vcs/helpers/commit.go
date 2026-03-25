@@ -78,10 +78,12 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 	}
 
 	vcsCommit := &app.VCSConnectionCommit{
-		SHA:             *ghCommit.SHA,
-		VCSConnectionID: generics.ToPtr(vcsConnectionID),
-		OwnerID:         ownerID,
-		OwnerType:       ownerType,
+		SHA:       *ghCommit.SHA,
+		OwnerID:   ownerID,
+		OwnerType: ownerType,
+	}
+	if vcsConnectionID != "" {
+		vcsCommit.VCSConnectionID = generics.ToPtr(vcsConnectionID)
 	}
 
 	// Populate commit metadata with defensive nil checking

@@ -1,6 +1,6 @@
 import { useRef, forwardRef } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -101,6 +101,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
 
   const {
@@ -172,10 +173,12 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           <Text>Install created successfully!</Text>
         </Toast>
       )
+      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result?.headers?.['x-nuon-install-workflow-id']
       const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-      
+
       if (workflowId) {
         navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
       } else {

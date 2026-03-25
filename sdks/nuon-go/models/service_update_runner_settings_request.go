@@ -19,7 +19,7 @@ import (
 // swagger:model service.UpdateRunnerSettingsRequest
 type ServiceUpdateRunnerSettingsRequest struct {
 
-	// aws max instance lifetime
+	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	// Maximum: 3.1536e+07
 	// Minimum: 86400
 	AwsMaxInstanceLifetime int64 `json:"aws_max_instance_lifetime,omitempty"`
