@@ -13,7 +13,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -211,76 +210,47 @@ func (a *InstallStackOutputs) AfterQuery(tx *gorm.DB) error {
 	if len(a.Data) < 1 {
 		return nil
 	}
+	a.DataContents = map[string]any{}
 
-	// detect cloud platform from output keys
-	_, isGCP := a.Data["runner_service_account_email"]
-	if isGCP {
-		var gcpOutputs GCPStackOutputs
-		gcpDecoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				generics.StringToMapDecodeHook(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &gcpOutputs,
-		}
-		gcpDecoder, err := mapstructure.NewDecoder(gcpDecoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create gcp decoder")
-		}
-		if err := gcpDecoder.Decode(a.Data); err != nil {
-			return errors.Wrap(err, "unable to parse gcp outputs")
-		}
-		a.GCPStackOutputs = &gcpOutputs
-		return nil
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			generics.StringToMapDecodeHook(),
+			mapstructure.StringToTimeDurationHookFunc(),
+		),
+		WeaklyTypedInput: true,
 	}
 
-	_, isAzure := a.Data["resource_group_id"]
-	if isAzure {
-		var azureOutputs AzureStackOutputs
-		azureDecoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &azureOutputs,
-		}
-		azureDecoder, err := mapstructure.NewDecoder(azureDecoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create azure decoder")
-		}
-		if err := azureDecoder.Decode(a.Data); err != nil {
-			return errors.Wrap(err, "unable to parse azure outputs")
-		}
-		a.AzureStackOutputs = &azureOutputs
+	// decode into content map[string]interface
+	decoderConfig.Result = &a.DataContents
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to create gcp decoder")
+	}
+	if err := decoder.Decode(a.Data); err != nil {
+		return errors.Wrap(err, "unable to parse gcp outputs")
+	}
+
+	// detect cloud platform from output keys
+	// ja/sk/am: what have we become
+	if _, isGCP := a.Data["runner_service_account_email"]; isGCP {
+		a.GCPStackOutputs = &GCPStackOutputs{}
+		decoderConfig.Result = a.GCPStackOutputs
+	} else if _, isAzure := a.Data["resource_group_id"]; isAzure {
+		a.AzureStackOutputs = &AzureStackOutputs{}
+		decoderConfig.Result = a.AzureStackOutputs
 	} else {
-		// parsing pgtype.Hstore into map[string]interface{}
-		outputData, err := stacks.DecodeAWSStackOutputData(a.Data)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode stack output data to map")
-		}
-		a.DataContents = outputData
+		a.AWSStackOutputs = &AWSStackOutputs{}
+		decoderConfig.Result = a.AWSStackOutputs
+	}
 
-		var awsOutputs AWSStackOutputs
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &awsOutputs,
-		}
-		awsDecoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create aws decoder")
-		}
-		if err := awsDecoder.Decode(outputData); err != nil {
-			return errors.Wrap(err, "unable to parse aws outputs")
-		}
-
-		a.AWSStackOutputs = &awsOutputs
-
+	// decode into cloud stack output
+	decoder, err = mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to create gcp decoder")
+	}
+	if err := decoder.Decode(a.Data); err != nil {
+		return errors.Wrap(err, "unable to parse gcp outputs")
 	}
 
 	return nil

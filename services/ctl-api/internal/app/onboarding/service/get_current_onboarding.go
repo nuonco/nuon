@@ -42,6 +42,7 @@ func (s *service) getActiveOnboarding(ctx *gin.Context, accountID string) (*app.
 	var onboarding app.Onboarding
 	res := s.db.WithContext(ctx).
 		Where("account_id = ? AND status = ?", accountID, app.OnboardingStatusActive).
+		Order("created_at DESC").
 		First(&onboarding)
 	if res.Error != nil {
 		return nil, fmt.Errorf("no active onboarding session found: %w", res.Error)

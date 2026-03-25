@@ -31,6 +31,7 @@ func HealthcheckUpdateNeededWorkflowsID(req *HealthcheckUpdateNeededRequest) str
 // @temporal-gen-v2 workflow
 // @execution-timeout 2m
 // @task-timeout 5m
+// @id-generator HealthcheckUpdateNeededWorkflowsID
 func (w *Workflows) HealthcheckUpdateNeeded(
 	ctx workflow.Context,
 	req *HealthcheckUpdateNeededRequest,
