@@ -17,7 +17,7 @@ export const ActionStep = ({ index, step }: IActionStep) => {
       className="border rounded-md"
       headerClassName=""
       heading={
-        <Text variant="base" weight="strong">
+        <Text weight="strong">
           {index + 1}. {step.name}
         </Text>
       }

@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -19,7 +20,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
-import type { TActionConfigTriggerType } from "@/types"
+import type { TActionConfigTriggerType } from '@/types'
 
 const CONTAINER_ID = 'install-action-detail-page'
 
@@ -48,12 +49,18 @@ export const ActionDetail = () => {
     enabled: !!org?.id && !!install?.id,
   })
 
-  const installActionBreakGlassRole = action?.action_workflow?.configs?.[0]?.break_glass_role_arn
-  const breakGlassRoleArns = installState?.install_stack?.outputs?.break_glass_role_arns
+  const installActionBreakGlassRole =
+    action?.action_workflow?.configs?.[0]?.break_glass_role_arn
+  const breakGlassRoleArns =
+    installState?.install_stack?.outputs?.break_glass_role_arns
+  const kubeConfigEnabled =
+    action?.action_workflow?.configs?.[0]?.enable_kube_config
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
-      <PageTitle title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`} />
+      <PageTitle
+        title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`}
+      />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -86,22 +93,34 @@ export const ActionDetail = () => {
               <LabeledValue label="Last status">
                 <StatusWithDescription
                   statusProps={{ status: action.runs[0].status_v2?.status }}
-                  tooltipProps={{ position: 'top', tipContent: action.runs[0].status_v2?.status_human_description }}
+                  tooltipProps={{
+                    position: 'top',
+                    tipContent:
+                      action.runs[0].status_v2?.status_human_description,
+                  }}
                 />
+              </LabeledValue>
+              <LabeledValue label="Kube config">
+                <Badge
+                  theme={kubeConfigEnabled ? 'info' : 'warn'}
+                  variant="code"
+                  size="sm"
+                >
+                  {kubeConfigEnabled ? 'Enabled' : 'Disabled'}
+                </Badge>
               </LabeledValue>
               <LabeledValue label="Last trigger">
                 <ActionTriggerType
-                  triggerType={action.runs[0].triggered_by_type as TActionConfigTriggerType}
+                  size="sm"
+                  triggerType={
+                    action.runs[0].triggered_by_type as TActionConfigTriggerType
+                  }
                   componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
                   componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
                 />
               </LabeledValue>
             </>
           ) : null}
-          <LabeledValue label="Install">
-            <Text variant="subtext">{install?.name}</Text>
-            <ID>{install?.id}</ID>
-          </LabeledValue>
           {action?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
           ) ? (
@@ -129,20 +148,35 @@ export const ActionDetail = () => {
           {installActionBreakGlassRole ? (
             <PageSection className="flex flex-col gap-4">
               <div className="flex justify-between items-center gap-4">
-                <Text variant="base" weight="strong">Break glass role</Text>
-                <Status status={breakGlassRoleArns?.[installActionBreakGlassRole] ? 'provisioned' : 'not-provisioned'}>
-                  {breakGlassRoleArns?.[installActionBreakGlassRole] ? 'Provisioned' : 'Not provisioned'}
+                <Text variant="base" weight="strong">
+                  Break glass role
+                </Text>
+                <Status
+                  status={
+                    breakGlassRoleArns?.[installActionBreakGlassRole]
+                      ? 'provisioned'
+                      : 'not-provisioned'
+                  }
+                >
+                  {breakGlassRoleArns?.[installActionBreakGlassRole]
+                    ? 'Provisioned'
+                    : 'Not provisioned'}
                 </Status>
               </div>
               {breakGlassRoleArns?.[installActionBreakGlassRole] ? (
                 <div className="flex flex-col gap-2">
-                  <Text variant="body" weight="strong">Role assumed while running this action</Text>
-                  <Code variant="default">{breakGlassRoleArns[installActionBreakGlassRole]}</Code>
+                  <Text variant="body" weight="strong">
+                    Role assumed while running this action
+                  </Text>
+                  <Code variant="default">
+                    {breakGlassRoleArns[installActionBreakGlassRole]}
+                  </Code>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
                   <Text variant="body">
-                    Break Glass Role must be enabled in install stack before running this action.
+                    Break Glass Role must be enabled in install stack before
+                    running this action.
                   </Text>
                   <Code variant="default">{installActionBreakGlassRole}</Code>
                 </div>
@@ -152,9 +186,15 @@ export const ActionDetail = () => {
 
           {action?.action_workflow?.configs?.[0]?.role ? (
             <PageSection className="flex flex-col gap-2">
-              <Text variant="base" weight="strong">Execution role</Text>
-              <Text variant="subtext">IAM role used when executing this action.</Text>
-              <Code variant="inline">{action.action_workflow.configs[0].role}</Code>
+              <Text variant="base" weight="strong">
+                Execution role
+              </Text>
+              <Text variant="subtext">
+                IAM role used when executing this action.
+              </Text>
+              <Code variant="inline">
+                {action.action_workflow.configs[0].role}
+              </Code>
             </PageSection>
           ) : null}
 
