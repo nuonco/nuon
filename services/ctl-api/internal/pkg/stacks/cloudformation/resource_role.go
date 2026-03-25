@@ -211,14 +211,14 @@ func (a *Templates) roleInUse(roleName string, inp *stacks.TemplateInput) bool {
 
 	for _, comp := range cfg.ComponentConfigConnections {
 		for _, roleNamePtr := range comp.OperationRoles {
-			if roleNamePtr != nil && renderAndCompare(*roleNamePtr) {
+			if roleNamePtr != nil && renderAndCompare(generics.FromPtrStr(roleNamePtr)) {
 				return true
 			}
 		}
 	}
 
 	for _, roleNamePtr := range cfg.SandboxConfig.OperationRoles {
-		if roleNamePtr != nil && renderAndCompare(*roleNamePtr) {
+		if roleNamePtr != nil && renderAndCompare(generics.FromPtrStr(roleNamePtr)) {
 			return true
 		}
 	}
