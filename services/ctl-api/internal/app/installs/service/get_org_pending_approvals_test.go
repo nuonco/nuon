@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -78,6 +79,22 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(resp).Error)
 			},
 			wantInResult: true,
+		},
+		{
+			name: "approval on cancelled workflow is not returned",
+			setupApproval: func() *app.WorkflowStepApproval {
+				install := s.createTestInstall()
+				workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+				now := time.Now()
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Model(workflow).Updates(map[string]any{
+					"status":      app.NewCompositeStatus(s.ctx, app.StatusCancelled),
+					"finished_at": now,
+				}).Error)
+				step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+				return s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "plan output")
+			},
+			setupResponse: nil,
+			wantInResult:  false,
 		},
 	}
 

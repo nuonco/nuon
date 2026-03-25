@@ -9,7 +9,6 @@ import { Card } from '@/components/common/Card'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 import { adminRestartOrgRunners, getInstalls } from '@/lib'
 import { RunnerCard } from '../runners/RunnerCard'
 import { LoadRunnerCard } from '../runners/LoadRunnerCard'
@@ -27,15 +26,13 @@ export const AdminRunnersPanel = ({
   const { org } = useOrg()
   const { addToast } = useToast()
   const { user } = useAuth()
-  const config = useConfig()
   const adminEmail = user?.email ?? ''
-  const adminApiUrl = config.adminApiUrl ?? ''
   const [installs, setInstalls] = useState<TInstall[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
 
   const { mutate: restartAll, isPending: isRestarting } = useMutation({
-    mutationFn: () => adminRestartOrgRunners({ orgId, adminApiUrl, adminEmail }),
+    mutationFn: () => adminRestartOrgRunners({ orgId, adminEmail }),
     onSuccess: async () => {
       addToast(
         <Toast heading="Runners Restarted" theme="success">

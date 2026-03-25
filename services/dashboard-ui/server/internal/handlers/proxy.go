@@ -41,9 +41,27 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 
 	authed := e.Group("/", h.requireAuth())
 	nuonOnly := authed.Group("/", h.requireNuonEmail())
+	adminAPITarget, _ := url.Parse(h.cfg.AdminAPIUrl)
+	adminAPIProxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			token, _ := req.Cookie(authCookie)
+			req.URL.Scheme = adminAPITarget.Scheme
+			req.URL.Host = adminAPITarget.Host
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, "/admin")
+			req.Host = adminAPITarget.Host
+			req.Header.Del("Cookie")
+			req.Header.Del("Accept-Encoding")
+			if token != nil && token.Value != "" {
+				req.Header.Set("Authorization", "Bearer "+token.Value)
+			}
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+
 	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
 	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
+	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
 
 	return nil
 }
