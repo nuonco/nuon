@@ -29,6 +29,7 @@ func LifecycleActionWorkflowsID(req *LifecycleActionWorkflowsRequest) string {
 // @temporal-gen-v2 workflow
 // @execution-timeout 1h
 // @task-timeout 30s
+// @id-generator LifecycleActionWorkflowsID
 func (w *Workflows) LifecycleActionWorkflows(ctx workflow.Context, req *LifecycleActionWorkflowsRequest) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

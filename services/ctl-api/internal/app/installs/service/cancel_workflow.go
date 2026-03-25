@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.temporal.io/api/serviceerror"
@@ -74,6 +75,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 	}
 	if wf.Status.Status == app.StatusPending {
 		ctx.JSON(http.StatusAccepted, true)
+		return
 	}
 
 	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
@@ -93,6 +95,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
 		} else {
 			ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
+			return
 		}
 	}
 
@@ -155,9 +158,9 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 	}
 	if wf.Status.Status == app.StatusPending {
 		ctx.JSON(http.StatusAccepted, true)
+		return
 	}
 
-	// TODO: cancellation should support workflows by owner type
 	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
 		EventLoopRequest: eventloop.EventLoopRequest{
 			ID: wf.OwnerID,
@@ -190,7 +193,8 @@ func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) 
 	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
 	res := s.db.WithContext(ctx).Model(&obj).Updates(
 		map[string]any{
-			"status": status,
+			"status":      status,
+			"finished_at": time.Now(),
 		})
 	if res.Error != nil {
 		return pkgerrors.Wrap(res.Error, "unable to update")
