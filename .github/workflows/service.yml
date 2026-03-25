@@ -103,7 +103,8 @@ jobs:
             --field env=stage \
             --field tag=${{inputs.tag}} \
             --field source_repo=${{ github.repository }} \
-            --field source_run_id=${{ github.run_id }}
+            --field source_run_id=${{ github.run_id }} \
+            --field source_actor=${{ github.actor }}
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
@@ -116,7 +117,8 @@ jobs:
             --field env=prod \
             --field tag=${{inputs.tag}} \
             --field source_repo=${{ github.repository }} \
-            --field source_run_id=${{ github.run_id }}
+            --field source_run_id=${{ github.run_id }} \
+            --field source_actor=${{ github.actor }}
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 

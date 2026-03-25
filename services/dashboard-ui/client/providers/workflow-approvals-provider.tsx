@@ -1,7 +1,9 @@
 import { createContext, useEffect, useRef, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getPendingApprovals } from '@/lib'
 import { useOrg } from '@/hooks/use-org'
+import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -27,6 +29,8 @@ export function WorkflowApprovalsProvider({
 }) {
   const { org } = useOrg()
   const { addToast } = useToast()
+  const { emitNotification } = useNotifications()
+  const navigate = useNavigate()
   const seenIds = useRef<Set<string>>(new Set())
   const initialized = useRef(false)
 
@@ -75,9 +79,20 @@ export function WorkflowApprovalsProvider({
             )}
           </Toast>
         )
+        emitNotification({
+          title: stepName ? toSentenceCase(stepName) : 'Approval required',
+          body: 'A workflow step is waiting for your approval.',
+          tag: approval.id,
+          onClick: () => {
+            window.focus()
+            if (workflowUrl) {
+              navigate(workflowUrl)
+            }
+          },
+        })
       }
     }
-  }, [approvals])
+  }, [approvals, addToast, emitNotification, navigate, org.id])
 
   return (
     <WorkflowApprovalsContext.Provider
