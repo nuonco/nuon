@@ -82,6 +82,7 @@ export function WorkflowApprovalsProvider({
         emitNotification({
           title: stepName ? toSentenceCase(stepName) : 'Approval required',
           body: 'A workflow step is waiting for your approval.',
+          icon: '/favicon.svg',
           tag: approval.id,
           onClick: () => {
             window.focus()
