@@ -83,6 +83,19 @@ func (c *client) GetInstallComponentLatestDeploy(ctx context.Context, installID 
 	return resp.Payload, nil
 }
 
+func (c *client) GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error) {
+	resp, err := c.genClient.Operations.GetInstallComponentOutputs(&operations.GetInstallComponentOutputsParams{
+		InstallID:   installID,
+		ComponentID: componentID,
+		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) error {
 	resp, err := c.genClient.Operations.TeardownInstallComponent(&operations.TeardownInstallComponentParams{
 		InstallID:   installID,
