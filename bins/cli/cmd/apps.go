@@ -55,11 +55,12 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(getCmd)
 
 	currentCmd := &cobra.Command{
-		Use:        "current",
-		Deprecated: "Use `nuon apps get` instead",
-		Short:      "Get the current app (deprecated)",
-		Hidden:     true,
+		Use:    "current",
+		Short:  "Get the current app (deprecated)",
+		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			printDeprecatedCommandWarning(cmd, "Use `nuon apps get` instead")
+
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
 		}),
