@@ -54,6 +54,7 @@ function parseActionsToTableData(
               componentName={trigger?.component?.name}
               componentPath={`${basePath}/components/${trigger?.component?.id}`}
               triggerType={trigger?.type as TActionConfigTriggerType}
+              cronSchedule={trigger?.cron_schedule}
             />
           ))}
         </div>
@@ -151,7 +152,11 @@ export const ActionsTable = ({
           </Link>
         ),
       }}
-      pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
       searchPlaceholder="Search action name..."
     />
   )
