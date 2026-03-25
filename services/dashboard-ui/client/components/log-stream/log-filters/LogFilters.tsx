@@ -10,10 +10,10 @@ interface LogFiltersProps {
 
 export const LogFilters = ({ filters }: LogFiltersProps) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 py-4">
+    <div className="flex flex-wrap items-center justify-between gap-4 py-4 w-full">
       <LogSearch filters={filters} />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-end gap-4">
         <LogSort filters={filters} />
         <LogServiceFilter title="service" filters={filters} />
         <LogSeverityFilter title="severity" filters={filters} />

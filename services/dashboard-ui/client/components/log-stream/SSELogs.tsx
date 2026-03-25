@@ -9,6 +9,7 @@ import type { TOTELLog } from '@/types'
 import { cn } from '@/utils/classnames'
 import { LogSeverity } from './LogSeverity'
 import { LogLineSkeleton } from './LogLine'
+import { DownloadLogsButton } from './DownloadLogs'
 import { LogFilters } from './log-filters/LogFilters'
 
 export const LogsSkeleton = () => {
@@ -33,7 +34,10 @@ export const SSELogs = ({
         <div
           className={cn('sticky bg-background border-b z-10', filterClassName)}
         >
-          <LogFilters filters={filters} />
+          <div className="flex items-center gap-4">
+            <LogFilters filters={filters} />
+            {!isStreamOpen && <DownloadLogsButton />}
+          </div>
           <div className="grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
               Severity
