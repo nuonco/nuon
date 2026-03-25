@@ -2,8 +2,8 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
+import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
-import { Cron } from '@/components/common/Cron'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -16,7 +16,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAction } from '@/lib'
-import type { TActionConfigTriggerType } from "@/types"
+import type { TActionConfigTriggerType } from '@/types'
 
 const CONTAINER_ID = 'action-detail-page'
 
@@ -62,26 +62,35 @@ export const ActionDetail = () => {
           {actionId ? <ID>{actionId}</ID> : null}
         </HeadingGroup>
 
-        {config && (config.triggers?.length || config.break_glass_role_arn || config.role) ? (
+        {config &&
+        (config.triggers?.length ||
+          config.break_glass_role_arn ||
+          config.role) ? (
           <div className="flex flex-row gap-6 items-start">
+            <LabeledValue label="Kube config">
+              <Badge
+                theme={config?.enable_kube_config ? 'info' : 'warn'}
+                variant="code"
+                size="sm"
+              >
+                {config?.enable_kube_config ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </LabeledValue>
             {config.triggers?.length ? (
               <LabeledValue label="Triggers">
-                <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
                   {config.triggers.map((trigger) => (
-                    <div key={trigger.id} className="flex items-center gap-2 flex-wrap">
+                    <div
+                      key={trigger.id}
+                      className="flex items-center gap-2 flex-wrap"
+                    >
                       <ActionTriggerType
+                        size="sm"
                         triggerType={trigger.type as TActionConfigTriggerType}
                         componentName={trigger?.component?.name}
                         componentPath={`/${org?.id}/apps/${app?.id}/components/${trigger?.component_id}`}
+                        cronSchedule={trigger?.cron_schedule}
                       />
-                      {trigger.type === 'cron' && trigger.cron_schedule ? (
-                        <Cron
-                          cron={trigger.cron_schedule}
-                          variant="subtext"
-                          theme="neutral"
-                          showTooltip
-                        />
-                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -92,7 +101,8 @@ export const ActionDetail = () => {
               <LabeledValue label="Break glass role">
                 <Code variant="inline">{config.break_glass_role_arn}</Code>
                 <Text variant="subtext" theme="neutral">
-                  Must be enabled in the install stack before running this action.
+                  Must be enabled in the install stack before running this
+                  action.
                 </Text>
               </LabeledValue>
             ) : null}

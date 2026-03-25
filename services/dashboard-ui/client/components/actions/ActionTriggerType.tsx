@@ -1,4 +1,5 @@
 import { Badge, type IBadge } from '@/components/common/Badge'
+import { Cron } from '@/components/common/Cron'
 import { Link } from '@/components/common/Link'
 import type { TActionConfigTriggerType } from '@/types'
 
@@ -18,15 +19,18 @@ export interface IActionTriggerType {
   componentPath?: string
   size?: IBadge['size']
   triggerType: TActionConfigTriggerType
+  cronSchedule?: string
 }
 
 export const ActionTriggerType = ({
   componentName,
   componentPath,
+  cronSchedule,
   size,
   triggerType,
 }: IActionTriggerType) => {
   const isComponentTrigger = COMPONENT_ACTION_TRIGGERS.includes(triggerType)
+  const isCron = triggerType === 'cron'
 
   return (
     <Badge variant="code" size={size}>
@@ -34,6 +38,17 @@ export const ActionTriggerType = ({
         <span className="flex items-center gap-1">
           <span className="text-nowrap truncate">{triggerType}</span>:
           <Link href={componentPath}>{componentName}</Link>
+        </span>
+      ) : isCron ? (
+        <span className="flex items-center gap-1">
+          <span className="text-nowrap truncate">{triggerType}</span>:
+          <Cron
+            cron={cronSchedule}
+            variant="label"
+            theme="neutral"
+            family="mono"
+            showTooltip
+          />
         </span>
       ) : (
         triggerType
