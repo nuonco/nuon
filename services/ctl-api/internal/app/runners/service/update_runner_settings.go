@@ -25,6 +25,7 @@ type UpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
 
+	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime,omitempty" validate:"omitempty,min=86400,max=31536000"`
 }
 

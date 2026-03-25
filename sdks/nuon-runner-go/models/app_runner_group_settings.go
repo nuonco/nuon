@@ -23,7 +23,7 @@ type AppRunnerGroupSettings struct {
 	// aws runner specifics runner-v2
 	AwsInstanceType string `json:"aws_instance_type,omitempty"`
 
-	// Default: 7 days
+	// Deprecated: instance refresh is now handled by a backend cron, not ASG MaxInstanceLifetime.
 	AwsMaxInstanceLifetime int64 `json:"aws_max_instance_lifetime,omitempty"`
 
 	// aws tags
