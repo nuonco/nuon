@@ -1,11 +1,14 @@
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
+import { useNotifications } from '@/hooks/use-notifications'
+import { useToast } from '@/hooks/use-toast'
 import { AdminPanel } from '@/components/admin/AdminPanel'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { Toast } from '@/components/surfaces/Toast'
 import { InviteUserButton } from '@/components/team/InviteUser'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
@@ -25,6 +28,8 @@ export const UserDropdown = ({
   const { isAdmin } = useAuth()
   const { authServiceUrl } = useConfig()
   const { addPanel } = useSurfaces()
+  const { addToast } = useToast()
+  const { permission, requestPermission, isSupported, muted, toggleMute } = useNotifications()
 
   return (
     <Dropdown
@@ -56,6 +61,36 @@ export const UserDropdown = ({
           </Button>
         ) : null}
         {!hideOrgSettings && <hr />}
+         {!hideOrgSettings && (
+          <Text variant="label" theme="neutral">
+            User settings
+          </Text>
+        )}
+        {isSupported && permission === 'granted' ? (
+          <Button onClick={() => {
+            toggleMute()
+            addToast(
+              <Toast heading={muted ? 'Notifications enabled' : 'Notifications disabled'}>
+                <Text>{muted ? 'You will receive desktop notifications.' : 'Desktop notifications are now muted.'}</Text>
+              </Toast>
+            )
+          }}>
+            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'Bell' : 'BellSlash'} />
+          </Button>
+        ) : isSupported && permission !== 'denied' ? (
+          <Button onClick={async () => {
+            const result = await requestPermission()
+            if (result === 'granted') {
+              addToast(
+                <Toast heading="Notifications enabled">
+                  <Text>You will receive desktop notifications.</Text>
+                </Toast>
+              )
+            }
+          }}>
+            Enable notifications <Icon variant="Bell" />
+          </Button>
+        ) : null}
         <Link
           href={`${authServiceUrl}/logout`}
           className="!text-red-800 dark:!text-red-500"
