@@ -139,6 +139,15 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			}
 		}
 
+		// install action workflows
+		actions := installs.Group("/actions")
+		{
+			action := actions.Group("/:action_id")
+			{
+				action.GET("/outputs", s.GetInstallActionWorkflowOutputs)
+			}
+		}
+
 		installs.POST("/sync-secrets", s.SyncSecrets)
 
 		// install events
