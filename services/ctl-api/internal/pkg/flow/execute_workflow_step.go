@@ -661,8 +661,8 @@ func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Cont
 
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 		StepID:            step.ID,
-		Status:            app.Status(app.InstallDeployStatusActive),
-		StatusDescription: "No changes found in plan, infrastructure matches desired state.",
+		Status:            app.StatusAutoSkipped,
+		StatusDescription: "No changes found in plan, skipping deployment.",
 	}); err != nil {
 		return errors.Wrap(err, "unable to update step target status")
 	}
