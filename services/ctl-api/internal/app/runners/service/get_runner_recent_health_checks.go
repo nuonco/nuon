@@ -19,7 +19,7 @@ import (
 // @Description.markdown	get_runner_recent_health_checks.md
 // @Param					runner_id					path	string	true	"runner ID"
 // @Param					window						query	string	false	"window of health checks to return"				Default(1h)
-// @Param					process						query	string	false	"runner process to filter by (install or mng)"	Default(install)
+// @Param					process						query	string	false	"runner process to filter by (install or mng)"
 // @Param					offset						query	int		false	"offset of results to return"					Default(0)
 // @Param					limit						query	int		false	"limit of results to return"					Default(10)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -56,7 +56,11 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 		return
 	}
 
-	process := app.RunnerProcess(ctx.DefaultQuery("process", string(app.RunnerProcessInstall)))
+	var process *app.RunnerProcess
+	if processStr, ok := ctx.GetQuery("process"); ok {
+		p := app.RunnerProcess(processStr)
+		process = &p
+	}
 
 	startTS := time.Now().Add(-windowDur)
 	healthChecks, err := s.getRunnerRecentHealthChecks(ctx, runnerID, process, startTS)
@@ -68,21 +72,23 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, healthChecks)
 }
 
-func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, process app.RunnerProcess, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
+func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, process *app.RunnerProcess, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
 	healthChecks := []*app.RunnerHealthCheck{}
 
-	res := s.chDB.WithContext(ctx).
+	q := s.chDB.WithContext(ctx).
 		Scopes(
 			scopes.WithOverrideTable("runner_health_checks_view_v2"),
 			scopes.WithOffsetPagination,
 		).
-		Where(app.RunnerHealthCheck{
-			RunnerID: runnerID,
-			Process:  process,
-		}).
+		Where(app.RunnerHealthCheck{RunnerID: runnerID}).
 		Where("created_at > ?", startTS).
-		Order("created_at asc").
-		Find(&healthChecks)
+		Order("created_at asc")
+
+	if process != nil {
+		q = q.Where("process = ?", *process)
+	}
+
+	res := q.Find(&healthChecks)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get health checks")
 	}
