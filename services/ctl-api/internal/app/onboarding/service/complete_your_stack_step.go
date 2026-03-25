@@ -15,7 +15,7 @@ import (
 )
 
 type CompleteYourStackStepRequest struct {
-	AppType        app.OnboardingAppType `json:"app_type" validate:"required,oneof=custom example"`
+	AppType        app.OnboardingAppType `json:"app_type" validate:"required,oneof=custom example" swaggertype:"string" enums:"custom,example"`
 	ExampleAppSlug string                `json:"example_app_slug"`
 	CloudProvider  string                `json:"cloud_provider"`
 	AppAttributes  []string              `json:"app_attributes"`

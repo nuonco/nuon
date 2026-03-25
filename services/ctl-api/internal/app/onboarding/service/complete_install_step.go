@@ -16,7 +16,7 @@ import (
 
 type CompleteInstallStepRequest struct {
 	Name        string                    `json:"name" validate:"required"`
-	InstallMode app.OnboardingInstallMode `json:"install_mode,omitempty" validate:"omitempty,oneof=cloud sandbox"`
+	InstallMode app.OnboardingInstallMode `json:"install_mode,omitempty" validate:"omitempty,oneof=cloud sandbox" swaggertype:"string" enums:"cloud,sandbox"`
 
 	AWSAccount *struct {
 		Region string `json:"region"`
