@@ -1,11 +1,13 @@
 'use client'
 
 import { Plan } from '@/components/approvals/Plan'
+import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { useOrg } from '@/hooks/use-org'
 import { getDeploy } from '@/lib'
@@ -63,8 +65,29 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
                 View deploy logs <Icon variant="CaretRight" />
               </Link>
             </Text>
+
           </>
         )}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+        {deploy?.created_at ? (
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="CalendarBlankIcon" />
+            <Time variant="subtext" time={deploy.created_at} />
+          </Text>
+        ) : null}
+        {deploy?.created_at ? (
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="TimerIcon" />
+            <Duration variant="subtext" beginTime={deploy.created_at} endTime={deploy.updated_at} />
+          </Text>
+        ) : null}
+        {deploy?.role ? (
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="FileLockIcon" />
+            <Text variant="subtext">{deploy.role}</Text>
+          </Text>
+        ) : null}
       </div>
       {step?.execution_type === 'approval' ? (
         <Tabs

@@ -1,11 +1,14 @@
 'use client'
 
 import { Badge } from '@/components/common/Badge'
+import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useOrg } from '@/hooks/use-org'
 import type { IActionRunMetadata } from './types'
@@ -49,15 +52,26 @@ export const ActionRunMetadata = ({
           </Badge>
         </LabeledValue>
 
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
+        {actionRun?.created_at ? (
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="CalendarBlankIcon" />
+            <Time variant="subtext" time={actionRun.created_at} />
+          </Text>
+        ) : null}
+        {actionRun?.created_at ? (
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="TimerIcon" />
+            <Duration variant="subtext" beginTime={actionRun.created_at} endTime={actionRun.updated_at} />
+          </Text>
+        ) : null}
         {actionRun?.role ? (
-          <LabeledValue label="Role used">
-            <Link
-              className="text-xs"
-              href={`/${org.id}/installs/${step.owner_id}/roles#${actionRun?.role}`}
-            >
-              {actionRun?.role}
-            </Link>
-          </LabeledValue>
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="FileLockIcon" />
+            <Text variant="subtext">{actionRun.role}</Text>
+          </Text>
         ) : null}
       </div>
 
