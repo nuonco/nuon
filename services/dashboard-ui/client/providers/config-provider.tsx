@@ -2,7 +2,7 @@ import { createContext, useMemo } from 'react'
 
 export type TRuntimeConfig = {
   apiUrl: string
-  adminApiUrl?: string
+
   temporalUiUrl?: string
   authServiceUrl?: string
   appUrl: string
