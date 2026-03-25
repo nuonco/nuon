@@ -133,12 +133,15 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
+
+	// install stack id is only sent via
 	if len(installInputValues) > 0 {
 		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
-			InstallID:             install.ID,
-			InputConfigID:         appCfg.InputConfig.ID,
-			InputValues:           installInputValues,
-			InstallStackVersionID: version.ID,
+			InstallID:               install.ID,
+			InputConfigID:           appCfg.InputConfig.ID,
+			InputValues:             installInputValues,
+			InstallStackVersionID:   version.ID,
+			SkipInputUpdateWorkflow: sreq.SkipInputUpdateWorkflow,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
 		}

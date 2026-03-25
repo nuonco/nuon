@@ -18,7 +18,8 @@ import (
 const SignalType signal.SignalType = "update-install-stack-outputs"
 
 type Signal struct {
-	InstallStackID string
+	InstallStackID          string
+	SkipInputUpdateWorkflow bool
 }
 
 var _ signal.Signal = &Signal{}
@@ -142,10 +143,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if len(installInputValues) > 0 {
 		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
-			InstallID:             install.ID,
-			InputConfigID:         appCfg.InputConfig.ID,
-			InputValues:           installInputValues,
-			InstallStackVersionID: version.ID,
+			InstallID:               install.ID,
+			InputConfigID:           appCfg.InputConfig.ID,
+			InputValues:             installInputValues,
+			InstallStackVersionID:   version.ID,
+			SkipInputUpdateWorkflow: s.SkipInputUpdateWorkflow,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
 		}
