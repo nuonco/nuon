@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	createorg "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -64,7 +65,10 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 
 	// Create new org (async path) — name is required
 	if req.Name == "" {
-		ctx.Error(fmt.Errorf("name is required when org_id is not provided"))
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("name is required when org_id is not provided"),
+			Description: "either name or org_id must be provided",
+		})
 		return
 	}
 
@@ -76,14 +80,20 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgID string) {
 	// Verify user has access to the org
 	if !slices.Contains(account.OrgIDs, orgID) {
-		ctx.Error(fmt.Errorf("account does not have access to org %s", orgID))
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("account does not have access to org %s", orgID),
+			Description: "you do not have access to this organization",
+		})
 		return
 	}
 
 	// Verify org exists and is active
 	var org app.Org
 	if err := s.db.WithContext(ctx).Where("id = ? AND status = ?", orgID, app.OrgStatusActive).First(&org).Error; err != nil {
-		ctx.Error(fmt.Errorf("org not found or not active: %w", err))
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("org not found or not active: %w", err),
+			Description: "organization not found or not active",
+		})
 		return
 	}
 
