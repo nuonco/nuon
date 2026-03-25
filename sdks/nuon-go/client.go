@@ -2,6 +2,7 @@ package nuon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -213,6 +214,12 @@ type Client interface {
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
 	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, error)
 	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error)
+
+	// terraform workspaces
+	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)
+	GetTerraformWorkspaceStates(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceState, error)
+	GetTerraformWorkspaceLatestState(ctx context.Context, workspaceID string) (*models.AppTerraformWorkspaceState, error)
+	GetTerraformWorkspaceLatestStateJSON(ctx context.Context, workspaceID string) (json.RawMessage, error)
 
 	// components
 	GetAllComponents(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
