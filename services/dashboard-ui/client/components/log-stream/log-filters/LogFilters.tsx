@@ -1,3 +1,4 @@
+import { LogJobOutputFilter } from './LogJobOutputFilter'
 import { LogSearch } from './LogSearch'
 import { LogServiceFilter } from './LogServiceFilter'
 import { LogSeverityFilter } from './LogSeverityFilter'
@@ -15,6 +16,7 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
 
       <div className="flex items-center justify-end gap-4">
         <LogSort filters={filters} />
+        <LogJobOutputFilter filters={filters} />
         <LogServiceFilter title="service" filters={filters} />
         <LogSeverityFilter title="severity" filters={filters} />
       </div>

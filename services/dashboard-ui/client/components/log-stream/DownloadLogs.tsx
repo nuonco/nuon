@@ -99,7 +99,7 @@ export const DownloadLogsButton = ({ ...props }: IButtonAsButton) => {
 
   return (
     <Button variant="ghost" onClick={() => addModal(modal)} {...props}>
-      Download logs
+      Download
       <Icon variant="FileArrowDownIcon" size="16" />
     </Button>
   )
