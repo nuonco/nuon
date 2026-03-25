@@ -27,7 +27,9 @@ func (a *Activities) GetLatestJob(ctx context.Context, req *GetLatestJobRequest)
 			Type:      req.Type,
 			Operation: req.Operation,
 		}).
-		Preload("Executions").
+		Preload("Executions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("runner_job_executions.created_at DESC")
+		}).
 		Preload("Executions.Result", func(db *gorm.DB) *gorm.DB {
 			return db.Order("runner_job_execution_results.created_at DESC")
 		}).
