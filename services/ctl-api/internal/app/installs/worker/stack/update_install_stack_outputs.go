@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -53,76 +52,41 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		return nil
 	}
 
-	// make sure outputs are valid
-	outputs := app.InstallStackOutputs{
-		AWSStackOutputs:   nil,
-		AzureStackOutputs: nil,
-		GCPStackOutputs:   nil,
-	}
+	// make sure installStackOutputs are valid
+	installStackOutputs := app.InstallStackOutputs{}
+
+	var stackOutputs app.StackOutput
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
-		// parse into map[string]interface{}
-		stackOutputs, err := stacks.DecodeAWSStackOutputData(run.Data)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode run data")
-		}
-
-		// parse into AWSStackOutputs
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &outputs.AWSStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create decoder")
-		}
-		if err := decoder.Decode(stackOutputs); err != nil {
-			return errors.Wrap(err, "unable to parse install outputs")
-		}
-
-		if err := w.v.Struct(outputs); err != nil {
-			return errors.Wrap(err, "invalid outputs")
-		}
+		installStackOutputs.AWSStackOutputs = &app.AWSStackOutputs{}
+		stackOutputs = installStackOutputs.AWSStackOutputs
 	case app.AppRunnerTypeAzure:
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &outputs.AzureStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create decoder")
-		}
-		if err := decoder.Decode(run.Data); err != nil {
-			return errors.Wrap(err, "unable to parse install outputs")
-		}
-
-		if err := w.v.Struct(outputs); err != nil {
-			return errors.Wrap(err, "invalid outputs")
-		}
+		installStackOutputs.AzureStackOutputs = &app.AzureStackOutputs{}
+		stackOutputs = installStackOutputs.AzureStackOutputs
 	case app.AppRunnerTypeGCP:
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				pkggenerics.StringToMapDecodeHook(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &outputs.GCPStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create gcp decoder")
-		}
-		if err := decoder.Decode(run.Data); err != nil {
-			return errors.Wrap(err, "unable to parse gcp install outputs")
-		}
+		installStackOutputs.GCPStackOutputs = &app.GCPStackOutputs{}
+		stackOutputs = installStackOutputs.GCPStackOutputs
+	}
+
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.StringToTimeDurationHookFunc(),
+			pkggenerics.StringToMapDecodeHook(),
+		),
+		WeaklyTypedInput: true,
+		Result:           stackOutputs,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create %s decoder", appCfg.RunnerConfig.Type)
+	}
+	if err := decoder.Decode(run.Data); err != nil {
+		return errors.Wrapf(err, "unable to parse %s install outputs", appCfg.RunnerConfig.Type)
+	}
+
+	if err := w.v.Struct(installStackOutputs); err != nil {
+		return errors.Wrap(err, "invalid outputs")
 	}
 
 	// update outputs if needed
@@ -136,9 +100,10 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 
 	// update the runner settings group
 	runnerIAMRoleARN := ""
-	if outputs.AWSStackOutputs != nil {
-		runnerIAMRoleARN = outputs.AWSStackOutputs.RunnerIAMRoleARN
+	if installStackOutputs.AWSStackOutputs != nil {
+		runnerIAMRoleARN = installStackOutputs.AWSStackOutputs.RunnerIAMRoleARN
 	}
+
 	if err := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
 		RunnerID:           install.RunnerID,
 		LocalAWSIAMRoleARN: runnerIAMRoleARN,
@@ -147,11 +112,11 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	}
 
 	// update gcp account from stack outputs
-	if outputs.GCPStackOutputs != nil && outputs.GCPStackOutputs.Region != "" {
+	if installStackOutputs.GCPStackOutputs != nil && installStackOutputs.GCPStackOutputs.Region != "" {
 		if err := activities.AwaitUpdateGCPAccountRegion(ctx, &activities.UpdateGCPAccountRegion{
 			InstallID: install.ID,
-			Region:    outputs.GCPStackOutputs.Region,
-			ProjectID: outputs.GCPStackOutputs.ProjectID,
+			Region:    installStackOutputs.GCPStackOutputs.Region,
+			ProjectID: installStackOutputs.GCPStackOutputs.ProjectID,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update gcp account from stack outputs")
 		}
@@ -159,28 +124,24 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
-	err = validateRegion(*install, outputs)
+	err = validateRegion(*install, installStackOutputs)
 	if err != nil {
 		return errors.Wrap(err, "unable to validate region")
 	}
 
-	// extract install_inputs from stack outputs
-	var inputValues map[string]string
-	if outputs.GCPStackOutputs != nil {
-		inputValues = outputs.GCPStackOutputs.InstallInputs
-	} else {
-		data, err := stacks.DecodeAWSStackOutputData(run.Data)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode run data")
-		}
-		inputValues = extractAppInputsFromStackOutputs(data)
+	installInputValues, err := stackOutputs.InstallInputValues()
+	if err != nil {
+		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
-	if len(inputValues) > 0 {
+
+	// install stack id is only sent via
+	if len(installInputValues) > 0 {
 		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
-			InstallID:             install.ID,
-			InputConfigID:         appCfg.InputConfig.ID,
-			InputValues:           inputValues,
-			InstallStackVersionID: version.ID,
+			InstallID:               install.ID,
+			InputConfigID:           appCfg.InputConfig.ID,
+			InputValues:             installInputValues,
+			InstallStackVersionID:   version.ID,
+			SkipInputUpdateWorkflow: sreq.SkipInputUpdateWorkflow,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
 		}
@@ -189,7 +150,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
-		TriggeredByType: plugins.TableName(w.db, outputs),
+		TriggeredByType: plugins.TableName(w.db, installStackOutputs),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")
@@ -215,23 +176,4 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 	}
 
 	return nil
-}
-
-// extractAppInputsFromStackOutputs extracts the install_inputs nested object from stack outputs
-func extractAppInputsFromStackOutputs(stackOutputs map[string]interface{}) map[string]string {
-	inputValues := make(map[string]string)
-
-	// Extract app_inputs from stack outputs
-	appInputsRaw, ok := stackOutputs["install_inputs"]
-	if !ok {
-		return inputValues
-	}
-
-	// Convert app_inputs to map[string]interface{}
-	appInputsMap, ok := appInputsRaw.(map[string]string)
-	if !ok {
-		return inputValues
-	}
-
-	return appInputsMap
 }

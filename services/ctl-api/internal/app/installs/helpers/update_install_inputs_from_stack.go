@@ -12,7 +12,14 @@ import (
 
 // UpdateInstallInputsFromStackOutputs updates install_inputs table with values from stack outputs
 // inputValues should only contain the app inputs extracted from stack outputs (from the "app_inputs" nested object)
-func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, installStackVersionID, installID, inputConfigID string, inputValues map[string]string) error {
+func (h *Helpers) UpdateInstallInputsFromStackOutputs(
+	ctx context.Context,
+	installStackVersionID,
+	installID,
+	inputConfigID string,
+	inputValues map[string]string,
+	skipInputUpdateWorkflow bool,
+) error {
 	// If no input values provided, nothing to update
 	if len(inputValues) == 0 {
 		return nil
@@ -108,10 +115,12 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(ctx context.Context, insta
 		return errors.Wrap(res.Error, "unable to update install inputs")
 	}
 
-	// Send signals to notify that inputs have been updated from stack outputs
-	_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "")
-	if err != nil {
-		return errors.Wrap(err, "unable to update inputs from install stack output")
+	if len(changedInputs) > 0 && !skipInputUpdateWorkflow {
+		// Send signals to notify that inputs have been updated from stack outputs
+		_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "")
+		if err != nil {
+			return errors.Wrap(err, "unable to update inputs from install stack output")
+		}
 	}
 
 	return nil

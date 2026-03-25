@@ -7,10 +7,11 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
-	"github.com/nuonco/nuon/pkg/types/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -51,16 +52,22 @@ func (a *InstallStackVersionRun) AfterQuery(tx *gorm.DB) error {
 		return nil
 	}
 
-	// TODO(ja): what have i become
-	_, isAzure := a.Data["resource_group_id"]
-	if !isAzure {
-		// parsing pgtype.Hstore into map[string]interface{}
-		outputData, err := stacks.DecodeAWSStackOutputData(a.Data)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode stack output data to map")
-		}
-		a.DataContents = outputData
-
+	a.DataContents = map[string]any{}
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			generics.StringToMapDecodeHook(),
+			mapstructure.StringToTimeDurationHookFunc(),
+		),
+		WeaklyTypedInput: true,
+		Result:           &a.DataContents,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to create gcp decoder")
+	}
+	if err := decoder.Decode(a.Data); err != nil {
+		return errors.Wrap(err, "unable to parse gcp outputs")
 	}
 
 	return nil
