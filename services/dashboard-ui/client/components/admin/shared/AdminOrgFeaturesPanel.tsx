@@ -9,7 +9,6 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 import { adminGetOrgFeaturesList, adminUpdateOrgFeatures } from '@/lib'
 import type { TOrg } from '@/types'
 
@@ -26,9 +25,7 @@ export const AdminOrgFeaturesPanel = ({
 }: AdminOrgFeaturesPanelProps) => {
   const { addToast } = useToast()
   const { user } = useAuth()
-  const config = useConfig()
   const adminEmail = user?.email ?? ''
-  const adminApiUrl = config.adminApiUrl ?? ''
   const [featuresList, setFeaturesList] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
@@ -39,7 +36,7 @@ export const AdminOrgFeaturesPanel = ({
       featuresList.forEach((feature) => {
         features[feature] = formData.get(feature) === 'on'
       })
-      return adminUpdateOrgFeatures({ orgId, features, adminApiUrl, adminEmail })
+      return adminUpdateOrgFeatures({ orgId, features, adminEmail })
     },
     onSuccess: () => {
       addToast(
@@ -61,7 +58,7 @@ export const AdminOrgFeaturesPanel = ({
     setIsLoading(true)
     setError(undefined)
 
-    adminGetOrgFeaturesList({ adminApiUrl })
+    adminGetOrgFeaturesList()
       .then((features) => {
         setIsLoading(false)
         if (Array.isArray(features)) {
@@ -74,7 +71,7 @@ export const AdminOrgFeaturesPanel = ({
         setIsLoading(false)
         setError('Unable to fetch org features list')
       })
-  }, [adminApiUrl])
+  }, [])
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
