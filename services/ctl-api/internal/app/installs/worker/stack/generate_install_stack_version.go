@@ -146,6 +146,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			Settings:                   &runner.RunnerGroup.Settings,
 			APIToken:                   generics.FromPtrStr(bootstrapToken),
 			RunnerInitScriptURL:        initScriptURL,
+			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
 		}
 
 		tmplByts, checksum, err := gcp.Render(inp)
@@ -184,6 +185,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		Runner:                     runner,
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
+		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
 	}
 
 	switch cfg.RunnerConfig.Type {
