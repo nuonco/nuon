@@ -2,6 +2,7 @@ import { createContext, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getPendingApprovals } from '@/lib'
+import { useAuth } from '@/hooks/use-auth'
 import { useOrg } from '@/hooks/use-org'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
@@ -27,6 +28,7 @@ export function WorkflowApprovalsProvider({
 }: {
   children: ReactNode
 }) {
+  const { isAdmin } = useAuth()
   const { org } = useOrg()
   const { addToast } = useToast()
   const { emitNotification } = useNotifications()
@@ -64,6 +66,9 @@ export function WorkflowApprovalsProvider({
           step?.owner_id && step?.install_workflow_id
             ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
             : null
+        if (isAdmin) {
+          new Audio('/sounds/fahhh.mp3').play().catch(() => {})
+        }
         addToast(
           <Toast
             heading={stepName ? toSentenceCase(stepName) : 'Approval required'}
