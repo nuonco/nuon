@@ -1,15 +1,15 @@
 {
   "announcements": [
     {
-      "id": "nuon-actions-2025",
-      "title": "Day-2 using Actions!",
-      "date": "Jan 5, 2026",
-      "description": "Actions allow you to create automated workflows that can be run in installs. Actions are useful for debugging, running scripts, and implementing health checks.",
-      "image": "/images/announcements/nuon-actions-light.png",
-      "imageDark": "/images/announcements/nuon-actions-dark.png",
-      "ctaText": "Check it out",
-      "ctaUrl": "https://docs.nuon.co/concepts/actions",
-      "dismissible": true
+      "id": "nuon-operation-roles-031",
+      "title": "Operation-level IAM roles are here",
+      "date": "Feb 26, 2026",
+      "description": "Assign distinct IAM roles to individual sandbox, component, and action operations. No more shared maintenance roles — grant exactly the permissions each operation needs.",
+      "image": "/images/announcements/tui-light.png",
+      "imageDark": "/images/announcements/tui-dark.png",
+      "ctaText": "Learn more",
+      "ctaUrl": "https://docs.nuon.co/updates/031-operation-roles",
+      "dismissible": false
     }
   ]
 }
