@@ -51,67 +51,45 @@ nuon api --help
 
 - [Nuon CLI Extensions](/guides/cli-extensions)
 
+## Roles, Roles, and more Roles
+
+We've spent some time improving the customer experience when disabling or disablign first class roles and we have
+introduced a new feature: Operation Roles.
+
+### Operation Roles
+
+Actions can specify which roles they should be executed both, in config and in the UI. This makes it significantly
+easier to make use of custom roles with scoped permissions. Addtionally, components can now define `operation_role`s
+making it easy to select a role with the right permissions when a specific role is required. For example, when
+reprovisioning a sandbox or deploying a component that touches CRDs. This new capability is surfaced in the UI in a new
+role selector drop down.
+
+### Learn More
+
+- [Concepts: Operation Roles](/concepts/operation-roles)
+- [Guides: Operation Roles](/guides/operation-roles)
+
+## GCP
+
+We are please to announce we now have robust support for Google Cloud Platform.
+
+### Learn More
+
+- [GCP GKE Sandbox](https://github.com/nuonco/gcp-gke-sandboxgcp-gke-sandbox)
+
 ## Dashboard UI Changes and Improvements
 
-The Nuon dashboard has focused on two themes: moving key product surfaces onto the SPA/BFF architecture and making
-install operations more observable and easier to act on.
+The nuon dashboard has an updated workflow UI with an emphasis on making operations easier to reason about.
 
-### Platform and Navigation
-
-- Migrated major product surfaces to the SPA pattern, including onboarding, install components, admin panel, audit logs,
-  and install config download flows.
-- Improved navigation behavior with empty-route redirects, safer login redirects, and org-level dashboard redirects when
-  enabled.
-- Simplified and modernized dashboard presentation with better page titling, icon usage, scroll ergonomics, and version
-  rendering consistency.
-
-### Workflow Visibility and Approvals
-
-- Added org-level and install-level active workflow experiences, with follow-up refinements to keep only in-progress
-  workflows in active views.
 - Added pending-approval toasts and notification improvements so approval-required workflows are easier to spot and
   action.
-- Expanded workflow detail panels to include logs and added downloadable logs for easier incident and support handling.
-- Improved approvals UX with better defaults and guardrails (including duplicate build warning and safer stack-run
-  handling).
-
-### Install and Action Operations
-
-- Added role-aware UI paths for reprovision and install input updates, including custom role selection improvements.
-- Added role provision status indicators for install and app role visibility.
+- Added org-level and install-level active workflow experiences
+- Improved workflow detail panels with better logs and the ability to download logs.
+- Improved approvals UX with better defaults and guardrails.
+- Added warnings for duplicate builds making it easier to navigate the build when deploying components.
+- Improved custom role selection for actions.
 - Added quick-action improvements like forget install, ad-hoc action reruns, and better quick-menu loading behavior.
-- Improved runner and runner-job interactions, including endpoint alignment for restart behavior.
-- Added the ability to download logs to a `.txt` file.
-
-## Role and Operation Roles
-
-### Operation Role Selection and Workflow Propagation
-
-- Refactored role resolution so role mapping and auth context are determined in plan workflows, improving consistency
-  between planning and execution.
-- Added explicit role override support to reprovision and install-input update workflows via role fields in workflow
-  creation paths.
-- Continued hardening selector behavior around template rendering, stack-output role lookup, and default-role fallback
-  behavior.
-
-### Available Roles and Role Status APIs
-
-- Role picker now allows selecting from all available enabled roles.
-- Enable UI visibility into enabled/provisioned roles along with its identifier.
-
-### GCP, Break-Glass, and Custom Role Support
-
-- GCP installs now resolve custom roles and break-glass service accounts through the same operation-role selection used
-  by AWS and Azure.
-- GCP stack outputs are parsed into the role lookup flow so role pickers and plan workflows see GCP roles alongside
-  other cloud roles.
-- Sandbox-mode fake stack outputs include custom role, break-glass, and install-input identifiers for role-aware sandbox
-  planning.
-
-### Install Stack Role Provisioning Behavior
-
-- Updated CloudFormation role parameter defaults so custom roles are auto-selected when referenced by operation role
-  configs (entity-level roles or matrix rules).
+- Added role status indicators to make it easier to determine which roles are active on installs.
 
 ## Changed
 
