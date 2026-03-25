@@ -52,6 +52,8 @@ export const InstallActionManualRunModal = ({
 
   const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps || [])
+  const defaultRole = config?.role?.replace('{{.nuon.install.id}}', install.id)
+    || config?.break_glass_role_arn?.replace('{{.nuon.install.id}}', install.id)
 
   const [customVars, setCustomVars] = useState<number[]>([])
   const [selectedRole, setSelectedRole] = useState<string>('')
@@ -174,6 +176,8 @@ export const InstallActionManualRunModal = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
+          defaultRoleName={defaultRole}
+          mappedRoleNames={defaultRole ? [defaultRole] : undefined}
         />
         <Expand
           id="action-env-vars"

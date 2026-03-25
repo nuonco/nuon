@@ -33,54 +33,10 @@ export const SandboxHeader = ({
   const { sandboxRun } = useSandboxRun()
 
   return (
-    <header className="flex p-6 border-b justify-between w-full">
-      <HeadingGroup>
-        <BackLink className="mb-6" />
-        <div className="flex flex-col gap-1">
-          <span className="flex items-cenert gap-2">
-            <CloudPlatform
-              platform={install.cloud_platform as TCloudPlatform}
-              variant="subtext"
-              displayVariant="icon-only"
-            />
-            <Text
-              className="inline-flex items-center gap-4"
-              variant="h3"
-              weight="strong"
-            >
-              Sandbox {sandboxRun?.run_type}
-            </Text>
-          </span>
-          <ID>{sandboxRun?.id}</ID>
-        </div>
-
-        <div className="flex gap-8 items-center justify-start my-2">
-          <Text theme="info" className="!flex items-center gap-1">
-            <Icon variant="CalendarBlankIcon" />
-            <Time variant="subtext" time={sandboxRun?.created_at} />
-          </Text>
-          <Text theme="info" className="!flex items-center gap-1">
-            <Icon variant="TimerIcon" />
-            <Duration
-              variant="subtext"
-              beginTime={sandboxRun?.created_at}
-              endTime={sandboxRun?.updated_at}
-            />
-          </Text>
-        </div>
-
-        {sandboxRun?.install_workflow_id ? (
-          <Button
-            href={`/${org?.id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
-          >
-            View workflow
-            <Icon variant="CaretRightIcon" />
-          </Button>
-        ) : null}
-      </HeadingGroup>
-
-      <div className="flex flex-col gap-6">
-        <div className="flex items-start justify-start gap-6">
+    <header className="flex flex-col p-6 border-b gap-4">
+      <div className="flex items-start justify-between">
+        <BackLink />
+        <div className="flex items-start gap-6">
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -119,12 +75,62 @@ export const SandboxHeader = ({
             </SandboxConfigContextTooltip>
           </LabeledValue>
           <SandboxRunSwitcher sandboxRunId={sandboxRun?.id} />
-          <ManageRunDropdown 
+          <ManageRunDropdown
             workflow={workflow}
-            variant="primary" 
+            variant="primary"
           />
         </div>
       </div>
+
+      <HeadingGroup>
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-2">
+            <CloudPlatform
+              platform={install.cloud_platform as TCloudPlatform}
+              variant="subtext"
+              displayVariant="icon-only"
+            />
+            <Text
+              className="inline-flex items-center gap-4"
+              variant="h3"
+              weight="strong"
+            >
+              Sandbox {sandboxRun?.run_type}
+            </Text>
+          </span>
+          <ID>{sandboxRun?.id}</ID>
+        </div>
+
+        <div className="flex flex-wrap gap-x-8 gap-y-1 items-center justify-start my-2">
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="CalendarBlankIcon" />
+            <Time variant="subtext" time={sandboxRun?.created_at} />
+          </Text>
+          <Text theme="info" className="!flex items-center gap-1">
+            <Icon variant="TimerIcon" />
+            <Duration
+              variant="subtext"
+              beginTime={sandboxRun?.created_at}
+              endTime={sandboxRun?.updated_at}
+            />
+          </Text>
+          {sandboxRun?.role ? (
+            <Text theme="info" className="!flex items-center gap-1">
+              <Icon variant="FileLockIcon" />
+              <Text variant="subtext">{sandboxRun.role}</Text>
+            </Text>
+          ) : null}
+        </div>
+
+        {sandboxRun?.install_workflow_id ? (
+          <Button
+            href={`/${org?.id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
+          >
+            View workflow
+            <Icon variant="CaretRightIcon" />
+          </Button>
+        ) : null}
+      </HeadingGroup>
     </header>
   )
 }
