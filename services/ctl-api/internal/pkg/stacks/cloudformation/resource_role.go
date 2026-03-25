@@ -10,6 +10,7 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -182,8 +183,57 @@ func (a *Templates) getRolesParameters(inp *stacks.TemplateInput) map[string]clo
 		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
 	}
 	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, a.roleInUse(role.Name, inp))
 	}
 
 	return params
+}
+
+func (a *Templates) roleInUse(roleName string, inp *stacks.TemplateInput) bool {
+	cfg := inp.AppCfg
+
+	stateMap, err := inp.InstallState.AsMap()
+	if err != nil {
+		return false
+	}
+
+	renderAndCompare := func(templateName string) bool {
+		remderedRole, err := render.RenderV2(templateName, stateMap)
+		if err != nil {
+			return false
+		}
+		renderedInputRole, err := render.RenderV2(roleName, stateMap)
+		if err != nil {
+			return false
+		}
+		return remderedRole == renderedInputRole
+	}
+
+	for _, comp := range cfg.ComponentConfigConnections {
+		for _, roleNamePtr := range comp.OperationRoles {
+			if roleNamePtr != nil && renderAndCompare(*roleNamePtr) {
+				return true
+			}
+		}
+	}
+
+	for _, roleNamePtr := range cfg.SandboxConfig.OperationRoles {
+		if roleNamePtr != nil && renderAndCompare(*roleNamePtr) {
+			return true
+		}
+	}
+
+	for _, action := range cfg.ActionWorkflowConfigs {
+		if action.Role != "" && renderAndCompare(action.Role) {
+			return true
+		}
+	}
+
+	for _, rule := range cfg.OperationRoleConfig.Rules {
+		if rule.Role != "" && renderAndCompare(rule.Role) {
+			return true
+		}
+	}
+
+	return false
 }
