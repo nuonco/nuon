@@ -18,9 +18,10 @@ import (
 // @Summary				get recent health checks
 // @Description.markdown	get_runner_recent_health_checks.md
 // @Param					runner_id					path	string	true	"runner ID"
-// @Param					window						query	string	false	"window of health checks to return"	Default(1h)
-// @Param					offset						query	int		false	"offset of results to return"		Default(0)
-// @Param					limit						query	int		false	"limit of results to return"		Default(10)
+// @Param					window						query	string	false	"window of health checks to return"				Default(1h)
+// @Param					process						query	string	false	"runner process to filter by (install or mng)"	Default(install)
+// @Param					offset						query	int		false	"offset of results to return"					Default(0)
+// @Param					limit						query	int		false	"limit of results to return"					Default(10)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
 // @Tags					runners
 // @Accept					json
@@ -55,8 +56,10 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 		return
 	}
 
+	process := app.RunnerProcess(ctx.DefaultQuery("process", string(app.RunnerProcessInstall)))
+
 	startTS := time.Now().Add(-windowDur)
-	healthChecks, err := s.getRunnerRecentHealthChecks(ctx, runnerID, startTS)
+	healthChecks, err := s.getRunnerRecentHealthChecks(ctx, runnerID, process, startTS)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -65,16 +68,17 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, healthChecks)
 }
 
-func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
+func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, process app.RunnerProcess, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
 	healthChecks := []*app.RunnerHealthCheck{}
 
 	res := s.chDB.WithContext(ctx).
 		Scopes(
-			scopes.WithOverrideTable("runner_health_checks_view_v1"),
+			scopes.WithOverrideTable("runner_health_checks_view_v2"),
 			scopes.WithOffsetPagination,
 		).
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,
+			Process:  process,
 		}).
 		Where("created_at > ?", startTS).
 		Order("created_at asc").
