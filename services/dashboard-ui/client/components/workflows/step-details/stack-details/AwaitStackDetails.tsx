@@ -26,7 +26,7 @@ import type { IStackDetails } from './types'
 
 export const AwaitStackDetails = ({ stack, ...props }: IStackDetails) => {
   const outputValues = useMemo(
-    () => objectToKeyValueArray(stack?.install_stack_outputs?.data),
+    () => objectToKeyValueArray(stack?.install_stack_outputs?.data_contents),
     [stack?.install_stack_outputs]
   )
   const { install } = useInstall()

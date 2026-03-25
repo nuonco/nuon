@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -106,35 +105,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		data := helpers.GetFakeSandboxStackData(appCfg, region, stateMap)
 
-		run, err := activities.AwaitCreateSandboxInstallStackVersionRun(ctx, &activities.CreateSandboxInstallStackVersionRunRequest{
-			StackVersionID: version.ID,
-			Data:           generics.ToStringMap(data),
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create sandbox version run")
-		}
-
-		// Send signal to runner using cross-namespace signal sending
-		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   install.RunnerID,
-			OwnerType: "runners",
-			Signal: &runnersignalsv2.Signal{
-				RunnerID:                 install.RunnerID,
-				InstallStackVersionRunID: run.ID,
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to enqueue signal to runner")
-		}
-
-		if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     version.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
+		// Fire phone home HTTP call to exercise the full production code path
+		if err := activities.AwaitFireSandboxPhoneHome(ctx, &activities.FireSandboxPhoneHomeRequest{
+			InstallID:   install.ID,
+			PhoneHomeID: version.PhoneHomeID,
+			Data:        data,
 		}); err != nil {
-			return errors.Wrap(err, "unable to update status")
+			return errors.Wrap(err, "unable to fire sandbox phone home")
 		}
-
-		return nil
 	}
 
 	// Not sandbox mode - poll for stack version run

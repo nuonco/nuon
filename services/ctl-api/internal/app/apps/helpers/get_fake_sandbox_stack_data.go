@@ -35,22 +35,25 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 
 	stackRefs := GetStackReferences(appCfg)
 
+	fakeAccountID := fmt.Sprintf("%012d", 100000000000+len(generics.GetFakeObj[string]()))
+
 	data := map[string]any{
-		"account":                  generics.GetFakeObj[string](),
+		"account":                  fakeAccountID,
+		"account_id":               fakeAccountID,
 		"region":                   region,
-		"url":                      generics.GetFakeObj[string](),
-		"maintenance_iam_role_arn": generics.GetFakeObj[string](),
-		"provision_iam_role_arn":   generics.GetFakeObj[string](),
-		"deprovision_iam_role_arn": generics.GetFakeObj[string](),
-		"reprovision_iam_role_arn": generics.GetFakeObj[string](),
+		"url":                      fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com", generics.GetFakeObj[string](), region),
+		"maintenance_iam_role_arn": fmt.Sprintf("arn:aws:iam::%s:role/maintenance-%s", fakeAccountID, generics.GetFakeObj[string]()),
+		"provision_iam_role_arn":   fmt.Sprintf("arn:aws:iam::%s:role/provision-%s", fakeAccountID, generics.GetFakeObj[string]()),
+		"deprovision_iam_role_arn": fmt.Sprintf("arn:aws:iam::%s:role/deprovision-%s", fakeAccountID, generics.GetFakeObj[string]()),
+		"reprovision_iam_role_arn": fmt.Sprintf("arn:aws:iam::%s:role/reprovision-%s", fakeAccountID, generics.GetFakeObj[string]()),
+		"runner_iam_role_arn":      fmt.Sprintf("arn:aws:iam::%s:role/runner-%s", fakeAccountID, generics.GetFakeObj[string]()),
 		"break_glass_role_arns":    breakGlassRoleARNs,
 		"install_inputs":           installInputs,
 		"custom_role_arns":         customRoleARNs,
-		"vpc_id":                   generics.GetFakeObj[string](),
-		"account_id":               generics.GetFakeObj[string](),
-		"public_subnets":           generics.GetFakeObj[string](),
-		"private_subnets":          generics.GetFakeObj[string](),
-		"runner_subnet":            generics.GetFakeObj[string](),
+		"vpc_id":                   fmt.Sprintf("vpc-%s", generics.GetFakeObj[string]()),
+		"public_subnets":           fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
+		"private_subnets":          fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
+		"runner_subnet":            fmt.Sprintf("subnet-%s", generics.GetFakeObj[string]()),
 	}
 
 	return generics.MergeMap(refs.GetFakeRefs(stackRefs), data)

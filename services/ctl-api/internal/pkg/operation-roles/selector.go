@@ -15,9 +15,6 @@ import (
 
 // SelectionContext contains all information needed for role selection
 type SelectionContext struct {
-	// under sandbox mode make sure to choose either provision deprovision or maintenance
-	SandboxMode bool
-
 	Operation app.OperationType
 
 	// "component", "sandbox", "action"
