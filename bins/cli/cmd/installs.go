@@ -355,14 +355,15 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	outputsCmd := &cobra.Command{
 		Use:   "outputs",
 		Short: "View all install outputs",
-		Long:  "View unified outputs from stack, sandbox, and components for an install",
+		Long:  "View unified outputs from stack, sandbox, and components for an install. Use -c to filter by component.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Outputs(cmd.Context(), id, PrintJSON)
+			return svc.Outputs(cmd.Context(), id, componentID, PrintJSON)
 		}),
 	}
 	outputsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	outputsCmd.MarkFlagRequired("install-id")
+	outputsCmd.Flags().StringVarP(&componentID, "component", "c", "", "Filter by component name or ID")
 	installsCmds.AddCommand(outputsCmd)
 
 	currentInputs := &cobra.Command{

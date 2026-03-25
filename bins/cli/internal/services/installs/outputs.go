@@ -2,9 +2,11 @@ package installs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
@@ -18,7 +20,7 @@ type installOutputs struct {
 	Components map[string]map[string]any `json:"components,omitempty"`
 }
 
-func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) error {
+func (s *Service) Outputs(ctx context.Context, installID, componentFilter string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -79,8 +81,8 @@ func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) er
 		Components: make(map[string]map[string]any),
 	}
 
-	// Stack outputs.
-	if stack != nil && stack.InstallStackOutputs != nil {
+	// Stack outputs (skip when filtering by component).
+	if componentFilter == "" && stack != nil && stack.InstallStackOutputs != nil {
 		outputs := stack.InstallStackOutputs
 		flat := make(map[string]any)
 		if outputs.Aws != nil {
@@ -135,18 +137,20 @@ func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) er
 		out.Stack = flat
 	}
 
-	// Sandbox outputs — latest successful/active run.
-	for _, run := range sandboxes {
-		if (run.Status == "active" || run.Status == "succeeded") && run.Outputs != nil {
-			out.Sandbox = run.Outputs
-			break
+	// Sandbox outputs (skip when filtering by component).
+	if componentFilter == "" {
+		for _, run := range sandboxes {
+			if (run.Status == "active" || run.Status == "succeeded") && run.Outputs != nil {
+				out.Sandbox = run.Outputs
+				break
+			}
+		}
+		if out.Sandbox == nil && len(sandboxes) > 0 && sandboxes[0].Outputs != nil {
+			out.Sandbox = sandboxes[0].Outputs
 		}
 	}
-	if out.Sandbox == nil && len(sandboxes) > 0 && sandboxes[0].Outputs != nil {
-		out.Sandbox = sandboxes[0].Outputs
-	}
 
-	// Component outputs — fetch latest deploy for each in parallel.
+	// Component outputs — fetch terraform state outputs via workspace state JSON.
 	if len(components) > 0 {
 		var cmu sync.Mutex
 		var cwg sync.WaitGroup
@@ -158,19 +162,42 @@ func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) er
 				if comp.Component != nil && comp.Component.Name != "" {
 					name = comp.Component.Name
 				}
-				deploy, err := s.api.GetInstallComponentLatestDeploy(ctx, installID, comp.ComponentID)
-				if err != nil || deploy == nil || deploy.Outputs == nil || len(deploy.Outputs) == 0 {
+
+				// Skip if filtering and this isn't the target.
+				if componentFilter != "" &&
+					!strings.EqualFold(name, componentFilter) &&
+					!strings.EqualFold(comp.ComponentID, componentFilter) {
 					return
 				}
+
+				if comp.TerraformWorkspace == nil || comp.TerraformWorkspace.ID == "" {
+					return
+				}
+
+				outputs, err := s.getTerraformOutputs(ctx, comp.TerraformWorkspace.ID)
 				cmu.Lock()
-				out.Components[name] = deploy.Outputs
-				cmu.Unlock()
+				defer cmu.Unlock()
+				if err != nil {
+					warnings = append(warnings, fmt.Sprintf("component %s: error fetching outputs: %s", name, err))
+					return
+				}
+				if len(outputs) == 0 {
+					return
+				}
+				out.Components[name] = outputs
 			}(ic)
 		}
 		cwg.Wait()
 	}
 
 	if asJSON {
+		if componentFilter != "" && len(out.Components) == 1 {
+			// When filtering by component in JSON mode, return just that component's outputs.
+			for _, v := range out.Components {
+				ui.PrintJSON(v)
+				return nil
+			}
+		}
 		ui.PrintJSON(out)
 		return nil
 	}
@@ -212,7 +239,24 @@ func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) er
 	}
 
 	if empty {
-		view.Print("No outputs available for this install.")
+		if componentFilter != "" {
+			fmt.Printf("No outputs found for component %q.\n", componentFilter)
+			// List available components.
+			names := make([]string, 0, len(components))
+			for _, c := range components {
+				name := c.ComponentID
+				if c.Component != nil && c.Component.Name != "" {
+					name = c.Component.Name
+				}
+				names = append(names, name)
+			}
+			if len(names) > 0 {
+				sort.Strings(names)
+				fmt.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
+			}
+		} else {
+			view.Print("No outputs available for this install.")
+		}
 	}
 
 	if len(warnings) > 0 {
@@ -223,6 +267,88 @@ func (s *Service) Outputs(ctx context.Context, installID string, asJSON bool) er
 	}
 
 	return nil
+}
+
+// getTerraformOutputs fetches the latest terraform state JSON for a workspace
+// and extracts the output values.
+func (s *Service) getTerraformOutputs(ctx context.Context, workspaceID string) (map[string]any, error) {
+	// Try state-json by ID — returns terraform show -json directly.
+	raw, err := s.api.GetTerraformWorkspaceLatestStateJSON(ctx, workspaceID)
+	if err == nil && len(raw) > 0 {
+		if outputs := parseTerraformShowOutputs(raw); len(outputs) > 0 {
+			return outputs, nil
+		}
+		if outputs, parseErr := parseRawTerraformStateOutputs(raw); parseErr == nil && len(outputs) > 0 {
+			return outputs, nil
+		}
+	}
+
+	// Fall back to raw state by ID.
+	state, stateErr := s.api.GetTerraformWorkspaceLatestState(ctx, workspaceID)
+	if stateErr == nil && state != nil && len(state.Contents) > 0 {
+		raw := int64SliceToBytes(state.Contents)
+		if outputs := parseTerraformShowOutputs(raw); len(outputs) > 0 {
+			return outputs, nil
+		}
+		return parseRawTerraformStateOutputs(raw)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("state-json: %w", err)
+	}
+	if stateErr != nil {
+		return nil, fmt.Errorf("raw state: %w", stateErr)
+	}
+	return nil, fmt.Errorf("no state data available")
+}
+
+func int64SliceToBytes(s []int64) []byte {
+	b := make([]byte, len(s))
+	for i, v := range s {
+		b[i] = byte(v)
+	}
+	return b
+}
+
+// parseTerraformShowOutputs parses `terraform show -json` format: {values: {outputs: {name: {value, type}}}}
+func parseTerraformShowOutputs(raw []byte) map[string]any {
+	var tfShow struct {
+		Values struct {
+			Outputs map[string]struct {
+				Value any `json:"value"`
+				Type  any `json:"type"`
+			} `json:"outputs"`
+		} `json:"values"`
+	}
+	if err := json.Unmarshal(raw, &tfShow); err != nil {
+		return nil
+	}
+	result := make(map[string]any, len(tfShow.Values.Outputs))
+	for k, v := range tfShow.Values.Outputs {
+		result[k] = v.Value
+	}
+	return result
+}
+
+// parseRawTerraformStateOutputs parses raw terraform state: {outputs: {name: {value, type}}}
+func parseRawTerraformStateOutputs(raw []byte) (map[string]any, error) {
+	var tfState struct {
+		Outputs map[string]struct {
+			Value any    `json:"value"`
+			Type  string `json:"type"`
+		} `json:"outputs"`
+	}
+	if err := json.Unmarshal(raw, &tfState); err != nil {
+		return nil, fmt.Errorf("parsing terraform state: %w", err)
+	}
+	if len(tfState.Outputs) == 0 {
+		return nil, nil
+	}
+	result := make(map[string]any, len(tfState.Outputs))
+	for k, v := range tfState.Outputs {
+		result[k] = v.Value
+	}
+	return result, nil
 }
 
 func printSection(view *ui.ListView, flat map[string]string) {
