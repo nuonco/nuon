@@ -227,7 +227,7 @@ func (e *evClient) SendAsync(ctx workflow.Context, objectID string, signal event
 			// Propagate the cancellation to the signalled workflow
 			dctx, _ := workflow.NewDisconnectedContext(ctx)
 			err := workflow.SignalExternalWorkflow(
-				workflow.WithWorkflowNamespace(ctx, signal.Namespace()),
+				workflow.WithWorkflowNamespace(dctx, signal.Namespace()),
 				signal.WorkflowID(objectID),
 				"",
 				CancelChannelName,

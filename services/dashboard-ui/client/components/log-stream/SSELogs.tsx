@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useEffect, useMemo, memo } from 'react'
+import { useEffect, memo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -23,8 +23,7 @@ export const SSELogs = ({
 }: {
   filterClassName?: string
 }) => {
-  const { loadMore, hasMore, isLoading, isStreamOpen, connectionState } =
-    useUnifiedLogData()
+  const { loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
   const { filteredLogs, filters, activeLog, handleActiveLog } = useLogViewer()
 
   return (
@@ -33,7 +32,9 @@ export const SSELogs = ({
         <div
           className={cn('sticky bg-background border-b z-10', filterClassName)}
         >
-          <LogFilters filters={filters} />
+          <div className="flex items-center gap-4">
+            <LogFilters filters={filters} />
+          </div>
           <div className="grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
               Severity

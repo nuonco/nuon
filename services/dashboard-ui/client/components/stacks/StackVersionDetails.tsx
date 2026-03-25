@@ -130,7 +130,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
 
       {reversedRuns.length ? (
         reversedRuns.map((run, displayIdx) => {
-          const originalIdx = version.runs.length - 1 - displayIdx
+          const originalIdx = (version?.runs?.length ?? 0) - 1 - displayIdx
           return (
             <Expand
               key={run?.id}

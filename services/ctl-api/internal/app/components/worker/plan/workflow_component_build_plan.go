@@ -17,6 +17,7 @@ type CreateComponentBuildPlanRequest struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
+// @id-generator CreateComponentBuildWorkflowIDCallback
 func CreateComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {
 	p := Planner{}
 	return p.createComponentBuildPlan(ctx, req)
