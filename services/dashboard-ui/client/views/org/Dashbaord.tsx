@@ -99,7 +99,7 @@ export const Dashboard = () => {
   }))
 
   return (
-    <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
+    <PageLayout className="divide-y pb-6" id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
       <PageHeader>

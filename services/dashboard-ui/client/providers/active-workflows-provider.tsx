@@ -35,14 +35,17 @@ export function ActiveWorkflowsProvider({
         offset: 0,
         planonly: false,
       }),
-    refetchInterval: 20_000,
+    // refetchInterval: 20_000,
   })
 
   const activeWorkflows = (data?.data ?? []).filter(
     (w) =>
       w.status?.status &&
       w.status.status !== 'pending' &&
-      w.status.status !== 'queued'
+      w.status.status !== 'queued' &&
+      w.status.status !== 'cancelled' &&
+      w.status.status !== 'error' &&
+      w.status.status !== 'success'
   )
 
   return (

@@ -131,7 +131,8 @@ export const Markdown = ({ content = '' }) => {
   return (
     <>
       <style>{`
-        .prose .readme-table pre { max-width: 50ch; } 
+        .prose .readme-table { overflow-x: auto; }
+        .prose .readme-table pre { max-width: 50ch; }
         .mermaid-diagram { 
           text-align: center; 
           margin: 1rem 0; 
