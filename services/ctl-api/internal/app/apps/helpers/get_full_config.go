@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -147,6 +148,11 @@ func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool,
 		return true, nil
 	}
 
+	// Allow commit SHAs (some releases are shorthand commit SHAs)
+	if commitSHARegex.MatchString(version) {
+		return true, nil
+	}
+
 	v, err := semver.NewVersion(version)
 	if err != nil {
 		return false, err
@@ -159,3 +165,5 @@ func (h *Helpers) CliVerisionAllowed(ctx context.Context, version string) (bool,
 
 	return constraint.Check(v), nil
 }
+
+var commitSHARegex = regexp.MustCompile(`^[0-9a-f]{7}$`)
