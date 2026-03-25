@@ -8,11 +8,19 @@ import (
 	"go.uber.org/zap"
 
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
 const authCookie = "X-Nuon-Auth"
 const orgCookie = "org_session"
+
+func orgLandingPath(org *models.AppOrg) string {
+	if org.Features != nil && org.Features["org-dashboard"] {
+		return "/" + org.ID + ""
+	}
+	return "/" + org.ID + "/apps"
+}
 
 type RootHandler struct {
 	cfg *internal.Config
@@ -42,8 +50,8 @@ func (h *RootHandler) Handle(c *gin.Context) {
 			nuon.WithOrgID(orgId),
 		)
 		if err == nil {
-			if _, err := orgClient.GetOrg(c.Request.Context()); err == nil {
-				c.Redirect(http.StatusFound, "/"+orgId+"/apps")
+			if org, err := orgClient.GetOrg(c.Request.Context()); err == nil {
+				c.Redirect(http.StatusFound, orgLandingPath(org))
 				return
 			}
 		}
@@ -58,7 +66,7 @@ func (h *RootHandler) Handle(c *gin.Context) {
 
 	orgs, _, err := client.GetOrgs(c.Request.Context(), nil)
 	if err == nil && len(orgs) > 0 {
-		c.Redirect(http.StatusFound, "/"+orgs[0].ID+"/apps")
+		c.Redirect(http.StatusFound, orgLandingPath(orgs[0]))
 		return
 	}
 
