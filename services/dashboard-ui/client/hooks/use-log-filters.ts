@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { TOTELLog } from '@/types'
 
 type SortDirection = 'asc' | 'desc'
@@ -14,13 +14,70 @@ const DEFAULT_SELECTED_SEVERITIES = new Set([
 
 const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner'])
 
+const LS_KEY_SEVERITIES = 'nuon:log-filter:severities'
+const LS_KEY_SERVICES = 'nuon:log-filter:services'
+const LS_KEY_JOB_OUTPUT = 'nuon:log-filter:job-output'
+
+function readBoolFromStorage(key: string, fallback: boolean): boolean {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw !== null) return raw === 'true'
+  } catch {
+    // ignore
+  }
+  return fallback
+}
+
+function readSetFromStorage(key: string, fallback: Set<string>): Set<string> {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return new Set(parsed)
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return new Set(fallback)
+}
+
 export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
   const [selectedSeverities, setSelectedSeverities] = useState<Set<string>>(
-    new Set(DEFAULT_SELECTED_SEVERITIES)
+    () => readSetFromStorage(LS_KEY_SEVERITIES, DEFAULT_SELECTED_SEVERITIES)
   )
   const [selectedServices, setSelectedServices] = useState<Set<string>>(
-    new Set(DEFAULT_SELECTED_SERVICES) // Start with all services selected (empty set means all)
+    () => readSetFromStorage(LS_KEY_SERVICES, DEFAULT_SELECTED_SERVICES)
   )
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY_SEVERITIES, JSON.stringify(Array.from(selectedSeverities)))
+    } catch {
+      // ignore
+    }
+  }, [selectedSeverities])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY_SERVICES, JSON.stringify(Array.from(selectedServices)))
+    } catch {
+      // ignore
+    }
+  }, [selectedServices])
+  const [jobOutputOnly, setJobOutputOnly] = useState<boolean>(
+    () => readBoolFromStorage(LS_KEY_JOB_OUTPUT, false)
+  )
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY_JOB_OUTPUT, String(jobOutputOnly))
+    } catch {
+      // ignore
+    }
+  }, [jobOutputOnly])
+
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
@@ -66,6 +123,10 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
       item.service_name ? selectedServices.has(item.service_name) : false
     )
 
+    if (jobOutputOnly) {
+      filtered = filtered.filter((item) => item.scope_name === 'oteljob')
+    }
+
     // Then filter by search query
     if (searchQuery.trim()) {
       const searchLower = searchQuery.toLowerCase().trim()
@@ -76,7 +137,7 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
 
     // Finally sort by timestamp
     return sortLogsByTimestamp(filtered, sortDirection)
-  }, [logs, selectedSeverities, selectedServices, searchQuery, sortDirection])
+  }, [logs, selectedSeverities, selectedServices, jobOutputOnly, searchQuery, sortDirection])
 
   // Severity filter handlers
   const handleSeverityInputToggle = (severity: string) => {
@@ -147,6 +208,10 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
     setSortDirection(direction)
   }
 
+  const handleJobOutputToggle = () => {
+    setJobOutputOnly((prev) => !prev)
+  }
+
   return {
     // Severity filter
     selectedSeverities,
@@ -160,6 +225,10 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
     handleServiceInputToggle,
     handleServiceButtonClick,
     handleServiceReset,
+
+    // Job output filter
+    jobOutputOnly,
+    handleJobOutputToggle,
 
     // Search and sort
     searchQuery,
