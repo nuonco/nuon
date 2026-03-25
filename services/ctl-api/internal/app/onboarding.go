@@ -65,6 +65,7 @@ type Onboarding struct {
 	CurrentStep OnboardingStep   `json:"current_step,omitzero" gorm:"notnull" swaggertype:"string"`
 
 	// Step 1: Organization
+
 	OrgID *string `json:"org_id,omitempty"`
 	Org   *Org    `json:"-"`
 
@@ -78,13 +79,15 @@ type Onboarding struct {
 	AppBranchID    *string           `json:"app_branch_id,omitempty"`
 	AppBranch      *AppBranch        `json:"-"`
 
-	// Step 3: Install
+	// Step 3: Install (skip a line or swaggo hollers)
+
 	InstallMode OnboardingInstallMode `json:"install_mode,omitempty" swaggertype:"string"`
 	InstallID   *string               `json:"install_id,omitempty"`
 	Install     *Install              `json:"-"`
 	WorkflowID  *string               `json:"workflow_id,omitempty"`
 
 	// Async step status (for queue-based signal processing)
+
 	StepStatus OnboardingStepStatus `json:"step_status,omitempty" gorm:"default:''" swaggertype:"string"`
 	StepError  *string              `json:"step_error,omitempty"`
 }

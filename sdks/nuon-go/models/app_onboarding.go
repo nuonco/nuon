@@ -53,10 +53,10 @@ type AppOnboarding struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
-	// Step 3: Install
+	// install mode
 	InstallMode string `json:"install_mode,omitempty"`
 
-	// Step 1: Organization
+	// org id
 	OrgID string `json:"org_id,omitempty"`
 
 	// status
@@ -65,7 +65,7 @@ type AppOnboarding struct {
 	// step error
 	StepError string `json:"step_error,omitempty"`
 
-	// Async step status (for queue-based signal processing)
+	// step status
 	StepStatus string `json:"step_status,omitempty"`
 
 	// updated at
