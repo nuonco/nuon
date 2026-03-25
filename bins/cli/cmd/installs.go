@@ -74,11 +74,12 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(getCmd)
 
 	currentCmd := &cobra.Command{
-		Use:        "current",
-		Deprecated: "Use `nuon installs get` instead",
-		Short:      "Get current install (deprecated)",
-		Hidden:     true,
+		Use:    "current",
+		Short:  "Get current install (deprecated)",
+		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			printDeprecatedCommandWarning(cmd, "Use `nuon installs get` instead")
+
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), c.cfg.GetString("install_id"), PrintJSON)
 		}),
