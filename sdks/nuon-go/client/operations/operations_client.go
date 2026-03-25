@@ -86,6 +86,8 @@ func WithAcceptTextCsv(r *runtime.ClientOperation) {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	AbandonOnboarding(params *AbandonOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AbandonOnboardingOK, error)
+
 	AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error)
 
 	BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error)
@@ -97,6 +99,16 @@ type ClientService interface {
 	CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error)
 
 	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
+
+	CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error)
+
+	CompleteOnboardingGetStartedStep(params *CompleteOnboardingGetStartedStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingGetStartedStepOK, error)
+
+	CompleteOnboardingInstallStep(params *CompleteOnboardingInstallStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingInstallStepOK, error)
+
+	CompleteOnboardingOrganizationStep(params *CompleteOnboardingOrganizationStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingOrganizationStepOK, error)
+
+	CompleteOnboardingYourStackStep(params *CompleteOnboardingYourStackStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingYourStackStepOK, error)
 
 	CompleteUserJourney(params *CompleteUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteUserJourneyOK, error)
 
@@ -189,6 +201,8 @@ type ClientService interface {
 	CreateJobComponentConfig(params *CreateJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateJobComponentConfigCreated, error)
 
 	CreateKubernetesManifestComponentConfig(params *CreateKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateKubernetesManifestComponentConfigCreated, error)
+
+	CreateOnboarding(params *CreateOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOnboardingCreated, error)
 
 	CreateOrg(params *CreateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgCreated, error)
 
@@ -392,6 +406,8 @@ type ClientService interface {
 
 	GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentInstallInputsOK, error)
 
+	GetCurrentOnboarding(params *GetCurrentOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOnboardingOK, error)
+
 	GetCurrentOrgFeatures(params *GetCurrentOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgFeaturesOK, error)
 
 	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
@@ -411,6 +427,8 @@ type ClientService interface {
 	GetInstallActionRuns(params *GetInstallActionRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionRunsOK, error)
 
 	GetInstallActionWorkflow(params *GetInstallActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowOK, error)
+
+	GetInstallActionWorkflowOutputs(params *GetInstallActionWorkflowOutputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowOutputsOK, error)
 
 	GetInstallActionWorkflowRecentRuns(params *GetInstallActionWorkflowRecentRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRecentRunsOK, error)
 
@@ -497,6 +515,8 @@ type ClientService interface {
 	GetLatestRunnerHeartBeat(params *GetLatestRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerHeartBeatOK, error)
 
 	GetLogStream(params *GetLogStreamParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLogStreamOK, error)
+
+	GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error)
 
 	GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgOK, error)
 
@@ -675,6 +695,52 @@ type ClientService interface {
 	UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+AbandonOnboarding abandons onboarding session
+
+Marks the current active onboarding session as abandoned
+*/
+func (a *Client) AbandonOnboarding(params *AbandonOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AbandonOnboardingOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAbandonOnboardingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AbandonOnboarding",
+		Method:             "DELETE",
+		PathPattern:        "/v1/onboarding/current",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AbandonOnboardingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AbandonOnboardingOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AbandonOnboarding: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
@@ -971,6 +1037,236 @@ func (a *Client) CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CheckVCSConnectionStatus: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CompleteOnboardingDeployStep completes the deploy step
+
+Advances the onboarding past the deploy monitoring to get started
+*/
+func (a *Client) CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteOnboardingDeployStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteOnboardingDeployStep",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding/current/steps/deploy",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteOnboardingDeployStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteOnboardingDeployStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteOnboardingDeployStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CompleteOnboardingGetStartedStep completes onboarding
+
+Marks the onboarding session as completed
+*/
+func (a *Client) CompleteOnboardingGetStartedStep(params *CompleteOnboardingGetStartedStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingGetStartedStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteOnboardingGetStartedStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteOnboardingGetStartedStep",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding/current/steps/get-started",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteOnboardingGetStartedStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteOnboardingGetStartedStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteOnboardingGetStartedStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CompleteOnboardingInstallStep completes the install step
+
+Creates an install and advances the onboarding to the install status step
+*/
+func (a *Client) CompleteOnboardingInstallStep(params *CompleteOnboardingInstallStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingInstallStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteOnboardingInstallStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteOnboardingInstallStep",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding/current/steps/install",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteOnboardingInstallStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteOnboardingInstallStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteOnboardingInstallStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CompleteOnboardingOrganizationStep completes the organization step
+
+Creates a sandbox organization or attaches an existing one, then advances the onboarding to the app profile step
+*/
+func (a *Client) CompleteOnboardingOrganizationStep(params *CompleteOnboardingOrganizationStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingOrganizationStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteOnboardingOrganizationStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteOnboardingOrganizationStep",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding/current/steps/organization",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteOnboardingOrganizationStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteOnboardingOrganizationStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteOnboardingOrganizationStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CompleteOnboardingYourStackStep completes the your stack step
+
+Configures the application profile and advances the onboarding to the install step
+*/
+func (a *Client) CompleteOnboardingYourStackStep(params *CompleteOnboardingYourStackStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingYourStackStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteOnboardingYourStackStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteOnboardingYourStackStep",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding/current/steps/your-stack",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteOnboardingYourStackStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteOnboardingYourStackStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteOnboardingYourStackStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -3130,6 +3426,52 @@ func (a *Client) CreateKubernetesManifestComponentConfig(params *CreateKubernete
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateKubernetesManifestComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateOnboarding starts a new onboarding session
+
+Creates a new active onboarding session for the current account
+*/
+func (a *Client) CreateOnboarding(params *CreateOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOnboardingCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateOnboardingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateOnboarding",
+		Method:             "POST",
+		PathPattern:        "/v1/onboarding",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOnboardingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateOnboardingCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateOnboarding: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -7862,6 +8204,52 @@ func (a *Client) GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, 
 }
 
 /*
+GetCurrentOnboarding gets current onboarding session
+
+Returns the active onboarding session for the current account
+*/
+func (a *Client) GetCurrentOnboarding(params *GetCurrentOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOnboardingOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCurrentOnboardingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCurrentOnboarding",
+		Method:             "GET",
+		PathPattern:        "/v1/onboarding/current",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCurrentOnboardingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCurrentOnboardingOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCurrentOnboarding: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	GetCurrentOrgFeatures gets current org s feature flags
 
 	Get the current organization's feature flag values.
@@ -8335,6 +8723,56 @@ func (a *Client) GetInstallActionWorkflow(params *GetInstallActionWorkflowParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallActionWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetInstallActionWorkflowOutputs gets an install action workflow outputs
+
+	Return the latest outputs for an action workflow.
+
+The action_id parameter accepts either an action workflow ID or name.
+
+**NOTE** requires a valid install.
+*/
+func (a *Client) GetInstallActionWorkflowOutputs(params *GetInstallActionWorkflowOutputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowOutputsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallActionWorkflowOutputsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallActionWorkflowOutputs",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/actions/{action_id}/outputs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallActionWorkflowOutputsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallActionWorkflowOutputsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallActionWorkflowOutputs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -10315,6 +10753,52 @@ func (a *Client) GetLogStream(params *GetLogStreamParams, authInfo runtime.Clien
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetLogStream: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetOnboardingExampleApps gets example apps catalog
+
+Returns the list of available example applications for onboarding
+*/
+func (a *Client) GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOnboardingExampleAppsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOnboardingExampleApps",
+		Method:             "GET",
+		PathPattern:        "/v1/onboarding/example-apps",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOnboardingExampleAppsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOnboardingExampleAppsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOnboardingExampleApps: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
