@@ -106,6 +106,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
           "updates/030-policies",
           "updates/029-auth-inputs-better-nested-templates",
@@ -160,21 +161,11 @@
           },
           {
             "group": "Customer Configuration Options",
-            "pages": [
-              "concepts/installs",
-              "concepts/stacks",
-              "concepts/runners",
-              "concepts/operation-roles"
-            ]
+            "pages": ["concepts/installs", "concepts/stacks", "concepts/runners", "concepts/operation-roles"]
           },
           {
             "group": "Day-2 Operations",
-            "pages": [
-              "concepts/workflows",
-              "concepts/actions",
-              "concepts/policies",
-              "concepts/customer-portal"
-            ]
+            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies", "concepts/customer-portal"]
           },
           {
             "group": "Reference",
