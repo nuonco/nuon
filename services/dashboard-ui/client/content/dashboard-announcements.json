@@ -2,7 +2,7 @@
   "announcements": [
     {
       "id": "nuon-operation-roles-031",
-      "title": "Least-privilege access for every operation",
+      "title": "Operation-level IAM roles are here",
       "date": "Feb 26, 2026",
       "description": "Assign distinct IAM roles to individual sandbox, component, and action operations. No more shared maintenance roles — grant exactly the permissions each operation needs.",
       "image": "/images/announcements/tui-light.png",
