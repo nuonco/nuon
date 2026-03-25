@@ -60,6 +60,12 @@ export const DeployHeader = ({
               endTime={deploy?.updated_at}
             />
           </Text>
+          {deploy?.role ? (
+            <Text theme="info" className="!flex items-center gap-1">
+              <Icon variant="FileLockIcon" />
+              <Text variant="subtext">{deploy.role}</Text>
+            </Text>
+          ) : null}
           <ID>
             <Link
               href={`/${deploy?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
