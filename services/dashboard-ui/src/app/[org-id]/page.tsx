@@ -109,7 +109,7 @@ export default async function OrgDashboard({ params }: TPageProps<'org-id'>) {
                   new Date(job.started_at).getTime()
               )
             : undefined,
-          triggeredBy: '', // Job doesn't have creator info directly
+          triggeredBy: '',
           href: getJobHref(job),
         }))
       }
