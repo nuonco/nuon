@@ -16,6 +16,7 @@ interface NotificationSettings {
   permissionRequested: boolean
   permissionGrantedAt?: string
   lastPermissionRequest?: string
+  muted?: boolean
 }
 
 interface NotificationContextType {
@@ -25,6 +26,8 @@ interface NotificationContextType {
   isSupported: boolean
   settings: NotificationSettings
   hasRequestedPermission: boolean
+  muted: boolean
+  toggleMute: () => void
 }
 
 export const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -46,6 +49,7 @@ export function NotificationProvider({
     permissionRequested: false
   })
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
+  const [muted, setMuted] = useState(false)
 
   // Load settings from localStorage
   useEffect(() => {
@@ -57,6 +61,7 @@ export function NotificationProvider({
         const parsedSettings = JSON.parse(stored)
         setSettings(parsedSettings)
         setHasRequestedPermission(parsedSettings.permissionRequested)
+        setMuted(parsedSettings.muted ?? false)
       }
     } catch (error) {
       console.warn('Failed to load notification settings from localStorage:', error)
@@ -96,6 +101,12 @@ export function NotificationProvider({
     }
   }, [])
 
+  const toggleMute = useCallback(() => {
+    const newMuted = !muted
+    setMuted(newMuted)
+    saveSettings({ ...settings, muted: newMuted })
+  }, [muted, settings, saveSettings])
+
   const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
     if (!isSupported) {
       console.warn('Notifications are not supported in this browser')
@@ -129,8 +140,7 @@ export function NotificationProvider({
       return false
     }
 
-    if (permission !== 'granted') {
-      console.warn('Notification permission not granted')
+    if (permission !== 'granted' || muted) {
       return false
     }
 
@@ -174,7 +184,7 @@ export function NotificationProvider({
       console.error('Error creating notification:', error)
       return false
     }
-  }, [isSupported, permission])
+  }, [isSupported, permission, muted])
 
   const value: NotificationContextType = {
     emitNotification,
@@ -183,6 +193,8 @@ export function NotificationProvider({
     isSupported,
     settings,
     hasRequestedPermission,
+    muted,
+    toggleMute,
   }
 
   return (
