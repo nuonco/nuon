@@ -3,12 +3,11 @@ package updateinstallstackoutputs
 import (
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/types/stacks"
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
@@ -19,7 +18,8 @@ import (
 const SignalType signal.SignalType = "update-install-stack-outputs"
 
 type Signal struct {
-	InstallStackID string
+	InstallStackID          string
+	SkipInputUpdateWorkflow bool
 }
 
 var _ signal.Signal = &Signal{}
@@ -63,71 +63,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get app config by id")
 	}
 
+	installStackOutputs := app.InstallStackOutputs{}
+
+	var stackOutputs app.StackOutput
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
-		break
+		installStackOutputs.AWSStackOutputs = &app.AWSStackOutputs{}
+		stackOutputs = installStackOutputs.AWSStackOutputs
 	case app.AppRunnerTypeAzure:
-		break
+		installStackOutputs.AzureStackOutputs = &app.AzureStackOutputs{}
+		stackOutputs = installStackOutputs.AzureStackOutputs
+	case app.AppRunnerTypeGCP:
+		installStackOutputs.GCPStackOutputs = &app.GCPStackOutputs{}
+		stackOutputs = installStackOutputs.GCPStackOutputs
 	default:
 		return nil
 	}
 
-	// make sure outputs are valid
-	outputs := app.InstallStackOutputs{
-		AWSStackOutputs:   nil,
-		AzureStackOutputs: nil,
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.StringToTimeDurationHookFunc(),
+			pkggenerics.StringToMapDecodeHook(),
+		),
+		WeaklyTypedInput: true,
+		Result:           stackOutputs,
 	}
-
-	v := validator.New()
-
-	switch appCfg.RunnerConfig.Type {
-	case app.AppRunnerTypeAWS:
-		// parse into map[string]interface{}
-		stackOutputs, err := stacks.DecodeAWSStackOutputData(run.Data)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode run data")
-		}
-
-		// parse into AWSStackOutputs
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &outputs.AWSStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create decoder")
-		}
-		if err := decoder.Decode(stackOutputs); err != nil {
-			return errors.Wrap(err, "unable to parse install outputs")
-		}
-
-		if err := v.Struct(outputs); err != nil {
-			return errors.Wrap(err, "invalid outputs")
-		}
-	case app.AppRunnerTypeAzure:
-		decoderConfig := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.StringToTimeDurationHookFunc(),
-			),
-			WeaklyTypedInput: true,
-			Result:           &outputs.AzureStackOutputs,
-		}
-		decoder, err := mapstructure.NewDecoder(decoderConfig)
-		if err != nil {
-			return errors.Wrap(err, "unable to create decoder")
-		}
-		if err := decoder.Decode(run.Data); err != nil {
-			return errors.Wrap(err, "unable to parse install outputs")
-		}
-
-		if err := v.Struct(outputs); err != nil {
-			return errors.Wrap(err, "invalid outputs")
-		}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create %s decoder", appCfg.RunnerConfig.Type)
+	}
+	if err := decoder.Decode(run.Data); err != nil {
+		return errors.Wrapf(err, "unable to parse %s install outputs", appCfg.RunnerConfig.Type)
 	}
 
 	// update outputs if needed
@@ -141,9 +108,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// update the runner settings group
 	runnerIAMRoleARN := ""
-	if outputs.AWSStackOutputs != nil {
-		runnerIAMRoleARN = outputs.AWSStackOutputs.RunnerIAMRoleARN
+	if installStackOutputs.AWSStackOutputs != nil {
+		runnerIAMRoleARN = installStackOutputs.AWSStackOutputs.RunnerIAMRoleARN
 	}
+
 	if err := activities.AwaitUpdateRunnerGroupSettings(ctx, &activities.UpdateRunnerGroupSettings{
 		RunnerID:           install.RunnerID,
 		LocalAWSIAMRoleARN: runnerIAMRoleARN,
@@ -151,27 +119,35 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update runner group settings")
 	}
 
+	// update gcp account from stack outputs
+	if installStackOutputs.GCPStackOutputs != nil && installStackOutputs.GCPStackOutputs.Region != "" {
+		if err := activities.AwaitUpdateGCPAccountRegion(ctx, &activities.UpdateGCPAccountRegion{
+			InstallID: install.ID,
+			Region:    installStackOutputs.GCPStackOutputs.Region,
+			ProjectID: installStackOutputs.GCPStackOutputs.ProjectID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update gcp account from stack outputs")
+		}
+	}
+
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
-	err = validateRegion(*install, outputs)
+	err = validateRegion(*install, installStackOutputs)
 	if err != nil {
 		return errors.Wrap(err, "unable to validate region")
 	}
 
-	// TODO(sk): this can be aws or azure
-	data, err := stacks.DecodeAWSStackOutputData(run.Data)
+	installInputValues, err := stackOutputs.InstallInputValues()
 	if err != nil {
-		return errors.Wrap(err, "unable to decode run data")
+		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
-
-	// extract app_inputs from stack outputs for install_stack sourced inputs
-	inputValues := extractAppInputsFromStackOutputs(data)
-	if len(inputValues) > 0 {
+	if len(installInputValues) > 0 {
 		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
-			InstallID:             install.ID,
-			InputConfigID:         appCfg.InputConfig.ID,
-			InputValues:           inputValues,
-			InstallStackVersionID: version.ID,
+			InstallID:               install.ID,
+			InputConfigID:           appCfg.InputConfig.ID,
+			InputValues:             installInputValues,
+			InstallStackVersionID:   version.ID,
+			SkipInputUpdateWorkflow: s.SkipInputUpdateWorkflow,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
 		}
@@ -202,23 +178,4 @@ func validateRegion(install app.Install, outputs app.InstallStackOutputs) error 
 	}
 
 	return nil
-}
-
-// extractAppInputsFromStackOutputs extracts the install_inputs nested object from stack outputs
-func extractAppInputsFromStackOutputs(stackOutputs map[string]interface{}) map[string]string {
-	inputValues := make(map[string]string)
-
-	// Extract app_inputs from stack outputs
-	appInputsRaw, ok := stackOutputs["install_inputs"]
-	if !ok {
-		return inputValues
-	}
-
-	// Convert app_inputs to map[string]interface{}
-	appInputsMap, ok := appInputsRaw.(map[string]string)
-	if !ok {
-		return inputValues
-	}
-
-	return appInputsMap
 }
