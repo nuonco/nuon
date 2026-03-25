@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { TOTELLog } from '@/types'
 
 type SortDirection = 'asc' | 'desc'
@@ -14,13 +14,47 @@ const DEFAULT_SELECTED_SEVERITIES = new Set([
 
 const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner'])
 
+const LS_KEY_SEVERITIES = 'nuon:log-filter:severities'
+const LS_KEY_SERVICES = 'nuon:log-filter:services'
+
+function readSetFromStorage(key: string, fallback: Set<string>): Set<string> {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return new Set(parsed)
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return new Set(fallback)
+}
+
 export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
   const [selectedSeverities, setSelectedSeverities] = useState<Set<string>>(
-    new Set(DEFAULT_SELECTED_SEVERITIES)
+    () => readSetFromStorage(LS_KEY_SEVERITIES, DEFAULT_SELECTED_SEVERITIES)
   )
   const [selectedServices, setSelectedServices] = useState<Set<string>>(
-    new Set(DEFAULT_SELECTED_SERVICES) // Start with all services selected (empty set means all)
+    () => readSetFromStorage(LS_KEY_SERVICES, DEFAULT_SELECTED_SERVICES)
   )
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY_SEVERITIES, JSON.stringify(Array.from(selectedSeverities)))
+    } catch {
+      // ignore
+    }
+  }, [selectedSeverities])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY_SERVICES, JSON.stringify(Array.from(selectedServices)))
+    } catch {
+      // ignore
+    }
+  }, [selectedServices])
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
