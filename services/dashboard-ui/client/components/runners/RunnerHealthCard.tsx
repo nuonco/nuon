@@ -15,6 +15,7 @@ interface IRunnerHealthCard extends Omit<ICard, 'children'> {
   initHealthchecks?: TRunnerHealthCheck[]
   shouldPoll?: boolean
   pollInterval?: number
+  process?: string
 }
 
 export const RunnerHealthCard = ({
@@ -22,14 +23,15 @@ export const RunnerHealthCard = ({
   initHealthchecks,
   shouldPoll = false,
   pollInterval = 60000,
+  process,
   ...props
 }: IRunnerHealthCard) => {
   const { org } = useOrg()
   const { runner } = useRunner()
 
   const { data: healthchecks, isLoading } = useQuery({
-    queryKey: ['runner-health-checks', org?.id, runner?.id],
-    queryFn: () => getRunnerRecentHealthChecks({ orgId: org.id, runnerId: runner.id }),
+    queryKey: ['runner-health-checks', org?.id, runner?.id, process],
+    queryFn: () => getRunnerRecentHealthChecks({ orgId: org.id, runnerId: runner.id, process }),
     initialData: initHealthchecks,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!runner?.id,

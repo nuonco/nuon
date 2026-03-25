@@ -89,7 +89,7 @@ export const BuildRunner = () => {
               runnerGroup={org.runner_group}
               shouldPoll
             />
-            <RunnerHealthCard className="flex-auto" shouldPoll />
+            <RunnerHealthCard className="flex-auto" process="org" shouldPoll />
           </PageSection>
 
           <div className="flex gap-6">

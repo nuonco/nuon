@@ -65,7 +65,7 @@ const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: s
           </Card>
         )}
 
-        <RunnerHealthCard className="flex-auto" shouldPoll />
+        <RunnerHealthCard className="flex-auto" process="install" shouldPoll />
       </div>
 
       <div className="flex flex-col gap-6">

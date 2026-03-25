@@ -28,8 +28,8 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
   })
 
   const { data: runnerHealthCheck, isLoading: isHealthCheckLoading } = useQuery({
-    queryKey: ['runner-health-checks', org?.id, runnerId],
-    queryFn: () => getRunnerRecentHealthChecks({ orgId: org.id, runnerId }),
+    queryKey: ['runner-health-checks', org?.id, runnerId, 'install'],
+    queryFn: () => getRunnerRecentHealthChecks({ orgId: org.id, runnerId, process: 'install' }),
     enabled: !!org?.id && !!runnerId,
   })
 
@@ -65,6 +65,7 @@ export const RunnerStepDetails = ({ step }: IRunnerStepDetails) => {
           <RunnerProvider runnerId={runner.id}>
             <RunnerHealthCard
               initHealthchecks={runnerHealthCheck}
+              process="install"
               shouldPoll
             />
           </RunnerProvider>
