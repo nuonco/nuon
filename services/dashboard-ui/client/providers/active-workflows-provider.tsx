@@ -35,7 +35,7 @@ export function ActiveWorkflowsProvider({
         offset: 0,
         planonly: false,
       }),
-    refetchInterval: 20_000,
+    // refetchInterval: 20_000,
   })
 
   const activeWorkflows = (data?.data ?? []).filter(
