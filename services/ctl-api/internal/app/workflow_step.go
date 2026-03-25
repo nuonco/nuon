@@ -126,6 +126,13 @@ func (i *WorkflowStep) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &WorkflowStep{}, "install_workflow_id_deleted_at"),
+			Columns: []string{
+				"install_workflow_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 
