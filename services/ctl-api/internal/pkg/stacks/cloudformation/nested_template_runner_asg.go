@@ -60,6 +60,11 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		})
 	}
 
+	// conditionally include RunnerEnvVars if the nested template defines it as a parameter
+	if _, ok := tmpl.Parameters["RunnerEnvVars"]; ok {
+		params["RunnerEnvVars"] = inp.RunnerEnvVars
+	}
+
 	return &nestedcloudformation.Stack{
 		Parameters: params,
 		TemplateURL: cloudformation.Join("", []interface{}{
