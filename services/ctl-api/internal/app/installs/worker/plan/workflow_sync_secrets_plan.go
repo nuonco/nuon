@@ -16,6 +16,7 @@ type CreateSyncSecretsPlanRequest struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
+// @id-generator SyncSecretsWorkflowIDCallback
 func CreateSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSecretsPlanRequest) (*plantypes.SyncSecretsPlan, error) {
 	p := Planner{}
 	return p.createSyncSecretsPlan(ctx, req)

@@ -18,6 +18,7 @@ type CreateSandboxRunPlanRequest struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
+// @id-generator SandboxRunWorkflowIDCallback
 func CreateSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
 	p := Planner{}
 	return p.createSandboxRunPlan(ctx, req)
