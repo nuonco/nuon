@@ -15,11 +15,6 @@ WITH component_config_connections_with_count AS (
 
 app_configs_for_component_configs AS (
 SELECT
-    row_number() OVER (
-        PARTITION BY app_id
-        ORDER BY
-            created_at
-    ) AS version,
     *
 FROM
     app_configs
