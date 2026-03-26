@@ -97,7 +97,7 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    if (log.id && log.id === searchParams?.get('panel')) {
+    if (log.id && log.id === searchParams?.get('log')) {
       onActivate(log.id)
     }
   }, [])
