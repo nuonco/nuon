@@ -25,6 +25,9 @@ const useUnifiedLogData = ({
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [reconnectAttempt, setReconnectAttempt] = useState(0)
+  const [isCatchingUp, setIsCatchingUp] = useState(false)
+  const isCatchingUpRef = useRef(false)
+  const catchUpBufferRef = useRef<TOTELLog[]>([])
 
   const isStreamOpen = logStream?.open || false
 
@@ -42,11 +45,15 @@ const useUnifiedLogData = ({
       try {
         const newLogs: TOTELLog[] = JSON.parse(event.data)
         if (newLogs.length > 0) {
-          setLogs(prev => {
-            const logMap = new Map(prev.map(log => [log.id, log]))
-            newLogs.forEach(log => logMap.set(log.id, log))
-            return Array.from(logMap.values())
-          })
+          if (catchUpBufferRef.current !== null && isCatchingUpRef.current) {
+            catchUpBufferRef.current.push(...newLogs)
+          } else {
+            setLogs(prev => {
+              const logMap = new Map(prev.map(log => [log.id, log]))
+              newLogs.forEach(log => logMap.set(log.id, log))
+              return Array.from(logMap.values())
+            })
+          }
         }
         setConnectionState('connected')
         setReconnectAttempt(0)
@@ -58,6 +65,26 @@ const useUnifiedLogData = ({
         })
       }
     }
+
+    eventSource.addEventListener('status', (event: MessageEvent) => {
+      if (event.data === 'catching-up') {
+        isCatchingUpRef.current = true
+        setIsCatchingUp(true)
+        catchUpBufferRef.current = []
+      } else if (event.data === 'live') {
+        const buffered = catchUpBufferRef.current
+        catchUpBufferRef.current = []
+        isCatchingUpRef.current = false
+        setIsCatchingUp(false)
+        if (buffered.length > 0) {
+          setLogs(prev => {
+            const logMap = new Map(prev.map(log => [log.id, log]))
+            buffered.forEach(log => logMap.set(log.id, log))
+            return Array.from(logMap.values())
+          })
+        }
+      }
+    })
 
     eventSource.addEventListener('error', (event: MessageEvent) => {
       try {
@@ -224,7 +251,7 @@ const useUnifiedLogData = ({
   }, [isStreamOpen])
 
   const isLoading = isStreamOpen
-    ? connectionState === 'connecting' || connectionState === 'reconnecting'
+    ? isCatchingUp || connectionState === 'connecting' || connectionState === 'reconnecting'
     : staticIsLoading || false
 
   const currentError = isStreamOpen ? error : null
