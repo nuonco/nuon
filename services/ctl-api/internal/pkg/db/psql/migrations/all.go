@@ -64,5 +64,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "097-backfill-runner-group-owner-name",
 			Fn:   m.Migration097BackfillRunnerGroupOwnerName,
 		},
+		{
+			Name: "098-backfill-app-config-version",
+			Fn:   m.Migration098BackfillAppConfigVersion,
+		},
 	}
 }
