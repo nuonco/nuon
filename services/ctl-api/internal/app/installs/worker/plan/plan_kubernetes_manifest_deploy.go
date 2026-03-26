@@ -88,7 +88,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		zap.String("tag", ociArtifact.Tag),
 		zap.String("digest", ociArtifact.Digest))
 
-	cloudAuth, err := p.getAuthForDeploy(
+	cloudAuth, _, err := p.getAuthForDeploy(
 		ctx,
 		installDeploy,
 		compBuild,

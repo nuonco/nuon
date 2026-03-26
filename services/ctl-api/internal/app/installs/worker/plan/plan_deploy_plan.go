@@ -201,10 +201,10 @@ func (p *Planner) getAuthForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 	sessionName string,
-) (*CloudAuth, error) {
+) (*CloudAuth, string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	roleSelection, operation, err := p.getRoleForDeploy(
@@ -216,7 +216,7 @@ func (p *Planner) getAuthForDeploy(
 		installState,
 	)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	l.Info("selected role for component deploy plan",
@@ -227,5 +227,19 @@ func (p *Planner) getAuthForDeploy(
 		zap.String("deploy_type", string(installDeploy.Type)),
 	)
 
-	return getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
+	// Persist the resolved role name to the deploy record
+	if roleSelection.RoleName != "" {
+		if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+			DeployID:          installDeploy.ID,
+			Status:            installDeploy.Status,
+			StatusDescription: installDeploy.StatusDescription,
+			SkipStatusSync:    true,
+			Role:              roleSelection.RoleName,
+		}); err != nil {
+			l.Warn("unable to persist resolved role to deploy", zap.Error(err))
+		}
+	}
+
+	cloudAuth, err := getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
+	return cloudAuth, roleSelection.RoleName, err
 }
