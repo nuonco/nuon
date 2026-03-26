@@ -117,7 +117,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 
 	if len(changedInputs) > 0 && !skipInputUpdateWorkflow {
 		// Send signals to notify that inputs have been updated from stack outputs
-		_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "")
+		_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "", true)
 		if err != nil {
 			return errors.Wrap(err, "unable to update inputs from install stack output")
 		}

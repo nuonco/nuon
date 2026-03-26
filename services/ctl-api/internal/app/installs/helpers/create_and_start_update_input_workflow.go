@@ -2,18 +2,20 @@ package helpers
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 )
 
-func (h *Helpers) CreateAndStartInputUpdateWorkflow(ctx context.Context, installID string, changedInputs []string, role string) (*app.Workflow, error) {
+func (h *Helpers) CreateAndStartInputUpdateWorkflow(ctx context.Context, installID string, changedInputs []string, role string, deployDependents bool) (*app.Workflow, error) {
 	workflow, err := h.CreateWorkflowWithRole(ctx, installID, app.WorkflowTypeInputUpdate, map[string]string{
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
 		// maybe that will change at some point, but this metadata should not be abused.
-		"inputs": strings.Join(changedInputs, ","),
+		"inputs":            strings.Join(changedInputs, ","),
+		"deploy_dependents": strconv.FormatBool(deployDependents),
 	},
 		false,
 		role,
