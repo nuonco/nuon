@@ -59,10 +59,10 @@ export const ActionStepGraph = ({
           id,
           data: {
             label: (
-              <div className="flex flex-col gap-2 my-auto w-full px-2">
+              <div className="flex flex-col my-auto w-full px-2">
                 <div className="flex items-center gap-2">
                   <Status status={s?.status} isWithoutText variant="timeline" />
-                  <Text variant="body" weight="stronger">
+                  <Text variant="subtext" weight="stronger">
                     {s.name || `Step ${i + 1}`}
                   </Text>
                 </div>

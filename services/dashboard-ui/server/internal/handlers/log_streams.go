@@ -77,6 +77,11 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		c.Writer.Flush()
 	}
 
+	sendStatus := func(status string) {
+		fmt.Fprintf(c.Writer, "event: status\ndata: %s\n\n", status)
+		c.Writer.Flush()
+	}
+
 	sendError := func(msg string) {
 		b, _ := json.Marshal(map[string]string{"error": msg})
 		fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", b)
@@ -109,6 +114,9 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 			if !hasSeenFirstBatch {
 				isCatchingUp = len(logs) >= streamingThreshold
 				hasSeenFirstBatch = true
+				if isCatchingUp {
+					sendStatus("catching-up")
+				}
 			}
 
 			paginationComplete := nextOffset == ""
@@ -117,6 +125,9 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 				sendEvent(logs)
 				if paginationComplete {
 					isCatchingUp = false
+					sendStatus("live")
+				} else {
+					continue
 				}
 			} else {
 				for _, log := range logs {
