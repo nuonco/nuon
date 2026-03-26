@@ -97,6 +97,13 @@ const tmpl = `
         "description": "The location for all resources."
       }
     },
+    "deployTimestamp": {
+      "type": "string",
+      "defaultValue": "[utcNow()]",
+      "metadata": {
+        "description": "Force re-run of deployment scripts on each deploy."
+      }
+    },
     "secrets": {
       "type": "array",
       "defaultValue": [],
@@ -408,7 +415,7 @@ const tmpl = `
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]",
       "sku": {
-        "name": "Standard_B2s",
+        "name": "Standard_D2s_v3",
         "tier": "Standard",
         "capacity": 1
       },
@@ -523,6 +530,7 @@ const tmpl = `
       "tags": "[variables('commonTags')]",
       "kind": "AzureCLI",
       "properties": {
+        "forceUpdateTag": "[parameters('deployTimestamp')]",
         "azCliVersion": "2.40.0",
         "timeout": "PT30M",
         "retentionInterval": "PT1H",
