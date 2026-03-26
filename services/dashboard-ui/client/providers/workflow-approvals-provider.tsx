@@ -2,6 +2,7 @@ import { createContext, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getPendingApprovals } from '@/lib'
+import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
@@ -28,6 +29,7 @@ export function WorkflowApprovalsProvider({
   children: ReactNode
 }) {
   const { org } = useOrg()
+  const { activeWorkflows } = useActiveWorkflows()
   const { addToast } = useToast()
   const { emitNotification } = useNotifications()
   const navigate = useNavigate()
@@ -60,13 +62,18 @@ export function WorkflowApprovalsProvider({
         seenIds.current.add(approval.id)
         const step = approval.workflow_step
         const stepName = step?.name
+        const installName = step?.owner_id
+          ? activeWorkflows.find((w) => w.owner_id === step.owner_id)?.metadata
+              ?.owner_name
+          : undefined
+        const heading = stepName ? toSentenceCase(stepName) : 'Approval required'
         const workflowUrl =
           step?.owner_id && step?.install_workflow_id
             ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
             : null
         addToast(
           <Toast
-            heading={stepName ? toSentenceCase(stepName) : 'Approval required'}
+            heading={installName ? `${installName} — ${heading}` : heading}
             theme="warn"
           >
             <Text>Workflow step needs approved.</Text>
@@ -80,7 +87,7 @@ export function WorkflowApprovalsProvider({
           </Toast>
         )
         emitNotification({
-          title: stepName ? toSentenceCase(stepName) : 'Approval required',
+          title: installName ? `${installName} — ${heading}` : heading,
           body: 'A workflow step is waiting for your approval.',
           icon: '/favicon.svg',
           tag: approval.id,
@@ -93,7 +100,7 @@ export function WorkflowApprovalsProvider({
         })
       }
     }
-  }, [approvals, addToast, emitNotification, navigate, org.id])
+  }, [approvals, activeWorkflows, addToast, emitNotification, navigate, org.id])
 
   return (
     <WorkflowApprovalsContext.Provider

@@ -9,7 +9,7 @@ const DEFAULT_SELECTED_SEVERITIES = new Set([
   'Info',
   'Warn',
   'Error',
-  // 'Fatal',
+  'Fatal',
 ])
 
 const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner'])
