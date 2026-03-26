@@ -140,13 +140,13 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get app component graph")
 	}
 
-	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
-	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component deploy steps")
-	}
-
 	if generics.FromPtrStr(deployDependents) == strconv.FormatBool(true) {
+		dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
+		dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get component deploy steps")
+		}
+
 		steps = append(steps, dependencyDeploySteps...)
 	}
 
