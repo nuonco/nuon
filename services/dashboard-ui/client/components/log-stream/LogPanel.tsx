@@ -29,7 +29,6 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
         getSeverityBorderClasses(log.severity_number, 't'),
         className
       )}
-      panelKey={log.id}
       heading={<LogPanelHeading log={log} />}
       size="half"
       {...props}

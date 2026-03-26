@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useEffect, memo } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -17,7 +17,6 @@ export const LogsSkeleton = () => {
   ))
 }
 
-// demo sse logs
 export const SSELogs = ({
   filterClassName = '-top-6',
 }: {
@@ -25,6 +24,22 @@ export const SSELogs = ({
 }) => {
   const { loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
   const { filteredLogs, filters, activeLog, handleActiveLog } = useLogViewer()
+  const [searchParams] = useSearchParams()
+  const deepLinkHandledRef = useRef(false)
+
+  useEffect(() => {
+    if (deepLinkHandledRef.current || !filteredLogs?.length) return
+    const targetLogId = searchParams?.get('log')
+    if (!targetLogId) return
+
+    const idx = filteredLogs.findIndex(l => l.id === targetLogId)
+    if (idx === -1) return
+
+    deepLinkHandledRef.current = true
+    handleActiveLog(targetLogId)
+    const el = document.getElementById(`log-${targetLogId}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [filteredLogs, searchParams, handleActiveLog])
 
   return (
     <div className="flex flex-col gap-4">
@@ -52,7 +67,7 @@ export const SSELogs = ({
         </div>
 
         <div className="flex flex-col divide-y">
-          {!isStreamOpen && !filteredLogs?.length && isLoading ? (
+          {!filteredLogs?.length && isLoading ? (
             <LogsSkeleton />
           ) : null}
 
@@ -94,18 +109,10 @@ interface ILogLine {
 }
 
 const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
-  const [searchParams] = useSearchParams()
-
-  useEffect(() => {
-    if (log.id && log.id === searchParams?.get('panel')) {
-      onActivate(log.id)
-    }
-  }, [])
-
   const isActive = activeLogId === log.id
 
   return (
-    <div>
+    <div id={`log-${log.id}`} className="border-b">
       <Button
         className={cn(
           '!grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 !py-1 !px-0 text-left w-full rounded-none h-fit',
