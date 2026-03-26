@@ -144,14 +144,20 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 			}
 		}
 
-		roleName := strings.ReplaceAll(permissions.ProvisionRole.Name, " ", "")
-		availableRoles[roleName] = true
+		if permissions.ProvisionRole != nil {
+			roleName := strings.ReplaceAll(permissions.ProvisionRole.Name, " ", "")
+			availableRoles[roleName] = true
+		}
 
-		roleName = strings.ReplaceAll(permissions.MaintenanceRole.Name, " ", "")
-		availableRoles[roleName] = true
+		if permissions.MaintenanceRole != nil {
+			roleName := strings.ReplaceAll(permissions.MaintenanceRole.Name, " ", "")
+			availableRoles[roleName] = true
+		}
 
-		roleName = strings.ReplaceAll(permissions.DeprovisionRole.Name, " ", "")
-		availableRoles[roleName] = true
+		if permissions.DeprovisionRole != nil {
+			roleName := strings.ReplaceAll(permissions.DeprovisionRole.Name, " ", "")
+			availableRoles[roleName] = true
+		}
 	}
 	if breakGlass != nil {
 		for _, role := range breakGlass.Roles {
