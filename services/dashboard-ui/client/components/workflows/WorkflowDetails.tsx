@@ -8,7 +8,7 @@ import { WorkflowStatusSection } from './workflow-details/WorkflowStatusSection'
 import { WorkflowDetailsSection } from './workflow-details/WorkflowDetailsSection'
 
 export const WorkflowDetails = () => {
-  const { failedSteps } = useWorkflow()
+  const { failedSteps, workflow } = useWorkflow()
 
   return (
     <>

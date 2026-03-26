@@ -3,6 +3,7 @@ import { Card } from '@/components/common/Card'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { getApprovalType } from '@/utils/approval-utils'
@@ -11,6 +12,12 @@ import { toSentenceCase } from '@/utils/string-utils'
 export const PendingApprovals = () => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
+  const { activeWorkflows } = useActiveWorkflows()
+  const ownerNames = new Map(
+    activeWorkflows
+      .filter((w) => w.owner_id && w.metadata?.owner_name)
+      .map((w) => [w.owner_id!, w.metadata!.owner_name!])
+  )
 
   if (approvals.length === 0) return null
 
@@ -34,6 +41,9 @@ export const PendingApprovals = () => {
           const name = step?.name
             ? toSentenceCase(step.name)
             : 'Approval required'
+          const installName = step?.owner_id
+            ? ownerNames.get(step.owner_id)
+            : undefined
 
           return (
             <div
@@ -43,11 +53,23 @@ export const PendingApprovals = () => {
               <div className="flex items-center gap-3 min-w-0">
                 <Status status="pending-approval" variant="badge" />
                 {href ? (
-                  <Link href={href} className="truncate text-sm font-strong">
+                  <Link
+                    href={href}
+                    className="truncate text-sm font-strong flex items-center gap-2"
+                  >
+                    {installName && (
+                      <>
+                        <Text>{installName}</Text>
+                        <span>|</span>
+                      </>
+                    )}
                     {name}
                   </Link>
                 ) : (
-                  <Text className="truncate">{name}</Text>
+                  <Text className="truncate">
+                    {installName && <>{installName} | </>}
+                    {name}
+                  </Text>
                 )}
               </div>
               {approval.type && (
