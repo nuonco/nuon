@@ -80,7 +80,7 @@ export const OrgStatusBar = () => {
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
     id: workflow.id ?? '',
     title: workflow.name || toSentenceCase(snakeToWords(workflow.type)),
-    subtitle: workflow.status?.status ?? undefined,
+    subtitle: workflow.metadata?.owner_name || workflow.status?.status || undefined,
     href: workflow.owner_id
       ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
       : undefined,
@@ -94,16 +94,23 @@ export const OrgStatusBar = () => {
     ),
   }))
 
+  const ownerNames = new Map(
+    activeWorkflows
+      .filter((w) => w.owner_id && w.metadata?.owner_name)
+      .map((w) => [w.owner_id!, w.metadata!.owner_name!])
+  )
+
   const approvalItems: TContextTooltipItem[] = approvals.map((approval) => {
     const step = approval.workflow_step
     const href =
       step?.owner_id && step?.install_workflow_id
         ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
         : undefined
+    const installName = step?.owner_id ? ownerNames.get(step.owner_id) : undefined
     return {
       id: approval.id ?? '',
       title: step?.name ? toSentenceCase(step.name) : 'Approval required',
-      subtitle: approval.type ?? undefined,
+      subtitle: installName || approval.type || undefined,
       href,
     }
   })
