@@ -35,6 +35,9 @@ param privateSubnet3CIDR string = '10.128.134.0/24'
 @description('The location for all resources.')
 param location string = '{{.Install.AzureAccount.Location}}'
 
+@description('Force re-run of deployment scripts on each deploy.')
+param deployTimestamp string = utcNow()
+
 @description('List of secrets to store in Azure Key Vault')
 param secrets array = []
 
@@ -426,7 +429,7 @@ resource vmss 'Microsoft.Compute/virtualMachineScaleSets@2023-03-01' = {
   location: location
   tags: commonTags
   sku: {
-    name: 'Standard_B2s'
+    name: 'Standard_D2s_v3'
     tier: 'Standard'
     capacity: 1
   }
@@ -538,6 +541,7 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
   tags: commonTags
   kind: 'AzureCLI'
   properties: {
+    forceUpdateTag: deployTimestamp
     azCliVersion: '2.40.0'
     timeout: 'PT30M'
     retentionInterval: 'PT1H'
