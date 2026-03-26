@@ -49,6 +49,7 @@ type WorkflowMetadataKey string
 const (
 	WorkflowMetadataKeyWorkflowNameSuffix = "workflow-name-suffix"
 	WorkflowMetadataKeyRole               = "role"
+	WorkflowMetadataKeyOwnerName          = "owner_name"
 )
 
 func (i WorkflowType) PastTenseName() string {
