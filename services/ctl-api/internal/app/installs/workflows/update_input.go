@@ -1,6 +1,7 @@
 package workflows
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -29,6 +30,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
+	deployDependents := flw.Metadata["deploy_dependents"]
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -65,15 +67,17 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
 		componentIDs = append(componentIDs, comp.ID)
 
-		dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
-			AppConfigID: appConfig.ID,
-			ComponentID: comp.ID,
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
-		}
+		if generics.FromPtrStr(deployDependents) == strconv.FormatBool(true) {
+			dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
+				AppConfigID: appConfig.ID,
+				ComponentID: comp.ID,
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
+			}
 
-		componentIDs = append(componentIDs, dependentCompIDs...)
+			componentIDs = append(componentIDs, dependentCompIDs...)
+		}
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 
