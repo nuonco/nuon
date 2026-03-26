@@ -88,7 +88,7 @@ type AppConfig struct {
 	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_aws_cloud_formation_stack_version,omitzero,omitempty"`
 
 	// version is computed at write time as the sequential config number for this app
-	Version int `json:"version,omitzero" gorm:"default:0" temporaljson:"version,omitzero,omitempty"`
+	Version int `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index:idx_app_app_branch" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch" temporaljson:"app_branch,omitzero,omitempty"`
@@ -137,11 +137,16 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 		a.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
-	// compute version as count of existing configs for this app + 1
+	// compute version as max existing version for this app + 1
+	// use Unscoped to include soft-deleted rows so versions are never reused
 	if a.Version == 0 && a.AppID != "" {
-		var count int64
-		tx.Model(&AppConfig{}).Where("app_id = ?", a.AppID).Count(&count)
-		a.Version = int(count) + 1
+		var maxVersion *int
+		tx.Unscoped().Model(&AppConfig{}).Where("app_id = ?", a.AppID).Select("MAX(version)").Scan(&maxVersion)
+		if maxVersion != nil {
+			a.Version = *maxVersion + 1
+		} else {
+			a.Version = 1
+		}
 	}
 
 	// NOTE(JM): this will eventually be moved, so we can have hooks on specific nested types
