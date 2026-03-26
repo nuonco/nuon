@@ -20,7 +20,7 @@ export const PageLayout = ({
   ...props
 }: IPageLayout) => {
   return (
-    <main className="flex flex-col h-screen w-[100vw] md:w-full">
+    <main className="flex flex-col h-screen w-[100vw] md:w-full min-w-0">
       <MainTopbar hideSidebarButtons={variant === 'single-page'}>
         {variant === 'single-page' ? <Logo /> : null}
         {hideBreadcrumbs ? null : <BreadcrumbNav />}
