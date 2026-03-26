@@ -10,9 +10,6 @@ import { WorkflowDetailsSection } from './workflow-details/WorkflowDetailsSectio
 export const WorkflowDetails = () => {
   const { failedSteps, workflow } = useWorkflow()
 
-
-  console.log(workflow)
-
   return (
     <>
       <WorkflowHeader />
