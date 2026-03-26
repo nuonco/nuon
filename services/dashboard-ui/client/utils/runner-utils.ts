@@ -25,12 +25,12 @@ export function getJobHref(job: TRunnerJob): string {
     case 'build':
       return `/${org_id}/apps/${metadata?.app_id}/components/${metadata?.component_id}/builds/${metadata?.component_build_id}`
     case 'sandbox':
-      return `/${org_id}/installs/${metadata?.install_id}/sandbox/${metadata?.sandbox_run_id}`
+      return `/${org_id}/installs/${metadata?.install_id}/sandbox/runs/${metadata?.sandbox_run_id}`
     case 'sync':
     case 'deploy':
       return `/${org_id}/installs/${metadata?.install_id}/components/${metadata?.component_id}/deploys/${metadata?.deploy_id}`
     case 'actions':
-      return `/${org_id}/installs/${metadata?.install_id}/actions/${metadata?.action_workflow_id}/${metadata?.action_workflow_run_id}`
+      return `/${org_id}/installs/${metadata?.install_id}/actions/${metadata?.action_workflow_id}/runs/${metadata?.action_workflow_run_id}`
     default:
       return ''
   }
