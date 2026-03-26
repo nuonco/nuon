@@ -30,7 +30,7 @@ export const MainLayout = ({
         )}
       >
         <MainSidebar versions={versions} hideOrgContent={hideOrgContent} />
-        <div className="w-full">{children}</div>
+        <div className="flex-1 min-w-0">{children}</div>
       </div>
     </div>
   )
