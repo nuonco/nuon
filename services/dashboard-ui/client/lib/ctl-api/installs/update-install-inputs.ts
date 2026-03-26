@@ -4,6 +4,7 @@ import type { TInstallInputs } from '@/types'
 export type TUpdateInstallInputsBody = {
   inputs?: Record<string, string>
   role?: string
+  deploy_dependents?: boolean
 }
 
 export const updateInstallInputs = ({
