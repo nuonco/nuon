@@ -25,7 +25,7 @@ export const CreateOrgStep = ({
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
   const [orgName, setOrgName] = useState('')
   const { user } = useAuth()
-  const { isByoc, sfTrialEndpoint, adminApiUrl } = useConfig()
+  const { isByoc, sfTrialEndpoint } = useConfig()
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
 
   const orgCreated = isStepComplete('org_created')
@@ -40,10 +40,9 @@ export const CreateOrgStep = ({
       setCreatedOrg(org)
       setSharedData('orgId', org.id)
 
-      if (!isByoc && adminApiUrl) {
+      if (!isByoc) {
         adminAddSupportUsersToOrg({
           orgId: org.id,
-          adminApiUrl,
           adminEmail: user?.email ?? '',
         }).catch(() => {})
       }

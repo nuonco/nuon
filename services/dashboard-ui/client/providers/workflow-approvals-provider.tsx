@@ -41,7 +41,7 @@ export function WorkflowApprovalsProvider({
   } = useQuery({
     queryKey: ['workflow-approvals', org.id],
     queryFn: () => getPendingApprovals({ orgId: org.id }),
-    refetchInterval: 20_000,
+    // refetchInterval: 20_000,
   })
 
   useEffect(() => {

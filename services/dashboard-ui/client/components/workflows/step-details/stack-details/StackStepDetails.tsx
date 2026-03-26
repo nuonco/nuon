@@ -35,7 +35,7 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
         )
       ) : isLoading && !stack ? (
         <AwaitStackDetailsSkeleton />
-      ) : (
+      ) : !stack ? null : (
         <AwaitStackDetails stack={stack} step={step} />
       )}
     </div>

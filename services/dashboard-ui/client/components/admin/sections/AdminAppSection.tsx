@@ -4,7 +4,6 @@ import { AdminActionCard } from '../shared/AdminActionCard'
 import { AdminMetadataPanel } from '../shared/AdminMetadata'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 import { adminReprovisionApp, adminRestartApp } from '@/lib'
 
 interface AdminAppSectionProps {
@@ -14,9 +13,7 @@ interface AdminAppSectionProps {
 
 export const AdminAppSection = ({ appId }: AdminAppSectionProps) => {
   const { user } = useAuth()
-  const config = useConfig()
   const adminEmail = user?.email ?? ''
-  const adminApiUrl = config.adminApiUrl ?? ''
 
   const metadata = (
     <AdminMetadataPanel>
@@ -36,7 +33,7 @@ export const AdminAppSection = ({ appId }: AdminAppSectionProps) => {
         <AdminActionCard
           title="Reprovision app"
           description="Reprovision current app infrastructure"
-          action={() => adminReprovisionApp({ appId, adminApiUrl, adminEmail })}
+          action={() => adminReprovisionApp({ appId, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will reprovision the app infrastructure. This may affect all installs of this app."
@@ -44,7 +41,7 @@ export const AdminAppSection = ({ appId }: AdminAppSectionProps) => {
         <AdminActionCard
           title="Restart app"
           description="Restart current app event loop"
-          action={() => adminRestartApp({ appId, adminApiUrl, adminEmail })}
+          action={() => adminRestartApp({ appId, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart the app event loop. Continue?"

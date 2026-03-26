@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -80,7 +81,7 @@ func newTestInput(serverURL string, customStacks []config.CustomNestedStack) *st
 }
 
 func TestGetCustomNestedStacks_Empty(t *testing.T) {
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput("http://localhost", nil)
 	tb := tagBuilder{installID: inp.Install.ID}
 
@@ -98,7 +99,7 @@ func TestGetCustomNestedStacks_SingleStack(t *testing.T) {
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -138,7 +139,7 @@ func TestGetCustomNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "k8s_namespaces", TemplateURL: server.URL + "/template1.yaml", Index: 0},
 		{Name: "eks_access", TemplateURL: server.URL + "/template2.yaml", Index: 1},
@@ -164,7 +165,7 @@ func TestGetCustomNestedStacks_MultipleStacks_DependsOnChaining(t *testing.T) {
 }
 
 func TestGetCustomNestedStacks_MissingName(t *testing.T) {
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "", TemplateURL: "http://example.com/stack.yaml", Index: 0},
 	})
@@ -176,7 +177,7 @@ func TestGetCustomNestedStacks_MissingName(t *testing.T) {
 }
 
 func TestGetCustomNestedStacks_MissingTemplateURL(t *testing.T) {
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: "", Index: 0},
 	})
@@ -193,7 +194,7 @@ func TestGetCustomNestedStacks_ConflictWithExistingResource(t *testing.T) {
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "vpc", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -210,7 +211,7 @@ func TestGetCustomNestedStacks_DuplicateNames(t *testing.T) {
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 1},
@@ -228,7 +229,7 @@ func TestGetCustomNestedStacks_ParameterConflictBetweenStacks(t *testing.T) {
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "stack_a", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 		{Name: "stack_b", TemplateURL: server.URL + "/stack.yaml", Index: 1},
@@ -252,7 +253,7 @@ func TestGetCustomNestedStacks_IndexDeterminesOrder(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	// provide stacks in reverse index order — index 10 first, index 5 second
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "eks_access", TemplateURL: server.URL + "/template2.yaml", Index: 10},
@@ -270,7 +271,7 @@ func TestGetCustomNestedStacks_IndexDeterminesOrder(t *testing.T) {
 }
 
 func TestGetCustomNestedStacks_DuplicateIndex(t *testing.T) {
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "stack_a", TemplateURL: "http://example.com/a.yaml", Index: 1},
 		{Name: "stack_b", TemplateURL: "http://example.com/b.yaml", Index: 1},
@@ -387,7 +388,7 @@ func TestGetCustomNestedStacks_ExplicitParameterMapping(t *testing.T) {
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	nsVal := "sourdough,persimmon"
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
@@ -426,7 +427,7 @@ func TestGetCustomNestedStacks_ExplicitParameterMappingAcrossMultipleStacks(t *t
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	nsVal := "sourdough,persimmon"
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
@@ -467,7 +468,7 @@ func TestGetCustomNestedStacks_ExplicitParameterEmptyWhenNoInstallInputs(t *test
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
 			Name:        "my_stack",
@@ -504,7 +505,7 @@ func TestGetCustomNestedStacks_FirstClassOutputWiring(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",
@@ -572,7 +573,7 @@ Resources:
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",
@@ -620,7 +621,7 @@ Resources:
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	clusterVal := "my-cluster"
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{
@@ -667,7 +668,7 @@ Resources:
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -716,7 +717,7 @@ Resources:
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -769,7 +770,7 @@ Resources:
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -814,7 +815,7 @@ Resources:
 	}))
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := newTestInput(server.URL, []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: server.URL + "/stack.yaml", Index: 0},
 	})
@@ -921,7 +922,7 @@ func TestGetCustomNestedStacks_InterStackOutputWiring(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",
@@ -975,7 +976,7 @@ func TestGetCustomNestedStacks_InterStackOutputWiring_ThreeStackChain(t *testing
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",
@@ -1053,7 +1054,7 @@ Resources:
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	tpl := &Templates{}
+	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install: &app.Install{
 			ID:    "test-install-id",

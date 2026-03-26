@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import React, { useEffect, type ReactElement, type ReactNode } from 'react'
+import React, { useEffect, useRef, type ReactElement, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Divider } from '@/components/common/Divider'
@@ -107,6 +107,7 @@ export const StepDetailPanelButton = ({
   const { addPanel, panels } = useSurfaces()
   const { workflow } = useWorkflow()
   const [searchParams] = useSearchParams()
+  const autoOpened = useRef(false)
 
   const panel = (
     <StepDetailPanel
@@ -125,7 +126,8 @@ export const StepDetailPanelButton = ({
   const isPendingApproval =
     approvalPrompt &&
     step.execution_type === 'approval' &&
-    !step.approval?.response &&
+    !!step.approval &&
+    !step.approval.response &&
     step.status?.status !== 'discarded'
 
   const isPendingAwaitStack =
@@ -142,14 +144,19 @@ export const StepDetailPanelButton = ({
       handleAddPanel()
       return
     }
+  }, [])
+
+  useEffect(() => {
+    if (autoOpened.current || !workflow) return
     if (
       !workflowBlocked &&
       (isPendingApproval || isPendingAwaitStack) &&
-      !panels.some((p) => p.key === step.id)
+      panels.length === 0
     ) {
+      autoOpened.current = true
       handleAddPanel()
     }
-  }, [])
+  }, [workflow?.id, workflowBlocked, isPendingApproval, isPendingAwaitStack])
 
   return (
     <Button

@@ -47,6 +47,13 @@ func (a *AppAWSIAMPolicyConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppAWSIAMPolicyConfig{}, "role_config_id_deleted_at"),
+			Columns: []string{
+				"app_awsiam_role_config_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 
