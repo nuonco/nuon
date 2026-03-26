@@ -4,6 +4,7 @@ import { BackLink } from '@/components/common/BackLink'
 import { BackToTop } from '@/components/common/BackToTop'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
+import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -67,6 +68,12 @@ export const ActionDetail = () => {
           config.break_glass_role_arn ||
           config.role) ? (
           <div className="flex flex-row gap-6 items-start">
+            {config?.timeout ? (
+              <LabeledValue label="Timeout">
+                <Duration nanoseconds={config?.timeout} variant="subtext" />
+              </LabeledValue>
+            ) : null}
+
             <LabeledValue label="Kube config">
               <Badge
                 theme={config?.enable_kube_config ? 'info' : 'warn'}
@@ -78,7 +85,7 @@ export const ActionDetail = () => {
             </LabeledValue>
             {config.triggers?.length ? (
               <LabeledValue label="Triggers">
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   {config.triggers.map((trigger) => (
                     <div
                       key={trigger.id}
