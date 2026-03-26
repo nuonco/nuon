@@ -28,25 +28,30 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// vpcParams := t.getVPCNestedStackParams(inp)
 	maps.Copy(tmpl.Parameters, vpcParams)
 
-	// NOTE(fd): we branch here to choose the cf stack based on
-	// NOTE(fd): this uses the configurable nested runner asg cf stack
-	runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
-	if err != nil {
-		return nil, err
-	}
-	tmpl.Resources["RunnerAutoScalingGroup"] = runnerASG
+	// When using local runners (dev mode), skip the ASG and runner-EC2-specific
+	// resources to save ~5-6 minutes during stack creation.
+	// PhoneHome resources are always created as the provision workflow depends on
+	// the phone home callback to proceed.
+	if !t.cfg.UseLocalRunners {
+		// NOTE(fd): this uses the configurable nested runner asg cf stack
+		runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
+		if err != nil {
+			return nil, err
+		}
+		tmpl.Resources["RunnerAutoScalingGroup"] = runnerASG
 
-	// runner ASG and launch template
+		tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
+
+		// CloudWatch: logs
+		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
+		tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
+		tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
+	}
+
+	// Phone home Lambda + props (always needed for the provision workflow callback)
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp)
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
-
-	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
-
-	// CloudWatch: logs
-	tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
-	tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
-	tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
 
 	paramlabels := map[string]any{}
 
