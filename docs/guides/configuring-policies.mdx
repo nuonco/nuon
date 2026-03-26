@@ -155,12 +155,27 @@ components = ["api"]
 contents   = "./policies/require-resource-limits.rego"
 ```
 
-| Field | Description |
-|-------|-------------|
-| `type` | Policy type matching the component type |
-| `engine` | `opa` for Rego policies |
-| `components` | Component names to apply to, or `["*"]` for all |
-| `contents` | Path to policy file (relative to `policies/` directory) |
+### Policy configuration fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `kubernetes_cluster`, or `sandbox` |
+| `engine` | No | Policy engine: `opa` or `kyverno` (default) |
+| `name` | No | Human-readable name. If not specified, derived from the filename |
+| `components` | Yes | List of component names this policy applies to. Use `["*"]` for all components of the specified type |
+| `contents` | Yes | Inline policy content or path to policy file (e.g., `./policies/require-encryption.rego`) |
+
+The `contents` field supports multiple source types. Relative paths are resolved from the `policies/` directory:
+
+```toml
+# Relative file path (relative to policies/ directory)
+contents = "./require-encryption.rego"
+
+# HTTP/HTTPS URL
+contents = "https://example.com/policies/security.rego"
+
+# Git repository
+contents = "git::https://github.com/org/policies//terraform/encryption.rego"
 
 ## Sync Your App
 
