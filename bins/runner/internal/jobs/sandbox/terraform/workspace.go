@@ -30,6 +30,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		dirarchive.WithPath(archDir),
 		dirarchive.WithIgnoreDotTerraformDir(),
 		dirarchive.WithIgnoreTerraformStateFile(),
+		dirarchive.WithIgnoreTerraformLockFile(),
 		dirarchive.WithAddBackendFile("http"),
 	)
 	if err != nil {
@@ -114,6 +115,7 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		dirarchive.WithPath(archDir),
 		dirarchive.WithIgnoreDotTerraformDir(),
 		dirarchive.WithIgnoreTerraformStateFile(),
+		dirarchive.WithIgnoreTerraformLockFile(),
 		dirarchive.WithAddBackendFile("http"),
 	)
 	if err != nil {

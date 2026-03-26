@@ -23,6 +23,7 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 		dirarchive.WithAddBackendFile("http"),
 		dirarchive.WithIgnoreTerraformStateFile(),
 		dirarchive.WithIgnoreDotTerraformDir(),
+		dirarchive.WithIgnoreTerraformLockFile(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
@@ -92,6 +93,7 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 		dirarchive.WithAddBackendFile("http"),
 		dirarchive.WithIgnoreTerraformStateFile(),
 		dirarchive.WithIgnoreDotTerraformDir(),
+		dirarchive.WithIgnoreTerraformLockFile(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create local archive: %w", err)
