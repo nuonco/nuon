@@ -92,7 +92,7 @@ export function TableBase<TData extends object>({
         ) : null}
       </div>
       <div
-        className={`overflow-x-auto md:overflow-visible rounded-lg border ${className} [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
+        className={`overflow-x-auto rounded-lg border ${className} [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-gray-600`}
       >
         <table className="w-max md:w-full min-w-full text-sm">
           <thead className="rounded-lg">
