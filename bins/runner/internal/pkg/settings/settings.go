@@ -68,7 +68,7 @@ func New(params Params) (*Settings, error) {
 	// not use the settings in any other dependency initializer (ie: New function), because the settings will not be
 	// loaded yet.
 	ctx := context.Background()
-	ctx, cancelFn := context.WithTimeout(ctx, time.Second)
+	ctx, cancelFn := context.WithTimeout(ctx, 3*time.Second)
 	defer cancelFn()
 	if err := settings.fetch(ctx); err != nil {
 		return nil, errors.Wrap(err, "unable to fetch settings")
