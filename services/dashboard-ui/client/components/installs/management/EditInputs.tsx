@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -104,6 +105,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   const formRef = useRef<HTMLFormElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [deployDependents, setDeployDependents] = useState(true)
 
   const {
     data: config,
@@ -151,6 +153,7 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
         orgId: org.id,
         body: {
           inputs,
+          deploy_dependents: deployDependents,
           ...(selectedRole && { role: selectedRole }),
         },
       })
@@ -238,6 +241,23 @@ const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
               variant: 'primary',
             }
           : undefined
+      }
+      footerActions={
+        <div className="flex flex-col gap-1 pl-4">
+          <CheckboxInput
+            checked={deployDependents}
+            onChange={(e) => setDeployDependents(e.target.checked)}
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
+              labelText: 'Deploy dependents',
+              labelTextProps: { variant: 'base', weight: 'stronger' },
+            }}
+          />
+          <Text variant="subtext" theme="neutral" className="ml-8 leading-none">
+            Deploy all dependents as well as the affected components.
+          </Text>
+        </div>
       }
       onClose={handleClose}
     >
