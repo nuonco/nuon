@@ -33,15 +33,15 @@ export const ActionTriggerType = ({
   const isCron = triggerType === 'cron'
 
   return (
-    <Badge variant="code" size={size}>
+    <Badge variant="code" size={size} className="max-w-full">
       {isComponentTrigger ? (
-        <span className="flex items-center gap-1">
-          <span className="text-nowrap truncate">{triggerType}</span>:
-          <Link href={componentPath}>{componentName}</Link>
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="shrink-0">{triggerType}</span>:
+          <Link href={componentPath} className="truncate">{componentName}</Link>
         </span>
       ) : isCron ? (
-        <span className="flex items-center gap-1">
-          <span className="text-nowrap truncate">{triggerType}</span>:
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="shrink-0">{triggerType}</span>:
           <Cron
             cron={cronSchedule}
             variant="label"
