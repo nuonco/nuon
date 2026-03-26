@@ -120,11 +120,6 @@ func (a AppConfig) ViewVersion() string {
 func (i *AppConfig) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &AppConfig{}, 2),
-			SQL:           viewsql.AppConfigViewV2,
-			AlwaysReapply: false,
-		},
-		{
 			Name:          views.CustomViewName(db, &AppConfig{}, "latest_view_v1"),
 			SQL:           viewsql.AppConfigsLatestViewV1,
 			AlwaysReapply: true,
