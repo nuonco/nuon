@@ -62,10 +62,9 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	}
 
 	metadata["install_id"] = installID
-	var installName string
-	s.db.WithContext(ctx).Model(&app.Install{}).Where("id = ?", installID).Pluck("name", &installName)
-	if installName != "" {
-		metadata[app.WorkflowMetadataKeyOwnerName] = installName
+	var install app.Install
+	if res := s.db.WithContext(ctx).Where("id = ?", installID).First(&install); res.Error == nil && install.Name != "" {
+		metadata[app.WorkflowMetadataKeyOwnerName] = install.Name
 	}
 	installWorkflow := app.Workflow{
 		Type:      workflowType,
