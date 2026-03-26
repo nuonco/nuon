@@ -52,10 +52,13 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		seenIndices[stack.Index] = stack.Name
 	}
 
-	fcOutputs := tpl.extractFirstClassOutputs(map[string]string{
-		"VPC":                    inp.AppCfg.StackConfig.VPCNestedTemplateURL,
-		"RunnerAutoScalingGroup": inp.AppCfg.StackConfig.RunnerNestedTemplateURL,
-	})
+	firstClassStacks := map[string]string{
+		"VPC": inp.AppCfg.StackConfig.VPCNestedTemplateURL,
+	}
+	if _, hasASG := existingResourceKeys["RunnerAutoScalingGroup"]; hasASG {
+		firstClassStacks["RunnerAutoScalingGroup"] = inp.AppCfg.StackConfig.RunnerNestedTemplateURL
+	}
+	fcOutputs := tpl.extractFirstClassOutputs(firstClassStacks)
 
 	result := &customNestedStackResult{
 		resources: map[string]*nestedcloudformation.Stack{},
@@ -226,7 +229,10 @@ func (tpl *Templates) buildCustomNestedStack(inp *stacks.TemplateInput, stack co
 	if prevLogicalID != "" {
 		dependsOn = append(dependsOn, prevLogicalID)
 	} else {
-		dependsOn = append(dependsOn, "VPC", "RunnerAutoScalingGroup")
+		dependsOn = append(dependsOn, "VPC")
+		if !tpl.cfg.UseLocalRunners {
+			dependsOn = append(dependsOn, "RunnerAutoScalingGroup")
+		}
 	}
 	nestedStack.AWSCloudFormationDependsOn = dependsOn
 
