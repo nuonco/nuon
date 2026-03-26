@@ -44,12 +44,19 @@ export const ActiveWorkflows = ({
         pagination={{ hasNext: false, offset: 0, limit: 50 }}
         renderEvent={(workflow) => {
           const installId = workflow.owner_id
+          const installName = workflow.metadata?.owner_name
           const workflowTitle = (
             <span className="flex items-center gap-4">
               <Link
                 className="inline-flex gap-2 items-center"
                 href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
               >
+                {installName && !install && (
+                  <>
+                    <Text>{installName}</Text>
+                    <span>|</span>
+                  </>
+                )}
                 {workflow?.type === 'action_workflow_run' &&
                 workflow?.metadata?.adhoc_action
                   ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
