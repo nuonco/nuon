@@ -3,6 +3,7 @@ ARG NUON_CLI_VERSION=0.19.602
 ARG AWS_IAM_AUTHENTICATOR_VERSION=0.6.2
 ARG KUBELOGIN_VERSION=0.2.9
 ARG GCLOUD_VERSION=516.0.0
+ARG AZURE_CLI_VERSION=2.73.0
 
 FROM ${BUILD_IMAGE} AS code
 
@@ -99,6 +100,13 @@ WORKDIR /opt
 RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_VERSION}-linux-x86_64.tar.gz" | tar xz \
     && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
     && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
+
+FROM python:3.12-alpine AS azure-cli
+
+ARG AZURE_CLI_VERSION
+
+RUN apk add --update --no-cache gcc musl-dev libffi-dev
+RUN pip install --no-cache-dir --prefix=/azure-cli azure-cli==${AZURE_CLI_VERSION}
 
 FROM golang:1.25-alpine AS certs
 
@@ -214,6 +222,7 @@ COPY --from=nuon-cli /bin/nuon /usr/bin/nuon
 COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
 COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
+COPY --from=azure-cli /azure-cli /usr/local
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
