@@ -2,7 +2,6 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { Code } from '@/components/common/Code'
 import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
@@ -111,6 +110,10 @@ export const InstallActionRunHeader = ({
 
           <LabeledValue label={`Total duration`}>
             <Duration nanoseconds={installActionRun?.execution_time} />
+          </LabeledValue>
+
+          <LabeledValue label={`Timeout`}>
+            <Duration nanoseconds={installActionRun?.config?.timeout} />
           </LabeledValue>
 
           {/*

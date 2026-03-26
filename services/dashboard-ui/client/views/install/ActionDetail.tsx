@@ -9,6 +9,7 @@ import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { Duration } from '@/components/common/Duration'
 import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
@@ -108,6 +109,12 @@ export const ActionDetail = () => {
                 >
                   {kubeConfigEnabled ? 'Enabled' : 'Disabled'}
                 </Badge>
+              </LabeledValue>
+              <LabeledValue label="Timeout">
+                <Duration
+                  nanoseconds={action?.action_workflow?.configs?.[0]?.timeout}
+                  variant="subtext"
+                />
               </LabeledValue>
               <LabeledValue label="Last trigger">
                 <ActionTriggerType

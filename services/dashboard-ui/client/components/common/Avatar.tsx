@@ -19,17 +19,11 @@ interface IAvatarProps
   size?: TAvatarSizeKey
 }
 
-type TAvatar =
-  | {
-      name?: string
-      src?: never
-      alt?: never
-    }
-  | {
-      alt?: string
-      name?: never
-      src?: string
-    }
+type TAvatar = {
+  alt?: string
+  name?: string
+  src?: string
+}
 
 export type IAvatar = IAvatarProps & TAvatar
 
@@ -42,13 +36,16 @@ export const Avatar = ({
   size = 'md',
   ...props
 }: IAvatar) => {
+  const [imageLoaded, setImageLoaded] = React.useState(false)
   const [imageError, setImageError] = React.useState(false)
   const sizeConf = AVATAR_SIZES[size]
 
-  // Reset error state when src changes
   React.useEffect(() => {
+    setImageLoaded(false)
     setImageError(false)
   }, [src])
+
+  const showImage = src && !imageError
 
   return (
     <span
@@ -64,19 +61,25 @@ export const Avatar = ({
       )}
       {...props}
     >
-      {isLoading ? null : src && !imageError ? (
-        <img
-          height={sizeConf.px}
-          width={sizeConf.px}
-          src={src}
-          alt={alt || ''}
-          referrerPolicy="no-referrer"
-          className="h-full w-full object-cover"
-          referrerPolicy="no-referrer"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        getInitials(name)
+      {isLoading ? null : (
+        <>
+          {showImage && (
+            <img
+              height={sizeConf.px}
+              width={sizeConf.px}
+              src={src}
+              alt={alt || ''}
+              referrerPolicy="no-referrer"
+              className={cn(
+                'h-full w-full object-cover',
+                !imageLoaded && 'hidden'
+              )}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          )}
+          {(!showImage || !imageLoaded) && getInitials(name)}
+        </>
       )}
     </span>
   )
