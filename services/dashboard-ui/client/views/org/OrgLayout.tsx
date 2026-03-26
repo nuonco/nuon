@@ -29,8 +29,8 @@ export const OrgLayout = () => {
             <PageTitleProvider>
               <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
                 <ToastProvider>
-                  <WorkflowApprovalsProvider>
-                    <ActiveWorkflowsProvider>
+                  <ActiveWorkflowsProvider>
+                    <WorkflowApprovalsProvider>
                       <SurfacesProvider>
                       <MainLayout
                         versions={{
@@ -47,8 +47,8 @@ export const OrgLayout = () => {
                         <OrgStatusBar />
                       </MainLayout>
                       </SurfacesProvider>
-                    </ActiveWorkflowsProvider>
-                  </WorkflowApprovalsProvider>
+                    </WorkflowApprovalsProvider>
+                  </ActiveWorkflowsProvider>
                 </ToastProvider>
               </SidebarProvider>
             </PageTitleProvider>

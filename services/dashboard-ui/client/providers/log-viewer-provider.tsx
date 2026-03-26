@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'
 import { useLogFilters, type TLogFiltersProps } from '@/hooks/use-log-filters'
@@ -29,6 +30,17 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
   const filters = useLogFilters(logs || [])
   const { addPanel, removePanel } = useSurfaces()
+  const navigate = useNavigate()
+
+  function setLogParam(logId?: string) {
+    const params = new URLSearchParams(window.location.search)
+    if (logId) {
+      params.set('log', logId)
+    } else {
+      params.delete('log')
+    }
+    navigate(`?${params.toString()}`, { replace: true })
+  }
 
   function handleActiveLog(id?: string) {
     setActiveLog(id ? filters.filteredLogs?.find((l) => l.id === id) : undefined)
@@ -38,6 +50,7 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
     onDownArrow() {
       if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
         removePanel(activeLog?.id)
+        setLogParam(undefined)
         const activeLogIndex = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
         const nextLogIndex = activeLogIndex + 1
         const nextLog = filters.filteredLogs?.at(
@@ -51,6 +64,7 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
     onUpArrow() {
       if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
         removePanel(activeLog?.id)
+        setLogParam(undefined)
         const activeLogIndex = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
         const prevLog = filters.filteredLogs?.at(activeLogIndex - 1)
         setTimeout(() => {
@@ -67,13 +81,23 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
           log={activeLog}
           onClose={() => {
             handleActiveLog(undefined)
+            setLogParam(undefined)
           }}
         />,
-        activeLog.id,
+        undefined,
         activeLog.id
       )
+      setLogParam(activeLog.id)
     }
   }, [activeLog])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const logId = params.get('log')
+    if (logId && filters.filteredLogs?.length) {
+      handleActiveLog(logId)
+    }
+  }, [filters.filteredLogs?.length])
 
   return (
     <LogViewerContext.Provider
