@@ -136,6 +136,22 @@ func (c *OperationRolesConfig) ValidateWithConfig(
 				availableRoles[roleName] = true
 			}
 		}
+
+		for _, role := range permissions.CustomRoles {
+			if role.Name != "" {
+				roleName := strings.ReplaceAll(role.Name, " ", "")
+				availableRoles[roleName] = true
+			}
+		}
+
+		roleName := strings.ReplaceAll(permissions.ProvisionRole.Name, " ", "")
+		availableRoles[roleName] = true
+
+		roleName = strings.ReplaceAll(permissions.MaintenanceRole.Name, " ", "")
+		availableRoles[roleName] = true
+
+		roleName = strings.ReplaceAll(permissions.DeprovisionRole.Name, " ", "")
+		availableRoles[roleName] = true
 	}
 	if breakGlass != nil {
 		for _, role := range breakGlass.Roles {
