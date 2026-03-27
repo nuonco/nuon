@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/utils/classnames'
 import { Icon } from './Icon'
 import './Tooltip.css'
@@ -31,24 +32,24 @@ export const Tooltip = ({
 
   const calculatePosition = () => {
     if (triggerRef.current && tooltipRef.current) {
-      const triggerRect = triggerRef.current.getBoundingClientRect()
+      const trigger = triggerRef.current.getBoundingClientRect()
       const tooltipRect = tooltipRef.current.getBoundingClientRect()
 
       let top = 0
       let left = 0
 
       if (position === 'top') {
-        top = -(tooltipRect.height + 8) // 8px spacing above
-        left = triggerRect.width / 2 - tooltipRect.width / 2
+        top = trigger.top - tooltipRect.height - 8
+        left = trigger.left + trigger.width / 2 - tooltipRect.width / 2
       } else if (position === 'bottom') {
-        top = triggerRect.height + 8 // 8px spacing below
-        left = triggerRect.width / 2 - tooltipRect.width / 2
+        top = trigger.bottom + 8
+        left = trigger.left + trigger.width / 2 - tooltipRect.width / 2
       } else if (position === 'left') {
-        top = triggerRect.height / 2 - tooltipRect.height / 2
-        left = -(tooltipRect.width + 8) // 8px spacing to the left
+        top = trigger.top + trigger.height / 2 - tooltipRect.height / 2
+        left = trigger.left - tooltipRect.width - 8
       } else if (position === 'right') {
-        top = triggerRect.height / 2 - tooltipRect.height / 2
-        left = triggerRect.width + 8 // 8px spacing to the right
+        top = trigger.top + trigger.height / 2 - tooltipRect.height / 2
+        left = trigger.right + 8
       }
 
       setStyles({
@@ -61,20 +62,36 @@ export const Tooltip = ({
   useEffect(() => {
     calculatePosition()
 
-    // Recalculate on window resize or scroll
     window.addEventListener('resize', calculatePosition)
-    window.addEventListener('scroll', calculatePosition)
+    window.addEventListener('scroll', calculatePosition, true)
     return () => {
       window.removeEventListener('resize', calculatePosition)
-      window.removeEventListener('scroll', calculatePosition)
+      window.removeEventListener('scroll', calculatePosition, true)
     }
   }, [])
+
+  const tooltipContent = (
+    <span
+      ref={tooltipRef}
+      className={cn(
+        `tooltip-content bg-background text-foreground fixed block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${position}`,
+        {
+          enter: isOpen,
+          exit: !isOpen,
+        },
+        tipContentClassName
+      )}
+      role="tooltip"
+      style={styles || undefined}
+    >
+      {tipContent}
+    </span>
+  )
 
   return (
     <span
       className={cn('tooltip-wrapper w-fit leading-none', className)}
       ref={triggerRef}
-      style={{ position: 'relative' }}
       onMouseEnter={() => {
         calculatePosition()
         setIsOpen(true)
@@ -92,21 +109,7 @@ export const Tooltip = ({
         children
       )}
 
-      <span
-        ref={tooltipRef}
-        className={cn(
-          `tooltip-content bg-background text-foreground absolute block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${position}`,
-          {
-            enter: isOpen,
-            exit: !isOpen,
-          },
-          tipContentClassName
-        )}
-        role="tooltip"
-        style={styles || undefined}
-      >
-        {tipContent}
-      </span>
+      {createPortal(tooltipContent, document.body)}
     </span>
   )
 }
