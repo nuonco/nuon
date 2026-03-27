@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Markdown } from '@/components/common/Showdown'
+import { Markdown } from '@/components/common/Markdown'
 import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
