@@ -81,7 +81,13 @@ export const Time = ({
   }
 
   return format === 'relative' ? (
-    <Tooltip tipContent={datetime.toLocaleString(LONG_DATETIME_FORMAT)}>
+    <Tooltip
+      tipContent={
+        <Text variant="subtext">
+          {datetime.toLocaleString(LONG_DATETIME_FORMAT)}
+        </Text>
+      }
+    >
       <Text {...props} role="time">
         {getFormattedTime()}
       </Text>
