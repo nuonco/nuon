@@ -214,7 +214,7 @@ export const CustomGridTemplate = () => (
       { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
       { applicationName: 'Worker', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
     ]}
-    gridTemplate="2fr 1fr 1fr"  // Application Name gets 2 parts, others get 1 part each
+    gridTemplate="auto auto 1fr"  // Application Name gets 2 parts, others get 1 part each
   />
 )
 
