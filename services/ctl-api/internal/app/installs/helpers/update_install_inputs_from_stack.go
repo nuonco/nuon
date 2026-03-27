@@ -145,10 +145,10 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 		// NOTE: passes nil v2Signals because this is called from a Temporal activity (worker/activities),
 		// and importing v2 signal packages would create an import cycle (helpers → v2 → worker → activities → helpers).
 		// Legacy signals are used as fallback.
-		_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "")
-		if err != nil {
-			return errors.Wrap(err, "unable to update inputs from install stack output")
-		}
+		//_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changed.ChangedValuesJSON)
+		//if err != nil {
+		//return errors.Wrap(err, "unable to update inputs from install stack output")
+		//}
 	}
 
 	return nil

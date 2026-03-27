@@ -15,6 +15,11 @@ type EnqueueSignalToOwnerRequest struct {
 	OwnerType string        `json:"owner_type" validate:"required"`
 	QueueName string        `json:"queue_name,omitempty"`
 	Signal    signal.Signal `json:"signal" validate:"required"`
+
+	// SignalOwnerID and SignalOwnerType are set on the QueueSignal record to track
+	// which entity (e.g. workflow step) triggered this signal execution.
+	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
+	SignalOwnerType string `json:"signal_owner_type,omitempty"`
 }
 
 type EnqueueSignalToOwnerResponse struct {
@@ -45,8 +50,10 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 
 	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID: queue.ID,
-		Signal:  req.Signal,
+		QueueID:   queue.ID,
+		Signal:    req.Signal,
+		OwnerID:   req.SignalOwnerID,
+		OwnerType: req.SignalOwnerType,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")

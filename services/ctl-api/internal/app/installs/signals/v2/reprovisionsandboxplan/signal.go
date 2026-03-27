@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "reprovision-sandbox-plan"
@@ -157,7 +158,6 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
-	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
@@ -223,7 +223,16 @@ func (s *Signal) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID st
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
 	}); err != nil {
-		l.Error("unable to update run status", zap.Error(err))
+		l.Error("unable to update run status", zap.String("run-id", runID), zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateRunStatusV2(ctx, statusactivities.UpdateRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2", zap.String("run-id", runID), zap.Error(err))
 	}
 }

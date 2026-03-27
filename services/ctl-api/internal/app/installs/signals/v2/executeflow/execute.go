@@ -54,10 +54,12 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 		)
 
 		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   installID,
-			OwnerType: "installs",
-			QueueName: "install-signals",
-			Signal:    sig,
+			OwnerID:         installID,
+			OwnerType:       "installs",
+			QueueName:       "install-signals",
+			Signal:          sig,
+			SignalOwnerID:   step.ID,
+			SignalOwnerType: "install_workflow_steps",
 		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)

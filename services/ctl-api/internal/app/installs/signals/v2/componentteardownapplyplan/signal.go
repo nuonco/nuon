@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "component-teardown-apply-plan"
@@ -260,26 +261,64 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
 		DeployID:          deployID,
 		Status:            status,
 		StatusDescription: message,
-	})
+		SkipStatusSync:    false,
+	}); err != nil {
+		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
+		DeployID:          deployID,
+		Status:            app.Status(status),
+		StatusDescription: message,
+		SkipStatusSync:    false,
+	}); err != nil {
+		l.Error("unable to update deploy status v2",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
 }
 
 func (s *Signal) updateDeployStatusWithoutStatusSync(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {
-	_ = activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
 		DeployID:          deployID,
 		Status:            status,
 		StatusDescription: message,
 		SkipStatusSync:    true,
-	})
+	}); err != nil {
+		l.Error("unable to update deploy status",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
+		DeployID:          deployID,
+		Status:            app.Status(status),
+		StatusDescription: message,
+		SkipStatusSync:    true,
+	}); err != nil {
+		l.Error("unable to update deploy status v2",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
 }
 
 func (s *Signal) updateInstallComponentStatus(ctx workflow.Context, installComponentID string, status app.InstallComponentStatus, message string) {
-	_ = activities.AwaitUpdateInstallComponentStatus(ctx, activities.UpdateInstallComponentStatusRequest{
+	l := workflow.GetLogger(ctx)
+	if err := activities.AwaitUpdateInstallComponentStatus(ctx, activities.UpdateInstallComponentStatusRequest{
 		InstallComponentID: installComponentID,
 		Status:             status,
 		StatusDescription:  message,
-	})
+	}); err != nil {
+		l.Error("unable to update install component status",
+			zap.String("InstallComponentID", installComponentID),
+			zap.Error(err))
+	}
 }

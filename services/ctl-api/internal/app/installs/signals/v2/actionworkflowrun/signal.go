@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "install-action-workflow-run"
@@ -238,9 +239,25 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 }
 
 func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {
-	_ = activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+	l := workflow.GetLogger(ctx)
+
+	if err := activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: msg,
-	})
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, statusactivities.UpdateInstallWorkflowRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: msg,
+	}); err != nil {
+		l.Error("unable to update run status v2",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
 }
