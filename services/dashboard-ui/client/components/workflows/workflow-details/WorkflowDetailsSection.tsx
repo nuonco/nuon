@@ -113,7 +113,7 @@ export const WorkflowDetailsSection = () => {
                 ),
               },
             ]}
-            gridTemplate="max-content 1fr 1fr"
+            gridTemplate="auto auto 1fr"
           />
         </div>
       )}
