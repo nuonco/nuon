@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -49,8 +48,6 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 	// with empty SignalJSON (JSON null != SQL NULL), which would cause
 	// json.Unmarshal to fail with "unexpected end of JSON input".
 	if step.Signal != nil && len(step.Signal.SignalJSON) > 0 {
-		logger := workflow.GetLogger(ctx)
-		logger.Error("JM-TEST executing legacy signal")
 		var sig DomainSignal
 		if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
 			return c.handleStepErr(ctx, step.ID, err)
@@ -64,8 +61,6 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 	}
 
 	if step.QueueSignal != nil {
-		logger := workflow.GetLogger(ctx)
-		logger.Error("JM-TEST executing queue signal", zap.Any("signal", step.QueueSignal))
 		if c.StepChildWorkflow {
 			err := c.executeStepAsChildWorkflow(ctx, step)
 			if err != nil {

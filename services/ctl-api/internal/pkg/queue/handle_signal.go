@@ -24,6 +24,14 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
+	// skip signals that were already processed (e.g. via force-execute)
+	if isTerminalStatus(queueSignal.Status.Status) {
+		l.Info("queue signal already in terminal state, skipping",
+			zap.String("queue-signal-id", queueSignal.ID),
+			zap.String("status", string(queueSignal.Status.Status)))
+		return nil
+	}
+
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		// Persist error status so AwaitSignal callers don't block forever

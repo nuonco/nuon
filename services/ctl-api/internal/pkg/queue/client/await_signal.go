@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -22,6 +23,9 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	// If the DB status already indicates completion (e.g. handler was slept),
 	// return immediately without trying to reach the workflow.
 	if isTerminalStatus(q.Status.Status) {
+		if q.Status.Status == app.StatusError {
+			return nil, fmt.Errorf("signal execution failed with status: %s", q.Status.Status)
+		}
 		return &handler.FinishedResponse{}, nil
 	}
 
@@ -41,6 +45,9 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 			return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
 		}
 		if isTerminalStatus(fresh.Status.Status) {
+			if fresh.Status.Status == app.StatusError {
+				return nil, fmt.Errorf("signal execution failed with status: %s", fresh.Status.Status)
+			}
 			return &handler.FinishedResponse{}, nil
 		}
 		return nil, errors.Wrap(err, "unable to call finished handler")
@@ -49,6 +56,16 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	var resp handler.FinishedResponse
 	if err := rawResp.Get(ctx, &resp); err != nil {
 		return nil, errors.Wrap(err, "unable get response")
+	}
+
+	// Re-check DB status after workflow update completes, since the finishedHandler
+	// returns FinishedResponse{} regardless of whether signal execution succeeded or failed.
+	fresh, err := c.getQueueSignal(ctx, queueSignalID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to verify signal status after completion")
+	}
+	if fresh.Status.Status == app.StatusError {
+		return nil, fmt.Errorf("signal execution failed with status: %s", fresh.Status.Status)
 	}
 
 	return &resp, nil

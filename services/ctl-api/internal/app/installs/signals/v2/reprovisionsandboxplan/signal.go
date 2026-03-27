@@ -194,7 +194,8 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	}
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status "+string(status))
+		return fmt.Errorf("runner job failed with status %s", status)
 	}
 
 	jobResult, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)

@@ -3,7 +3,6 @@ package executeflow
 import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
@@ -97,9 +96,6 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 
 	startFromStepIdx := 0
 	for {
-		logger := workflow.GetLogger(ctx)
-		logger.Error("JM-TEST", zap.Int("index", startFromStepIdx))
-
 		err := fc.Handle(ctx, eventLoopReq, s.InstallWorkflowID, startFromStepIdx)
 		if err == nil {
 			return nil

@@ -131,9 +131,9 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
-        // Only send UpdateInstallStackOutputs signal if this is a stack param update (existing runs present meaning,
+	// Only send UpdateInstallStackOutputs signal if this is a stack param update (existing runs present meaning,
 	// its an stack update on existing install and not part of provision / reprovision flow).
-        // For the first phone home during provisioning, the provision/reprovision workflow step handles this.
+	// For the first phone home during provisioning, the provision/reprovision workflow step handles this.
 	var existingRunCount int64
 	if res = s.db.WithContext(ctx).
 		Model(&app.InstallStackVersionRun{}).
@@ -143,27 +143,30 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	}
 
 	if existingRunCount > 1 {
-	useQueues, err := s.useInstallQueues(ctx)
-	if err != nil {
-		return fmt.Errorf("checking features: %w", err)
-	}
-	if useQueues {
-		queueID, err := s.getInstallSignalsQueueID(ctx, installID)
+		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 		if err != nil {
-			return err
+			return fmt.Errorf("checking features: %w", err)
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
-			InstallStackID: stackVersion.InstallStackID,
-		}); err != nil {
-			return fmt.Errorf("enqueue signal: %w", err)
+		if err != nil {
+			return fmt.Errorf("checking features: %w", err)
 		}
-	} else {
-		s.evClient.Send(ctx, installID, &signals.Signal{
-			Type:           signals.OperationUpdateInstallStackOutputs,
-			InstallStackID: stackVersion.InstallStackID,
-		})
+		if useQueues {
+			queueID, err := s.getInstallSignalsQueueID(ctx, installID)
+			if err != nil {
+				return err
+			}
+			if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
+				InstallStackID: stackVersion.InstallStackID,
+			}); err != nil {
+				return fmt.Errorf("enqueue signal: %w", err)
+			}
+		} else {
+			s.evClient.Send(ctx, installID, &signals.Signal{
+				Type:           signals.OperationUpdateInstallStackOutputs,
+				InstallStackID: stackVersion.InstallStackID,
+			})
+		}
 	}
-}
 
 	return nil
 }
