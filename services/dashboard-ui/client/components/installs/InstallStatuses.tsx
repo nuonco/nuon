@@ -310,7 +310,7 @@ export const InstallStatuses = ({
     )
 
   return (
-    <div className={cn('flex items-center gap-4', className)} {...props}>
+    <div className={cn('flex items-center flex-wrap gap-2', className)} {...props}>
       {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
       {stackContent ? wrap('Stack', stackContent) : null}
       {wrap('Runner', runnerContent)}
