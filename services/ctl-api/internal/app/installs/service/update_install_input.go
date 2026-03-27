@@ -92,7 +92,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	}
 
 	// Validate that only vendor inputs are being updated
-	err = s.validateVendorSourceInputs(ctx, pinnedAppInputConfig, req.Inputs)
+	err = s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -100,8 +100,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 
 	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
 		ctx,
-		*latestLatestInstallInputs,
-		*pinnedAppInputConfig,
+		latestLatestInstallInputs,
+		pinnedAppInputConfig,
 		req,
 	)
 	if err != nil {
@@ -156,8 +156,8 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 
 func (s *service) newInstallInputs(
 	ctx context.Context,
-	installInputs app.InstallInputs,
-	appInputConfig app.AppInputConfig,
+	installInputs *app.InstallInputs,
+	appInputConfig *app.AppInputConfig,
 	req UpdateInstallInputsRequest,
 ) (*app.InstallInputs, *[]string, string, error) {
 	inputs := map[string]*string{}
@@ -214,7 +214,7 @@ func (s *service) newInstallInputs(
 	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
 }
 
-func (s *service) validateVendorSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
+func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
 	appInputSources := map[string]app.AppInputSource{}
 	for _, input := range appInputConfig.AppInputs {
 		appInputSources[input.Name] = input.Source
