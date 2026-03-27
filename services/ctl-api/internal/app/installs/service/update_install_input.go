@@ -211,7 +211,7 @@ func (s *service) newInstallInputs(
 
 	latestInstallInputs.Values = nil
 
-	return latestInstallInputs, &changed.Names, changed.ValuesJSON, nil
+	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
 }
 
 func (s *service) validateVendorSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
