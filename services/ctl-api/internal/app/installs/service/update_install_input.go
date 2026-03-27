@@ -105,7 +105,14 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(ctx, install.ID, *changedInputs, changedInputValues, req.Role, req.DeployDependents)
+	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
+		ctx,
+		install.ID,
+		changedInputValues,
+		req.Role,
+		req.DeployDependents,
+		true
+	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return

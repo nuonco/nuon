@@ -9,7 +9,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 )
 
-func (h *Helpers) CreateAndStartInputUpdateWorkflow(ctx context.Context, installID string, changedInputs []string, changedInputValues string, role string, deployDependents bool) (*app.Workflow, error) {
+func (h *Helpers) CreateAndStartInputUpdateWorkflow(
+	ctx context.Context,
+	installID string,
+	changedInputs []string,
+	changedInputValues string,
+	role string,
+	deployDependents bool,
+) (*app.Workflow, error) {
 	metadata := map[string]string{
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
 		// rendering things in the UI and other such things, which is why we are just using a string slice here,
@@ -21,7 +28,11 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(ctx context.Context, install
 		metadata[app.WorkflowMetadataKeyChangedInputValues] = changedInputValues
 	}
 
-	workflow, err := h.CreateWorkflowWithRole(ctx, installID, app.WorkflowTypeInputUpdate, metadata,
+	workflow, err := h.CreateWorkflowWithRole(
+		ctx,
+		installID,
+		app.WorkflowTypeInputUpdate,
+		metadata,
 		false,
 		role,
 	)
