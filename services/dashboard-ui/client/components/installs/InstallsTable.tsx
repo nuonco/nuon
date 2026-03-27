@@ -97,6 +97,7 @@ function parseInstallsToTableData(
         platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
         variant="subtext"
         colorVariant="color"
+        displayVariant="icon-only"
       />
     ),
     created_at: install?.created_at,
@@ -157,7 +158,7 @@ const columns: ColumnDef<InstallRow>[] = [
   {
     accessorKey: 'created_at',
     header: 'Created',
-    cell: (info) => <Time time={info.getValue<string>()} variant="subtext" />,
+    cell: (info) => <Time time={info.getValue<string>()} variant="subtext" format="relative" />,
   },
   {
     accessorKey: 'updated_at',
