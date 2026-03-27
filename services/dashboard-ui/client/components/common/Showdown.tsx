@@ -133,6 +133,13 @@ export const Markdown = ({ content = '' }) => {
       <style>{`
         .prose .readme-table { overflow-x: auto; }
         .prose .readme-table pre { max-width: 50ch; }
+        /* Remove any pseudo-element backticks from inline code */
+        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
+        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
+        .prose code::before,
+        .prose code::after {
+          content: none !important;
+        }
         .mermaid-diagram { 
           text-align: center; 
           margin: 1rem 0; 
