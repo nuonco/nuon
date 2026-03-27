@@ -9,8 +9,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -92,19 +92,31 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	}
 
 	// Validate that only vendor inputs are being updated
-	err = s.validateVendorSourceInputs(ctx, pinnedAppInputConfig, req.Inputs)
+	err = s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	inputs, changedInputs, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *pinnedAppInputConfig, req)
+	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
+		ctx,
+		latestLatestInstallInputs,
+		pinnedAppInputConfig,
+		req,
+	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
 
-	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(ctx, install.ID, *changedInputs, req.Role, req.DeployDependents)
+	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
+		ctx,
+		install.ID,
+		*changedInputs,
+		changedInputValues,
+		req.Role,
+		req.DeployDependents,
+	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -142,7 +154,12 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 	return &appInputConfig, nil
 }
 
-func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, *[]string, error) {
+func (s *service) newInstallInputs(
+	ctx context.Context,
+	installInputs *app.InstallInputs,
+	appInputConfig *app.AppInputConfig,
+	req UpdateInstallInputsRequest,
+) (*app.InstallInputs, *[]string, string, error) {
 	inputs := map[string]*string{}
 	for k, v := range installInputs.Values {
 		inputs[k] = v
@@ -153,18 +170,18 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	}
 
 	// create a lookup for the latest app input config
-	appInputs := appInputConfig.AppInputs
 	appInputNames := map[string]struct{}{}
-	for _, input := range appInputs {
+	for _, input := range appInputConfig.AppInputs {
 		appInputNames[input.Name] = struct{}{}
 	}
 
-	var changedInputs []string
-	for k, v := range req.Inputs {
-		ov, ok := installInputs.Values[k]
-		if !ok || generics.FromPtrStr(v) != generics.FromPtrStr(ov) {
-			changedInputs = append(changedInputs, k)
-		}
+	changed, err := helpers.ComputeChangedInputs(
+		installInputs.Values,
+		req.Inputs,
+		appInputConfig.AppInputs,
+	)
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("unable to compute changed inputs: %w", err)
 	}
 
 	// remove inputs not in the latest app input config
@@ -184,20 +201,20 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	}
 	res := s.db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
-		return nil, nil, fmt.Errorf("unable to create install inputs: %w", res.Error)
+		return nil, nil, "", fmt.Errorf("unable to create install inputs: %w", res.Error)
 	}
 
 	latestInstallInputs, err := s.getLatestInstallInputs(ctx, installInputs.InstallID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to get latest install inputs: %w", err)
+		return nil, nil, "", fmt.Errorf("unable to get latest install inputs: %w", err)
 	}
 
 	latestInstallInputs.Values = nil
 
-	return latestInstallInputs, &changedInputs, nil
+	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
 }
 
-func (s *service) validateVendorSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
+func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
 	appInputSources := map[string]app.AppInputSource{}
 	for _, input := range appInputConfig.AppInputs {
 		appInputSources[input.Name] = input.Source
