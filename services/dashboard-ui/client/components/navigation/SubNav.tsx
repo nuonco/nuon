@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react'
 import { cn } from '@/utils/classnames'
+import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { usePageSidebar } from '@/hooks/use-page-sidebar'
 import type { TNavLink } from '@/types'
 import { SubNavLink } from './SubNavLink'
@@ -103,7 +106,32 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             togglePageSidebar()
           }}
         >
-          <Icon variant="SplitHorizontal" />
+          <Tooltip
+            position="right"
+            tipContent={
+              <div className="w-fit">
+                <Text
+                  className="inline-flex gap-2 items-center !text-nowrap"
+                  variant="subtext"
+                >
+                  {isPageSidebarOpen ? 'Collapse' : 'Expand'} sidebar
+                  <span className="inline-flex gap-0.5">
+                    <Badge variant="code" size="sm">
+                      ALT
+                    </Badge>
+                    <Badge variant="code" size="sm">
+                      SHIFT
+                    </Badge>
+                    <Badge variant="code" size="sm">
+                      S
+                    </Badge>
+                  </span>
+                </Text>
+              </div>
+            }
+          >
+            <Icon variant="SplitHorizontal" />
+          </Tooltip>
         </button>
       </div>
     </aside>
