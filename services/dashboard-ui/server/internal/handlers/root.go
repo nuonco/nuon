@@ -33,6 +33,9 @@ func NewRootHandler(cfg *internal.Config, l *zap.Logger) *RootHandler {
 
 func (h *RootHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/", h.Handle)
+	e.GET("/api/auth/login", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/")
+	})
 	return nil
 }
 
