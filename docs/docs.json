@@ -181,7 +181,8 @@
             "group": "Getting Started",
             "pages": [
               "guides/byoc",
-              "guides/app-install-life-cycle"
+              "guides/app-install-life-cycle",
+              "guides/ai-and-apps"
             ]
           },
           {
@@ -193,7 +194,6 @@
               "guides/vcs",
               "guides/component-dependencies",
               "guides/app-init",
-              "guides/ai-and-apps",
               {
                 "group": "Components",
                 "pages": [
