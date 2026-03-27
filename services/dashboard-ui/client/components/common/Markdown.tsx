@@ -6,8 +6,6 @@ import { cn } from '@/utils/classnames'
 import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
-import { Expand } from './Expand'
-import { Code } from './Code'
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -49,11 +47,8 @@ const MermaidDiagram = ({ code }: { code: string }) => {
   )
 }
 
-export const Markdown = ({ content = '' }) => {
-  // Custom components for react-markdown
-  const components = {
-    // Handle code blocks
-    code({ node, inline, className, children, ...props }: any) {
+const markdownComponents = {
+  code({ node, inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '')
       const language = match ? match[1] : 'text'
       const codeString = String(children).replace(/\n$/, '')
@@ -123,12 +118,28 @@ export const Markdown = ({ content = '' }) => {
       )
     },
     
-    // Handle tables (wrap in container for styling)
     table({ children, ...props }: any) {
       return (
-        <div className="readme-table">
-          <table {...props}>{children}</table>
+        <div className="readme-table overflow-x-auto rounded-lg border my-4">
+          <table className="min-w-full text-sm !my-0" {...props}>{children}</table>
         </div>
+      )
+    },
+    thead({ children, ...props }: any) {
+      return <thead {...props}>{children}</thead>
+    },
+    th({ children, ...props }: any) {
+      return (
+        <th className="py-3 px-4 text-left bg-cool-grey-100 dark:bg-dark-grey-700 first:rounded-tl-lg last:rounded-tr-lg" {...props}>
+          {children}
+        </th>
+      )
+    },
+    td({ children, ...props }: any) {
+      return (
+        <td className="py-3 px-4 border-t" {...props}>
+          {children}
+        </td>
       )
     },
     
@@ -174,16 +185,15 @@ export const Markdown = ({ content = '' }) => {
     },
 
     // Override pre to prevent double wrapping of CodeBlock and JSONViewer
-    pre({ children, ...props }: any) {
-      // Just return the children directly to avoid wrapping CodeBlock/JSONViewer
-      return <>{children}</>
-    },
-  }
+  pre({ children, ...props }: any) {
+    return <>{children}</>
+  },
+}
 
+export const Markdown = React.memo(({ content = '' }: { content?: string }) => {
   return (
     <>
       <style>{`
-        .prose .readme-table pre { max-width: 50ch; } 
         .mermaid-diagram { 
           text-align: center; 
           margin: 1rem 0; 
@@ -207,9 +217,11 @@ export const Markdown = ({ content = '' }) => {
           padding-left: 1.5rem;
         }
         /* Remove any pseudo-element backticks from inline code */
-        .prose code:before,
-        .prose code:after {
-          content: '' !important;
+        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
+        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
+        .prose code::before,
+        .prose code::after {
+          content: none !important;
         }
         /* Override prose styles for JSONViewer custom element - nuclear approach */
         .prose andypf-json-viewer *[class*="container"],
@@ -260,11 +272,11 @@ export const Markdown = ({ content = '' }) => {
         <ReactMarkdown 
           remarkPlugins={[remarkGfm]} 
           rehypePlugins={[rehypeRaw]}
-          components={components}
+          components={markdownComponents}
         >
           {content}
         </ReactMarkdown>
       </div>
     </>
   )
-}
+})
