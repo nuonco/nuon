@@ -10,7 +10,7 @@ import (
 
 const (
 	DefaultQueueTimeout     time.Duration = time.Hour * 24
-	DefaultAvailableTimeout time.Duration = time.Second * 30
+	DefaultAvailableTimeout time.Duration = time.Minute * 1
 	DefaultExecutionTimeout time.Duration = time.Minute * 5
 
 	DefaultMaxExecutions int = 1
