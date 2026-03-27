@@ -52,9 +52,8 @@ const markdownComponents = {
       const match = /language-(\w+)/.exec(className || '')
       const language = match ? match[1] : 'text'
       const codeString = String(children).replace(/\n$/, '')
-      
-      // Detect inline code: explicit inline prop or no className (no language specified)
-      const isInlineCode = inline === true || !className
+      const isMultiline = codeString.includes('\n')
+      const isInlineCode = inline === true || (!className && !isMultiline)
       
       if (!isInlineCode) {
         // Block code
