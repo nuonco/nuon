@@ -193,19 +193,19 @@
               "guides/vcs",
               "guides/component-dependencies",
               "guides/app-init",
-              "guides/ai-and-apps"
-            ]
-          },
-          {
-            "group": "Components",
-            "pages": [
-              "guides/docker-build-components",
-              "guides/container-image-components",
-              "guides/external-image-policies",
-              "guides/terraform-components",
-              "guides/terraform-cli",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components"
+              "guides/ai-and-apps",
+              {
+                "group": "Components",
+                "pages": [
+                  "guides/docker-build-components",
+                  "guides/container-image-components",
+                  "guides/external-image-policies",
+                  "guides/terraform-components",
+                  "guides/terraform-cli",
+                  "guides/helm-chart-components",
+                  "guides/kubernetes-manifest-components"
+                ]
+              }
             ]
           },
           {
