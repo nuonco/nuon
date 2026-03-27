@@ -178,51 +178,74 @@
         "icon": "map",
         "groups": [
           {
-            "group": "Configuration",
+            "group": "Getting Started",
             "pages": [
+              "guides/byoc",
               "guides/app-install-life-cycle",
+              "guides/ai-and-apps"
+            ]
+          },
+          {
+            "group": "Connect Your App",
+            "pages": [
               "guides/managing-apps",
               "guides/managing-components",
-              "guides/configuring-sandboxes",
               "guides/configuring-inputs-and-secrets",
               "guides/vcs",
-              "guides/docker-build-components",
-              "guides/container-image-components",
-              "guides/external-image-policies",
-              "guides/configuring-policies",
-              "guides/terraform-components",
-              "guides/terraform-cli",
-              "guides/helm-chart-components",
-              "guides/kubernetes-manifest-components",
               "guides/component-dependencies",
+              "guides/app-init",
+              {
+                "group": "Components",
+                "pages": [
+                  "guides/docker-build-components",
+                  "guides/container-image-components",
+                  "guides/external-image-policies",
+                  "guides/terraform-components",
+                  "guides/terraform-cli",
+                  "guides/helm-chart-components",
+                  "guides/kubernetes-manifest-components"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Support Customer Infrastructure",
+            "pages": [
+              "guides/configuring-sandboxes",
+              "guides/bring-your-own-network",
+              "guides/using-variables",
+              "guides/sandbox-orgs",
+              "guides/custom-nested-stacks",
+              "guides/install-access-permissions",
+              "guides/runner-management-mode"
+            ]
+          },
+          {
+            "group": "Continuous Delivery",
+            "pages": [
+              "guides/configuring-policies",
               "guides/actions",
               "guides/operation-roles",
-              "guides/ai-and-apps",
-              "guides/app-init",
-              "guides/bring-your-own-network"
+              "guides/using-readmes",
+              "guides/team-management",
+              "guides/custom-domains"
             ]
           },
           {
             "group": "Customer Experience",
-            "pages": ["guides/customer-portal", "guides/control-plane-integration", "guides/vendor-customers"]
-          },
-          {
-            "group": "How To",
             "pages": [
-              "guides/byoc",
-              "guides/install-access-permissions",
-              "guides/using-variables",
-              "guides/using-readmes",
-              "guides/custom-domains",
-              "guides/sandbox-orgs",
-              "guides/team-management",
-              "guides/runner-management-mode",
-              "guides/custom-nested-stacks"
+              "guides/customer-portal",
+              "guides/control-plane-integration",
+              "guides/vendor-customers"
             ]
           },
           {
             "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
+            "pages": [
+              "guides/notifications",
+              "guides/github-actions",
+              "guides/cli-extensions"
+            ]
           }
         ]
       },
