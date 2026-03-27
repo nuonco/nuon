@@ -281,6 +281,59 @@ Complex nested JSON structures are much easier to explore with the interactive v
   </div>
 )
 
+export const Tables = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Table styling</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Markdown tables match the dashboard data table styling with rounded borders and header backgrounds.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Simple table</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`| Name | Status | Region |
+|------|--------|--------|
+| prod-cluster | Active | us-west-2 |
+| staging-cluster | Active | us-east-1 |
+| dev-cluster | Inactive | eu-west-1 |`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Wide table (horizontal scroll)</h4>
+      <div className="p-4 border rounded-lg max-w-xl">
+        <Markdown
+          content={`| ID | Name | Status | Region | Provider | Version | CPU | Memory | Created |
+|-----|------|--------|--------|----------|---------|-----|--------|---------|
+| r-001 | prod-1 | Active | us-west-2 | AWS | 1.28 | 16 | 64GB | 2024-01-15 |
+| r-002 | prod-2 | Active | us-east-1 | AWS | 1.28 | 16 | 64GB | 2024-02-20 |
+| r-003 | staging | Updating | eu-west-1 | Azure | 1.27 | 8 | 32GB | 2024-03-10 |`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Mixed content</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`| # | Policy | Type | Enforcement | Trigger | Expected Result |
+|---|--------|------|-------------|---------|-----------------|
+| 1 | Public EKS Endpoint | \`sandbox\` / OPA | **warn** | \`cluster_endpoint_public_access = true\` in sandbox | Warning in UI — continue anyway |
+| 2 | S3 Bucket Creation | \`terraform_module\` / OPA | **deny** | \`s3_bucket\` component creates an S3 bucket | Deploy blocked |
+| 3 | Database Modification | \`terraform_module\` / OPA | **deny** | Change \`billing_mode\` input after first deploy | First deploy passes, redeploy blocked |
+| 4 | Restricted Namespaces | \`helm_chart\` / OPA | **deny** | \`whoami_kube_system\` deploys to \`kube-system\` | Deploy blocked |
+| 5a | Runner-Only Access | \`sandbox\` / OPA | **deny** | Non-runner IAM principals in EKS access entries | Deploy blocked (latent) |
+| 5b | ECR Images Only | \`helm_chart\` / OPA | **deny** | \`traefik/whoami:latest\` is not from ECR | Deploy blocked |`}
+        />
+      </div>
+    </div>
+  </div>
+)
+
 export const CollapsibleContent = () => (
   <div className="space-y-6">
     <div className="space-y-3">
