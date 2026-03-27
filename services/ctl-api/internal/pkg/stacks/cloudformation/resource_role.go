@@ -65,13 +65,15 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder)
 
 	trustPolicies := make([]map[string]any, 0)
 
-	trustPolicies = append(trustPolicies, map[string]any{
-		"Effect": "Allow",
-		"Principal": map[string]any{
-			"AWS": cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRoleARN"),
-		},
-		"Action": "sts:AssumeRole",
-	})
+	if !a.cfg.UseLocalRunners {
+		trustPolicies = append(trustPolicies, map[string]any{
+			"Effect": "Allow",
+			"Principal": map[string]any{
+				"AWS": cloudformation.GetAttPtr("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRoleARN"),
+			},
+			"Action": "sts:AssumeRole",
+		})
+	}
 
 	if a.cfg.RunnerEnableSupport {
 		trustPolicies = append(trustPolicies, map[string]any{

@@ -126,7 +126,8 @@ export const StepDetailPanelButton = ({
   const isPendingApproval =
     approvalPrompt &&
     step.execution_type === 'approval' &&
-    !step.approval?.response &&
+    !!step.approval &&
+    !step.approval.response &&
     step.status?.status !== 'discarded'
 
   const isPendingAwaitStack =
@@ -155,7 +156,7 @@ export const StepDetailPanelButton = ({
       autoOpened.current = true
       handleAddPanel()
     }
-  }, [workflow?.id, workflowBlocked])
+  }, [workflow?.id, workflowBlocked, isPendingApproval, isPendingAwaitStack])
 
   return (
     <Button

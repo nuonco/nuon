@@ -124,83 +124,7 @@ spec:
 
 ## How do you configure Policies?
 
-Create a `policies.toml` file at the root of your app directory. Policy content (Rego or Kyverno YAML) can be inline or referenced from files in a `policies/` directory.
-
-### Directory Structure
-
-```
-myapp/
-├── policies/
-│   ├── require-encryption.rego
-│   ├── block-mutable-tags.rego
-│   └── require-labels.yaml
-├── policies.toml
-├── components/
-│   └── api.toml
-└── metadata.toml
-```
-
-### Configuring `policies.toml`
-
-Define policies in `policies.toml` with file references or inline content:
-
-```toml policies.toml
-# Reference an external policy file
-[[policy]]
-type       = "terraform_module"
-engine     = "opa"
-components = ["*"]
-contents   = "./policies/require-encryption.rego"
-
-# Inline policy content
-[[policy]]
-type       = "container_image"
-engine     = "opa"
-components = ["api_image", "worker_image"]
-contents   = """
-package nuon
-
-default allow := false
-
-allow if {
-    input.metadata.signed == true
-}
-
-deny contains msg if {
-    not input.metadata.signed
-    msg := sprintf("Image %s:%s must be signed", [input.image, input.tag])
-}
-"""
-```
-
-### Policy Configuration Fields
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| `type` | Yes | Policy type: `container_image`, `helm_chart`, `kubernetes_manifest`, `terraform_module`, `kubernetes_cluster`, or `sandbox` |
-| `engine` | No | Policy engine: `opa` or `kyverno` (default) |
-| `name` | No | Human-readable name. If not specified, derived from the filename |
-| `components` | Yes | List of component names this policy applies to. Use `["*"]` for all components of the specified type |
-| `contents` | Yes | Inline policy content or path to policy file (e.g., `./require-encryption.rego`) |
-
-### Referencing External Policy Files
-
-The `contents` field supports multiple source types. Relative paths are resolved from the `policies/` directory:
-
-```toml
-# Relative file path (relative to policies/ directory)
-contents = "./require-encryption.rego"
-
-# HTTP/HTTPS URL
-contents = "https://example.com/policies/security.rego"
-
-# Git repository
-contents = "git::https://github.com/org/policies//terraform/encryption.rego"
-```
-
-## Syncing Policies
-
-Policies are part of your app configuration. To create or update policies, sync your app:
+Policies are part of your app configuration. To create or update policies, add them to your app config and sync:
 
 ```sh
 nuon apps sync
@@ -208,7 +132,7 @@ nuon apps sync
 
 ![Policies list](../images/concepts/policies/policies-list.png)
 
-Policies are synced along with components, actions, and app metadata. If you change or add policies, run `nuon apps sync` again to upload the changes.
+Please go through the [Configuring Policies guide](/guides/configuring-policies) for details.
 
 Note that unlike components, policies do not need to be built, they are evaluated directly during build and deploy workflows.
 

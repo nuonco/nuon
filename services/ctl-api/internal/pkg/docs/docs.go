@@ -40,6 +40,10 @@ func getOverrideSwaggerHTML(title string) string {
     <script src="https://unpkg.com/swagger-ui-dist@5.31.2/swagger-ui-standalone-preset.js"></script>
     <script>
         window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiKey = urlParams.get('api_key');
+            const orgID = urlParams.get('org_id');
+
             window.ui = SwaggerUIBundle({
                 url: '/oapi/v2',
                 dom_id: '#swagger-ui',
@@ -56,7 +60,15 @@ func getOverrideSwaggerHTML(title string) string {
                     SwaggerUIBundle.presets.apis,
                     SwaggerUIStandalonePreset
                 ],
-                layout: "BaseLayout"
+                layout: "BaseLayout",
+                onComplete: function() {
+                    if (apiKey) {
+                        window.ui.preauthorizeApiKey("APIKey", apiKey);
+                    }
+                    if (orgID) {
+                        window.ui.preauthorizeApiKey("OrgID", orgID);
+                    }
+                }
             });
         };
     </script>

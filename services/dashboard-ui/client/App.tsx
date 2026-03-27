@@ -6,6 +6,7 @@ import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
 import { Login } from '@/views/Login'
+import { NotFound } from '@/views/NotFound'
 import { Onboarding } from '@/views/Onboarding'
 import { orgRoutes } from '@/views/org/routes'
 
@@ -22,7 +23,11 @@ const router = createBrowserRouter([
   { index: true, element: <Login /> },
   {
     element: <AuthLayout />,
-    children: [{ path: '/onboarding', element: <Onboarding /> }, ...orgRoutes],
+    children: [
+      { path: '/onboarding', element: <Onboarding /> },
+      ...orgRoutes,
+      { path: '*', element: <NotFound /> },
+    ],
   },
 ])
 
