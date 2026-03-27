@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,8 +9,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -99,7 +98,12 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(ctx, *latestLatestInstallInputs, *pinnedAppInputConfig, req)
+	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
+		ctx,
+		*latestLatestInstallInputs,
+		*pinnedAppInputConfig,
+		req,
+	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -108,10 +112,10 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
+		*changedInputs,
 		changedInputValues,
 		req.Role,
 		req.DeployDependents,
-		true
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
@@ -150,12 +154,12 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 	return &appInputConfig, nil
 }
 
-type changedInputValue struct {
-	Old string `json:"old"`
-	New string `json:"new"`
-}
-
-func (s *service) newInstallInputs(ctx context.Context, installInputs app.InstallInputs, appInputConfig app.AppInputConfig, req UpdateInstallInputsRequest) (*app.InstallInputs, *[]string, string, error) {
+func (s *service) newInstallInputs(
+	ctx context.Context,
+	installInputs app.InstallInputs,
+	appInputConfig app.AppInputConfig,
+	req UpdateInstallInputsRequest,
+) (*app.InstallInputs, *[]string, string, error) {
 	inputs := map[string]*string{}
 	for k, v := range installInputs.Values {
 		inputs[k] = v
@@ -166,43 +170,18 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 	}
 
 	// create a lookup for the latest app input config
-	appInputs := appInputConfig.AppInputs
 	appInputNames := map[string]struct{}{}
-	sensitiveInputs := map[string]bool{}
-	for _, input := range appInputs {
+	for _, input := range appInputConfig.AppInputs {
 		appInputNames[input.Name] = struct{}{}
-		if input.Sensitive {
-			sensitiveInputs[input.Name] = true
-		}
 	}
 
-	var changedInputs []string
-	changedValues := map[string]changedInputValue{}
-	for k, v := range req.Inputs {
-		ov, ok := installInputs.Values[k]
-		if !ok || generics.FromPtrStr(v) != generics.FromPtrStr(ov) {
-			changedInputs = append(changedInputs, k)
-
-			oldVal := generics.FromPtrStr(ov)
-			newVal := generics.FromPtrStr(v)
-			if sensitiveInputs[k] {
-				oldVal = "***"
-				newVal = "***"
-			}
-			changedValues[k] = changedInputValue{
-				Old: oldVal,
-				New: newVal,
-			}
-		}
-	}
-
-	changedValuesJSON := ""
-	if len(changedValues) > 0 {
-		b, err := json.Marshal(changedValues)
-		if err != nil {
-			return nil, nil, "", fmt.Errorf("unable to marshal changed input values: %w", err)
-		}
-		changedValuesJSON = string(b)
+	changed, err := helpers.ComputeChangedInputs(
+		installInputs.Values,
+		req.Inputs,
+		appInputConfig.AppInputs,
+	)
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("unable to compute changed inputs: %w", err)
 	}
 
 	// remove inputs not in the latest app input config
@@ -232,7 +211,7 @@ func (s *service) newInstallInputs(ctx context.Context, installInputs app.Instal
 
 	latestInstallInputs.Values = nil
 
-	return latestInstallInputs, &changedInputs, changedValuesJSON, nil
+	return latestInstallInputs, &changed.Names, changed.ValuesJSON, nil
 }
 
 func (s *service) validateVendorSourceInputs(ctx context.Context, appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
