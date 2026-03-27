@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -95,14 +96,25 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 		return errors.New("missing install inputs")
 	}
 
+	// Convert filtered values to pointer map for comparison
+	newValuesPtr := make(map[string]*string)
+	for k, v := range filteredInputValues {
+		newValuesPtr[k] = generics.ToPtr(v)
+	}
+
+	changed, err := ComputeChangedInputs(
+		installInputs.Values,
+		newValuesPtr,
+		appInputConfig.AppInputs,
+	)
+	if err != nil {
+		return errors.Wrap(err, "unable to compute changed inputs")
+	}
+
+	// Merge new values into existing map
 	newInputMap := installInputs.Values
-	var changedInputs []string
 	for key, value := range filteredInputValues {
-		// Check if value is different from existing
-		if newInputMap[key] == nil || *newInputMap[key] != value {
-			changedInputs = append(changedInputs, key)
-		}
-		newInputMap[key] = &value
+		newInputMap[key] = generics.ToPtr(value)
 	}
 
 	// Update the install inputs with merged values
@@ -115,9 +127,16 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 		return errors.Wrap(res.Error, "unable to update install inputs")
 	}
 
-	if len(changedInputs) > 0 && !skipInputUpdateWorkflow {
+	if len(changed.Names) > 0 && !skipInputUpdateWorkflow {
 		// Send signals to notify that inputs have been updated from stack outputs
-		_, err = h.CreateAndStartInputUpdateWorkflow(ctx, installID, changedInputs, "", true)
+		_, err = h.CreateAndStartInputUpdateWorkflow(
+			ctx,
+			installID,
+			changed.Names,
+			changed.ChangedValuesJSON,
+			"",
+			true,
+		)
 		if err != nil {
 			return errors.Wrap(err, "unable to update inputs from install stack output")
 		}

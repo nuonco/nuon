@@ -19,6 +19,9 @@ import (
 // swagger:model service.UpdateInstallInputsRequest
 type ServiceUpdateInstallInputsRequest struct {
 
+	// deploy dependents
+	DeployDependents bool `json:"deploy_dependents,omitempty"`
+
 	// inputs
 	// Required: true
 	Inputs map[string]string `json:"inputs"`
