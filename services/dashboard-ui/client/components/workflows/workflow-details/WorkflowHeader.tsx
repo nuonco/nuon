@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -8,6 +9,39 @@ import { useInstall } from '@/hooks/use-install'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { WorkflowActionButtons } from './WorkflowActionButtons'
+
+type ChangedInputValue = { old: string; new: string }
+
+const ChangedInputs = ({
+  changedInputValues,
+}: {
+  changedInputValues: string
+}) => {
+  const parsed = useMemo(() => {
+    try {
+      return JSON.parse(changedInputValues) as Record<string, ChangedInputValue>
+    } catch {
+      return null
+    }
+  }, [changedInputValues])
+
+  if (!parsed || Object.keys(parsed).length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-1.5 mt-2">
+      <Text variant="subtext" weight="strong" theme="neutral">
+        Changed inputs
+      </Text>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(parsed).map(([name, { old: oldVal, new: newVal }]) => (
+          <Badge key={name} variant="code" size="sm">
+            {name}: {oldVal || '(empty)'} → {newVal || '(empty)'}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export const WorkflowHeader = () => {
   const { install } = useInstall()
@@ -42,6 +76,12 @@ export const WorkflowHeader = () => {
           <Text theme="neutral">
             Watch your app get updated here and provide needed approvals.
           </Text>
+          {workflow?.type === 'input_update' &&
+            workflow?.metadata?.changed_input_values && (
+              <ChangedInputs
+                changedInputValues={workflow.metadata.changed_input_values}
+              />
+            )}
         </HeadingGroup>
       </div>
 
