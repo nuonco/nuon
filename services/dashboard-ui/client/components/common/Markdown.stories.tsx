@@ -163,6 +163,56 @@ This code block uses the CodeBlock component for proper syntax highlighting.`}
         />
       </div>
     </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Directory tree</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`## App directory structure
+
+\`\`\`
+.
+├── runner.toml                    # Runner config (AWS)
+├── stack.toml                     # CloudFormation stack
+├── sandbox.toml                   # EKS sandbox with operation_roles
+├── sandbox.tfvars                 # Cluster vars + custom role access entries
+├── metadata.toml                  # App metadata
+├── inputs.toml                    # User-facing inputs (domain)
+├── operation_roles.toml           # Matrix rules (app-wide fallback)
+│
+├── components/
+│   ├── whoami.toml                # Helm chart with deploy/teardown roles
+│   └── certificate.toml           # Terraform module with deploy/teardown roles
+│
+├── actions/
+│   ├── deployment_status.toml     # Read-only action (view role)
+│   └── deployment_restart.toml    # Write action (edit role)
+│
+├── permissions/
+│   ├── provision.toml             # Default provision role
+│   ├── maintenance.toml           # Default maintenance role
+│   ├── deprovision.toml           # Default deprovision role
+│   ├── sandbox-provision.toml     # Custom: sandbox provision
+│   ├── sandbox-maintenance.toml   # Custom: sandbox reprovision
+│   ├── sandbox-deprovision.toml   # Custom: sandbox deprovision
+│   ├── whoami-deploy.toml         # Custom: whoami deploy
+│   ├── whoami-teardown.toml       # Custom: whoami teardown
+│   ├── certificate-deploy.toml    # Custom: certificate deploy
+│   ├── certificate-teardown.toml  # Custom: certificate teardown
+│   ├── deployments-status-trigger.toml
+│   ├── deployment-restart-trigger.toml
+│   ├── provision_boundary.json    # Boundary for provision/deploy ops
+│   ├── deprovision_boundary.json  # Boundary for teardown/deprovision ops
+│   └── maintenance_boundary.json  # Boundary for action triggers
+│
+└── src/components/                # Source code for components
+    ├── certificate/               # Terraform (ACM + Route53)
+    └── whoami/                    # Helm chart (deployment + service)
+\`\`\`
+`}
+        />
+      </div>
+    </div>
   </div>
 )
 
