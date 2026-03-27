@@ -226,13 +226,12 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       installID,
 		TriggeredByID:   actionWorkflowRunID,
 		TriggeredByType: "install_action_workflow_runs", // plugins.TableName would require db instance
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 
 	return nil

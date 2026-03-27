@@ -131,14 +131,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
-	_, err = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
+	if _, err := installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installDeploy.ID,
 		TriggeredByType: "install_deploys",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
+
 	return nil
 }
 

@@ -93,13 +93,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   s.InstallWorkflowID,
 		TriggeredByType: "install_sandbox_runs",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 	return nil
 }

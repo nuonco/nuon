@@ -107,13 +107,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 
-	_, err = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
+	if _, err := installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installDeploy.ID,
 		TriggeredByType: "install_deploys",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 
 	return nil

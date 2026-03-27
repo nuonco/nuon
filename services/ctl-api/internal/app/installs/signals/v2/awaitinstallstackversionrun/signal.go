@@ -188,13 +188,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update status")
 	}
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
 		TriggeredByType: "install_stack_version_runs",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 
 	return nil

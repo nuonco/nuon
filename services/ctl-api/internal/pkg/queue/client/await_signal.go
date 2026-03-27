@@ -7,13 +7,15 @@ import (
 	"github.com/pkg/errors"
 
 	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 2h
+// @max-retries 1
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
@@ -24,7 +26,9 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	// return immediately without trying to reach the workflow.
 	if isTerminalStatus(q.Status.Status) {
 		if q.Status.Status == app.StatusError {
-			return nil, fmt.Errorf("signal execution failed with status: %s", q.Status.Status)
+			return nil, temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("signal execution failed with status: %s", q.Status.Status),
+				"SIGNAL_FAILED", nil)
 		}
 		return &handler.FinishedResponse{}, nil
 	}
@@ -46,7 +50,9 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		}
 		if isTerminalStatus(fresh.Status.Status) {
 			if fresh.Status.Status == app.StatusError {
-				return nil, fmt.Errorf("signal execution failed with status: %s", fresh.Status.Status)
+				return nil, temporal.NewNonRetryableApplicationError(
+					fmt.Sprintf("signal execution failed with status: %s", fresh.Status.Status),
+					"SIGNAL_FAILED", nil)
 			}
 			return &handler.FinishedResponse{}, nil
 		}
@@ -65,7 +71,9 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		return nil, errors.Wrap(err, "unable to verify signal status after completion")
 	}
 	if fresh.Status.Status == app.StatusError {
-		return nil, fmt.Errorf("signal execution failed with status: %s", fresh.Status.Status)
+		return nil, temporal.NewNonRetryableApplicationError(
+			fmt.Sprintf("signal execution failed with status: %s", fresh.Status.Status),
+			"SIGNAL_FAILED", nil)
 	}
 
 	return &resp, nil

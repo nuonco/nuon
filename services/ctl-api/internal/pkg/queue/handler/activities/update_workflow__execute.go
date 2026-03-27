@@ -12,7 +12,8 @@ import (
 )
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 2h
+// @max-retries 1
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID

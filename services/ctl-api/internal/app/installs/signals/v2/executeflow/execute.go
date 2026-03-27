@@ -49,6 +49,7 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 
 		logger.Info("enqueuing signal to install queue",
 			"step_name", step.Name,
+			"step_id", step.ID,
 			"owner_id", installID,
 			"owner_type", "installs",
 		)

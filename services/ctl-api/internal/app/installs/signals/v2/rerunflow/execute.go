@@ -1,6 +1,7 @@
 package rerunflow
 
 import (
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -11,8 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
-
-	"github.com/pkg/errors"
 )
 
 func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
@@ -50,10 +49,12 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 		)
 
 		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   installID,
-			OwnerType: "installs",
-			QueueName: "install-signals",
-			Signal:    sig,
+			OwnerID:         installID,
+			OwnerType:       "installs",
+			QueueName:       "install-signals",
+			Signal:          sig,
+			SignalOwnerID:   step.ID,
+			SignalOwnerType: "install_workflow_steps",
 		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
