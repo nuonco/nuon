@@ -52,9 +52,11 @@ func (m *Manager) Browse(_ string) ([]AvailableExtension, error) {
 
 		name := strings.TrimPrefix(repo.Name, "nuon-ext-")
 
+		desc := strings.TrimPrefix(repo.Description, "Nuon Extension: ")
+
 		ext := AvailableExtension{
 			Name:        name,
-			Description: repo.Description,
+			Description: desc,
 			Repo:        repo.FullName,
 			Installed:   installedMap[name],
 		}
