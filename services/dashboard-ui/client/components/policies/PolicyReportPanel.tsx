@@ -80,11 +80,13 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
 interface IPolicyReportPanel extends IPanel {
   report: TPolicyReport
   orgId: string
+  policyNameMap: Map<string, string>
 }
 
 export const PolicyReportPanel = ({
   report,
   orgId,
+  policyNameMap,
   ...props
 }: IPolicyReportPanel) => {
   const { label: ownerTypeLabel, theme: ownerTypeTheme } = formatOwnerType(
@@ -112,7 +114,7 @@ export const PolicyReportPanel = ({
     []
 
   return (
-    <Panel heading={report.component_name || 'Sandbox'} size="half" {...props}>
+    <Panel heading={report.component_name ? `Component - ${report.component_name}` : 'Sandbox'} size="half" {...props}>
       <Card className="!p-0 overflow-hidden">
         <div className="flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
@@ -227,6 +229,11 @@ export const PolicyReportPanel = ({
                   policyDenyViolations.length > 0 ||
                   policyWarnViolations.length > 0
 
+                const policyName =
+                  policy.policy_name ||
+                  (policy.policy_id && policyNameMap.get(policy.policy_id)) ||
+                  policy.policy_id
+
                 return (
                   <div key={policy.policy_id} className="flex flex-col">
                     <div className="flex items-center justify-between p-4">
@@ -237,12 +244,12 @@ export const PolicyReportPanel = ({
                             className="hover:underline"
                           >
                             <Text variant="body">
-                              {policy.policy_name || policy.policy_id}
+                              {policyName}
                             </Text>
                           </Link>
                         ) : (
                           <Text variant="body">
-                            {policy.policy_name || policy.policy_id}
+                            {policyName}
                           </Text>
                         )}
                         {policy.policy_id && <ID>{policy.policy_id}</ID>}
@@ -434,15 +441,17 @@ export const PolicyReportPanel = ({
 interface IPolicyReportPanelButton extends IButtonAsButton {
   report: TPolicyReport
   orgId: string
+  policyNameMap: Map<string, string>
 }
 
 export const PolicyReportPanelButton = ({
   report,
   orgId,
+  policyNameMap,
   ...props
 }: IPolicyReportPanelButton) => {
   const { addPanel } = useSurfaces()
-  const panel = <PolicyReportPanel report={report} orgId={orgId} />
+  const panel = <PolicyReportPanel report={report} orgId={orgId} policyNameMap={policyNameMap} />
 
   return (
     <Button
