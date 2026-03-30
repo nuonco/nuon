@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Tabs } from '@/components/common/Tabs'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -7,6 +9,9 @@ import { CloudPlatform as CloudPlatformDisplay } from '@/components/common/Cloud
 import { ComponentType } from '@/components/components/ComponentType'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
+import { getExampleApps, completeYourStackStep } from '@/lib'
+import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
+import type { TAPIError, TExampleApp, TOnboarding, TCloudPlatform as TCloudPlatformType } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TComponentType } from '@/types'
 
@@ -219,147 +224,10 @@ const CustomAppTab = ({
   </div>
 )
 
-type SampleAppCategory = 'architecture' | 'self-hosted'
-
-interface ISampleApp {
-  id: string
-  name: string
-  description: string
-  category: SampleAppCategory
-  cloud: CloudPlatform
-  componentTypes: TComponentType[]
-}
-
-const SAMPLE_APPS: ISampleApp[] = [
-  {
-    id: 'httpbin',
-    name: 'Httpbin',
-    description:
-      'HTTP request & response debugging service. Deploys an EC2 instance with Docker',
-    category: 'architecture',
-    cloud: 'aws',
-    componentTypes: ['docker_build'],
-  },
-  {
-    id: 'aws-lambda-api-gateway',
-    name: 'AWS Lambda + API Gateway',
-    description:
-      'Lambda function from a Go Docker image with DynamoDB, API Gateway and a certificate',
-    category: 'architecture',
-    cloud: 'aws',
-    componentTypes: ['docker_build', 'terraform_module', 'job'],
-  },
-  {
-    id: 'eks-simple',
-    name: 'EKS Simple',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'architecture',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'eks-auto-mode',
-    name: 'EKS Auto mode',
-    description:
-      'HTTP request & response debugging service. Deploys an EC2 instance with Docker',
-    category: 'architecture',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'docker_build'],
-  },
-  {
-    id: 'gke-simple',
-    name: 'GKE Simple',
-    description:
-      'Lambda function from a Go Docker image with DynamoDB, API Gateway and a certificate',
-    category: 'architecture',
-    cloud: 'gcp',
-    componentTypes: ['terraform_module', 'docker_build', 'job'],
-  },
-  {
-    id: 'grafana',
-    name: 'Grafana',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'clickhouse',
-    name: 'Clickhouse',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'baserow',
-    name: 'Baserow',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'penpot',
-    name: 'Penpot',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'coder',
-    name: 'Coder',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'twenty-crm',
-    name: 'Twenty CRM',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'mattermost',
-    name: 'Mattermost',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-  {
-    id: 'clickhouse-tailscale',
-    name: 'Clickhouse + Tailscale',
-    description:
-      'EKS cluster with a Whoami workload, Application Load Balancer and a certificate',
-    category: 'self-hosted',
-    cloud: 'aws',
-    componentTypes: ['terraform_module', 'helm_chart'],
-  },
-]
-
-const SAMPLE_APP_CATEGORIES: {
-  id: SampleAppCategory
-  label: string
-}[] = [
-  { id: 'architecture', label: 'Architectures' },
-  { id: 'self-hosted', label: 'Popular self hosted applications' },
-]
+type SampleAppCategory = string
 
 interface ISampleAppCardProps {
-  app: ISampleApp
+  app: TExampleApp
   selected: boolean
   onSelect: () => void
 }
@@ -378,22 +246,24 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
       )}
     >
       <div className="flex flex-col gap-1">
-        <Text weight="strong">{app.name}</Text>
+        <Text weight="strong">{app.display_name}</Text>
         <Text variant="label" theme="neutral" className="line-clamp-2">
           {app.description}
         </Text>
       </div>
       <div className="flex items-center gap-1.5">
-        <CloudPlatformDisplay
-          platform={app.cloud}
-          colorVariant="color"
-          displayVariant="icon-only"
-          iconSize="16"
-        />
-        {app.componentTypes.map((type) => (
+        {app.cloud_provider && (
+          <CloudPlatformDisplay
+            platform={app.cloud_provider as TCloudPlatformType}
+            colorVariant="color"
+            displayVariant="icon-only"
+            iconSize="16"
+          />
+        )}
+        {app.tags?.map((tag) => (
           <ComponentType
-            key={type}
-            type={type}
+            key={tag}
+            type={tag as TComponentType}
             colorVariant="color"
             displayVariant="icon-only"
             iconSize="16"
@@ -405,23 +275,39 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
 )
 
 interface IExampleAppsTabProps {
+  apps: TExampleApp[]
+  isLoading: boolean
   selectedApp: string | null
-  onSelectApp: (id: string) => void
+  onSelectApp: (slug: string) => void
   search: string
   onSearchChange: (val: string) => void
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  architecture: 'Architectures',
+  'self-hosted': 'Popular self hosted applications',
+}
+
 const ExampleAppsTab = ({
+  apps,
+  isLoading,
   selectedApp,
   onSelectApp,
   search,
   onSearchChange,
 }: IExampleAppsTabProps) => {
   const filtered = useMemo(() => {
-    if (!search) return SAMPLE_APPS
+    if (!search) return apps
     const q = search.toLowerCase()
-    return SAMPLE_APPS.filter((app) => app.name.toLowerCase().includes(q))
-  }, [search])
+    return apps.filter((app) =>
+      (app.display_name ?? '').toLowerCase().includes(q)
+    )
+  }, [search, apps])
+
+  const categories = useMemo(() => {
+    const cats = new Set(filtered.map((a) => a.category).filter(Boolean))
+    return Array.from(cats) as string[]
+  }, [filtered])
 
   return (
     <div className="flex flex-col gap-6 pt-4">
@@ -439,19 +325,27 @@ const ExampleAppsTab = ({
         placeholder="Search examples"
       />
 
-      {SAMPLE_APP_CATEGORIES.map((category) => {
-        const apps = filtered.filter((app) => app.category === category.id)
-        if (apps.length === 0) return null
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Icon variant="Loading" size={24} />
+        </div>
+      )}
+
+      {categories.map((category) => {
+        const categoryApps = filtered.filter((app) => app.category === category)
+        if (categoryApps.length === 0) return null
         return (
-          <div className="flex flex-col gap-3" key={category.id}>
-            <Text weight="strong">{category.label}</Text>
+          <div className="flex flex-col gap-3" key={category}>
+            <Text weight="strong">
+              {CATEGORY_LABELS[category] ?? category}
+            </Text>
             <div className="grid grid-cols-3 gap-3">
-              {apps.map((app) => (
+              {categoryApps.map((app) => (
                 <SampleAppCard
-                  key={app.id}
+                  key={app.slug}
                   app={app}
-                  selected={selectedApp === app.id}
-                  onSelect={() => onSelectApp(app.id)}
+                  selected={selectedApp === app.slug}
+                  onSelect={() => onSelectApp(app.slug!)}
                 />
               ))}
             </div>
@@ -459,7 +353,7 @@ const ExampleAppsTab = ({
         )
       })}
 
-      {filtered.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8 gap-2">
           <Text theme="neutral">No examples match your search.</Text>
         </div>
@@ -471,6 +365,7 @@ const ExampleAppsTab = ({
 export const AppProfileStep = ({
   onAdvance,
   onGoBack,
+  sharedData,
   setSharedData,
   nextStepTitle,
 }: IWizardStepComponentProps) => {
@@ -480,6 +375,15 @@ export const AppProfileStep = ({
     null
   )
   const [sampleSearch, setSampleSearch] = useState('')
+  const [waiting, setWaiting] = useState(false)
+
+  const onboarding = sharedData.onboarding as TOnboarding | undefined
+  const orgId = onboarding?.org_id
+
+  const { data: exampleApps = [], isLoading: appsLoading } = useQuery({
+    queryKey: ['onboarding-example-apps'],
+    queryFn: getExampleApps,
+  })
 
   const toggleAttribute = (attr: AppAttribute) => {
     setAppAttributes((prev) =>
@@ -487,16 +391,57 @@ export const AppProfileStep = ({
     )
   }
 
-  const handleAdvance = () => {
-    const sampleApp = SAMPLE_APPS.find((a) => a.id === selectedSampleApp)
-    setSharedData('cloudPlatform', sampleApp?.cloud ?? cloudPlatform)
-    setSharedData('appAttributes', appAttributes)
-    setSharedData('sampleApp', selectedSampleApp)
-    onAdvance()
-  }
+  const { mutate: submit, isPending, error } = useMutation({
+    mutationFn: () => {
+      if (!orgId) throw new Error('Organization not created yet')
+      if (selectedSampleApp) {
+        return completeYourStackStep({
+          body: { app_type: 'example', example_app_slug: selectedSampleApp },
+          orgId,
+        })
+      }
+      return completeYourStackStep({
+        body: {
+          app_type: 'custom',
+          cloud_provider: cloudPlatform ?? undefined,
+          app_attributes: appAttributes,
+        },
+        orgId,
+      })
+    },
+    onSuccess: (ob) => {
+      setSharedData('onboarding', ob)
+      if (ob.step_status === 'processing') {
+        setWaiting(true)
+      } else {
+        onAdvance()
+      }
+    },
+  })
+
+  useOnboardingPoll({
+    enabled: waiting,
+    onResolved: (ob) => {
+      setWaiting(false)
+      setSharedData('onboarding', ob)
+      if (ob.step_error) return
+      onAdvance()
+    },
+  })
+
+  const canAdvance = selectedSampleApp || cloudPlatform
+  const isWorking = isPending || waiting
 
   return (
     <div className="flex flex-col gap-6">
+      {error && (
+        <Banner theme="error">
+          {(error as TAPIError).error ?? 'Failed to save app profile'}
+        </Banner>
+      )}
+      {onboarding?.step_error && (
+        <Banner theme="error">{onboarding.step_error}</Banner>
+      )}
       <Tabs
         tabs={{
           'create your own app': (
@@ -509,6 +454,8 @@ export const AppProfileStep = ({
           ),
           'demo using a sample app': (
             <ExampleAppsTab
+              apps={exampleApps}
+              isLoading={appsLoading}
               selectedApp={selectedSampleApp}
               onSelectApp={setSelectedSampleApp}
               search={sampleSearch}
@@ -525,9 +472,14 @@ export const AppProfileStep = ({
         ) : (
           <div />
         )}
-        <Button type="button" variant="primary" onClick={handleAdvance}>
-          {nextStepTitle ?? 'Continue'}{' '}
-          <Icon variant="CaretRight" weight="bold" />
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!canAdvance || isWorking}
+          onClick={() => submit()}
+        >
+          {waiting ? 'Setting up app...' : isPending ? 'Saving...' : (nextStepTitle ?? 'Continue')}{' '}
+          {!isWorking && <Icon variant="CaretRight" weight="bold" />}
         </Button>
       </div>
     </div>
