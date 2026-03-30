@@ -53,7 +53,7 @@ const markdownComponents = {
       const language = match ? match[1] : 'text'
       const codeString = String(children).replace(/\n$/, '')
       const isMultiline = codeString.includes('\n')
-      const isInlineCode = inline === true || (!className && !isMultiline)
+      const isInlineCode = inline === true
       
       if (!isInlineCode) {
         // Block code
@@ -83,7 +83,7 @@ const markdownComponents = {
             // Not JSON, use regular code block
           }
         }
-        
+
         // Regular code block
         return <CodeBlock language={language}>{codeString}</CodeBlock>
       }
