@@ -1,246 +1,138 @@
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/common/Button'
+import { useEffect } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { ComponentType } from '@/components/components/ComponentType'
-import type { TComponentType } from '@/types/ctl-api.types'
-import { cn } from '@/utils/classnames'
+import { completeDeployStep, getCurrentOnboarding, getWorkflow, getWorkflowSteps } from '@/lib'
+import { getStepBadge } from '@/utils/workflow-utils'
+import { toSentenceCase } from '@/utils/string-utils'
+import type { TOnboarding, TWorkflow } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
-const DEPLOY_PHASES = ['Queue', 'Plan', 'Apply', 'Health check', 'Live'] as const
+function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedData: (key: string, val: unknown) => void) {
+  const orgId = onboarding?.org_id
+  const workflowId = onboarding?.workflow_id
 
-const MOCK_COMPONENTS: { name: string; type?: TComponentType; isAction?: boolean }[] = [
-  { name: 'helm-release', type: 'helm_chart' },
-  { name: 'terraform-infra', type: 'terraform_module' },
-  { name: 'run-scripts', isAction: true },
-  { name: 'docker-workload', type: 'docker_build' },
-]
+  const { data: polledOnboarding } = useQuery({
+    queryKey: ['onboarding-provision-poll'],
+    queryFn: getCurrentOnboarding,
+    enabled: !!orgId && !workflowId,
+    refetchInterval: 2000,
+  })
 
-type Phase = 'runner' | 'install' | 'components'
+  useEffect(() => {
+    if (polledOnboarding?.workflow_id && !workflowId) {
+      setSharedData('onboarding', polledOnboarding)
+    }
+  }, [polledOnboarding, workflowId, setSharedData])
 
-const DeployProgress = ({ currentStep }: { currentStep: number }) => (
-  <div className="flex items-center w-full gap-0">
-    {DEPLOY_PHASES.map((phase, i) => {
-      const completed = i < currentStep
-      const active = i === currentStep
-      return (
-        <div key={phase} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-5 h-5 flex items-center justify-center">
-              {completed ? (
-                <Icon variant="CheckCircle" size={20} weight="fill" theme="success" />
-              ) : active ? (
-                <Icon variant="Loading" size={20} />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-cool-grey-300 dark:border-dark-grey-600" />
-              )}
-            </div>
-            <Text
-              variant="subtext"
-              theme={completed ? 'success' : active ? 'default' : 'neutral'}
-              className="whitespace-nowrap text-center"
-            >
-              {phase}
-            </Text>
-          </div>
-          {i < DEPLOY_PHASES.length - 1 && (
-            <div
-              className={cn(
-                'flex-1 h-0.5 mx-1 mt-[-18px]',
-                completed ? 'bg-green-500' : 'bg-cool-grey-300 dark:bg-dark-grey-600',
-              )}
-            />
-          )}
-        </div>
-      )
-    })}
-  </div>
-)
+  const effectiveWorkflowId = workflowId ?? polledOnboarding?.workflow_id
 
-const ComponentDeployCard = ({
-  name,
-  type,
-  isAction,
-  currentStep,
-}: {
-  name: string
-  type?: TComponentType
-  isAction?: boolean
-  currentStep: number
-}) => {
-  const isLive = currentStep >= DEPLOY_PHASES.length - 1
-  return (
-    <Card className="p-4 flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        {isLive ? (
-          <Icon variant="CheckCircle" size={20} weight="fill" theme="success" />
-        ) : (
-          <Icon variant="Loading" size={20} />
-        )}
-        <Text weight="strong">{name}</Text>
-        {isAction ? (
-          <Icon variant="Terminal" size={14} theme="brand" />
-        ) : type ? (
-          <ComponentType type={type} colorVariant="color" displayVariant="icon-only" />
-        ) : null}
-        <div className="ml-auto">
-          <Badge theme={isLive ? 'success' : 'neutral'} size="sm">
-            {isLive ? 'live' : DEPLOY_PHASES[currentStep]?.toLowerCase()}
-          </Badge>
-        </div>
-      </div>
-      <DeployProgress currentStep={currentStep} />
-    </Card>
-  )
+  const { data: workflow } = useQuery({
+    queryKey: ['onboarding-workflow', effectiveWorkflowId],
+    queryFn: () => getWorkflow({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
+    enabled: !!effectiveWorkflowId && !!orgId,
+    refetchInterval: (query) => {
+      const wf = query.state.data as TWorkflow | undefined
+      return wf?.finished ? false : 4000
+    },
+  })
+
+  const { data: steps = [] } = useQuery({
+    queryKey: ['onboarding-workflow-steps', effectiveWorkflowId],
+    queryFn: () => getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId!, limit: 100, offset: 0 }),
+    enabled: !!effectiveWorkflowId && !!orgId,
+    refetchInterval: (query) => {
+      return workflow?.finished ? false : 4000
+    },
+  })
+
+  return { workflow, steps, workflowId: effectiveWorkflowId }
 }
 
-export const ProvisioningStep = ({ onAdvance, onGoBack, nextStepTitle }: IWizardStepComponentProps) => {
-  const [phase, setPhase] = useState<Phase>('runner')
-  const [runnerReady, setRunnerReady] = useState(false)
-  const [installReady, setInstallReady] = useState(false)
-  const [componentSteps, setComponentSteps] = useState<number[]>([0, -1, -1, -1])
+export const ProvisioningStep = ({
+  onAdvance,
+  onGoBack,
+  sharedData,
+  setSharedData,
+  nextStepTitle,
+}: IWizardStepComponentProps) => {
+  const onboarding = sharedData.onboarding as TOnboarding | undefined
+  const orgId = onboarding?.org_id
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setRunnerReady(true), 1500)
-    const t2 = setTimeout(() => {
-      setInstallReady(true)
-      setPhase('install')
-    }, 3000)
-    const t3 = setTimeout(() => setPhase('components'), 4000)
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-    }
-  }, [])
+  const { workflow, steps, workflowId } = useOnboardingWorkflow(onboarding, setSharedData)
 
-  useEffect(() => {
-    if (phase !== 'components') return
+  const isFinished = !!workflow?.finished
+  const isError = workflow?.status?.status === 'error'
 
-    setComponentSteps([0, -1, -1, -1])
+  const { mutate: completeDeploy, isPending: deployPending } = useMutation({
+    mutationFn: () => completeDeployStep({ orgId: orgId! }),
+    onSuccess: (ob) => {
+      setSharedData('onboarding', ob)
+      onAdvance()
+    },
+  })
 
-    const timers: ReturnType<typeof setTimeout>[] = []
-
-    MOCK_COMPONENTS.forEach((_, compIdx) => {
-      for (let step = 0; step <= DEPLOY_PHASES.length - 1; step++) {
-        const delay = compIdx * 1000 + step * 600
-        timers.push(
-          setTimeout(() => {
-            setComponentSteps((prev) => {
-              const next = [...prev]
-              next[compIdx] = step
-              return next
-            })
-          }, delay),
-        )
-      }
-    })
-
-    return () => timers.forEach(clearTimeout)
-  }, [phase])
-
-  const allDone =
-    phase === 'components' && componentSteps.every((s) => s >= DEPLOY_PHASES.length - 1)
+  const visibleSteps = steps.filter((s) => s.execution_type !== 'hidden')
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Section 1: Install status */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          {installReady ? (
+          {isFinished && !isError ? (
             <Icon variant="CheckCircle" size={24} weight="fill" theme="success" />
+          ) : isError ? (
+            <Icon variant="XCircle" size={24} weight="fill" theme="error" />
           ) : (
             <Icon variant="Loading" size={24} />
           )}
           <Text variant="h3" weight="strong">
-            {installReady ? 'Install is live' : 'Provisioning install...'}
+            {isFinished && !isError
+              ? 'Your app is live'
+              : isError
+                ? 'Provisioning failed'
+                : 'Provisioning...'}
           </Text>
         </div>
-        {installReady && (
-          <Text variant="body" theme="neutral">
-            sandbox mode &middot; beacon-software
-          </Text>
+
+        {isError && workflow?.status?.status_human_description && (
+          <Banner theme="error">{workflow.status.status_human_description}</Banner>
         )}
-
-        <Card className="p-4 flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 flex items-center justify-center">
-              {runnerReady ? (
-                <Icon variant="CheckCircle" size={20} weight="fill" theme="success" />
-              ) : (
-                <Icon variant="Loading" size={20} />
-              )}
-            </div>
-            <div className="flex flex-col flex-1">
-              <Text weight="strong">runner-sandbox-01</Text>
-              <Text variant="subtext" theme="neutral">
-                {runnerReady ? 'connected \u00b7 healthy' : 'initializing...'}
-              </Text>
-            </div>
-            <Badge theme={runnerReady ? 'success' : 'neutral'} size="sm">
-              {runnerReady ? 'online' : 'pending'}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 flex items-center justify-center">
-              {installReady ? (
-                <Icon variant="CheckCircle" size={20} weight="fill" theme="success" />
-              ) : runnerReady ? (
-                <Icon variant="Loading" size={20} />
-              ) : (
-                <div className="w-4 h-4 rounded-full border-2 border-cool-grey-300 dark:border-dark-grey-600" />
-              )}
-            </div>
-            <div className="flex flex-col flex-1">
-              <Text weight="strong">install-abc123</Text>
-              <Text variant="subtext" theme="neutral">
-                {installReady ? 'healthy \u00b7 all checks passed' : 'waiting for runner...'}
-              </Text>
-            </div>
-            <Badge theme={installReady ? 'success' : 'neutral'} size="sm">
-              {installReady ? 'healthy' : 'pending'}
-            </Badge>
-          </div>
-        </Card>
       </div>
 
-      {/* Section 2: Component deployments */}
-      {phase === 'components' && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            {allDone ? (
-              <Icon variant="CheckCircle" size={24} weight="fill" theme="success" />
-            ) : (
-              <Icon variant="Loading" size={24} />
-            )}
-            <Text variant="h3" weight="strong">
-              {allDone ? 'Your app is live' : 'Deploying components...'}
-            </Text>
-          </div>
-          {allDone && (
-            <Text variant="body" theme="neutral">
-              4 components deployed &middot; install-abc123
-            </Text>
-          )}
+      <div className="flex flex-col gap-3">
+        {!workflowId && (
+          <>
+            <Skeleton height="52px" width="100%" />
+            <Skeleton height="52px" width="100%" />
+          </>
+        )}
 
-          <div className="flex flex-col gap-3">
-            {MOCK_COMPONENTS.map((comp, i) =>
-              componentSteps[i] >= 0 ? (
-                <ComponentDeployCard
-                  key={comp.name}
-                  name={comp.name}
-                  type={comp.type}
-                  isAction={comp.isAction}
-                  currentStep={componentSteps[i]}
-                />
-              ) : null,
-            )}
-          </div>
-        </div>
-      )}
+        {visibleSteps.map((step) => {
+          const badgeConfig = getStepBadge(step)
+          return (
+            <Card key={step.id} className="px-4 py-3 flex items-center gap-3">
+              <Status
+                isWithoutText
+                status={step.retried ? 'retried' : step.status?.status || 'pending'}
+                variant="timeline"
+                iconSize={16}
+              />
+              <Text weight="strong" className="flex-1 truncate">
+                {toSentenceCase(step.name)}
+              </Text>
+              {badgeConfig?.children && (
+                <Badge {...badgeConfig} size="sm" />
+              )}
+            </Card>
+          )
+        })}
+      </div>
 
       <div className="flex justify-between">
         {onGoBack ? (
@@ -250,8 +142,13 @@ export const ProvisioningStep = ({ onAdvance, onGoBack, nextStepTitle }: IWizard
         ) : (
           <div />
         )}
-        <Button type="button" variant="primary" disabled={!allDone} onClick={onAdvance}>
-          {nextStepTitle ?? 'Continue'} <Icon variant="CaretRight" weight="bold" />
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!isFinished || isError || deployPending}
+          onClick={() => completeDeploy()}
+        >
+          {deployPending ? 'Completing...' : (nextStepTitle ?? 'Continue')} {!deployPending && <Icon variant="CaretRight" weight="bold" />}
         </Button>
       </div>
     </div>

@@ -26,7 +26,7 @@ export type TAppSandboxBuild = {
   app_sandbox_config_id?: string
   status?: string
   status_description?: string
-  status_v2?: { status?: string; status_human_description?: string }
+  status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
   log_stream?: { id: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
@@ -69,10 +69,6 @@ export type TAppPoliciesConfig = {
   app_config_id?: string
   policies?: TAppPolicyConfig[]
 }
-
-export type TAppBranch = components['schemas']['app.AppBranch']
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
-export type TAppBranchInstallGroup = components['schemas']['app.AppBranchInstallGroup']
 
 // policy reports
 export type TPolicyReport = components['schemas']['app.PolicyReport']
@@ -407,6 +403,16 @@ export type TAvailableRolesResponse =
   components['schemas']['service.AvailableRolesResponse']
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
+
+// onboarding
+export type TOnboarding = components['schemas']['app.Onboarding']
+export type TExampleApp = components['schemas']['service.ExampleApp']
+export type TCompleteOrganizationStepRequest =
+  components['schemas']['service.CompleteOrganizationStepRequest']
+export type TCompleteYourStackStepRequest =
+  components['schemas']['service.CompleteYourStackStepRequest']
+export type TCompleteInstallStepRequest =
+  components['schemas']['service.CompleteInstallStepRequest']
 
 // auth
 export type TMe = {
