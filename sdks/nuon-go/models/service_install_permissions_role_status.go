@@ -50,6 +50,9 @@ type ServiceInstallPermissionsRoleStatus struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
+	// enabled in stack
+	EnabledInStack *SQLNullBool `json:"enabled_in_stack,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -82,6 +85,10 @@ type ServiceInstallPermissionsRoleStatus struct {
 func (m *ServiceInstallPermissionsRoleStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateEnabledInStack(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePolicies(formats); err != nil {
 		res = append(res, err)
 	}
@@ -93,6 +100,29 @@ func (m *ServiceInstallPermissionsRoleStatus) Validate(formats strfmt.Registry) 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceInstallPermissionsRoleStatus) validateEnabledInStack(formats strfmt.Registry) error {
+	if swag.IsZero(m.EnabledInStack) { // not required
+		return nil
+	}
+
+	if m.EnabledInStack != nil {
+		if err := m.EnabledInStack.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enabled_in_stack")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enabled_in_stack")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -151,6 +181,10 @@ func (m *ServiceInstallPermissionsRoleStatus) validateType(formats strfmt.Regist
 func (m *ServiceInstallPermissionsRoleStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEnabledInStack(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidatePolicies(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -162,6 +196,31 @@ func (m *ServiceInstallPermissionsRoleStatus) ContextValidate(ctx context.Contex
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceInstallPermissionsRoleStatus) contextValidateEnabledInStack(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.EnabledInStack != nil {
+
+		if swag.IsZero(m.EnabledInStack) { // not required
+			return nil
+		}
+
+		if err := m.EnabledInStack.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("enabled_in_stack")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("enabled_in_stack")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
