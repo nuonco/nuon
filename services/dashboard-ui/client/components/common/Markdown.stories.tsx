@@ -5,8 +5,9 @@ export const BasicUsage = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Enhanced Markdown Component</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        The enhanced Markdown component uses react-markdown with custom component overrides
-        to provide CodeBlock integration, JSONViewer support, and design system consistency.
+        The enhanced Markdown component uses react-markdown with custom
+        component overrides to provide CodeBlock integration, JSONViewer
+        support, and design system consistency.
       </p>
     </div>
 
@@ -57,7 +58,9 @@ Check out [this external link](https://example.com) and [this internal link](/da
 export const LinkIntegration = () => (
   <div className="space-y-6">
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Custom Link Component Integration</h3>
+      <h3 className="text-lg font-semibold">
+        Custom Link Component Integration
+      </h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         All links within markdown now use the custom Link component, providing
         consistent styling and behavior throughout the application.
@@ -100,8 +103,9 @@ export const CodeBlockIntegration = () => (
       <h3 className="text-lg font-semibold">Enhanced Code Integration</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Both inline code and code blocks now use the design system components.
-        Inline code uses the Code component with inline variant, while code blocks
-        use CodeBlock for syntax highlighting and JSONViewer for interactive JSON.
+        Inline code uses the Code component with inline variant, while code
+        blocks use CodeBlock for syntax highlighting and JSONViewer for
+        interactive JSON.
       </p>
     </div>
 
@@ -129,7 +133,9 @@ Mix inline code with links: Check the [\`useState\`](https://react.dev) hook doc
     </div>
 
     <div className="space-y-4">
-      <h4 className="text-sm font-medium">JavaScript with Syntax Highlighting</h4>
+      <h4 className="text-sm font-medium">
+        JavaScript with Syntax Highlighting
+      </h4>
       <div className="p-4 border rounded-lg">
         <Markdown
           content={`## React Component Example
@@ -336,7 +342,8 @@ export const Tables = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Table styling</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Markdown tables match the dashboard data table styling with rounded borders and header backgrounds.
+        Markdown tables match the dashboard data table styling with rounded
+        borders and header backgrounds.
       </p>
     </div>
 
@@ -389,8 +396,8 @@ export const CollapsibleContent = () => (
     <div className="space-y-3">
       <h3 className="text-lg font-semibold">Enhanced Collapsible Content</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Details/summary elements now use styling inspired by the Expand component,
-        providing consistent visual design and interactive behavior.
+        Details/summary elements now use styling inspired by the Expand
+        component, providing consistent visual design and interactive behavior.
       </p>
     </div>
 
@@ -545,7 +552,8 @@ export const ComprehensiveExample = () => (
       <h3 className="text-lg font-semibold">Complete Feature Demonstration</h3>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         This example demonstrates all the enhanced features working together:
-        syntax highlighting, interactive JSON, mermaid diagrams, tables, and collapsible content.
+        syntax highlighting, interactive JSON, mermaid diagrams, tables, and
+        collapsible content.
       </p>
     </div>
 
