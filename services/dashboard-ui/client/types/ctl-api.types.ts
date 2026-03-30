@@ -408,6 +408,16 @@ export type TAvailableRolesResponse =
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
+// onboarding
+export type TOnboarding = components['schemas']['app.Onboarding']
+export type TExampleApp = components['schemas']['service.ExampleApp']
+export type TCompleteOrganizationStepRequest =
+  components['schemas']['service.CompleteOrganizationStepRequest']
+export type TCompleteYourStackStepRequest =
+  components['schemas']['service.CompleteYourStackStepRequest']
+export type TCompleteInstallStepRequest =
+  components['schemas']['service.CompleteInstallStepRequest']
+
 // auth
 export type TMe = {
   id: string
