@@ -35,7 +35,7 @@ type ServiceAppAWSIAMRoleConfig struct {
 	DisplayName *string `json:"display_name"`
 
 	// enabled in stack
-	EnabledInStack bool `json:"enabled_in_stack,omitempty"`
+	EnabledInStack *bool `json:"enabled_in_stack,omitempty"`
 
 	// name
 	// Required: true

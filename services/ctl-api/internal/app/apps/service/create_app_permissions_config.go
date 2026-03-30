@@ -33,7 +33,7 @@ type AppAWSIAMRoleConfig struct {
 	Description         string `json:"description" validate:"required"`
 	PermissionsBoundary string `json:"permissions_boundary,omitempty" swaggertype:"string" validate:"optional_json"`
 	CloudPlatform       string `json:"cloud_platform,omitempty" validate:"omitempty,oneof=aws gcp"`
-	EnabledInStack      *bool  `json:"enabled_in_stack,omitempty"`
+	EnabledInStack      *bool  `json:"enabled_in_stack" swaggertype:"boolean" extensions:"x-nullable"`
 
 	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
 }

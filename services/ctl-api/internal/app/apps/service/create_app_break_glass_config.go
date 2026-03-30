@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -85,6 +86,7 @@ func (s *service) createAppBreakGlassConfig(ctx context.Context, appID string, r
 			DisplayName:             role.DisplayName,
 			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
 			Policies:                role.getPolicies(req.AppConfigID),
+			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
 		})
 	}
 
