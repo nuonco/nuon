@@ -5,6 +5,16 @@ import type {
   THelmK8sChangeAction,
 } from '@/types'
 
+const NORMALIZE_ACTION: Record<string, THelmK8sChangeAction> = {
+  added: 'added',
+  created: 'added',
+  changed: 'changed',
+  modified: 'changed',
+  destroyed: 'destroyed',
+  removed: 'destroyed',
+  deleted: 'destroyed',
+}
+
 export function parseHelmPlan(plan: THelmPlan): {
   changes: THelmPlanChange[]
   summary: THelmPlanSummary
@@ -50,7 +60,7 @@ export function parseHelmPlan(plan: THelmPlan): {
         release: match[2].trim(),
         resource: match[3].trim(),
         resourceType: match[4].trim(),
-        action: match[5].trim() as unknown as THelmK8sChangeAction,
+        action: NORMALIZE_ACTION[match[5].trim()] || match[5].trim() as unknown as THelmK8sChangeAction,
         before: before,
         after: after,
       })
