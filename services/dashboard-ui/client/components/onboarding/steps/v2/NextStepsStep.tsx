@@ -1,9 +1,12 @@
+import { useMutation } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TIconVariant } from '@/components/common/Icon'
+import type { TOnboarding } from '@/types'
+import { completeGetStartedStep } from '@/lib'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
 type NextStepLink = {
@@ -128,71 +131,91 @@ const NEXT_STEP_SECTIONS: NextStepSection[] = [
   },
 ]
 
-export const NextStepsStep = ({ onAdvance }: IWizardStepComponentProps) => (
-  <div className="flex flex-col gap-8">
-    <div className="flex flex-col gap-2">
-      <Text variant="h2">What's next</Text>
-      <Text variant="body" theme="neutral">
-        Your environment is provisioned. Here are some ways to get the most out
-        of Nuon.
-      </Text>
-    </div>
+export const NextStepsStep = ({ onAdvance, sharedData }: IWizardStepComponentProps) => {
+  const onboarding = sharedData.onboarding as TOnboarding | undefined
+  const orgId = onboarding?.org_id
 
-    {NEXT_STEP_SECTIONS.map((section) => (
-      <div key={section.title} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <Icon variant={section.icon} size={20} />
-            <Text variant="label">{section.title}</Text>
-            <Badge size="sm" theme="neutral">
-              Step {section.step}
-            </Badge>
-          </div>
-          <Text variant="body" theme="neutral">
-            {section.description}
-          </Text>
-        </div>
+  const { mutate: completeStep } = useMutation({
+    mutationFn: () => completeGetStartedStep({ orgId: orgId! }),
+  })
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {section.links.map((link) => (
-            <a
-              key={link.title}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-underline"
-            >
-              <Card className="gap-2 p-4 h-full hover:border-cool-grey-500 transition-colors relative">
-                {link.badge && (
-                  <Badge
-                    size="sm"
-                    theme="default"
-                    className="absolute top-3 right-3"
-                  >
-                    {link.badge}
-                  </Badge>
-                )}
-                <div className="flex items-center gap-2">
-                  <Icon variant={link.icon} size={16} />
-                  <Text variant="label">{link.title}</Text>
-                </div>
-                <Text variant="body" theme="neutral">
-                  {link.description}
-                </Text>
-              </Card>
-            </a>
-          ))}
-        </div>
+  const installId = onboarding?.install_id
+
+  const handleOpenControlPlane = () => {
+    if (orgId) completeStep()
+    if (orgId && installId) {
+      window.location.href = `/${orgId}/installs/${installId}`
+    } else {
+      onAdvance()
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-2">
+        <Text variant="h2">What's next</Text>
+        <Text variant="body" theme="neutral">
+          Your environment is provisioned. Here are some ways to get the most out
+          of Nuon.
+        </Text>
       </div>
-    ))}
 
-    <Button
-      type="button"
-      variant="primary"
-      onClick={onAdvance}
-      className="self-center"
-    >
-      <Icon variant="SquaresFour" /> Open control plane
-    </Button>
-  </div>
-)
+      {NEXT_STEP_SECTIONS.map((section) => (
+        <div key={section.title} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Icon variant={section.icon} size={20} />
+              <Text variant="label">{section.title}</Text>
+              <Badge size="sm" theme="neutral">
+                Step {section.step}
+              </Badge>
+            </div>
+            <Text variant="body" theme="neutral">
+              {section.description}
+            </Text>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {section.links.map((link) => (
+              <a
+                key={link.title}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline"
+              >
+                <Card className="gap-2 p-4 h-full hover:border-cool-grey-500 transition-colors relative">
+                  {link.badge && (
+                    <Badge
+                      size="sm"
+                      theme="default"
+                      className="absolute top-3 right-3"
+                    >
+                      {link.badge}
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Icon variant={link.icon} size={16} />
+                    <Text variant="label">{link.title}</Text>
+                  </div>
+                  <Text variant="body" theme="neutral">
+                    {link.description}
+                  </Text>
+                </Card>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <Button
+        type="button"
+        variant="primary"
+        onClick={handleOpenControlPlane}
+        className="self-center"
+      >
+        <Icon variant="SquaresFour" /> Open control plane
+      </Button>
+    </div>
+  )
+}

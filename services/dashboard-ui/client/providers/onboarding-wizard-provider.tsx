@@ -24,6 +24,8 @@ export interface IOnboardingWizardProps {
   onComplete: () => void
   canClose?: boolean
   onClose?: () => void
+  initialSharedData?: Record<string, unknown>
+  initialStepIndex?: number
 }
 
 export interface IWizardContext {
@@ -50,25 +52,37 @@ export function OnboardingWizardProvider({
   onComplete,
   canClose = false,
   onClose,
+  initialSharedData,
+  initialStepIndex,
   children,
 }: IOnboardingWizardProps & { children: React.ReactNode }) {
+  const useLocalStorage = initialStepIndex === undefined
+
   const [currentStepIndex, setCurrentStepIndex] = useState(() => {
+    if (!useLocalStorage) return initialStepIndex
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === null) return 0
     const parsed = parseInt(saved, 10)
     return parsed >= 0 && parsed < steps.length ? parsed : 0
   })
+
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(() => {
+    if (!useLocalStorage) {
+      return new Set(steps.slice(0, initialStepIndex).map((s) => s.id))
+    }
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === null) return new Set()
     const parsed = parseInt(saved, 10)
     return new Set(steps.slice(0, parsed).map((s) => s.id))
   })
-  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>({})
+
+  const [sharedData, setSharedDataState] = useState<Record<string, unknown>>(initialSharedData ?? {})
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(currentStepIndex))
-  }, [currentStepIndex])
+    if (useLocalStorage) {
+      localStorage.setItem(STORAGE_KEY, String(currentStepIndex))
+    }
+  }, [currentStepIndex, useLocalStorage])
 
   const markComplete = useCallback((id: string) => {
     setCompletedSteps((prev) => new Set([...prev, id]))
@@ -89,12 +103,16 @@ export function OnboardingWizardProvider({
 
   const goNext = useCallback(() => {
     setCurrentStepIndex((prev) => {
+      const currentStepId = steps[prev]?.id
+      if (currentStepId) {
+        setCompletedSteps((s) => new Set([...s, currentStepId]))
+      }
       if (prev < steps.length - 1) return prev + 1
-      localStorage.removeItem(STORAGE_KEY)
+      if (useLocalStorage) localStorage.removeItem(STORAGE_KEY)
       onComplete()
       return prev
     })
-  }, [steps.length, onComplete])
+  }, [steps, onComplete, useLocalStorage])
 
   const goPrev = useCallback(() => {
     setCurrentStepIndex((prev) => Math.max(0, prev - 1))

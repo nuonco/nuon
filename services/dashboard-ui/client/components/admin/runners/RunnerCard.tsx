@@ -95,7 +95,7 @@ export const RunnerCard = ({ runner, href, isInstallRunner = false, onAction }: 
             <Text variant="base" weight="strong">Recent job</Text>
             <LoadRunnerJob
               runnerId={runner.id}
-              statuses={['finished', 'error', 'timed-out', 'cancelled', 'not-attempted']}
+              statuses={['finished', 'failed', 'timed-out', 'cancelled', 'not-attempted']}
               title="Recent job"
             />
           </div>
