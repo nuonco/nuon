@@ -26,7 +26,7 @@ export type TAppSandboxBuild = {
   app_sandbox_config_id?: string
   status?: string
   status_description?: string
-  status_v2?: { status?: string; status_human_description?: string }
+  status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
   log_stream?: { id: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
