@@ -15,6 +15,7 @@ import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getWorkflow } from '@/lib'
 
 const CONTAINER_ID = 'sandbox-run-page'
@@ -46,11 +47,13 @@ const SandboxRunDetailContent = () => {
     ?.filter((s) => s?.step_target_id === sandboxRun?.id)
     ?.at(-1) ?? null
 
+  const { hasResponded } = useRespondedApprovals()
+  const responded = step ? hasResponded(step.id) : false
   const logStream = sandboxRun?.log_stream
   const pendingApproval =
-    step?.approval && !step?.approval?.response && step?.status?.status !== 'auto-skipped'
+    step?.approval && !step?.approval?.response && !responded && step?.status?.status !== 'auto-skipped'
   const completedApproval =
-    step?.approval && !!step?.approval?.response && step?.status?.status !== 'auto-skipped'
+    step?.approval && (!!step?.approval?.response || responded) && step?.status?.status !== 'auto-skipped'
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
