@@ -47,56 +47,47 @@ const MermaidDiagram = ({ code }: { code: string }) => {
   )
 }
 
-const markdownComponents = {
-  code({ node, inline, className, children, ...props }: any) {
-      const match = /language-(\w+)/.exec(className || '')
-      const language = match ? match[1] : 'text'
-      const codeString = String(children).replace(/\n$/, '')
-      const isMultiline = codeString.includes('\n')
-      const isInlineCode = inline === true
-      
-      if (!isInlineCode) {
-        // Block code
-        
-        // Handle mermaid diagrams
-        if (language === 'mermaid') {
-          return <MermaidDiagram code={codeString} />
-        }
-        
-        // Handle JSON
-        if (language === 'json' || language === 'jsonc') {
-          try {
-            const jsonData = JSON.parse(codeString)
-            return <JSONViewer data={jsonData} expanded={2} className="my-4" />
-          } catch {
-            // Fallback to regular code block if JSON parsing fails
-            return <CodeBlock language="json">{codeString}</CodeBlock>
-          }
-        }
-        
-        // Auto-detect JSON if no language specified
-        if (language === 'text' || !language) {
-          try {
-            const jsonData = JSON.parse(codeString)
-            return <JSONViewer data={jsonData} expanded={2} className="my-4" />
-          } catch {
-            // Not JSON, use regular code block
-          }
-        }
+function renderCodeBlock(language: string, codeString: string) {
+  if (language === 'mermaid') {
+    return <MermaidDiagram code={codeString} />
+  }
 
-        // Regular code block
-        return <CodeBlock language={language}>{codeString}</CodeBlock>
-      }
-      
-      // Inline code
+  if (language === 'json' || language === 'jsonc') {
+    try {
+      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+    } catch {
+      return <CodeBlock language="json">{codeString}</CodeBlock>
+    }
+  }
+
+  if (!language || language === 'text') {
+    try {
+      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+    } catch {
       return (
-        <code 
+        <pre className="overflow-x-auto rounded-lg border p-4 my-4 bg-code text-sm font-mono">
+          <code>{codeString}</code>
+        </pre>
+      )
+    }
+  }
+
+  return <CodeBlock language={language}>{codeString}</CodeBlock>
+}
+
+const markdownComponents = {
+  code({ node, className, children, style, ...props }: any) {
+      if (style || node?.properties?.style) {
+        return <code className={className} style={style} {...props}>{children}</code>
+      }
+
+      return (
+        <code
           className={cn(
             'bg-code text-sm text-blue-800 dark:text-blue-500 font-mono px-1 py-0.5 rounded',
             className
-          )} 
+          )}
           {...props}
-          style={{ position: 'relative' }}
         >
           {children}
         </code>
@@ -183,13 +174,55 @@ const markdownComponents = {
       )
     },
 
-    // Override pre to prevent double wrapping of CodeBlock and JSONViewer
-  pre({ children, ...props }: any) {
-    return <>{children}</>
+  pre({ node, children, style, ...props }: any) {
+    if (style || node?.properties?.style) {
+      return <pre style={style} {...props}>{children}</pre>
+    }
+
+    const childArray = React.Children.toArray(children)
+    const child = childArray.length === 1 ? (childArray[0] as React.ReactElement<any>) : null
+
+    if (child?.props?.className) {
+      const match = /language-(\w+)/.exec(child.props.className)
+      if (match) {
+        const codeString = String(child.props.children).replace(/\n$/, '')
+        return renderCodeBlock(match[1], codeString)
+      }
+    }
+
+    if (child?.props?.children != null) {
+      const codeString = String(child.props.children).replace(/\n$/, '')
+      return renderCodeBlock('text', codeString)
+    }
+
+    return <pre style={style} {...props}>{children}</pre>
   },
 }
 
+function preprocessContent(content: string): string {
+  const lines = content.split('\n')
+  const result: string[] = []
+  let htmlDepth = 0
+
+  for (const line of lines) {
+    const opens = (line.match(/<(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
+    const closes = (line.match(/<\/(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
+    htmlDepth += opens - closes
+
+    if (htmlDepth > 0 && line.trim() === '') {
+      continue
+    }
+
+    result.push(line)
+
+    if (htmlDepth < 0) htmlDepth = 0
+  }
+
+  return result.join('\n')
+}
+
 export const Markdown = React.memo(({ content = '' }: { content?: string }) => {
+  const processed = preprocessContent(content)
   return (
     <>
       <style>{`
@@ -268,12 +301,12 @@ export const Markdown = React.memo(({ content = '' }: { content?: string }) => {
         'prose dark:prose-invert max-w-[100%]',
         'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
       )}>
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]} 
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
           components={markdownComponents}
         >
-          {content}
+          {processed}
         </ReactMarkdown>
       </div>
     </>
