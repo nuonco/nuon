@@ -60,7 +60,7 @@ Plan: 1 to add, 1 to change, 1 to destroy
         release: 'myapp-release',
         resource: 'ConfigMap',
         resourceType: 'v1',
-        action: 'created',
+        action: 'added',
         before: null,
         after: { data: { config: 'value' } },
       })
@@ -70,7 +70,7 @@ Plan: 1 to add, 1 to change, 1 to destroy
         release: 'myapp-release',
         resource: 'Deployment',
         resourceType: 'apps/v1',
-        action: 'modified',
+        action: 'changed',
         before: { replicas: 2 },
         after: { replicas: 3 },
       })
@@ -119,7 +119,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         release: 'myapp-release',
         resource: 'ConfigMap',
         resourceType: 'v1',
-        action: 'created',
+        action: 'added',
         before: null,
         after: null,
       })
@@ -156,7 +156,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         release: 'myapp-release',
         resource: 'ConfigMap',
         resourceType: 'v1',
-        action: 'created',
+        action: 'added',
         before: null, // No matching diff found
         after: null,
       })
@@ -196,11 +196,11 @@ Plan: 1 to add, 1 to change, 1 to destroy
 
       expect(result.changes[0].workspace).toBe('default')
       expect(result.changes[0].release).toBe('app1-release')
-      expect(result.changes[0].action).toBe('created')
+      expect(result.changes[0].action).toBe('added')
 
       expect(result.changes[1].workspace).toBe('kube-system')
       expect(result.changes[1].release).toBe('app2-release')
-      expect(result.changes[1].action).toBe('modified')
+      expect(result.changes[1].action).toBe('changed')
 
       expect(result.changes[2].workspace).toBe('production')
       expect(result.changes[2].release).toBe('app3-release')
@@ -237,6 +237,31 @@ Plan: 1 to add, 1 to change, 1 to destroy
         change: 0,
         destroy: 0,
       })
+    })
+
+    test('should normalize action words to canonical names', () => {
+      const mockPlan: THelmPlan = {
+        plan: `
+ctl-api, ctl-api-admin, Ingress (networking.k8s.io) to be removed.
+ctl-api, ctl-api, Role (rbac.authorization.k8s.io) to be changed.
+ctl-api, ctl-api-admin, HTTPRoute (gateway.networking.k8s.io) to be added.
+default, myapp-release, ConfigMap (v1) to be created
+default, myapp-release, Deployment (apps/v1) to be modified
+default, myapp-release, Service (v1) to be destroyed
+Plan: 2 to add, 2 to change, 2 to destroy
+        `,
+        helm_content_diff: [],
+      } as THelmPlan
+
+      const result = parseHelmPlan(mockPlan)
+
+      expect(result.changes).toHaveLength(6)
+      expect(result.changes[0].action).toBe('destroyed') // removed → destroyed
+      expect(result.changes[1].action).toBe('changed')   // changed → changed
+      expect(result.changes[2].action).toBe('added')     // added → added
+      expect(result.changes[3].action).toBe('added')     // created → added
+      expect(result.changes[4].action).toBe('changed')   // modified → changed
+      expect(result.changes[5].action).toBe('destroyed') // destroyed → destroyed
     })
 
     test('should handle malformed lines gracefully', () => {
