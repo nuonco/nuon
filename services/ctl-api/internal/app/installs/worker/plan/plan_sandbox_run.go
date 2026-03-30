@@ -14,7 +14,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -274,60 +273,7 @@ func (p *Planner) getRoleForSandbox(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	// Determine operation type based on run type
-	var operation app.OperationType
-	switch run.RunType {
-	case app.SandboxRunTypeProvision:
-		operation = app.OperationProvision
-	case app.SandboxRunTypeReprovision:
-		operation = app.OperationReprovision
-	case app.SandboxRunTypeDeprovision:
-		operation = app.OperationDeprovision
-	default:
-		operation = app.OperationProvision
-	}
-
-	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
-	if operation == app.OperationDeprovision {
-		defaultRole = appCfg.PermissionsConfig.DeprovisionRole.Name
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeSandbox,
-		PrincipalName: "", // Sandboxes don't have names
-		RuntimeRole:   run.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			appCfg.SandboxConfig.OperationRoles,
-		),
-		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  defaultRole,
-		AppConfig:    appCfg,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	// Select role using operation roles engine
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for sandbox",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
+	return operationroles.GetRoleForSandbox(l, appCfg, run, stack, installState)
 }
 
 func (p *Planner) getAuthForSandbox(

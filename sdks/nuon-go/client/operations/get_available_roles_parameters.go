@@ -61,17 +61,23 @@ GetAvailableRolesParams contains all the parameters to send to the API endpoint
 */
 type GetAvailableRolesParams struct {
 
-	/* AppOperationType.
-
-	   operation type: provision, reprovision, deprovision, deploy, teardown, trigger
-	*/
-	AppOperationType string
-
 	/* InstallID.
 
 	   install ID
 	*/
 	InstallID string
+
+	/* OperationType.
+
+	   operation type: provision, reprovision, deprovision, deploy, teardown, trigger
+	*/
+	OperationType string
+
+	/* PrincipalID.
+
+	   principal ID: component ID or action workflow ID (required for component and action)
+	*/
+	PrincipalID *string
 
 	/* PrincipalType.
 
@@ -132,17 +138,6 @@ func (o *GetAvailableRolesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithAppOperationType adds the appOperationType to the get available roles params
-func (o *GetAvailableRolesParams) WithAppOperationType(appOperationType string) *GetAvailableRolesParams {
-	o.SetAppOperationType(appOperationType)
-	return o
-}
-
-// SetAppOperationType adds the appOperationType to the get available roles params
-func (o *GetAvailableRolesParams) SetAppOperationType(appOperationType string) {
-	o.AppOperationType = appOperationType
-}
-
 // WithInstallID adds the installID to the get available roles params
 func (o *GetAvailableRolesParams) WithInstallID(installID string) *GetAvailableRolesParams {
 	o.SetInstallID(installID)
@@ -152,6 +147,28 @@ func (o *GetAvailableRolesParams) WithInstallID(installID string) *GetAvailableR
 // SetInstallID adds the installId to the get available roles params
 func (o *GetAvailableRolesParams) SetInstallID(installID string) {
 	o.InstallID = installID
+}
+
+// WithOperationType adds the operationType to the get available roles params
+func (o *GetAvailableRolesParams) WithOperationType(operationType string) *GetAvailableRolesParams {
+	o.SetOperationType(operationType)
+	return o
+}
+
+// SetOperationType adds the operationType to the get available roles params
+func (o *GetAvailableRolesParams) SetOperationType(operationType string) {
+	o.OperationType = operationType
+}
+
+// WithPrincipalID adds the principalID to the get available roles params
+func (o *GetAvailableRolesParams) WithPrincipalID(principalID *string) *GetAvailableRolesParams {
+	o.SetPrincipalID(principalID)
+	return o
+}
+
+// SetPrincipalID adds the principalId to the get available roles params
+func (o *GetAvailableRolesParams) SetPrincipalID(principalID *string) {
+	o.PrincipalID = principalID
 }
 
 // WithPrincipalType adds the principalType to the get available roles params
@@ -173,19 +190,36 @@ func (o *GetAvailableRolesParams) WriteToRequest(r runtime.ClientRequest, reg st
 	}
 	var res []error
 
-	// query param app.operationType
-	qrAppOperationType := o.AppOperationType
-	qAppOperationType := qrAppOperationType
-	if qAppOperationType != "" {
+	// path param install_id
+	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
+		return err
+	}
 
-		if err := r.SetQueryParam("app.operationType", qAppOperationType); err != nil {
+	// query param operation_type
+	qrOperationType := o.OperationType
+	qOperationType := qrOperationType
+	if qOperationType != "" {
+
+		if err := r.SetQueryParam("operation_type", qOperationType); err != nil {
 			return err
 		}
 	}
 
-	// path param install_id
-	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
-		return err
+	if o.PrincipalID != nil {
+
+		// query param principal_id
+		var qrPrincipalID string
+
+		if o.PrincipalID != nil {
+			qrPrincipalID = *o.PrincipalID
+		}
+		qPrincipalID := qrPrincipalID
+		if qPrincipalID != "" {
+
+			if err := r.SetQueryParam("principal_id", qPrincipalID); err != nil {
+				return err
+			}
+		}
 	}
 
 	// query param principal_type

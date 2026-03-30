@@ -40,6 +40,9 @@ type AppRunnerJobPlan struct {
 	// runner job id
 	RunnerJobID string `json:"runner_job_id,omitempty"`
 
+	// runner job permission info
+	RunnerJobPermissionInfo *AppRunnerJobPermissionInfo `json:"runner_job_permission_info,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
@@ -49,6 +52,10 @@ func (m *AppRunnerJobPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCompositePlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunnerJobPermissionInfo(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,11 +88,38 @@ func (m *AppRunnerJobPlan) validateCompositePlan(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *AppRunnerJobPlan) validateRunnerJobPermissionInfo(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunnerJobPermissionInfo) { // not required
+		return nil
+	}
+
+	if m.RunnerJobPermissionInfo != nil {
+		if err := m.RunnerJobPermissionInfo.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runner_job_permission_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runner_job_permission_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app runner job plan based on the context it is used
 func (m *AppRunnerJobPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCompositePlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunnerJobPermissionInfo(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -111,6 +145,31 @@ func (m *AppRunnerJobPlan) contextValidateCompositePlan(ctx context.Context, for
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("composite_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJobPlan) contextValidateRunnerJobPermissionInfo(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.RunnerJobPermissionInfo != nil {
+
+		if swag.IsZero(m.RunnerJobPermissionInfo) { // not required
+			return nil
+		}
+
+		if err := m.RunnerJobPermissionInfo.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("runner_job_permission_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("runner_job_permission_info")
 			}
 
 			return err

@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/kube"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -158,55 +157,7 @@ func (p *Planner) getRoleForAction(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	operation := app.OperationTrigger
-
-	var entityRoles map[app.OperationType]string
-	if run.ActionWorkflowConfig.Role != "" {
-		entityRoles = map[app.OperationType]string{
-			operation: run.ActionWorkflowConfig.Role,
-		}
-	}
-
-	var breakGlassRole string
-	if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
-		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:      operation,
-		PrincipalType:  principal.TypeAction,
-		PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
-		RuntimeRole:    run.Role,
-		EntityRoles:    entityRoles,
-		MatrixRules:    appCfg.OperationRoleConfig.Rules,
-		DefaultRole:    appCfg.PermissionsConfig.MaintenanceRole.Name,
-		AppConfig:      appCfg,
-		StackOutputs:   &stack.InstallStackOutputs,
-		BreakGlassRole: breakGlassRole,
-		InstallState:   installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			l.Error("unable to get default role", zap.Error(fallbackErr))
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for action",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
+	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState)
 }
 
 func (p *Planner) getAuthForActionWorkflowRun(

@@ -105,11 +105,6 @@ export const ReprovisionModal = ({ ...props }: IReprovision & IModal) => {
 
         <RoleSelector
           installId={install?.id}
-          // TODO(sk): remove operationtype and principalType params, mark them deprecated
-          // this is just place holder, these two params are not needed anymore since they are not being used at
-          // at the backene. to be removed from everywhere.
-          operationType="reprovision"
-          principalType="sandbox"
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"

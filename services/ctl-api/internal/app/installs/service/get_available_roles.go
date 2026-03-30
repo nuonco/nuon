@@ -12,12 +12,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
+	"go.uber.org/zap"
 )
 
 type AvailableRole struct {
 	Name     string `json:"name"`
 	ARN      string `json:"arn"`
 	RoleType string `json:"role_type"`
+	Default  bool   `json:"default"`
 }
 
 type AvailableRolesResponse struct {
@@ -28,8 +31,9 @@ type AvailableRolesResponse struct {
 // @Summary				get available IAM roles for a specific operation
 // @Description.markdown	get_available_roles.md
 // @Param					install_id					path	string	true	"install ID"
-// @Param					principal_type				query	principal.Type	true	"principal type: component, sandbox, action"
-// @Param					app.operationType				query	string	true	"operation type: provision, reprovision, deprovision, deploy, teardown, trigger"
+// @Param					principal_type				query	principal.Type	false	"principal type: component, sandbox, action"
+// @Param					operation_type				query	app.OperationType	false	"operation type: provision, reprovision, deprovision, deploy, teardown, trigger"
+// @Param					principal_id				query	string	false	"principal ID: component ID or action workflow ID (required for component and action)"
 // @Tags					installs
 // @Accept					json
 // @Produce				json
@@ -52,21 +56,26 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	principalType := ctx.Query("principal_type")
 	operationType := ctx.Query("operation_type")
+	principalID := ctx.Query("principal_id")
 
-	if err := validatePrincipalType(principalType); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         err,
-			Description: err.Error(),
-		})
-		return
+	if principalType != "" {
+		if err := validatePrincipalType(principalType); err != nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         err,
+				Description: err.Error(),
+			})
+			return
+		}
 	}
 
-	if err := validateOperationType(operationType); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         err,
-			Description: err.Error(),
-		})
-		return
+	if operationType != "" {
+		if err := validateOperationType(operationType); err != nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         err,
+				Description: err.Error(),
+			})
+			return
+		}
 	}
 
 	install, err := s.getInstall(ctx, installID)
@@ -81,7 +90,7 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	state, err := s.helpers.GetInstallState(ctx, installID, false, false)
+	installState, err := s.helpers.GetInstallState(ctx, installID, false, false)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return
@@ -112,13 +121,113 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	roles, err = buildAvailableRoles(stackOutput, appCfg, state, operationType)
+	roles, err = buildAvailableRoles(stackOutput, appCfg, installState, operationType)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to build available roles: %w", err))
 		return
 	}
 
+	// Determine which role would be selected by default (no runtime override)
+	if principalType != "" && operationType != "" {
+		defaultRoleName, err := s.getDefaultRoleName(ctx, principal.Type(principalType), principalID, app.OperationType(operationType), appCfg, installStack, installState)
+		if err != nil {
+			s.l.Warn("unable to determine default role", zap.Error(err))
+		}
+
+		if defaultRoleName != "" {
+			for i := range roles {
+				if roles[i].Name == defaultRoleName {
+					roles[i].Default = true
+					break
+				}
+			}
+		}
+	}
+
 	ctx.JSON(http.StatusOK, AvailableRolesResponse{Roles: roles})
+}
+
+func (s *service) getDefaultRoleName(
+	ctx *gin.Context,
+	principalType principal.Type,
+	principalID string,
+	operationType app.OperationType,
+	appCfg *app.AppConfig,
+	installStack *app.InstallStack,
+	installState *state.State,
+) (string, error) {
+	switch principalType {
+	case principal.TypeComponent:
+		if principalID == "" {
+			return "", fmt.Errorf("principal_id is required for component")
+		}
+		cmp, err := s.componentHelpers.GetComponent(ctx, principalID)
+		if err != nil {
+			return "", fmt.Errorf("unable to get component: %w", err)
+		}
+		if len(cmp.ComponentConfigs) == 0 {
+			return "", fmt.Errorf("component has no configs")
+		}
+		latestConfig := &cmp.ComponentConfigs[0]
+		latestConfig.Component = *cmp
+		installDeploy := &app.InstallDeploy{
+			Type: app.InstallDeployTypeApply,
+		}
+		if operationType == app.OperationTeardown {
+			installDeploy.Type = app.InstallDeployTypeTeardown
+		}
+		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState)
+		if err != nil {
+			return "", err
+		}
+		return roleSelection.RoleName, nil
+
+	case principal.TypeSandbox:
+		var runType app.SandboxRunType
+		switch operationType {
+		case app.OperationDeprovision:
+			runType = app.SandboxRunTypeDeprovision
+		case app.OperationReprovision:
+			runType = app.SandboxRunTypeReprovision
+		default:
+			runType = app.SandboxRunTypeProvision
+		}
+		run := &app.InstallSandboxRun{
+			RunType: runType,
+		}
+		roleSelection, _, err := operationroles.GetRoleForSandbox(s.l, appCfg, run, installStack, installState)
+		if err != nil {
+			return "", err
+		}
+		return roleSelection.RoleName, nil
+
+	case principal.TypeAction:
+		if principalID == "" {
+			return "", fmt.Errorf("principal_id is required for action")
+		}
+		actionWorkflowCfg, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, principalID, appCfg.ID)
+		if err != nil {
+			return "", fmt.Errorf("unable to get action workflow config: %w", err)
+		}
+		// Load the action workflow name
+		var actionWorkflow app.ActionWorkflow
+		if res := s.db.WithContext(ctx).First(&actionWorkflow, "id = ?", actionWorkflowCfg.ActionWorkflowID); res.Error != nil {
+			return "", fmt.Errorf("unable to get action workflow: %w", res.Error)
+		}
+		actionWorkflowCfg.ActionWorkflow = actionWorkflow
+
+		run := &app.InstallActionWorkflowRun{
+			ActionWorkflowConfig: *actionWorkflowCfg,
+		}
+		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState)
+		if err != nil {
+			return "", err
+		}
+		return roleSelection.RoleName, nil
+
+	default:
+		return "", fmt.Errorf("unsupported principal type: %s", principalType)
+	}
 }
 
 func buildAvailableRoles(stackOutputs app.StackOutput, appCfg *app.AppConfig, state *state.State, operationType string) ([]AvailableRole, error) {

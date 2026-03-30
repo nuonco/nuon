@@ -5052,6 +5052,7 @@ export interface components {
     };
     "service.AvailableRole": {
       arn?: string;
+      default?: boolean;
       name?: string;
       role_type?: string;
     };

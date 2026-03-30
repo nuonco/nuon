@@ -1,15 +1,12 @@
 package plan
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -151,46 +148,7 @@ func (p *Planner) getRoleForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	operation := app.OperationDeploy
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		operation = app.OperationTeardown
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeComponent,
-		PrincipalName: compBuild.ComponentConfigConnection.Component.Name,
-		RuntimeRole:   installDeploy.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			compBuild.ComponentConfigConnection.OperationRoles,
-		),
-		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  appCfg.PermissionsConfig.MaintenanceRole.Name,
-		AppConfig:    appCfg,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for component deploy",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
+	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState)
 }
 
 func (p *Planner) getAuthForDeploy(
