@@ -94,7 +94,7 @@ const InstallTemplate = () => {
               {
                 path: `/policies`,
                 iconVariant: 'ShieldCheck',
-                text: 'Policies',
+                text: 'Policy Evaluations',
               },
               {
                 path: `/workflows`,
@@ -221,7 +221,7 @@ const InstallTemplate = () => {
                 {
                   path: `/policies`,
                   iconVariant: 'ShieldCheck',
-                  text: 'Policies',
+                  text: 'Policy Evaluations',
                 },
                 {
                   path: `/workflows`,
