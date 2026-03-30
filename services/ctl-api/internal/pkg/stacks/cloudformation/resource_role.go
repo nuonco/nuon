@@ -175,17 +175,24 @@ func (a *Templates) getRoleParameters(role app.AppAWSIAMRoleConfig, defaultValue
 	}
 }
 
+func resolveEnabledInStack(role app.AppAWSIAMRoleConfig, fallback bool) bool {
+	if role.EnabledInStack.Valid {
+		return role.EnabledInStack.Bool
+	}
+	return fallback
+}
+
 func (a *Templates) getRolesParameters(inp *stacks.TemplateInput) map[string]cloudformation.Parameter {
 	params := make(map[string]cloudformation.Parameter, 0)
 
 	for _, role := range inp.AppCfg.PermissionsConfig.Roles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, true)
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, resolveEnabledInStack(role, true))
 	}
 	for _, role := range inp.AppCfg.BreakGlassConfig.Roles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, false)
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, resolveEnabledInStack(role, false))
 	}
 	for _, role := range inp.AppCfg.PermissionsConfig.CustomRoles {
-		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, a.roleInUse(role.Name, inp))
+		params[role.CloudFormationStackParamName] = a.getRoleParameters(role, resolveEnabledInStack(role, a.roleInUse(role.Name, inp)))
 	}
 
 	return params

@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -32,6 +33,7 @@ type AppAWSIAMRoleConfig struct {
 	Description         string `json:"description" validate:"required"`
 	PermissionsBoundary string `json:"permissions_boundary,omitempty" swaggertype:"string" validate:"optional_json"`
 	CloudPlatform       string `json:"cloud_platform,omitempty" validate:"omitempty,oneof=aws gcp"`
+	EnabledInStack      *bool  `json:"enabled_in_stack" swaggertype:"boolean" extensions:"x-nullable"`
 
 	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
 }
@@ -167,6 +169,7 @@ func (s *service) getCustomRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID 
 			Description:             role.Description,
 			DisplayName:             role.DisplayName,
 			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
+			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
 			Policies:                role.getPolicies(appConfigID),
 		}
 		roleConfigs = append(roleConfigs, roleConfig)
@@ -187,6 +190,7 @@ func (s *service) getBreakGlassRoleConfigs(roles []AppAWSIAMRoleConfig, appConfi
 			Description:             role.Description,
 			DisplayName:             role.DisplayName,
 			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
+			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
 			Policies:                role.getPolicies(appConfigID),
 		}
 		roleConfigs = append(roleConfigs, roleConfig)
@@ -208,6 +212,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 				Description:             req.ProvisionRole.Description,
 				DisplayName:             req.ProvisionRole.DisplayName,
 				PermissionsBoundaryJSON: generics.ToJSON(req.ProvisionRole.PermissionsBoundary),
+				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.ProvisionRole.EnabledInStack),
 				Policies:                req.ProvisionRole.getPolicies(req.AppConfigID),
 			},
 			{
@@ -218,6 +223,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 				Description:             req.MaintenanceRole.Description,
 				DisplayName:             req.MaintenanceRole.DisplayName,
 				PermissionsBoundaryJSON: generics.ToJSON(req.MaintenanceRole.PermissionsBoundary),
+				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.MaintenanceRole.EnabledInStack),
 				Policies:                req.MaintenanceRole.getPolicies(req.AppConfigID),
 			},
 			{
@@ -228,6 +234,7 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 				Description:             req.DeprovisionRole.Description,
 				DisplayName:             req.DeprovisionRole.DisplayName,
 				PermissionsBoundaryJSON: generics.ToJSON(req.DeprovisionRole.PermissionsBoundary),
+				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.DeprovisionRole.EnabledInStack),
 				Policies:                req.DeprovisionRole.getPolicies(req.AppConfigID),
 			},
 		},

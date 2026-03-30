@@ -11,7 +11,7 @@ func NewNullBool(val bool) sql.NullBool {
 
 func NewNullBoolFromPtr(val *bool) sql.NullBool {
 	if val == nil {
-		return sql.NullBool{Valid: true}
+		return sql.NullBool{Valid: false}
 	}
 
 	return sql.NullBool{

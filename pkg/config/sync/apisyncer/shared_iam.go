@@ -35,5 +35,9 @@ func (s *syncer) iamRoleToRequest(role *config.AppAWSIAMRole) *models.ServiceApp
 		req.PermissionsBoundary = role.PermissionsBoundary
 	}
 
+	if role.EnabledInStack != nil {
+		req.EnabledInStack = role.EnabledInStack
+	}
+
 	return req
 }

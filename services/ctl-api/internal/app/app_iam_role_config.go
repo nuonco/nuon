@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -54,6 +55,8 @@ type AppAWSIAMRoleConfig struct {
 	Name          string         `json:"name,omitzero" features:"template" temporaljson:"name,omitzero,omitempty"`
 	Description   string         `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 	DisplayName   string         `json:"display_name,omitzero" features:"template" temporaljson:"display_name,omitzero,omitempty"`
+
+	EnabledInStack sql.NullBool `json:"enabled_in_stack,omitempty" gorm:"column:enabled_in_stack" temporaljson:"enabled_in_stack,omitempty"`
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`

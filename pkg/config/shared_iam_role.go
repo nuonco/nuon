@@ -14,6 +14,8 @@ type AppAWSIAMRole struct {
 	Policies    []AppAWSIAMPolicy `mapstructure:"policies" toml:"policies" jsonschema:"required"`
 
 	PermissionsBoundary string `mapstructure:"permissions_boundary,omitempty" toml:"permissions_boundary,omitempty" features:"template,get"`
+
+	EnabledInStack *bool `mapstructure:"enabled_in_stack,omitempty" toml:"enabled_in_stack,omitempty"`
 }
 
 func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -45,5 +47,7 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("permissions_boundary").Short("[AWS] permissions boundary policy").
 		Long("[AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
 		Example("./provision_boundary.json").
-		Example("./maintenance_boundary.json")
+		Example("./maintenance_boundary.json").
+		Field("enabled_in_stack").Short("whether the role is enabled by default in the CloudFormation stack").
+		Long("Controls the default value of the Enable parameter for this role in the CloudFormation stack. When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)")
 }
