@@ -156,16 +156,21 @@
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/app-variables"
+              "concepts/app-variables",
+              "concepts/runners"
             ]
           },
           {
-            "group": "Customer Configuration Options",
-            "pages": ["concepts/installs", "concepts/stacks", "concepts/runners", "concepts/operation-roles"]
+            "group": "Support Customer Infrastructure",
+            "pages": ["concepts/installs", "concepts/stacks", "concepts/operation-roles"]
           },
           {
-            "group": "Day-2 Operations",
-            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies", "concepts/customer-portal"]
+            "group": "Continuous Delivery",
+            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
+          },
+          {
+            "group": "Customer Experience",
+            "pages": ["concepts/customer-portal"]
           },
           {
             "group": "Reference",
@@ -182,7 +187,8 @@
             "pages": [
               "guides/byoc",
               "guides/app-install-life-cycle",
-              "guides/ai-and-apps"
+              "guides/ai-and-apps",
+              "guides/using-variables"
             ]
           },
           {
@@ -191,6 +197,7 @@
               "guides/managing-apps",
               "guides/managing-components",
               "guides/configuring-inputs-and-secrets",
+              "guides/configuring-sandboxes",
               "guides/vcs",
               "guides/component-dependencies",
               "guides/app-init",
@@ -211,12 +218,7 @@
           {
             "group": "Support Customer Infrastructure",
             "pages": [
-              "guides/configuring-sandboxes",
-              "guides/bring-your-own-network",
-              "guides/using-variables",
-              "guides/sandbox-orgs",
               "guides/custom-nested-stacks",
-              "guides/install-access-permissions",
               "guides/runner-management-mode"
             ]
           },
@@ -226,9 +228,7 @@
               "guides/configuring-policies",
               "guides/actions",
               "guides/operation-roles",
-              "guides/using-readmes",
-              "guides/team-management",
-              "guides/custom-domains"
+              "guides/using-readmes"
             ]
           },
           {
@@ -237,6 +237,13 @@
               "guides/customer-portal",
               "guides/control-plane-integration",
               "guides/vendor-customers"
+            ]
+          },
+          {
+            "group": "Admin",
+            "pages": [
+              "guides/team-management",
+              "guides/custom-domains"
             ]
           },
           {

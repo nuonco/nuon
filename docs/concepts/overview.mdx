@@ -5,7 +5,7 @@ icon: "compass"
 keywords: ["BYOC", "bring your own cloud", "concepts", "platform overview", "how Nuon works"]
 ---
 
-Nuon is built around three pillars: packaging your app for BYOC delivery, giving customers flexible configuration options, and enabling reliable day-2 operations. This section covers the core concepts behind each.
+Nuon is built around three pillars: connecting your app for BYOC delivery, supporting customer infrastructure, and enabling continuous delivery. This section covers the core concepts behind each.
 
 ## Connect Your App
 
@@ -37,9 +37,13 @@ Everything you define as a vendor to package your application for BYOC delivery.
     Store and share dynamic values across all installs of an app via the API.
   </Card>
 
+  <Card title="Runners" icon="shoe-prints" href="/concepts/runners">
+    Egress-only agents that deploy and manage installs inside customer cloud accounts.
+  </Card>
+
 </CardGroup>
 
-## Customer Configuration Options
+## Support Customer Infrastructure
 
 Deploy into customer cloud accounts and adapt to their existing infrastructure.
 
@@ -53,18 +57,13 @@ Deploy into customer cloud accounts and adapt to their existing infrastructure.
     Cloud-native templates that bootstrap an install in a customer's cloud account.
   </Card>
 
-  <Card title="Runners" icon="shoe-prints" href="/concepts/runners">
-    Egress-only agents that deploy and manage installs inside customer cloud accounts.
-  </Card>
-
   <Card title="Operation Roles" icon="user-lock" href="/concepts/operation-roles">
     Map IAM roles to specific operations for least-privilege access in customer accounts.
   </Card>
 
-
 </CardGroup>
 
-## Day-2 Operations
+## Continuous Delivery
 
 Push updates with governance, audit trails, and operational control.
 
@@ -81,6 +80,14 @@ Push updates with governance, audit trails, and operational control.
   <Card title="Policies" icon="shield" href="/concepts/policies">
     Enforce compliance and security rules across builds and infrastructure deployments.
   </Card>
+
+</CardGroup>
+
+## Customer Experience
+
+How your customers interact with and manage their installs.
+
+<CardGroup cols={2}>
 
   <Card title="Customer Portal" icon="users" href="/concepts/customer-portal">
     How your customers interact with installs — via the hosted portal, your own product, or CLI.
