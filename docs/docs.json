@@ -187,7 +187,8 @@
             "pages": [
               "guides/byoc",
               "guides/app-install-life-cycle",
-              "guides/ai-and-apps"
+              "guides/ai-and-apps",
+              "guides/using-variables"
             ]
           },
           {
@@ -196,6 +197,7 @@
               "guides/managing-apps",
               "guides/managing-components",
               "guides/configuring-inputs-and-secrets",
+              "guides/configuring-sandboxes",
               "guides/vcs",
               "guides/component-dependencies",
               "guides/app-init",
@@ -216,11 +218,7 @@
           {
             "group": "Support Customer Infrastructure",
             "pages": [
-              "guides/configuring-sandboxes",
-              "guides/using-variables",
-              "guides/sandbox-orgs",
               "guides/custom-nested-stacks",
-              "guides/install-access-permissions",
               "guides/runner-management-mode"
             ]
           },
@@ -230,9 +228,7 @@
               "guides/configuring-policies",
               "guides/actions",
               "guides/operation-roles",
-              "guides/using-readmes",
-              "guides/team-management",
-              "guides/custom-domains"
+              "guides/using-readmes"
             ]
           },
           {
@@ -241,6 +237,13 @@
               "guides/customer-portal",
               "guides/control-plane-integration",
               "guides/vendor-customers"
+            ]
+          },
+          {
+            "group": "Admin",
+            "pages": [
+              "guides/team-management",
+              "guides/custom-domains"
             ]
           },
           {
