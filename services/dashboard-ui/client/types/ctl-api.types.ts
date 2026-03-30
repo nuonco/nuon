@@ -70,10 +70,6 @@ export type TAppPoliciesConfig = {
   policies?: TAppPolicyConfig[]
 }
 
-export type TAppBranch = components['schemas']['app.AppBranch']
-export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
-export type TAppBranchInstallGroup = components['schemas']['app.AppBranchInstallGroup']
-
 // policy reports
 export type TPolicyReport = components['schemas']['app.PolicyReport']
 export type TPolicyReportOwnerType =

@@ -11,7 +11,7 @@ import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { getExampleApps, completeYourStackStep } from '@/lib'
 import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
-import type { TAPIError, TExampleApp, TOnboarding } from '@/types'
+import type { TAPIError, TExampleApp, TOnboarding, TCloudPlatform as TCloudPlatformType } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TComponentType } from '@/types'
 
@@ -254,7 +254,7 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
       <div className="flex items-center gap-1.5">
         {app.cloud_provider && (
           <CloudPlatformDisplay
-            platform={app.cloud_provider}
+            platform={app.cloud_provider as TCloudPlatformType}
             colorVariant="color"
             displayVariant="icon-only"
             iconSize="16"

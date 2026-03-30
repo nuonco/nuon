@@ -4,7 +4,7 @@ import { completeYourStackStep } from './complete-your-stack-step'
 
 describe('completeYourStackStep should handle response status codes from POST onboarding/current/steps/your-stack endpoint', () => {
   const orgId = 'test-org-id'
-  const body = { app_id: 'test-app-id' }
+  const body = { app_type: 'example' as const, example_app_slug: 'test-app' }
 
   test('200 status', async () => {
     const result = await completeYourStackStep({ body, orgId })
