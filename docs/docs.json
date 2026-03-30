@@ -156,16 +156,21 @@
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
-              "concepts/app-variables"
+              "concepts/app-variables",
+              "concepts/runners"
             ]
           },
           {
-            "group": "Customer Configuration Options",
-            "pages": ["concepts/installs", "concepts/stacks", "concepts/runners", "concepts/operation-roles"]
+            "group": "Support Customer Infrastructure",
+            "pages": ["concepts/installs", "concepts/stacks", "concepts/operation-roles"]
           },
           {
-            "group": "Day-2 Operations",
-            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies", "concepts/customer-portal"]
+            "group": "Continuous Delivery",
+            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
+          },
+          {
+            "group": "Customer Experience",
+            "pages": ["concepts/customer-portal"]
           },
           {
             "group": "Reference",
@@ -212,7 +217,6 @@
             "group": "Support Customer Infrastructure",
             "pages": [
               "guides/configuring-sandboxes",
-              "guides/bring-your-own-network",
               "guides/using-variables",
               "guides/sandbox-orgs",
               "guides/custom-nested-stacks",
