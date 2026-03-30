@@ -38,8 +38,11 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
 		cfg.ECRAuth = &credentials.Config{
-			Region:     currentApp.Repository.Region,
-			UseDefault: true,
+			Region: currentApp.Repository.Region,
+			AssumeRole: &credentials.AssumeRoleConfig{
+				RoleARN:     a.cfg.ManagementIAMRoleARN,
+				SessionName: "ctl-api-ecr-auth",
+			},
 		}
 	}
 
