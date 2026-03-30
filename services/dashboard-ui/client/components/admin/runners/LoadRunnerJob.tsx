@@ -10,7 +10,7 @@ import type { TRunnerJob } from '@/types'
 interface LoadRunnerJobProps {
   runnerId: string
   groups?: Array<'operations'>
-  statuses?: Array<'finished' | 'error' | 'timed-out' | 'cancelled' | 'not-attempted'>
+  statuses?: Array<'finished' | 'failed' | 'timed-out' | 'cancelled' | 'not-attempted'>
   title: string
 }
 
@@ -23,7 +23,7 @@ export const LoadRunnerJob = ({
   const { org } = useOrg()
   const orgId = org.id
 
-  const { data, error: queryError, isLoading } = useQuery<TRunnerJob[]>({
+  const { data, error: queryError, isLoading } = useQuery({
     queryKey: ['runner-jobs', orgId, runnerId, groups, statuses],
     queryFn: () =>
       getRunnerJobs({
@@ -36,7 +36,7 @@ export const LoadRunnerJob = ({
     enabled: !!orgId && !!runnerId,
   })
 
-  const job = data?.[0]
+  const job = data?.data?.[0]
   const error = queryError ? 'Unable to load runner job' : null
 
   if (error) {
