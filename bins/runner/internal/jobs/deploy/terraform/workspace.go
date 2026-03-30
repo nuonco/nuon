@@ -47,6 +47,9 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 	extraEnvVars := make(map[string]string, 0)
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
+		// The Terraform Kubernetes provider does not read the standard
+		// KUBECONFIG env var — it uses KUBE_CONFIG_PATH instead.
+		extraEnvVars["KUBE_CONFIG_PATH"] = config.DefaultKubeConfigFilename
 	}
 
 	vars, err := staticvars.New(p.v,
@@ -116,6 +119,9 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 	extraEnvVars := make(map[string]string, 0)
 	if p.state.plan.TerraformDeployPlan.ClusterInfo != nil {
 		extraEnvVars[config.DefaultKubeConfigEnvVar] = config.DefaultKubeConfigFilename
+		// The Terraform Kubernetes provider does not read the standard
+		// KUBECONFIG env var — it uses KUBE_CONFIG_PATH instead.
+		extraEnvVars["KUBE_CONFIG_PATH"] = config.DefaultKubeConfigFilename
 	}
 
 	vars, err := staticvars.New(p.v,
