@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
 import { CreateOrgStep } from '@/components/onboarding/steps/CreateOrgStep'
@@ -14,6 +15,16 @@ import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provid
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { useConfig } from '@/hooks/use-config'
+import { createOnboarding } from '@/lib'
+import type { TOnboarding } from '@/types'
+
+const ONBOARDING_STEP_TO_INDEX: Record<string, number> = {
+  organization: 0,
+  your_stack: 1,
+  install: 2,
+  deploy: 3,
+  get_started: 4,
+}
 
 const STEPS = [
   {
@@ -100,6 +111,27 @@ const STEPS_V2 = [
 export function Onboarding() {
   const { onboardingV2 } = useConfig()
   const steps = onboardingV2 ? STEPS_V2 : STEPS
+  const [initialSharedData, setInitialSharedData] = useState<
+    Record<string, unknown> | undefined
+  >(onboardingV2 ? undefined : {})
+
+  useEffect(() => {
+    if (!onboardingV2) return
+    let cancelled = false
+    createOnboarding().then((ob) => {
+      if (!cancelled) setInitialSharedData({ onboarding: ob })
+    }).catch(() => {
+      if (!cancelled) setInitialSharedData({})
+    })
+    return () => { cancelled = true }
+  }, [onboardingV2])
+
+  if (!initialSharedData) return null
+
+  const onboarding = initialSharedData.onboarding as TOnboarding | undefined
+  const initialStepIndex = onboardingV2 && onboarding?.current_step
+    ? ONBOARDING_STEP_TO_INDEX[onboarding.current_step] ?? 0
+    : undefined
 
   return (
     <ToastProvider>
@@ -107,6 +139,8 @@ export function Onboarding() {
         <OnboardingJourneyProvider>
           <OnboardingWizard
             steps={steps}
+            initialSharedData={initialSharedData}
+            initialStepIndex={initialStepIndex}
             onComplete={() => {
               window.location.href = '/'
             }}

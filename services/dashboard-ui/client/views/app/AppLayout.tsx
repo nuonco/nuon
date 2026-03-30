@@ -58,7 +58,7 @@ const AppTemplate = () => {
     { path: `/policies`, iconVariant: 'ShieldCheck' as const, text: 'Policies' },
     { path: `/installs`, iconVariant: 'Cube' as const, text: 'Installs' },
     { path: `/readme`, iconVariant: 'BookOpen' as const, text: 'README' },
-  ].filter((link): link is TNavLink => !!link)
+  ].filter(Boolean) as TNavLink[]
 
   return (
     <PageLayout>
