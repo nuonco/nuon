@@ -1,16 +1,16 @@
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
-import { PolicyReportsTable, policyReportsTableColumns } from '@/components/policies/PolicyReportsTable'
+import { PolicyReportsTable } from '@/components/policies/PolicyReportsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallPolicyReports } from '@/lib'
+import { getInstallPolicyReports, getAppPoliciesConfigs } from '@/lib'
 import type { TPolicyReportOwnerType, TPolicyReportStatus } from '@/lib/ctl-api/installs/get-install-policy-reports'
 
 const CONTAINER_ID = 'install-policies-page'
@@ -34,6 +34,29 @@ export const Policies = () => {
       }),
     enabled: !!org?.id && !!install?.id,
   })
+
+  const { data: policiesConfigs } = useQuery({
+    queryKey: ['app-policies-configs', org?.id, install?.app_id],
+    queryFn: () =>
+      getAppPoliciesConfigs({
+        orgId: org.id,
+        appId: install.app_id!,
+      }),
+    enabled: !!org?.id && !!install?.app_id,
+  })
+
+  const policyNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!policiesConfigs) return map
+    for (const config of policiesConfigs) {
+      for (const policy of config.policies ?? []) {
+        if (policy.id && policy.name) {
+          map.set(policy.id, policy.name)
+        }
+      }
+    }
+    return map
+  }, [policiesConfigs])
 
   const reports = reportsResult ?? []
 
@@ -59,12 +82,20 @@ export const Policies = () => {
 
       <div className="flex flex-auto">
         {isLoading ? (
-          <TableSkeleton columns={policyReportsTableColumns} skeletonRows={5} />
+          <div className="flex flex-col gap-3 w-full">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-32 rounded-md border bg-cool-grey-50 dark:bg-dark-grey-800 animate-pulse"
+              />
+            ))}
+          </div>
         ) : (
           <PolicyReportsTable
             reports={reports}
             orgId={org?.id ?? ''}
             installId={install?.id ?? ''}
+            policyNameMap={policyNameMap}
             currentStatus={status || undefined}
             currentOwnerType={ownerType || undefined}
           />
