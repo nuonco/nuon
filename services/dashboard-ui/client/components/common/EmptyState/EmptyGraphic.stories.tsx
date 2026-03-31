@@ -8,6 +8,7 @@ export const Variants = () => (
     <EmptyGraphic variant="actions" />
     <EmptyGraphic variant="diagram" />
     <EmptyGraphic variant="history" />
+    <EmptyGraphic variant="policy" />
     <EmptyGraphic variant="search" />
     <EmptyGraphic variant="table" />
   </div>
@@ -19,6 +20,7 @@ export const Small = () => (
     <EmptyGraphic variant="actions" size="sm" />
     <EmptyGraphic variant="diagram" size="sm" />
     <EmptyGraphic variant="history" size="sm" />
+    <EmptyGraphic variant="policy" size="sm" />
     <EmptyGraphic variant="search" size="sm" />
     <EmptyGraphic variant="table" size="sm" />
   </div>
