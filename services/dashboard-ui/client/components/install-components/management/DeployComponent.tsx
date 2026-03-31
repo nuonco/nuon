@@ -182,7 +182,7 @@ export const DeployComponentModal = ({
           </Text>
         </div>
       }
-      size="3/4"
+      size="half"
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}
@@ -239,6 +239,7 @@ export const DeployComponentModal = ({
 
         <BuildSelect
           componentId={component.id}
+          componentType={component.type}
           selectedBuildId={buildId}
           currentBuildId={currentBuildId}
           currentDeployStatus={currentDeployStatus}

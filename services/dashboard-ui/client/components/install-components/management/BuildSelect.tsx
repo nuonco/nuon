@@ -14,6 +14,7 @@ import type { TBuild } from '@/types'
 
 interface BuildSelectProps {
   componentId: string
+  componentType?: string
   selectedBuildId?: string
   currentBuildId?: string
   currentDeployStatus?: string
@@ -23,6 +24,7 @@ interface BuildSelectProps {
 
 export const BuildSelect = ({
   componentId,
+  componentType,
   selectedBuildId,
   currentBuildId,
   currentDeployStatus,
@@ -51,6 +53,8 @@ export const BuildSelect = ({
       }),
     enabled: !!org?.id && !!componentId,
   })
+
+  console.log(allBuilds)
 
   // Update accumulated builds when new data comes in
   useEffect(() => {
@@ -169,6 +173,10 @@ export const BuildSelect = ({
             const isActive = build?.status_v2?.status === 'active'
             const isCurrentDeployment =
               currentBuildId && build.id === currentBuildId
+            const externalImageTag =
+              componentType === 'external_image'
+                ? build?.component_config_connection?.external_image?.tag
+                : undefined
             return (
               <RadioInput
                 key={build.id}
@@ -185,13 +193,20 @@ export const BuildSelect = ({
                   labelText: (
                     <div className="flex items-start justify-between w-full">
                       <div className="flex flex-col">
-                        <Text
-                          className="!leading-[1] font-mono"
-                          variant="base"
-                          weight="strong"
-                        >
-                          {build.id}
-                        </Text>
+                        <div className="flex items-center gap-2">
+                          <Text
+                            className="!leading-[1] font-mono"
+                            variant="base"
+                            weight="strong"
+                          >
+                            {build.id}
+                          </Text>
+                          {externalImageTag && (
+                            <Badge size="sm" theme="neutral">
+                              {externalImageTag}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2">
                           {build?.vcs_connection_commit?.message && (
                             <>
