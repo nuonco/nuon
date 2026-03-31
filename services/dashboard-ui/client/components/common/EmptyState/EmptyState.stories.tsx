@@ -32,6 +32,11 @@ export const Variants = () => (
       emptyMessage="No history records found"
     />
     <EmptyState
+      variant="policy"
+      emptyTitle="No evaluations yet"
+      emptyMessage="Evaluations will appear after a deploy or sandbox run"
+    />
+    <EmptyState
       variant="search"
       emptyTitle="No results"
       emptyMessage="Try adjusting your search terms"
