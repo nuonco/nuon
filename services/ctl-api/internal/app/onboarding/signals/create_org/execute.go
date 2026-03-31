@@ -76,7 +76,7 @@ func (s *Signal) executeCreateOrg(ctx workflow.Context, logger interface{ Info(s
 
 	// Update onboarding with org reference and advance step
 	nextStep := string(app.OnboardingStepYourStack)
-	stepStatus := string(app.OnboardingStepStatusIdle)
+	stepStatus := string(app.OnboardingStepStatusActive)
 	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
 		Req: &activities.UpdateOnboardingInput{
 			OnboardingID: s.OnboardingID,
