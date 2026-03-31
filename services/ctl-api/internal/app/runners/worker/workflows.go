@@ -61,6 +61,7 @@ func (w *Workflows) All() []any {
 		w.EventLoop,
 		w.HealthCheck,
 		wkflow.ProvisionRunner,
+		wkflow.DeprovisionRunner,
 	}
 }
 
