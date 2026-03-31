@@ -108,7 +108,7 @@ export const Dropdown = ({
     const trigger = triggerRef.current.getBoundingClientRect()
     const newStyles: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 1000,
+      zIndex: 20,
     }
 
     if (position === 'below') {
