@@ -98,6 +98,7 @@ export type TEmptyVariant =
   | 'actions'
   | 'diagram'
   | 'history'
+  | 'policy'
   | 'search'
   | 'table'
 
