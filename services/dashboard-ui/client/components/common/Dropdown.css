@@ -1,11 +1,11 @@
 /*
   below
 */
-.dropdown .dropdown-content.below.enter {
+.dropdown-content.below.enter {
   animation: enter-below var(--duration-fastest) var(--ease-cubic);
 }
 
-.dropdown .dropdown-content.below.exit {
+.dropdown-content.below.exit {
   animation: exit-below var(--duration-fastest) var(--ease-cubic);
 }
 
@@ -34,11 +34,11 @@
 /*
   above
 */
-.dropdown .dropdown-content.above.enter {
+.dropdown-content.above.enter {
   animation: enter-above var(--duration-fastest) var(--ease-cubic);
 }
 
-.dropdown .dropdown-content.above.exit {
+.dropdown-content.above.exit {
   animation: exit-above var(--duration-fastest) var(--ease-cubic);
 }
 
@@ -71,11 +71,11 @@
 /*
   beside left
 */
-.dropdown .dropdown-content.beside.left.enter {
+.dropdown-content.beside.left.enter {
   animation: enter-beside-left var(--duration-fastest) var(--ease-cubic);
 }
 
-.dropdown .dropdown-content.beside.left.exit {
+.dropdown-content.beside.left.exit {
   animation: exit-beside-left var(--duration-fastest) var(--ease-cubic);
 }
 
@@ -104,11 +104,11 @@
 /*
   beside right
 */
-.dropdown .dropdown-content.beside.right.enter {
+.dropdown-content.beside.right.enter {
   animation: enter-beside-right var(--duration-fastest) var(--ease-cubic);
 }
 
-.dropdown .dropdown-content.beside.right.exit {
+.dropdown-content.beside.right.exit {
   animation: exit-beside-right var(--duration-fastest) var(--ease-cubic);
 }
 
@@ -137,11 +137,11 @@
 /*
   overlay
 */
-.dropdown .dropdown-content.overlay.enter {
+.dropdown-content.overlay.enter {
   animation: enter-overlay var(--duration-fastest) var(--ease-cubic);
 }
 
-.dropdown .dropdown-content.overlay.exit {
+.dropdown-content.overlay.exit {
   animation: exit-overlay var(--duration-fastest) var(--ease-cubic);
 }
 
