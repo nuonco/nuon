@@ -151,7 +151,7 @@ export const Dropdown = ({
   }, [isOpen, calculatePosition])
 
   useEffect(() => {
-    if (!isOpen || !closeOnBlur) return
+    if (!isOpen) return
 
     const handleClickOutside = (event: MouseEvent) => {
       if (!isInsideTree(event.target as Node)) {
@@ -159,18 +159,24 @@ export const Dropdown = ({
       }
     }
 
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, handleClose, isInsideTree])
+
+  useEffect(() => {
+    if (!isOpen || !closeOnBlur) return
+
+    const triggerEl = triggerRef.current
     const handleFocusOut = (event: FocusEvent) => {
       if (!isInsideTree(event.relatedTarget as Node)) {
         handleClose()
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    triggerRef.current?.addEventListener('focusout', handleFocusOut, true)
-    const triggerEl = triggerRef.current
-
+    triggerEl?.addEventListener('focusout', handleFocusOut, true)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
       triggerEl?.removeEventListener('focusout', handleFocusOut, true)
     }
   }, [isOpen, closeOnBlur, handleClose, isInsideTree])
