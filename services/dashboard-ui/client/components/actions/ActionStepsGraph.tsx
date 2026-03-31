@@ -15,7 +15,7 @@ import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { useSystemTheme } from '@/hooks/use-system-theme'
-import type { THydratedActionRunSteps } from '@/utils/action-utils'
+import { sortByIdx, type THydratedActionRunSteps } from '@/utils/action-utils'
 
 const NODE_WIDTH = 250
 const NODE_HEIGHT = 75
@@ -45,14 +45,7 @@ export const ActionStepGraph = ({
   }, [theme])
 
   const { nodes: builtNodes, edges: builtEdges } = useMemo(() => {
-    const nodes = (steps || [])
-      .sort((a, b) => {
-        if (a.idx === undefined && b.idx === undefined) return 0
-        if (a.idx === undefined) return -1
-        if (b.idx === undefined) return 1
-
-        return a.idx - b.idx
-      })
+    const nodes = sortByIdx(steps || [])
       .map((s, i) => {
         const id = s.id || String(i)
         return {
