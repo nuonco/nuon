@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -72,7 +73,9 @@ func NewAPI(p APIParams) (*API, error) {
 			zap.String("selected", port))
 	}
 	p.Config.HTTPPort = port
-	p.Config.AppUrl = fmt.Sprintf("http://localhost:%s", port)
+	if strings.HasPrefix(p.Config.AppUrl, "http://localhost") {
+		p.Config.AppUrl = fmt.Sprintf("http://localhost:%s", port)
+	}
 
 	if err := writePortFile(p.Config.DistDir, port); err != nil {
 		p.Logger.Warn("failed to write port file", zap.Error(err))
