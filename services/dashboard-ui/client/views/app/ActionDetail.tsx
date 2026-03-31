@@ -18,6 +18,7 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAction } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
+import { sortByIdx } from '@/utils/action-utils'
 
 const CONTAINER_ID = 'action-detail-page'
 
@@ -34,9 +35,7 @@ export const ActionDetail = () => {
   })
 
   const config = action?.configs?.[0]
-  const steps = config?.steps
-    ?.slice()
-    .sort((a, b) => (a?.idx ?? 0) - (b?.idx ?? 0))
+  const steps = config?.steps ? sortByIdx(config.steps) : undefined
 
   return (
     <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">

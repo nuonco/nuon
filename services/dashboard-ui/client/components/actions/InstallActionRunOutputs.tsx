@@ -6,7 +6,7 @@ import { KeyValueList } from '@/components/common/KeyValueList'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
-import { hydrateActionRunSteps } from '@/utils/action-utils'
+import { hydrateActionRunSteps, sortByIdx } from '@/utils/action-utils'
 
 export const InstallActionRunOutputs = () => {
   const { installActionRun } = useInstallActionRun()
@@ -17,13 +17,7 @@ export const InstallActionRunOutputs = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      {steps
-        ?.sort((a, b) => {
-          if (a.idx === undefined && b.idx === undefined) return 0
-          if (a.idx === undefined) return -1
-          if (b.idx === undefined) return 1
-          return a.idx - b.idx
-        })
+      {sortByIdx(steps ?? [])
         .map((step) => {
           const outputs = installActionRun?.outputs?.steps?.[step?.name]
           const outputCount = Object.keys(outputs || {})?.length
