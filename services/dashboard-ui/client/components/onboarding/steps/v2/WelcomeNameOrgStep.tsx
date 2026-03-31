@@ -45,7 +45,7 @@ export const WelcomeNameOrgStep = ({
     mutationFn: () => completeOrganizationStep({ body: { name: orgName.trim() } }),
     onSuccess: (ob) => {
       setSharedData('onboarding', ob)
-      if (ob.step_status === 'processing') {
+      if (ob.status_v2?.status === 'processing') {
         setWaiting(true)
       } else {
         onAdvance()
@@ -58,7 +58,7 @@ export const WelcomeNameOrgStep = ({
     onResolved: (ob) => {
       setWaiting(false)
       setSharedData('onboarding', ob)
-      if (ob.step_error) return
+      if (ob.status_v2?.status === 'error') return
       onAdvance()
     },
   })
@@ -103,7 +103,7 @@ export const WelcomeNameOrgStep = ({
           {(error as TAPIError).error ?? 'Failed to create organization'}
         </Banner>
       )}
-      {onboarding?.step_error && (
+      {onboarding?.status_v2?.status === 'error' && onboarding?.step_error && (
         <Banner theme="error">{onboarding.step_error}</Banner>
       )}
       <div className="flex flex-col gap-1 w-full md:max-w-[400px]">
