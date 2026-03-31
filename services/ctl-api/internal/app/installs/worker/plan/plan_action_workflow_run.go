@@ -86,7 +86,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		attrs["action.id"] = run.ID
 	}
 
-	cloudAuth, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, _, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for action workflow run")
 	}
@@ -216,15 +216,15 @@ func (p *Planner) getAuthForActionWorkflowRun(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
-) (*CloudAuth, error) {
+) (*CloudAuth, string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	roleSelection, operation, err := p.getRoleForAction(l, appCfg, run, stack, installState)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	l.Info("selected role for action workflow run plan",
@@ -235,5 +235,18 @@ func (p *Planner) getAuthForActionWorkflowRun(
 		zap.String("run_id", run.ID),
 	)
 
-	return getCloudAuth(roleSelection, &outputs, fmt.Sprintf("action-workflow-%s", run.ID))
+	// Persist the resolved role name to the action workflow run record
+	if roleSelection.RoleName != "" {
+		if err := activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+			RunID:             run.ID,
+			Status:            run.Status,
+			StatusDescription: run.StatusDescription,
+			Role:              roleSelection.RoleName,
+		}); err != nil {
+			l.Warn("unable to persist resolved role to action workflow run", zap.Error(err))
+		}
+	}
+
+	cloudAuth, err := getCloudAuth(roleSelection, &outputs, fmt.Sprintf("action-workflow-%s", run.ID))
+	return cloudAuth, roleSelection.RoleName, err
 }
