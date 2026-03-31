@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { PolicyReportGroup } from '@/components/policies/PolicyReportGroup'
 import { PolicyReportsFilter } from '@/components/policies/PolicyReportsFilter'
@@ -24,6 +25,17 @@ export const PolicyReportsTable = ({
 }) => {
   const hasActiveFilters = currentStatus || currentOwnerType
 
+  if (reports.length === 0 && !hasActiveFilters) {
+    return (
+      <EmptyState
+        className="py-12"
+        variant="policy"
+        emptyTitle="No evaluations yet"
+        emptyMessage="Evaluations will appear here once a deploy or sandbox run triggers a policy check."
+      />
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between">
@@ -37,16 +49,11 @@ export const PolicyReportsTable = ({
       </div>
 
       {reports.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Text variant="body" weight="strong" theme="neutral">
-            {hasActiveFilters ? 'No matching reports' : 'No policy evaluations'}
-          </Text>
-          <Text variant="subtext" theme="neutral" className="mt-1">
-            {hasActiveFilters
-              ? 'No reports match the current filters.'
-              : 'Policy evaluations will appear here after deploys or sandbox runs.'}
-          </Text>
-        </div>
+        <EmptyState
+          variant="policy"
+          emptyTitle="No matching reports"
+          emptyMessage="No reports match the current filters."
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {reports.map((report) => (
