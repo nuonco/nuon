@@ -10,7 +10,7 @@ type GetAppComponentGraphRequest struct {
 	InstallID   string `json:"install_id" validate:"required"`
 	ComponentID string `json:"component_id" validate:"required"`
 
-	Reverse bool `validate:"required"`
+	Reverse bool `json:"reverse"`
 }
 
 // @temporal-gen-v2 activity
