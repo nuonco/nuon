@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -19,6 +19,7 @@ interface IForget {}
 export const ForgetModal = ({ ...props }: IForget & IModal) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
+  const queryClient = useQueryClient()
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
@@ -32,6 +33,8 @@ export const ForgetModal = ({ ...props }: IForget & IModal) => {
         installId: install.id,
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['installs'] })
+      queryClient.invalidateQueries({ queryKey: ['app-installs'] })
       addToast(
         <Toast heading="Install forgotten" theme="success">
           <Text>Install {install.name} has been forgotten.</Text>
