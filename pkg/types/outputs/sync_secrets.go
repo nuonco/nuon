@@ -5,8 +5,9 @@ import "time"
 type SyncSecretsOutput map[string]SecretSyncOutput
 
 type SecretSyncOutput struct {
-	Name string `mapstructure:"name" json:"name,omitempty"`
-	ARN  string `mapstructure:"arn" json:"arn,omitempty"`
+	Name          string `mapstructure:"name" json:"name,omitempty"`
+	ARN           string `mapstructure:"arn" json:"arn,omitempty"`
+	GCPSecretName string `mapstructure:"gcp_secret_name" json:"gcp_secret_name,omitempty"`
 
 	KubernetesNamespace string `mapstructure:"kubernetes_namespace" json:"kubernetes_namespace,omitempty"`
 	KubernetesName      string `mapstructure:"kubernetes_name" json:"kubernetes_name,omitempty"`

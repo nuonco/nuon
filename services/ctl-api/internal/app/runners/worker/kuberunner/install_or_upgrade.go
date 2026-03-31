@@ -21,6 +21,7 @@ type InstallOrUpgradeRequest struct {
 	RunnerID                 string
 	RunnerIAMRole            string
 	RunnerServiceAccountName string
+	CloudProvider            string
 
 	APIURL                 string
 	APIToken               string

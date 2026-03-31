@@ -36,6 +36,21 @@ type helmValues struct {
 }
 
 func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
+	annotations := map[string]string{}
+	enableNodePool := true
+	switch req.CloudProvider {
+	case "gcp":
+		if req.RunnerIAMRole != "" {
+			annotations["iam.gke.io/gcp-service-account"] = req.RunnerIAMRole
+		}
+		// GKE uses Autopilot or node auto-provisioning, not Karpenter
+		enableNodePool = false
+	default:
+		if req.RunnerIAMRole != "" {
+			annotations["eks.amazonaws.com/role-arn"] = req.RunnerIAMRole
+		}
+	}
+
 	return helmValues{
 		Image: helmValuesImage{
 			Tag:        req.Image.Tag,
@@ -48,13 +63,11 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			SettingsRefreshTimeout: req.SettingsRefreshTimeout.String(),
 		},
 		ServiceAccount: serviceAccountValues{
-			Name: req.RunnerServiceAccountName,
-			Annotations: map[string]string{
-				"eks.amazonaws.com/role-arn": req.RunnerIAMRole,
-			},
+			Name:        req.RunnerServiceAccountName,
+			Annotations: annotations,
 		},
 		NodePool: nodePoolValues{
-			Enabled: true,
+			Enabled: enableNodePool,
 			InstanceType: instanceType{
 				Name: req.InstanceTypeName,
 			},
