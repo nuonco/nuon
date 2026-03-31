@@ -6,8 +6,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -57,16 +59,35 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 		appName = *onboarding.ExampleAppSlug
 	}
 
-	// Create app + branch (activity handles idempotency — returns existing app if already created)
+	// Only example apps need a branch (custom apps sync config directly)
+	isExampleApp := s.ExampleRepo != ""
+
+	// Create app (+ branch for example apps only)
 	appResp, err := activities.AwaitCreateOnboardingApp(ctx, activities.CreateOnboardingAppRequest{
-		OrgID:   *onboarding.OrgID,
-		AppName: appName,
+		OrgID:        *onboarding.OrgID,
+		AppName:      appName,
+		CreateBranch: isExampleApp,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create app: %w", err)
 	}
 
 	logger.Info("created onboarding app", "app_id", appResp.AppID, "app_branch_id", appResp.AppBranchID)
+
+	// Save app references on onboarding immediately so downstream activities can read them
+	updateReq := &activities.UpdateOnboardingInput{
+		OnboardingID: s.OnboardingID,
+		AppID:        &appResp.AppID,
+	}
+	if appResp.AppBranchID != "" {
+		updateReq.AppBranchID = &appResp.AppBranchID
+	}
+	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
+		Req: updateReq,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to save app references on onboarding: %w", err)
+	}
 
 	// For example apps, create branch config with public git VCS and trigger a sync run
 	if s.ExampleRepo != "" {
@@ -90,22 +111,59 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 		}
 
 		logger.Info("triggered app branch run", "run_id", runResp.RunID, "workflow_id", runResp.WorkflowID)
+	} else if onboarding.CloudProvider != nil && *onboarding.CloudProvider != "" {
+		// For custom apps, build config programmatically and sync to create DB records
+		_, err := activities.AwaitBuildCustomAppConfig(ctx, activities.BuildCustomAppConfigRequest{
+			OnboardingID: s.OnboardingID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to build custom app config: %w", err)
+		}
+
+		syncResp, err := activities.AwaitSyncCustomAppConfig(ctx, activities.SyncCustomAppConfigRequest{
+			OnboardingID: s.OnboardingID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to sync custom app config: %w", err)
+		}
+
+		logger.Info("synced custom app config", "app_config_id", syncResp.AppConfigID, "component_ids", syncResp.ComponentIDs)
+
+		// Trigger builds for each component (fire-and-forget, same as example app path)
+		for _, componentID := range syncResp.ComponentIDs {
+			if err := activities.AwaitEnsureComponentQueueByComponentID(ctx, componentID); err != nil {
+				return fmt.Errorf("component %s: ensure queue failed: %w", componentID, err)
+			}
+
+			// Don't pass AppConfigID for custom apps — there's no AppBranchRun,
+			// and the queuebuild signal would retry GetAppBranchRunByAppConfigID forever.
+			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   componentID,
+				OwnerType: "components",
+				Signal: &queuebuild.Signal{
+					ComponentID: componentID,
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("component %s: enqueue build failed: %w", componentID, err)
+			}
+
+			logger.Info("enqueued component build", "component_id", componentID)
+		}
 	}
 
-	// Update onboarding with app references and advance step
+	// Advance step (app references already saved above)
 	nextStep := string(app.OnboardingStepInstall)
-	stepStatus := string(app.OnboardingStepStatusIdle)
+	stepStatus := string(app.OnboardingStepStatusActive)
 	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
 		Req: &activities.UpdateOnboardingInput{
 			OnboardingID: s.OnboardingID,
-			AppID:        &appResp.AppID,
-			AppBranchID:  &appResp.AppBranchID,
 			CurrentStep:  &nextStep,
 			StepStatus:   &stepStatus,
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("unable to update onboarding with app references: %w", err)
+		return fmt.Errorf("unable to advance onboarding step: %w", err)
 	}
 
 	return nil
