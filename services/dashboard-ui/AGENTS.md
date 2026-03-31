@@ -355,3 +355,5 @@ npm run lint:spa       # ESLint for the SPA
 npm run tsc:spa        # TypeScript type check for the SPA
 ```
 
+**Do NOT run build commands** (`build:spa`, `build:spa:js`, `build:spa:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+
