@@ -325,6 +325,274 @@ export const NestedDropdowns = () => (
       </div>
     </div>
 
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Deep nesting (10 levels)</h4>
+      <div className="flex gap-4">
+        <Dropdown id="deep-root" buttonText="Level 1">
+          <Menu className="min-w-48">
+            <Button variant="ghost">Action at level 1</Button>
+            <Dropdown
+              id="deep-2"
+              buttonText="Level 2"
+              position="beside"
+              alignment="right"
+              icon={<Icon variant="CaretRight" />}
+              variant="ghost"
+              className="w-full justify-between"
+            >
+              <Menu className="min-w-44">
+                <Button variant="ghost">Action at level 2</Button>
+                <Dropdown
+                  id="deep-3"
+                  buttonText="Level 3"
+                  position="beside"
+                  alignment="left"
+                  icon={<Icon variant="CaretLeft" />}
+                  variant="ghost"
+                  className="w-full justify-between"
+                >
+                  <Menu className="min-w-44">
+                    <Button variant="ghost">Action at level 3</Button>
+                    <Dropdown
+                      id="deep-4"
+                      buttonText="Level 4"
+                      position="beside"
+                      alignment="right"
+                      icon={<Icon variant="CaretRight" />}
+                      variant="ghost"
+                      className="w-full justify-between"
+                    >
+                      <Menu className="min-w-44">
+                        <Button variant="ghost">Action at level 4</Button>
+                        <Dropdown
+                          id="deep-5"
+                          buttonText="Level 5"
+                          position="beside"
+                          alignment="left"
+                          icon={<Icon variant="CaretLeft" />}
+                          variant="ghost"
+                          className="w-full justify-between"
+                        >
+                          <Menu className="min-w-44">
+                            <Button variant="ghost">Action at level 5</Button>
+                            <Dropdown
+                              id="deep-6"
+                              buttonText="Level 6"
+                              position="beside"
+                              alignment="right"
+                              icon={<Icon variant="CaretRight" />}
+                              variant="ghost"
+                              className="w-full justify-between"
+                            >
+                              <Menu className="min-w-44">
+                                <Button variant="ghost">
+                                  Action at level 6
+                                </Button>
+                                <Dropdown
+                                  id="deep-7"
+                                  buttonText="Level 7"
+                                  position="beside"
+                                  alignment="left"
+                                  icon={<Icon variant="CaretLeft" />}
+                                  variant="ghost"
+                                  className="w-full justify-between"
+                                >
+                                  <Menu className="min-w-44">
+                                    <Button variant="ghost">
+                                      Action at level 7
+                                    </Button>
+                                    <Dropdown
+                                      id="deep-8"
+                                      buttonText="Level 8"
+                                      position="beside"
+                                      alignment="right"
+                                      icon={<Icon variant="CaretRight" />}
+                                      variant="ghost"
+                                      className="w-full justify-between"
+                                    >
+                                      <Menu className="min-w-44">
+                                        <Button variant="ghost">
+                                          Action at level 8
+                                        </Button>
+                                        <Dropdown
+                                          id="deep-9"
+                                          buttonText="Level 9"
+                                          position="beside"
+                                          alignment="left"
+                                          icon={<Icon variant="CaretLeft" />}
+                                          variant="ghost"
+                                          className="w-full justify-between"
+                                        >
+                                          <Menu className="min-w-44">
+                                            <Button variant="ghost">
+                                              Action at level 9
+                                            </Button>
+                                            <Dropdown
+                                              id="deep-10"
+                                              buttonText="Level 10"
+                                              position="beside"
+                                              alignment="right"
+                                              icon={
+                                                <Icon variant="CaretRight" />
+                                              }
+                                              variant="ghost"
+                                              className="w-full justify-between"
+                                            >
+                                              <Menu className="min-w-44">
+                                                <Button variant="ghost">
+                                                  Action at level 10
+                                                </Button>
+                                              </Menu>
+                                            </Dropdown>
+                                          </Menu>
+                                        </Dropdown>
+                                      </Menu>
+                                    </Dropdown>
+                                  </Menu>
+                                </Dropdown>
+                              </Menu>
+                            </Dropdown>
+                          </Menu>
+                        </Dropdown>
+                      </Menu>
+                    </Dropdown>
+                  </Menu>
+                </Dropdown>
+              </Menu>
+            </Dropdown>
+          </Menu>
+        </Dropdown>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">
+        Multiple siblings with nested children
+      </h4>
+      <div className="flex gap-4">
+        <Dropdown id="sibling-root" buttonText="File menu">
+          <Menu className="min-w-48">
+            <Button variant="ghost">New file</Button>
+            <Dropdown
+              id="sib-open"
+              buttonText="Open recent"
+              position="beside"
+              alignment="right"
+              icon={<Icon variant="CaretRight" />}
+              variant="ghost"
+              className="w-full justify-between"
+            >
+              <Menu className="min-w-44">
+                <Button variant="ghost">project-a.ts</Button>
+                <Button variant="ghost">config.json</Button>
+                <Dropdown
+                  id="sib-open-more"
+                  buttonText="More files"
+                  position="beside"
+                  alignment="right"
+                  icon={<Icon variant="CaretRight" />}
+                  variant="ghost"
+                  className="w-full justify-between"
+                >
+                  <Menu className="min-w-40">
+                    <Button variant="ghost">readme.md</Button>
+                    <Button variant="ghost">package.json</Button>
+                  </Menu>
+                </Dropdown>
+              </Menu>
+            </Dropdown>
+            <Dropdown
+              id="sib-export"
+              buttonText="Export as"
+              position="beside"
+              alignment="right"
+              icon={<Icon variant="CaretRight" />}
+              variant="ghost"
+              className="w-full justify-between"
+            >
+              <Menu className="min-w-44">
+                <Button variant="ghost">PDF</Button>
+                <Button variant="ghost">HTML</Button>
+                <Dropdown
+                  id="sib-export-img"
+                  buttonText="Image"
+                  position="beside"
+                  alignment="right"
+                  icon={<Icon variant="CaretRight" />}
+                  variant="ghost"
+                  className="w-full justify-between"
+                >
+                  <Menu className="min-w-40">
+                    <Button variant="ghost">PNG</Button>
+                    <Button variant="ghost">SVG</Button>
+                    <Button variant="ghost">JPEG</Button>
+                  </Menu>
+                </Dropdown>
+              </Menu>
+            </Dropdown>
+            <Dropdown
+              id="sib-share"
+              buttonText="Share with"
+              position="beside"
+              alignment="right"
+              icon={<Icon variant="CaretRight" />}
+              variant="ghost"
+              className="w-full justify-between"
+            >
+              <Menu className="min-w-44">
+                <Button variant="ghost">Copy link</Button>
+                <Dropdown
+                  id="sib-share-team"
+                  buttonText="Team"
+                  position="beside"
+                  alignment="right"
+                  icon={<Icon variant="CaretRight" />}
+                  variant="ghost"
+                  className="w-full justify-between"
+                >
+                  <Menu className="min-w-40">
+                    <Button variant="ghost">Engineering</Button>
+                    <Button variant="ghost">Design</Button>
+                    <Dropdown
+                      id="sib-share-team-eng"
+                      buttonText="Sub-teams"
+                      position="beside"
+                      alignment="left"
+                      icon={<Icon variant="CaretLeft" />}
+                      variant="ghost"
+                      className="w-full justify-between"
+                    >
+                      <Menu className="min-w-40">
+                        <Button variant="ghost">Frontend</Button>
+                        <Button variant="ghost">Backend</Button>
+                        <Button variant="ghost">Infra</Button>
+                      </Menu>
+                    </Dropdown>
+                  </Menu>
+                </Dropdown>
+                <Dropdown
+                  id="sib-share-ext"
+                  buttonText="External"
+                  position="beside"
+                  alignment="right"
+                  icon={<Icon variant="CaretRight" />}
+                  variant="ghost"
+                  className="w-full justify-between"
+                >
+                  <Menu className="min-w-40">
+                    <Button variant="ghost">Email</Button>
+                    <Button variant="ghost">Slack</Button>
+                  </Menu>
+                </Dropdown>
+              </Menu>
+            </Dropdown>
+            <hr />
+            <Button variant="ghost">Close</Button>
+          </Menu>
+        </Dropdown>
+      </div>
+    </div>
+
     <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
       <strong>Nested Dropdown Guidelines:</strong>
       <ul className="mt-2 space-y-1 list-disc list-inside">
