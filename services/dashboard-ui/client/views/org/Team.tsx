@@ -36,7 +36,7 @@ export const Team = () => {
       <PageHeader className="flex items-center justify-between">
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1}>
-            Team duder
+            Team
           </Text>
           <Text theme="neutral">Manage your team members and permissions.</Text>
         </HeadingGroup>
