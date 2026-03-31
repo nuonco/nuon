@@ -19,6 +19,7 @@ import { getApps } from '@/lib/ctl-api/apps/get-apps'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
 import { getComponents } from '@/lib/ctl-api/apps/components/get-components'
 import { getActions } from '@/lib/ctl-api/apps/actions/get-actions'
+import { getInstallActionsLatestRuns } from '@/lib/ctl-api/installs/actions/get-install-actions-latest-runs'
 import { getInstallComponents } from '@/lib/ctl-api/installs/components/get-install-components'
 
 type SpotlightResult = {
@@ -138,21 +139,41 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
   const { data: actionResults } = useQuery({
     queryKey: ['spotlight', 'actions', parsed.query, orgId],
     queryFn: async () => {
-      const appsRes = await getApps({ orgId, limit: 20 })
+      const [appsRes, installsRes] = await Promise.all([
+        getApps({ orgId, limit: 20 }),
+        getInstalls({ orgId, limit: 20 }),
+      ])
+
       const apps = (appsRes.data ?? []).slice(0, 5)
+      const installs = (installsRes.data ?? []).slice(0, 5)
 
-      const appActions = await Promise.all(
-        apps.map((app) =>
-          getActions({
-            appId: app.id!,
-            orgId,
-            q: parsed.query || undefined,
-            limit: 3,
-          }).then((res) => ({ app, actions: res.data ?? [] }))
-        )
-      )
+      const [appActionResults, installActionResults] = await Promise.all([
+        Promise.allSettled(
+          apps.map((app) =>
+            getActions({
+              appId: app.id!,
+              orgId,
+              q: parsed.query || undefined,
+              limit: 3,
+            }).then((res) => ({ app, actions: res.data ?? [] }))
+          )
+        ),
+        Promise.allSettled(
+          installs.map((install) =>
+            getInstallActionsLatestRuns({
+              installId: install.id!,
+              orgId,
+              q: parsed.query || undefined,
+              limit: 3,
+            }).then((res) => ({ install, actions: res.data ?? [] }))
+          )
+        ),
+      ])
 
-      return { appActions }
+      const appActions = appActionResults.flatMap((r) => r.status === 'fulfilled' ? [r.value] : [])
+      const installActions = installActionResults.flatMap((r) => r.status === 'fulfilled' ? [r.value] : [])
+
+      return { appActions, installActions }
     },
     enabled:
       parsed.prefix === 'action' &&
@@ -171,8 +192,8 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       const apps = (appsRes.data ?? []).slice(0, 5)
       const installs = (installsRes.data ?? []).slice(0, 5)
 
-      const [appComps, installComps] = await Promise.all([
-        Promise.all(
+      const [appCompResults, installCompResults] = await Promise.all([
+        Promise.allSettled(
           apps.map((app) =>
             getComponents({
               appId: app.id!,
@@ -182,7 +203,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             }).then((res) => ({ app, components: res.data ?? [] }))
           )
         ),
-        Promise.all(
+        Promise.allSettled(
           installs.map((install) =>
             getInstallComponents({
               installId: install.id!,
@@ -193,6 +214,9 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           )
         ),
       ])
+
+      const appComps = appCompResults.flatMap((r) => r.status === 'fulfilled' ? [r.value] : [])
+      const installComps = installCompResults.flatMap((r) => r.status === 'fulfilled' ? [r.value] : [])
 
       return { appComps, installComps }
     },
@@ -262,6 +286,16 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           items.push({
             label: `${app.name} › ${action.name}`,
             path: `/apps/${app.id}/actions/${action.id}`,
+            icon: 'TerminalWindow',
+          })
+        }
+      }
+      for (const { install, actions } of actionResults.installActions) {
+        for (const action of actions) {
+          items.push({
+            label: `${install.name} › ${action.action_workflow?.name ?? action.action_workflow_id}`,
+            subtitle: install.app?.name,
+            path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
             icon: 'TerminalWindow',
           })
         }
