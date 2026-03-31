@@ -1,10 +1,11 @@
 package orgiam
 
 type ProvisionIAMRequest struct {
-	OrgID       string `json:"org_id"`
-	Reprovision bool   `json:"reprovision"`
+	OrgID    string `json:"org_id"`
+	RunnerID string `json:"runner_id"`
 
-	WorkflowID string `json:"workflow_id"`
+	Reprovision bool   `json:"reprovision"`
+	WorkflowID  string `json:"workflow_id"`
 }
 
 type ProvisionIAMResponse struct {

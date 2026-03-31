@@ -32,6 +32,26 @@ func (w Wkflow) provisionRunnerIAM(ctx workflow.Context, req *ProvisionIAMReques
 func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*ProvisionIAMResponse, error) {
 	resp := &ProvisionIAMResponse{}
 
+	// GCP uses Workload Identity — create GCP service account + binding.
+	if w.cfg.CloudProvider == "gcp" {
+		activityOpts := workflow.ActivityOptions{
+			ScheduleToCloseTimeout: defaultActivityTimeout,
+		}
+		ctx = workflow.WithActivityOptions(ctx, activityOpts)
+
+		gcpReq := CreateGCPServiceAccountRequest{
+			ProjectID:             w.cfg.ManagementAccountID,
+			OrgID:                 req.OrgID,
+			K8sNamespace:          req.RunnerID,
+			K8sServiceAccountName: fmt.Sprintf("runner-%s", req.OrgID),
+		}
+		_, err := AwaitCreateGCPServiceAccount(ctx, &gcpReq)
+		if err != nil {
+			return resp, fmt.Errorf("unable to provision GCP service account: %w", err)
+		}
+		return resp, nil
+	}
+
 	activityOpts := workflow.ActivityOptions{
 		ScheduleToCloseTimeout: defaultActivityTimeout,
 	}

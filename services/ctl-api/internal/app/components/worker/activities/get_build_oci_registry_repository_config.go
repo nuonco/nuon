@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -27,15 +28,27 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 		return nil, errors.Wrap(err, "unable to get app")
 	}
 
-	return &configs.OCIRegistryRepository{
-		RegistryType: configs.OCIRegistryTypeECR,
-		Repository:   compApp.Repository.RepositoryURI,
-		Region:       compApp.Repository.Region,
-		ECRAuth: &credentials.Config{
+	cfg := &configs.OCIRegistryRepository{
+		Repository: compApp.Repository.RepositoryURI,
+		Region:     compApp.Repository.Region,
+	}
+
+	switch a.cfg.CloudProvider {
+	case "gcp":
+		cfg.RegistryType = configs.OCIRegistryTypeGAR
+		// LoginServer is the GAR host (e.g. "us-central1-docker.pkg.dev")
+		if idx := strings.Index(compApp.Repository.RepositoryURI, "/"); idx != -1 {
+			cfg.LoginServer = compApp.Repository.RepositoryURI[:idx]
+		}
+	default:
+		cfg.RegistryType = configs.OCIRegistryTypeECR
+		cfg.ECRAuth = &credentials.Config{
 			Region:     compApp.Repository.Region,
 			UseDefault: true,
-		},
-	}, nil
+		}
+	}
+
+	return cfg, nil
 }
 
 func (a *Activities) getApp(ctx context.Context, appID string) (*app.App, error) {

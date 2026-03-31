@@ -44,15 +44,20 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	// AWS/Azure still use S3-hosted templates with quick links.
 	if req.Platform != "gcp" {
 		bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
-		templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
-		quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-			req.Region, req.Region, templateURL, req.StackName,
-		)
-
-		obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
 		obj.AWSBucketKey = bucketKey
-		obj.TemplateURL = templateURL
-		obj.QuickLinkURL = quickLinkURL
+
+		// Only generate S3-based template URL and CloudFormation quick link when
+		// running on AWS BYOC (S3 base URL is configured). On GCP BYOC, the
+		// template is uploaded to GCS and the URL is set after upload.
+		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
+			templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
+			quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+				req.Region, req.Region, templateURL, req.StackName,
+			)
+			obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
+			obj.TemplateURL = templateURL
+			obj.QuickLinkURL = quickLinkURL
+		}
 	}
 
 	if res := a.db.WithContext(ctx).Create(&obj); res.Error != nil {
