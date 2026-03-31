@@ -2525,6 +2525,7 @@ export interface components {
       created_by_id?: string;
       description?: string;
       display_name?: string;
+      enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
       org_id?: string;
@@ -2796,7 +2797,7 @@ export interface components {
     /** @enum {string} */
     "app.AppRunnerConfigHelmDriverType": "secret" | "configmap" | "";
     /** @enum {string} */
-    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "local" | "aws" | "azure" | "gcp";
+    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "gcp-gke" | "local" | "aws" | "azure" | "gcp";
     "app.AppSandboxBuild": {
       app_config_id?: string;
       app_id?: string;
@@ -3650,6 +3651,7 @@ export interface components {
       account_id?: string;
       app_attributes?: string[];
       app_branch_id?: string;
+      app_config?: Record<string, never>;
       app_id?: string;
       /** @description Step 2: Your Stack */
       app_type?: string;
@@ -3665,6 +3667,7 @@ export interface components {
       /** @description Step 1: Organization */
       org_id?: string;
       status?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       step_error?: string;
       /** @description Async step status (for queue-based signal processing) */
       step_status?: string;
@@ -3977,6 +3980,7 @@ export interface components {
       };
       /** @description org runner specifics */
       org_aws_iam_role_arn?: string;
+      org_gcp_service_account?: string;
       org_id?: string;
       org_k8s_service_account_name?: string;
       otel_collector_config?: string;
@@ -4639,6 +4643,7 @@ export interface components {
     "outputs.SecretSyncOutput": {
       arn?: string;
       exists?: boolean;
+      gcp_secret_name?: string;
       kubernetes_key?: string;
       kubernetes_name?: string;
       kubernetes_namespace?: string;
@@ -4832,6 +4837,8 @@ export interface components {
        * updating the runner job and save time.
        */
       format?: string;
+      /** @description projects/{project}/secrets/{id}/versions/latest */
+      gcp_secret_name?: string;
       key_name?: string;
       name?: string;
       namespace?: string;
@@ -4904,6 +4911,7 @@ export interface components {
       aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
       azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       kubernetes_secrets?: components["schemas"]["plantypes.KubernetesSecretSync"][];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
     };
@@ -4973,6 +4981,7 @@ export interface components {
       cloud_platform?: "aws" | "gcp";
       description: string;
       display_name: string;
+      enabled_in_stack?: boolean | null;
       name: string;
       permissions_boundary?: string;
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
@@ -5552,6 +5561,7 @@ export interface components {
       description?: string;
       display_name?: string;
       enabled?: boolean;
+      enabled_in_stack?: components["schemas"]["sql.NullBool"];
       id?: string;
       name?: string;
       org_id?: string;
