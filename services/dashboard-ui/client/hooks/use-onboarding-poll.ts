@@ -4,8 +4,8 @@ import { getCurrentOnboarding } from '@/lib'
 import type { TOnboarding } from '@/types'
 
 /**
- * Polls getCurrentOnboarding while step_status is "processing".
- * When the step resolves (idle or error), calls onResolved with the updated onboarding.
+ * Polls getCurrentOnboarding while status_v2 is "processing".
+ * When the step resolves (active or error), calls onResolved with the updated onboarding.
  */
 export function useOnboardingPoll({
   enabled,
@@ -26,7 +26,7 @@ export function useOnboardingPoll({
 
   useEffect(() => {
     if (!data || !enabled) return
-    if (data.step_status !== 'processing') {
+    if (data.status_v2?.status !== 'processing') {
       onResolvedRef.current(data)
     }
   }, [data, enabled])
