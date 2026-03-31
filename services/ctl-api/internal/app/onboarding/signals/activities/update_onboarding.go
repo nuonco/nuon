@@ -53,9 +53,11 @@ func (a *Activities) updateOnboarding(ctx context.Context, req *UpdateOnboarding
 	}
 	if req.CurrentStep != nil {
 		onboarding.CurrentStep = app.OnboardingStep(*req.CurrentStep)
+		onboarding.SetCompositeStatus(ctx, app.Status("step:"+*req.CurrentStep))
 	}
 	if req.StepStatus != nil {
 		onboarding.StepStatus = app.OnboardingStepStatus(*req.StepStatus)
+		onboarding.SetCompositeStatus(ctx, app.Status(*req.StepStatus))
 	}
 	if req.StepError != nil {
 		onboarding.StepError = req.StepError

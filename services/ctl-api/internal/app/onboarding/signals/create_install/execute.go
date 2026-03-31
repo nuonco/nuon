@@ -82,7 +82,7 @@ func (s *Signal) executeCreateInstall(ctx workflow.Context, logger interface{ In
 
 	// Update onboarding with install references and advance step
 	nextStep := string(app.OnboardingStepDeploy)
-	stepStatus := string(app.OnboardingStepStatusIdle)
+	stepStatus := string(app.OnboardingStepStatusActive)
 	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
 		Req: &activities.UpdateOnboardingInput{
 			OnboardingID: s.OnboardingID,
