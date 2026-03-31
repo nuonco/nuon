@@ -404,6 +404,9 @@ export type TAvailableRolesResponse =
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
+// composite status
+export type TCompositeStatus = components['schemas']['app.CompositeStatus']
+
 // onboarding
 export type TOnboarding = components['schemas']['app.Onboarding']
 export type TExampleApp = components['schemas']['service.ExampleApp']
