@@ -15,7 +15,8 @@ export const StepBanner = ({
 }) => {
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
-  const { hasViolations: hasPolicyViolations } = getPolicyViolationCounts(step)
+  const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
+    getPolicyViolationCounts(step)
 
   return (
     <>
@@ -39,7 +40,15 @@ export const StepBanner = ({
           </div>
         </Banner>
       ) : null}
-      {hasPolicyViolations ? <PolicyViolations step={step} /> : null}
+      {hasPolicyViolations ? (
+        <PolicyViolations step={step} />
+      ) : hasPolicyData && passedCount > 0 ? (
+        <Banner theme="success">
+          <Text weight="strong">
+            All policy checks passed successfully
+          </Text>
+        </Banner>
+      ) : null}
     </>
   )
 }
