@@ -29,7 +29,8 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 
 	// provision IAM roles for the org
 	orgIAMReq := &orgiam.ProvisionIAMRequest{
-		OrgID: sreq.ID,
+		OrgID:    sreq.ID,
+		RunnerID: org.RunnerGroup.Runners[0].ID,
 	}
 	if org.OrgType == app.OrgTypeDefault {
 		_, err = orgiam.AwaitProvisionIAM(ctx, orgIAMReq)

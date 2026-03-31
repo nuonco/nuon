@@ -2,6 +2,7 @@ package runner
 
 import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
 )
 
@@ -12,7 +13,12 @@ func (w *Wkflow) getClusterInfo() *kube.ClusterInfo {
 		CAData:   w.cfg.OrgRunnerK8sCAData,
 	}
 
-	if w.cfg.OrgRunnerK8sUseDefaultCreds {
+	if w.cfg.CloudProvider == "gcp" {
+		clusterInfo.GCPAuth = &gcpcredentials.Config{
+			ProjectID: w.cfg.ManagementAccountID,
+			Region:    w.cfg.OrgRunnerRegion,
+		}
+	} else if w.cfg.OrgRunnerK8sUseDefaultCreds {
 		clusterInfo.AWSAuth = &awscredentials.Config{
 			Region:     w.cfg.OrgRunnerRegion,
 			UseDefault: true,

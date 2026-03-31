@@ -16,6 +16,11 @@ import (
 func (w Wkflow) DeprovisionIAM(ctx workflow.Context, req *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	resp := &DeprovisionIAMResponse{}
 
+	// GCP uses Workload Identity — no AWS IAM roles to deprovision.
+	if w.cfg.CloudProvider == "gcp" {
+		return resp, nil
+	}
+
 	status := make(map[string]interface{})
 	nameFns := map[string]func(string) string{
 		"runners": roles.RunnerIAMName,

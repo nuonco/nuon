@@ -33,7 +33,22 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 	}
 
 	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
-	if currentApp.Org.OrgType == app.OrgTypeDefault {
+	switch {
+	case currentApp.Org.OrgType != app.OrgTypeDefault:
+		l.Info("skipping reprovision ecr",
+			zap.String("app_id", currentApp.ID),
+			zap.Any("org_type", currentApp.Org.OrgType))
+	case w.cfg.CloudProvider == "gcp":
+		garURL := w.cfg.ManagementGARRepositoryURL
+		repoResp = &ecrrepository.ProvisionECRRepositoryResponse{
+			RepositoryName: fmt.Sprintf("%s/%s", currentApp.OrgID, sreq.ID),
+			RepositoryURI:  fmt.Sprintf("%s/%s/%s", garURL, currentApp.OrgID, sreq.ID),
+			Region:         w.cfg.AppRegion,
+		}
+		l.Info("using GAR repository",
+			zap.String("app_id", currentApp.ID),
+			zap.String("repository_uri", repoResp.RepositoryURI))
+	default:
 		repoResp, err = ecrrepository.AwaitProvisionECRRepository(ctx, &ecrrepository.ProvisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
@@ -41,13 +56,6 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		if err != nil {
 			return errors.Wrap(err, "unable to provision ECR repository")
 		}
-	} else {
-		l.Info("skipping reprovision ecr",
-			zap.String("app_id", currentApp.ID),
-			zap.String("app_name", currentApp.Name),
-			zap.Any("org_type", currentApp.Org.OrgType),
-			zap.String("org_id", currentApp.Org.ID),
-			zap.String("org_name", currentApp.Org.Name))
 	}
 
 	if _, err := activities.AwaitCreateAppRepository(ctx, &activities.CreateAppRepositoryRequest{

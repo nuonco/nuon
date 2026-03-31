@@ -23,6 +23,7 @@ const (
 	AppRunnerTypeAWSEKS   AppRunnerType = "aws-eks"
 	AppRunnerTypeAzureAKS AppRunnerType = "azure-aks"
 	AppRunnerTypeAzureACS AppRunnerType = "azure-acs"
+	AppRunnerTypeGCPGKE   AppRunnerType = "gcp-gke"
 
 	AppRunnerTypeLocal AppRunnerType = "local"
 
@@ -36,7 +37,7 @@ func (a AppRunnerType) JobType() RunnerJobType {
 	switch a {
 	case AppRunnerTypeAWSECS, AppRunnerTypeAzureACS:
 		return RunnerJobTypeRunnerTerraform
-	case AppRunnerTypeAWSEKS, AppRunnerTypeAzureAKS:
+	case AppRunnerTypeAWSEKS, AppRunnerTypeAzureAKS, AppRunnerTypeGCPGKE:
 		return RunnerJobTypeRunnerHelm
 	case AppRunnerTypeLocal, AppRunnerTypeAWS, AppRunnerTypeGCP:
 		return RunnerJobTypeRunnerLocal
@@ -130,7 +131,7 @@ func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
 		a.CloudPlatform = CloudPlatformAWS
 	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
 		a.CloudPlatform = CloudPlatformAzure
-	case AppRunnerTypeGCP:
+	case AppRunnerTypeGCP, AppRunnerTypeGCPGKE:
 		a.CloudPlatform = CloudPlatformGCP
 	default:
 		a.CloudPlatform = CloudPlatformUnknown

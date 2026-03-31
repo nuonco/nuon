@@ -30,11 +30,19 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 		return nil
 	}
 
+	var runnerIAMRole string
+	if w.cfg.CloudProvider == "gcp" {
+		runnerIAMRole = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", runner.OrgID, w.cfg.ManagementAccountID)
+	} else {
+		runnerIAMRole = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runner.OrgID, runner.OrgID)
+	}
+
 	req := &kuberunner.ProvisionRunnerRequest{
 		RunnerID:                 runnerID,
 		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
 		APIToken:                 apiToken,
-		RunnerIAMRole:            fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runner.OrgID, runner.OrgID),
+		CloudProvider:            w.cfg.CloudProvider,
+		RunnerIAMRole:            runnerIAMRole,
 		RunnerServiceAccountName: runner.RunnerGroup.Settings.OrgK8sServiceAccountName,
 		Image: kuberunner.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,
