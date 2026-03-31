@@ -411,7 +411,7 @@ export const AppProfileStep = ({
     },
     onSuccess: (ob) => {
       setSharedData('onboarding', ob)
-      if (ob.step_status === 'processing') {
+      if (ob.status_v2?.status === 'processing') {
         setWaiting(true)
       } else {
         onAdvance()
@@ -424,7 +424,7 @@ export const AppProfileStep = ({
     onResolved: (ob) => {
       setWaiting(false)
       setSharedData('onboarding', ob)
-      if (ob.step_error) return
+      if (ob.status_v2?.status === 'error') return
       onAdvance()
     },
   })
@@ -439,7 +439,7 @@ export const AppProfileStep = ({
           {(error as TAPIError).error ?? 'Failed to save app profile'}
         </Banner>
       )}
-      {onboarding?.step_error && (
+      {onboarding?.status_v2?.status === 'error' && onboarding?.step_error && (
         <Banner theme="error">{onboarding.step_error}</Banner>
       )}
       <Tabs
