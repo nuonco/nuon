@@ -47,6 +47,8 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
     enabled: !!org?.id && !!deploy?.install_workflow_id,
   })
 
+  const { hasResponded } = useRespondedApprovals()
+
   if (!deploy || !component) return null
 
   const step = workflow?.steps
@@ -54,8 +56,6 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
       (s) => s?.step_target_id === deploy?.id && s?.execution_type === 'approval'
     )
     ?.at(-1) ?? null
-
-  const { hasResponded } = useRespondedApprovals()
   const responded = step ? hasResponded(step.id) : false
   const logStream = deploy?.log_stream
   const pendingApproval =
