@@ -3,7 +3,11 @@ package fxmodules
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
@@ -34,7 +38,46 @@ type API struct {
 	srv         *http.Server
 }
 
+func findAvailablePort(preferred string) (string, error) {
+	port, _ := strconv.Atoi(preferred)
+	base := 4000
+	if port >= base {
+		base = (port / 10) * 10
+	}
+	for p := base; p <= 4090; p += 10 {
+		ln, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", p))
+		if err == nil {
+			ln.Close()
+			return strconv.Itoa(p), nil
+		}
+	}
+	return "", fmt.Errorf("no available ports in range 4000-4090")
+}
+
+func writePortFile(distDir, port string) error {
+	if err := os.MkdirAll(distDir, 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(distDir, ".port"), []byte(port), 0o644)
+}
+
 func NewAPI(p APIParams) (*API, error) {
+	port, err := findAvailablePort(p.Config.HTTPPort)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find available port: %w", err)
+	}
+	if port != p.Config.HTTPPort {
+		p.Logger.Info("configured port in use, selected alternative",
+			zap.String("configured", p.Config.HTTPPort),
+			zap.String("selected", port))
+	}
+	p.Config.HTTPPort = port
+	p.Config.AppUrl = fmt.Sprintf("http://localhost:%s", port)
+
+	if err := writePortFile(p.Config.DistDir, port); err != nil {
+		p.Logger.Warn("failed to write port file", zap.Error(err))
+	}
+
 	handler := gin.New()
 	handler.Use(gin.Recovery())
 	handler.Use(gin.Logger())
@@ -47,7 +90,7 @@ func NewAPI(p APIParams) (*API, error) {
 		spa:         p.SPA,
 		handler:     handler,
 		srv: &http.Server{
-			Addr:    fmt.Sprintf("0.0.0.0:%s", p.Config.HTTPPort),
+			Addr:    fmt.Sprintf("0.0.0.0:%s", port),
 			Handler: handler.Handler(),
 		},
 	}

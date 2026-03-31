@@ -9,7 +9,7 @@ import (
 
 //nolint:gochecknoinits
 func init() {
-	config.RegisterDefault("http_port", "4040")
+	config.RegisterDefault("http_port", "4000")
 	config.RegisterDefault("log_level", "INFO")
 	config.RegisterDefault("dashboard_dev", false)
 	config.RegisterDefault("service_name", "dashboard-ui")
