@@ -26,6 +26,7 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 			return AwaitForget(ctx, input)
 		},
 		signals.OperationExecuteFlow: func(ctx workflow.Context, input signals.RequestSignal) error {
+			w.ensureComponentLoops(ctx, input)
 			return AwaitExecuteFlow(ctx, input)
 		},
 		signals.OperationRerunFlow: func(ctx workflow.Context, input signals.RequestSignal) error {

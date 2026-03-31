@@ -72,7 +72,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	if currentApp.Org.OrgType == app.OrgTypeDefault {
+	if currentApp.Org.OrgType == app.OrgTypeDefault && w.cfg.CloudProvider != "gcp" {
 		repoDeprovisionReq := &ecrrepository.DeprovisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,
@@ -84,10 +84,8 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 	} else {
 		l.Info("skipping deprovision ecr",
 			zap.String("app_id", currentApp.ID),
-			zap.String("app_name", currentApp.Name),
 			zap.Any("org_type", currentApp.Org.OrgType),
-			zap.String("org_id", currentApp.Org.ID),
-			zap.String("org_name", currentApp.Org.Name))
+			zap.String("cloud_provider", w.cfg.CloudProvider))
 	}
 
 	// update status with response
