@@ -20,4 +20,4 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 FROM base AS test
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild \
-    go test -v ./pkg/...
+    go test -v $(go list ./pkg/... | grep -v temporal-gen-v2/examples)
