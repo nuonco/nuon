@@ -16,11 +16,11 @@ const (
 )
 
 type CreateLogStreamRequest struct {
-	SandboxRunID        string `json:"sandbox_run_id"`
-	DeployID            string `json:"deploy_id"`
-	ActionWorkflowRunID string `json:"action_workflow_run_id"`
-	StepID              string `json:"step_id"`
-	ParentLogStreamID   string `json:"parent_log_stream_id"`
+	SandboxRunID        string
+	DeployID            string
+	ActionWorkflowRunID string
+	StepID              string
+	ParentLogStreamID   string
 }
 
 // @temporal-gen-v2 activity
