@@ -35,6 +35,7 @@ func (s *service) AbandonOnboarding(ctx *gin.Context) {
 	}
 
 	onboarding.Status = app.OnboardingStatusAbandoned
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStatusAbandoned))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to abandon onboarding: %w", err))
