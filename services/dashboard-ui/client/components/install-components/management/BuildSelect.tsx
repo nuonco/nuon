@@ -54,8 +54,6 @@ export const BuildSelect = ({
     enabled: !!org?.id && !!componentId,
   })
 
-  console.log(allBuilds)
-
   // Update accumulated builds when new data comes in
   useEffect(() => {
     if (buildsResult) {
