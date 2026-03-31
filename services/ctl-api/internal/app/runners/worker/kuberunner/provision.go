@@ -23,8 +23,14 @@ type ProvisionRunnerRequest struct {
 	APIURL                   string                      `validate:"required"`
 	APIToken                 string                      `validate:"required"`
 	Image                    ProvisionRunnerRequestImage `validate:"required"`
-	RunnerIAMRole            string                      `validate:"required"`
 	RunnerServiceAccountName string                      `validate:"required"`
+
+	// CloudProvider determines how the runner authenticates to cloud resources.
+	// "gcp" uses GKE Workload Identity, anything else uses AWS IRSA.
+	CloudProvider string
+
+	// RunnerIAMRole is the AWS IAM role ARN (for AWS/IRSA) or GCP service account email (for GCP/Workload Identity).
+	RunnerIAMRole string
 }
 
 type ProvisionRunnerResponse struct{}
@@ -45,6 +51,7 @@ func (w Wkflow) ProvisionRunner(ctx workflow.Context, req *ProvisionRunnerReques
 		RunnerID:                 req.RunnerID,
 		RunnerServiceAccountName: req.RunnerServiceAccountName,
 		RunnerIAMRole:            req.RunnerIAMRole,
+		CloudProvider:            req.CloudProvider,
 		APIToken:                 req.APIToken,
 		APIURL:                   req.APIURL,
 	}); err != nil {

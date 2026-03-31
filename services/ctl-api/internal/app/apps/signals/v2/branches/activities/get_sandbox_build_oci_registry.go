@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
@@ -23,13 +24,24 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 		return nil, fmt.Errorf("unable to get app %s: %w", req.AppID, res.Error)
 	}
 
-	return &configs.OCIRegistryRepository{
-		RegistryType: configs.OCIRegistryTypeECR,
-		Repository:   currentApp.Repository.RepositoryURI,
-		Region:       currentApp.Repository.Region,
-		ECRAuth: &credentials.Config{
+	cfg := &configs.OCIRegistryRepository{
+		Repository: currentApp.Repository.RepositoryURI,
+		Region:     currentApp.Repository.Region,
+	}
+
+	switch a.cfg.CloudProvider {
+	case "gcp":
+		cfg.RegistryType = configs.OCIRegistryTypeGAR
+		if idx := strings.Index(currentApp.Repository.RepositoryURI, "/"); idx != -1 {
+			cfg.LoginServer = currentApp.Repository.RepositoryURI[:idx]
+		}
+	default:
+		cfg.RegistryType = configs.OCIRegistryTypeECR
+		cfg.ECRAuth = &credentials.Config{
 			Region:     currentApp.Repository.Region,
 			UseDefault: true,
-		},
-	}, nil
+		}
+	}
+
+	return cfg, nil
 }

@@ -19,6 +19,14 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
   const [isDownloading, setIsDownloading] = useState(false)
 
+  const version = stack?.versions?.at(0)
+  const quickLink = version?.quick_link_url
+  const templateUrl = version?.template_url
+  const isS3Template = templateUrl?.includes('s3.amazonaws.com') || templateUrl?.includes('.s3.')
+  const stackName = quickLink?.match(/stackName=([^&]+)/)?.[1] || `nuon-${install?.id || 'install'}`
+  const region = version?.region || quickLink?.match(/region=([^&#]+)/)?.[1] || install?.aws_account?.region || 'us-east-1'
+  const consoleUrl = `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
+
   const handleDownloadTerraformConfig = async () => {
     if (!org?.id || !install?.id) {
       console.error('Missing org ID or install ID')
@@ -52,39 +60,41 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
     <>
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Setup your install stack
+          {quickLink ? 'Setup your install stack' : 'View your install stack'}
         </Text>
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>Install quick link</Text>
-            <ClickToCopyButton
-              textToCopy={stack?.versions?.at(0)?.quick_link_url}
-            />
-          </span>
-          <Link
-            href={stack?.versions?.at(0)?.quick_link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Code>{stack?.versions?.at(0)?.quick_link_url}</Code>
-          </Link>
-        </Card>
 
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text weight="strong">Install template link</Text>
-            <ClickToCopyButton
-              textToCopy={stack?.versions?.at(0)?.template_url}
-            />
-          </span>
-          <Link
-            href={stack?.versions?.at(0)?.template_url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Code>{stack?.versions?.at(0)?.template_url}</Code>
-          </Link>
-        </Card>
+        {quickLink ? (
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Quick launch in AWS console</Text>
+              <ClickToCopyButton textToCopy={quickLink} />
+            </span>
+            <Link href={quickLink} target="_blank" rel="noopener noreferrer">
+              <Code>{quickLink}</Code>
+            </Link>
+          </Card>
+        ) : null}
+
+        {templateUrl ? (
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text weight="strong">CloudFormation template</Text>
+              <span className="flex gap-2 items-center">
+                <ClickToCopyButton textToCopy={templateUrl} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => window.open(templateUrl, '_blank')}
+                >
+                  Download
+                </Button>
+              </span>
+            </span>
+            <Link href={templateUrl} target="_blank" rel="noopener noreferrer">
+              <Code>{templateUrl}</Code>
+            </Link>
+          </Card>
+        ) : null}
 
         {org?.features?.['terraform-installer'] && (
           <Card>
@@ -107,47 +117,66 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
         )}
       </div>
 
-      <Divider dividerWord="or" />
+      {quickLink ? <Divider dividerWord="or" /> : null}
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Setup your install stack using CLI command
+          Deploy with AWS CLI
         </Text>
         <Card>
           <span className="flex justify-between items-center">
-            <Text>AWS CloudFormation create stack</Text>
-
+            <Text>Create stack</Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={` aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
-            --template-url ${stack?.versions?.at(0)?.template_url}`}
+              textToCopy={isS3Template
+                ? `aws cloudformation create-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+                : `curl -sLo template.json "${templateUrl}" && aws cloudformation create-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+              }
             />
           </span>
-          <Code>
-            aws cloudformation create-stack --stack-name [YOUR_STACK_NAME]
-            --template-url {stack?.versions?.at(0)?.template_url}
+          <Code className="text-xs whitespace-pre-wrap break-all">
+            {isS3Template
+              ? `aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
+              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
+            }
           </Code>
         </Card>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Update existing stack</Text>
+            <ClickToCopyButton
+              className="w-fit self-end"
+              textToCopy={isS3Template
+                ? `aws cloudformation update-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+                : `curl -sLo template.json "${templateUrl}" && aws cloudformation update-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+              }
+            />
+          </span>
+          <Code className="text-xs whitespace-pre-wrap break-all">
+            {isS3Template
+              ? `aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
+              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
+            }
+          </Code>
+        </Card>
+
       </div>
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Update an existing install stack using CLI command
+          Verify your stack
         </Text>
         <Card>
-          <span className="flex justify-between items-center">
-            <Text>AWS CloudFormation update stack</Text>
-
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={` aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
-            --template-url ${stack?.versions?.at(0)?.template_url}`}
-            />
-          </span>
-          <Code>
-            aws cloudformation update-stack --stack-name [YOUR_STACK_NAME]
-            --template-url {stack?.versions?.at(0)?.template_url}
-          </Code>
+          <Text variant="subtext" theme="neutral">
+            After running the create or update command above, open the AWS CloudFormation console to monitor your stack progress.
+          </Text>
+          <Button
+            variant="secondary"
+            onClick={() => window.open(consoleUrl, '_blank')}
+          >
+            Open in AWS console
+          </Button>
         </Card>
       </div>
     </>
@@ -173,8 +202,6 @@ export const AwaitAWSDetailsSkeleton = () => {
         <Skeleton height="17px" width="175px" />
         <Skeleton height="32px" width="100%" />
       </Card>
-
-      <Divider dividerWord="or" />
 
       <Skeleton height="24px" width="325px" />
 
