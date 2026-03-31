@@ -96,9 +96,10 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 		configID = ""
 		checksum = ""
 	case "kubernetes_manifest":
-		// TODO: Implement kubernetes manifest component sync
-		configID = ""
-		checksum = ""
+		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		if err != nil {
+			return err
+		}
 	default:
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unsupported component type: %s", comp.Type.APIType()),

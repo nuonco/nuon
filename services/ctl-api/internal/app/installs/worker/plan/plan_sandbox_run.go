@@ -125,9 +125,22 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	l.Info("getting auth with role selection")
-	cloudAuth, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, roleName, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get sandbox run auth")
+	}
+
+	// Persist the resolved role name to the sandbox run record
+	if roleName != "" {
+		if err := activities.AwaitUpdateRunStatus(ctx, activities.UpdateRunStatusRequest{
+			RunID:             req.RunID,
+			Status:            run.Status,
+			StatusDescription: run.StatusDescription,
+			SkipStatusSync:    true,
+			Role:              roleName,
+		}); err != nil {
+			l.Warn("unable to persist resolved role to sandbox run", zap.Error(err))
+		}
 	}
 
 	plan := &plantypes.SandboxRunPlan{
@@ -337,15 +350,15 @@ func (p *Planner) getAuthForSandbox(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
-) (*CloudAuth, error) {
+) (*CloudAuth, string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	l.Info("selected role for sandbox run plan",
@@ -356,7 +369,8 @@ func (p *Planner) getAuthForSandbox(
 		zap.String("run_type", string(run.RunType)),
 	)
 
-	return getCloudAuth(roleSelection, &outputs, fmt.Sprintf("sandbox-run-%s", run.ID))
+	cloudAuth, err := getCloudAuth(roleSelection, &outputs, fmt.Sprintf("sandbox-run-%s", run.ID))
+	return cloudAuth, roleSelection.RoleName, err
 }
 
 // TODO(ja): flesh out sandbox mode for azure

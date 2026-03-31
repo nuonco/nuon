@@ -23,6 +23,8 @@ export interface IModal
   onClose?: () => void
   primaryActionTrigger?: IButtonAsButton
   secondaryActionTrigger?: IButtonAsButton
+  showFooter?: boolean
+  showHeader?: boolean
   size?: 'default' | 'half' | '3/4' | 'full'
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
@@ -40,6 +42,8 @@ export const ModalBase = ({
   onClose,
   primaryActionTrigger,
   secondaryActionTrigger,
+  showFooter = true,
+  showHeader = true,
   size = 'default',
   ...props
 }: Omit<IModal, 'triggerButton'>) => {
@@ -83,6 +87,7 @@ export const ModalBase = ({
           ref={modalRef}
           {...props}
         >
+          {showHeader && (
           <div className="py-6 px-4 border-b flex items-center justify-between">
             {heading ? (
               typeof heading === 'string' ? (
@@ -108,6 +113,7 @@ export const ModalBase = ({
               </Button>
             </div>
           </div>
+          )}
           <div
             className={cn(
               'p-6 flex flex-col gap-4 md:gap-6',
@@ -116,6 +122,7 @@ export const ModalBase = ({
           >
             {children}
           </div>
+          {showFooter && (
           <div className="py-6 px-4 border-t flex items-center gap-4 justify-between">
             <div className="flex items-center gap-4">
               {footerActions}
@@ -131,6 +138,7 @@ export const ModalBase = ({
               {primaryActionTrigger ? <Button {...primaryActionTrigger} /> : null}
             </div>
           </div>
+          )}
         </div>
       </TransitionDiv>
     </>

@@ -91,31 +91,33 @@ const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
         Links
       </Text>
 
-      <>
+      {version?.quick_link_url ? (
         <div className="border rounded-md shadow p-2 flex flex-col gap-1">
           <span className="flex justify-between items-center">
             <Text variant="body" weight="strong">
               Install quick link
             </Text>
-            <ClickToCopyButton textToCopy={version?.quick_link_url} />
+            <ClickToCopyButton textToCopy={version.quick_link_url} />
           </span>
-          <Link href={version?.quick_link_url} isExternal>
-            <Code>{version?.quick_link_url}</Code>
+          <Link href={version.quick_link_url} isExternal>
+            <Code>{version.quick_link_url}</Code>
           </Link>
         </div>
+      ) : null}
 
+      {version?.template_url ? (
         <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
           <span className="flex justify-between items-center">
             <Text variant="body" weight="strong">
-              Install template link
+              Install template
             </Text>
-            <ClickToCopyButton textToCopy={version?.template_url} />
+            <ClickToCopyButton textToCopy={version.template_url} />
           </span>
-          <Link href={version?.template_url} isExternal>
-            <Code>{version?.template_url}</Code>
+          <Link href={version.template_url} isExternal>
+            <Code>{version.template_url}</Code>
           </Link>
         </div>
-      </>
+      ) : null}
     </div>
   )
 }

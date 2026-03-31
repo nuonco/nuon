@@ -251,8 +251,8 @@ export const InstallIAMRoles = ({
               </LabeledValue>
               <LabeledValue label="ARN">
                 {role.enabled && role.arn ? (
-                  <div className="flex items-center gap-1">
-                    <Text variant="subtext" family="mono">
+                  <div className="flex items-start gap-1 min-w-0">
+                    <Text variant="subtext" family="mono" className="break-all">
                       {role.arn}
                     </Text>
                     <ClickToCopyButton textToCopy={role.arn} />

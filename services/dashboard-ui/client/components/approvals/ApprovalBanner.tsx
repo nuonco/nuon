@@ -1,5 +1,6 @@
 import { Banner, type TBannerTheme } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
+import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import type {
   TWorkflowStep,
   TWorkflowStepApprovalType,
@@ -40,9 +41,12 @@ interface IApprovalBanner {
 }
 
 export const ApprovalBanner = ({ step }: IApprovalBanner) => {
+  const { hasResponded } = useRespondedApprovals()
+
   return step?.approval?.response ||
     step?.status?.status === 'auto-skipped' ||
-    step?.status?.status === 'cancelled' ? (
+    step?.status?.status === 'cancelled' ||
+    hasResponded(step?.id) ? (
     <ApprovedPlanBanner step={step} />
   ) : (
     <AwaitingApprovalBanner step={step} />
@@ -85,22 +89,28 @@ const RESPONSE_THEME: Record<
 }
 
 const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
+  const { hasResponded } = useRespondedApprovals()
   const responseType = getApprovalResponseType(step?.approval?.response?.type)
+  const optimistic = !responseType && hasResponded(step?.id)
 
   return (
-    <Banner theme={RESPONSE_THEME[step?.approval?.response?.type]}>
+    <Banner theme={optimistic ? 'success' : RESPONSE_THEME[step?.approval?.response?.type]}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <Text weight="strong">
             {responseType
               ? `Plan was ${responseType}`
-              : toSentenceCase(step?.status?.status)}
+              : optimistic
+                ? 'Response submitted'
+                : toSentenceCase(step?.status?.status)}
           </Text>
           <Text variant="subtext" theme="neutral">
             {responseType
               ? `This ${getApprovalType(step?.approval?.type)} plan was ${responseType}.`
-              : toSentenceCase(step?.status?.status_human_description) ||
-                toSentenceCase(step?.status?.metadata?.reason as string)}
+              : optimistic
+                ? 'Waiting for the workflow to process your response.'
+                : toSentenceCase(step?.status?.status_human_description) ||
+                  toSentenceCase(step?.status?.metadata?.reason as string)}
           </Text>
         </div>
       </div>

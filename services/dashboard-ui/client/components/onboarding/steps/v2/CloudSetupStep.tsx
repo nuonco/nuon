@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Divider } from '@/components/common/Divider'
 import { Icon } from '@/components/common/Icon'
@@ -8,6 +11,8 @@ import { CloudPlatform as CloudPlatformDisplay } from '@/components/common/Cloud
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { cn } from '@/utils/classnames'
+import { completeInstallStep } from '@/lib'
+import type { TAPIError, TOnboarding } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
 type CloudSetupOption = 'cloud' | 'sandbox'
@@ -29,17 +34,62 @@ export const CloudSetupStep = ({
   nextStepTitle,
 }: IWizardStepComponentProps) => {
   const [selected, setSelected] = useState<CloudSetupOption | null>(null)
-  const cloudPlatform = sharedData.cloudPlatform as CloudPlatform | null
+  const [waiting, setWaiting] = useState(false)
+  const onboarding = sharedData.onboarding as TOnboarding | undefined
+  const orgId = onboarding?.org_id
+  const cloudPlatform = onboarding?.cloud_provider as CloudPlatform | null
   const cloudLabel = cloudPlatform ? CLOUD_LABELS[cloudPlatform] : null
 
+  const { mutate: submit, isPending, error } = useMutation({
+    mutationFn: () => {
+      if (!orgId || !selected) throw new Error('Missing required data')
+      return completeInstallStep({
+        body: {
+          name: onboarding?.example_app_slug
+            ? `${onboarding.example_app_slug}-demo`
+            : `${cloudPlatform ?? 'nuon'}-demo`,
+          install_mode: selected,
+        },
+        orgId,
+      })
+    },
+    onSuccess: (ob) => {
+      setSharedData('onboarding', ob)
+      if (ob.step_status === 'processing') {
+        setWaiting(true)
+      } else {
+        onAdvance()
+      }
+    },
+  })
+
+  useOnboardingPoll({
+    enabled: waiting,
+    onResolved: (ob) => {
+      setWaiting(false)
+      setSharedData('onboarding', ob)
+      if (ob.step_error) return
+      onAdvance()
+    },
+  })
+
+  const isWorking = isPending || waiting
+
   const handleAdvance = () => {
-    if (!selected) return
-    setSharedData('cloudSetup', selected)
-    onAdvance()
+    if (!selected || isWorking) return
+    submit()
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {error && (
+        <Banner theme="error">
+          {(error as TAPIError).error ?? 'Failed to create install'}
+        </Banner>
+      )}
+      {onboarding?.step_error && (
+        <Banner theme="error">{onboarding.step_error}</Banner>
+      )}
       <div className="flex flex-col gap-12">
         <Button
           type="button"
@@ -133,11 +183,11 @@ export const CloudSetupStep = ({
         <Button
           type="button"
           variant="primary"
-          disabled={!selected}
+          disabled={!selected || isWorking}
           onClick={handleAdvance}
         >
-          {nextStepTitle ?? 'Continue'}{' '}
-          <Icon variant="CaretRight" weight="bold" />
+          {waiting ? 'Setting up install...' : isPending ? 'Creating...' : (nextStepTitle ?? 'Continue')}{' '}
+          {!isWorking && <Icon variant="CaretRight" weight="bold" />}
         </Button>
       </div>
     </div>

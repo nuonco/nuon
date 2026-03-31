@@ -37,4 +37,14 @@ install_inputs = {
   "{{.}}" = ""
 {{- end}}
 }
+auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
+secrets = {
+{{- range .Secrets}}
+  "{{.Name}}" = {
+    description = "{{.Description}}"
+    required    = {{.Required}}
+    value       = "{{.Default}}"
+  }
+{{- end}}
+}
 `

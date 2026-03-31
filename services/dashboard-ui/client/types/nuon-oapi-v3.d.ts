@@ -1203,6 +1203,17 @@ export interface paths {
      */
     get: operations["GetInstallAction"];
   };
+  "/v1/installs/{install_id}/actions/{action_id}/outputs": {
+    /**
+     * get an install action workflow outputs
+     * @description Return the latest outputs for an action workflow.
+     *
+     * The action_id parameter accepts either an action workflow ID or name.
+     *
+     * **NOTE** requires a valid install.
+     */
+    get: operations["GetInstallActionWorkflowOutputs"];
+  };
   "/v1/installs/{install_id}/actions/{action_id}/recent-runs": {
     /**
      * get recent runs for an action workflow by install id
@@ -1617,6 +1628,67 @@ export interface paths {
      * @description Read OTEL formatted logs for a log stream.
      */
     get: operations["LogStreamReadLogs"];
+  };
+  "/v1/onboarding": {
+    /**
+     * Start a new onboarding session
+     * @description Creates a new active onboarding session for the current account
+     */
+    post: operations["CreateOnboarding"];
+  };
+  "/v1/onboarding/current": {
+    /**
+     * Get current onboarding session
+     * @description Returns the active onboarding session for the current account
+     */
+    get: operations["GetCurrentOnboarding"];
+    /**
+     * Abandon onboarding session
+     * @description Marks the current active onboarding session as abandoned
+     */
+    delete: operations["AbandonOnboarding"];
+  };
+  "/v1/onboarding/current/steps/deploy": {
+    /**
+     * Complete the deploy step
+     * @description Advances the onboarding past the deploy monitoring to get started
+     */
+    post: operations["CompleteOnboardingDeployStep"];
+  };
+  "/v1/onboarding/current/steps/get-started": {
+    /**
+     * Complete onboarding
+     * @description Marks the onboarding session as completed
+     */
+    post: operations["CompleteOnboardingGetStartedStep"];
+  };
+  "/v1/onboarding/current/steps/install": {
+    /**
+     * Complete the install step
+     * @description Creates an install and advances the onboarding to the install status step
+     */
+    post: operations["CompleteOnboardingInstallStep"];
+  };
+  "/v1/onboarding/current/steps/organization": {
+    /**
+     * Complete the organization step
+     * @description Creates a sandbox organization or attaches an existing one, then advances the onboarding to the app profile step
+     */
+    post: operations["CompleteOnboardingOrganizationStep"];
+  };
+  "/v1/onboarding/current/steps/your-stack": {
+    /**
+     * Complete the your stack step
+     * @description Configures the application profile and advances the onboarding to the install step
+     */
+    post: operations["CompleteOnboardingYourStackStep"];
+  };
+  "/v1/onboarding/example-apps": {
+    /**
+     * Get example apps catalog
+     * @description Returns the list of available example applications for onboarding
+     */
+    get: operations["GetOnboardingExampleApps"];
   };
   "/v1/orgs": {
     /**
@@ -2164,6 +2236,10 @@ export interface paths {
       };
     };
   };
+  "/v1/workflows": {
+    /** get all workflows for the org */
+    get: operations["GetOrgWorkflows"];
+  };
   "/v1/workflows/pending-approvals": {
     /** get all pending workflow step approvals for the org */
     get: operations["GetOrgPendingApprovals"];
@@ -2598,6 +2674,7 @@ export interface components {
       group_id?: string;
       id?: string;
       index?: number;
+      /** @description Deprecated: this field was never enforced and has no effect. */
       internal?: boolean;
       name?: string;
       org_id?: string;
@@ -3569,6 +3646,31 @@ export interface components {
       urls?: string[];
       variant?: string;
     };
+    "app.Onboarding": {
+      account_id?: string;
+      app_attributes?: string[];
+      app_branch_id?: string;
+      app_id?: string;
+      /** @description Step 2: Your Stack */
+      app_type?: string;
+      cloud_provider?: string;
+      created_at?: string;
+      created_by_id?: string;
+      current_step?: string;
+      example_app_slug?: string;
+      id?: string;
+      install_id?: string;
+      /** @description Step 3: Install */
+      install_mode?: string;
+      /** @description Step 1: Organization */
+      org_id?: string;
+      status?: string;
+      step_error?: string;
+      /** @description Async step status (for queue-based signal processing) */
+      step_status?: string;
+      updated_at?: string;
+      workflow_id?: string;
+    };
     /** @enum {string} */
     "app.OperationStatus": "started" | "finished" | "noop" | "failed";
     /** @enum {string} */
@@ -3849,7 +3951,7 @@ export interface components {
       aws_cloudformation_stack_type?: string;
       /** @description aws runner specifics runner-v2 */
       aws_instance_type?: string;
-      /** @description Default: 7 days */
+      /** @description Deprecated: instance refresh is now handled by a backend cron, not ASG MaxInstanceLifetime. */
       aws_max_instance_lifetime?: number;
       aws_tags?: {
         [key: string]: string;
@@ -4894,11 +4996,10 @@ export interface components {
       display_name: string;
       group: string;
       index: number;
-      /** @description New, optional fields */
-      internal?: boolean;
       required?: boolean;
       sensitive?: boolean;
       source?: components["schemas"]["app.AppInputSource"];
+      /** @description New, optional fields */
       type?: string;
     };
     "service.AppPolicyConfig": {
@@ -4961,6 +5062,34 @@ export interface components {
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CompleteInstallStepRequest": {
+      aws_account?: {
+        region?: string;
+      };
+      azure_account?: {
+        location?: string;
+      };
+      inputs?: {
+        [key: string]: string;
+      };
+      /** @enum {string} */
+      install_mode?: "cloud" | "sandbox";
+      metadata?: {
+        managed_by?: string;
+      };
+      name: string;
+    };
+    "service.CompleteOrganizationStepRequest": {
+      name?: string;
+      org_id?: string;
+    };
+    "service.CompleteYourStackStepRequest": {
+      app_attributes?: string[];
+      /** @enum {string} */
+      app_type: "custom" | "example";
+      cloud_provider?: string;
+      example_app_slug?: string;
+    };
     "service.ComponentChildren": {
       children?: components["schemas"]["app.Component"][];
     };
@@ -5376,6 +5505,18 @@ export interface components {
       plan_only?: boolean;
       role?: string;
     };
+    "service.ExampleApp": {
+      branch?: string;
+      category?: string;
+      cloud_provider?: string;
+      description?: string;
+      difficulty?: string;
+      directory?: string;
+      display_name?: string;
+      repo?: string;
+      slug?: string;
+      tags?: string[];
+    };
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
     "service.ForgetInstallRequest": Record<string, never>;
@@ -5469,6 +5610,7 @@ export interface components {
     };
     "service.ReprovisionInstallRequest": {
       plan_only?: boolean;
+      role?: string;
     };
     "service.ReprovisionInstallSandboxRequest": {
       plan_only?: boolean;
@@ -5555,9 +5697,11 @@ export interface components {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
     };
     "service.UpdateInstallInputsRequest": {
+      deploy_dependents?: boolean;
       inputs: {
         [key: string]: string;
       };
+      role?: string;
     };
     "service.UpdateInstallRequest": {
       install_config?: components["schemas"]["service.PatchInstallConfigParams"];
@@ -5573,6 +5717,7 @@ export interface components {
       name: string;
     };
     "service.UpdateRunnerSettingsRequest": {
+      /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
       container_image_tag?: string;
       container_image_url?: string;
@@ -14802,6 +14947,64 @@ export interface operations {
     };
   };
   /**
+   * get an install action workflow outputs
+   * @description Return the latest outputs for an action workflow.
+   *
+   * The action_id parameter accepts either an action workflow ID or name.
+   *
+   * **NOTE** requires a valid install.
+   */
+  GetInstallActionWorkflowOutputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description action workflow ID or name */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get recent runs for an action workflow by install id
    * @description Returns recent workflow runs for an install action workflow.
    */
@@ -17492,6 +17695,8 @@ export interface operations {
         planonly?: boolean;
         /** @description filter by workflow type */
         type?: string;
+        /** @description filter by finished state */
+        finished?: boolean;
         /** @description filter workflows created after timestamp (RFC3339 format) */
         created_at_gte?: string;
         /** @description filter workflows created before timestamp (RFC3339 format) */
@@ -17637,6 +17842,306 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Start a new onboarding session
+   * @description Creates a new active onboarding session for the current account
+   */
+  CreateOnboarding: {
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current onboarding session
+   * @description Returns the active onboarding session for the current account
+   */
+  GetCurrentOnboarding: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Abandon onboarding session
+   * @description Marks the current active onboarding session as abandoned
+   */
+  AbandonOnboarding: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the deploy step
+   * @description Advances the onboarding past the deploy monitoring to get started
+   */
+  CompleteOnboardingDeployStep: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete onboarding
+   * @description Marks the onboarding session as completed
+   */
+  CompleteOnboardingGetStartedStep: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the install step
+   * @description Creates an install and advances the onboarding to the install status step
+   */
+  CompleteOnboardingInstallStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteInstallStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the organization step
+   * @description Creates a sandbox organization or attaches an existing one, then advances the onboarding to the app profile step
+   */
+  CompleteOnboardingOrganizationStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteOrganizationStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the your stack step
+   * @description Configures the application profile and advances the onboarding to the install step
+   */
+  CompleteOnboardingYourStackStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteYourStackStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get example apps catalog
+   * @description Returns the list of available example applications for onboarding
+   */
+  GetOnboardingExampleApps: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ExampleApp"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -20943,6 +21448,61 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all workflows for the org */
+  GetOrgWorkflows: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description exclude plan only workflows when set to false */
+        planonly?: boolean;
+        /** @description filter by workflow type */
+        type?: string;
+        /** @description filter by finished state */
+        finished?: boolean;
+        /** @description filter workflows created after timestamp (RFC3339 format) */
+        created_at_gte?: string;
+        /** @description filter workflows created before timestamp (RFC3339 format) */
+        created_at_lte?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

@@ -41,6 +41,7 @@ func (s *service) CompleteGetStartedStep(ctx *gin.Context) {
 	}
 
 	onboarding.Status = app.OnboardingStatusCompleted
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStatusCompleted))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))

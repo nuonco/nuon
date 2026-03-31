@@ -89,16 +89,21 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 		sig.ExampleBranch = exApp.Branch
 
 	case app.OnboardingAppTypeCustom:
-		if req.CloudProvider != "" {
-			onboarding.CloudProvider = &req.CloudProvider
+		if req.CloudProvider == "" {
+			ctx.Error(fmt.Errorf("cloud_provider is required for custom app type"))
+			return
 		}
+		onboarding.CloudProvider = &req.CloudProvider
 		if len(req.AppAttributes) > 0 {
 			onboarding.AppAttributes = pq.StringArray(req.AppAttributes)
 		}
 	}
 
-	// Set processing status — signal will advance CurrentStep on completion
+	// Advance step immediately so the frontend can proceed; signal will
+	// set the same value on completion (idempotent) plus clear StepStatus.
+	onboarding.CurrentStep = app.OnboardingStepInstall
 	onboarding.StepStatus = app.OnboardingStepStatusProcessing
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusProcessing))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))

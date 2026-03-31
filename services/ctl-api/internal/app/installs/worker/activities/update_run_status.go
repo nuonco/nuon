@@ -14,6 +14,7 @@ type UpdateRunStatusRequest struct {
 	Status            app.SandboxRunStatus `validate:"required"`
 	StatusDescription string               `validate:"required"`
 	SkipStatusSync    bool
+	Role              string
 }
 
 // @temporal-gen-v2 activity
@@ -21,10 +22,12 @@ func (a *Activities) UpdateRunStatus(ctx context.Context, req UpdateRunStatusReq
 	install := app.InstallSandboxRun{
 		ID: req.RunID,
 	}
-	res := a.db.WithContext(ctx).Model(&install).Updates(app.InstallSandboxRun{
+	updateFields := app.InstallSandboxRun{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
-	})
+		Role:              req.Role,
+	}
+	res := a.db.WithContext(ctx).Model(&install).Updates(updateFields)
 	if res.Error != nil {
 		return fmt.Errorf("unable to update install run: %w", res.Error)
 	}

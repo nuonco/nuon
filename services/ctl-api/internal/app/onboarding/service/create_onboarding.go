@@ -31,19 +31,20 @@ func (s *service) CreateOnboarding(ctx *gin.Context) {
 		return
 	}
 
-	// Check for existing active onboarding
+	// Return existing active session if one exists (idempotent)
 	var existing app.Onboarding
 	res := s.db.WithContext(ctx).
 		Where("account_id = ? AND status = ?", account.ID, app.OnboardingStatusActive).
 		First(&existing)
 	if res.Error == nil {
-		ctx.Error(fmt.Errorf("an active onboarding session already exists"))
+		ctx.JSON(http.StatusOK, existing)
 		return
 	}
 
 	onboarding := app.Onboarding{
 		AccountID:   account.ID,
 		Status:      app.OnboardingStatusActive,
+		StatusV2:    app.NewCompositeStatus(ctx, app.Status(app.OnboardingStatusActive)),
 		CurrentStep: app.OnboardingStepOrganization,
 	}
 
