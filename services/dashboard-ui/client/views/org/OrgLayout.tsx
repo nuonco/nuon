@@ -14,6 +14,12 @@ import { WorkflowApprovalsProvider } from '@/providers/workflow-approvals-provid
 import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
+import { useSpotlight } from '@/hooks/use-spotlight'
+
+const SpotlightListener = () => {
+  useSpotlight()
+  return null
+}
 
 export const OrgLayout = () => {
   const { data: versions } = useQuery({
@@ -32,6 +38,7 @@ export const OrgLayout = () => {
                   <ActiveWorkflowsProvider>
                     <WorkflowApprovalsProvider>
                       <SurfacesProvider>
+                      <SpotlightListener />
                       <MainLayout
                         versions={{
                           api: {
