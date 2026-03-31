@@ -22,6 +22,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
+import { sortByIdx } from '@/utils/action-utils'
 
 const CONTAINER_ID = 'install-action-detail-page'
 
@@ -209,7 +210,7 @@ export const ActionDetail = () => {
             <Text variant="base" weight="strong">
               Steps
             </Text>
-            {action?.action_workflow?.configs?.[0]?.steps?.map((step, i) => (
+            {sortByIdx(action?.action_workflow?.configs?.[0]?.steps ?? []).map((step, i) => (
               <ActionStep key={step.id ?? i} index={i} step={step} />
             )) ?? (
               <Text variant="body" theme="neutral">
