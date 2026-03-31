@@ -4,17 +4,17 @@ import { Duration } from '@/components/common/Duration'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { hydrateActionRunSteps } from '@/utils/action-utils'
+import { hydrateActionRunSteps, sortByIdx } from '@/utils/action-utils'
 import { toSentenceCase } from '@/utils/string-utils'
 import type { IStandardActionSteps } from './types'
 
 export const StandardActionSteps = ({ actionRun }: IStandardActionSteps) => {
-  const hydratedSteps = hydrateActionRunSteps({
-    steps: actionRun.steps,
-    stepConfigs: actionRun?.config?.steps,
-  })
-    ?.sort(({ idx: a }, { idx: b }) => b - a)
-    ?.reverse()
+  const hydratedSteps = sortByIdx(
+    hydrateActionRunSteps({
+      steps: actionRun.steps,
+      stepConfigs: actionRun?.config?.steps,
+    })
+  )
 
   return (
     <div className="flex flex-col gap-2">

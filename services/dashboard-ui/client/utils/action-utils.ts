@@ -1,5 +1,14 @@
 import type { TActionConfig, TInstallActionRun } from '@/types'
 
+export function sortByIdx<T extends { idx?: number }>(items: T[]): T[] {
+  return items.slice().sort((a, b) => {
+    if (a.idx === undefined && b.idx === undefined) return 0
+    if (a.idx === undefined) return -1
+    if (b.idx === undefined) return 1
+    return a.idx - b.idx
+  })
+}
+
 export type THydratedActionRunSteps = Array<
   TInstallActionRun['steps'][number] & { name?: string; idx?: number }
 >
