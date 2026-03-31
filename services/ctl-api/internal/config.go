@@ -116,16 +116,17 @@ type Config struct {
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
-	DBName       string `config:"db_name" validate:"required"`
-	DBHost       string `config:"db_host" validate:"required"`
-	DBPort       string `config:"db_port" validate:"required"`
-	DBSSLMode    string `config:"db_ssl_mode" validate:"required"`
-	DBPassword   string `config:"db_password"`
-	DBUser       string `config:"db_user" validate:"required"`
-	DBZapLog     bool   `config:"db_use_zap"`
-	DBUseIAM     bool   `config:"db_use_iam"`
-	DBRegion     string `config:"db_region" validate:"required"`
-	DBLogQueries bool   `config:"db_log_queries"`
+	DBName        string `config:"db_name" validate:"required"`
+	DBHost        string `config:"db_host" validate:"required"`
+	DBPort        string `config:"db_port" validate:"required"`
+	DBSSLMode     string `config:"db_ssl_mode" validate:"required"`
+	DBPassword    string `config:"db_password"`
+	DBUser        string `config:"db_user" validate:"required"`
+	DBZapLog      bool   `config:"db_use_zap"`
+	DBUseIAM      bool   `config:"db_use_iam"`
+	DBRegion      string `config:"db_region" validate:"required"`
+	CloudProvider string `config:"cloud_provider"`
+	DBLogQueries  bool   `config:"db_log_queries"`
 
 	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
@@ -207,33 +208,40 @@ type Config struct {
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
-	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn" validate:"required"`
+	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn"`
 
-	// configuration for managing AWS infra for orgs, apps and installs
-	ManagementIAMRoleARN string `config:"management_iam_role_arn" validate:"required"`
+	// configuration for managing cloud infra for orgs, apps and installs
+	ManagementAccountID string `config:"management_account_id" validate:"required"`
 
-	ManagementAccountID      string `config:"management_account_id" validate:"required"`
-	ManagementECRRegistryID  string `config:"management_ecr_registry_id" validate:"required"`
-	ManagementECRRegistryARN string `config:"management_ecr_registry_arn" validate:"required"`
+	// AWS management (not required for GCP)
+	ManagementIAMRoleARN     string `config:"management_iam_role_arn"`
+	ManagementECRRegistryID  string `config:"management_ecr_registry_id"`
+	ManagementECRRegistryARN string `config:"management_ecr_registry_arn"`
 
-	// configuration for org runners
-	OrgRunnerK8sClusterID       string `config:"org_runner_k8s_cluster_id" validate:"required"`
-	OrgRunnerK8sPublicEndpoint  string `config:"org_runner_k8s_public_endpoint" validate:"required"`
-	OrgRunnerK8sCAData          string `config:"org_runner_k8s_ca_data" validate:"required"`
-	OrgRunnerOIDCProviderURL    string `config:"org_runner_oidc_provider_url" validate:"required"`
-	OrgRunnerOIDCProviderARN    string `config:"org_runner_oidc_provider_arn" validate:"required"`
-	OrgRunnerRegion             string `config:"org_runner_region" validate:"required"`
-	OrgRunnerSupportRoleARN     string `config:"org_runner_support_role_arn" validate:"required"`
-	OrgRunnerHelmChartDir       string `config:"org_runner_helm_chart_dir" validate:"required"`
-	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn" validate:"required"`
+	// GCP management (not required for AWS)
+	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
+	GCSInstallTemplateBucket   string `config:"gcs_install_template_bucket"`
+
+	// configuration for org runners (shared across cloud providers)
+	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
+	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
+	OrgRunnerK8sCAData         string `config:"org_runner_k8s_ca_data" validate:"required"`
+	OrgRunnerRegion            string `config:"org_runner_region" validate:"required"`
+	OrgRunnerHelmChartDir      string `config:"org_runner_helm_chart_dir" validate:"required"`
+	OrgRunnerInstanceType      string `config:"org_runner_instance_type" validate:"required"`
+
+	// configuration for org runners (AWS-only, not required for GCP)
+	OrgRunnerOIDCProviderURL    string `config:"org_runner_oidc_provider_url"`
+	OrgRunnerOIDCProviderARN    string `config:"org_runner_oidc_provider_arn"`
+	OrgRunnerSupportRoleARN     string `config:"org_runner_support_role_arn"`
+	OrgRunnerK8sIAMRoleARN      string `config:"org_runner_k8s_iam_role_arn"`
 	OrgRunnerK8sUseDefaultCreds bool   `config:"org_runner_k8s_use_default_creds"`
-	OrgRunnerInstanceType       string `config:"org_runner_instance_type" validate:"required"`
 
 	// configuration for apps
 	AppRegion string `config:"app_region" validate:"required"`
 
 	// configuration for managing the public dns zone
-	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn" validate:"required"`
+	DNSManagementIAMRoleARN string `config:"dns_management_iam_role_arn"` // AWS-only
 	DNSZoneID               string `config:"dns_zone_id" validate:"required"`
 	DNSRootDomain           string `config:"dns_root_domain" validate:"required"`
 

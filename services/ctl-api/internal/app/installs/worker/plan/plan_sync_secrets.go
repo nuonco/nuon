@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
@@ -75,32 +76,47 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return &plantypes.SyncSecretsPlan{}, nil
 	}
 
-	if stack.InstallStackOutputs.AWSStackOutputs == nil {
+	// Build cloud auth based on the cloud provider
+	var cloudAuth *CloudAuth
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
+			return nil, fmt.Errorf("provision role not enabled in install stack")
+		}
+		cloudAuth = &CloudAuth{
+			AWS: &awscredentials.Config{
+				Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
+				AssumeRole: &awscredentials.AssumeRoleConfig{
+					SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
+					RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
+				},
+			},
+		}
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		gcpOutputs := stack.InstallStackOutputs.GCPStackOutputs
+		if gcpOutputs.ProvisionSAEmail == "" {
+			return nil, fmt.Errorf("provision service account not enabled in install stack")
+		}
+		cloudAuth = &CloudAuth{
+			GCP: &gcpcredentials.Config{
+				ProjectID:                 gcpOutputs.ProjectID,
+				Region:                    gcpOutputs.Region,
+				ImpersonateServiceAccount: gcpOutputs.ProvisionSAEmail,
+			},
+		}
+	default:
 		return nil, errors.New("secret sync not supported on current cloud provider")
 	}
 
-	if stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN == "" {
-		err := fmt.Errorf("provision role not enabled in install stack")
-		l.Error("provision role not enabled in install stack", zap.Error(err))
-		return nil, err
-	}
-
-	awsAuth := &awscredentials.Config{
-		Region: stack.InstallStackOutputs.AWSStackOutputs.Region,
-		AssumeRole: &awscredentials.AssumeRoleConfig{
-			SessionName: fmt.Sprintf("install-sync-secrets-%s", req.InstallID),
-			RoleARN:     stack.InstallStackOutputs.AWSStackOutputs.ProvisionIAMRoleARN,
-		},
-	}
-
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, &CloudAuth{AWS: awsAuth})
+	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get cluster information")
 	}
 
 	plan := &plantypes.SyncSecretsPlan{
 		ClusterInfo:       clusterInfo,
-		AWSAuth:           awsAuth,
+		AWSAuth:           cloudAuth.AWS,
+		GCPAuth:           cloudAuth.GCP,
 		KubernetesSecrets: secrets,
 	}
 
@@ -122,23 +138,36 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 }
 
 func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.AppSecretConfig) (plantypes.KubernetesSecretSync, bool, error) {
-	key := fmt.Sprintf("%s_arn", cfg.Name)
-	secretARN, ok := stack.Data[key]
-	if !ok || secretARN == nil || generics.FromPtrStr(secretARN) == "" {
-		if cfg.Required {
-			return plantypes.KubernetesSecretSync{}, false, fmt.Errorf("secret arn not found in stack output: %s", key)
-		}
-
-		return plantypes.KubernetesSecretSync{}, false, nil
+	sync := plantypes.KubernetesSecretSync{
+		SecretName: cfg.Name,
+		Namespace:  cfg.KubernetesSecretNamespace,
+		Name:       cfg.KubernetesSecretName,
+		KeyName:    cfg.KubernetesSecretKey,
+		Format:     string(cfg.Format),
 	}
 
-	return plantypes.KubernetesSecretSync{
-		SecretARN:  generics.FromPtrStr(secretARN),
-		SecretName: cfg.Name,
+	switch {
+	case stack.GCPStackOutputs != nil:
+		key := fmt.Sprintf("%s_secret_name", cfg.Name)
+		val, ok := stack.Data[key]
+		if !ok || val == nil || generics.FromPtrStr(val) == "" {
+			if cfg.Required {
+				return plantypes.KubernetesSecretSync{}, false, fmt.Errorf("secret name not found in stack output: %s", key)
+			}
+			return plantypes.KubernetesSecretSync{}, false, nil
+		}
+		sync.GCPSecretName = generics.FromPtrStr(val)
+	default:
+		key := fmt.Sprintf("%s_arn", cfg.Name)
+		val, ok := stack.Data[key]
+		if !ok || val == nil || generics.FromPtrStr(val) == "" {
+			if cfg.Required {
+				return plantypes.KubernetesSecretSync{}, false, fmt.Errorf("secret arn not found in stack output: %s", key)
+			}
+			return plantypes.KubernetesSecretSync{}, false, nil
+		}
+		sync.SecretARN = generics.FromPtrStr(val)
+	}
 
-		Namespace: cfg.KubernetesSecretNamespace,
-		Name:      cfg.KubernetesSecretName,
-		KeyName:   cfg.KubernetesSecretKey,
-		Format:    string(cfg.Format),
-	}, true, nil
+	return sync, true, nil
 }

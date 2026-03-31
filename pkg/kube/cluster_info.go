@@ -4,9 +4,13 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -166,10 +170,25 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	}
 
 	if cInfo.GCPAuth != nil {
-		cfg.ExecProvider = &clientcmdapi.ExecConfig{
-			APIVersion:      "client.authentication.k8s.io/v1beta1",
-			Command:         "gke-gcloud-auth-plugin",
-			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+		ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+		if err != nil {
+			return nil, fmt.Errorf("unable to get GCP token source for K8s auth: %w", err)
+		}
+
+		cfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+			return &oauth2.Transport{Source: ts, Base: rt}
+		}
+
+		// Use gke-gcloud-auth-plugin if available (install runners in customer clusters),
+		// otherwise rely on oauth2 WrapTransport via Workload Identity (org runners in our cluster).
+		if _, err := exec.LookPath("gke-gcloud-auth-plugin"); err == nil {
+			cfg.ExecProvider = &clientcmdapi.ExecConfig{
+				APIVersion:      "client.authentication.k8s.io/v1beta1",
+				Command:         "gke-gcloud-auth-plugin",
+				InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+			}
+		} else {
+			cfg.ExecProvider = nil
 		}
 	}
 

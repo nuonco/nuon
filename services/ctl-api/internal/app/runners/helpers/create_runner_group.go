@@ -87,8 +87,18 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
 
 	platform := app.AppRunnerTypeAWSEKS
+	if h.cfg.CloudProvider == "gcp" {
+		platform = app.AppRunnerTypeGCPGKE
+	}
 	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
 		platform = app.AppRunnerTypeLocal
+	}
+
+	// Build cloud-specific identity for the org runner service account
+	var orgAWSIAMRoleARN string
+	var orgGCPServiceAccount string
+	if h.cfg.CloudProvider == "gcp" {
+		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
 	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
@@ -123,12 +133,10 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 				"runner.type":     generics.ToPtr(string(app.RunnerGroupTypeInstall)),
 				"runner.platform": generics.ToPtr(string(platform)),
 				"env":             generics.ToPtr(string(h.cfg.Env)),
-				// NOTE(jm): we also set the runner group at create time
 			}),
 
-			// NOTE(jm): this is mainly a legacy relic, where instead of actually tracking infra resources in our API, via a
-			// catalog, we actually pass around templates for IAM role ARNs
-			OrgAWSIAMRoleARN:         "",
+			OrgAWSIAMRoleARN:         orgAWSIAMRoleARN,
+			OrgGCPServiceAccount:     orgGCPServiceAccount,
 			LocalAWSIAMRoleARN:       "",
 			OrgK8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
 		},

@@ -160,6 +160,20 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 	}
 
 	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
+	loginServer := strings.TrimPrefix(accessInfo.ServerAddress, "https://")
+
+	// For GCP/GAR, the RegistryID from GetOrgECRAccessInfo contains the full GAR URL
+	// (e.g. "us-central1-docker.pkg.dev/project/repo"). Use it to build the full image path.
+	// Always use PrivateOCI with static credentials — the install runner may not have GCP
+	// default credentials (it runs in the customer's cloud, not ours).
+	if accessInfo.RegistryID != "" && strings.Contains(accessInfo.ServerAddress, "pkg.dev") {
+		garURL := accessInfo.RegistryID
+		if idx := strings.Index(garURL, "/"); idx != -1 {
+			loginServer = garURL[:idx]
+			appRepoName = fmt.Sprintf("%s/%s/%s", garURL[idx+1:], install.OrgID, install.AppID)
+		}
+	}
+
 	return &configs.OCIRegistryRepository{
 		Repository:   appRepoName,
 		Region:       "",
@@ -168,7 +182,7 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 			Username: accessInfo.Username,
 			Password: accessInfo.RegistryToken,
 		},
-		LoginServer: strings.TrimPrefix(accessInfo.ServerAddress, "https://"),
+		LoginServer: loginServer,
 	}, nil
 }
 

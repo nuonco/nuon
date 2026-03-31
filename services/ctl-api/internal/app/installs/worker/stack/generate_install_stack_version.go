@@ -227,12 +227,31 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		}
 	}
 
-	// upload stack template to S3
-	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
-		BucketKey: stackVersion.AWSBucketKey,
-		Template:  tmplByts,
-	}); err != nil {
-		return errors.Wrap(err, "unable to upload cloudformation stack")
+	// Upload stack template to cloud storage.
+	switch w.cfg.CloudProvider {
+	case "gcp":
+		gcsResp, err := activities.AwaitUploadGCSInstallStackTemplate(ctx, &activities.UploadGCSInstallStackTemplateRequest{
+			Bucket:   w.cfg.GCSInstallTemplateBucket,
+			Key:      stackVersion.AWSBucketKey,
+			Template: tmplByts,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to upload stack template to GCS")
+		}
+		// Update the stack version with the GCS signed URL so CloudFormation can fetch the template.
+		if err := activities.AwaitUpdateInstallStackVersionTemplateURL(ctx, &activities.UpdateInstallStackVersionTemplateURLRequest{
+			ID:          stackVersion.ID,
+			TemplateURL: gcsResp.URL,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update template URL")
+		}
+	default:
+		if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+			BucketKey: stackVersion.AWSBucketKey,
+			Template:  tmplByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload cloudformation stack")
+		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
