@@ -9,7 +9,7 @@
     "dev:css": "postcss client/styles.css -o dist/styles.css -w",
     "dev:ts": "esbuild client/index.tsx --bundle --outfile=dist/app.js --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --sourcemap --define:process.env.NODE_ENV='\"development\"' --watch=forever",
     "dev:html": "cp client/index.html dist/index.html",
-    "dev:bs": "browser-sync start --proxy localhost:${HTTP_PORT:-4040} --files 'dist/**/*' --no-open --port 4001",
+    "dev:bs": "browser-sync start --proxy localhost:${HTTP_PORT:-4000} --files 'dist/**/*' --no-open --port $((${HTTP_PORT:-4000}+1))",
     "dev:spa": "mkdir -p dist && npm run dev:html && run-p dev:css dev:ts dev:bs",
     "build": "cross-env NODE_ENV=production next build",
     "build:spa:js": "esbuild client/index.tsx --bundle --outdir=dist/assets --entry-names=[name]-[hash] --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --minify --define:process.env.NODE_ENV='\"production\"' --metafile=dist/meta.json",
