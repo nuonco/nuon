@@ -134,6 +134,7 @@ func (s *service) getAppBuilds(ctx *gin.Context, appID string, limit int) ([]app
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ComponentConfigConnection").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("VCSConnectionCommit").
 		Preload("ComponentConfigConnection.Component").
 		Joins("JOIN component_config_connections ON component_config_connections.id=component_builds.component_config_connection_id").
@@ -174,8 +175,10 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 				Order("component_builds.created_at DESC")
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit").
+		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection").
 		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.Component").
+		Preload("ComponentConfigs.ComponentBuilds.ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ComponentBuilds.CreatedBy").
 		First(&cmp, "id = ? AND org_id = ?", cmpID, orgID)
 	if res.Error != nil {
@@ -184,6 +187,12 @@ func (s *service) getComponentBuilds(ctx *gin.Context, cmpID string) ([]app.Comp
 
 	blds := make([]app.ComponentBuild, 0)
 	for _, cfg := range cmp.ComponentConfigs {
+		for i := range cfg.ComponentBuilds {
+			if cfg.ComponentBuilds[i].ComponentConfigConnection.ExternalImageComponentConfig == nil {
+				cfg.ComponentBuilds[i].ComponentConfigConnection.ExternalImageComponentConfig = cfg.ExternalImageComponentConfig
+				cfg.ComponentBuilds[i].ComponentConfigConnection.Type = cfg.Type
+			}
+		}
 		blds = append(blds, cfg.ComponentBuilds...)
 	}
 
