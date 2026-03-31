@@ -71,7 +71,7 @@ type GetAvailableRolesParams struct {
 
 	   operation type: provision, reprovision, deprovision, deploy, teardown, trigger
 	*/
-	OperationType string
+	OperationType *string
 
 	/* PrincipalID.
 
@@ -83,7 +83,7 @@ type GetAvailableRolesParams struct {
 
 	   principal type: component, sandbox, action
 	*/
-	PrincipalType string
+	PrincipalType *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -150,13 +150,13 @@ func (o *GetAvailableRolesParams) SetInstallID(installID string) {
 }
 
 // WithOperationType adds the operationType to the get available roles params
-func (o *GetAvailableRolesParams) WithOperationType(operationType string) *GetAvailableRolesParams {
+func (o *GetAvailableRolesParams) WithOperationType(operationType *string) *GetAvailableRolesParams {
 	o.SetOperationType(operationType)
 	return o
 }
 
 // SetOperationType adds the operationType to the get available roles params
-func (o *GetAvailableRolesParams) SetOperationType(operationType string) {
+func (o *GetAvailableRolesParams) SetOperationType(operationType *string) {
 	o.OperationType = operationType
 }
 
@@ -172,13 +172,13 @@ func (o *GetAvailableRolesParams) SetPrincipalID(principalID *string) {
 }
 
 // WithPrincipalType adds the principalType to the get available roles params
-func (o *GetAvailableRolesParams) WithPrincipalType(principalType string) *GetAvailableRolesParams {
+func (o *GetAvailableRolesParams) WithPrincipalType(principalType *string) *GetAvailableRolesParams {
 	o.SetPrincipalType(principalType)
 	return o
 }
 
 // SetPrincipalType adds the principalType to the get available roles params
-func (o *GetAvailableRolesParams) SetPrincipalType(principalType string) {
+func (o *GetAvailableRolesParams) SetPrincipalType(principalType *string) {
 	o.PrincipalType = principalType
 }
 
@@ -195,13 +195,20 @@ func (o *GetAvailableRolesParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 
-	// query param operation_type
-	qrOperationType := o.OperationType
-	qOperationType := qrOperationType
-	if qOperationType != "" {
+	if o.OperationType != nil {
 
-		if err := r.SetQueryParam("operation_type", qOperationType); err != nil {
-			return err
+		// query param operation_type
+		var qrOperationType string
+
+		if o.OperationType != nil {
+			qrOperationType = *o.OperationType
+		}
+		qOperationType := qrOperationType
+		if qOperationType != "" {
+
+			if err := r.SetQueryParam("operation_type", qOperationType); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -222,13 +229,20 @@ func (o *GetAvailableRolesParams) WriteToRequest(r runtime.ClientRequest, reg st
 		}
 	}
 
-	// query param principal_type
-	qrPrincipalType := o.PrincipalType
-	qPrincipalType := qrPrincipalType
-	if qPrincipalType != "" {
+	if o.PrincipalType != nil {
 
-		if err := r.SetQueryParam("principal_type", qPrincipalType); err != nil {
-			return err
+		// query param principal_type
+		var qrPrincipalType string
+
+		if o.PrincipalType != nil {
+			qrPrincipalType = *o.PrincipalType
+		}
+		qPrincipalType := qrPrincipalType
+		if qPrincipalType != "" {
+
+			if err := r.SetQueryParam("principal_type", qPrincipalType); err != nil {
+				return err
+			}
 		}
 	}
 
