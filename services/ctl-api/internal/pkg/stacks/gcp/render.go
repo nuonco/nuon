@@ -20,6 +20,14 @@ type GCPRoleTemplateInput struct {
 	PredefinedRole string
 }
 
+// GCPSecretTemplateInput holds a non-auto-gen secret definition for the template.
+type GCPSecretTemplateInput struct {
+	Name        string
+	Description string
+	Required    bool
+	Default     string
+}
+
 // GCPTemplateInput extends TemplateInput with pre-marshaled GCP IAM permission lists.
 type GCPTemplateInput struct {
 	*stacks.TemplateInput
@@ -34,6 +42,9 @@ type GCPTemplateInput struct {
 	BreakGlassRoles []GCPRoleTemplateInput
 	CustomRoles     []GCPRoleTemplateInput
 	InstallInputs   []string
+
+	AutoGenerateSecrets []string
+	Secrets             []GCPSecretTemplateInput
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
@@ -55,6 +66,23 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 	}
 
+	var autoGenerateSecrets []string
+	var secrets []GCPSecretTemplateInput
+	if inputs.AppCfg != nil {
+		for _, s := range inputs.AppCfg.SecretsConfig.Secrets {
+			if s.AutoGenerate {
+				autoGenerateSecrets = append(autoGenerateSecrets, s.Name)
+			} else {
+				secrets = append(secrets, GCPSecretTemplateInput{
+					Name:        s.Name,
+					Description: s.Description,
+					Required:    s.Required,
+					Default:     s.Default,
+				})
+			}
+		}
+	}
+
 	gcpInputs := &GCPTemplateInput{
 		TemplateInput:             inputs,
 		ProvisionPermissions:      prov,
@@ -66,6 +94,8 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		BreakGlassRoles:           breakGlassRoles,
 		CustomRoles:               customRoles,
 		InstallInputs:             installInputs,
+		AutoGenerateSecrets:       autoGenerateSecrets,
+		Secrets:                   secrets,
 	}
 
 	var buf bytes.Buffer
