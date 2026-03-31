@@ -177,7 +177,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	l.Info("creating plan for executing action run")
-	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+	planResponse, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
 		WorkflowID:          fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
@@ -217,27 +217,27 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	// save runner job plan
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
 	compositePlan := plantypes.CompositePlan{
-		ActionWorkflowRunPlan: runPlan,
+		ActionWorkflowRunPlan: planResponse.Plan,
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: compositePlan,
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  compositePlan,
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
 
 	planJSON = nil
-	runPlan = nil
 
 	// now queue and execute the job
 	l.Info("executing runner job")
