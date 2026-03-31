@@ -94,7 +94,7 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
-	cloudAuth, err := p.getAuthForDeploy(
+	cloudAuth, _, err := p.getAuthForDeploy(
 		ctx,
 		installDeploy,
 		compBuild,
