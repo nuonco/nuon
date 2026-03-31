@@ -15,6 +15,7 @@ import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTy
 import { ComponentType } from '@/components/components/ComponentType'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
+import { QuickComponentManagementDropdown } from '@/components/install-components/management/QuickComponentManagementDropdown'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents, getAppConfig } from '@/lib'
@@ -36,6 +37,7 @@ export type InstallComponentRow = {
   deployStatus: ReactNode
   driftStatus: ReactNode
   href: string
+  action: ReactNode
   dependencies: ReactNode
 }
 
@@ -99,6 +101,15 @@ function parseInstallComponentSummaryToTableData(
         <InstallComponentDependencies deps={deps?.at(depIndex)?.dependencies} />
       ),
       href: `/${orgId}/installs/${installId}/components/${component.component_id}`,
+      action: (
+        <div className="hidden md:block">
+          <QuickComponentManagementDropdown
+            installComponent={component}
+            orgId={orgId}
+            installId={installId}
+          />
+        </div>
+      ),
     }
   })
 }
@@ -148,16 +159,10 @@ const columns: ColumnDef<InstallComponentRow>[] = [
   },
   {
     enableSorting: false,
-    accessorKey: 'href',
+    accessorKey: 'action',
     id: 'action',
     header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
-    ),
+    cell: (info) => info.getValue<ReactNode>(),
   },
 ]
 
