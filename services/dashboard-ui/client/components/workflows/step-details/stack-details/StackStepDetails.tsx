@@ -30,7 +30,8 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
     },
   })
 
-  const linksReady = !!stack?.versions?.at(0)?.template_url
+  const version = stack?.versions?.at(0)
+  const linksReady = !!version?.template_url || !!version?.contents
 
   return (
     <div>
