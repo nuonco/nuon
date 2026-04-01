@@ -6,7 +6,8 @@ import (
 )
 
 type Planner struct {
-	v *validator.Validate
+	v             *validator.Validate
+	cloudProvider string
 }
 
 type Params struct {

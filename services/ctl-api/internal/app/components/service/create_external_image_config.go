@@ -34,8 +34,31 @@ func (a *awsECRImageConfigRequest) getAWSECRImageConfig() *app.AWSECRImageConfig
 	}
 }
 
+type gcpGARImageConfigRequest struct {
+	GCPProjectID             string `json:"gcp_project_id"`
+	GCPRegion                string `json:"gcp_region"`
+	ImageURL                 string `json:"image_url"`
+	Tag                      string `json:"tag"`
+	ServiceAccountEmail      string `json:"service_account_email,omitempty"`
+	WorkloadIdentityProvider string `json:"workload_identity_provider,omitempty"`
+}
+
+func (g *gcpGARImageConfigRequest) getGCPGARImageConfig() *app.GCPGARImageConfig {
+	if g == nil {
+		return nil
+	}
+
+	return &app.GCPGARImageConfig{
+		GCPProjectID:             g.GCPProjectID,
+		GCPRegion:                g.GCPRegion,
+		ServiceAccountEmail:      g.ServiceAccountEmail,
+		WorkloadIdentityProvider: g.WorkloadIdentityProvider,
+	}
+}
+
 type CreateExternalImageComponentConfigRequest struct {
 	AWSECRImageConfig *awsECRImageConfigRequest `json:"aws_ecr_image_config"`
+	GCPGARImageConfig *gcpGARImageConfigRequest `json:"gcp_gar_image_config"`
 
 	ImageURL      string `json:"image_url" validate:"required"`
 	Tag           string `json:"tag" validate:"required"`
@@ -167,11 +190,11 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	// build component config
 	cfg := app.ExternalImageComponentConfig{
 		ImageURL:          req.ImageURL,
 		Tag:               req.Tag,
 		AWSECRImageConfig: req.AWSECRImageConfig.getAWSECRImageConfig(),
+		GCPGARImageConfig: req.GCPGARImageConfig.getGCPGARImageConfig(),
 	}
 
 	operationRoles := make(pgtype.Hstore)
