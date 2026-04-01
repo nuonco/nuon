@@ -8,9 +8,9 @@ import (
 )
 
 type WriteEventRequest struct {
-	DeployID     string `validate:"required"`
-	InstallID    string `validate:"required"`
-	SandboxRunID string `validate:"required"`
+	DeployID     string
+	InstallID    string
+	SandboxRunID string
 
 	Operation       eventloop.SignalType `validate:"required"`
 	OperationStatus app.OperationStatus  `validate:"required"`

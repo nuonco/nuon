@@ -13,7 +13,7 @@ type CreateInstallDeployRequest struct {
 	ComponentID string                `json:"component_id" validate:"required"`
 	BuildID     string                `json:"build_id" validate:"required"`
 	Type        app.InstallDeployType `json:"type" validate:"required"`
-	WorkflowID  string                `json:"workflow_id" validate:"required"`
+	WorkflowID  string                `json:"workflow_id,omitempty"`
 	Role        string                `json:"role,omitempty"`
 }
 
