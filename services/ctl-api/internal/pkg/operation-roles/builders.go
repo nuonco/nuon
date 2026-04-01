@@ -1,6 +1,7 @@
 package operationroles
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/principal"
@@ -40,16 +41,22 @@ func GetRoleForDeploy(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		var selErr *SelectionError
+		var failedTrace []app.RunnerJobPermissionTraceRecord
+		if errors.As(err, &selErr) {
+			failedTrace = selErr.Trace
+		}
+
 		l.Warn("dynamic role selection failed, falling back to default role",
 			zap.Error(err),
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		var fallbackErr error
-		roleSelection, fallbackErr = GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get default role: %w", err)
 		}
+		roleSelection.Trace = append(failedTrace, roleSelection.Trace...)
 
 		l.Warn("using default role for component deploy",
 			zap.String("role_name", roleSelection.RoleName),
@@ -102,16 +109,22 @@ func GetRoleForSandbox(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		var selErr *SelectionError
+		var failedTrace []app.RunnerJobPermissionTraceRecord
+		if errors.As(err, &selErr) {
+			failedTrace = selErr.Trace
+		}
+
 		l.Warn("dynamic role selection failed, falling back to default role",
 			zap.Error(err),
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		var fallbackErr error
-		roleSelection, fallbackErr = GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to get default role: %w", err)
 		}
+		roleSelection.Trace = append(failedTrace, roleSelection.Trace...)
 
 		l.Warn("using default role for sandbox",
 			zap.String("role_name", roleSelection.RoleName),
@@ -160,17 +173,23 @@ func GetRoleForAction(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		var selErr *SelectionError
+		var failedTrace []app.RunnerJobPermissionTraceRecord
+		if errors.As(err, &selErr) {
+			failedTrace = selErr.Trace
+		}
+
 		l.Warn("dynamic role selection failed, falling back to default role",
 			zap.Error(err),
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		var fallbackErr error
-		roleSelection, fallbackErr = GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			l.Error("unable to get default role", zap.Error(fallbackErr))
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
+		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		if err != nil {
+			l.Error("unable to get default role", zap.Error(err))
+			return nil, "", fmt.Errorf("unable to get default role: %w", err)
 		}
+		roleSelection.Trace = append(failedTrace, roleSelection.Trace...)
 
 		l.Warn("using default role for action",
 			zap.String("role_name", roleSelection.RoleName),
