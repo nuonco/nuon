@@ -116,7 +116,7 @@ export const ComponentsGraphRenderer = ({
           </li>
         </ul>
       </div>
-      <ComponentsGraph appId={appId} configId={configId} />
+      <ComponentsGraphInline appId={appId} configId={configId} />
     </Modal>
   )
 }
@@ -162,7 +162,7 @@ const nodeTypes = {
   customComponent: CustomComponentNode,
 }
 
-const ComponentsGraph = ({
+export const ComponentsGraphInline = ({
   appId,
   configId,
 }: {
