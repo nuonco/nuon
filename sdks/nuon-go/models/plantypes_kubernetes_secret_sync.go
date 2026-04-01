@@ -21,6 +21,9 @@ type PlantypesKubernetesSecretSync struct {
 	// updating the runner job and save time.
 	Format string `json:"format,omitempty"`
 
+	// projects/{project}/secrets/{id}/versions/latest
+	GcpSecretName string `json:"gcp_secret_name,omitempty"`
+
 	// key name
 	KeyName string `json:"key_name,omitempty"`
 

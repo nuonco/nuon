@@ -58,7 +58,6 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*c
 		return nil, errors.Wrap(err, "unable to normalize repository")
 	}
 
-	// aws ecr repository
 	if cfg.AWSECRImageConfig != nil {
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
@@ -71,8 +70,21 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*c
 					RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
 					SessionName:            "container-image-build",
 					SessionDurationSeconds: 30 * 60,
+					UseGCPOIDC:             b.cloudProvider == "gcp",
 				},
 			},
+		}, nil
+	}
+
+	if cfg.GCPGARImageConfig != nil {
+		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
+		return &configs.OCIRegistryRepository{
+			RegistryType:             configs.OCIRegistryTypeGAR,
+			Repository:               cfg.ImageURL,
+			Region:                   cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:              garLoginServer,
+			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
+			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
 		}, nil
 	}
 
