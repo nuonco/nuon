@@ -9,8 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
-	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -165,56 +163,4 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 	}
 
 	return nil
-}
-
-func (w *Workflows) getRoleForDeploy(
-	l *zap.Logger,
-	appConfig *app.AppConfig,
-	installDeploy *app.InstallDeploy,
-	build *app.ComponentBuild,
-	comp *app.Component,
-	stack *app.InstallStack,
-	installState *state.State,
-) (*operationroles.RoleSelection, app.OperationType, error) {
-	operation := app.OperationDeploy
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		operation = app.OperationTeardown
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeComponent,
-		PrincipalName: comp.Name,
-		RuntimeRole:   installDeploy.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			build.ComponentConfigConnection.OperationRoles,
-		),
-		MatrixRules:  appConfig.OperationRoleConfig.Rules,
-		DefaultRole:  appConfig.PermissionsConfig.MaintenanceRole.Name,
-		AppConfig:    appConfig,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			l.Error("unable to get default role", zap.Error(fallbackErr))
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for component deploy",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
 }

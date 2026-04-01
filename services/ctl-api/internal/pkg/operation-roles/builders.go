@@ -52,7 +52,7 @@ func GetRoleForDeploy(
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		roleSelection, err = SelectDefaultRole(selectionCtx)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to get default role: %w", err)
 		}
@@ -120,7 +120,7 @@ func GetRoleForSandbox(
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		roleSelection, err = SelectDefaultRole(selectionCtx)
 		if err != nil {
 			return nil, "", fmt.Errorf("unable to get default role: %w", err)
 		}
@@ -184,7 +184,7 @@ func GetRoleForAction(
 			zap.String("default_role", selectionCtx.DefaultRole),
 		)
 
-		roleSelection, err = GetDefaultRoleSelection(selectionCtx)
+		roleSelection, err = SelectDefaultRole(selectionCtx)
 		if err != nil {
 			l.Error("unable to get default role", zap.Error(err))
 			return nil, "", fmt.Errorf("unable to get default role: %w", err)
