@@ -58,6 +58,11 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install state")
 	}
 
+	// this is here just to reduce duplicated return values from all component types, we're caling same function within
+	// every component to build cloud auth, its non expensive and deterministic so we can be sure that in both calls
+	// we get same information.
+	// unless, we change response models like appcfg, installdeploy, build, stack etc somewhere in middle, which should
+	// not happen ideally.
 	roleSelection, _, err := p.getRoleForDeploy(l, appCfg, installDeploy, build, stack, installState)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
