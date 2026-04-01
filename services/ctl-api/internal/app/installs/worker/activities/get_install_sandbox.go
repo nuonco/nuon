@@ -10,7 +10,7 @@ import (
 
 type GetInstallSandboxRequest struct {
 	InstallID string `validate:"required"`
-	ID        string `validate:"required"`
+	ID        string
 }
 
 // @temporal-gen-v2 activity
