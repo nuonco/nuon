@@ -16,7 +16,8 @@ import (
 )
 
 type CreateOrgInviteRequest struct {
-	Email string `json:"email" validate:"required"`
+	Email    string       `json:"email" validate:"required"`
+	RoleType app.RoleType `json:"role_type,omitempty"`
 }
 
 // @ID						CreateOrgInvite
@@ -68,7 +69,19 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	invite, err := s.createInvite(ctx, org.ID, req.Email)
+	roleType := req.RoleType
+	if roleType == "" {
+		roleType = app.RoleTypeOrgAdmin
+	}
+	if roleType != app.RoleTypeOrgAdmin && roleType != app.RoleTypeOrgSupport {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid role type: %s", roleType),
+			Description: fmt.Sprintf("role_type must be %q or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport),
+		})
+		return
+	}
+
+	invite, err := s.createInvite(ctx, org.ID, req.Email, roleType)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create invite: %w", err))
 		return
@@ -88,12 +101,12 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 	})
 }
 
-func (s *service) createInvite(ctx context.Context, orgID, email string) (*app.OrgInvite, error) {
+func (s *service) createInvite(ctx context.Context, orgID, email string, roleType app.RoleType) (*app.OrgInvite, error) {
 	invite := app.OrgInvite{
 		OrgID:    orgID,
 		Email:    email,
 		Status:   app.OrgInviteStatusPending,
-		RoleType: app.RoleTypeOrgAdmin,
+		RoleType: roleType,
 	}
 
 	err := s.db.WithContext(ctx).
