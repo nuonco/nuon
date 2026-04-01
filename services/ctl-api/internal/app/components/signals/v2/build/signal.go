@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
@@ -132,14 +133,33 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		return fmt.Errorf("unable to create job: %w", err)
 	}
 
+	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
 		ComponentID:      comp.ID,
 		ComponentBuildID: buildID,
 		WorkflowID:       fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		CloudProvider:    cloudProvider,
 	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
 		return errors.Wrap(err, "unable to create plan")
+	}
+
+	if runPlan.ContainerImagePullPlan != nil &&
+		runPlan.ContainerImagePullPlan.RepoCfg != nil &&
+		runPlan.ContainerImagePullPlan.RepoCfg.RegistryType == configs.OCIRegistryTypeGAR {
+		garToken, err := activities.AwaitGetGARAccessToken(ctx, &activities.GetGARAccessTokenRequest{
+			ServiceAccountEmail:      runPlan.ContainerImagePullPlan.RepoCfg.ServiceAccountEmail,
+			WorkloadIdentityProvider: runPlan.ContainerImagePullPlan.RepoCfg.WorkloadIdentityProvider,
+		})
+		if err != nil {
+			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
+			return errors.Wrap(err, "unable to get GAR access token")
+		}
+		runPlan.ContainerImagePullPlan.RepoCfg.OCIAuth = &configs.OCIRegistryAuth{
+			Username: garToken.Username,
+			Password: garToken.Password,
+		}
 	}
 
 	planJSON, err := json.Marshal(runPlan)
