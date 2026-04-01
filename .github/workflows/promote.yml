@@ -154,7 +154,7 @@ jobs:
             *status* - ${{steps.check.outputs.status}}
 
       - name: Update datadog
-        uses: masci/datadog@v1
+        uses: masci/datadog@v2
         with:
           api-key: ${{ secrets.DATADOG_API_KEY }}
           api-url: "https://us5.datadoghq.com"
