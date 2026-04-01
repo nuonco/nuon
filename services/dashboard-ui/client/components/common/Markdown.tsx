@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -6,6 +6,8 @@ import { cn } from '@/utils/classnames'
 import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
+import { Tabs } from './Tabs'
+import { buildNuonComponents, extractSegments, type MarkdownMode } from './markdown-components'
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -75,7 +77,14 @@ function renderCodeBlock(language: string, codeString: string) {
   return <CodeBlock language={language}>{codeString}</CodeBlock>
 }
 
-const markdownComponents = {
+const nuonComponentsByMode: Record<MarkdownMode, Record<string, any>> = {
+  app: buildNuonComponents('app'),
+  install: buildNuonComponents('install'),
+}
+
+function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
+  return {
+  ...nuonComponentsByMode[mode],
   code({ node, className, children, style, ...props }: any) {
       if (style || node?.properties?.style) {
         return <code className={className} style={style} {...props}>{children}</code>
@@ -197,6 +206,7 @@ const markdownComponents = {
 
     return <pre style={style} {...props}>{children}</pre>
   },
+  }
 }
 
 function preprocessContent(content: string): string {
@@ -221,93 +231,120 @@ function preprocessContent(content: string): string {
   return result.join('\n')
 }
 
-export const Markdown = React.memo(({ content = '' }: { content?: string }) => {
+const markdownStyles = `
+  .mermaid-diagram {
+    text-align: center;
+    margin: 1rem 0;
+    min-height: 100px;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    background: var(--background-neutral);
+  }
+  .mermaid-diagram svg {
+    max-width: 100%;
+    height: 300px;
+  }
+  details[open] > summary {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+  }
+  details div ul, details div ol {
+    padding-left: 1.5rem;
+  }
+  .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
+  .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
+  .prose code::before,
+  .prose code::after {
+    content: none !important;
+  }
+  .prose andypf-json-viewer *[class*="container"],
+  .prose andypf-json-viewer *[class="container"],
+  .prose andypf-json-viewer div.container,
+  .prose andypf-json-viewer div.container *,
+  .prose div andypf-json-viewer,
+  .prose div andypf-json-viewer .container,
+  .prose div andypf-json-viewer .container * {
+    font-family: var(--font-hack) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  andypf-json-viewer .container,
+  andypf-json-viewer .container * {
+    font-family: var(--font-hack) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  .prose andypf-json-viewer {
+    --font-family: var(--font-hack) !important;
+    --font-size: 0.875rem !important;
+    --line-height: 1.25rem !important;
+    --json-font-family: var(--font-hack) !important;
+    --json-font-size: 0.875rem !important;
+    --json-line-height: 1.25rem !important;
+    --viewer-font-family: var(--font-hack) !important;
+    --viewer-font-size: 0.875rem !important;
+    --text-font-size: 0.875rem !important;
+    --code-font-family: var(--font-hack) !important;
+    --code-font-size: 0.875rem !important;
+    --container-font-family: var(--font-hack) !important;
+    --container-font-size: 0.875rem !important;
+    --key-value-font-family: var(--font-hack) !important;
+    --key-value-font-size: 0.875rem !important;
+    --value-string-font-family: var(--font-hack) !important;
+    --value-string-font-size: 0.875rem !important;
+  }
+`
+
+const proseClassName = cn(
+  'prose dark:prose-invert max-w-[100%]',
+  'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
+)
+
+function MarkdownBlock({ content, components }: { content: string; components: Record<string, any> }) {
   const processed = preprocessContent(content)
   return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
+      components={components}
+    >
+      {processed}
+    </ReactMarkdown>
+  )
+}
+
+export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: string; mode?: MarkdownMode }) => {
+  const components = getMarkdownComponents(mode)
+  const segments = extractSegments(content)
+
+  const hasOnlyMarkdown = segments.length === 1 && segments[0].type === 'markdown'
+
+  if (hasOnlyMarkdown) {
+    return (
+      <>
+        <style>{markdownStyles}</style>
+        <div className={proseClassName}>
+          <MarkdownBlock content={content} components={components} />
+        </div>
+      </>
+    )
+  }
+
+  return (
     <>
-      <style>{`
-        .mermaid-diagram { 
-          text-align: center; 
-          margin: 1rem 0; 
-          min-height: 100px;
-          border-radius: 0.25rem;
-          border: 1px solid var(--border-color);
-          padding: 1rem;
-          background: var(--background-neutral);
-        }
-        .mermaid-diagram svg {
-          max-width: 100%;
-          height: 300px;
-        }
-        /* Enhanced details/summary styling to match Expand component */
-        details[open] > summary {
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 0;
-        }
-        /* Fix list padding inside details content wrapper */
-        details div ul, details div ol {
-          padding-left: 1.5rem;
-        }
-        /* Remove any pseudo-element backticks from inline code */
-        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
-        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
-        .prose code::before,
-        .prose code::after {
-          content: none !important;
-        }
-        /* Override prose styles for JSONViewer custom element - nuclear approach */
-        .prose andypf-json-viewer *[class*="container"],
-        .prose andypf-json-viewer *[class="container"],
-        .prose andypf-json-viewer div.container,
-        .prose andypf-json-viewer div.container *,
-        .prose div andypf-json-viewer,
-        .prose div andypf-json-viewer .container,
-        .prose div andypf-json-viewer .container * {
-          font-family: var(--font-hack) !important;
-          font-size: 0.875rem !important;
-          line-height: 1.25rem !important;
-        }
-        /* Global override with maximum specificity */
-        andypf-json-viewer .container,
-        andypf-json-viewer .container * {
-          font-family: var(--font-hack) !important;
-          font-size: 0.875rem !important;
-          line-height: 1.25rem !important;
-        }
-        .prose andypf-json-viewer {
-          /* Shadow DOM CSS custom properties - try various naming patterns */
-          --font-family: var(--font-hack) !important;
-          --font-size: 0.875rem !important;
-          --line-height: 1.25rem !important;
-          --json-font-family: var(--font-hack) !important;
-          --json-font-size: 0.875rem !important;
-          --json-line-height: 1.25rem !important;
-          --viewer-font-family: var(--font-hack) !important;
-          --viewer-font-size: 0.875rem !important;
-          --text-font-size: 0.875rem !important;
-          --code-font-family: var(--font-hack) !important;
-          --code-font-size: 0.875rem !important;
-          /* Try container-specific variables */
-          --container-font-family: var(--font-hack) !important;
-          --container-font-size: 0.875rem !important;
-          /* Try more specific variables based on classes we see */
-          --key-value-font-family: var(--font-hack) !important;
-          --key-value-font-size: 0.875rem !important;
-          --value-string-font-family: var(--font-hack) !important;
-          --value-string-font-size: 0.875rem !important;
-        }
-      `}</style>
-      <div className={cn(
-        'prose dark:prose-invert max-w-[100%]',
-        'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
-      )}>
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
-          components={markdownComponents}
-        >
-          {processed}
-        </ReactMarkdown>
+      <style>{markdownStyles}</style>
+      <div className={proseClassName}>
+        {segments.map((segment, i) => {
+          if (segment.type === 'markdown') {
+            return <MarkdownBlock key={i} content={segment.content} components={components} />
+          }
+          const tabs: Record<string, ReactNode> = {}
+          for (const tab of segment.tabs) {
+            tabs[tab.name] = <MarkdownBlock content={tab.content} components={components} />
+          }
+          return <Tabs key={i} tabs={tabs} />
+        })}
       </div>
     </>
   )
