@@ -1,4 +1,28 @@
+import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { OrgContext } from '@/providers/org-provider'
+import { InstallContext } from '@/providers/install-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
+import type { TOrg, TInstall } from '@/types'
 import { Markdown } from './Markdown'
+
+const mockOrg = { id: 'org-mock', name: 'Mock Org' } as TOrg
+const mockInstall = { id: 'install-mock', name: 'Mock Install' } as TInstall
+const storyQueryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+})
+
+const MockInstallProviders = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={storyQueryClient}>
+    <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
+      <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
+        <SurfacesProvider>
+          {children}
+        </SurfacesProvider>
+      </InstallContext.Provider>
+    </OrgContext.Provider>
+  </QueryClientProvider>
+)
 
 export const BasicUsage = () => (
   <div className="space-y-6">
@@ -749,6 +773,225 @@ class APIClient {
 
 Visit our [developer portal](https://developers.example.com) for more information.`}
         />
+      </div>
+    </div>
+  </div>
+)
+
+export const NuonComponents = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Nuon embedded components</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Custom nuon-* tags render real React components from the dashboard.
+        These can be used in user-authored markdown like runbooks.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Badge</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Badges inline with text: <nuon-badge theme="success">Healthy</nuon-badge> <nuon-badge theme="error">Degraded</nuon-badge> <nuon-badge theme="warn">Pending</nuon-badge>
+
+With sizes: <nuon-badge theme="info" size="sm">small</nuon-badge> <nuon-badge theme="info" size="md">medium</nuon-badge> <nuon-badge theme="info" size="lg">large</nuon-badge>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Status</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Status indicators:
+
+<nuon-status status="active"></nuon-status>
+
+<nuon-status status="error"></nuon-status>
+
+<nuon-status status="provisioning"></nuon-status>
+
+With badge variant: <nuon-status status="active" variant="badge"></nuon-status>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Banner</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`## Runbook: restart procedure
+
+<nuon-banner theme="warn">Only run this during a maintenance window.</nuon-banner>
+
+Follow these steps:
+
+1. Verify the install is in a stable state
+2. Notify the team in Slack
+
+<nuon-banner theme="info">This process typically takes 5-10 minutes to complete.</nuon-banner>
+
+3. Proceed with the restart
+4. Verify health checks pass
+
+<nuon-banner theme="success">If all checks pass, the restart is complete.</nuon-banner>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Combined example</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`# Environment status
+
+| Environment | Status |
+|---|---|
+| Production | <nuon-badge theme="success">Healthy</nuon-badge> |
+| Staging | <nuon-badge theme="warn">Deploying</nuon-badge> |
+| Development | <nuon-badge theme="error">Down</nuon-badge> |
+
+<nuon-banner theme="warn">Staging deployment in progress — avoid merging to main.</nuon-banner>
+
+<details>
+<summary>Troubleshooting steps for development</summary>
+
+Check the current status: <nuon-status status="error"></nuon-status>
+
+1. Check runner connectivity
+2. Review recent deploy logs
+3. Escalate if unresolved after 15 minutes
+
+</details>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Tabs</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`## Deployment guide
+
+<nuon-tabs>
+<nuon-tab name="AWS">
+
+### AWS setup
+
+1. Create an IAM role
+2. Configure VPC networking
+3. Deploy the stack
+
+\`\`\`bash
+nuon installs create --cloud aws
+\`\`\`
+
+</nuon-tab>
+<nuon-tab name="Azure">
+
+### Azure setup
+
+1. Create a service principal
+2. Configure VNet
+3. Deploy the resources
+
+\`\`\`bash
+nuon installs create --cloud azure
+\`\`\`
+
+</nuon-tab>
+</nuon-tabs>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Tabs with embedded components</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-tabs>
+<nuon-tab name="status">
+
+Current environment status:
+
+<nuon-badge theme="success">Healthy</nuon-badge> Production
+
+<nuon-badge theme="warn">Deploying</nuon-badge> Staging
+
+</nuon-tab>
+<nuon-tab name="runbook">
+
+<nuon-banner theme="info">Follow these steps during a maintenance window.</nuon-banner>
+
+1. Pause traffic
+2. Run migrations
+3. Resume traffic
+
+</nuon-tab>
+</nuon-tabs>`}
+        />
+      </div>
+    </div>
+  </div>
+)
+
+export const RenderModes = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Render modes: app vs install</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Action components like <code>nuon-view-state</code> require install context.
+        In app mode they degrade to inline code. Display components with unresolved
+        Go templates also degrade.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">App mode (default) — action tags render as code</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          mode="app"
+          content={`## Runbook
+
+Check the current install state:
+
+<nuon-view-state></nuon-view-state>
+
+Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">App mode — unresolved templates degrade to code</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          mode="app"
+          content={`Status with template: <nuon-badge theme="success">{"{{ .install.status }}"}</nuon-badge>
+
+Resolved badge still renders: <nuon-badge theme="info">Ready</nuon-badge>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Install mode — action tags render real components</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        ViewStateButton renders as a real button (clicking opens the modal with mock context).
+      </p>
+      <div className="p-4 border rounded-lg">
+        <MockInstallProviders>
+          <Markdown
+            mode="install"
+            content={`## Runbook
+
+Check the current install state:
+
+<nuon-view-state></nuon-view-state>
+
+Display components also render: <nuon-badge theme="success">Healthy</nuon-badge>`}
+          />
+        </MockInstallProviders>
       </div>
     </div>
   </div>
