@@ -11,7 +11,7 @@ type CreateWorkflowRequest struct {
 	InstallID    string            `validate:"required"`
 	WorkflowType app.WorkflowType  `validate:"required"`
 	Metadata     map[string]string `validate:"required"`
-	PlanOnly     bool              `validate:"required"`
+	PlanOnly     bool
 }
 
 // @temporal-gen-v2 activity
