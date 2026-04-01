@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
+import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -43,42 +44,39 @@ const registry: Record<string, NuonComponent> = {
     mapProps: noProps,
     requiresInstall: true,
   },
+  'nuon-config-graph': {
+    component: InstallConfigGraph,
+    mapProps: noProps,
+    requiresInstall: true,
+  },
 }
 
-export type ContentSegment =
-  | { type: 'markdown'; content: string }
-  | { type: 'tabs'; tabs: { name: string; content: string }[] }
+export type ExtractedTabs = { name: string; content: string }[]
 
-export function extractSegments(content: string): ContentSegment[] {
-  const segments: ContentSegment[] = []
-  const tabsRegex = /<nuon-tabs>([\s\S]*?)<\/nuon-tabs>/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
+export function extractTabs(content: string): {
+  content: string
+  tabsMap: Map<string, ExtractedTabs>
+} {
+  const tabsMap = new Map<string, ExtractedTabs>()
+  let idx = 0
 
-  while ((match = tabsRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'markdown', content: content.slice(lastIndex, match.index) })
+  const replaced = content.replace(
+    /<nuon-tabs>([\s\S]*?)<\/nuon-tabs>/g,
+    (_match, inner: string) => {
+      const tabRegex = /<nuon-tab\s+name="([^"]+)">([\s\S]*?)<\/nuon-tab>/g
+      const tabs: ExtractedTabs = []
+      let tabMatch: RegExpExecArray | null
+      while ((tabMatch = tabRegex.exec(inner)) !== null) {
+        tabs.push({ name: tabMatch[1], content: tabMatch[2].trim() })
+      }
+      if (tabs.length === 0) return ''
+      const id = `nuon-tabs-${idx++}`
+      tabsMap.set(id, tabs)
+      return `<nuon-tabs-rendered data-id="${id}"></nuon-tabs-rendered>`
     }
+  )
 
-    const tabsInner = match[1]
-    const tabRegex = /<nuon-tab\s+name="([^"]+)">([\s\S]*?)<\/nuon-tab>/g
-    const tabs: { name: string; content: string }[] = []
-    let tabMatch: RegExpExecArray | null
-    while ((tabMatch = tabRegex.exec(tabsInner)) !== null) {
-      tabs.push({ name: tabMatch[1], content: tabMatch[2].trim() })
-    }
-    if (tabs.length > 0) {
-      segments.push({ type: 'tabs', tabs })
-    }
-
-    lastIndex = match.index + match[0].length
-  }
-
-  if (lastIndex < content.length) {
-    segments.push({ type: 'markdown', content: content.slice(lastIndex) })
-  }
-
-  return segments
+  return { content: replaced, tabsMap }
 }
 
 function hasUnresolvedTemplates(attrs: Record<string, string>): boolean {
