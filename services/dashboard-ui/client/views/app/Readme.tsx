@@ -48,7 +48,7 @@ export const Readme = () => {
       {isLoading ? (
         <ReadmeSkeleton />
       ) : appConfig?.readme ? (
-        <Markdown content={appConfig.readme} />
+        <Markdown content={appConfig.readme} mode="app" />
       ) : (
         <EmptyState
           variant="table"
