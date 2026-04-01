@@ -23,6 +23,9 @@ type OutputsSecretSyncOutput struct {
 	// exists
 	Exists bool `json:"exists,omitempty"`
 
+	// gcp secret name
+	GcpSecretName string `json:"gcp_secret_name,omitempty"`
+
 	// kubernetes key
 	KubernetesKey string `json:"kubernetes_key,omitempty"`
 

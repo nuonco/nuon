@@ -30,6 +30,15 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 			AwsRegion:  containerImage.AWSECRImageConfig.AWSRegion,
 			IamRoleArn: containerImage.AWSECRImageConfig.IAMRoleARN,
 		}
+	} else if containerImage.GCPGARImageConfig != nil {
+		configRequest.ImageURL = generics.ToPtr(containerImage.GCPGARImageConfig.ImageURL)
+		configRequest.Tag = generics.ToPtr(containerImage.GCPGARImageConfig.Tag)
+		configRequest.GcpGarImageConfig = &models.ServiceGcpGARImageConfigRequest{
+			GcpProjectID:             containerImage.GCPGARImageConfig.GCPProjectID,
+			GcpRegion:                containerImage.GCPGARImageConfig.GCPRegion,
+			ServiceAccountEmail:      containerImage.GCPGARImageConfig.ServiceAccountEmail,
+			WorkloadIdentityProvider: containerImage.GCPGARImageConfig.WorkloadIdentityProvider,
+		}
 	} else if containerImage.PublicImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.PublicImageConfig.ImageURL)
 		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
