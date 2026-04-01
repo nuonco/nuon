@@ -33,6 +33,9 @@ type OCIRegistryRepository struct {
 	ACRAuth *azurecredentials.Config `hcl:"acr_auth,block"`
 	OCIAuth *OCIRegistryAuth         `hcl:"ocr_auth,block"`
 
+	ServiceAccountEmail      string `hcl:"service_account_email,optional"`
+	WorkloadIdentityProvider string `hcl:"workload_identity_provider,optional"`
+
 	// based on the type of access, either the repository (ecr) or login server (acr) will be provided.
 	Repository  string `hcl:"repository"`
 	LoginServer string `hcl:"login_server"`

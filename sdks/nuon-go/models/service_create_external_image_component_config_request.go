@@ -38,6 +38,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
+	// gcp gar image config
+	GcpGarImageConfig *ServiceGcpGARImageConfigRequest `json:"gcp_gar_image_config,omitempty"`
+
 	// image url
 	// Required: true
 	ImageURL *string `json:"image_url"`
@@ -58,6 +61,10 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) Validate(formats strf
 	var res []error
 
 	if err := m.validateAwsEcrImageConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpGarImageConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -98,6 +105,29 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) validateAwsEcrImageCo
 	return nil
 }
 
+func (m *ServiceCreateExternalImageComponentConfigRequest) validateGcpGarImageConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpGarImageConfig) { // not required
+		return nil
+	}
+
+	if m.GcpGarImageConfig != nil {
+		if err := m.GcpGarImageConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_gar_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_gar_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ServiceCreateExternalImageComponentConfigRequest) validateImageURL(formats strfmt.Registry) error {
 
 	if err := validate.Required("image_url", "body", m.ImageURL); err != nil {
@@ -124,6 +154,10 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) ContextValidate(ctx c
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateGcpGarImageConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -146,6 +180,31 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) contextValidateAwsEcr
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_ecr_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateExternalImageComponentConfigRequest) contextValidateGcpGarImageConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpGarImageConfig != nil {
+
+		if swag.IsZero(m.GcpGarImageConfig) { // not required
+			return nil
+		}
+
+		if err := m.GcpGarImageConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_gar_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_gar_image_config")
 			}
 
 			return err

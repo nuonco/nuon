@@ -46,6 +46,7 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.AWSECRImageConfig").
+		Preload("ComponentConfigs.ExternalImageComponentConfig.GCPGARImageConfig").
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").

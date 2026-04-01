@@ -95,6 +95,7 @@ func AllModels() []any {
 		&app.ConnectedGithubVCSConfig{},
 		&app.PublicGitVCSConfig{},
 		&app.AWSECRImageConfig{},
+		&app.GCPGARImageConfig{},
 
 		// component management
 		&app.ComponentBuild{},
