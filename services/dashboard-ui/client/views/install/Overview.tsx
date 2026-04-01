@@ -66,7 +66,7 @@ export const Overview = () => {
                   {warn}
                 </div>
               ))}
-              <Markdown content={readme.readme} />
+              <Markdown content={readme.readme} mode="install" />
             </>
           ) : (
             <EmptyState
