@@ -74,6 +74,9 @@ type AppComponentConfigConnection struct {
 	// Operation roles map: operation type -> role name
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 
+	// pulumi
+	Pulumi *AppPulumiComponentConfig `json:"pulumi,omitempty"`
+
 	// references
 	References []string `json:"references"`
 

@@ -122,6 +122,12 @@ const (
 
 	// AppRunnerJobTypeActionsDashWorkflow captures enum value "actions-workflow"
 	AppRunnerJobTypeActionsDashWorkflow AppRunnerJobType = "actions-workflow"
+
+	// AppRunnerJobTypePulumiDashBuild captures enum value "pulumi-build"
+	AppRunnerJobTypePulumiDashBuild AppRunnerJobType = "pulumi-build"
+
+	// AppRunnerJobTypePulumiDashDeploy captures enum value "pulumi-deploy"
+	AppRunnerJobTypePulumiDashDeploy AppRunnerJobType = "pulumi-deploy"
 )
 
 // for schema
@@ -129,7 +135,7 @@ var appRunnerJobTypeEnum []any
 
 func init() {
 	var res []AppRunnerJobType
-	if err := json.Unmarshal([]byte(`["health-check","docker-build","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["health-check","docker-build","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow","pulumi-build","pulumi-deploy"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
