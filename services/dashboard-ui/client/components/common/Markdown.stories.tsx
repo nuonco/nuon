@@ -957,6 +957,10 @@ Check the current install state:
 
 <nuon-view-state></nuon-view-state>
 
+View the dependency graph:
+
+<nuon-config-graph></nuon-config-graph>
+
 Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
         />
       </div>
@@ -988,6 +992,10 @@ Resolved badge still renders: <nuon-badge theme="info">Ready</nuon-badge>`}
 Check the current install state:
 
 <nuon-view-state></nuon-view-state>
+
+View the dependency graph:
+
+<nuon-config-graph></nuon-config-graph>
 
 Display components also render: <nuon-badge theme="success">Healthy</nuon-badge>`}
           />
