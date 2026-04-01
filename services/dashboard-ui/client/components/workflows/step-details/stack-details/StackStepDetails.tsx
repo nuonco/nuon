@@ -23,7 +23,15 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
     queryKey: ['install-stack', org?.id, step?.owner_id],
     queryFn: () => getInstallStack({ orgId: org.id, installId: step.owner_id }),
     enabled: !!org?.id && !!step?.owner_id,
+    refetchInterval: (query) => {
+      if (isGenerateStack) return false
+      const hasLinks = !!query.state.data?.versions?.at(0)?.template_url
+      return hasLinks ? false : 3000
+    },
   })
+
+  const version = stack?.versions?.at(0)
+  const linksReady = !!version?.template_url || !!version?.contents
 
   return (
     <div>
@@ -33,9 +41,9 @@ export const StackStepDetails = ({ step }: IStackStepDetails) => {
         ) : (
           <GenerateStackDetails />
         )
-      ) : isLoading && !stack ? (
+      ) : isLoading || !linksReady ? (
         <AwaitStackDetailsSkeleton />
-      ) : !stack ? null : (
+      ) : (
         <AwaitStackDetails stack={stack} step={step} />
       )}
     </div>

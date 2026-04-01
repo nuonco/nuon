@@ -18,7 +18,7 @@ type CreateOnboardingAppResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @as-wrapper
-func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName string) (*CreateOnboardingAppResponse, error) {
+func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName string, createBranch bool) (*CreateOnboardingAppResponse, error) {
 	// Load org for context — needed for event loop startup (startEventLoop calls signal.GetOrg)
 	var org app.Org
 	if err := a.db.WithContext(ctx).First(&org, "id = ?", orgID).Error; err != nil {
@@ -32,18 +32,16 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		Preload("AppBranches").
 		Where("org_id = ? AND name = ?", orgID, appName).
 		First(&existingApp).Error; err == nil {
-		branchID := ""
-		if len(existingApp.AppBranches) > 0 {
-			branchID = existingApp.AppBranches[0].ID
-			// Ensure branch queue exists (may have been missed in a previous failed attempt)
-			if err := a.appsHelpers.EnsureAppBranchQueue(ctx, branchID); err != nil {
+		resp := &CreateOnboardingAppResponse{
+			AppID: existingApp.ID,
+		}
+		if createBranch && len(existingApp.AppBranches) > 0 {
+			resp.AppBranchID = existingApp.AppBranches[0].ID
+			if err := a.appsHelpers.EnsureAppBranchQueue(ctx, resp.AppBranchID); err != nil {
 				return nil, fmt.Errorf("unable to ensure app branch queue: %w", err)
 			}
 		}
-		return &CreateOnboardingAppResponse{
-			AppID:       existingApp.ID,
-			AppBranchID: branchID,
-		}, nil
+		return resp, nil
 	}
 
 	// Create the app record
@@ -68,12 +66,6 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
 	}
 
-	// Create the main branch + branch queue
-	branch, err := a.appsHelpers.CreateAppBranch(ctx, newApp.ID, "main")
-	if err != nil {
-		return nil, fmt.Errorf("unable to create app branch: %w", err)
-	}
-
 	// Send v1 event loop signals (matching apps/service/create_app.go)
 	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
 		Type: appsignals.OperationCreated,
@@ -85,8 +77,17 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		Type: appsignals.OperationProvision,
 	})
 
-	return &CreateOnboardingAppResponse{
-		AppID:       newApp.ID,
-		AppBranchID: branch.ID,
-	}, nil
+	resp := &CreateOnboardingAppResponse{
+		AppID: newApp.ID,
+	}
+
+	if createBranch {
+		branch, err := a.appsHelpers.CreateAppBranch(ctx, newApp.ID, "main")
+		if err != nil {
+			return nil, fmt.Errorf("unable to create app branch: %w", err)
+		}
+		resp.AppBranchID = branch.ID
+	}
+
+	return resp, nil
 }

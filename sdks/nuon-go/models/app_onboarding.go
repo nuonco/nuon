@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -25,6 +27,9 @@ type AppOnboarding struct {
 
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
+
+	// app config
+	AppConfig any `json:"app_config,omitempty"`
 
 	// app id
 	AppID string `json:"app_id,omitempty"`
@@ -62,6 +67,9 @@ type AppOnboarding struct {
 	// status
 	Status string `json:"status,omitempty"`
 
+	// status v2
+	StatusV2 *AppCompositeStatus `json:"status_v2,omitempty"`
+
 	// step error
 	StepError string `json:"step_error,omitempty"`
 
@@ -77,11 +85,77 @@ type AppOnboarding struct {
 
 // Validate validates this app onboarding
 func (m *AppOnboarding) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateStatusV2(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app onboarding based on context it is used
+func (m *AppOnboarding) validateStatusV2(formats strfmt.Registry) error {
+	if swag.IsZero(m.StatusV2) { // not required
+		return nil
+	}
+
+	if m.StatusV2 != nil {
+		if err := m.StatusV2.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app onboarding based on the context it is used
 func (m *AppOnboarding) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppOnboarding) contextValidateStatusV2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.StatusV2 != nil {
+
+		if swag.IsZero(m.StatusV2) { // not required
+			return nil
+		}
+
+		if err := m.StatusV2.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

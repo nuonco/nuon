@@ -81,8 +81,11 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		onboarding.InstallMode = req.InstallMode
 	}
 
-	// Set processing status — signal will advance CurrentStep on completion
+	// Advance step immediately so the frontend can proceed; signal will
+	// set the same value on completion (idempotent) plus clear StepStatus.
+	onboarding.CurrentStep = app.OnboardingStepDeploy
 	onboarding.StepStatus = app.OnboardingStepStatusProcessing
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusProcessing))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -6,6 +6,8 @@ import { cn } from '@/utils/classnames'
 import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
+import { Tabs } from './Tabs'
+import { buildNuonComponents, extractTabs, type ExtractedTabs, type MarkdownMode } from './markdown-components'
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -47,56 +49,54 @@ const MermaidDiagram = ({ code }: { code: string }) => {
   )
 }
 
-const markdownComponents = {
-  code({ node, inline, className, children, ...props }: any) {
-      const match = /language-(\w+)/.exec(className || '')
-      const language = match ? match[1] : 'text'
-      const codeString = String(children).replace(/\n$/, '')
-      const isMultiline = codeString.includes('\n')
-      const isInlineCode = inline === true
-      
-      if (!isInlineCode) {
-        // Block code
-        
-        // Handle mermaid diagrams
-        if (language === 'mermaid') {
-          return <MermaidDiagram code={codeString} />
-        }
-        
-        // Handle JSON
-        if (language === 'json' || language === 'jsonc') {
-          try {
-            const jsonData = JSON.parse(codeString)
-            return <JSONViewer data={jsonData} expanded={2} className="my-4" />
-          } catch {
-            // Fallback to regular code block if JSON parsing fails
-            return <CodeBlock language="json">{codeString}</CodeBlock>
-          }
-        }
-        
-        // Auto-detect JSON if no language specified
-        if (language === 'text' || !language) {
-          try {
-            const jsonData = JSON.parse(codeString)
-            return <JSONViewer data={jsonData} expanded={2} className="my-4" />
-          } catch {
-            // Not JSON, use regular code block
-          }
-        }
+function renderCodeBlock(language: string, codeString: string) {
+  if (language === 'mermaid') {
+    return <MermaidDiagram code={codeString} />
+  }
 
-        // Regular code block
-        return <CodeBlock language={language}>{codeString}</CodeBlock>
-      }
-      
-      // Inline code
+  if (language === 'json' || language === 'jsonc') {
+    try {
+      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+    } catch {
+      return <CodeBlock language="json">{codeString}</CodeBlock>
+    }
+  }
+
+  if (!language || language === 'text') {
+    try {
+      return <JSONViewer data={JSON.parse(codeString)} expanded={2} className="my-4" />
+    } catch {
       return (
-        <code 
+        <pre className="overflow-x-auto rounded-lg border p-4 my-4 bg-code text-sm font-mono">
+          <code>{codeString}</code>
+        </pre>
+      )
+    }
+  }
+
+  return <CodeBlock language={language}>{codeString}</CodeBlock>
+}
+
+const nuonComponentsByMode: Record<MarkdownMode, Record<string, any>> = {
+  app: buildNuonComponents('app'),
+  install: buildNuonComponents('install'),
+}
+
+function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
+  return {
+  ...nuonComponentsByMode[mode],
+  code({ node, className, children, style, ...props }: any) {
+      if (style || node?.properties?.style) {
+        return <code className={className} style={style} {...props}>{children}</code>
+      }
+
+      return (
+        <code
           className={cn(
             'bg-code text-sm text-blue-800 dark:text-blue-500 font-mono px-1 py-0.5 rounded',
             className
-          )} 
+          )}
           {...props}
-          style={{ position: 'relative' }}
         >
           {children}
         </code>
@@ -183,97 +183,167 @@ const markdownComponents = {
       )
     },
 
-    // Override pre to prevent double wrapping of CodeBlock and JSONViewer
-  pre({ children, ...props }: any) {
-    return <>{children}</>
+  pre({ node, children, style, ...props }: any) {
+    if (style || node?.properties?.style) {
+      return <pre style={style} {...props}>{children}</pre>
+    }
+
+    const childArray = React.Children.toArray(children)
+    const child = childArray.length === 1 ? (childArray[0] as React.ReactElement<any>) : null
+
+    if (child?.props?.className) {
+      const match = /language-(\w+)/.exec(child.props.className)
+      if (match) {
+        const codeString = String(child.props.children).replace(/\n$/, '')
+        return renderCodeBlock(match[1], codeString)
+      }
+    }
+
+    if (child?.props?.children != null) {
+      const codeString = String(child.props.children).replace(/\n$/, '')
+      return renderCodeBlock('text', codeString)
+    }
+
+    return <pre style={style} {...props}>{children}</pre>
   },
+  }
 }
 
-export const Markdown = React.memo(({ content = '' }: { content?: string }) => {
+function preprocessContent(content: string): string {
+  const lines = content.split('\n')
+  const result: string[] = []
+  let htmlDepth = 0
+
+  for (const line of lines) {
+    const opens = (line.match(/<(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
+    const closes = (line.match(/<\/(?:div|table|thead|tbody|tr|ul|ol|section)\b/gi) || []).length
+    htmlDepth += opens - closes
+
+    if (htmlDepth > 0 && line.trim() === '') {
+      continue
+    }
+
+    result.push(line)
+
+    if (htmlDepth < 0) htmlDepth = 0
+  }
+
+  return result.join('\n')
+}
+
+const markdownStyles = `
+  .mermaid-diagram {
+    text-align: center;
+    margin: 1rem 0;
+    min-height: 100px;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    background: var(--background-neutral);
+  }
+  .mermaid-diagram svg {
+    max-width: 100%;
+    height: 300px;
+  }
+  details[open] > summary {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+  }
+  details div ul, details div ol {
+    padding-left: 1.5rem;
+  }
+  .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
+  .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
+  .prose code::before,
+  .prose code::after {
+    content: none !important;
+  }
+  .prose andypf-json-viewer *[class*="container"],
+  .prose andypf-json-viewer *[class="container"],
+  .prose andypf-json-viewer div.container,
+  .prose andypf-json-viewer div.container *,
+  .prose div andypf-json-viewer,
+  .prose div andypf-json-viewer .container,
+  .prose div andypf-json-viewer .container * {
+    font-family: var(--font-hack) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  andypf-json-viewer .container,
+  andypf-json-viewer .container * {
+    font-family: var(--font-hack) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  .prose andypf-json-viewer {
+    --font-family: var(--font-hack) !important;
+    --font-size: 0.875rem !important;
+    --line-height: 1.25rem !important;
+    --json-font-family: var(--font-hack) !important;
+    --json-font-size: 0.875rem !important;
+    --json-line-height: 1.25rem !important;
+    --viewer-font-family: var(--font-hack) !important;
+    --viewer-font-size: 0.875rem !important;
+    --text-font-size: 0.875rem !important;
+    --code-font-family: var(--font-hack) !important;
+    --code-font-size: 0.875rem !important;
+    --container-font-family: var(--font-hack) !important;
+    --container-font-size: 0.875rem !important;
+    --key-value-font-family: var(--font-hack) !important;
+    --key-value-font-size: 0.875rem !important;
+    --value-string-font-family: var(--font-hack) !important;
+    --value-string-font-size: 0.875rem !important;
+  }
+`
+
+const proseClassName = cn(
+  'prose dark:prose-invert max-w-[100%]',
+  'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
+)
+
+function TabsPlaceholder({
+  tabsMap,
+  mode,
+  dataId,
+}: {
+  tabsMap: Map<string, ExtractedTabs>
+  mode: MarkdownMode
+  dataId: string
+}) {
+  const extracted = tabsMap.get(dataId)
+  if (!extracted) return null
+
+  const tabs: Record<string, ReactNode> = {}
+  for (const tab of extracted) {
+    tabs[tab.name] = <Markdown content={tab.content} mode={mode} />
+  }
+  return <Tabs tabs={tabs} />
+}
+
+export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: string; mode?: MarkdownMode }) => {
+  const { content: processedContent, tabsMap } = useMemo(() => extractTabs(content), [content])
+  const processed = preprocessContent(processedContent)
+
+  const components = useMemo(() => {
+    const base = getMarkdownComponents(mode)
+    if (tabsMap.size > 0) {
+      base['nuon-tabs-rendered'] = ({ node, ...attrs }: any) => (
+        <TabsPlaceholder tabsMap={tabsMap} mode={mode} dataId={attrs['data-id']} />
+      )
+    }
+    return base
+  }, [mode, tabsMap])
+
   return (
     <>
-      <style>{`
-        .mermaid-diagram { 
-          text-align: center; 
-          margin: 1rem 0; 
-          min-height: 100px;
-          border-radius: 0.25rem;
-          border: 1px solid var(--border-color);
-          padding: 1rem;
-          background: var(--background-neutral);
-        }
-        .mermaid-diagram svg {
-          max-width: 100%;
-          height: 300px;
-        }
-        /* Enhanced details/summary styling to match Expand component */
-        details[open] > summary {
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 0;
-        }
-        /* Fix list padding inside details content wrapper */
-        details div ul, details div ol {
-          padding-left: 1.5rem;
-        }
-        /* Remove any pseudo-element backticks from inline code */
-        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::before,
-        .prose :where(code):not(:where([class~="not-prose"], [class~="not-prose"] *))::after,
-        .prose code::before,
-        .prose code::after {
-          content: none !important;
-        }
-        /* Override prose styles for JSONViewer custom element - nuclear approach */
-        .prose andypf-json-viewer *[class*="container"],
-        .prose andypf-json-viewer *[class="container"],
-        .prose andypf-json-viewer div.container,
-        .prose andypf-json-viewer div.container *,
-        .prose div andypf-json-viewer,
-        .prose div andypf-json-viewer .container,
-        .prose div andypf-json-viewer .container * {
-          font-family: var(--font-hack) !important;
-          font-size: 0.875rem !important;
-          line-height: 1.25rem !important;
-        }
-        /* Global override with maximum specificity */
-        andypf-json-viewer .container,
-        andypf-json-viewer .container * {
-          font-family: var(--font-hack) !important;
-          font-size: 0.875rem !important;
-          line-height: 1.25rem !important;
-        }
-        .prose andypf-json-viewer {
-          /* Shadow DOM CSS custom properties - try various naming patterns */
-          --font-family: var(--font-hack) !important;
-          --font-size: 0.875rem !important;
-          --line-height: 1.25rem !important;
-          --json-font-family: var(--font-hack) !important;
-          --json-font-size: 0.875rem !important;
-          --json-line-height: 1.25rem !important;
-          --viewer-font-family: var(--font-hack) !important;
-          --viewer-font-size: 0.875rem !important;
-          --text-font-size: 0.875rem !important;
-          --code-font-family: var(--font-hack) !important;
-          --code-font-size: 0.875rem !important;
-          /* Try container-specific variables */
-          --container-font-family: var(--font-hack) !important;
-          --container-font-size: 0.875rem !important;
-          /* Try more specific variables based on classes we see */
-          --key-value-font-family: var(--font-hack) !important;
-          --key-value-font-size: 0.875rem !important;
-          --value-string-font-family: var(--font-hack) !important;
-          --value-string-font-size: 0.875rem !important;
-        }
-      `}</style>
-      <div className={cn(
-        'prose dark:prose-invert max-w-[100%]',
-        'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
-      )}>
-        <ReactMarkdown 
-          remarkPlugins={[remarkGfm]} 
+      <style>{markdownStyles}</style>
+      <div className={proseClassName}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
-          components={markdownComponents}
+          components={components}
         >
-          {content}
+          {processed}
         </ReactMarkdown>
       </div>
     </>

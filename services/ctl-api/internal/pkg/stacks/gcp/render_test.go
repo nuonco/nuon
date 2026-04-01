@@ -239,6 +239,59 @@ func TestRenderChecksumDiffers(t *testing.T) {
 	assert.NotEqual(t, checksum1, checksum2, "different inputs should produce different checksums")
 }
 
+func TestRenderSecrets(t *testing.T) {
+	t.Run("auto-gen and customer secrets", func(t *testing.T) {
+		inp := testInput()
+		inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+			Secrets: []app.AppSecretConfig{
+				{
+					Name:         "db_password",
+					AutoGenerate: true,
+				},
+				{
+					Name:        "stripe_key",
+					Description: "Your Stripe API key",
+					Required:    true,
+				},
+				{
+					Name:        "optional_key",
+					Description: "Optional config",
+					Default:     "default-val",
+				},
+			},
+		}
+
+		out, _, err := Render(inp)
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+
+		// auto-gen should be in the list
+		assert.Contains(t, tfvars, `auto_generate_secrets = ["db_password", ]`)
+
+		// customer secrets should be in the secrets block
+		assert.Contains(t, tfvars, `"stripe_key"`)
+		assert.Contains(t, tfvars, `description = "Your Stripe API key"`)
+		assert.Contains(t, tfvars, `required    = true`)
+
+		assert.Contains(t, tfvars, `"optional_key"`)
+		assert.Contains(t, tfvars, `value       = "default-val"`)
+
+		// auto-gen should NOT appear in customer secrets
+		assert.NotContains(t, tfvars, `"db_password" = {`)
+	})
+
+	t.Run("no secrets", func(t *testing.T) {
+		out, _, err := Render(testInput())
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+
+		assert.Contains(t, tfvars, "auto_generate_secrets = []")
+		assert.Contains(t, tfvars, "secrets = {\n}")
+	})
+}
+
 func TestRenderPredefinedRoleValues(t *testing.T) {
 	inp := testInput()
 	inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{

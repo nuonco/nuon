@@ -18,13 +18,27 @@ const (
 )
 
 func (c *database) poolCfg() (*pgxpool.Config, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		c.Host,
-		c.User,
-		c.Password,
-		c.Name,
-		c.Port,
-		c.SSLMode)
+	// Omit password= from the DSN when using IAM auth (PasswordFn set) — an empty
+	// password= value followed immediately by dbname= can confuse pgconn's keyword-value
+	// parser, causing the database field to be silently dropped. The password is injected
+	// per-connection via beforeConnect instead.
+	var dsn string
+	if c.PasswordFn != nil {
+		dsn = fmt.Sprintf("host=%s user=%s dbname=%s port=%s sslmode=%s",
+			c.Host,
+			c.User,
+			c.Name,
+			c.Port,
+			c.SSLMode)
+	} else {
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+			c.Host,
+			c.User,
+			c.Password,
+			c.Name,
+			c.Port,
+			c.SSLMode)
+	}
 
 	connCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {

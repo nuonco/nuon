@@ -44,6 +44,7 @@ func (s *service) CreateOnboarding(ctx *gin.Context) {
 	onboarding := app.Onboarding{
 		AccountID:   account.ID,
 		Status:      app.OnboardingStatusActive,
+		StatusV2:    app.NewCompositeStatus(ctx, app.Status(app.OnboardingStatusActive)),
 		CurrentStep: app.OnboardingStepOrganization,
 	}
 

@@ -50,13 +50,23 @@ func (d *database) Validate(v *validator.Validate) error {
 }
 
 func (c *database) connCfg() (*pgx.ConnConfig, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		c.Host,
-		c.User,
-		c.Password,
-		c.Name,
-		c.Port,
-		c.SSLMode)
+	var dsn string
+	if c.PasswordFn != nil {
+		dsn = fmt.Sprintf("host=%s user=%s dbname=%s port=%s sslmode=%s",
+			c.Host,
+			c.User,
+			c.Name,
+			c.Port,
+			c.SSLMode)
+	} else {
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+			c.Host,
+			c.User,
+			c.Password,
+			c.Name,
+			c.Port,
+			c.SSLMode)
+	}
 
 	connCfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
@@ -77,7 +87,6 @@ func New(v *validator.Validate,
 
 	database := &database{
 		Logger:        l,
-		PasswordFn:    FetchIamTokenPassword,
 		Host:          cfg.DBHost,
 		User:          cfg.DBUser,
 		Name:          cfg.DBName,
@@ -89,9 +98,13 @@ func New(v *validator.Validate,
 		poolCtxCancel: cancelFn,
 	}
 
-	if cfg.DBPassword != "" {
-		database.PasswordFn = nil
+	switch {
+	case cfg.DBPassword != "":
 		database.Password = cfg.DBPassword
+	case cfg.DBUseIAM && cfg.CloudProvider == "gcp":
+		database.PasswordFn = FetchGcpCloudSqlPassword
+	case cfg.DBUseIAM:
+		database.PasswordFn = FetchIamTokenPassword
 	}
 	if err := database.Validate(v); err != nil {
 		return nil, err

@@ -100,7 +100,8 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 	// Update onboarding with org reference and advance step
 	onboarding.OrgID = &orgID
 	onboarding.CurrentStep = app.OnboardingStepYourStack
-	onboarding.StepStatus = app.OnboardingStepStatusIdle
+	onboarding.StepStatus = app.OnboardingStepStatusActive
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusActive))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))
@@ -112,8 +113,11 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 
 // createNewOrg enqueues an async signal to create a sandbox org and attach it.
 func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboarding *app.Onboarding, orgName string) {
-	// Set processing status — signal will advance CurrentStep on completion
+	// Advance step immediately so the frontend can proceed; signal will
+	// set the same value on completion (idempotent) plus clear StepStatus.
+	onboarding.CurrentStep = app.OnboardingStepYourStack
 	onboarding.StepStatus = app.OnboardingStepStatusProcessing
+	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusProcessing))
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))

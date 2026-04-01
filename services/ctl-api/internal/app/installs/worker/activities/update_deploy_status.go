@@ -14,6 +14,7 @@ type UpdateDeployStatusRequest struct {
 	Status            app.InstallDeployStatus `validate:"required"`
 	StatusDescription string                  `validate:"required"`
 	SkipStatusSync    bool
+	Role              string
 }
 
 // @temporal-gen-v2 activity
@@ -24,6 +25,7 @@ func (a *Activities) UpdateDeployStatus(ctx context.Context, req UpdateDeploySta
 	res := a.db.WithContext(ctx).Model(&installDeploy).Updates(app.InstallDeploy{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
+		Role:              req.Role,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to update install deploy: %w", res.Error)

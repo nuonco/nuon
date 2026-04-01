@@ -175,17 +175,25 @@ func (s *Signal) executeProvisionOrgRunner(ctx workflow.Context, runner *app.Run
 		return nil
 	}
 
-	// Get management account ID from workflow config
-	// Note: In the original code, this comes from w.cfg.ManagementAccountID
-	// For now, we'll use a placeholder - this should be passed via activity or config
-	managementAccountID := "placeholder" // TODO: Get from config
+	// Derive cloud provider and identity from runner platform
+	var cloudProvider string
+	var runnerIAMRole string
+	switch runner.RunnerGroup.Platform {
+	case app.AppRunnerTypeGCPGKE:
+		cloudProvider = "gcp"
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgGCPServiceAccount
+	default:
+		cloudProvider = "aws"
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgAWSIAMRoleARN
+	}
 
 	// Provision runner in Kubernetes
 	req := &kuberunner.ProvisionRunnerRequest{
 		RunnerID:                 runnerID,
 		APIURL:                   runner.RunnerGroup.Settings.RunnerAPIURL,
 		APIToken:                 apiToken,
-		RunnerIAMRole:            fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", managementAccountID, runner.OrgID, runner.OrgID),
+		CloudProvider:            cloudProvider,
+		RunnerIAMRole:            runnerIAMRole,
 		RunnerServiceAccountName: runner.RunnerGroup.Settings.OrgK8sServiceAccountName,
 		Image: kuberunner.ProvisionRunnerRequestImage{
 			URL: runner.RunnerGroup.Settings.ContainerImageURL,

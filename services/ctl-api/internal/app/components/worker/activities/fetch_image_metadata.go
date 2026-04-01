@@ -108,6 +108,7 @@ func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConf
 		AssumeRole: &credentials.AssumeRoleConfig{
 			RoleARN:     ecrCfg.IAMRoleARN,
 			SessionName: "ctl-api-image-metadata-fetch",
+			UseGCPOIDC:  a.cfg.CloudProvider == "gcp",
 		},
 	}
 

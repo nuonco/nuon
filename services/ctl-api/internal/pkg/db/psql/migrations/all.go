@@ -52,5 +52,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "094-vcs-commit-polymorphic-ownership",
 			Fn:   m.Migration094VCSCommitPolymorphicOwnership,
 		},
+		{
+			Name: "095-backfill-org-support-role",
+			Fn:   m.Migration095BackfillOrgSupportRole,
+		},
 	}
 }

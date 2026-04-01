@@ -39,6 +39,31 @@ func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq 
 	return nil
 }
 
+func (w *Workflows) ensureComponentLoops(pctx workflow.Context, sreq signals.RequestSignal) {
+	cwo := workflow.ChildWorkflowOptions{
+		TaskQueue:             "api",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
+	}
+
+	componentIDs, err := activities.AwaitGetInstallComponentIDsByInstallID(pctx, sreq.ID)
+	if err != nil {
+		return
+	}
+
+	futs := make([]workflow.ChildWorkflowFuture, 0, len(componentIDs))
+	for _, id := range componentIDs {
+		cwo.WorkflowID = fmt.Sprintf("%s-%s-%s", sreq.WorkflowID(sreq.ID), "component", id)
+		ctx := workflow.WithChildOptions(pctx, cwo)
+		subsreq := sreq
+		subsreq.ID = id
+		futs = append(futs, workflow.ExecuteChildWorkflow(ctx, w.subwfComponents.ComponentEventLoop, subsreq))
+	}
+	for _, fut := range futs {
+		_ = fut.GetChildWorkflowExecution().Get(pctx, nil)
+	}
+}
+
 func (w *Workflows) startChildren(pctx workflow.Context, sreq signals.RequestSignal) error {
 	cwo := workflow.ChildWorkflowOptions{
 		TaskQueue:             "api",

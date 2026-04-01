@@ -9,6 +9,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useRemovePanelByKey } from '@/hooks/use-remove-panel-by-key'
+import { addRespondedStep } from '@/hooks/use-responded-approvals'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { approveWorkflowStep } from '@/lib'
@@ -58,6 +59,7 @@ export const DenyPlanModal = ({
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       queryClient.invalidateQueries({ queryKey: ['workflow-steps'] })
+      addRespondedStep(step.id)
       removePanelByKey(step.id)
       removeModal(props.modalId)
     },
