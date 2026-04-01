@@ -10,7 +10,8 @@ type CreateComponentBuildPlanRequest struct {
 	ComponentID      string
 	ComponentBuildID string
 
-	WorkflowID string
+	WorkflowID    string
+	CloudProvider string
 }
 
 // @temporal-gen-v2 workflow
@@ -19,6 +20,6 @@ type CreateComponentBuildPlanRequest struct {
 // @task-queue "api"
 // @id-generator CreateComponentBuildWorkflowIDCallback
 func CreateComponentBuildPlan(ctx workflow.Context, req *CreateComponentBuildPlanRequest) (*plantypes.BuildPlan, error) {
-	p := Planner{}
+	p := Planner{cloudProvider: req.CloudProvider}
 	return p.createComponentBuildPlan(ctx, req)
 }

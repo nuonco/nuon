@@ -29,6 +29,9 @@ type PlantypesSyncSecretsPlan struct {
 	// cluster info
 	ClusterInfo *KubeClusterInfo `json:"cluster_info,omitempty"`
 
+	// gcp auth
+	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
+
 	// kubernetes secrets
 	KubernetesSecrets []*PlantypesKubernetesSecretSync `json:"kubernetes_secrets"`
 
@@ -49,6 +52,10 @@ func (m *PlantypesSyncSecretsPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateClusterInfo(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -135,6 +142,29 @@ func (m *PlantypesSyncSecretsPlan) validateClusterInfo(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *PlantypesSyncSecretsPlan) validateGcpAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpAuth) { // not required
+		return nil
+	}
+
+	if m.GcpAuth != nil {
+		if err := m.GcpAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesSyncSecretsPlan) validateKubernetesSecrets(formats strfmt.Registry) error {
 	if swag.IsZero(m.KubernetesSecrets) { // not required
 		return nil
@@ -201,6 +231,10 @@ func (m *PlantypesSyncSecretsPlan) ContextValidate(ctx context.Context, formats 
 	}
 
 	if err := m.contextValidateClusterInfo(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -284,6 +318,31 @@ func (m *PlantypesSyncSecretsPlan) contextValidateClusterInfo(ctx context.Contex
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesSyncSecretsPlan) contextValidateGcpAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpAuth != nil {
+
+		if swag.IsZero(m.GcpAuth) { // not required
+			return nil
+		}
+
+		if err := m.GcpAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_auth")
 			}
 
 			return err

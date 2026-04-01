@@ -17,6 +17,7 @@ title: 'Container Image'
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
 | **`aws_ecr`**<br/>[AWSECRConfig](#aws_ecr) | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | **Optional** | - |
+| **`gcp_gar`**<br/>[GCPGARConfig](#gcp_gar) | GCP Artifact Registry image configuration Configuration for pulling images from Google Artifact Registry. Use when deploying images from private GAR repositories | **Optional** | - |
 | **`public`**<br/>[PublicImageConfig](#public) | public registry image configuration Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc) | **Optional** | - |
 | **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 15m. Max: 1h | **Optional**<br/>Default: `"15m"` | `"30m"`, `"1h"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
@@ -36,6 +37,17 @@ title: 'Container Image'
 | **`region`**<br/>string | AWS region for the ECR repository AWS region where the ECR repository is located | **✅ Required** | `"us-east-1"`, `"us-west-2"`, `"eu-west-1"` |
 | **`image_url`**<br/>string | ECR image URL Full URL to the ECR image (without tag). Format: \<account-id\>.dkr.ecr.\<region\>.amazonaws.com/\<repository-name\>/\<image-name\> | **✅ Required** | `"123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp/api"`, `"123456789012.dkr.ecr.us-west-2.amazonaws.com/myapp/worker"` |
 | **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+
+### `gcp_gar`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`gcp_project_id`**<br/>string | GCP project ID Google Cloud project ID where the Artifact Registry repository is located | **✅ Required** | `"my-gcp-project"` |
+| **`region`**<br/>string | GCP region for the GAR repository Google Cloud region where the Artifact Registry repository is located | **✅ Required** | `"us-central1"`, `"us-east1"`, `"europe-west1"` |
+| **`image_url`**<br/>string | GAR image URL Full URL to the GAR image (without tag). Format: \<region\>-docker.pkg.dev/\<project\>/\<repository\>/\<image\> | **✅ Required** | `"us-central1-docker.pkg.dev/my-project/my-repo/my-image"` |
+| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`service_account_email`**<br/>string | GCP service account for impersonation Optional service account email to impersonate when pulling from GAR. If not set, uses application default credentials | **Optional** | `"my-sa@my-project.iam.gserviceaccount.com"` |
+| **`workload_identity_provider`**<br/>string | - | **Optional** | - |
 
 ### `public`
 

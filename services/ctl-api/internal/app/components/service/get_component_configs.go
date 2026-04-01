@@ -114,6 +114,7 @@ func (s *service) getComponentConfigs(ctx *gin.Context, cmpID string) ([]app.Com
 		// preload all external image configs
 		Preload("ComponentConfigs.ExternalImageComponentConfig").
 		Preload("ComponentConfigs.ExternalImageComponentConfig.AWSECRImageConfig").
+		Preload("ComponentConfigs.ExternalImageComponentConfig.GCPGARImageConfig").
 
 		// preload all job configs
 		Preload("ComponentConfigs.JobComponentConfig").

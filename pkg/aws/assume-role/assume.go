@@ -9,10 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	sts_types "github.com/aws/aws-sdk-go-v2/service/sts/types"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/ui"
 )
 
 // LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
@@ -43,23 +41,26 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 }
 
 func (a *assumer) assumeIamRole(ctx context.Context, client *sts.Client, role string) (*sts_types.Credentials, error) {
-	if a.UseGithubOIDC {
-		ui.Step(ctx, "fetching github OIDC token")
-		token, err := a.getGithubOIDCToken(ctx)
+	if a.UseGithubOIDC || a.UseGCPOIDC {
+		var token string
+		var err error
+		if a.UseGithubOIDC {
+			token, err = a.getGithubOIDCToken(ctx)
+		} else {
+			token, err = a.getGCPOIDCToken(ctx)
+		}
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get token")
+			return nil, fmt.Errorf("unable to get OIDC token: %w", err)
 		}
 
-		params := &sts.AssumeRoleWithWebIdentityInput{
+		resp, err := client.AssumeRoleWithWebIdentity(ctx, &sts.AssumeRoleWithWebIdentityInput{
 			RoleArn:          generics.ToPtr(role),
 			RoleSessionName:  generics.ToPtr(a.RoleSessionName),
 			WebIdentityToken: generics.ToPtr(token),
 			DurationSeconds:  generics.ToPtr(int32(a.RoleSessionDuration.Seconds())),
-		}
-
-		resp, err := client.AssumeRoleWithWebIdentity(ctx, params)
+		})
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to assume role with web identity "+token)
+			return nil, fmt.Errorf("unable to assume role with web identity: %w", err)
 		}
 
 		return resp.Credentials, nil
