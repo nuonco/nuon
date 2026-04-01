@@ -73,7 +73,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	plan, err := pkgplan.AwaitCreateDeployPlan(ctx, &pkgplan.CreateDeployPlanRequest{
+	planResponse, err := pkgplan.AwaitCreateDeployPlan(ctx, &pkgplan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
 		WorkflowID:      fmt.Sprintf("%s-create-deploy-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -83,27 +83,28 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
-	planJSON, err := json.Marshal(plan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
 	compositePlan := plantypes.CompositePlan{
-		DeployPlan: plan,
+		DeployPlan: planResponse.Plan,
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: compositePlan,
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  compositePlan,
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	planJSON = nil
-	plan = nil
+	planResponse = pkgplan.CreateDeployPlanResponse{}
 
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{

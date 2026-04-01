@@ -353,6 +353,7 @@ func TestSelectRole(t *testing.T) {
 		expectedRoleName string
 		expectedRoleARN  string
 		expectedSource   RoleSelectionSource
+		expectedTrace    []app.RunnerJobPermissionTraceRecord
 		expectError      bool
 		errorContains    string
 	}{
@@ -383,7 +384,10 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceRuntime,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "emergency-access", RoleSource: "runtime", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "entity role takes precedence over matrix and default",
@@ -406,7 +410,12 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceEntity,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "1234-custom-db-role", RoleSource: "entity", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "matrix rule takes precedence over default",
@@ -427,7 +436,13 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "test-install-maintenance", RoleSource: "matrix", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "default role used when no other rules match",
@@ -446,7 +461,14 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-provision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-provision", RoleSource: "default", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "default role for sandbox provision",
@@ -465,7 +487,14 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-provision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-provision", RoleSource: "default", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "default role for sandbox deprovision",
@@ -484,7 +513,14 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-deprovision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-deprovision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-deprovision", RoleSource: "default", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "default role for action trigger",
@@ -503,7 +539,14 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-maintenance", RoleSource: "default", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "error when default role not found",
@@ -558,7 +601,13 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "test-install-maintenance", RoleSource: "matrix", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "wildcard matrix rule matches action",
@@ -579,7 +628,13 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "emergency-access", RoleSource: "matrix", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		// Azure Support Tests
 		{
@@ -603,7 +658,10 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "azure early exit ignores all other rules",
@@ -630,9 +688,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
-		// Break Glass Role Tests
 		{
 			name: "break glass role used when specified",
 			ctx: &SelectionContext{
@@ -651,7 +711,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "break glass role takes precedence over entity role",
@@ -673,7 +737,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "break glass role takes precedence over matrix rules",
@@ -695,7 +763,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "break glass role takes precedence over default",
@@ -715,7 +787,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "runtime role takes precedence over break glass",
@@ -735,7 +811,10 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceRuntime,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "1234-custom-db-role", RoleSource: "runtime", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "error when break glass role not found",
@@ -777,7 +856,11 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		// Combined Scenarios
 		{
@@ -801,7 +884,10 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 		{
 			name: "azure with break glass returns azure placeholder",
@@ -825,7 +911,10 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectError:      false,
+			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+			},
+			expectError: false,
 		},
 	}
 
@@ -854,6 +943,30 @@ func TestSelectRole(t *testing.T) {
 				}
 				if result.Source != tt.expectedSource {
 					t.Errorf("expected source %q, got %q", tt.expectedSource, result.Source)
+				}
+				if tt.expectedTrace != nil {
+					if len(result.Trace) != len(tt.expectedTrace) {
+						t.Errorf("expected %d trace records, got %d", len(tt.expectedTrace), len(result.Trace))
+					} else {
+						for i, expected := range tt.expectedTrace {
+							got := result.Trace[i]
+							if got.RoleName != expected.RoleName {
+								t.Errorf("trace[%d] role name: expected %q, got %q", i, expected.RoleName, got.RoleName)
+							}
+							if got.RoleSource != expected.RoleSource {
+								t.Errorf("trace[%d] role source: expected %q, got %q", i, expected.RoleSource, got.RoleSource)
+							}
+							if got.Available != expected.Available {
+								t.Errorf("trace[%d] available: expected %v, got %v", i, expected.Available, got.Available)
+							}
+							if got.Selected != expected.Selected {
+								t.Errorf("trace[%d] selected: expected %v, got %v", i, expected.Selected, got.Selected)
+							}
+							if expected.RoleID != "" && got.RoleID != expected.RoleID {
+								t.Errorf("trace[%d] role ID: expected %q, got %q", i, expected.RoleID, got.RoleID)
+							}
+						}
+					}
 				}
 			}
 		})

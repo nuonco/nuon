@@ -15,52 +15,57 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, error) {
+func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, *operationroles.RoleSelection, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	deploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
+		return nil, nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, deploy.ComponentBuildID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component build")
+		return nil, nil, errors.Wrap(err, "unable to get component build")
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
+		return nil, nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
+		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
+		return nil, nil, errors.Wrap(err, "unable to get install stack")
 	}
 
 	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
+		return nil, nil, errors.Wrap(err, "unable to get install state")
+	}
+
+	roleSelection, _, err := p.getRoleForDeploy(l, appCfg, installDeploy, build, stack, installState)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
 	}
 
 	ociConfig, err := p.getInstallRegistryRepositoryConfig(ctx, installDeploy, build, appCfg, stack, installState)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install registry repository config")
+		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
 	plan := &plantypes.DeployPlan{
@@ -83,7 +88,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Info("error generating terraform plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
 	case app.ComponentTypeHelmChart:
@@ -91,7 +96,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Error("error generating helm plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to helm deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
@@ -99,7 +104,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Error("error generating kubernetes manifest plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	}
@@ -107,7 +112,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	// the following section is for sandbox mode only
 	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
+		return nil, nil, errors.Wrap(err, "unable to get org")
 	}
 	if org.SandboxMode {
 		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
@@ -123,21 +128,21 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		case app.ComponentTypeKubernetesManifest:
 			sandboxPlan, err := p.createKubernetesManifestDeployPlanSandboxMode(plan.KubernetesManifestDeployPlan)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to create sandbox plan")
+				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
 
 			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
 			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to create sandbox plan")
+				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
 
 			plan.SandboxMode.Terraform = sandboxPlan
 		}
 	}
 
-	return plan, nil
+	return plan, roleSelection, nil
 }
 
 func (p *Planner) getRoleForDeploy(

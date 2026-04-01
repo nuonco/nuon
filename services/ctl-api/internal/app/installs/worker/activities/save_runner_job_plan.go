@@ -9,8 +9,8 @@ import (
 )
 
 type SaveRunnerJobPlanRequest struct {
-	JobID          string                      `validate:"required"`
-	CompositePlan  plantypes.CompositePlan      `validate:"required"`
+	JobID          string                  `validate:"required"`
+	CompositePlan  plantypes.CompositePlan `validate:"required"`
 	PermissionInfo app.RunnerJobPermissionInfo
 	// Deprecated: but kept for backward compatibility
 	PlanJSON string `validate:"required"`
@@ -18,7 +18,13 @@ type SaveRunnerJobPlanRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
-	if err := a.runnersHelpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON), req.CompositePlan, req.PermissionInfo); err != nil {
+	if err := a.runnersHelpers.WriteJobPlan(
+		ctx,
+		req.JobID,
+		[]byte(req.PlanJSON),
+		req.CompositePlan,
+		req.PermissionInfo,
+	); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}
 

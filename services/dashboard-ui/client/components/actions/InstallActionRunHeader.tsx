@@ -20,6 +20,7 @@ import type { TWorkflow } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { getWorkflowStep } from '@/utils/workflow-utils'
 import type { TActionConfigTriggerType } from '@/types'
+import { Code } from '../common/Code'
 
 interface IInstallActionRunHeader {
   actionId: string
@@ -87,7 +88,7 @@ export const InstallActionRunHeader = ({
       </div>
 
       <Card>
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           <LabeledValue
             label={`Triggered via ${installActionRun?.triggered_by_type}`}
           >
@@ -116,23 +117,19 @@ export const InstallActionRunHeader = ({
             <Duration nanoseconds={installActionRun?.config?.timeout} />
           </LabeledValue>
 
-          {/*
           <LabeledValue label="Execution role">
-            {installActionRun?.runner_job?.json?.composite_plan?.plan_auth
-              ?.aws_auth?.assume_role?.role_arn ? (
-              <Code variant="inline" className="text-xs">
+            {installActionRun.runner_job.json.permission_info.role ? (
+              <Text variant="subtext" family='mono' className="text-xs">
                 {
-                  installActionRun.runner_job.json.composite_plan.plan_auth
-                    .aws_auth.assume_role.role_arn
+                  installActionRun.runner_job.json.permission_info.role
                 }
-              </Code>
+              </Text>
             ) : (
               <Text variant="subtext" theme="neutral">
-                —
+                -
               </Text>
             )}
           </LabeledValue>
-              */}
         </div>
       </Card>
 

@@ -17,3 +17,14 @@ func EntityOperationRoleMapFromHstore(hstore map[string]*string) EntityOperation
 	}
 	return result
 }
+
+func NewPermissionInfo(rs *RoleSelection) app.RunnerJobPermissionInfo {
+	if rs == nil {
+		return app.RunnerJobPermissionInfo{}
+	}
+	return app.RunnerJobPermissionInfo{
+		Role:               rs.RoleName,
+		RoleSource:         string(rs.Source),
+		RoleSelectionTrace: rs.Trace,
+	}
+}

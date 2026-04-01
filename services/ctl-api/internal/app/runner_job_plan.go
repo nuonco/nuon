@@ -66,7 +66,7 @@ type RunnerJobPlan struct {
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
 
-	PermissionInfo RunnerJobPermissionInfo `json:"runner_job_permission_info" gorm:"type:jsonb"`
+	PermissionInfo RunnerJobPermissionInfo `json:"permission_info,omitzero" gorm:"type:jsonb" temporaljson:"permission_info"`
 
 	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
 	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
