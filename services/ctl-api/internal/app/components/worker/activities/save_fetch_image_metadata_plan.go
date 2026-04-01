@@ -43,7 +43,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		return fmt.Errorf("build %s does not have external image config", req.BuildID)
 	}
 
-	srcRepo, err := getSourceRepository(extImgCfg)
+	srcRepo, err := a.getSourceRepository(extImgCfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to get source repository")
 	}
@@ -73,7 +73,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 	return nil
 }
 
-func getSourceRepository(cfg *app.ExternalImageComponentConfig) (*configs.OCIRegistryRepository, error) {
+func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*configs.OCIRegistryRepository, error) {
 	if cfg.AWSECRImageConfig != nil {
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
@@ -86,8 +86,21 @@ func getSourceRepository(cfg *app.ExternalImageComponentConfig) (*configs.OCIReg
 					RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
 					SessionName:            "fetch-image-metadata",
 					SessionDurationSeconds: 30 * 60,
+					UseGCPOIDC:             a.cfg.CloudProvider == "gcp",
 				},
 			},
+		}, nil
+	}
+
+	if cfg.GCPGARImageConfig != nil {
+		garLoginServer := fmt.Sprintf("%s-docker.pkg.dev", cfg.GCPGARImageConfig.GCPRegion)
+		return &configs.OCIRegistryRepository{
+			RegistryType:             configs.OCIRegistryTypeGAR,
+			Repository:               cfg.ImageURL,
+			Region:                   cfg.GCPGARImageConfig.GCPRegion,
+			LoginServer:              garLoginServer,
+			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
+			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
 		}, nil
 	}
 

@@ -30,6 +30,7 @@ type ExternalImageComponentConfig struct {
 	ImageURL          string             `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
 	Tag               string             `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
 	AWSECRImageConfig *AWSECRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
+	GCPGARImageConfig *GCPGARImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
 }
 
 func (e *ExternalImageComponentConfig) Indexes(db *gorm.DB) []migrations.Index {

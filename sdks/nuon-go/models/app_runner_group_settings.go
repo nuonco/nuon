@@ -71,6 +71,9 @@ type AppRunnerGroupSettings struct {
 	// org runner specifics
 	OrgAwsIamRoleArn string `json:"org_aws_iam_role_arn,omitempty"`
 
+	// org gcp service account
+	OrgGcpServiceAccount string `json:"org_gcp_service_account,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

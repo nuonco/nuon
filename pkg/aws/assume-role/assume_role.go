@@ -47,6 +47,7 @@ type Settings struct {
 
 	// Github Config is an optional config which will direct this to grab the github OIDC role
 	UseGithubOIDC bool
+	UseGCPOIDC    bool
 
 	Region string
 }
@@ -64,6 +65,7 @@ type assumer struct {
 
 	TwoStepConfig *TwoStepConfig
 	UseGithubOIDC bool
+	UseGCPOIDC    bool
 
 	// internal state
 	v *validator.Validate
@@ -110,6 +112,7 @@ func WithSettings(s Settings) assumerOptions {
 		a.RoleSessionName = s.RoleSessionName
 		a.TwoStepConfig = s.TwoStepConfig
 		a.UseGithubOIDC = s.UseGithubOIDC
+		a.UseGCPOIDC = s.UseGCPOIDC
 		a.Region = s.Region
 
 		if s.RoleSessionDuration > 0 {

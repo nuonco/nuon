@@ -111,6 +111,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
 
 		UseGithubOIDC: c.AssumeRole.UseGithubOIDC,
+		UseGCPOIDC:    c.AssumeRole.UseGCPOIDC,
 		TwoStepConfig: c.AssumeRole.TwoStepConfig,
 		Region:        c.Region,
 	}))
