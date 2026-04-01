@@ -16,17 +16,17 @@ import (
 )
 
 type RunnerJobPermissionTraceRecord struct {
-	RoleName   string `json:"role_name"`
-	RoleSource string `json:"role_source"`
-	Available  bool   `json:"available"`
-	RoleID     string `json:"role_id"`
-	Selected   bool   `json:"selected"`
+	RoleName   string `json:"role_name,omitempty"`
+	RoleSource string `json:"role_source,omitempty"`
+	Available  bool   `json:"available,omitempty"`
+	RoleID     string `json:"role_id,omitempty"`
+	Selected   bool   `json:"selected,omitempty"`
 }
 
 type RunnerJobPermissionInfo struct {
-	Role               string                           `json:"role"`
-	RoleSource         string                           `json:"role_source"`
-	RoleSelectionTrace []RunnerJobPermissionTraceRecord `json:"role_selection_trace"`
+	Role               string                           `json:"role,omitempty"`
+	RoleSource         string                           `json:"role_source,omitempty"`
+	RoleSelectionTrace []RunnerJobPermissionTraceRecord `json:"role_selection_trace,omitempty"`
 }
 
 func (r *RunnerJobPermissionInfo) Scan(value interface{}) error {
