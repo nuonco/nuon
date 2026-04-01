@@ -34,14 +34,14 @@ type AppRunnerJobPlan struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// permission info
+	PermissionInfo *AppRunnerJobPermissionInfo `json:"permission_info,omitempty"`
+
 	// plan json
 	PlanJSON string `json:"plan_json,omitempty"`
 
 	// runner job id
 	RunnerJobID string `json:"runner_job_id,omitempty"`
-
-	// runner job permission info
-	RunnerJobPermissionInfo *AppRunnerJobPermissionInfo `json:"runner_job_permission_info,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
@@ -55,7 +55,7 @@ func (m *AppRunnerJobPlan) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateRunnerJobPermissionInfo(formats); err != nil {
+	if err := m.validatePermissionInfo(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -88,20 +88,20 @@ func (m *AppRunnerJobPlan) validateCompositePlan(formats strfmt.Registry) error 
 	return nil
 }
 
-func (m *AppRunnerJobPlan) validateRunnerJobPermissionInfo(formats strfmt.Registry) error {
-	if swag.IsZero(m.RunnerJobPermissionInfo) { // not required
+func (m *AppRunnerJobPlan) validatePermissionInfo(formats strfmt.Registry) error {
+	if swag.IsZero(m.PermissionInfo) { // not required
 		return nil
 	}
 
-	if m.RunnerJobPermissionInfo != nil {
-		if err := m.RunnerJobPermissionInfo.Validate(formats); err != nil {
+	if m.PermissionInfo != nil {
+		if err := m.PermissionInfo.Validate(formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("runner_job_permission_info")
+				return ve.ValidateName("permission_info")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("runner_job_permission_info")
+				return ce.ValidateName("permission_info")
 			}
 
 			return err
@@ -119,7 +119,7 @@ func (m *AppRunnerJobPlan) ContextValidate(ctx context.Context, formats strfmt.R
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateRunnerJobPermissionInfo(ctx, formats); err != nil {
+	if err := m.contextValidatePermissionInfo(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -154,22 +154,22 @@ func (m *AppRunnerJobPlan) contextValidateCompositePlan(ctx context.Context, for
 	return nil
 }
 
-func (m *AppRunnerJobPlan) contextValidateRunnerJobPermissionInfo(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppRunnerJobPlan) contextValidatePermissionInfo(ctx context.Context, formats strfmt.Registry) error {
 
-	if m.RunnerJobPermissionInfo != nil {
+	if m.PermissionInfo != nil {
 
-		if swag.IsZero(m.RunnerJobPermissionInfo) { // not required
+		if swag.IsZero(m.PermissionInfo) { // not required
 			return nil
 		}
 
-		if err := m.RunnerJobPermissionInfo.ContextValidate(ctx, formats); err != nil {
+		if err := m.PermissionInfo.ContextValidate(ctx, formats); err != nil {
 			ve := new(errors.Validation)
 			if stderrors.As(err, &ve) {
-				return ve.ValidateName("runner_job_permission_info")
+				return ve.ValidateName("permission_info")
 			}
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
-				return ce.ValidateName("runner_job_permission_info")
+				return ce.ValidateName("permission_info")
 			}
 
 			return err
