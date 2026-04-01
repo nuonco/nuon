@@ -129,7 +129,7 @@ require (
 	go.opentelemetry.io/collector/config/configcompression v1.37.0
 	go.opentelemetry.io/collector/config/confighttp v0.131.0
 	go.opentelemetry.io/collector/config/configopaque v1.37.0
-	go.opentelemetry.io/collector/config/configretry v1.37.0
+	go.opentelemetry.io/collector/config/configretry v1.55.0
 	go.opentelemetry.io/collector/consumer v1.37.0
 	go.opentelemetry.io/collector/consumer/consumererror v0.131.0
 	go.opentelemetry.io/collector/exporter v0.131.0
