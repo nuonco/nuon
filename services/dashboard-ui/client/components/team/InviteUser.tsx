@@ -6,6 +6,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
+import { RadioInput } from '@/components/common/form/RadioInput'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
@@ -18,9 +19,16 @@ export const InviteUserModal = ({ ...props }: IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const [email, setEmail] = useState('')
+  const [roleType, setRoleType] = useState('org_admin')
+
+  const hasSupportRole = !!org?.features?.['support-role']
 
   const { mutate, isPending: isLoading, error } = useMutation({
-    mutationFn: () => inviteUser({ body: { email }, orgId: org.id }),
+    mutationFn: () =>
+      inviteUser({
+        body: { email, ...(hasSupportRole ? { role_type: roleType } : {}) },
+        orgId: org.id,
+      }),
     onSuccess: () => {
       addToast(
         <Toast heading="Invitation sent" theme="success">
@@ -82,6 +90,25 @@ export const InviteUserModal = ({ ...props }: IModal) => {
             required
           />
         </div>
+        {hasSupportRole ? (
+          <div className="flex flex-col gap-2">
+            <Label>Role</Label>
+            <RadioInput
+              name="role_type"
+              value="org_admin"
+              checked={roleType === 'org_admin'}
+              onChange={() => setRoleType('org_admin')}
+              labelProps={{ labelText: 'Admin' }}
+            />
+            <RadioInput
+              name="role_type"
+              value="org_support"
+              checked={roleType === 'org_support'}
+              onChange={() => setRoleType('org_support')}
+              labelProps={{ labelText: 'Support' }}
+            />
+          </div>
+        ) : null}
       </div>
     </Modal>
   )
