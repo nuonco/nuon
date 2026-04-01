@@ -58,6 +58,7 @@ const (
 	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
 	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
 	OrgFeatureQueues                  OrgFeature = "queues"
+	OrgFeatureSupportRole             OrgFeature = "support-role"
 )
 
 type Org struct {
@@ -163,6 +164,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
 		OrgFeatureQueues:             false,
+		OrgFeatureSupportRole:        false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -228,6 +230,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDashboardSSE,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureQueues,
+		OrgFeatureSupportRole,
 	}
 }
 
@@ -257,6 +260,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
+		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
 	}
 }
 
