@@ -38,10 +38,11 @@ type PersistPolicyReportRequest struct {
 }
 
 type PersistPolicyReportResult struct {
-	ReportID  string `json:"report_id" temporaljson:"report_id,omitempty"`
-	DenyCount int    `json:"deny_count" temporaljson:"deny_count,omitempty"`
-	WarnCount int    `json:"warn_count" temporaljson:"warn_count,omitempty"`
-	PassCount int    `json:"pass_count" temporaljson:"pass_count,omitempty"`
+	ReportID        string   `json:"report_id" temporaljson:"report_id,omitempty"`
+	DenyCount       int      `json:"deny_count" temporaljson:"deny_count,omitempty"`
+	WarnCount       int      `json:"warn_count" temporaljson:"warn_count,omitempty"`
+	PassCount       int      `json:"pass_count" temporaljson:"pass_count,omitempty"`
+	PassedPolicyIDs []string `json:"passed_policy_ids" temporaljson:"passed_policy_ids,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -130,11 +131,19 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		zap.Int("pass_count", passCount),
 	)
 
+	passedPolicyIDs := make([]string, 0)
+	for _, result := range policyResults {
+		if result.Status == "pass" {
+			passedPolicyIDs = append(passedPolicyIDs, result.PolicyID)
+		}
+	}
+
 	return &PersistPolicyReportResult{
-		ReportID:  report.ID,
-		DenyCount: denyCount,
-		WarnCount: warnCount,
-		PassCount: passCount,
+		ReportID:        report.ID,
+		DenyCount:       denyCount,
+		WarnCount:       warnCount,
+		PassCount:       passCount,
+		PassedPolicyIDs: passedPolicyIDs,
 	}, nil
 }
 

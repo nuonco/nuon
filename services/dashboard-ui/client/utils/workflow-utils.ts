@@ -163,8 +163,10 @@ export interface PolicyViolation {
 export interface PolicyViolationCounts {
   denyViolations: PolicyViolation[]
   warnViolations: PolicyViolation[]
+  passedPolicyIds: string[]
   denyCount: number
   warnCount: number
+  passedCount: number
   hasPolicyData: boolean
   hasViolations: boolean
 }
@@ -175,18 +177,23 @@ export function getPolicyViolationCounts(
   const metadata = step?.status?.metadata
   const denyViolations = (metadata?.deny_violations as PolicyViolation[]) || []
   const warnViolations = (metadata?.warn_violations as PolicyViolation[]) || []
+  const passedPolicyIds = (metadata?.passed_policy_ids as string[]) || []
   const denyCount = denyViolations.length
   const warnCount = warnViolations.length
+  const passedCount = passedPolicyIds.length
   const hasPolicyData =
     metadata?.deny_violations !== undefined ||
-    metadata?.warn_violations !== undefined
+    metadata?.warn_violations !== undefined ||
+    metadata?.passed_policy_ids !== undefined
   const hasViolations = denyCount > 0 || warnCount > 0
 
   return {
     denyViolations,
     warnViolations,
+    passedPolicyIds,
     denyCount,
     warnCount,
+    passedCount,
     hasPolicyData,
     hasViolations,
   }
