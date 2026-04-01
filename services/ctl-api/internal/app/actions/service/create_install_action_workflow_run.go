@@ -10,9 +10,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @ID						CreateInstallActionWorkflowRun
@@ -98,10 +98,11 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		workflowMetadata[k] = v
 	}
 
-	workflow, err := s.CreateWorkflow(ctx,
+	workflow, err := s.installHelpers.CreateWorkflowWithRole(ctx,
 		installActionWorkflow.InstallID,
 		app.WorkflowTypeActionWorkflowRun,
 		workflowMetadata,
+		false,
 		req.Role,
 	)
 	if err != nil {
@@ -109,10 +110,29 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, installActionWorkflow.InstallID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, installActionWorkflow.InstallID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, installActionWorkflow.InstallID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
+	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
@@ -130,25 +150,6 @@ func PrependRunEnvPrefix(runEnvVars map[string]string) map[string]string {
 	}
 
 	return result
-}
-
-func (s *service) CreateWorkflow(ctx context.Context, installID string, workflowType app.WorkflowType, metadata map[string]string, role string) (*app.Workflow, error) {
-	installWorkflow := app.Workflow{
-		Type:              workflowType,
-		OwnerID:           installID,
-		OwnerType:         "installs",
-		Metadata:          generics.ToHstore(metadata),
-		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
-		StepErrorBehavior: app.StepErrorBehaviorAbort,
-		Role:              role,
-	}
-
-	res := s.db.WithContext(ctx).Create(&installWorkflow)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create install workflow")
-	}
-
-	return &installWorkflow, nil
 }
 
 func (s *service) getInstall(ctx context.Context, installID string) (*app.Install, error) {

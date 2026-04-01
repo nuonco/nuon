@@ -34,13 +34,17 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 }
 
 func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
-	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	sg := newStepGroup()
+
+	installID := flw.OwnerID
+	if flw.OwnerType != "installs" {
+		return nil, errors.New("invalid owner set on workflow")
+	}
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg.nextGroup()
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
+	step, err := sg.installSignalStep(ctx, flw.OwnerID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
+		InstallID: flw.OwnerID,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

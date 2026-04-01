@@ -74,7 +74,6 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))

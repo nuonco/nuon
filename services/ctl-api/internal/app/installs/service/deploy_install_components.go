@@ -75,7 +75,6 @@ func (s *service) DeployInstallComponents(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-			InstallID:         installID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))

@@ -122,7 +122,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
@@ -264,7 +263,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			InstallID:         install.ID,
 			InstallWorkflowID: workflow.ID,
 		}); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))

@@ -88,12 +88,12 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 // This is safe because each step is just enqueue+await (2 lightweight activity calls).
 func (s *Signal) executeFlow(ctx workflow.Context) error {
 	eventLoopReq := eventloop.EventLoopRequest{
-		ID: s.InstallID,
+		ID: s.installID,
 	}
 
 	fc := &flow.WorkflowConductor[*signals.Signal]{
 		Generators:        getWorkflowStepGenerators(),
-		ExecFn:            getExecuteFlowExecFn(s.InstallID),
+		ExecFn:            getExecuteFlowExecFn(s.installID),
 		StepChildWorkflow: false,
 	}
 
