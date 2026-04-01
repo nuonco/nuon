@@ -41,8 +41,8 @@ func (j *jobLoop) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 
 	jobType := string(job.Type)
 	duration := j.cfg.SandboxJobDuration
-	shouldFault := rand.Intn(10) == 0
 	faultsEnabled := j.cfg.SandboxModeFaultsEnabled
+	shouldFault := faultsEnabled && rand.Intn(10) == 0
 	var faultMessage string
 
 	if state := j.sandboxCtl.GetState(); state != nil {
@@ -66,7 +66,7 @@ func (j *jobLoop) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 		zap.String("job_type", jobType),
 	)
 
-	if shouldFault {
+	if shouldFault && faultsEnabled {
 		l.Error("sandbox mode fault selected, will return an error at the end of this job")
 	}
 
