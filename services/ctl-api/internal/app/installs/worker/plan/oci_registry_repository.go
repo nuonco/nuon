@@ -42,7 +42,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
-	cloudAuth, _, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
+	cloudAuth, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for install registry")
 	}

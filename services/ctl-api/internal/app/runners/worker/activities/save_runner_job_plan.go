@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type SaveRunnerJobPlanRequest struct {
@@ -16,7 +17,7 @@ type SaveRunnerJobPlanRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
-	if err := a.helpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON), req.CompositePlan); err != nil {
+	if err := a.helpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON), req.CompositePlan, app.RunnerJobPermissionInfo{}); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}
 

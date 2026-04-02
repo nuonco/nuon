@@ -5,18 +5,26 @@ import (
 	"fmt"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type SaveRunnerJobPlanRequest struct {
-	JobID         string                  `validate:"required"`
-	CompositePlan plantypes.CompositePlan `validate:"required"`
+	JobID          string                  `validate:"required"`
+	CompositePlan  plantypes.CompositePlan `validate:"required"`
+	PermissionInfo app.RunnerJobPermissionInfo
 	// Deprecated: but kept for backward compatibility
 	PlanJSON string `validate:"required"`
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPlanRequest) error {
-	if err := a.runnersHelpers.WriteJobPlan(ctx, req.JobID, []byte(req.PlanJSON), req.CompositePlan); err != nil {
+	if err := a.runnersHelpers.WriteJobPlan(
+		ctx,
+		req.JobID,
+		[]byte(req.PlanJSON),
+		req.CompositePlan,
+		req.PermissionInfo,
+	); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}
 

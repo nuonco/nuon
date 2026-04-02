@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -164,7 +165,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	}
 
 	l.Info("creating plan for executing action run")
-	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+	planResponse, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
 	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -193,23 +194,23 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	}
 
 	// save runner job plan
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: runPlan},
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  plantypes.CompositePlan{ActionWorkflowRunPlan: planResponse.Plan},
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
 
 	planJSON = nil
-	runPlan = nil
 
 	// now queue and execute the job
 	l.Info("executing runner job")

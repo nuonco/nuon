@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
-	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -48,7 +46,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      sandboxRun.ID,
 		InstallID:  install.ID,
 		RootDomain: w.cfg.DNSRootDomain,
@@ -59,19 +57,20 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		return errors.Wrap(err, "unable to create json")
 	}
 
 	compositePlan := plantypes.CompositePlan{
-		SandboxRunPlan: runPlan,
+		SandboxRunPlan: planResponse.Plan,
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: compositePlan,
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  compositePlan,
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
@@ -109,68 +108,4 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 	}
 
 	return nil
-}
-
-func (w *Workflows) getRoleForSandbox(
-	l *zap.Logger,
-	appConfig *app.AppConfig,
-	sandboxRun *app.InstallSandboxRun,
-	stack *app.InstallStack,
-	installState *state.State,
-) (*operationroles.RoleSelection, app.OperationType, error) {
-	// Determine operation type based on run type
-	var operation app.OperationType
-	switch sandboxRun.RunType {
-	case app.SandboxRunTypeProvision:
-		operation = app.OperationProvision
-	case app.SandboxRunTypeReprovision:
-		operation = app.OperationReprovision
-	case app.SandboxRunTypeDeprovision:
-		operation = app.OperationDeprovision
-	default:
-		operation = app.OperationProvision
-	}
-
-	defaultRole := appConfig.PermissionsConfig.ProvisionRole.Name
-	if operation == app.OperationDeprovision {
-		defaultRole = appConfig.PermissionsConfig.DeprovisionRole.Name
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeSandbox,
-		PrincipalName: "", // Sandboxes don't have names
-		RuntimeRole:   sandboxRun.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			appConfig.SandboxConfig.OperationRoles,
-		),
-		MatrixRules:  appConfig.OperationRoleConfig.Rules,
-		DefaultRole:  defaultRole,
-		AppConfig:    appConfig,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	// Select role using operation roles engine
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			l.Error("unable to get default role", zap.Error(fallbackErr))
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for sandbox",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
 }

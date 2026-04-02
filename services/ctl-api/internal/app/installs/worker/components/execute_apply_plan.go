@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -82,7 +83,7 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	plan, err := pkgplan.AwaitCreateDeployPlan(ctx, &pkgplan.CreateDeployPlanRequest{
+	planResponse, err := pkgplan.AwaitCreateDeployPlan(ctx, &pkgplan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
 		InstallID:       install.ID,
 		WorkflowID:      fmt.Sprintf("%s-create-apply-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
@@ -102,47 +103,48 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 
 	// Add Plan contents from the result to the plan
 	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
-		plan.ApplyPlanContents = ""
-		plan.ApplyPlanDisplay = ""
+		planResponse.Plan.ApplyPlanContents = ""
+		planResponse.Plan.ApplyPlanDisplay = ""
 	} else if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
-		plan.ApplyPlanContents = planJob.Execution.Result.Contents
-		plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
+		planResponse.Plan.ApplyPlanContents = planJob.Execution.Result.Contents
+		planResponse.Plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info("using the compressed contents from the runner job execution result")
 		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents string")
 		}
-		plan.ApplyPlanContents = applyPlanContents
+		planResponse.Plan.ApplyPlanContents = applyPlanContents
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display string")
 		}
-		plan.ApplyPlanDisplay = applyPlanContentsDisplay
+		planResponse.Plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
 
-	planJSON, err := json.Marshal(plan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
 	compositePlan := plantypes.CompositePlan{
-		DeployPlan: plan,
+		DeployPlan: planResponse.Plan,
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: compositePlan,
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  compositePlan,
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	planJSON = nil
-	plan = nil
+	planResponse = pkgplan.CreateDeployPlanResponse{}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{

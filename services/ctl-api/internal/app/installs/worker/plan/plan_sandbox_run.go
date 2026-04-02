@@ -14,7 +14,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -24,30 +23,30 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, error) {
+func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, *operationroles.RoleSelection, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
+		return nil, nil, errors.Wrap(err, "unable to get install stack")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
+		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	run, err := activities.AwaitGetSandboxRunByRunID(ctx, req.RunID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run")
+		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
 	l.Info("configuring environment variables to execute terraform run as")
@@ -56,7 +55,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	l.Info("configuring terraform variables to execute terraform run as")
 	vars, err := p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get vars")
+		return nil, nil, errors.Wrap(err, "unable to get vars")
 	}
 	for k, v := range appCfg.SandboxConfig.Variables {
 		vars[k] = v
@@ -66,11 +65,11 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		InstallID: install.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
+		return nil, nil, errors.Wrap(err, "unable to get install state")
 	}
 	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get state")
+		return nil, nil, errors.Wrap(err, "unable to get state")
 	}
 
 	l.Info("rendering environment variables")
@@ -80,7 +79,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render environment variables")
+		return nil, nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
 	if err := render.RenderStruct(&appCfg.SandboxConfig, stateData); err != nil {
@@ -88,7 +87,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render config")
+		return nil, nil, errors.Wrap(err, "unable to render config")
 	}
 
 	l.Info("rendering terraform variables")
@@ -98,7 +97,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render variables")
+		return nil, nil, errors.Wrap(err, "unable to render variables")
 	}
 
 	l.Info("outputs vars", zap.Any("vars", vars))
@@ -109,38 +108,25 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 			zap.Error(err),
 			zap.Any("state", stateData),
 		)
-		return nil, errors.Wrap(err, "unable to render policies")
+		return nil, nil, errors.Wrap(err, "unable to render policies")
 	}
 
 	l.Info("getting policies")
 	policies, err := p.getPolicies(&appCfg.PoliciesConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get policies")
+		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
 
 	l.Info("fetching sandbox git source")
 	gitSource, err := activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run git source")
+		return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
 	}
 
 	l.Info("getting auth with role selection")
-	cloudAuth, roleName, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, roleSelection, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get sandbox run auth")
-	}
-
-	// Persist the resolved role name to the sandbox run record
-	if roleName != "" {
-		if err := activities.AwaitUpdateRunStatus(ctx, activities.UpdateRunStatusRequest{
-			RunID:             req.RunID,
-			Status:            run.Status,
-			StatusDescription: run.StatusDescription,
-			SkipStatusSync:    true,
-			Role:              roleName,
-		}); err != nil {
-			l.Warn("unable to persist resolved role to sandbox run", zap.Error(err))
-		}
+		return nil, nil, errors.Wrap(err, "unable to get sandbox run auth")
 	}
 
 	plan := &plantypes.SandboxRunPlan{
@@ -173,17 +159,17 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 	org, err := activities.AwaitGetOrgByInstallID(ctx, install.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
+		return nil, nil, errors.Wrap(err, "unable to get org")
 	}
 	if org.SandboxMode {
 		pdcJSONByts := new(bytes.Buffer)
 		if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
-			return nil, errors.Wrap(err, "unable to get json")
+			return nil, nil, errors.Wrap(err, "unable to get json")
 		}
 
 		stJSONByts := new(bytes.Buffer)
 		if err := json.Compact(stJSONByts, []byte(FakeTerraformStateJSON)); err != nil {
-			return nil, errors.Wrap(err, "unable to get json")
+			return nil, nil, errors.Wrap(err, "unable to get json")
 		}
 
 		plan.SandboxMode = &plantypes.SandboxMode{
@@ -198,7 +184,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 	}
 
-	return plan, nil
+	return plan, roleSelection, nil
 }
 
 func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, error) {
@@ -287,60 +273,7 @@ func (p *Planner) getRoleForSandbox(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	// Determine operation type based on run type
-	var operation app.OperationType
-	switch run.RunType {
-	case app.SandboxRunTypeProvision:
-		operation = app.OperationProvision
-	case app.SandboxRunTypeReprovision:
-		operation = app.OperationReprovision
-	case app.SandboxRunTypeDeprovision:
-		operation = app.OperationDeprovision
-	default:
-		operation = app.OperationProvision
-	}
-
-	defaultRole := appCfg.PermissionsConfig.ProvisionRole.Name
-	if operation == app.OperationDeprovision {
-		defaultRole = appCfg.PermissionsConfig.DeprovisionRole.Name
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeSandbox,
-		PrincipalName: "", // Sandboxes don't have names
-		RuntimeRole:   run.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			appCfg.SandboxConfig.OperationRoles,
-		),
-		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  defaultRole,
-		AppConfig:    appCfg,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	// Select role using operation roles engine
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for sandbox",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
+	return operationroles.GetRoleForSandbox(l, appCfg, run, stack, installState)
 }
 
 func (p *Planner) getAuthForSandbox(
@@ -350,15 +283,15 @@ func (p *Planner) getAuthForSandbox(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
-) (*CloudAuth, string, error) {
+) (*CloudAuth, *operationroles.RoleSelection, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	roleSelection, operation, err := p.getRoleForSandbox(l, appCfg, run, stack, installState)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
 	l.Info("selected role for sandbox run plan",
@@ -370,7 +303,11 @@ func (p *Planner) getAuthForSandbox(
 	)
 
 	cloudAuth, err := getCloudAuth(roleSelection, &outputs, fmt.Sprintf("sandbox-run-%s", run.ID))
-	return cloudAuth, roleSelection.RoleName, err
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to get cloud auth")
+	}
+
+	return cloudAuth, roleSelection, nil
 }
 
 // TODO(ja): flesh out sandbox mode for azure

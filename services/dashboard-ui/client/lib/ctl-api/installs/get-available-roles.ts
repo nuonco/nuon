@@ -5,15 +5,27 @@ export async function getAvailableRoles({
   installId,
   operationType,
   principalType,
+  principalId,
   orgId,
 }: {
   installId: string
-  operationType: TOperationType
-  principalType: TPrincipalType
+  operationType?: TOperationType
+  principalType?: TPrincipalType
+  principalId?: string
   orgId: string
 }) {
+  const params = new URLSearchParams()
+  if (principalType) {
+    params.set('principal_type', principalType)
+  }
+  if (operationType) {
+    params.set('operation_type', operationType)
+  }
+  if (principalId) {
+    params.set('principal_id', principalId)
+  }
   return api<TAvailableRolesResponse>({
-    path: `installs/${installId}/available-roles?principal_type=${principalType}&operation_type=${operationType}`,
+    path: `installs/${installId}/available-roles?${params.toString()}`,
     orgId,
   })
 }
