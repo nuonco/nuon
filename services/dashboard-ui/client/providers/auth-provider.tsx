@@ -9,6 +9,7 @@ interface IAuthContext {
   isAuthenticated: boolean
   isAdmin: boolean
   isLoading: boolean
+  error: unknown
 }
 
 export const AuthContext = createContext<IAuthContext | undefined>(undefined)
@@ -24,7 +25,7 @@ function meToUser(me: TMe): IUser {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: me, isLoading } = useQuery({
+  const { data: me, isLoading, error } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: getMe,
     staleTime: Infinity,
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isAdmin: !!user && isNuonSession(user),
         isLoading,
+        error,
       }}
     >
       {children}

@@ -70,11 +70,13 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
     const [hasBlurred, setHasBlurred] = useState(false)
     const [showValidationMessage, setShowValidationMessage] = useState(false)
     const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null)
+    const [highlightedIndex, setHighlightedIndex] = useState(-1)
     const hiddenInputRef = useRef<HTMLInputElement>(null)
     const validationInputRef = useRef<HTMLInputElement>(null)
     const selectRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
     const portalRef = useRef<HTMLDivElement>(null)
+    const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
     const currentValue = value !== undefined
       ? options.find(option => option.value === value) || null
@@ -102,6 +104,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
     const closeDropdown = (wasOpen: boolean) => {
       setIsOpen(false)
       setSearchQuery('')
+      setHighlightedIndex(-1)
       if (required && wasOpen) {
         setHasBlurred(true)
         if (validationInputRef.current && !validationInputRef.current.checkValidity()) {
@@ -204,6 +207,87 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       setSearchQuery('')
     }
 
+    const filteredOptions = searchable && searchQuery
+      ? options.filter(o => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
+      : options
+
+    const openDropdown = () => {
+      if (disabled || isOpen) return
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect()
+        setDropdownPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+        })
+      }
+      const currentIdx = currentValue
+        ? filteredOptions.findIndex(o => o.value === currentValue.value)
+        : -1
+      setHighlightedIndex(currentIdx >= 0 ? currentIdx : 0)
+      setIsOpen(true)
+    }
+
+    useEffect(() => {
+      if (isOpen && highlightedIndex >= 0) {
+        optionRefs.current[highlightedIndex]?.scrollIntoView({ block: 'nearest' })
+      }
+    }, [highlightedIndex, isOpen])
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (!isOpen) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          openDropdown()
+        }
+        return
+      }
+
+      const enabledIndices = filteredOptions
+        .map((o, i) => (o.disabled ? -1 : i))
+        .filter(i => i >= 0)
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault()
+          const nextIdx = enabledIndices.find(i => i > highlightedIndex)
+          setHighlightedIndex(nextIdx ?? enabledIndices[0] ?? -1)
+          break
+        }
+        case 'ArrowUp': {
+          e.preventDefault()
+          const prevIdx = [...enabledIndices].reverse().find(i => i < highlightedIndex)
+          setHighlightedIndex(prevIdx ?? enabledIndices[enabledIndices.length - 1] ?? -1)
+          break
+        }
+        case 'Home': {
+          e.preventDefault()
+          setHighlightedIndex(enabledIndices[0] ?? -1)
+          break
+        }
+        case 'End': {
+          e.preventDefault()
+          setHighlightedIndex(enabledIndices[enabledIndices.length - 1] ?? -1)
+          break
+        }
+        case 'Enter':
+        case ' ': {
+          e.preventDefault()
+          if (highlightedIndex >= 0 && filteredOptions[highlightedIndex] && !filteredOptions[highlightedIndex].disabled) {
+            handleOptionSelect(filteredOptions[highlightedIndex])
+            buttonRef.current?.focus()
+          }
+          break
+        }
+        case 'Escape':
+        case 'Tab': {
+          closeDropdown(true)
+          buttonRef.current?.focus()
+          break
+        }
+      }
+    }
+
     const selectComponent = (
       <div className="relative select" ref={selectRef}>
         <input
@@ -231,7 +315,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         <button
           ref={buttonRef}
           type="button"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
           onClick={handleToggle}
+          onKeyDown={handleKeyDown}
           disabled={disabled}
           className={cn(
             'flex items-center justify-between w-full border border-solid rounded shadow-sm transition-all duration-300 font-mono',
@@ -280,14 +368,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       </div>
     )
 
-    const filteredOptions = searchable && searchQuery
-      ? options.filter(o => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
-      : options
-
     const dropdownPortal = isOpen && dropdownPosition
       ? createPortal(
           <div
             ref={portalRef}
+            onKeyDown={handleKeyDown}
             style={{
               position: 'fixed',
               top: dropdownPosition.top,
@@ -298,6 +383,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
           >
             <TransitionDiv
               isVisible={isOpen}
+              role="listbox"
               className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 max-h-72 overflow-x-hidden overflow-y-auto"
             >
               <div className="flex flex-col gap-1">
@@ -305,11 +391,17 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                   <div className="pb-1 mb-1 border-b border-cool-grey-200 dark:border-dark-grey-700">
                     <SearchInput
                       value={searchQuery}
-                      onChange={setSearchQuery}
+                      onChange={(val) => {
+                        setSearchQuery(val)
+                        setHighlightedIndex(0)
+                      }}
                       placeholder="Search..."
                       labelClassName="w-full"
                       className="!min-w-0 w-full h-8 text-xs"
-                      onKeyDown={e => e.stopPropagation()}
+                      onKeyDown={e => {
+                        if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Home', 'End'].includes(e.key)) return
+                        e.stopPropagation()
+                      }}
                       autoFocus
                     />
                   </div>
@@ -320,17 +412,26 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                 {filteredOptions.length === 0 && !searchQuery && (
                   <div className="px-2 py-1 text-sm">No options available</div>
                 )}
-                {filteredOptions.map((option) => (
+                {filteredOptions.map((option, idx) => (
                   <button
                     key={option.value}
+                    ref={el => { optionRefs.current[idx] = el }}
                     type="button"
-                    onClick={() => handleOptionSelect(option)}
+                    role="option"
+                    aria-selected={currentValue?.value === option.value}
+                    onClick={() => {
+                      handleOptionSelect(option)
+                      buttonRef.current?.focus()
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
                     disabled={option.disabled}
                     className={cn(
                       'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-mono text-left flex items-center justify-between gap-2',
                       {
-                        'text-white bg-primary-600': currentValue?.value === option.value,
-                        'hover:bg-black/5 dark:hover:bg-white/5': currentValue?.value !== option.value && !option.disabled,
+                        'text-white bg-primary-600': currentValue?.value === option.value && highlightedIndex !== idx,
+                        'bg-primary-100 dark:bg-primary-900/40': highlightedIndex === idx && currentValue?.value !== option.value,
+                        'text-white bg-primary-700': highlightedIndex === idx && currentValue?.value === option.value,
+                        'hover:bg-black/5 dark:hover:bg-white/5': highlightedIndex !== idx && currentValue?.value !== option.value && !option.disabled,
                         'opacity-50 cursor-not-allowed': option.disabled,
                       }
                     )}
