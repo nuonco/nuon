@@ -86,6 +86,15 @@ function parseQuery(raw: string): ParsedQuery {
   return { prefix: null, query: raw.trim() }
 }
 
+const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
+
+function getAutocompletion(input: string): string | null {
+  if (!input || input.includes(':')) return null
+  const lower = input.toLowerCase()
+  const match = FILTER_PREFIXES.find((p) => p.startsWith(lower) && p !== lower)
+  return match ?? null
+}
+
 function tokenMatch(text: string, query: string): boolean {
   const tokens = query.toLowerCase().split(/\s+/).filter(Boolean)
   const lower = text.toLowerCase()
@@ -106,6 +115,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
   const [raw, setRaw] = useState('')
   const [debouncedRaw, setDebouncedRaw] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const autocompletion = useMemo(() => getAutocompletion(raw), [raw])
   const listRef = useRef<HTMLDivElement>(null)
   const inputWrapperRef = useRef<HTMLDivElement>(null)
 
@@ -166,8 +176,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             getInstallActionsLatestRuns({
               installId: install.id!,
               orgId,
-              q: parsed.query || undefined,
-              limit: 3,
+              limit: 20,
             }).then((res) => ({ install, actions: res.data ?? [] }))
           )
         ),
@@ -234,14 +243,14 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       const matched = pages.filter((p) => tokenMatch(p.label, liveParsed.query))
       const apps = (appsResult?.data ?? []).map((app): SpotlightResult => ({
         label: app.name ?? app.id!,
-        tag: 'App',
+        tag: 'app',
         path: `/apps/${app.id}`,
         icon: 'AppWindow',
       }))
       const installs = (installsResult?.data ?? []).map((install): SpotlightResult => ({
         label: install.name ?? install.id!,
         subtitle: install.app?.name,
-        tag: 'Install',
+        tag: 'install',
         path: `/installs/${install.id}`,
         icon: 'Cube',
       }))
@@ -254,14 +263,14 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       for (const app of apps) {
         items.push({
           label: app.name ?? app.id!,
-          tag: 'App',
+          tag: 'app',
           path: `/apps/${app.id}`,
           icon: 'AppWindow',
         })
         for (const sub of appSubPages) {
           const entry = {
             label: `${app.name ?? app.id} › ${sub}`,
-            tag: 'App',
+            tag: 'app',
             path: `/apps/${app.id}/${sub.toLowerCase()}`,
             icon: 'AppWindow' as TIconVariant,
           }
@@ -279,7 +288,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         items.push({
           label: install.name ?? install.id!,
           subtitle: install.app?.name,
-          tag: 'Install',
+          tag: 'install',
           path: `/installs/${install.id}`,
           icon: 'Cube',
         })
@@ -287,7 +296,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           const entry = {
             label: `${install.name ?? install.id} › ${sub}`,
             subtitle: install.app?.name,
-            tag: 'Install',
+            tag: 'install',
             path: `/installs/${install.id}/${sub.toLowerCase()}`,
             icon: 'Cube' as TIconVariant,
           }
@@ -304,20 +313,22 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const action of actions) {
           items.push({
             label: `${app.name} › ${action.name}`,
-            tag: 'Action',
+            tag: 'action',
             path: `/apps/${app.id}/actions/${action.id}`,
-            icon: 'TerminalWindow',
+            icon: 'AppWindow',
           })
         }
       }
       for (const { install, actions } of actionResults.installActions) {
         for (const action of actions) {
+          const name = action.action_workflow?.name ?? action.action_workflow_id ?? ''
+          if (parsed.query && !tokenMatch(name, parsed.query)) continue
           items.push({
-            label: `${install.name} › ${action.action_workflow?.name ?? action.action_workflow_id}`,
+            label: `${install.name} › ${name}`,
             subtitle: install.app?.name,
-            tag: 'Action',
+            tag: 'action',
             path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
-            icon: 'TerminalWindow',
+            icon: 'Cube',
           })
         }
       }
@@ -330,7 +341,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const comp of components) {
           items.push({
             label: `${app.name} › ${comp.name}`,
-            tag: 'Component',
+            tag: 'component',
             path: `/apps/${app.id}/components/${comp.id}`,
             icon: 'AppWindow',
           })
@@ -340,7 +351,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const comp of components) {
           items.push({
             label: `${install.name} › ${comp.component?.name ?? comp.id}`,
-            tag: 'Component',
+            tag: 'component',
             path: `/installs/${install.id}/components/${comp.component_id}`,
             icon: 'Cube',
           })
@@ -372,7 +383,10 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'Tab' && autocompletion) {
+        e.preventDefault()
+        setRaw(autocompletion)
+      } else if (e.key === 'ArrowDown') {
         e.preventDefault()
         setActiveIndex((i) => Math.min(i + 1, results.length - 1))
       } else if (e.key === 'ArrowUp') {
@@ -383,7 +397,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         selectResult(results[activeIndex])
       }
     },
-    [results, activeIndex, selectResult]
+    [results, activeIndex, selectResult, autocompletion]
   )
 
   useEffect(() => {
@@ -401,36 +415,34 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       childrenClassName="!p-0 !gap-0"
     >
       <div ref={inputWrapperRef} className="p-4 border-b" onKeyDown={handleKeyDown}>
-        <SearchInput
-        className="w-full"
-          labelClassName="w-full"
-          placeholder="Search pages, apps, installs, components, actions…"
-          value={raw}
-          onChange={setRaw}
-          onClear={() => setRaw('')}
-          autoFocus
-        />
+        <div className="relative">
+          <SearchInput
+            className="w-full bg-transparent"
+            labelClassName="w-full"
+            placeholder="Search pages, apps, installs, components, actions…"
+            value={raw}
+            onChange={setRaw}
+            onClear={() => setRaw('')}
+            autoFocus
+          />
+          {autocompletion && (
+            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-400 dark:text-cool-grey-600">
+              <span className="invisible">{raw}</span>
+              <span>{autocompletion.slice(raw.length)}</span>
+              <span className="ml-1.5 text-xs text-cool-grey-400 dark:text-cool-grey-600 border border-cool-grey-300 dark:border-dark-grey-600 rounded px-1">tab</span>
+            </div>
+          )}
+        </div>
       </div>
       <div className="px-2 py-1">
         {liveParsed.prefix === null && (
-          <div className="px-2 py-1">
-            <Text variant="subtext" className="text-cool-grey-600">
-              Type{' '}
-              <code className="text-xs bg-cool-grey-100 dark:bg-dark-grey-800 px-1 rounded">
-                app:
-              </code>{' '}
-              <code className="text-xs bg-cool-grey-100 dark:bg-dark-grey-800 px-1 rounded">
-                install:
-              </code>{' '}
-              <code className="text-xs bg-cool-grey-100 dark:bg-dark-grey-800 px-1 rounded">
-                component:
-              </code>{' '}
-              or{' '}
-              <code className="text-xs bg-cool-grey-100 dark:bg-dark-grey-800 px-1 rounded">
-                action:
-              </code>{' '}
-              to search entities
-            </Text>
+          <div className="px-2 py-1 flex items-center gap-1.5 flex-wrap">
+            <Text variant="subtext" className="text-cool-grey-600">Filter by</Text>
+            {FILTER_PREFIXES.map((prefix) => (
+              <button key={prefix} onClick={() => setRaw(prefix)} className="cursor-pointer">
+                <Badge size="sm" variant="code" theme="neutral">{prefix}</Badge>
+              </button>
+            ))}
           </div>
         )}
       </div>
