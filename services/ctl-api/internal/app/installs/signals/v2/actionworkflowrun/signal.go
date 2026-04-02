@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "install-action-workflow-run"
@@ -33,9 +34,15 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+	s.InstallWorkflowID = flowID
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -159,7 +166,8 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	l.Info("creating plan for executing action run")
 	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
-		WorkflowID:          fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+	}, &workflow.ChildWorkflowOptions{
+		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
@@ -206,8 +214,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	// now queue and execute the job
 	l.Info("executing runner job")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   run.Install.RunnerID,
-		JobID:      runnerJob.ID,
+		RunnerID: run.Install.RunnerID,
+		JobID:    runnerJob.ID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {
@@ -217,22 +226,37 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       installID,
 		TriggeredByID:   actionWorkflowRunID,
 		TriggeredByType: "install_action_workflow_runs", // plugins.TableName would require db instance
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 
 	return nil
 }
 
 func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {
-	_ = activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
+	l := workflow.GetLogger(ctx)
+
+	if err := activities.AwaitUpdateInstallWorkflowRunStatus(ctx, activities.UpdateInstallWorkflowRunStatusRequest{
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: msg,
-	})
+	}); err != nil {
+		l.Error("unable to update run status",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateInstallWorkflowRunStatusV2(ctx, statusactivities.UpdateInstallWorkflowRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: msg,
+	}); err != nil {
+		l.Error("unable to update run status v2",
+			zap.String("run-id", runID),
+			zap.Error(err))
+	}
 }

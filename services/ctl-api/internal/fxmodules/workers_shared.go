@@ -27,6 +27,9 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
 
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
+
+	// Register install queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 )
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.

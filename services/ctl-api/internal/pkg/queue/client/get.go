@@ -48,19 +48,39 @@ func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string)
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
+func (c *Client) GetQueueByOwnerAndName(ctx context.Context, ownerID, ownerType, name string) (*app.Queue, error) {
+	var q app.Queue
+	if res := c.db.WithContext(ctx).
+		Where(&app.Queue{
+			OwnerID:   ownerID,
+			OwnerType: ownerType,
+			Name:      name,
+		}).
+		First(&q); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get queue by owner and name")
+	}
+
+	return &q, nil
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) GetQueueStatus(ctx context.Context, queueID string) (*queue.StatusResponse, error) {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue")
 	}
 
-	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.StatusHandlerName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			queue.StatusRequest{},
+	rawResp, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
+		UpdateOptions: tclient.UpdateWorkflowOptions{
+			WorkflowID:   q.Workflow.ID,
+			UpdateName:   queue.StatusHandlerName,
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			Args: []any{
+				queue.StatusRequest{},
+			},
 		},
+		StartWorkflowOperation: c.queueStartOperation(q),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to call status handler")

@@ -139,16 +139,30 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
 
-	// Create a queue for this install (enables cross-namespace signal delivery)
+	// Create the install-workflows queue (orchestrates workflow execution, limited concurrency)
 	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     install.ID,
 		OwnerType:   plugins.TableName(s.db, app.Install{}),
 		Namespace:   "installs",
-		MaxInFlight: 1,
+		Name:        InstallWorkflowsQueueName,
+		MaxInFlight: 10,
 		MaxDepth:    50,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to create queue for install: %w", err)
+		return nil, fmt.Errorf("unable to create install-workflows queue: %w", err)
+	}
+
+	// Create the install-signals queue (handles individual signal execution, higher concurrency)
+	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     install.ID,
+		OwnerType:   plugins.TableName(s.db, app.Install{}),
+		Namespace:   "installs",
+		Name:        InstallSignalsQueueName,
+		MaxInFlight: 20,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create install-signals queue: %w", err)
 	}
 
 	if req.InstallConfig != nil {

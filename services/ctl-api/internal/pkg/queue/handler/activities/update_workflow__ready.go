@@ -16,15 +16,18 @@ import (
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
-func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string) (*handler.ReadyResponse, error) {
+func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ReadyResponse, error) {
 	info := activity.GetInfo(ctx)
 
-	rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
+	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   workflowID,
-			UpdateName:   handler.ReadyHandlerName,
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		tclient.UpdateWithStartWorkflowOptions{
+			UpdateOptions: tclient.UpdateWorkflowOptions{
+				WorkflowID:   workflowID,
+				UpdateName:   handler.ReadyHandlerName,
+				WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			},
+			StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to call query handler")

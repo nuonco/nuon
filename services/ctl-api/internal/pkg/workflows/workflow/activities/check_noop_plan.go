@@ -15,7 +15,7 @@ type CheckNoopPlanRequest struct {
 }
 
 // @temporal-gen-v2 activity
-// @max-retries 1
+// @max-retries 5
 func (a *Activities) CheckNoopPlan(ctx context.Context, req *CheckNoopPlanRequest) (bool, error) {
 	plan, err := a.getApprovalPlan(ctx, req.StepTargetID)
 	if err != nil {

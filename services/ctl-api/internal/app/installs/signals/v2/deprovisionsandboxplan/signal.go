@@ -9,12 +9,14 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "deprovision-sandbox-plan"
@@ -25,14 +27,27 @@ type Signal struct {
 	FlowStepID       string
 	FlowID           string
 	SandboxMode      bool
-	DNSRootDomain    string
+
+	cfg *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
 
+func (s *Signal) WithParams(params *signal.Params) {
+	s.cfg = params.Cfg
+}
+
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+	s.FlowStepID = stepID
+	s.FlowID = flowID
+}
+
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallSandboxID == "" {
@@ -104,7 +119,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusDeprovisioning, "deprovisioning")
 
 	l.Info("executing deprovision")
-	err = s.executeSandboxPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.DNSRootDomain)
+	err = s.executeSandboxPlan(ctx, install, installRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain)
 	if err != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "error deprovisioning")
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
@@ -170,8 +185,9 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:      runnerJob.ID,
-		RunnerID:   install.RunnerID,
+		JobID:    runnerJob.ID,
+		RunnerID: install.RunnerID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
@@ -180,7 +196,8 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	}
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status"+string(status))
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed with status "+string(status))
+		return fmt.Errorf("runner job failed with status %s", status)
 	}
 
 	jobResult, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
@@ -208,7 +225,16 @@ func (s *Signal) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID st
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
 	}); err != nil {
-		l.Error("unable to update run status", zap.Error(err))
+		l.Error("unable to update run status", zap.String("run-id", runID), zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateRunStatusV2(ctx, statusactivities.UpdateRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2", zap.String("run-id", runID), zap.Error(err))
 	}
 }
