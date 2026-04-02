@@ -28,14 +28,12 @@ func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetM
 
 func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcess) (*app.RunnerHeartBeat, error) {
 	var hb app.RunnerHeartBeat
-	query := app.RunnerHeartBeat{
-		RunnerID: runnerID,
-	}
+	db := a.chDB.WithContext(ctx).
+		Where("runner_id = ?", runnerID)
 	if process != "" {
-		query.Process = process
+		db = db.Where("process IN ?", []app.RunnerProcess{process, app.RunnerProcessUknown})
 	}
-	res := a.chDB.WithContext(ctx).
-		Where(query).
+	res := db.
 		Order("created_at desc").
 		Limit(1).
 		First(&hb)
