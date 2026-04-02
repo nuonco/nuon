@@ -17,13 +17,16 @@ func (c *Client) Stop(ctx context.Context, queueID string) error {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
-	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.StopUpdateName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			queue.StopRequest{},
+	update, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
+		UpdateOptions: tclient.UpdateWorkflowOptions{
+			WorkflowID:   q.Workflow.ID,
+			UpdateName:   queue.StopUpdateName,
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			Args: []any{
+				queue.StopRequest{},
+			},
 		},
+		StartWorkflowOperation: c.queueStartOperation(q),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to call update handler")

@@ -11,7 +11,16 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+)
+
+const (
+	// InstallWorkflowsQueueName is the queue that orchestrates install workflow execution.
+	InstallWorkflowsQueueName = "install-workflows"
+
+	// InstallSignalsQueueName is the queue that handles individual install signal execution.
+	InstallSignalsQueueName = "install-signals"
 )
 
 type Params struct {
@@ -26,6 +35,7 @@ type Params struct {
 	RunnersHelpers   *runnershelpers.Helpers
 	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
+	FeaturesClient   *features.Features
 }
 
 type Helpers struct {
@@ -37,6 +47,7 @@ type Helpers struct {
 	db               *gorm.DB
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
+	featuresClient   *features.Features
 }
 
 func New(params Params) *Helpers {
@@ -49,5 +60,6 @@ func New(params Params) *Helpers {
 		db:               params.DB,
 		evClient:         params.EvClient,
 		queueClient:      params.QueueClient,
+		featuresClient:   params.FeaturesClient,
 	}
 }

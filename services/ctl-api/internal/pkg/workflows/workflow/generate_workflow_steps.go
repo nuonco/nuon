@@ -5,7 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -41,6 +43,15 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 
 	steps := req.Steps
 
+	// Pre-generate step IDs and inject step context (stepID, flowID) into signals
+	// before persisting, so signals have access to their own step ID and the parent flow ID.
+	for _, step := range steps {
+		step.ID = domains.NewWorkflowStepID()
+		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+			signal.ApplyStepContext(step.QueueSignal.Signal, step.ID, fid)
+		}
+	}
+
 	stepsReq := activities.CreateFlowStepsRequest{
 		Steps: make([]activities.CreateFlowStep, 0, len(steps)),
 	}
@@ -48,6 +59,7 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 	for idx, step := range steps {
 		step.Idx = idx
 		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
+			ID:            step.ID,
 			FlowID:        fid,
 			OwnerID:       wflw.OwnerID,
 			OwnerType:     wflw.OwnerType,

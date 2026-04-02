@@ -54,6 +54,7 @@ func GetFakeSandboxStackData(appCfg *app.AppConfig, region string, stateMap map[
 		"public_subnets":           fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
 		"private_subnets":          fmt.Sprintf("subnet-%s,subnet-%s", generics.GetFakeObj[string](), generics.GetFakeObj[string]()),
 		"runner_subnet":            fmt.Sprintf("subnet-%s", generics.GetFakeObj[string]()),
+		"github_app_key_arn":       generics.GetFakeObj[string](),
 	}
 
 	return generics.MergeMap(refs.GetFakeRefs(stackRefs), data)

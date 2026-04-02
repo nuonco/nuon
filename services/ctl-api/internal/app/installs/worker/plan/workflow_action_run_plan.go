@@ -16,7 +16,7 @@ type CreateActionRunPlanRequest struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
-// @id-generator WorkflowIDCallback
+// @id-template {{.Req.WorkflowID}}
 func CreateActionWorkflowRunPlan(ctx workflow.Context, req *CreateActionRunPlanRequest) (*plantypes.ActionWorkflowRunPlan, error) {
 	p := Planner{}
 	return p.createActionWorkflowRunPlan(ctx, req.ActionWorkflowRunID)

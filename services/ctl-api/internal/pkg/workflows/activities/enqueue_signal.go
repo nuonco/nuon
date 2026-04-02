@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -12,7 +13,13 @@ import (
 type EnqueueSignalToOwnerRequest struct {
 	OwnerID   string        `json:"owner_id" validate:"required"`
 	OwnerType string        `json:"owner_type" validate:"required"`
+	QueueName string        `json:"queue_name,omitempty"`
 	Signal    signal.Signal `json:"signal" validate:"required"`
+
+	// SignalOwnerID and SignalOwnerType are set on the QueueSignal record to track
+	// which entity (e.g. workflow step) triggered this signal execution.
+	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
+	SignalOwnerType string `json:"signal_owner_type,omitempty"`
 }
 
 type EnqueueSignalToOwnerResponse struct {
@@ -29,16 +36,24 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	// Find the queue by owner
-	queue, err := a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+	// Find the queue by owner (and optionally by name for multi-queue owners)
+	var queue *app.Queue
+	var err error
+	if req.QueueName != "" {
+		queue, err = a.queueClient.GetQueueByOwnerAndName(ctx, req.OwnerID, req.OwnerType, req.QueueName)
+	} else {
+		queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to find queue for owner")
 	}
 
 	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID: queue.ID,
-		Signal:  req.Signal,
+		QueueID:   queue.ID,
+		Signal:    req.Signal,
+		OwnerID:   req.SignalOwnerID,
+		OwnerType: req.SignalOwnerType,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")
