@@ -14,6 +14,8 @@ import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useOrg } from '@/hooks/use-org'
+import { Badge } from '@/components/common/Badge'
+import { Skeleton } from '@/components/common/Skeleton'
 import { cn } from '@/utils/classnames'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
@@ -25,6 +27,7 @@ import { getInstallComponents } from '@/lib/ctl-api/installs/components/get-inst
 type SpotlightResult = {
   label: string
   subtitle?: string
+  tag?: string
   path: string
   icon: TIconVariant
 }
@@ -123,20 +126,20 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
 
   const orgId = org?.id ?? ''
 
-  const { data: appsResult } = useQuery({
+  const { data: appsResult, isFetching: appsFetching } = useQuery({
     queryKey: ['spotlight', 'apps', parsed.query, orgId],
     queryFn: () => getApps({ orgId, q: parsed.query || undefined, limit: 5 }),
-    enabled: parsed.prefix === 'app' && !!orgId,
+    enabled: (parsed.prefix === 'app' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
   })
 
-  const { data: installsResult } = useQuery({
+  const { data: installsResult, isFetching: installsFetching } = useQuery({
     queryKey: ['spotlight', 'installs', parsed.query, orgId],
     queryFn: () =>
       getInstalls({ orgId, q: parsed.query || undefined, limit: 5 }),
-    enabled: parsed.prefix === 'install' && !!orgId,
+    enabled: (parsed.prefix === 'install' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
   })
 
-  const { data: actionResults } = useQuery({
+  const { data: actionResults, isFetching: actionsFetching } = useQuery({
     queryKey: ['spotlight', 'actions', parsed.query, orgId],
     queryFn: async () => {
       const [appsRes, installsRes] = await Promise.all([
@@ -177,11 +180,10 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
     },
     enabled:
       parsed.prefix === 'action' &&
-      !!orgId &&
-      parsed.query.length > 0,
+      !!orgId,
   })
 
-  const { data: componentResults } = useQuery({
+  const { data: componentResults, isFetching: componentsFetching } = useQuery({
     queryKey: ['spotlight', 'components', parsed.query, orgId],
     queryFn: async () => {
       const [appsRes, installsRes] = await Promise.all([
@@ -222,15 +224,28 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
     },
     enabled:
       parsed.prefix === 'component' &&
-      !!orgId &&
-      parsed.query.length > 0,
+      !!orgId,
   })
 
   const results = useMemo((): SpotlightResult[] => {
     if (liveParsed.prefix === null) {
       const pages = STATIC_PAGES.filter((p) => !p.feature || !!org?.features?.[p.feature])
       if (!liveParsed.query) return pages
-      return pages.filter((p) => tokenMatch(p.label, liveParsed.query))
+      const matched = pages.filter((p) => tokenMatch(p.label, liveParsed.query))
+      const apps = (appsResult?.data ?? []).map((app): SpotlightResult => ({
+        label: app.name ?? app.id!,
+        tag: 'App',
+        path: `/apps/${app.id}`,
+        icon: 'AppWindow',
+      }))
+      const installs = (installsResult?.data ?? []).map((install): SpotlightResult => ({
+        label: install.name ?? install.id!,
+        subtitle: install.app?.name,
+        tag: 'Install',
+        path: `/installs/${install.id}`,
+        icon: 'Cube',
+      }))
+      return [...matched, ...apps, ...installs]
     }
 
     if (parsed.prefix === 'app') {
@@ -239,12 +254,14 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       for (const app of apps) {
         items.push({
           label: app.name ?? app.id!,
+          tag: 'App',
           path: `/apps/${app.id}`,
           icon: 'AppWindow',
         })
         for (const sub of appSubPages) {
           const entry = {
             label: `${app.name ?? app.id} › ${sub}`,
+            tag: 'App',
             path: `/apps/${app.id}/${sub.toLowerCase()}`,
             icon: 'AppWindow' as TIconVariant,
           }
@@ -262,6 +279,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         items.push({
           label: install.name ?? install.id!,
           subtitle: install.app?.name,
+          tag: 'Install',
           path: `/installs/${install.id}`,
           icon: 'Cube',
         })
@@ -269,6 +287,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           const entry = {
             label: `${install.name ?? install.id} › ${sub}`,
             subtitle: install.app?.name,
+            tag: 'Install',
             path: `/installs/${install.id}/${sub.toLowerCase()}`,
             icon: 'Cube' as TIconVariant,
           }
@@ -285,6 +304,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const action of actions) {
           items.push({
             label: `${app.name} › ${action.name}`,
+            tag: 'Action',
             path: `/apps/${app.id}/actions/${action.id}`,
             icon: 'TerminalWindow',
           })
@@ -295,6 +315,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           items.push({
             label: `${install.name} › ${action.action_workflow?.name ?? action.action_workflow_id}`,
             subtitle: install.app?.name,
+            tag: 'Action',
             path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
             icon: 'TerminalWindow',
           })
@@ -309,6 +330,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const comp of components) {
           items.push({
             label: `${app.name} › ${comp.name}`,
+            tag: 'Component',
             path: `/apps/${app.id}/components/${comp.id}`,
             icon: 'AppWindow',
           })
@@ -318,6 +340,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
         for (const comp of components) {
           items.push({
             label: `${install.name} › ${comp.component?.name ?? comp.id}`,
+            tag: 'Component',
             path: `/installs/${install.id}/components/${comp.component_id}`,
             icon: 'Cube',
           })
@@ -328,6 +351,8 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
 
     return []
   }, [liveParsed, parsed, appsResult, installsResult, actionResults, componentResults, appSubPages])
+
+  const isSearching = raw !== debouncedRaw || appsFetching || installsFetching || actionsFetching || componentsFetching
 
   useEffect(() => {
     setActiveIndex(0)
@@ -362,7 +387,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
   )
 
   useEffect(() => {
-    const active = listRef.current?.children[activeIndex] as HTMLElement
+    const active = listRef.current?.querySelector(`[data-index="${activeIndex}"]`) as HTMLElement
     active?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
 
@@ -411,14 +436,28 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       </div>
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1 px-2">
         <div className="flex flex-col gap-1">
-          {results.length === 0 && raw.length > 0 && (
-            <div className="px-2 py-1 text-sm text-cool-grey-500 dark:text-cool-grey-400">
-              No results
+          {results.length === 0 && raw.length > 0 && isSearching && (
+            <div className="flex flex-col gap-2 px-2 py-2">
+              <Skeleton width={['70%', '55%', '40%']} lines={3} height="1.5rem" />
+            </div>
+          )}
+          {results.length === 0 && raw.length > 0 && !isSearching && (
+            <div className="px-2 py-2 text-sm text-cool-grey-500 dark:text-cool-grey-400 flex flex-col gap-1">
+              <span>No results for &ldquo;{raw}&rdquo;</span>
+              <span className="text-xs text-cool-grey-400 dark:text-cool-grey-500">
+                Try{' '}
+                <button className="underline cursor-pointer" onClick={() => setRaw(`app:${liveParsed.query} `)}>app:</button>
+                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`install:${liveParsed.query} `)}>install:</button>
+                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`component:${liveParsed.query} `)}>component:</button>
+                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`action:${liveParsed.query} `)}>action:</button>
+                {' '}to narrow your search
+              </span>
             </div>
           )}
           {results.map((result, i) => (
             <button
               key={result.path}
+              data-index={i}
               className={cn(
                 'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm text-left flex items-center gap-3',
                 {
@@ -436,7 +475,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
                   'text-cool-grey-500': i !== activeIndex,
                 })}
               />
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0 flex-1">
                 <span className="truncate">{result.label}</span>
                 {result.subtitle && (
                   <span
@@ -449,6 +488,11 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
                   </span>
                 )}
               </div>
+              {result.tag && (
+                <Badge size="sm" variant="code" theme="neutral" className="shrink-0">
+                  {result.tag}
+                </Badge>
+              )}
             </button>
           ))}
         </div>
