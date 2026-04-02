@@ -426,10 +426,10 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             autoFocus
           />
           {autocompletion && (
-            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-400 dark:text-cool-grey-600">
+            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500">
               <span className="invisible">{raw}</span>
               <span>{autocompletion.slice(raw.length)}</span>
-              <span className="ml-1.5 text-xs text-cool-grey-400 dark:text-cool-grey-600 border border-cool-grey-300 dark:border-dark-grey-600 rounded px-1">tab</span>
+              <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">tab</span>
             </div>
           )}
         </div>
@@ -454,9 +454,9 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             </div>
           )}
           {results.length === 0 && raw.length > 0 && !isSearching && (
-            <div className="px-2 py-2 text-sm text-cool-grey-500 dark:text-cool-grey-400 flex flex-col gap-1">
+            <div className="px-2 py-2 text-sm text-cool-grey-700 dark:text-cool-grey-400 flex flex-col gap-1">
               <span>No results for &ldquo;{raw}&rdquo;</span>
-              <span className="text-xs text-cool-grey-400 dark:text-cool-grey-500">
+              <span className="text-xs text-cool-grey-600 dark:text-cool-grey-500">
                 Try{' '}
                 <button className="underline cursor-pointer" onClick={() => setRaw(`app:${liveParsed.query} `)}>app:</button>
                 {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`install:${liveParsed.query} `)}>install:</button>
@@ -484,7 +484,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
                 variant={result.icon}
                 className={cn('shrink-0', {
                   'text-white': i === activeIndex,
-                  'text-cool-grey-500': i !== activeIndex,
+                  'text-cool-grey-700 dark:text-cool-grey-500': i !== activeIndex,
                 })}
               />
               <div className="flex flex-col min-w-0 flex-1">
