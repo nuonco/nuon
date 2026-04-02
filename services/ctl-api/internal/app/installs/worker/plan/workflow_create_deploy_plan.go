@@ -23,6 +23,7 @@ type CreateDeployPlanResponse struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
+// @id-template {{.Req.WorkflowID}}
 func CreateDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (CreateDeployPlanResponse, error) {
 	p := Planner{}
 	plan, roleSelection, err := p.createDeployPlan(ctx, req)
