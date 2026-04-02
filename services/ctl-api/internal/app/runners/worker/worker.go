@@ -16,6 +16,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+
+	// Blank imports to register v2 queue signal types in the catalog.
+	// The queue handler workflow (registered via SharedWorkflows) deserializes signals by type;
+	// importing these packages runs their init() which calls catalog.Register().
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/healthcheck"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )

@@ -76,16 +76,14 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     runnerGroup.Runners[0].ID,
-		OwnerType:   "runners",
-		Namespace:   "runners",
-		Name:        "runner-signals",
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
+	parallelJobs, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureParallelRunnerJobs)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create runner queue: %w", err)
+		return nil, fmt.Errorf("unable to check parallel runner jobs feature: %w", err)
+	}
+	if parallelJobs {
+		if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+			return nil, fmt.Errorf("unable to create runner queues: %w", err)
+		}
 	}
 
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
@@ -169,6 +167,10 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create runner queue: %w", err)
+	}
+
+	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+		return nil, fmt.Errorf("unable to create runner queues: %w", err)
 	}
 
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{

@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		queueDetail.GET("/status", s.GetQueueStatus)
 		queueDetail.GET("/signals", s.GetQueueSignals)
 		queueDetail.GET("/signals/:signal_id", s.GetQueueSignal)
+		queueDetail.GET("/signals/:signal_id/await", s.AwaitQueueSignal)
 	}
 
 	return nil

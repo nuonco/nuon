@@ -59,6 +59,7 @@ const (
 	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
 	OrgFeatureQueues                  OrgFeature = "queues"
 	OrgFeatureSupportRole             OrgFeature = "support-role"
+	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
 )
 
 type Org struct {
@@ -165,6 +166,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureTerraformInstaller: false,
 		OrgFeatureQueues:             false,
 		OrgFeatureSupportRole:        false,
+		OrgFeatureParallelRunnerJobs: false,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
@@ -231,6 +233,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureQueues,
 		OrgFeatureSupportRole,
+		OrgFeatureParallelRunnerJobs,
 	}
 }
 
@@ -261,6 +264,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
+		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
 	}
 }
 

@@ -31,6 +31,7 @@ func (a *Activities) getRunner(ctx context.Context, runnerID string) (*app.Runne
 		Preload("Org.RunnerGroup.Runners").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
+		Preload("Queues").
 		First(&runner, "id = ?", runnerID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
