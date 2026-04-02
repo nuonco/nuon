@@ -24,7 +24,7 @@ type RunnerHeartBeat struct {
 	Version   string        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
 
-	Process RunnerProcess `json:"process" gorm:"not null;default:''" swaggertype:"string"`
+	Process RunnerProcessType `json:"process" gorm:"not null;default:''" swaggertype:"string"`
 }
 
 func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
@@ -60,7 +60,7 @@ func (r RunnerHeartBeat) GetTableClusterOptions() string {
 // NOTE(fd): i am not registering this model so GORM never thinks about it when migrating.
 type LatestRunnerHeartBeat struct {
 	RunnerID  string        `json:"runner_id,omitzero"  gorm:"->" temporaljson:"runner_id,omitzero,omitempty"`
-	Process   RunnerProcess `json:"process"             gorm:"->" swaggertype:"string"`
+	Process   RunnerProcessType `json:"process"             gorm:"->" swaggertype:"string"`
 	Version   string        `json:"version,omitzero"    gorm:"->" temporaljson:"version,omitzero,omitempty"`
 	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-"  temporaljson:"started_at,omitzero,omitempty"`
 	AliveTime time.Duration `json:"alive_time,omitzero" gorm:"->" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`

@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/spf13/cobra"
@@ -55,8 +56,9 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Provide(sandboxctl.New),
 			fx.Invoke(func(*sandboxctl.Server) {}),
 
-			// start registry and heartbeater
+			// start heartbeater and process registrar
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
+			fx.Invoke(func(*process.Registrar) {}),
 		}...,
 	)
 	// run

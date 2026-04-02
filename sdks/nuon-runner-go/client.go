@@ -61,6 +61,11 @@ type Client interface {
 	LockTerraformWorkspace(ctx context.Context, workspaceID string, jobID *string, reqBody any) error
 	UnlockTerraformWorkspace(ctx context.Context, workspaceID string) error
 
+	// runner processes
+	CreateProcess(ctx context.Context, req *models.ServiceCreateRunnerProcessRequest) (*models.AppRunnerProcess, error)
+	GetProcess(ctx context.Context, processID string) (*models.AppRunnerProcess, error)
+	UpdateProcess(ctx context.Context, processID string, req *models.ServiceUpdateRunnerProcessRequest) (*models.AppRunnerProcess, error)
+
 	// runner
 	GetRunner(ctx context.Context) (*models.AppRunner, error)
 

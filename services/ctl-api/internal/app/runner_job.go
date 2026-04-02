@@ -217,7 +217,8 @@ type RunnerJob struct {
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerID    string  `json:"runner_id,omitzero" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerID        string  `json:"runner_id,omitzero" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerProcessID *string `json:"runner_process_id,omitempty" gorm:"index" temporaljson:"runner_process_id,omitzero,omitempty"`
 	OwnerID     string  `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType   string  `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 	LogStreamID *string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
