@@ -38,6 +38,12 @@ type AppQueue struct {
 	// max in flight
 	MaxInFlight int64 `json:"max_in_flight,omitempty"`
 
+	// metadata
+	Metadata map[string]string `json:"metadata,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

@@ -12,56 +12,81 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
-// AppPulumiComponentConfig app pulumi component config
+// ServiceCreatePulumiComponentConfigRequest service create pulumi component config request
 //
-// swagger:model app.PulumiComponentConfig
-type AppPulumiComponentConfig struct {
+// swagger:model service.CreatePulumiComponentConfigRequest
+type ServiceCreatePulumiComponentConfigRequest struct {
 
-	// parent reference
-	ComponentConfigConnectionID string `json:"component_config_connection_id,omitempty"`
+	// app config id
+	AppConfigID string `json:"app_config_id,omitempty"`
+
+	// build timeout
+	BuildTimeout string `json:"build_timeout,omitempty"`
+
+	// checksum
+	Checksum string `json:"checksum,omitempty"`
 
 	// config
-	Config map[string]string `json:"config,omitempty"`
+	// Required: true
+	Config map[string]string `json:"config"`
 
 	// connected github vcs config
-	ConnectedGithubVcsConfig *AppConnectedGithubVCSConfig `json:"connected_github_vcs_config,omitempty"`
+	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
-	// created at
-	CreatedAt string `json:"created_at,omitempty"`
+	// dependencies
+	Dependencies []string `json:"dependencies"`
 
-	// created by id
-	CreatedByID string `json:"created_by_id,omitempty"`
+	// deploy timeout
+	DeployTimeout string `json:"deploy_timeout,omitempty"`
+
+	// drift schedule
+	DriftSchedule string `json:"drift_schedule,omitempty"`
 
 	// env vars
-	EnvVars map[string]string `json:"env_vars,omitempty"`
+	// Required: true
+	EnvVars map[string]string `json:"env_vars"`
 
-	// id
-	ID string `json:"id,omitempty"`
+	// operation roles
+	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 
 	// public git vcs config
-	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
+	PublicGitVcsConfig *ServicePublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
-	// pulumi configuration values
-	Runtime string `json:"runtime,omitempty"`
+	// references
+	References []string `json:"references"`
 
-	// updated at
-	UpdatedAt string `json:"updated_at,omitempty"`
+	// runtime
+	// Required: true
+	Runtime *string `json:"runtime"`
 
 	// version
 	Version string `json:"version,omitempty"`
 }
 
-// Validate validates this app pulumi component config
-func (m *AppPulumiComponentConfig) Validate(formats strfmt.Registry) error {
+// Validate validates this service create pulumi component config request
+func (m *ServiceCreatePulumiComponentConfigRequest) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateConfig(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateConnectedGithubVcsConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
+	if err := m.validateEnvVars(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRuntime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -71,7 +96,16 @@ func (m *AppPulumiComponentConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppPulumiComponentConfig) validateConnectedGithubVcsConfig(formats strfmt.Registry) error {
+func (m *ServiceCreatePulumiComponentConfigRequest) validateConfig(formats strfmt.Registry) error {
+
+	if err := validate.Required("config", "body", m.Config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreatePulumiComponentConfigRequest) validateConnectedGithubVcsConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
 		return nil
 	}
@@ -94,7 +128,16 @@ func (m *AppPulumiComponentConfig) validateConnectedGithubVcsConfig(formats strf
 	return nil
 }
 
-func (m *AppPulumiComponentConfig) validatePublicGitVcsConfig(formats strfmt.Registry) error {
+func (m *ServiceCreatePulumiComponentConfigRequest) validateEnvVars(formats strfmt.Registry) error {
+
+	if err := validate.Required("env_vars", "body", m.EnvVars); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreatePulumiComponentConfigRequest) validatePublicGitVcsConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PublicGitVcsConfig) { // not required
 		return nil
 	}
@@ -117,8 +160,17 @@ func (m *AppPulumiComponentConfig) validatePublicGitVcsConfig(formats strfmt.Reg
 	return nil
 }
 
-// ContextValidate validate this app pulumi component config based on the context it is used
-func (m *AppPulumiComponentConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceCreatePulumiComponentConfigRequest) validateRuntime(formats strfmt.Registry) error {
+
+	if err := validate.Required("runtime", "body", m.Runtime); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service create pulumi component config request based on the context it is used
+func (m *ServiceCreatePulumiComponentConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateConnectedGithubVcsConfig(ctx, formats); err != nil {
@@ -135,7 +187,7 @@ func (m *AppPulumiComponentConfig) ContextValidate(ctx context.Context, formats 
 	return nil
 }
 
-func (m *AppPulumiComponentConfig) contextValidateConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceCreatePulumiComponentConfigRequest) contextValidateConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ConnectedGithubVcsConfig != nil {
 
@@ -160,7 +212,7 @@ func (m *AppPulumiComponentConfig) contextValidateConnectedGithubVcsConfig(ctx c
 	return nil
 }
 
-func (m *AppPulumiComponentConfig) contextValidatePublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceCreatePulumiComponentConfigRequest) contextValidatePublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.PublicGitVcsConfig != nil {
 
@@ -186,7 +238,7 @@ func (m *AppPulumiComponentConfig) contextValidatePublicGitVcsConfig(ctx context
 }
 
 // MarshalBinary interface implementation
-func (m *AppPulumiComponentConfig) MarshalBinary() ([]byte, error) {
+func (m *ServiceCreatePulumiComponentConfigRequest) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -194,8 +246,8 @@ func (m *AppPulumiComponentConfig) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AppPulumiComponentConfig) UnmarshalBinary(b []byte) error {
-	var res AppPulumiComponentConfig
+func (m *ServiceCreatePulumiComponentConfigRequest) UnmarshalBinary(b []byte) error {
+	var res ServiceCreatePulumiComponentConfigRequest
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -27,5 +27,8 @@ type PulumiDeployPlan struct {
 
 	State *state.State `json:"state" faker:"-"`
 
+	// Destroy indicates this is a teardown operation (pulumi destroy instead of up)
+	Destroy bool `json:"destroy"`
+
 	PlanJSON []byte `json:"plan_json"`
 }

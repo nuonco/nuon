@@ -109,5 +109,6 @@ func (p *Planner) createPulumiDeployPlan(
 		GCPAuth:       cloudAuth.GCP,
 		ClusterInfo:   clusterInfo,
 		State:         state,
+		Destroy:       installDeploy.Type == app.InstallDeployTypeTeardown,
 	}, nil
 }

@@ -91,6 +91,7 @@ func AllModels() []any {
 		&app.DockerBuildComponentConfig{},
 		&app.JobComponentConfig{},
 		&app.KubernetesManifestComponentConfig{},
+		&app.PulumiComponentConfig{},
 		&app.ExternalImageComponentConfig{},
 		&app.ConnectedGithubVCSConfig{},
 		&app.PublicGitVCSConfig{},

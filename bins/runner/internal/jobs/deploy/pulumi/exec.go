@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"path/filepath"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -94,6 +96,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to create pulumi workspace: %w", err)
 	}
 
+	// Download existing state from control plane and import into local backend
+	if err := h.downloadState(ctx, l, ws, plan.WorkspaceID); err != nil {
+		h.writeErrorResult(ctx, "download pulumi state", err)
+		return fmt.Errorf("unable to download pulumi state: %w", err)
+	}
+
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		l.Info("executing pulumi preview")
@@ -142,23 +150,123 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
-		l.Info("executing pulumi up")
-		result, err := ws.Up(ctx)
-		if err != nil {
-			l.Error("pulumi up errored", zap.Error(err))
-			h.writeErrorResult(ctx, "pulumi up", err)
-			return fmt.Errorf("unable to execute pulumi up: %w", err)
-		}
+		if plan.Destroy {
+			l.Info("executing pulumi destroy")
+			if err := ws.Destroy(ctx); err != nil {
+				l.Error("pulumi destroy errored", zap.Error(err))
+				h.writeErrorResult(ctx, "pulumi destroy", err)
+				// Still try to upload state even on failure
+				if stateErr := h.updatePulumiState(ctx, ws); stateErr != nil {
+					l.Error("failed to update state after error", zap.Error(stateErr))
+				}
+				return fmt.Errorf("unable to execute pulumi destroy: %w", err)
+			}
 
-		// Update state in control plane
-		if err := h.updatePulumiState(ctx, ws); err != nil {
-			h.writeErrorResult(ctx, "update pulumi state", err)
-		}
+			// Update state in control plane after destroy
+			if err := h.updatePulumiState(ctx, ws); err != nil {
+				h.writeErrorResult(ctx, "update pulumi state", err)
+			}
 
-		l.Info("pulumi up completed", zap.Any("outputs", result.Outputs))
+			l.Info("pulumi destroy completed")
+		} else {
+			l.Info("executing pulumi up")
+			result, err := ws.Up(ctx)
+			if err != nil {
+				l.Error("pulumi up errored", zap.Error(err))
+				h.writeErrorResult(ctx, "pulumi up", err)
+				// Still try to upload state even on failure
+				if stateErr := h.updatePulumiState(ctx, ws); stateErr != nil {
+					l.Error("failed to update state after error", zap.Error(stateErr))
+				}
+				return fmt.Errorf("unable to execute pulumi up: %w", err)
+			}
+
+			// Update state in control plane
+			if err := h.updatePulumiState(ctx, ws); err != nil {
+				h.writeErrorResult(ctx, "update pulumi state", err)
+			}
+
+			l.Info("pulumi up completed", zap.Any("outputs", result.Outputs))
+		}
 
 	default:
 		return fmt.Errorf("unsupported operation type %s", job.Operation)
+	}
+
+	return nil
+}
+
+func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiworkspace.Workspace, workspaceID string) error {
+	l.Info("downloading pulumi state from control plane", zap.String("workspace_id", workspaceID))
+
+	// Fetch state directly via HTTP from the runner API
+	stateURL := fmt.Sprintf("%s/v1/terraform-workspaces/%s/state-json", h.cfg.RunnerAPIURL, workspaceID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, stateURL, nil)
+	if err != nil {
+		return fmt.Errorf("unable to create state request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+h.cfg.RunnerAPIToken)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		l.Info("unable to fetch state, starting fresh", zap.Error(err))
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNoContent {
+		l.Info("no existing state found, starting fresh")
+		return nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		l.Info("non-OK response fetching state, starting fresh", zap.Int("status", resp.StatusCode))
+		return nil
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read state response: %w", err)
+	}
+
+	// Skip empty or null state
+	if len(body) == 0 || string(body) == "null" || string(body) == "[]" {
+		l.Info("state is empty, starting fresh")
+		return nil
+	}
+
+	// The response is an array of workspace states, extract the latest state contents
+	var states []json.RawMessage
+	if err := json.Unmarshal(body, &states); err != nil {
+		// Try parsing as a single state object
+		l.Info("importing existing state into local backend", zap.Int("state_bytes", len(body)))
+		if err := ws.ImportState(ctx, body); err != nil {
+			return fmt.Errorf("unable to import state: %w", err)
+		}
+		return nil
+	}
+
+	if len(states) == 0 {
+		l.Info("no states found, starting fresh")
+		return nil
+	}
+
+	// Parse the first (latest) state to get its contents field
+	var stateRecord struct {
+		Contents json.RawMessage `json:"contents"`
+	}
+	if err := json.Unmarshal(states[0], &stateRecord); err != nil {
+		return fmt.Errorf("unable to parse state record: %w", err)
+	}
+
+	if len(stateRecord.Contents) == 0 || string(stateRecord.Contents) == "null" {
+		l.Info("state contents empty, starting fresh")
+		return nil
+	}
+
+	l.Info("importing existing state into local backend", zap.Int("state_bytes", len(stateRecord.Contents)))
+	if err := ws.ImportState(ctx, stateRecord.Contents); err != nil {
+		return fmt.Errorf("unable to import state: %w", err)
 	}
 
 	return nil

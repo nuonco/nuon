@@ -154,6 +154,8 @@ type ClientService interface {
 
 	CreateAppPoliciesConfig(params *CreateAppPoliciesConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPoliciesConfigCreated, error)
 
+	CreateAppPulumiComponentConfig(params *CreateAppPulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPulumiComponentConfigCreated, error)
+
 	CreateAppRunnerConfig(params *CreateAppRunnerConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppRunnerConfigCreated, error)
 
 	CreateAppSandboxBuild(params *CreateAppSandboxBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppSandboxBuildCreated, error)
@@ -207,6 +209,8 @@ type ClientService interface {
 	CreateOrg(params *CreateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgCreated, error)
 
 	CreateOrgInvite(params *CreateOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgInviteCreated, error)
+
+	CreatePulumiComponentConfig(params *CreatePulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePulumiComponentConfigCreated, error)
 
 	CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error)
 
@@ -2328,6 +2332,50 @@ func (a *Client) CreateAppPoliciesConfig(params *CreateAppPoliciesConfigParams, 
 }
 
 /*
+CreateAppPulumiComponentConfig creates a pulumi component config
+*/
+func (a *Client) CreateAppPulumiComponentConfig(params *CreateAppPulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppPulumiComponentConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppPulumiComponentConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppPulumiComponentConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/configs/pulumi",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppPulumiComponentConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppPulumiComponentConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppPulumiComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateAppRunnerConfig creates an app runner config
 
 Create a runner configuration for an app.
@@ -3566,6 +3614,50 @@ func (a *Client) CreateOrgInvite(params *CreateOrgInviteParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreatePulumiComponentConfig creates a pulumi component config
+*/
+func (a *Client) CreatePulumiComponentConfig(params *CreatePulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePulumiComponentConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreatePulumiComponentConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreatePulumiComponentConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/components/{component_id}/configs/pulumi",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreatePulumiComponentConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreatePulumiComponentConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreatePulumiComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
