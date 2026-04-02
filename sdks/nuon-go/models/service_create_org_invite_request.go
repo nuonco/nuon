@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -22,6 +23,9 @@ type ServiceCreateOrgInviteRequest struct {
 	// email
 	// Required: true
 	Email *string `json:"email"`
+
+	// role type
+	RoleType AppRoleType `json:"role_type,omitempty"`
 }
 
 // Validate validates this service create org invite request
@@ -29,6 +33,10 @@ func (m *ServiceCreateOrgInviteRequest) Validate(formats strfmt.Registry) error 
 	var res []error
 
 	if err := m.validateEmail(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRoleType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -47,8 +55,60 @@ func (m *ServiceCreateOrgInviteRequest) validateEmail(formats strfmt.Registry) e
 	return nil
 }
 
-// ContextValidate validates this service create org invite request based on context it is used
+func (m *ServiceCreateOrgInviteRequest) validateRoleType(formats strfmt.Registry) error {
+	if swag.IsZero(m.RoleType) { // not required
+		return nil
+	}
+
+	if err := m.RoleType.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("role_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("role_type")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service create org invite request based on the context it is used
 func (m *ServiceCreateOrgInviteRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateRoleType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateOrgInviteRequest) contextValidateRoleType(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RoleType) { // not required
+		return nil
+	}
+
+	if err := m.RoleType.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("role_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("role_type")
+		}
+
+		return err
+	}
+
 	return nil
 }
 

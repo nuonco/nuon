@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -154,7 +155,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
 
-	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
@@ -165,7 +166,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		return errors.Wrap(err, "unable to create json")
 	}
@@ -174,8 +175,9 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
-			SandboxRunPlan: runPlan,
+			SandboxRunPlan: planResponse.Plan,
 		},
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)

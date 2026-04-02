@@ -20,6 +20,9 @@ type ServiceAvailableRole struct {
 	// arn
 	Arn string `json:"arn,omitempty"`
 
+	// default
+	Default bool `json:"default,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

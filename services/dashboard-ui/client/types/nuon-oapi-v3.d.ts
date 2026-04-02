@@ -4107,12 +4107,25 @@ export interface components {
     "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
+    "app.RunnerJobPermissionInfo": {
+      role?: string;
+      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
+      role_source?: string;
+    };
+    "app.RunnerJobPermissionTraceRecord": {
+      available?: boolean;
+      role_id?: string;
+      role_name?: string;
+      role_source?: string;
+      selected?: boolean;
+    };
     "app.RunnerJobPlan": {
       composite_plan?: components["schemas"]["plantypes.CompositePlan"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
       org_id?: string;
+      permission_info?: components["schemas"]["app.RunnerJobPermissionInfo"];
       plan_json?: string;
       runner_job_id?: string;
       updated_at?: string;
@@ -5052,6 +5065,7 @@ export interface components {
     };
     "service.AvailableRole": {
       arn?: string;
+      default?: boolean;
       name?: string;
       role_type?: string;
     };
@@ -15191,11 +15205,13 @@ export interface operations {
    */
   GetAvailableRoles: {
     parameters: {
-      query: {
+      query?: {
         /** @description principal type: component, sandbox, action */
-        principal_type: "component" | "sandbox" | "action";
+        principal_type?: "component" | "sandbox" | "action";
         /** @description operation type: provision, reprovision, deprovision, deploy, teardown, trigger */
-        "app.operationType": string;
+        operation_type?: "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
+        /** @description principal ID: component ID or action workflow ID (required for component and action) */
+        principal_id?: string;
       };
       path: {
         /** @description install ID */
