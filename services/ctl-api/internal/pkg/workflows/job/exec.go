@@ -85,8 +85,10 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error
 	if queueResp.QueueID != "" {
 		l.Info("queueing job via job-group queue", zap.String("runner-id", runnerID), zap.String("queue-id", queueResp.QueueID))
 		_, err := queueclient.AwaitEnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID: queueResp.QueueID,
-			Signal:  &processjobsignal.Signal{RunnerID: runnerID, JobID: jobID},
+			QueueID:   queueResp.QueueID,
+			Signal:    &processjobsignal.Signal{RunnerID: runnerID, JobID: jobID},
+			OwnerID:   jobID,
+			OwnerType: "runner_jobs",
 		})
 		return errors.Wrap(err, "unable to enqueue job to queue")
 	}
