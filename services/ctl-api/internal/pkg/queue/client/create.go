@@ -25,7 +25,6 @@ type CreateQueueRequest struct {
 	OwnerID   string `validate:"required"`
 	OwnerType string `validate:"required"`
 	Namespace string `validate:"required"`
-	Name      string
 
 	Name     string
 	Metadata pgtype.Hstore
