@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Tabs } from '@/components/common/Tabs'
+import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -14,6 +15,14 @@ import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
 import type { TAPIError, TExampleApp, TOnboarding, TCloudPlatform as TCloudPlatformType } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TComponentType } from '@/types'
+
+const TAG_TO_COMPONENT_TYPE: Record<string, TComponentType> = {
+  terraform: 'terraform_module',
+  helm: 'helm_chart',
+  kubernetes: 'kubernetes_manifest',
+  docker: 'docker_build',
+  lambda: 'job',
+}
 
 type CloudPlatform = 'aws' | 'gcp' | 'azure'
 type AppAttribute =
@@ -245,31 +254,42 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
         selected && '!bg-code/10 !border-primary-600'
       )}
     >
+      <div className="flex items-center gap-2">
+        {app.cloud_provider && (
+          <CloudPlatformDisplay
+            platform={app.cloud_provider as TCloudPlatformType}
+            colorVariant="color"
+            displayVariant="icon-only"
+            iconSize="24"
+          />
+        )}
+        {app.tags
+          ?.filter((tag) => TAG_TO_COMPONENT_TYPE[tag])
+          .map((tag) => (
+            <ComponentType
+              key={tag}
+              type={TAG_TO_COMPONENT_TYPE[tag]}
+              colorVariant="color"
+              displayVariant="icon-only"
+              iconSize="20"
+            />
+          ))}
+      </div>
       <div className="flex flex-col gap-1">
         <Text weight="strong">{app.display_name}</Text>
         <Text variant="label" theme="neutral" className="line-clamp-2">
           {app.description}
         </Text>
       </div>
-      <div className="flex items-center gap-1.5">
-        {app.cloud_provider && (
-          <CloudPlatformDisplay
-            platform={app.cloud_provider as TCloudPlatformType}
-            colorVariant="color"
-            displayVariant="icon-only"
-            iconSize="16"
-          />
-        )}
-        {app.tags?.map((tag) => (
-          <ComponentType
-            key={tag}
-            type={tag as TComponentType}
-            colorVariant="color"
-            displayVariant="icon-only"
-            iconSize="16"
-          />
-        ))}
-      </div>
+      {app.tags?.some((tag) => !TAG_TO_COMPONENT_TYPE[tag]) && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {app.tags
+            .filter((tag) => !TAG_TO_COMPONENT_TYPE[tag])
+            .map((tag) => (
+              <Badge key={tag} size="sm" variant="code">{tag}</Badge>
+            ))}
+        </div>
+      )}
     </div>
   </Button>
 )
