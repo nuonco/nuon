@@ -14,7 +14,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useOrg } from '@/hooks/use-org'
 import { Badge } from '@/components/common/Badge'
 import { Skeleton } from '@/components/common/Skeleton'
-import { FILTER_PREFIXES, parseQuery, getAutocompletion } from './types'
+import { FILTER_PREFIXES, COMMANDS_BY_PREFIX, parseQuery, getAutocompletion } from './types'
 import { useSpotlightResults } from './use-spotlight-results'
 import { SpotlightResultItem } from './SpotlightResultItem'
 
@@ -124,7 +124,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             autoFocus
           />
           {autocompletion && (
-            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500">
+            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500 whitespace-pre">
               <span className="invisible">{raw}</span>
               <span>{autocompletion.slice(raw.length)}</span>
               <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">
@@ -153,7 +153,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             ))}
           </div>
         )}
-        {liveParsed.prefix === 'install' && !liveParsed.command && (
+        {liveParsed.prefix && COMMANDS_BY_PREFIX[liveParsed.prefix] && liveParsed.command === null && (
           <div className="px-2 py-1 flex items-center gap-1.5">
             <Text variant="subtext" className="text-cool-grey-600">
               Type{' '}

@@ -9,7 +9,14 @@ import { getComponents } from '@/lib/ctl-api/apps/components/get-components'
 import { getActions } from '@/lib/ctl-api/apps/actions/get-actions'
 import { getInstallActionsLatestRuns } from '@/lib/ctl-api/installs/actions/get-install-actions-latest-runs'
 import { getInstallComponents } from '@/lib/ctl-api/installs/components/get-install-components'
-import { InstallAdhocActionModal } from './InstallAdhocActionModal'
+import {
+  InstallAdhocActionModal,
+  InstallEditInputsModal,
+  InstallSyncSecretsModal,
+  InstallReprovisionModal,
+  InstallReprovisionSandboxModal,
+  InstallDeployAllComponentsModal,
+} from './InstallCommandModals'
 import {
   type SpotlightResult,
   type ParsedQuery,
@@ -180,38 +187,76 @@ export function useSpotlightResults(parsed: ParsedQuery, liveParsed: ParsedQuery
       const installs = installsResult?.data ?? []
       const items: SpotlightResult[] = []
       for (const install of installs) {
-        if (!parsed.command) {
+        const installId = install.id!
+        const name = install.name ?? installId
+        if (parsed.command === null) {
           items.push({
-            label: install.name ?? install.id!,
+            label: name,
             subtitle: install.app?.name,
             tag: 'install',
-            path: `/installs/${install.id}`,
+            path: `/installs/${installId}`,
             icon: 'Cube',
           })
-        }
-        const adhocEntry: SpotlightResult = {
-          label: `${install.name ?? install.id} › Run adhoc action`,
-          subtitle: install.app?.name,
-          tag: 'command',
-          icon: 'Lightning',
-          action: () => {
-            addModal(<InstallAdhocActionModal installId={install.id!} />)
-          },
-        }
-        if (!parsed.command || tokenMatch('run adhoc action', parsed.command)) {
-          items.push(adhocEntry)
-        }
-        if (!parsed.command) {
           for (const sub of INSTALL_SUB_PAGES) {
             const entry = {
-              label: `${install.name ?? install.id} › ${sub}`,
+              label: `${name} › ${sub}`,
               subtitle: install.app?.name,
               tag: 'install',
-              path: `/installs/${install.id}/${sub.toLowerCase()}`,
+              path: `/installs/${installId}/${sub.toLowerCase()}`,
               icon: 'Cube' as TIconVariant,
             }
             if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
             items.push(entry)
+          }
+        }
+        const commands: SpotlightResult[] = [
+          {
+            label: `${name} › Run adhoc action`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallAdhocActionModal installId={installId} />),
+          },
+          {
+            label: `${name} › Edit inputs`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallEditInputsModal installId={installId} />),
+          },
+          {
+            label: `${name} › Sync secrets`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallSyncSecretsModal installId={installId} />),
+          },
+          {
+            label: `${name} › Reprovision install`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallReprovisionModal installId={installId} />),
+          },
+          {
+            label: `${name} › Reprovision sandbox`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallReprovisionSandboxModal installId={installId} />),
+          },
+          {
+            label: `${name} › Deploy all components`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallDeployAllComponentsModal installId={installId} />),
+          },
+        ]
+        for (const cmd of commands) {
+          const cmdName = cmd.label.split(' › ')[1]
+          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+            items.push(cmd)
           }
         }
       }

@@ -13,7 +13,7 @@ export type SpotlightResult = {
 export type ParsedQuery = {
   prefix: 'app' | 'install' | 'component' | 'action' | null
   query: string
-  command: string
+  command: string | null
 }
 
 export const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
@@ -47,7 +47,16 @@ export const APP_BRANCH_SUB_PAGES = [
 
 export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
 
-export const INSTALL_COMMANDS = ['adhoc', 'run adhoc action']
+export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix']>, string[]>> = {
+  install: [
+    'run adhoc action',
+    'edit inputs',
+    'sync secrets',
+    'reprovision install',
+    'reprovision sandbox',
+    'deploy all components',
+  ],
+}
 
 const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
   'app:': 'app',
@@ -68,20 +77,24 @@ export function parseQuery(raw: string): ParsedQuery {
       if (slashIdx >= 0) {
         return { prefix, query: rest.slice(0, slashIdx).trim(), command: rest.slice(slashIdx + 1).trim() }
       }
-      return { prefix, query: rest.trim(), command: '' }
+      return { prefix, query: rest.trim(), command: null }
     }
   }
-  return { prefix: null, query: raw.trim(), command: '' }
+  return { prefix: null, query: raw.trim(), command: null }
 }
 
 export function getAutocompletion(input: string): string | null {
   if (!input) return null
   if (input.includes('/')) {
+    const parsed = parseQuery(input)
+    if (!parsed.prefix) return null
+    const commands = COMMANDS_BY_PREFIX[parsed.prefix]
+    if (!commands) return null
     const slashIdx = input.indexOf('/')
     const before = input.slice(0, slashIdx + 1)
     const after = input.slice(slashIdx + 1).toLowerCase()
     if (!after) return null
-    const match = INSTALL_COMMANDS.find((c) => c.startsWith(after) && c !== after)
+    const match = commands.find((c) => c.startsWith(after) && c !== after)
     return match ? before + match : null
   }
   if (input.includes(':')) return null
