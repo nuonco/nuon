@@ -17,6 +17,7 @@ import {
   InstallReprovisionSandboxModal,
   InstallDeployAllComponentsModal,
 } from './InstallCommandModals'
+import { AppBuildAllComponentsModal } from './AppCommandModals'
 import {
   type SpotlightResult,
   type ParsedQuery,
@@ -163,21 +164,39 @@ export function useSpotlightResults(parsed: ParsedQuery, liveParsed: ParsedQuery
       const apps = appsResult?.data ?? []
       const items: SpotlightResult[] = []
       for (const app of apps) {
-        items.push({
-          label: app.name ?? app.id!,
-          tag: 'app',
-          path: `/apps/${app.id}`,
-          icon: 'AppWindow',
-        })
-        for (const sub of appSubPages) {
-          const entry = {
-            label: `${app.name ?? app.id} › ${sub}`,
+        const appId = app.id!
+        const name = app.name ?? appId
+        if (parsed.command === null) {
+          items.push({
+            label: name,
             tag: 'app',
-            path: `/apps/${app.id}/${sub.toLowerCase()}`,
-            icon: 'AppWindow' as TIconVariant,
+            path: `/apps/${appId}`,
+            icon: 'AppWindow',
+          })
+          for (const sub of appSubPages) {
+            const entry = {
+              label: `${name} › ${sub}`,
+              tag: 'app',
+              path: `/apps/${appId}/${sub.toLowerCase()}`,
+              icon: 'AppWindow' as TIconVariant,
+            }
+            if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
+            items.push(entry)
           }
-          if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
-          items.push(entry)
+        }
+        const commands: SpotlightResult[] = [
+          {
+            label: `${name} › Build all components`,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<AppBuildAllComponentsModal appId={appId} />),
+          },
+        ]
+        for (const cmd of commands) {
+          const cmdName = cmd.label.split(' › ')[1]
+          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+            items.push(cmd)
+          }
         }
       }
       return items

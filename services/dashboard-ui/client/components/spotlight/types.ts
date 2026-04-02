@@ -48,6 +48,9 @@ export const APP_BRANCH_SUB_PAGES = [
 export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
 
 export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix']>, string[]>> = {
+  app: [
+    'build all components',
+  ],
   install: [
     'run adhoc action',
     'edit inputs',
