@@ -11,6 +11,7 @@ import {
   adminReprovisionInstall,
   adminReprovisionInstallRunner,
   adminRestartInstall,
+  adminRestartInstallQueues,
   adminTeardownInstallComponents,
   adminUpdateInstallSandbox,
   adminShutdownRunnerJob,
@@ -77,6 +78,14 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart the install event loop. Continue?"
+        />
+        <AdminActionCard
+          title="Restart install queues"
+          description="Restart all Temporal queue workflows for this install"
+          action={() => adminRestartInstallQueues({ installId, adminApiUrl, adminEmail })}
+          variant="warning"
+          requiresConfirmation
+          confirmationText="This will restart all queue Temporal workflows for this install. Continue?"
         />
       </AdminActionGroup>
 

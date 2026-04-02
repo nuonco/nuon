@@ -43,8 +43,11 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 		return nil
 	}
 
-	// NOTE(jm): this is for pre-queue workflows
-	if step.Signal != nil {
+	// NOTE(jm): this is for pre-queue workflows.
+	// Check SignalJSON length because GORM reads JSONB null as a non-nil *Signal
+	// with empty SignalJSON (JSON null != SQL NULL), which would cause
+	// json.Unmarshal to fail with "unexpected end of JSON input".
+	if step.Signal != nil && len(step.Signal.SignalJSON) > 0 {
 		var sig DomainSignal
 		if err := json.Unmarshal(step.Signal.SignalJSON, &sig); err != nil {
 			return c.handleStepErr(ctx, step.ID, err)

@@ -1,14 +1,14 @@
 package reprovisionrunner
 
 import (
-	"fmt"
-
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovisionserviceaccount"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "reprovision-runner"
@@ -38,20 +38,24 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get the install to find the runner ID (copied from worker/reprovision_runner.go)
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: s.InstallID,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to get install: %w", err)
+		return errors.Wrap(err, "unable to get install")
 	}
 
-	// TODO: Send signal to runner namespace to reprovision the service account
-	// Original code: w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{Type: runnersignals.OperationReprovisionServiceAccount})
-	//
-	// This is deprecated and needs to be adapted for the queue system.
-	// Cross-namespace signal sending needs to be implemented as part of the queue infrastructure.
-	_ = install.RunnerID // suppress unused variable warning
+	// Enqueue reprovision-service-account signal to the runner's queue
+	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   install.RunnerID,
+		OwnerType: "runners",
+		Signal: &runnersignals.Signal{
+			RunnerID: install.RunnerID,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to enqueue reprovision service account signal to runner")
+	}
 
 	return nil
 }
