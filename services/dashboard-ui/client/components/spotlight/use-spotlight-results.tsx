@@ -18,6 +18,7 @@ import {
   InstallDeployAllComponentsModal,
 } from './InstallCommandModals'
 import { AppBuildAllComponentsModal } from './AppCommandModals'
+import { RestartRunnerModal } from './RestartRunnerModal'
 import {
   type SpotlightResult,
   type ParsedQuery,
@@ -271,6 +272,13 @@ export function useSpotlightResults(parsed: ParsedQuery, liveParsed: ParsedQuery
             icon: 'Lightning',
             action: () => addModal(<InstallDeployAllComponentsModal installId={installId} />),
           },
+          ...(install.runner_id ? [{
+            label: `${name} › Restart runner`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<RestartRunnerModal runnerId={install.runner_id!} />),
+          } satisfies SpotlightResult] : []),
         ]
         for (const cmd of commands) {
           const cmdName = cmd.label.split(' › ')[1]

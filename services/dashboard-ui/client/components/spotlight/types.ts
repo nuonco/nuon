@@ -58,6 +58,7 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
     'reprovision install',
     'reprovision sandbox',
     'deploy all components',
+    'restart runner',
   ],
 }
 
