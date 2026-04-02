@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -50,17 +50,15 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:      signals.OperationProcessCreated,
-		ProcessID: process.ID,
-	})
+	if _, err := s.helpers.CreateProcessQueues(ctx, runnerID, process); err != nil {
+		ctx.Error(fmt.Errorf("unable to create process queues: %w", err))
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, process)
 }
 
 func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req CreateRunnerProcessRequest) (*app.RunnerProcess, error) {
-	now := time.Now()
-
 	// create a log stream for this process
 	logStream := app.LogStream{
 		OwnerType: "runner_processes",
@@ -75,8 +73,8 @@ func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req 
 		Type:            req.Type,
 		Status:          app.RunnerProcessStatusActive,
 		Version:         req.Version,
-		StartedAt:       &now,
-		LogStreamID:     &logStream.ID,
+		StartedAt:       generics.ToPtr(time.Now()),
+		LogStreamID:     generics.ToPtr(logStream.ID),
 		CompositeStatus: app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusActive)),
 	}
 

@@ -73,9 +73,11 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
 export const RunnerProcessesTable = ({
   shouldPoll = true,
   pollInterval = 20000,
+  filterStatus,
 }: {
   shouldPoll?: boolean
   pollInterval?: number
+  filterStatus?: string
 }) => {
   const { org } = useOrg()
   const { runner } = useRunner()
@@ -83,13 +85,14 @@ export const RunnerProcessesTable = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['runner-processes', org?.id, runner?.id, offset],
+    queryKey: ['runner-processes', org?.id, runner?.id, offset, filterStatus],
     queryFn: () =>
       getRunnerProcesses({
         orgId: org.id,
         runnerId: runner.id,
         limit: LIMIT,
         offset,
+        status: filterStatus,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!runner?.id,

@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id/processes", s.ListRunnerProcesses)
 	api.GET("/v1/runners/:runner_id/processes/current", s.GetCurrentRunnerProcesses)
 	api.GET("/v1/runners/:runner_id/processes/:process_id", s.GetRunnerProcessPublic)
+	api.GET("/v1/runners/:runner_id/processes/:process_id/heart-beats/latest", s.GetProcessLatestHeartBeat)
 	api.POST("/v1/runners/:runner_id/processes/:process_id/shutdown", s.ShutdownRunnerProcess)
 
 	// trigger specific jobs

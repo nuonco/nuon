@@ -26,6 +26,9 @@ type ServiceCreateRunnerHeartBeatRequest struct {
 	// process
 	Process string `json:"process,omitempty"`
 
+	// process id
+	ProcessID string `json:"process_id,omitempty"`
+
 	// Making this required might break existing installs? Should update all installs to send this, then make it required?
 	Version string `json:"version,omitempty"`
 }

@@ -44,12 +44,16 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	// Get the current active process for this runner and type
-	process, err := activities.AwaitGetCurrentRunnerProcessByRunnerID(ctx, s.RunnerID, s.ProcessType)
+	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+		RunnerID:    s.RunnerID,
+		ProcessType: s.ProcessType,
+	})
 	if err != nil {
 		// No active process — nothing to check
 		return nil
 	}
 
+	// Noop if the process is not active (offline, inactive, shut-down, etc.)
 	if process.Status != app.RunnerProcessStatusActive {
 		return nil
 	}
@@ -71,7 +75,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Create a shutdown request for this process
-	shutdown := app.RunnerProcessShutdown{
+	_, err = activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
 		RunnerProcessID: process.ID,
 		Type:            app.RunnerProcessShutdownTypeGraceful,
 		Status:          app.RunnerProcessShutdownStatusRequested,
@@ -80,9 +84,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			StatusHumanDescription: "uptime threshold exceeded",
 			CreatedAtTS:            workflow.Now(ctx).Unix(),
 		},
-	}
-
-	_, err = activities.AwaitCreateRunnerProcessShutdownByRunnerProcessID(ctx, shutdown)
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create shutdown for process uptime check")
 	}

@@ -14,11 +14,14 @@ import (
 type RunnerProcessStatus string
 
 const (
-	RunnerProcessStatusActive       RunnerProcessStatus = "active"
-	RunnerProcessStatusShuttingDown RunnerProcessStatus = "shutting-down"
-	RunnerProcessStatusShutDown     RunnerProcessStatus = "shut-down"
-	RunnerProcessStatusError        RunnerProcessStatus = "error"
-	RunnerProcessStatusUnknown      RunnerProcessStatus = "unknown"
+	RunnerProcessStatusActive          RunnerProcessStatus = "active"
+	RunnerProcessStatusOffline         RunnerProcessStatus = "offline"
+	RunnerProcessStatusInactive        RunnerProcessStatus = "inactive"
+	RunnerProcessStatusPendingShutdown RunnerProcessStatus = "pending-shutdown"
+	RunnerProcessStatusShuttingDown    RunnerProcessStatus = "shutting-down"
+	RunnerProcessStatusShutDown        RunnerProcessStatus = "shut-down"
+	RunnerProcessStatusError           RunnerProcessStatus = "error"
+	RunnerProcessStatusUnknown         RunnerProcessStatus = "unknown"
 )
 
 
@@ -49,7 +52,23 @@ type RunnerProcess struct {
 	Version   string     `json:"version,omitzero"`
 	StartedAt *time.Time `json:"started_at,omitempty"`
 
+	Uptime time.Duration `json:"uptime,omitempty" gorm:"-" swaggertype:"primitive,integer"`
+
+	// Warnings are computed server-side and not persisted.
+	Warnings []string `json:"warnings,omitempty" gorm:"-"`
+
 	Shutdowns []RunnerProcessShutdown `json:"shutdowns,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
+}
+
+func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
+	if r.CompositeStatus.Status != "" {
+		r.Status = RunnerProcessStatus(r.CompositeStatus.Status)
+		r.StatusDescription = r.CompositeStatus.StatusHumanDescription
+	}
+	if r.StartedAt != nil {
+		r.Uptime = time.Since(*r.StartedAt)
+	}
+	return nil
 }
 
 func (r *RunnerProcess) BeforeCreate(tx *gorm.DB) error {

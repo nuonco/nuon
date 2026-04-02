@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
@@ -68,6 +69,11 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
+	// Immediately mark process as pending-shutdown so health checks noop
+	if err := s.updateProcessStatusPendingShutdown(ctx, process); err != nil {
+		s.l.Warn("unable to set process pending-shutdown status", zap.Error(err))
+	}
+
 	s.evClient.Send(ctx, runnerID, &signals.Signal{
 		Type:         signals.OperationProcessShutdown,
 		ProcessID:    processID,
@@ -75,6 +81,36 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 	})
 
 	ctx.JSON(http.StatusCreated, shutdown)
+}
+
+func (s *service) updateProcessStatusPendingShutdown(ctx context.Context, process *app.RunnerProcess) error {
+	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusPendingShutdown))
+	newComposite.StatusHumanDescription = "shutdown requested"
+	newComposite.History = append([]app.CompositeStatus{process.CompositeStatus}, process.CompositeStatus.History...)
+	newComposite.History[0].History = nil
+
+	res := s.db.WithContext(ctx).
+		Model(&app.RunnerProcess{ID: process.ID}).
+		Updates(app.RunnerProcess{
+			Status:            app.RunnerProcessStatusPendingShutdown,
+			StatusDescription: "shutdown requested",
+			CompositeStatus:   newComposite,
+		})
+	if res.Error != nil {
+		return fmt.Errorf("unable to update process status: %w", res.Error)
+	}
+
+	// Create health check record marking pending shutdown
+	hc := app.RunnerHealthCheck{
+		RunnerID:  process.RunnerID,
+		ProcessID: process.ID,
+		Status:    app.RunnerStatusActive,
+	}
+	if res := s.chDB.WithContext(ctx).Create(&hc); res.Error != nil {
+		return fmt.Errorf("unable to create health check: %w", res.Error)
+	}
+
+	return nil
 }
 
 func (s *service) createRunnerProcessShutdown(ctx context.Context, processID string, req ShutdownRunnerProcessRequest) (*app.RunnerProcessShutdown, error) {

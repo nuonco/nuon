@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -65,7 +66,12 @@ func (s *service) listRunnerProcesses(ctx context.Context, runnerID, orgID, proc
 		query = query.Where("type = ?", processType)
 	}
 	if status != "" {
-		query = query.Where("status = ?", status)
+		statuses := strings.Split(status, ",")
+		if len(statuses) == 1 {
+			query = query.Where("status = ?", status)
+		} else {
+			query = query.Where("status IN ?", statuses)
+		}
 	}
 
 	query = query.Limit(intFromString(limit, 25)).Offset(intFromString(offset, 0))

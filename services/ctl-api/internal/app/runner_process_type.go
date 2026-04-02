@@ -34,6 +34,7 @@ func (rp *RunnerProcessType) Scan(value any) error {
 const (
 	RunnerProcessTypeMng     RunnerProcessType = "mng"
 	RunnerProcessTypeInstall RunnerProcessType = "install"
+	RunnerProcessTypeBuild   RunnerProcessType = "build"
 	RunnerProcessTypeOrg     RunnerProcessType = "org"
 	RunnerProcessTypeUnknown RunnerProcessType = ""
 )

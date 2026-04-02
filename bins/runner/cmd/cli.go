@@ -37,6 +37,7 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(settings.New),
 		fx.Provide(heartbeater.New),
 		fx.Provide(process.New),
+		fx.Provide(process.NewShutdownPoller),
 		fx.Provide(metrics.New),
 	}
 }

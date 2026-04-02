@@ -6,6 +6,7 @@ import { Installs } from './Installs'
 import { BuildRunner } from './BuildRunner'
 import { RunnerJobDetail } from './RunnerJobDetail'
 import { RunnerProcesses } from './RunnerProcesses'
+import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Team } from './Team'
 import { NotFound } from '@/views/NotFound'
 import { appRoutes } from '@/views/app/routes'
@@ -21,6 +22,7 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId/runner', element: <BuildRunner /> },
       { path: ':orgId/runner/jobs/:jobId', element: <RunnerJobDetail /> },
       { path: ':orgId/runner/processes', element: <RunnerProcesses /> },
+      { path: ':orgId/runner/processes/:processId/logs', element: <ProcessSystemLogs /> },
       { path: ':orgId/team', element: <Team /> },
       ...appRoutes,
       ...installRoutes,

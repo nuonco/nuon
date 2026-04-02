@@ -44,6 +44,9 @@ type AppRunner struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled.
+	Queues []*AppQueue `json:"queues"`
+
 	// runner group
 	RunnerGroup *AppRunnerGroup `json:"runner_group,omitempty"`
 
@@ -72,6 +75,10 @@ func (m *AppRunner) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOperations(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueues(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -149,6 +156,36 @@ func (m *AppRunner) validateOperations(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppRunner) validateQueues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queues) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Queues); i++ {
+		if swag.IsZero(m.Queues[i]) { // not required
+			continue
+		}
+
+		if m.Queues[i] != nil {
+			if err := m.Queues[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppRunner) validateRunnerGroup(formats strfmt.Registry) error {
 	if swag.IsZero(m.RunnerGroup) { // not required
 		return nil
@@ -204,6 +241,10 @@ func (m *AppRunner) ContextValidate(ctx context.Context, formats strfmt.Registry
 	}
 
 	if err := m.contextValidateOperations(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueues(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -268,6 +309,35 @@ func (m *AppRunner) contextValidateOperations(ctx context.Context, formats strfm
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("operations" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppRunner) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Queues); i++ {
+
+		if m.Queues[i] != nil {
+
+			if swag.IsZero(m.Queues[i]) { // not required
+				return nil
+			}
+
+			if err := m.Queues[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
 				}
 
 				return err

@@ -17,8 +17,9 @@ import (
 type CreateRunnerHeartBeatRequest struct {
 	AliveTime time.Duration `json:"alive_time" validate:"required" swaggertype:"primitive,integer"`
 	// Making this required might break existing installs? Should update all installs to send this, then make it required?
-	Version string                `json:"version"`
-	Process app.RunnerProcessType `json:"process" swaggertype:"string"`
+	Version   string                `json:"version"`
+	Process   app.RunnerProcessType `json:"process" swaggertype:"string"`
+	ProcessID string                `json:"process_id"`
 }
 
 // @ID						CreateRunnerHeartBeat
@@ -75,6 +76,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	runnerHeartBeat := app.RunnerHeartBeat{
 		RunnerID:  runnerID,
+		ProcessID: req.ProcessID,
 		AliveTime: req.AliveTime,
 		Version:   req.Version,
 	}

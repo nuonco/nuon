@@ -56,9 +56,10 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Provide(sandboxctl.New),
 			fx.Invoke(func(*sandboxctl.Server) {}),
 
-			// start heartbeater and process registrar
+			// start heartbeater, process registrar, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
+			fx.Invoke(func(*process.ShutdownPoller) {}),
 		}...,
 	)
 	// run

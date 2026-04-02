@@ -51,7 +51,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Update runner status to healthy/active
-	_, err = activities.AwaitUpdateStatusByID(ctx, s.RunnerID, app.RunnerStatusHealthy)
+	err = activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusActive,
+		StatusDescription: "process created",
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}

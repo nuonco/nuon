@@ -22,6 +22,7 @@ type RunnerHealthCheck struct {
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	RunnerID     string       `json:"runner_id,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"runner_id,omitzero,omitempty"`
+	ProcessID    string       `json:"process_id,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"process_id,omitzero,omitempty"`
 	RunnerJob    RunnerJob    `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
 	RunnerStatus RunnerStatus `json:"status,omitzero" gorm:"codec:ZSTD(1)" temporaljson:"runner_status,omitzero,omitempty"`
 

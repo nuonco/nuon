@@ -63,10 +63,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Update shutdown status to in-progress
-	_, err = activities.AwaitUpdateRunnerProcessShutdownStatusByShutdownID(ctx, shutdownID,
-		app.RunnerProcessShutdownStatusInProgress, "shutdown in progress")
+	_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
+		ShutdownID:        shutdownID,
+		Status:            app.RunnerProcessShutdownStatusInProgress,
+		StatusDescription: "shutdown in progress",
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to update shutdown status to in-progress")
+	}
+
+	// Transition process to shutting-down
+	_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		ProcessID:         s.ProcessID,
+		Status:            app.RunnerProcessStatusShuttingDown,
+		StatusDescription: "shutdown in progress",
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to update process status to shutting-down")
 	}
 
 	// Wait for the runner process to report shut-down status
@@ -88,8 +101,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		if timedOut {
 			// Timeout: mark shutdown as failed
-			_, _ = activities.AwaitUpdateRunnerProcessShutdownStatusByShutdownID(ctx, shutdownID,
-				app.RunnerProcessShutdownStatusFailed, "shutdown timed out waiting for process to stop")
+			_, _ = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
+				ShutdownID:        shutdownID,
+				Status:            app.RunnerProcessShutdownStatusFailed,
+				StatusDescription: "shutdown timed out waiting for process to stop",
+			})
 			return errors.New("shutdown timed out")
 		}
 
@@ -101,8 +117,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		if updated.Status == app.RunnerProcessStatusShutDown {
 			// Process confirmed shut down
-			_, err = activities.AwaitUpdateRunnerProcessShutdownStatusByShutdownID(ctx, shutdownID,
-				app.RunnerProcessShutdownStatusCompleted, "shutdown completed")
+			_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
+				ShutdownID:        shutdownID,
+				Status:            app.RunnerProcessShutdownStatusCompleted,
+				StatusDescription: "shutdown completed",
+			})
 			if err != nil {
 				return errors.Wrap(err, "unable to update shutdown status to completed")
 			}
