@@ -11,13 +11,14 @@ import (
 )
 
 type GetMostRecentHeartBeatRequest struct {
-	RunnerID string `validate:"required"`
+	RunnerID string            `validate:"required"`
+	Process  app.RunnerProcess `json:"process,omitempty"`
 }
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
-	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID)
+	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID, req.Process)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner heart beat: %w", err)
 	}
@@ -25,13 +26,16 @@ func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetM
 	return hb, nil
 }
 
-func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string) (*app.RunnerHeartBeat, error) {
+func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcess) (*app.RunnerHeartBeat, error) {
 	var hb app.RunnerHeartBeat
+	query := app.RunnerHeartBeat{
+		RunnerID: runnerID,
+	}
+	if process != "" {
+		query.Process = process
+	}
 	res := a.chDB.WithContext(ctx).
-		Where(app.RunnerHeartBeat{
-			RunnerID: runnerID,
-			Process:  app.RunnerProcessInstall,
-		}).
+		Where(query).
 		Order("created_at desc").
 		Limit(1).
 		First(&hb)

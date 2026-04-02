@@ -34,6 +34,18 @@ func (rp *RunnerProcess) Scan(value any) error {
 const (
 	RunnerProcessMng     RunnerProcess = "mng"
 	RunnerProcessInstall RunnerProcess = "install"
+	RunnerProcessBuild   RunnerProcess = "build"
 	RunnerProcessOrg     RunnerProcess = "org"
 	RunnerProcessUknown  RunnerProcess = ""
 )
+
+func HeartBeatProcessForRunnerGroupType(groupType RunnerGroupType) RunnerProcess {
+	switch groupType {
+	case RunnerGroupTypeInstall:
+		return RunnerProcessInstall
+	case RunnerGroupTypeOrg:
+		return RunnerProcessBuild
+	default:
+		return RunnerProcessUknown
+	}
+}
