@@ -130,7 +130,10 @@ func (w *Workflows) executeHealthCheck(ctx workflow.Context, runnerID string) (a
 	}
 
 	newStatus := app.RunnerStatusActive
-	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, runnerID)
+	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequest(ctx, activities.GetMostRecentHeartBeatRequest{
+		RunnerID: runnerID,
+		Process:  app.HeartBeatProcessForRunnerGroupType(runner.RunnerGroup.Type),
+	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newStatus = app.RunnerStatusError
