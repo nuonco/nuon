@@ -93,7 +93,9 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
   )
 
   useEffect(() => {
-    const active = listRef.current?.querySelector(`[data-index="${activeIndex}"]`) as HTMLElement
+    const active = listRef.current?.querySelector(
+      `[data-index="${activeIndex}"]`
+    ) as HTMLElement
     active?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
 
@@ -106,7 +108,11 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       className="!mt-[15vh] !mb-auto"
       childrenClassName="!p-0 !gap-0"
     >
-      <div ref={inputWrapperRef} className="p-4 border-b" onKeyDown={handleKeyDown}>
+      <div
+        ref={inputWrapperRef}
+        className="p-4 border-b"
+        onKeyDown={handleKeyDown}
+      >
         <div className="relative">
           <SearchInput
             className="w-full bg-transparent"
@@ -121,7 +127,9 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500">
               <span className="invisible">{raw}</span>
               <span>{autocompletion.slice(raw.length)}</span>
-              <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">tab</span>
+              <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">
+                tab
+              </span>
             </div>
           )}
         </div>
@@ -129,37 +137,82 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       <div className="px-2 py-1">
         {liveParsed.prefix === null && (
           <div className="px-2 py-1 flex items-center gap-1.5 flex-wrap">
-            <Text variant="subtext" className="text-cool-grey-600">Filter by</Text>
+            <Text variant="subtext" className="text-cool-grey-600">
+              Filter by
+            </Text>
             {FILTER_PREFIXES.map((prefix) => (
-              <button key={prefix} onClick={() => setRaw(prefix)} className="cursor-pointer">
-                <Badge size="sm" variant="code" theme="neutral">{prefix}</Badge>
+              <button
+                key={prefix}
+                onClick={() => setRaw(prefix)}
+                className="cursor-pointer"
+              >
+                <Badge size="sm" variant="code" theme="neutral">
+                  {prefix}
+                </Badge>
               </button>
             ))}
           </div>
         )}
         {liveParsed.prefix === 'install' && !liveParsed.command && (
           <div className="px-2 py-1 flex items-center gap-1.5">
-            <Text variant="subtext" className="text-cool-grey-600">Type <Badge size="sm" variant="code" theme="neutral">/</Badge> to run commands</Text>
+            <Text variant="subtext" className="text-cool-grey-600">
+              Type{' '}
+              <Badge size="sm" variant="code" theme="neutral">
+                /
+              </Badge>{' '}
+              to run commands
+            </Text>
           </div>
         )}
       </div>
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1 px-2">
         <div className="flex flex-col gap-1">
           {results.length === 0 && raw.length > 0 && isSearching && (
-            <div className="flex flex-col gap-2 px-2 py-2">
-              <Skeleton width={['70%', '55%', '40%']} lines={3} height="1.5rem" />
-            </div>
+            <>
+              <div className="flex items-center gap-3 px-1 py-2">
+                <Skeleton width="20px" height="20px" />
+                <Skeleton width="110px" height="20px" />
+              </div>
+              <div className="flex items-center gap-3 px-1 py-2">
+                <Skeleton width="20px" height="20px" />
+                <Skeleton width="190px" height="20px" />
+              </div>
+              <div className="flex items-center gap-3 px-1 py-2">
+                <Skeleton width="20px" height="20px" />
+                <Skeleton width="80px" height="20px" />
+              </div>
+            </>
           )}
           {results.length === 0 && raw.length > 0 && !isSearching && (
             <div className="px-2 py-2 text-sm text-cool-grey-700 dark:text-cool-grey-400 flex flex-col gap-1">
               <span>No results for &ldquo;{raw}&rdquo;</span>
               <span className="text-xs text-cool-grey-600 dark:text-cool-grey-500">
                 Try{' '}
-                <button className="underline cursor-pointer" onClick={() => setRaw(`app:${liveParsed.query} `)}>app:</button>
-                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`install:${liveParsed.query} `)}>install:</button>
-                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`component:${liveParsed.query} `)}>component:</button>
-                {' '}<button className="underline cursor-pointer" onClick={() => setRaw(`action:${liveParsed.query} `)}>action:</button>
-                {' '}to narrow your search
+                <button
+                  className="underline cursor-pointer"
+                  onClick={() => setRaw(`app:${liveParsed.query} `)}
+                >
+                  app:
+                </button>{' '}
+                <button
+                  className="underline cursor-pointer"
+                  onClick={() => setRaw(`install:${liveParsed.query} `)}
+                >
+                  install:
+                </button>{' '}
+                <button
+                  className="underline cursor-pointer"
+                  onClick={() => setRaw(`component:${liveParsed.query} `)}
+                >
+                  component:
+                </button>{' '}
+                <button
+                  className="underline cursor-pointer"
+                  onClick={() => setRaw(`action:${liveParsed.query} `)}
+                >
+                  action:
+                </button>{' '}
+                to narrow your search
               </span>
             </div>
           )}
