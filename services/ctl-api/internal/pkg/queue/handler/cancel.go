@@ -37,19 +37,26 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 	}
 
 	// call signal-level cancel callback if implemented
+	cancelCallbackInvoked := false
 	if sc, ok := h.sig.(signal.SignalWithCancel); ok {
 		if err := sc.Cancel(ctx); err != nil {
 			if l, logErr := log.WorkflowLogger(ctx); logErr == nil {
 				l.Warn("signal cancel callback failed", zap.Error(err))
 			}
+		} else {
+			cancelCallbackInvoked = true
 		}
 	}
 
 	// persist cancelled status to DB
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+	statusReq := &activities.UpdateQueueSignalStatusRequest{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusCancelled,
-	})
+	}
+	if cancelCallbackInvoked {
+		statusReq.StatusDescription = "cancel-callback-invoked"
+	}
+	_ = activities.AwaitUpdateQueueSignalStatus(ctx, statusReq)
 
 	return &CancelResponse{}, nil
 }

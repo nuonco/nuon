@@ -69,6 +69,50 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 	}
 }
 
+func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+
+	// create a queue
+	q, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
+		OwnerID:     generics.GetFakeObj[string](),
+		OwnerType:   generics.GetFakeObj[string](),
+		Namespace:   defaultNamespace,
+		MaxInFlight: 5,
+		MaxDepth:    100,
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), q)
+
+	err = e.service.Client.QueueReady(ctx, q.ID)
+	require.Nil(e.T(), err)
+
+	// enqueue a panicking signal
+	resp, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal: &example.PanickingSignal{
+			Message: "test panic",
+		},
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), resp)
+
+	// poll until the signal finishes
+	timeout := 5 * time.Second
+	status, err := e.service.Client.PollSignal(ctx, resp.ID, &client.PollSignalOptions{
+		Timeout:      &timeout,
+		PollInterval: 500 * time.Millisecond,
+	})
+	require.Nil(e.T(), err)
+	require.True(e.T(), status.Finished)
+
+	// verify the DB has the error status persisted (not stuck in-progress)
+	var qs app.QueueSignal
+	res := e.service.DB.WithContext(ctx).First(&qs, "id = ?", resp.ID)
+	require.Nil(e.T(), res.Error)
+	require.Equal(e.T(), app.StatusError, qs.Status.Status)
+}
+
 func (e *EnqueueTestSuite) TestFailingSignalUpdatesDBStatus() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
