@@ -53,6 +53,12 @@ type AppRunnerProcess struct {
 	// started at
 	StartedAt string `json:"started_at,omitempty"`
 
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status string `json:"status,omitempty"`
+
+	// status description
+	StatusDescription string `json:"status_description,omitempty"`
+
 	// type
 	Type AppRunnerProcessType `json:"type,omitempty"`
 

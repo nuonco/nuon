@@ -20,6 +20,8 @@ type AppRunnerConfig struct {
 
 	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
 
+	AuthMethod string `mapstructure:"auth_method,omitempty" toml:"auth_method,omitempty"`
+
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }

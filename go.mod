@@ -126,6 +126,7 @@ require (
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
 	github.com/uber-go/tally/v4 v4.1.1
+	go.mozilla.org/pkcs7 v0.9.0
 	go.opentelemetry.io/collector/cmd/builder v0.150.0
 	go.opentelemetry.io/collector/component v1.37.0
 	go.opentelemetry.io/collector/config/configcompression v1.37.0

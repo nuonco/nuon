@@ -81,6 +81,8 @@ type AppRunnerConfig struct {
 
 	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
 	InitScriptURL string `json:"init_script,omitzero" gorm:"default null" temporaljson:"init_script,omitzero,omitempty" features:"get,omitzero"`
+
+	AuthMethod string `json:"auth_method,omitzero" gorm:"default null" temporaljson:"auth_method,omitzero,omitempty"`
 }
 
 func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {

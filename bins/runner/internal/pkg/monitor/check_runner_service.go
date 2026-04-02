@@ -156,7 +156,12 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 	case "azure":
 		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID)
 	default:
-		result, err = fetchtoken.FetchToken(ctx, unauthClient)
+		var opts []fetchtoken.FetchTokenOption
+		if h.settings.Cfg.RunnerAuthMethod == "iid" {
+			opts = append(opts, fetchtoken.WithAuthMethod("iid"))
+			opts = append(opts, fetchtoken.WithRunnerID(h.settings.Cfg.RunnerID))
+		}
+		result, err = fetchtoken.FetchToken(ctx, unauthClient, opts...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new token")

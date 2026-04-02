@@ -28,17 +28,28 @@ type service struct {
 	db         *gorm.DB
 	cfg        *internal.Config
 	acctClient *account.Client
+	certStore  *AWSCertStore
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
+	var certStore *AWSCertStore
+	if params.L != nil {
+		var err error
+		certStore, err = NewAWSCertStore(params.L)
+		if err != nil {
+			params.L.Warn("failed to initialize AWS IID cert store, IID auth will be unavailable", zap.Error(err))
+		}
+	}
+
 	return &service{
 		v:          params.V,
 		l:          params.L,
 		db:         params.DB,
 		cfg:        params.Cfg,
 		acctClient: params.AcctClient,
+		certStore:  certStore,
 	}
 }
 
@@ -50,6 +61,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	auth := api.Group("/v1/runner-auth")
 	{
 		auth.POST("/aws", s.RunnerAuthAWS)
+		auth.POST("/aws-iid", s.RunnerAuthAWSIID)
 		auth.POST("/gcp", s.RunnerAuthGCP)
 		auth.POST("/azure", s.RunnerAuthAzure)
 	}

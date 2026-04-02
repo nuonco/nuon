@@ -100,10 +100,18 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 			result, err = fetchtoken.FetchAndStoreTokenAzure(ctx, apiClient, runnerID)
 		}
 	} else {
+		var opts []fetchtoken.FetchTokenOption
+		authMethod := os.Getenv("RUNNER_AUTH_METHOD")
+		runnerID := os.Getenv("RUNNER_ID")
+		fmt.Fprintf(os.Stderr, "fetch-token: api_url=%s auth_method=%q runner_id=%s\n", apiURL, authMethod, runnerID)
+		if authMethod == "iid" {
+			opts = append(opts, fetchtoken.WithAuthMethod("iid"))
+			opts = append(opts, fetchtoken.WithRunnerID(runnerID))
+		}
 		if jsonOutput {
-			result, err = fetchtoken.FetchToken(ctx, apiClient)
+			result, err = fetchtoken.FetchToken(ctx, apiClient, opts...)
 		} else {
-			result, err = fetchtoken.FetchAndStoreToken(ctx, apiClient)
+			result, err = fetchtoken.FetchAndStoreToken(ctx, apiClient, opts...)
 		}
 	}
 	if err != nil {

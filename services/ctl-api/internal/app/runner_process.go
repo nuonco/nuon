@@ -43,6 +43,10 @@ type RunnerProcess struct {
 
 	CompositeStatus CompositeStatus `json:"composite_status,omitzero" gorm:"type:jsonb"`
 
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status            RunnerProcessStatus `json:"status,omitzero" gorm:"-" swaggertype:"primitive,string"`
+	StatusDescription string              `json:"status_description,omitzero" gorm:"-"`
+
 	LogStreamID *string    `json:"log_stream_id,omitempty"`
 	LogStream   *LogStream `json:"-"`
 
