@@ -30,6 +30,7 @@ func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string
 	res := a.chDB.WithContext(ctx).
 		Where(app.RunnerHeartBeat{
 			RunnerID: runnerID,
+			Process:  app.RunnerProcessInstall,
 		}).
 		Order("created_at desc").
 		Limit(1).
