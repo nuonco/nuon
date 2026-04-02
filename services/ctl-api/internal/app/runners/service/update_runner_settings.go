@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
@@ -27,6 +29,10 @@ type UpdateRunnerSettingsRequest struct {
 
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime,omitempty" validate:"omitempty,min=86400,max=31536000"`
+
+	// JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
+	// e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
+	JobGroupParallelism map[string]int `json:"job_group_parallelism,omitempty"`
 }
 
 func (c *UpdateRunnerSettingsRequest) Validate(v *validator.Validate) error {
@@ -101,6 +107,14 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 	}
 	if req.AWSMaxInstanceLifetime != nil {
 		updates.AWSMaxInstanceLifetime = *req.AWSMaxInstanceLifetime
+	}
+	if len(req.JobGroupParallelism) > 0 {
+		h := pgtype.Hstore{}
+		for k, v := range req.JobGroupParallelism {
+			s := strconv.Itoa(v)
+			h[k] = &s
+		}
+		updates.JobGroupParallelism = h
 	}
 
 	obj := app.RunnerGroupSettings{

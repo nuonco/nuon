@@ -89,6 +89,20 @@ type Runner struct {
 	Operations []RunnerOperation `json:"operations,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operations,omitzero,omitempty"`
 
 	RunnerJob *RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+
+	// Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled.
+	Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:runners" temporaljson:"queues,omitzero,omitempty"`
+}
+
+// GetQueueForGroup returns the queue for the given job group from the runner's preloaded Queues slice.
+// Returns nil if no queue exists for the group (e.g. feature flag was off at runner creation time).
+func (r *Runner) GetQueueForGroup(group RunnerJobGroup) *Queue {
+	for i := range r.Queues {
+		if r.Queues[i].Name == string(group) {
+			return &r.Queues[i]
+		}
+	}
+	return nil
 }
 
 func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {

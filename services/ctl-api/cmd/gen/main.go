@@ -22,6 +22,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd"
+
 	"github.com/nuonco/nuon/pkg/command"
 	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
@@ -102,7 +103,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "auth,accounts,apps,actions,components,installs,installers,general,onboarding,orgs,releases,sandboxes,vcs,runners",
+		"-t", "auth,accounts,apps,actions,components,installs,installers,general,onboarding,orgs,releases,sandboxes,vcs,runners,queues",
 	}
 
 	cmd, err := command.New(v,
