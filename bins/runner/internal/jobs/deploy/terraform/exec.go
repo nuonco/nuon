@@ -104,6 +104,22 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			p.writeErrorResult(ctx, "failed to create sandbox-run install plan", err)
 			return err
 		}
+
+		tfPlan, err := wkspace.ShowPlan(ctx, hclog)
+		if err != nil {
+			l.Warn("unable to read plan for workload health check, skipping", zap.Error(err))
+		} else {
+			tfState, err := wkspace.Show(ctx, hclog)
+			if err != nil {
+				l.Warn("unable to read state for workload health check, skipping", zap.Error(err))
+			} else {
+				if err := p.checkWorkloadHealthOnNoop(ctx, l, tfPlan, tfState); err != nil {
+					p.writeErrorResult(ctx, "workload health check failed", err)
+					return fmt.Errorf("workload health check failed on noop plan: %w", err)
+				}
+			}
+		}
+
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		if err := p.createResult(ctx, wkspace, hclog); err != nil {
 			p.writeErrorResult(ctx, "failed to create sandbox-run install plan", err)

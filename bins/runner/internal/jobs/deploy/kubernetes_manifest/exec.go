@@ -285,6 +285,12 @@ func (h *handler) handleCreateApplyPlan(
 		zap.Int("apply_diff_entries", len(*dryRunApplyOutput)),
 		zap.Int("total_diff_entries", len(resourceDiffs)))
 
+	if len(resourcesToApply) == 0 {
+		if err := h.checkWorkloadHealthOnNoop(ctx, l, desiredResources); err != nil {
+			return fmt.Errorf("workload health check failed on noop plan: %w", err)
+		}
+	}
+
 	planJ, err := json.Marshal(manifestPlan)
 	if err != nil {
 		return fmt.Errorf("failed to marshal k8s plan contents to JSON: %w", err)
