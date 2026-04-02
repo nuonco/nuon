@@ -137,6 +137,7 @@ func (s *Signal) deployComponentToInstall(ctx workflow.Context, logger log.Logge
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   installID,
 		OwnerType: "installs",
+		QueueName: "install-signals",
 		Signal: &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComponentID,
 			ComponentID:        componentID,

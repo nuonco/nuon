@@ -11,6 +11,7 @@ import (
 )
 
 type CreateFlowStep struct {
+	ID             string                        `json:"id"`
 	FlowID         string                        `json:"flow_id" validate:"required"`
 	OwnerID        string                        `json:"owner_id" validate:"required"`
 	OwnerType      string                        `json:"owner_type" validate:"required"`
@@ -44,6 +45,7 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 	steps := make([]*app.WorkflowStep, 0, len(reqs.Steps))
 	for _, req := range reqs.Steps {
 		step := app.WorkflowStep{
+			ID:                req.ID,
 			InstallWorkflowID: req.FlowID,
 			OwnerID:           req.OwnerID,
 			OwnerType:         req.OwnerType,

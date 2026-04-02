@@ -9,19 +9,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) Pause(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
-	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.PauseHandlerName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			queue.PauseRequest{},
+	update, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
+		UpdateOptions: tclient.UpdateWorkflowOptions{
+			WorkflowID:   q.Workflow.ID,
+			UpdateName:   queue.PauseHandlerName,
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			Args: []any{
+				queue.PauseRequest{},
+			},
 		},
+		StartWorkflowOperation: c.queueStartOperation(q),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to call update handler")
@@ -35,19 +40,24 @@ func (c *Client) Pause(ctx context.Context, queueID string) error {
 	return nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) Resume(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
-	update, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-		WorkflowID:   q.Workflow.ID,
-		UpdateName:   queue.ResumeHandlerName,
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			queue.ResumeRequest{},
+	update, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
+		UpdateOptions: tclient.UpdateWorkflowOptions{
+			WorkflowID:   q.Workflow.ID,
+			UpdateName:   queue.ResumeHandlerName,
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			Args: []any{
+				queue.ResumeRequest{},
+			},
 		},
+		StartWorkflowOperation: c.queueStartOperation(q),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to call update handler")

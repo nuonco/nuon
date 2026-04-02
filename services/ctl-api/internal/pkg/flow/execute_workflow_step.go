@@ -425,6 +425,7 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 				OwnerType:      flw.OwnerType,
 				Name:           getCloneStepName(step.Name),
 				Signal:         step.Signal,
+				QueueSignal:    step.QueueSignal,
 				Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 				Idx:            step.Idx,
 				ExecutionType:  step.ExecutionType,

@@ -11,6 +11,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -120,6 +123,45 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
+	}
+
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationUpdated,
+			InstallWorkflowID: workflow.ID,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
 	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)

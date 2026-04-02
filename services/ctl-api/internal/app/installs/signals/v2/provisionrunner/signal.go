@@ -6,7 +6,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/provisionserviceaccount"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "provision-runner"
@@ -36,7 +38,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get the install to find the runner ID (copied from worker/provision_runner.go)
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: s.InstallID,
 	})
@@ -44,16 +45,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	// TODO: Send signal to runner namespace to provision the service account
-	// Original code: w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{Type: runnersignals.OperationProvisionServiceAccount})
-	//
-	// This needs to be adapted for the queue system to:
-	// 1. Find the runner's queue
-	// 2. Enqueue a provision-service-account signal on the runner's queue
-	//
-	// For now, this is a placeholder. Cross-namespace signal sending needs to be
-	// implemented as part of the queue infrastructure.
-	_ = install.RunnerID // suppress unused variable warning
+	// Enqueue provision-service-account signal to the runner's queue
+	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   install.RunnerID,
+		OwnerType: "runners",
+		Signal: &runnersignals.Signal{
+			RunnerID: install.RunnerID,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to enqueue provision service account signal to runner")
+	}
 
 	return nil
 }

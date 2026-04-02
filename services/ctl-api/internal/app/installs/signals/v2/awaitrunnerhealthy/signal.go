@@ -7,9 +7,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
@@ -20,21 +20,29 @@ const SignalType signal.SignalType = "await-runner-healthy"
 type Signal struct {
 	InstallID      string `json:"install_id"`
 	WorkflowStepID string `json:"workflow_step_id"`
+
+	v *validator.Validate
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithParams = (*Signal)(nil)
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+
+func (s *Signal) WithParams(params *signal.Params) {
+	s.v = params.V
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
 
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+}
+
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallID == "" {
 		return errors.New("install_id is required")
-	}
-
-	if s.WorkflowStepID == "" {
-		return errors.New("workflow_step_id is required")
 	}
 
 	// Validate that the install exists
@@ -59,17 +67,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
-	// Update the workflow step target
-	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
-		StepID:         s.WorkflowStepID,
-		StepTargetID:   runner.ID,
-		StepTargetType: plugins.TableName(nil, runner),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update workflow step target")
+	// Update the workflow step target if step ID is available
+	if s.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         s.WorkflowStepID,
+			StepTargetID:   runner.ID,
+			StepTargetType: "runners",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update workflow step target")
+		}
 	}
 
 	// Poll for runner health
-	if err := poll.Poll(ctx, nil, poll.PollOpts{
+	if err := poll.Poll(ctx, s.v, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 1,
