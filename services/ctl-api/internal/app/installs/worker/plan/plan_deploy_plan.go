@@ -1,15 +1,12 @@
 package plan
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -18,52 +15,62 @@ import (
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
-func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, error) {
+func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRequest) (*plantypes.DeployPlan, *operationroles.RoleSelection, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	deploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
+		return nil, nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, deploy.ComponentBuildID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component build")
+		return nil, nil, errors.Wrap(err, "unable to get component build")
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
+		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, req.InstallDeployID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install deploy")
+		return nil, nil, errors.Wrap(err, "unable to get install deploy")
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
+		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
 
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, req.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install stack")
+		return nil, nil, errors.Wrap(err, "unable to get install stack")
 	}
 
 	installState, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install state")
+		return nil, nil, errors.Wrap(err, "unable to get install state")
+	}
+
+	// this is here just to reduce duplicated return values from all component types, we're caling same function within
+	// every component to build cloud auth, its non expensive and deterministic so we can be sure that in both calls
+	// we get same information.
+	// unless, we change response models like appcfg, installdeploy, build, stack etc somewhere in middle, which should
+	// not happen ideally.
+	roleSelection, _, err := p.getRoleForDeploy(l, appCfg, installDeploy, build, stack, installState)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
 	}
 
 	ociConfig, err := p.getInstallRegistryRepositoryConfig(ctx, installDeploy, build, appCfg, stack, installState)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install registry repository config")
+		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
 	plan := &plantypes.DeployPlan{
@@ -86,7 +93,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Info("error generating terraform plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to create terraform deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
 		}
 		plan.TerraformDeployPlan = tfPlan
 	case app.ComponentTypeHelmChart:
@@ -94,7 +101,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Error("error generating helm plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to helm deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to helm deploy plan")
 		}
 		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
@@ -102,7 +109,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
 		if err != nil {
 			l.Error("error generating kubernetes manifest plan", zap.Error(err))
-			return nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+			return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	}
@@ -110,7 +117,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	// the following section is for sandbox mode only
 	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
+		return nil, nil, errors.Wrap(err, "unable to get org")
 	}
 	if org.SandboxMode {
 		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
@@ -126,21 +133,21 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		case app.ComponentTypeKubernetesManifest:
 			sandboxPlan, err := p.createKubernetesManifestDeployPlanSandboxMode(plan.KubernetesManifestDeployPlan)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to create sandbox plan")
+				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
 
 			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
 			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to create sandbox plan")
+				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}
 
 			plan.SandboxMode.Terraform = sandboxPlan
 		}
 	}
 
-	return plan, nil
+	return plan, roleSelection, nil
 }
 
 func (p *Planner) getRoleForDeploy(
@@ -151,46 +158,7 @@ func (p *Planner) getRoleForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	operation := app.OperationDeploy
-	if installDeploy.Type == app.InstallDeployTypeTeardown {
-		operation = app.OperationTeardown
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:     operation,
-		PrincipalType: principal.TypeComponent,
-		PrincipalName: compBuild.ComponentConfigConnection.Component.Name,
-		RuntimeRole:   installDeploy.Role,
-		EntityRoles: operationroles.EntityOperationRoleMapFromHstore(
-			compBuild.ComponentConfigConnection.OperationRoles,
-		),
-		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  appCfg.PermissionsConfig.MaintenanceRole.Name,
-		AppConfig:    appCfg,
-		StackOutputs: &stack.InstallStackOutputs,
-		InstallState: installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for component deploy",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
+	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState)
 }
 
 func (p *Planner) getAuthForDeploy(
@@ -201,10 +169,10 @@ func (p *Planner) getAuthForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 	sessionName string,
-) (*CloudAuth, string, error) {
+) (*CloudAuth, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	roleSelection, operation, err := p.getRoleForDeploy(
@@ -216,7 +184,7 @@ func (p *Planner) getAuthForDeploy(
 		installState,
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	l.Info("selected role for component deploy plan",
@@ -227,19 +195,5 @@ func (p *Planner) getAuthForDeploy(
 		zap.String("deploy_type", string(installDeploy.Type)),
 	)
 
-	// Persist the resolved role name to the deploy record
-	if roleSelection.RoleName != "" {
-		if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
-			DeployID:          installDeploy.ID,
-			Status:            installDeploy.Status,
-			StatusDescription: installDeploy.StatusDescription,
-			SkipStatusSync:    true,
-			Role:              roleSelection.RoleName,
-		}); err != nil {
-			l.Warn("unable to persist resolved role to deploy", zap.Error(err))
-		}
-	}
-
-	cloudAuth, err := getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
-	return cloudAuth, roleSelection.RoleName, err
+	return getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
 }

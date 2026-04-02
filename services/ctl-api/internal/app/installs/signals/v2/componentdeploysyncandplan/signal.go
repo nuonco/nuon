@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -346,7 +347,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
-	planJSON, err := json.Marshal(deployPlan)
+	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
@@ -356,15 +357,15 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
-			DeployPlan: deployPlan,
+			DeployPlan: deployPlan.Plan,
 		},
+		PermissionInfo: operationroles.NewPermissionInfo(deployPlan.RoleSelection),
 	}); err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	planJSON = nil
-	deployPlan = nil
 
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "creating plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{

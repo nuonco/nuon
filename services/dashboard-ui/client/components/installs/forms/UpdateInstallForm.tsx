@@ -191,8 +191,6 @@ export const UpdateInstallForm = forwardRef<
           <UpdateInstallOptions />
           <RoleSelector
             installId={install?.id}
-            operationType="reprovision"
-            principalType="sandbox"
             value={selectedRole || ''}
             onChange={onRoleChange || (() => {})}
             name="role"

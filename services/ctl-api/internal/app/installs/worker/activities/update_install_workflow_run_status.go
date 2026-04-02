@@ -13,7 +13,6 @@ type UpdateInstallWorkflowRunStatusRequest struct {
 	RunID             string                             `validate:"required"`
 	Status            app.InstallActionWorkflowRunStatus `validate:"required"`
 	StatusDescription string                             `validate:"required"`
-	Role              string
 }
 
 // @temporal-gen-v2 activity
@@ -25,7 +24,6 @@ func (a *Activities) UpdateInstallWorkflowRunStatus(ctx context.Context, req Upd
 	res := a.db.WithContext(ctx).Model(&install).Updates(app.InstallActionWorkflowRun{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
-		Role:              req.Role,
 	})
 	if res.Error != nil {
 		return fmt.Errorf("unable to update install action workflow run: %w", res.Error)

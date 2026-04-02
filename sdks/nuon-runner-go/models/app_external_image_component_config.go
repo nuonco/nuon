@@ -31,6 +31,9 @@ type AppExternalImageComponentConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// gcp gar image config
+	GcpGarImageConfig *AppGCPGARImageConfig `json:"gcp_gar_image_config,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -49,6 +52,10 @@ func (m *AppExternalImageComponentConfig) Validate(formats strfmt.Registry) erro
 	var res []error
 
 	if err := m.validateAwsEcrImageConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGcpGarImageConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,11 +88,38 @@ func (m *AppExternalImageComponentConfig) validateAwsEcrImageConfig(formats strf
 	return nil
 }
 
+func (m *AppExternalImageComponentConfig) validateGcpGarImageConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.GcpGarImageConfig) { // not required
+		return nil
+	}
+
+	if m.GcpGarImageConfig != nil {
+		if err := m.GcpGarImageConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_gar_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_gar_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app external image component config based on the context it is used
 func (m *AppExternalImageComponentConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateAwsEcrImageConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGcpGarImageConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -111,6 +145,31 @@ func (m *AppExternalImageComponentConfig) contextValidateAwsEcrImageConfig(ctx c
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_ecr_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppExternalImageComponentConfig) contextValidateGcpGarImageConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GcpGarImageConfig != nil {
+
+		if swag.IsZero(m.GcpGarImageConfig) { // not required
+			return nil
+		}
+
+		if err := m.GcpGarImageConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("gcp_gar_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("gcp_gar_image_config")
 			}
 
 			return err

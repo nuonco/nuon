@@ -15,6 +15,7 @@ import (
 	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -203,27 +204,27 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 
 	// Add Plan contents from the result to the plan
 	if runnerJob.Type == app.RunnerJobTypeJobNOOPDeploy {
-		deployPlan.ApplyPlanContents = ""
-		deployPlan.ApplyPlanDisplay = ""
+		deployPlan.Plan.ApplyPlanContents = ""
+		deployPlan.Plan.ApplyPlanDisplay = ""
 	} else if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
-		deployPlan.ApplyPlanContents = planJob.Execution.Result.Contents
-		deployPlan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
+		deployPlan.Plan.ApplyPlanContents = planJob.Execution.Result.Contents
+		deployPlan.Plan.ApplyPlanDisplay = string(planJob.Execution.Result.ContentsDisplay)
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info("using the compressed contents from the runner job execution result")
 		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents string")
 		}
-		deployPlan.ApplyPlanContents = applyPlanContents
+		deployPlan.Plan.ApplyPlanContents = applyPlanContents
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display string")
 		}
-		deployPlan.ApplyPlanDisplay = applyPlanContentsDisplay
+		deployPlan.Plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
 
-	planJSON, err := json.Marshal(deployPlan)
+	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
 		return errors.Wrap(err, "unable to create json from plan")
@@ -233,15 +234,15 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
-			DeployPlan: deployPlan,
+			DeployPlan: deployPlan.Plan,
 		},
+		PermissionInfo: operationroles.NewPermissionInfo(deployPlan.RoleSelection),
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
 	planJSON = nil
-	deployPlan = nil
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusExecuting, "executing deploy plan")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{

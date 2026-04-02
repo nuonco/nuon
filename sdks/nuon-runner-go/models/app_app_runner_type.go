@@ -45,6 +45,9 @@ const (
 	// AppAppRunnerTypeAzureDashAcs captures enum value "azure-acs"
 	AppAppRunnerTypeAzureDashAcs AppAppRunnerType = "azure-acs"
 
+	// AppAppRunnerTypeGcpDashGke captures enum value "gcp-gke"
+	AppAppRunnerTypeGcpDashGke AppAppRunnerType = "gcp-gke"
+
 	// AppAppRunnerTypeLocal captures enum value "local"
 	AppAppRunnerTypeLocal AppAppRunnerType = "local"
 
@@ -63,7 +66,7 @@ var appAppRunnerTypeEnum []any
 
 func init() {
 	var res []AppAppRunnerType
-	if err := json.Unmarshal([]byte(`["unknown","aws-ecs","aws-eks","azure-aks","azure-acs","local","aws","azure","gcp"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["unknown","aws-ecs","aws-eks","azure-aks","azure-acs","gcp-gke","local","aws","azure","gcp"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
