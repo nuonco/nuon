@@ -9,11 +9,27 @@ import {
 import { WizardNav } from './WizardNav'
 import { WizardStepView } from './WizardStepView'
 
-function WizardLayout() {
-  const { onboardingV2 } = useConfig()
+function SkipOnboardingButton() {
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
   const orgCreated = isStepComplete('org_created')
   const orgId = getStepMetadata('org_created', 'org_id') as string | undefined
+
+  if (!orgCreated || !orgId) return null
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      href={`/${orgId}/apps`}
+      className="absolute top-8 right-6 z-20"
+    >
+      Skip onboarding
+    </Button>
+  )
+}
+
+function WizardLayout() {
+  const { onboardingV2 } = useConfig()
   const [isScrolled, setIsScrolled] = useState(false)
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -22,16 +38,7 @@ function WizardLayout() {
 
   return (
     <div className="h-screen flex flex-col bg-background relative">
-      {orgCreated && orgId && !onboardingV2 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          href={`/${orgId}/apps`}
-          className="absolute top-8 right-6 z-20"
-        >
-          Skip onboarding
-        </Button>
-      )}
+      {!onboardingV2 && <SkipOnboardingButton />}
       <WizardNav isScrolled={isScrolled} />
       <div
         className="flex-1 overflow-y-auto px-6 pt-14 pb-8"
