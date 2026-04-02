@@ -50,8 +50,6 @@ type SandboxRunPlan struct {
 
 	State *state.State `json:"state"`
 
-	// test commenst
-
 	// The following field is for applying a plan that is already saved
 	ApplyPlanContents string `json:"apply_plan_contents,omitempty"`
 	// This field is for storing a human legible plan or corollary representation

@@ -114,10 +114,10 @@ export const SandboxHeader = ({
               endTime={sandboxRun?.updated_at}
             />
           </Text>
-          {sandboxRun?.role ? (
+          {sandboxRun?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
             <Text theme="info" className="!flex items-center gap-1">
               <Icon variant="FileLockIcon" />
-              <Text variant="subtext">{sandboxRun.role}</Text>
+              <Text variant="subtext">{sandboxRun.runner_jobs.at(0).json.permission_info.role}</Text>
             </Text>
           ) : null}
         </div>

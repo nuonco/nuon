@@ -60,10 +60,10 @@ export const DeployHeader = ({
               endTime={deploy?.updated_at}
             />
           </Text>
-          {deploy?.role ? (
+          {deploy?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
             <Text theme="info" className="!flex items-center gap-1">
               <Icon variant="FileLockIcon" />
-              <Text variant="subtext">{deploy.role}</Text>
+              <Text variant="subtext">{deploy.runner_jobs.at(0).json.permission_info.role}</Text>
             </Text>
           ) : null}
           <ID>

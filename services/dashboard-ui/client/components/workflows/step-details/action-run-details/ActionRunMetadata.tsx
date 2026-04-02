@@ -67,10 +67,10 @@ export const ActionRunMetadata = ({
             <Duration variant="subtext" beginTime={actionRun.created_at} endTime={actionRun.updated_at} />
           </Text>
         ) : null}
-        {actionRun?.role ? (
+        {actionRun?.runner_job?.json?.permission_info?.role ? (
           <Text theme="info" className="!flex items-center gap-1">
             <Icon variant="FileLockIcon" />
-            <Text variant="subtext">{actionRun.role}</Text>
+            <Text variant="subtext">{actionRun.runner_job.json.permission_info.role}</Text>
           </Text>
         ) : null}
       </div>

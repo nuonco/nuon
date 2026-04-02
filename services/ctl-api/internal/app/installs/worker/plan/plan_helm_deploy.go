@@ -106,7 +106,7 @@ func (p *Planner) createHelmDeployPlan(
 		})
 	}
 
-	cloudAuth, _, err := p.getAuthForDeploy(
+	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
 		installDeploy,
 		compBuild,

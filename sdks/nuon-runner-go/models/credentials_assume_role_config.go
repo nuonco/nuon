@@ -35,6 +35,9 @@ type CredentialsAssumeRoleConfig struct {
 		IamTwoStepConfig
 	} `json:"two_step_config,omitempty"`
 
+	// use gcp oidc
+	UseGcpOidc bool `json:"use_gcp_oidc,omitempty"`
+
 	// use github oidc
 	UseGithubOidc bool `json:"use_github_oidc,omitempty"`
 }

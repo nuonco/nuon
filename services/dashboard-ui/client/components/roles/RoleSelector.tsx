@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
@@ -8,14 +8,13 @@ import type { TOperationType, TPrincipalType } from '@/types'
 
 interface IRoleSelector {
   installId: string
-  operationType: TOperationType
-  principalType: TPrincipalType
+  operationType?: TOperationType
+  principalType?: TPrincipalType
+  principalId?: string
   value?: string
   onChange?: (value: string) => void
   name?: string
   disabled?: boolean
-  defaultRoleName?: string
-  mappedRoleNames?: string[]
 }
 
 const ROLE_TYPE_CONFIG = {
@@ -26,85 +25,42 @@ const ROLE_TYPE_CONFIG = {
   maintenance: { theme: 'success' as const, label: 'Maintenance' },
 }
 
-const OPERATION_DEFAULT_ROLE_TYPE: Partial<Record<TOperationType, string>> = {
-  provision: 'provision',
-  reprovision: 'provision',
-  deprovision: 'deprovision',
-  teardown: 'deprovision',
-  deploy: 'maintenance',
-  trigger: 'maintenance',
-}
-
 export const RoleSelector = ({
   installId,
   operationType,
   principalType,
+  principalId,
   value,
   onChange,
   name,
   disabled,
-  defaultRoleName,
-  mappedRoleNames,
 }: IRoleSelector) => {
   const { org } = useOrg()
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['available-roles', org.id, installId, operationType, principalType],
+    queryKey: ['available-roles', org.id, installId, operationType, principalType, principalId],
     queryFn: () =>
-      getAvailableRoles({ installId, operationType, principalType, orgId: org.id }),
+      getAvailableRoles({ installId, operationType, principalType, principalId, orgId: org.id }),
     enabled: !!installId && !!org.id,
   })
 
   const roles = data?.roles ?? []
+  const defaultRole = roles.find((r) => r.default)
 
-  useEffect(() => {
-    if (defaultRoleName && defaultRoleName !== value) {
-      onChange?.(defaultRoleName)
-      return
-    }
-
-    if (!value && roles.length > 0) {
-      const defaultRoleType = OPERATION_DEFAULT_ROLE_TYPE[operationType]
-      if (defaultRoleType) {
-        const match = roles.find((r) => r.role_type === defaultRoleType)
-        if (match) {
-          onChange?.(match.name)
-        }
-      }
-    }
-  }, [roles, defaultRoleName, operationType, value, onChange])
-
-  const mappedSet = new Set(mappedRoleNames)
-
-  const sortedRoles = [...roles].sort((a, b) => {
-    const priority = (r: typeof a) => {
-      if (mappedSet.size > 0 && mappedSet.has(r.name)) return 0
-      if (r.role_type === 'break_glass') return 1
-      return 2
-    }
-    return priority(a) - priority(b)
-  })
-
-  const options: SelectOption[] = sortedRoles.map((role) => ({
-    value: role.name,
-    label: role.name,
-    badge: {
-      label: ROLE_TYPE_CONFIG[role.role_type]?.label,
-      theme: ROLE_TYPE_CONFIG[role.role_type]?.theme,
-    },
-  }))
-
-  if (defaultRoleName && !roles.find((r) => r.name === defaultRoleName)) {
-    options.push({
-      value: defaultRoleName,
-      label: defaultRoleName,
-      disabled: true,
+  const options: SelectOption[] = roles
+    .filter((role) => !role.default)
+    .map((role) => ({
+      value: role.name,
+      label: role.name,
       badge: {
-        label: 'Not provisioned',
-        theme: 'warn',
+        label: ROLE_TYPE_CONFIG[role.role_type]?.label,
+        theme: ROLE_TYPE_CONFIG[role.role_type]?.theme,
       },
-    })
-  }
+    }))
+
+  const placeholder = defaultRole
+    ? `${defaultRole.name}`
+    : 'Use default role'
 
   return (
     <div className="flex flex-col gap-1">
@@ -119,7 +75,7 @@ export const RoleSelector = ({
         <Text variant="subtext" theme="neutral">
           Failed to load available roles
         </Text>
-      ) : roles.length === 0 && !defaultRoleName ? (
+      ) : roles.length === 0 ? (
         <Text variant="subtext" theme="neutral">
           No roles available from install stack outputs
         </Text>
@@ -129,14 +85,27 @@ export const RoleSelector = ({
             Select an IAM role to use for this operation. If not selected, the
             default role will be used.
           </Text>
-          <Select
-            name={name}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            disabled={disabled}
-            options={options}
-            placeholder="Use default role"
-          />
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <Select
+                name={name}
+                value={value}
+                onChange={(e) => onChange?.(e.target.value)}
+                disabled={disabled}
+                options={options}
+                placeholder={placeholder}
+              />
+            </div>
+            {value ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange?.('')}
+              >
+                Reset
+              </Button>
+            ) : null}
+          </div>
         </>
       )}
     </div>
