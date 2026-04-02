@@ -17,3 +17,4 @@ JOIN installs i
 WHERE a.deleted_at = 0
   AND resp.id IS NULL
   AND (s.status->>'status') NOT IN ('auto-skipped', 'cancelled', 'error')
+  AND w.approval_option = 'prompt'

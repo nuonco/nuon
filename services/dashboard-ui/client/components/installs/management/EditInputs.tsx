@@ -95,7 +95,7 @@ const ConfirmUpdateModal = ({
   )
 }
 
-const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
+export const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
