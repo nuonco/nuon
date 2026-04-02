@@ -18,6 +18,10 @@ type Params struct {
 	MW  metrics.Writer
 	Cfg *internal.Config
 	V   *validator.Validate
+
+	// QueueSignalID is the ID of the queue signal that this signal is associated with.
+	// This allows signals to reference their own queue signal record if needed.
+	QueueSignalID string
 }
 
 // ApplyParams checks if the signal implements signalWithParams and calls WithParams if so.
