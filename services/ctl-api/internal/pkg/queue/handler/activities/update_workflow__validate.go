@@ -12,19 +12,23 @@ import (
 )
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
+// @start-to-close-timeout 2h
+// @max-retries 1
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
-func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string) (*handler.ValidateResponse, error) {
+func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ValidateResponse, error) {
 	info := activity.GetInfo(ctx)
 
-	rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
+	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   workflowID,
-			UpdateName:   handler.ValidateUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		tclient.UpdateWithStartWorkflowOptions{
+			UpdateOptions: tclient.UpdateWorkflowOptions{
+				WorkflowID:   workflowID,
+				UpdateName:   handler.ValidateUpdateName,
+				WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			},
+			StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to call query handler")

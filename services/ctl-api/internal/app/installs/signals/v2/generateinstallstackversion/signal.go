@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -27,12 +28,25 @@ const (
 type Signal struct {
 	InstallStackID string
 	WorkflowStepID string
+
+	cfg *internal.Config
 }
 
-var _ signal.Signal = &Signal{}
+var _ signal.Signal = (*Signal)(nil)
+
+func (s *Signal) WithParams(params *signal.Params) {
+	s.cfg = params.Cfg
+}
+
+var _ signal.SignalWithParams = (*Signal)(nil)
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -188,7 +202,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		// render the template
 		// TODO: NewTemplates now requires Params with Cfg - signals don't have access to config
 		templates := cloudformation.NewTemplates(cloudformation.Params{
-			Cfg: nil,
+			Cfg: s.cfg,
 		})
 		tmpl, awsChecksum, err := templates.Template(inp)
 		if err != nil {

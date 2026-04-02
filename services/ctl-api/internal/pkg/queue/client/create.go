@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -25,6 +26,9 @@ type CreateQueueRequest struct {
 	OwnerType string `validate:"required"`
 	Namespace string `validate:"required"`
 
+	Name     string
+	Metadata pgtype.Hstore
+
 	MaxInFlight int
 	MaxDepth    int
 }
@@ -35,6 +39,8 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	q := app.Queue{
 		OwnerID:     req.OwnerID,
 		OwnerType:   req.OwnerType,
+		Name:        req.Name,
+		Metadata:    req.Metadata,
 		MaxInFlight: req.MaxInFlight,
 		MaxDepth:    req.MaxDepth,
 		Workflow: signaldb.WorkflowRef{
@@ -59,6 +65,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		TaskQueue: workflows.APITaskQueue,
 		Memo: map[string]any{
 			"id":         q.ID,
+			"name":       q.Name,
 			"owner-id":   q.OwnerID,
 			"owner-type": q.OwnerType,
 		},

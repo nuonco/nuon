@@ -55,7 +55,13 @@ func (c *Client) PollSignal(ctx context.Context, queueSignalID string, opts *Pol
 		case <-ticker.C:
 			resp, err := c.tClient.QueryWorkflowInNamespace(pollCtx, q.Workflow.Namespace, q.Workflow.ID, "", handler.StatusQueryName, &handler.StatusRequest{})
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to query workflow status")
+				// Workflow query failed — handler may be sleeping/completed.
+				// Re-fetch from DB to get the persisted status.
+				fresh, dbErr := c.getQueueSignal(pollCtx, queueSignalID)
+				if dbErr != nil {
+					return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
+				}
+				return statusResponseFromDBStatus(fresh.Status), nil
 			}
 
 			var status handler.StatusResponse

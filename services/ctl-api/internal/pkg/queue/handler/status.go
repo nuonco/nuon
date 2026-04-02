@@ -14,11 +14,13 @@ type StatusRequest struct{}
 type StatusResponse struct {
 	Finished bool
 	Canceled bool
+	Sleeping bool
 }
 
 func (h *handler) statusHandler(ctx workflow.Context, req *StatusRequest) (*StatusResponse, error) {
 	return &StatusResponse{
 		Finished: h.finished,
 		Canceled: h.canceled,
+		Sleeping: h.sleeping,
 	}, nil
 }

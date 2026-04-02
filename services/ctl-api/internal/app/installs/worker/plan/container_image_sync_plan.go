@@ -17,7 +17,7 @@ type CreateSyncPlanRequest struct {
 // @execution-timeout 5m
 // @task-timeout 1m
 // @task-queue "api"
-// @id-generator CreateSyncWorkflowIDCallback
+// @id-template {{.Req.WorkflowID}}
 func CreateSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {
 	p := Planner{}
 	return p.createSyncPlan(ctx, req)

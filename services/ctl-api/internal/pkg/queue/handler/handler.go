@@ -64,6 +64,7 @@ type handler struct {
 	restarted bool
 	finished  bool
 	canceled  bool
+	sleeping  bool
 
 	// cancelable context for execution
 	executingCtx    workflow.Context

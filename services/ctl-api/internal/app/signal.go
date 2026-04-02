@@ -20,6 +20,10 @@ func (s *Signal) Scan(v interface{}) (err error) {
 	case nil:
 		return nil
 	case []byte:
+		// JSONB null is not SQL NULL — treat it as no signal
+		if string(v) == "null" {
+			return nil
+		}
 		if err := json.Unmarshal(v, s); err != nil {
 			return errors.Wrap(err, "unable to scan composite status")
 		}

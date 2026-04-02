@@ -26,9 +26,14 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -68,6 +73,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
 	l := workflow.GetLogger(ctx)
 
+	if s.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         s.WorkflowStepID,
+			StepTargetID:   s.WorkflowStepID,
+			StepTargetType: "install_workflow_steps",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install workflow step target")
+		}
+	}
+
 	if s.SandboxMode {
 		l.Debug("skipping sync secrets in sandbox mode")
 		return nil
@@ -75,7 +90,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("creating plan")
 	syncSecretsPlan, err := plan.AwaitCreateSyncSecretsPlan(ctx, &plan.CreateSyncSecretsPlanRequest{
-		InstallID:  install.ID,
+		InstallID: install.ID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-create-sync-secrets-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
@@ -121,8 +137,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("queueing job and waiting on execution")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:      runnerJob.ID,
-		RunnerID:   install.RunnerID,
+		JobID:    runnerJob.ID,
+		RunnerID: install.RunnerID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
