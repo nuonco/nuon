@@ -18,7 +18,7 @@ import { ViewStateButton } from './ViewState'
 
 export const QuickManagementDropdown = ({ install }: { install: TInstall }) => {
   return (
-    <InstallProvider installId={install?.id}  shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />}>
+    <InstallProvider installId={install?.id} shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />} errorElement={null}>
       <SurfacesProvider>
         <Dropdown
           alignment="right"

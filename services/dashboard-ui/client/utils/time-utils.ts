@@ -9,3 +9,12 @@ export function isLessThan15SecondsOld(timestampStr: string | undefined) {
 
   return diffInSeconds >= 0 && diffInSeconds < 15
 }
+
+export function isLessThan30SecondsOld(timestampStr: string | undefined) {
+  if (!timestampStr) return false
+  const date = DateTime.fromISO(timestampStr)
+  const now = DateTime.now()
+  const diffInSeconds = now.diff(date, 'seconds').seconds
+
+  return diffInSeconds >= 0 && diffInSeconds < 30
+}

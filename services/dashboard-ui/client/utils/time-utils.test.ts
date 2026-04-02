@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { describe, expect, test, beforeAll, afterAll, vi } from 'vitest'
-import { isLessThan15SecondsOld } from './time-utils'
+import { isLessThan15SecondsOld, isLessThan30SecondsOld } from './time-utils'
 import { DateTime } from 'luxon'
 
 describe('time-utils', () => {
@@ -43,8 +43,53 @@ describe('time-utils', () => {
     })
 
     test('should handle invalid ISO strings gracefully', () => {
-      // This test assumes DateTime.fromISO handles invalid strings by returning invalid DateTime
       const result = isLessThan15SecondsOld('invalid-date')
+      expect(typeof result).toBe('boolean')
+    })
+  })
+
+  describe('isLessThan30SecondsOld', () => {
+    beforeAll(() => {
+      vi.spyOn(DateTime, 'now').mockReturnValue(
+        DateTime.fromISO('2023-01-01T10:00:00.000Z')
+      )
+    })
+
+    afterAll(() => {
+      vi.restoreAllMocks()
+    })
+
+    test('should return true for timestamp less than 30 seconds old', () => {
+      const timestamp = '2023-01-01T09:59:40.000Z' // 20 seconds ago
+      expect(isLessThan30SecondsOld(timestamp)).toBe(true)
+    })
+
+    test('should return false for timestamp exactly 30 seconds old', () => {
+      const timestamp = '2023-01-01T09:59:30.000Z'
+      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
+    })
+
+    test('should return false for timestamp more than 30 seconds old', () => {
+      const timestamp = '2023-01-01T09:59:20.000Z' // 40 seconds ago
+      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
+    })
+
+    test('should return false for future timestamps', () => {
+      const timestamp = '2023-01-01T10:00:10.000Z'
+      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
+    })
+
+    test('should return true for current timestamp', () => {
+      const timestamp = '2023-01-01T10:00:00.000Z'
+      expect(isLessThan30SecondsOld(timestamp)).toBe(true)
+    })
+
+    test('should return false for undefined', () => {
+      expect(isLessThan30SecondsOld(undefined)).toBe(false)
+    })
+
+    test('should handle invalid ISO strings gracefully', () => {
+      const result = isLessThan30SecondsOld('invalid-date')
       expect(typeof result).toBe('boolean')
     })
   })
