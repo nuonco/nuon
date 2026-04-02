@@ -16,6 +16,8 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useOrg } from '@/hooks/use-org'
 import { Badge } from '@/components/common/Badge'
 import { Skeleton } from '@/components/common/Skeleton'
+import { InstallProvider } from '@/providers/install-provider'
+import { RunAdhocActionModal } from '@/components/installs/management/RunAdhocAction'
 import { cn } from '@/utils/classnames'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
@@ -28,13 +30,16 @@ type SpotlightResult = {
   label: string
   subtitle?: string
   tag?: string
-  path: string
   icon: TIconVariant
-}
+} & (
+  | { path: string; action?: never }
+  | { action: () => void; path?: never }
+)
 
 type ParsedQuery = {
   prefix: 'app' | 'install' | 'component' | 'action' | null
   query: string
+  command: string
 }
 
 const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
@@ -80,16 +85,32 @@ const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
 function parseQuery(raw: string): ParsedQuery {
   for (const [p, prefix] of Object.entries(PREFIX_MAP)) {
     if (raw.startsWith(p)) {
-      return { prefix, query: raw.slice(p.length).trim() }
+      const rest = raw.slice(p.length)
+      const slashIdx = rest.indexOf('/')
+      if (slashIdx >= 0) {
+        return { prefix, query: rest.slice(0, slashIdx).trim(), command: rest.slice(slashIdx + 1).trim() }
+      }
+      return { prefix, query: rest.trim(), command: '' }
     }
   }
-  return { prefix: null, query: raw.trim() }
+  return { prefix: null, query: raw.trim(), command: '' }
 }
 
 const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
 
+const INSTALL_COMMANDS = ['adhoc', 'run adhoc action']
+
 function getAutocompletion(input: string): string | null {
-  if (!input || input.includes(':')) return null
+  if (!input) return null
+  if (input.includes('/')) {
+    const slashIdx = input.indexOf('/')
+    const before = input.slice(0, slashIdx + 1)
+    const after = input.slice(slashIdx + 1).toLowerCase()
+    if (!after) return null
+    const match = INSTALL_COMMANDS.find((c) => c.startsWith(after) && c !== after)
+    return match ? before + match : null
+  }
+  if (input.includes(':')) return null
   const lower = input.toLowerCase()
   const match = FILTER_PREFIXES.find((p) => p.startsWith(lower) && p !== lower)
   return match ?? null
@@ -101,10 +122,16 @@ function tokenMatch(text: string, query: string): boolean {
   return tokens.every((t) => lower.includes(t))
 }
 
+const InstallAdhocActionModal = ({ installId, ...modalProps }: { installId: string } & IModal) => (
+  <InstallProvider installId={installId}>
+    <RunAdhocActionModal {...modalProps} />
+  </InstallProvider>
+)
+
 interface ISpotlightModal extends IModal {}
 
 export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
-  const { removeModal } = useSurfaces()
+  const { addModal, removeModal } = useSurfaces()
   const { org } = useOrg()
   const navigate = useNavigate()
   const hasAppBranches = !!org?.features?.['app-branches']
@@ -285,23 +312,39 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       const installs = installsResult?.data ?? []
       const items: SpotlightResult[] = []
       for (const install of installs) {
-        items.push({
-          label: install.name ?? install.id!,
-          subtitle: install.app?.name,
-          tag: 'install',
-          path: `/installs/${install.id}`,
-          icon: 'Cube',
-        })
-        for (const sub of INSTALL_SUB_PAGES) {
-          const entry = {
-            label: `${install.name ?? install.id} › ${sub}`,
+        if (!parsed.command) {
+          items.push({
+            label: install.name ?? install.id!,
             subtitle: install.app?.name,
             tag: 'install',
-            path: `/installs/${install.id}/${sub.toLowerCase()}`,
-            icon: 'Cube' as TIconVariant,
+            path: `/installs/${install.id}`,
+            icon: 'Cube',
+          })
+        }
+        const adhocEntry: SpotlightResult = {
+          label: `${install.name ?? install.id} › Run adhoc action`,
+          subtitle: install.app?.name,
+          tag: 'command',
+          icon: 'Lightning',
+          action: () => {
+            addModal(<InstallAdhocActionModal installId={install.id!} />)
+          },
+        }
+        if (!parsed.command || tokenMatch('run adhoc action', parsed.command)) {
+          items.push(adhocEntry)
+        }
+        if (!parsed.command) {
+          for (const sub of INSTALL_SUB_PAGES) {
+            const entry = {
+              label: `${install.name ?? install.id} › ${sub}`,
+              subtitle: install.app?.name,
+              tag: 'install',
+              path: `/installs/${install.id}/${sub.toLowerCase()}`,
+              icon: 'Cube' as TIconVariant,
+            }
+            if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
+            items.push(entry)
           }
-          if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
-          items.push(entry)
         }
       }
       return items
@@ -361,7 +404,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, actionResults, componentResults, appSubPages])
+  }, [liveParsed, parsed, appsResult, installsResult, actionResults, componentResults, appSubPages, addModal])
 
   const isSearching = raw !== debouncedRaw || appsFetching || installsFetching || actionsFetching || componentsFetching
 
@@ -375,8 +418,14 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
 
   const selectResult = useCallback(
     (result: SpotlightResult) => {
-      navigate(`/${orgId}${result.path}`)
-      close()
+      if (result.action) {
+        const action = result.action
+        close()
+        requestAnimationFrame(() => action())
+      } else {
+        close()
+        navigate(`/${orgId}${result.path}`)
+      }
     },
     [navigate, orgId, close]
   )
@@ -445,6 +494,11 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
             ))}
           </div>
         )}
+        {liveParsed.prefix === 'install' && !liveParsed.command && (
+          <div className="px-2 py-1 flex items-center gap-1.5">
+            <Text variant="subtext" className="text-cool-grey-600">Type <Badge size="sm" variant="code" theme="neutral">/</Badge> to run commands</Text>
+          </div>
+        )}
       </div>
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1 px-2">
         <div className="flex flex-col gap-1">
@@ -468,7 +522,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
           )}
           {results.map((result, i) => (
             <button
-              key={result.path}
+              key={result.path ?? result.label}
               data-index={i}
               className={cn(
                 'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm text-left flex items-center gap-3',
@@ -501,7 +555,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
                 )}
               </div>
               {result.tag && (
-                <Badge size="sm" variant="code" theme="neutral" className="shrink-0">
+                <Badge size="sm" variant="code" theme={result.tag === 'command' ? 'brand' : 'neutral'} className="shrink-0">
                   {result.tag}
                 </Badge>
               )}
