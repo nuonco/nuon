@@ -3012,6 +3012,7 @@ export interface components {
       };
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      pulumi_component_config?: components["schemas"]["app.PulumiComponentConfig"];
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
       type?: components["schemas"]["app.ComponentType"];
       updated_at?: string;
@@ -3047,7 +3048,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "unknown";
+    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
     "app.CompositeStatus": {
       created_at_ts?: number;
       created_by_id?: string;
@@ -4164,6 +4165,26 @@ export interface components {
       path?: string;
       version?: unknown;
       who?: string;
+    };
+    "app.PulumiComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      /** @description pulumi runtime (e.g. "nodejs", "python") */
+      runtime?: string;
+      updated_at?: string;
+      variables?: {
+        [key: string]: string;
+      };
+      /** @description pulumi version */
+      version?: string;
     };
     "app.TerraformModuleComponentConfig": {
       /** @description parent reference */
