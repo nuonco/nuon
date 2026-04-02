@@ -372,6 +372,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
       showHeader={false}
       showFooter={false}
       {...props}
+      className="!mt-[15vh] !mb-auto"
       childrenClassName="!p-0 !gap-0"
     >
       <div ref={inputWrapperRef} className="p-4 border-b" onKeyDown={handleKeyDown}>
