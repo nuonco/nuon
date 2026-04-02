@@ -24,7 +24,7 @@ type RunnerHeartBeat struct {
 	Version   string        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
 
-	Process RunnerProcess `json:"process" gorm:"index;not null;default:''" swaggertype:"string"`
+	Process RunnerProcess `json:"process" gorm:"not null;default:''" swaggertype:"string"`
 }
 
 func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
