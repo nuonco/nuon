@@ -20,7 +20,10 @@ type AWSSettings struct {
 	Region string `json:"region"`
 }
 
-type AzureAccount struct{}
+type AzureAccount struct {
+	SubscriptionID string `json:"subscription_id"`
+	Location       string `json:"location"`
+}
 
 func (c *client) ListInstalls(ctx context.Context, typ string) ([]Install, error) {
 	endpoint := "/v1/installs?type=" + typ
