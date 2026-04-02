@@ -27,11 +27,28 @@ func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetM
 }
 
 func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcess) (*app.RunnerHeartBeat, error) {
+	if process != "" {
+		hb, err := a.queryHeartBeat(ctx, runnerID, process)
+		if err != nil {
+			return nil, err
+		}
+		if hb != nil {
+			return hb, nil
+		}
+
+		// TODO: remove this fallback once all runners send the correct process
+		return a.queryHeartBeat(ctx, runnerID, app.RunnerProcessUknown)
+	}
+
+	return a.queryHeartBeat(ctx, runnerID, "")
+}
+
+func (a *Activities) queryHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcess) (*app.RunnerHeartBeat, error) {
 	var hb app.RunnerHeartBeat
 	db := a.chDB.WithContext(ctx).
 		Where("runner_id = ?", runnerID)
 	if process != "" {
-		db = db.Where("process IN ?", []app.RunnerProcess{process, app.RunnerProcessUknown})
+		db = db.Where("process = ?", process)
 	}
 	res := db.
 		Order("created_at desc").
