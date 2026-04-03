@@ -25,6 +25,7 @@ export const ProcessManagementDropdown = ({
 
   return (
     <Dropdown
+      buttonClassName="!p-1"
       id={`process-${process.id}-mgmt`}
       buttonText={<Icon variant="DotsThreeVertical" />}
       alignment="right"

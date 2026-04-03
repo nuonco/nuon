@@ -69,7 +69,7 @@ export const AuditHistoryModal = ({ ...props }: IAuditHistory & IModal) => {
           weight="strong"
         >
           <Icon variant="ClockClockwise" size="24" />
-          Audit History
+          Audit history
         </Text>
       }
       primaryActionTrigger={
@@ -156,7 +156,7 @@ export const AuditHistoryButton = ({ ...props }: IAuditHistory & IButtonAsButton
       }}
       {...props}
     >
-      Audit History
+      Audit history
       <Icon variant="ClockClockwise" />
     </Button>
   )
