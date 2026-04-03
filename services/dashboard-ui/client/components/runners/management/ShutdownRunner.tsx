@@ -11,23 +11,25 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { shutdownRunner } from '@/lib'
+import { shutdownRunnerProcess } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
 interface IShutdownRunnerButton extends IButtonAsButton {
   runnerId: string
+  processId: string
   showRunnerLabel?: boolean
 }
 
 interface IShutdownRunnerModal extends IModal {
   runnerId: string
+  processId: string
   showRunnerLabel?: boolean
 }
 
-export const ShutdownRunnerButton = ({ runnerId, showRunnerLabel, ...props }: IShutdownRunnerButton) => {
+export const ShutdownRunnerButton = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerButton) => {
   const { addModal } = useSurfaces()
-  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
-  const modal = <ShutdownRunnerModal runnerId={runnerId} showRunnerLabel={showRunnerLabel} />
+  const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
+  const modal = <ShutdownRunnerModal runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} />
   return (
     <Button
       onClick={() => {
@@ -35,15 +37,15 @@ export const ShutdownRunnerButton = ({ runnerId, showRunnerLabel, ...props }: IS
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="ArrowClockwise" />}
+      {props?.isMenuButton ? null : <Icon variant="Power" />}
       {label}
-      {props?.isMenuButton ? <Icon variant="ArrowClockwise" /> : null}
+      {props?.isMenuButton ? <Icon variant="Power" /> : null}
     </Button>
   )
 }
 
-export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: IShutdownRunnerModal) => {
-  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
+export const ShutdownRunnerModal = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerModal) => {
+  const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
   const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
@@ -52,23 +54,29 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
   const [force, setForce] = useState(false)
 
   const {
-    data: isShutdown,
+    data: shutdown,
     error,
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: () => shutdownRunner({ runnerId, orgId: org.id, force }),
+    mutationFn: () =>
+      shutdownRunnerProcess({
+        runnerId,
+        processId,
+        shutdownType: force ? 'force' : 'graceful',
+        orgId: org.id,
+      }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Restart runner process started" theme="success">
-          <Text>Restart runner process initiated successfully.</Text>
+        <Toast heading="Shutdown runner process started" theme="success">
+          <Text>Shutdown runner process initiated successfully.</Text>
         </Toast>
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading="Restart runner process failed" theme="error">
+        <Toast heading="Shutdown runner process failed" theme="error">
           <Text>Unable to restart runner process.</Text>
         </Toast>
       )
@@ -83,21 +91,21 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'runner_shutdown',
+        event: 'runner_process_shutdown',
         status: 'error',
         user,
-        props: { orgId: org.id, runnerId, err: error?.error },
+        props: { orgId: org.id, runnerId, processId, err: error?.error },
       })
     }
-    if (isShutdown) {
+    if (shutdown) {
       trackEvent({
-        event: 'runner_shutdown',
+        event: 'runner_process_shutdown',
         status: 'ok',
         user,
-        props: { orgId: org.id, runnerId },
+        props: { orgId: org.id, runnerId, processId },
       })
     }
-  }, [isShutdown, error, org.id, runnerId, user])
+  }, [shutdown, error, org.id, runnerId, processId, user])
 
   return (
     <Modal
@@ -109,7 +117,7 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
             weight="strong"
             theme="warn"
           >
-            <Icon variant="ArrowClockwise" size="24" />
+            <Icon variant="Power" size="24" />
             {label}?
           </Text>
         </div>
@@ -118,11 +126,11 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
         children: isLoading ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" />
-            Restarting
+            Shutting down
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="ArrowClockwise" />
+            <Icon variant="Power" />
             {label}
           </span>
         ),
@@ -136,20 +144,20 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
       <div className="flex flex-col gap-6">
         {error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to restart runner process.'}
+            {error?.error || 'Unable to shutdown runner process.'}
           </Banner>
         ) : null}
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
-            Restart this runner process gracefully.
+            Shutdown this runner process.
           </Text>
           <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            The runner will make a best effort to restart after any queued jobs
-            are complete.
+            This will terminate the container and restart the process. The runner
+            will make a best effort to complete any queued jobs before shutting down.
           </Text>
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
-            <li>Causes all jobs to queue while the runner restarts</li>
-            <li>Any new version updates will be applied</li>
+            <li>Causes all jobs to queue while the process restarts</li>
+            <li>Any new version updates will be applied on restart</li>
             <li>All local state will be refreshed</li>
           </ul>
           <div className="flex items-start">
@@ -163,7 +171,7 @@ export const ShutdownRunnerModal = ({ runnerId, showRunnerLabel, ...props }: ISh
                 labelText: (
                   <div className="flex flex-col gap-1">
                     <Text variant="base" weight="stronger">
-                      Destroy instance
+                      Force shutdown
                     </Text>
                     <Text variant="subtext" theme="neutral">
                       Immediately shutdown the runner, terminating any in-flight

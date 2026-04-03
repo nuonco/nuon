@@ -56,7 +56,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Create shutdown job
+	// Try process-based shutdown first
+	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+		RunnerID:    s.RunnerID,
+		ProcessType: string(app.RunnerProcessTypeInstall),
+	})
+	if err == nil && process != nil && process.ID != "" {
+		_, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+			RunnerProcessID: process.ID,
+			Type:            app.RunnerProcessShutdownTypeGraceful,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create process shutdown")
+		}
+		return nil
+	}
+
+	// Fallback: create legacy shutdown job for runners without process tracking
 	runnerJob, err := s.createRunnerShutdownJob(ctx, s.RunnerID, map[string]string{
 		"shutdown_type": "graceful",
 	})
@@ -64,16 +80,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create shutdown runner job")
 	}
 
-	// TODO: Implement cross-namespace signal sending for process_job
-	// The original code sends a process_job signal via evClient.Send:
-	//   w.evClient.Send(ctx, sreq.ID, &signals.Signal{
-	//       Type:  signals.OperationProcessJob,
-	//       JobID: runnerJob.ID,
-	//   })
-	// This needs to be implemented using the queue system's cross-namespace
-	// signal sending capability (EnqueueSignalToOwner activity)
-	_ = runnerJob // Silence unused variable warning until cross-namespace signaling is implemented
-
+	_ = runnerJob
 	return nil
 }
 

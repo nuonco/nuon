@@ -28,6 +28,7 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 		AliveTime: generics.ToPtr(int64(aliveDur)),
 		Version:   version.Version,
 		Process:   h.process,
+		ProcessID: h.processRegistrar.ProcessID(),
 	}
 
 	if _, err := h.apiClient.CreateHeartBeat(ctx, req); err != nil {

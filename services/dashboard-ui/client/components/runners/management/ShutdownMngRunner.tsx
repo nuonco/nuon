@@ -10,23 +10,25 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { restartMngRunner } from '@/lib'
+import { shutdownRunnerProcess } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
 interface IShutdownMngRunnerButton extends IButtonAsButton {
   runnerId: string
+  processId: string
   showRunnerLabel?: boolean
 }
 
 interface IShutdownMngRunnerModal extends IModal {
   runnerId: string
+  processId: string
   showRunnerLabel?: boolean
 }
 
-export const ShutdownMngRunnerButton = ({ runnerId, showRunnerLabel, ...props }: IShutdownMngRunnerButton) => {
+export const ShutdownMngRunnerButton = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownMngRunnerButton) => {
   const { addModal } = useSurfaces()
-  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
-  const modal = <ShutdownMngRunnerModal runnerId={runnerId} showRunnerLabel={showRunnerLabel} />
+  const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
+  const modal = <ShutdownMngRunnerModal runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} />
   return (
     <Button
       onClick={() => {
@@ -34,38 +36,44 @@ export const ShutdownMngRunnerButton = ({ runnerId, showRunnerLabel, ...props }:
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="ArrowClockwise" />}
+      {props?.isMenuButton ? null : <Icon variant="Power" />}
       {label}
-      {props?.isMenuButton ? <Icon variant="ArrowClockwise" /> : null}
+      {props?.isMenuButton ? <Icon variant="Power" /> : null}
     </Button>
   )
 }
 
-export const ShutdownMngRunnerModal = ({ runnerId, showRunnerLabel, ...props }: IShutdownMngRunnerModal) => {
-  const label = showRunnerLabel ? 'Restart runner process' : 'Restart process'
+export const ShutdownMngRunnerModal = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownMngRunnerModal) => {
+  const label = showRunnerLabel ? 'Shutdown runner process' : 'Shutdown process'
   const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
   const {
-    data: isRestarted,
+    data: shutdown,
     error,
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: () => restartMngRunner({ runnerId, orgId: org.id }),
+    mutationFn: () =>
+      shutdownRunnerProcess({
+        runnerId,
+        processId,
+        shutdownType: 'graceful',
+        orgId: org.id,
+      }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Restart managed runner process started" theme="success">
-          <Text>Restart managed runner process initiated successfully.</Text>
+        <Toast heading="Shutdown managed runner process started" theme="success">
+          <Text>Shutdown managed runner process initiated successfully.</Text>
         </Toast>
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading="Restart managed runner process failed" theme="error">
+        <Toast heading="Shutdown managed runner process failed" theme="error">
           <Text>Unable to restart managed runner process.</Text>
         </Toast>
       )
@@ -79,21 +87,21 @@ export const ShutdownMngRunnerModal = ({ runnerId, showRunnerLabel, ...props }: 
   useEffect(() => {
     if (error) {
       trackEvent({
-        event: 'managed_runner_restart',
+        event: 'mng_process_shutdown',
         status: 'error',
         user,
-        props: { orgId: org.id, runnerId, err: error?.error },
+        props: { orgId: org.id, runnerId, processId, err: error?.error },
       })
     }
-    if (isRestarted) {
+    if (shutdown) {
       trackEvent({
-        event: 'managed_runner_restart',
+        event: 'mng_process_shutdown',
         status: 'ok',
         user,
-        props: { orgId: org.id, runnerId },
+        props: { orgId: org.id, runnerId, processId },
       })
     }
-  }, [isRestarted, error, org.id, runnerId, user])
+  }, [shutdown, error, org.id, runnerId, processId, user])
 
   return (
     <Modal
@@ -105,7 +113,7 @@ export const ShutdownMngRunnerModal = ({ runnerId, showRunnerLabel, ...props }: 
             weight="strong"
             theme="warn"
           >
-            <Icon variant="ArrowClockwise" size="24" />
+            <Icon variant="Power" size="24" />
             {label}?
           </Text>
         </div>
@@ -114,11 +122,11 @@ export const ShutdownMngRunnerModal = ({ runnerId, showRunnerLabel, ...props }: 
         children: isLoading ? (
           <span className="flex items-center gap-2">
             <Icon variant="Loading" />
-            Restarting
+            Shutting down
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="ArrowClockwise" />
+            <Icon variant="Power" />
             {label}
           </span>
         ),
@@ -132,21 +140,21 @@ export const ShutdownMngRunnerModal = ({ runnerId, showRunnerLabel, ...props }: 
       <div className="flex flex-col gap-6">
         {error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to restart managed runner process.'}
+            {error?.error || 'Unable to shutdown managed runner process.'}
           </Banner>
         ) : null}
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
-            Restart this managed runner process.
+            Shutdown this managed runner instance.
           </Text>
           <Text variant="body" theme="neutral" className="leading-relaxed max-w-md">
-            The managed runner will be gracefully restarted after completing any
-            queued jobs.
+            This will destroy the managed runner instance. A new instance will be
+            provisioned automatically to replace it.
           </Text>
           <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
-            <li>All running jobs will be completed before restart</li>
-            <li>Causes all jobs to queue while the runner restarts</li>
-            <li>Any new version updates will be applied</li>
+            <li>The VM instance will be terminated</li>
+            <li>A new instance will be provisioned with the latest version</li>
+            <li>All local state will be lost</li>
           </ul>
         </div>
       </div>

@@ -114,6 +114,8 @@ func AllModels() []any {
 		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
 		&app.Runner{},
+		&app.RunnerProcess{},
+		&app.RunnerProcessShutdown{},
 		&app.RunnerJob{},
 		&app.RunnerJobPlan{},
 		&app.RunnerJobExecution{},

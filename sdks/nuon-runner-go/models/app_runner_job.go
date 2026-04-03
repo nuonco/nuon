@@ -92,6 +92,9 @@ type AppRunnerJob struct {
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 
+	// runner process id
+	RunnerProcessID string `json:"runner_process_id,omitempty"`
+
 	// started at
 	StartedAt string `json:"started_at,omitempty"`
 

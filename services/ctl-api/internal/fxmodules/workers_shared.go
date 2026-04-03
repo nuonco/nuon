@@ -9,6 +9,8 @@ import (
 	validateinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/validate"
 	queue "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
+	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
@@ -47,6 +49,7 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signalsactivities.New),
 	fx.Provide(queueactivities.New),
 	fx.Provide(handleractivities.New),
+	fx.Provide(emitteractivities.New),
 	fx.Provide(statusactivities.New),
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
@@ -58,4 +61,5 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(workflows.NewWorkflows),
 	fx.Provide(queue.NewWorkflows),
 	fx.Provide(handler.NewWorkflows),
+	fx.Provide(emitter.NewWorkflows),
 )
