@@ -12,7 +12,7 @@ import (
 )
 
 type CreateRunnerHealthCheckRequest struct {
-	Process app.RunnerProcess `json:"process" swaggertype:"string"`
+	Process app.RunnerProcessType `json:"process" swaggertype:"string"`
 }
 
 // @ID						CreateRunnerHealthCheck
@@ -57,7 +57,7 @@ func (s *service) createRunnerHealthCheck(ctx context.Context, runnerID string, 
 	if req.Process != "" {
 		runnerHealthCheck.Process = req.Process
 	} else {
-		runnerHealthCheck.Process = app.RunnerProcessUknown
+		runnerHealthCheck.Process = app.RunnerProcessTypeUnknown
 	}
 	res := s.chDB.WithContext(ctx).
 		Create(&runnerHealthCheck)

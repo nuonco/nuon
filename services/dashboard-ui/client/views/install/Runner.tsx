@@ -3,10 +3,8 @@ import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
-import { RunnerDetailsCard, RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCard'
-import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
+import { ProcessCard, ProcessCardSkeleton } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
-import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -14,66 +12,73 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getRunnerSettings } from '@/lib'
-import type { TRunnerGroup } from '@/types'
+import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 
 const CONTAINER_ID = 'install-runner-page'
 
 const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: string }) => {
   const { org } = useOrg()
 
-  const { data: settingsResult, isLoading: isLoadingSettings } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
     queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
     enabled: !!org?.id && !!runnerId,
   })
 
-  const settings = settingsResult
+  const { data: processResult, isLoading: processesLoading } = useQuery({
+    queryKey: ['runner-processes-active', org?.id, runnerId],
+    queryFn: () =>
+      getRunnerProcesses({
+        orgId: org.id,
+        runnerId,
+        status: 'active,offline,pending-shutdown',
+        limit: 2,
+      }),
+    refetchInterval: 10000,
+    enabled: !!org?.id && !!runnerId,
+  })
+
+  const processes = processResult?.data ?? []
 
   return (
     <>
-      <div className="flex gap-4 justify-between">
-        <hgroup>
-          <Text variant="base" weight="strong">
-            Install runner
-          </Text>
-        </hgroup>
-        {settings ? (
-          <ManagementDropdown
-            settings={settings}
-            isInstallRunner
-          />
-        ) : null}
-      </div>
-
-      <div className="flex flex-col @min-4xl:flex-row gap-6">
-        {isLoadingSettings ? (
-          <RunnerDetailsCardSkeleton className="flex-initial" />
-        ) : settings ? (
-          <RunnerDetailsCard
-            className="md:flex-initial"
-            runnerGroup={settings as unknown as TRunnerGroup}
-            shouldPoll
-          />
-        ) : (
-          <Card className="flex-auto">
+      <PageSection>
+        <Text variant="base" weight="strong">
+          Processes
+        </Text>
+        {processesLoading ? (
+          <div className="flex flex-wrap gap-6">
+            <ProcessCardSkeleton />
+            <ProcessCardSkeleton />
+          </div>
+        ) : processes.length === 0 ? (
+          <Card>
             <EmptyState
-              emptyMessage="Runner details will display here once available."
-              emptyTitle="No runner details"
+              emptyTitle="No active processes"
+              emptyMessage="No runner processes are currently active or offline."
               variant="table"
             />
           </Card>
+        ) : (
+          <div className="flex flex-wrap gap-6">
+            {processes.map((process) => (
+              <ProcessCard
+                key={process.id}
+                process={process}
+                settings={settings}
+                shouldPoll
+              />
+            ))}
+          </div>
         )}
+      </PageSection>
 
-        <RunnerHealthCard className="flex-auto" shouldPoll />
-      </div>
-
-      <div className="flex flex-col gap-6">
+      <PageSection>
         <Text variant="base" weight="strong">
-          Recent activity
+          Recent jobs
         </Text>
         <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/installs/${installId}/runner`} />
-      </div>
+      </PageSection>
     </>
   )
 }
@@ -112,7 +117,7 @@ export const Runner = () => {
   return (
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
-      <PageSection id={CONTAINER_ID} className="@container" isScrollable>
+      <PageSection id={CONTAINER_ID} isScrollable>
         <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[

@@ -185,6 +185,25 @@ func (c *Client) ResumeEmitter(ctx context.Context, emitterID string) (*app.Queu
 	return em, nil
 }
 
+func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
+	em, err := c.getEmitter(ctx, emitterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get emitter")
+	}
+
+	em.Status = app.NewCompositeStatus(ctx, app.StatusCancelled)
+	if res := c.db.WithContext(ctx).Save(em); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to update emitter status")
+	}
+
+	if err := c.tClient.CancelWorkflowInNamespace(ctx, em.Workflow.Namespace, em.Workflow.ID, ""); err != nil {
+		c.l.Warn("failed to cancel emitter workflow", zap.String("id", emitterID), zap.Error(err))
+	}
+
+	c.l.Debug("emitter stopped", zap.String("id", emitterID))
+	return em, nil
+}
+
 func (c *Client) DeleteEmitter(ctx context.Context, emitterID string) error {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {
