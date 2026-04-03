@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	gcpTokenAudience = "https://runner.nuon.co"
-
 	gcpRunnerIDMetadataKey = "nuon_runner_id"
 )
 
@@ -80,7 +78,7 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 	reqCtx := ctx.Request.Context()
 
 	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID
-	payload, err := idtoken.Validate(reqCtx, req.IdentityToken, gcpTokenAudience)
+	payload, err := idtoken.Validate(reqCtx, req.IdentityToken, s.cfg.RunnerAPIURL)
 	if err != nil {
 		s.l.Warn("runner auth gcp: identity token validation failed", zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
