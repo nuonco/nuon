@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -17,8 +18,9 @@ import (
 type CreateRunnerHeartBeatRequest struct {
 	AliveTime time.Duration `json:"alive_time" validate:"required" swaggertype:"primitive,integer"`
 	// Making this required might break existing installs? Should update all installs to send this, then make it required?
-	Version string            `json:"version"`
-	Process app.RunnerProcess `json:"process" swaggertype:"string"`
+	Version   string                `json:"version"`
+	Process   app.RunnerProcessType `json:"process" swaggertype:"string"`
+	ProcessID string                `json:"process_id"`
 }
 
 // @ID						CreateRunnerHeartBeat
@@ -53,6 +55,11 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
+	// Trigger initial health check on first heartbeat for this process
+	if req.ProcessID != "" {
+		s.maybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID)
+	}
+
 	runner, err := s.heartbeatGetRunner(ctx, runnerID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get runner"))
@@ -75,6 +82,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	runnerHeartBeat := app.RunnerHeartBeat{
 		RunnerID:  runnerID,
+		ProcessID: req.ProcessID,
 		AliveTime: req.AliveTime,
 		Version:   req.Version,
 	}
@@ -82,7 +90,7 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	if req.Process != "" {
 		runnerHeartBeat.Process = req.Process
 	} else {
-		runnerHeartBeat.Process = app.RunnerProcessUknown
+		runnerHeartBeat.Process = app.RunnerProcessTypeUnknown
 	}
 
 	res := s.chDB.
@@ -93,6 +101,22 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	}
 
 	return &runnerHeartBeat, nil
+}
+
+func (s *service) maybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, processID string) {
+	var process app.RunnerProcess
+	if res := s.db.WithContext(ctx).First(&process, "id = ?", processID); res.Error != nil {
+		s.l.Warn("unable to fetch process for initial health check", zap.String("process_id", processID), zap.Error(res.Error))
+		return
+	}
+
+	if process.InitialHealthCheck {
+		return
+	}
+
+	if err := s.helpers.EnqueueInitialHealthCheck(ctx, runnerID, &process); err != nil {
+		s.l.Warn("unable to enqueue initial health check", zap.String("process_id", processID), zap.Error(err))
+	}
 }
 
 func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
