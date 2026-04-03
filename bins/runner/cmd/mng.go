@@ -30,7 +30,7 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd := &cobra.Command{
 		Use:   "fetch-token",
 		Short: "Fetch and store the runner authentication token.",
-		Long:  "Authenticate with AWS using instance credentials and store the runner token.",
+		Long:  "Authenticate using cloud instance credentials (AWS or GCP) and store the runner token.",
 		Run:   c.runFetchToken,
 	}
 	fetchTokenCmd.Flags().Bool("json", false, "Output result as JSON (does not write token to disk)")
@@ -108,6 +108,11 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	fmt.Printf("authentication successful\n")
 	fmt.Printf("  runner_id:   %s\n", result.RunnerID)
 	fmt.Printf("  instance_id: %s\n", result.InstanceID)
-	fmt.Printf("  account_id:  %s\n", result.AccountID)
+	if result.AccountID != "" {
+		fmt.Printf("  account_id:  %s\n", result.AccountID)
+	}
+	if result.ProjectID != "" {
+		fmt.Printf("  project_id:  %s\n", result.ProjectID)
+	}
 	fmt.Printf("  token_path:  %s\n", result.TokenPath)
 }

@@ -46,6 +46,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	auth := api.Group("/v1/runner-auth")
 	{
 		auth.POST("/aws", s.RunnerAuthAWS)
+		auth.POST("/gcp", s.RunnerAuthGCP)
 	}
 	return nil
 }
