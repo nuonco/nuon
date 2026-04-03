@@ -7,6 +7,7 @@ import {
   SiHelm,
   SiKubernetes,
   SiOpencontainersinitiative,
+  SiPulumi,
   SiTerraform,
 } from 'react-icons/si'
 import { VscAzure } from 'react-icons/vsc'
@@ -30,6 +31,7 @@ const customIcons = {
   Kubernetes: SiKubernetes,
   Loading: Loading,
   OCI: SiOpencontainersinitiative,
+  Pulumi: SiPulumi,
   Terraform: SiTerraform,
 } as const
 
