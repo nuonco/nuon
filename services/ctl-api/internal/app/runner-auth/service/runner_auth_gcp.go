@@ -115,7 +115,7 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 	}
 
 	// Step 3: Cross-validate instance ID from JWT matches Compute API response
-	apiInstanceID := fmt.Sprintf("%d", instanceData.ID)
+	apiInstanceID := instanceData.ID
 	if apiInstanceID != claims.instanceID {
 		s.l.Warn("runner auth gcp: instance ID mismatch",
 			zap.String("jwt_instance_id", claims.instanceID),
@@ -241,7 +241,7 @@ func extractGCPClaims(payload *idtoken.Payload) (*gcpClaims, error) {
 
 // gcpInstanceResponse is a subset of the Compute API instances.get response.
 type gcpInstanceResponse struct {
-	ID       uint64 `json:"id"`
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Metadata struct {
 		Items []struct {
