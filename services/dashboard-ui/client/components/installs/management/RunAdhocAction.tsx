@@ -218,7 +218,7 @@ export const RunAdhocActionModal = ({
         disabled: isLoading,
         variant: 'primary',
       }}
-      size="half"
+      size="lg"
       {...props}
     >
       <form

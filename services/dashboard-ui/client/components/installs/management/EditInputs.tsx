@@ -210,7 +210,7 @@ export const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
   return (
     <Modal
       {...props}
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       heading={

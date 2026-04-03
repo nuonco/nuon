@@ -62,7 +62,6 @@ export const Workflows = () => {
       <ActiveWorkflows
         workflows={activeWorkflows}
         install={install}
-        hasDivider
       />
 
       <div className="flex items-center gap-4 justify-between">

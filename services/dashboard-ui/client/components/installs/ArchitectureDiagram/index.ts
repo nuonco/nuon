@@ -1,1 +1,1 @@
-export { ArchitectureDiagram } from './ArchitectureDiagram'
+export { ArchitectureDiagram, ArchitectureDiagramButton } from './ArchitectureDiagram'

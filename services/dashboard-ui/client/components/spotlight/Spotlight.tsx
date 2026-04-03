@@ -101,7 +101,7 @@ export const SpotlightModal = ({ ...props }: ISpotlightModal) => {
 
   return (
     <Modal
-      size="half"
+      size="lg"
       showHeader={false}
       showFooter={false}
       {...props}

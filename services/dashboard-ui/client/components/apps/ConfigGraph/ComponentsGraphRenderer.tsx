@@ -96,7 +96,7 @@ export const ComponentsGraphRenderer = ({
         isMenuButton: true,
         variant: 'ghost',
       }}
-      size="full"
+      size="xl"
     >
       <div className="flex flex-col gap-2">
         <Text>

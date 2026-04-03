@@ -261,11 +261,13 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
             {COMPONENT_TYPE_LABELS[componentType] || 'Component'}
           </Text>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isDrifted && (
             <Icon variant="WarningIcon" size={12} theme="warn" />
           )}
-          {status && <Status status={status} variant="badge" />}
+          <Status status={status || 'not-deployed'}>
+            {status ? undefined : 'Not deployed'}
+          </Status>
         </div>
       </div>
     </ContextTooltip>

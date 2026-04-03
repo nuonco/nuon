@@ -199,8 +199,7 @@ export const ViewCurrentInputsModal = ({ ...props }: IModal) => {
           Current inputs
         </Text>
       }
-      size="full"
-      className="!mt-12 !mb-auto"
+      size="xl"
       actions={
         !isLoading && (hasConfig || hasInputs) ? (
           <div className="flex items-center gap-2">
@@ -215,7 +214,6 @@ export const ViewCurrentInputsModal = ({ ...props }: IModal) => {
                 className="!p-2"
                 closeOnBlur={false}
                 id="inputs-filter"
-                variant="ghost"
                 buttonClassName="!p-1"
                 buttonText={
                   <>

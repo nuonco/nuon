@@ -222,7 +222,7 @@ const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           Create install
         </Text>
       }
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       primaryActionTrigger={

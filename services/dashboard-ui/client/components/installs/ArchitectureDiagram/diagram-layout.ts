@@ -75,10 +75,10 @@ export function extractRoles(appConfig?: TAppConfig): TRoleInfo[] {
       displayName: config!.display_name || fallback,
       description: config!.description || '',
       enabledInStack: !!(
-        config!.enabled_in_stack as { Valid?: boolean; Bool?: boolean }
-      )?.Valid &&
-        !!(config!.enabled_in_stack as { Valid?: boolean; Bool?: boolean })
-          ?.Bool,
+        config!.enabled_in_stack as { valid?: boolean; bool?: boolean }
+      )?.valid &&
+        !!(config!.enabled_in_stack as { valid?: boolean; bool?: boolean })
+          ?.bool,
       cloudformationStackName: config!.cloudformation_stack_name,
       policies: (config!.policies || []).map((p) => ({
         name: p.name,

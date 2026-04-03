@@ -4,12 +4,14 @@ import { ReactFlow, useReactFlow, ReactFlowProvider, type ReactFlowInstance } fr
 import { toPng } from 'html-to-image'
 import '@xyflow/react/dist/style.css'
 
-import { Button } from '@/components/common/Button'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallComponents, getInstallStack, getAppConfig } from '@/lib'
 import { computeLayout } from './diagram-layout'
 import { nodeTypes } from './diagram-nodes'
@@ -41,7 +43,7 @@ const DiagramCanvas = () => {
   const { install } = useInstall()
 
   const {
-    data: components,
+    data: componentsResult,
     isLoading: componentsLoading,
     isError: componentsError,
   } = useQuery({
@@ -56,6 +58,8 @@ const DiagramCanvas = () => {
     enabled: !!org?.id && !!install?.id,
     refetchInterval: 20000,
   })
+
+  const components = componentsResult?.data
 
   const { data: stack } = useQuery({
     queryKey: ['install-stack-diagram', org?.id, install?.id],
@@ -203,3 +207,43 @@ export const ArchitectureDiagram = () => (
     <DiagramCanvas />
   </ReactFlowProvider>
 )
+
+const ArchitectureDiagramModal = ({ ...props }: IModal) => (
+  <Modal
+    heading={
+      <Text className="inline-flex gap-2 items-center" variant="h3" weight="strong">
+        <Icon variant="TreeStructure" size="20" />
+        Architecture
+      </Text>
+    }
+    size="xl"
+    showFooter={false}
+    childrenClassName="!p-0 flex-1 min-h-0"
+    className="h-[80vh]"
+    {...props}
+  >
+    <div className="w-full h-full">
+      <ArchitectureDiagram />
+    </div>
+  </Modal>
+)
+
+export const ArchitectureDiagramButton = ({
+  ...props
+}: Omit<IButtonAsButton, 'onClick'>) => {
+  const { addModal } = useSurfaces()
+
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => {
+        const modal = <ArchitectureDiagramModal />
+        addModal(modal)
+      }}
+      {...props}
+    >
+      Architecture
+      <Icon variant="TreeStructure" />
+    </Button>
+  )
+}

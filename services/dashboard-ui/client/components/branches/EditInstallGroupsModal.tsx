@@ -278,7 +278,7 @@ export const EditInstallGroupsModal = ({
           </Text>
         </div>
       }
-      size="full"
+      size="xl"
       primaryActionTrigger={{
         children: isSaving ? 'Saving...' : 'Save changes',
         onClick: () => saveMutation(),
