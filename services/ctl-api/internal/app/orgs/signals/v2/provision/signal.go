@@ -12,9 +12,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	runnerprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "org-provision"
@@ -61,8 +61,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Provision IAM roles for the org
 	if org.OrgType == app.OrgTypeDefault {
 		orgIAMReq := &orgiam.ProvisionIAMRequest{
-			OrgID:    s.OrgID,
-			RunnerID: org.RunnerGroup.Runners[0].ID,
+			OrgID:      s.OrgID,
+			RunnerID:   org.RunnerGroup.Runners[0].ID,
+			WorkflowID: fmt.Sprintf("%s-provision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		}
 		_, err = orgiam.AwaitProvisionIAM(ctx, orgIAMReq)
 		if err != nil {
@@ -76,13 +77,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("org_name", org.Name))
 	}
 
-	// Provision the runner via v1 event loop signal
-	signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnersignals.Signal]{
-		ID: org.RunnerGroup.Runners[0].ID,
-		Signal: &runnersignals.Signal{
-			Type: runnersignals.OperationProvision,
+	// Provision the runner via v2 queue signal
+	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   org.RunnerGroup.Runners[0].ID,
+		OwnerType: "runners",
+		Signal: &runnerprovision.Signal{
+			RunnerID: org.RunnerGroup.Runners[0].ID,
 		},
 	})
+	if err != nil {
+		s.updateStatus(ctx, app.OrgStatusError, "unable to enqueue runner provision signal")
+		return fmt.Errorf("unable to enqueue runner provision signal: %w", err)
+	}
 
 	if err := s.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "organization did not provision runner")

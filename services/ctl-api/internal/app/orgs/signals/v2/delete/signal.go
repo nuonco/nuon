@@ -13,9 +13,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	runnerdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/delete"
+	runnerdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "org-delete"
@@ -68,10 +69,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if len(org.RunnerGroup.Runners) > 0 {
-		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnersignals.Signal]{
-			ID:     org.RunnerGroup.Runners[0].ID,
-			Signal: &runnersignals.Signal{Type: runnersignals.OperationDelete},
+		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   org.RunnerGroup.Runners[0].ID,
+			OwnerType: "runners",
+			Signal: &runnerdelete.Signal{
+				RunnerID: org.RunnerGroup.Runners[0].ID,
+			},
 		})
+		if err != nil {
+			if !s.ForceDelete {
+				return fmt.Errorf("unable to enqueue runner delete signal: %w", err)
+			}
+			l.Error("unable to enqueue runner delete signal, continuing anyway", zap.Error(err))
+		}
 
 		err = s.pollRunnerNotFound(ctx, org.RunnerGroup.Runners[0].ID)
 		if err != nil {
@@ -114,7 +124,7 @@ func (s *Signal) deprovision(ctx workflow.Context) error {
 	}
 
 	if orgFull.OrgType == app.OrgTypeDefault {
-		_, err = orgiam.AwaitDeprovisionIAM(ctx, &orgiam.DeprovisionIAMRequest{OrgID: s.OrgID})
+		_, err = orgiam.AwaitDeprovisionIAM(ctx, &orgiam.DeprovisionIAMRequest{OrgID: s.OrgID, WorkflowID: fmt.Sprintf("%s-deprovision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID)})
 		if err != nil {
 			s.updateStatus(ctx, app.OrgStatusError, "unable to deprovision iam roles")
 			return fmt.Errorf("unable to deprovision iam roles: %w", err)
@@ -124,10 +134,17 @@ func (s *Signal) deprovision(ctx workflow.Context) error {
 	}
 
 	if len(orgFull.RunnerGroup.Runners) > 0 {
-		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnersignals.Signal]{
-			ID:     orgFull.RunnerGroup.Runners[0].ID,
-			Signal: &runnersignals.Signal{Type: runnersignals.OperationDeprovision},
+		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   orgFull.RunnerGroup.Runners[0].ID,
+			OwnerType: "runners",
+			Signal: &runnerdeprovision.Signal{
+				RunnerID: orgFull.RunnerGroup.Runners[0].ID,
+			},
 		})
+		if err != nil {
+			s.updateStatus(ctx, app.OrgStatusError, "unable to enqueue runner deprovision signal")
+			return fmt.Errorf("unable to enqueue runner deprovision signal: %w", err)
+		}
 	}
 	s.updateStatus(ctx, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil

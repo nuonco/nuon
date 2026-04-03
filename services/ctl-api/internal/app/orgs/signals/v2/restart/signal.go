@@ -3,6 +3,7 @@ package restart
 import (
 	"fmt"
 
+	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -60,7 +61,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) restartEventLoop(ctx workflow.Context, l workflow.Logger, namespace, id string) error {
+func (s *Signal) restartEventLoop(ctx workflow.Context, l log.Logger, namespace, id string) error {
 	switch namespace {
 	case "orgs":
 		// skip restarting own namespace to avoid infinite loop

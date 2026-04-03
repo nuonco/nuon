@@ -6,9 +6,9 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	runnershutdown "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/gracefulshutdown"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "org-restart-runners"
@@ -39,10 +39,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	for _, runner := range runners {
-		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnersignals.Signal]{
-			ID:     runner.ID,
-			Signal: &runnersignals.Signal{Type: runnersignals.OperationGracefulShutdown},
+		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   runner.ID,
+			OwnerType: "runners",
+			Signal: &runnershutdown.Signal{
+				RunnerID: runner.ID,
+			},
 		})
+		if err != nil {
+			return fmt.Errorf("unable to enqueue graceful shutdown signal for runner %s: %w", runner.ID, err)
+		}
 	}
 
 	return nil
