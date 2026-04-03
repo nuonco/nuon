@@ -14,9 +14,18 @@ import (
 // @execution-timeout 10m
 // @task-timeout 5m
 func (w *Workflows) MngFetchToken(ctx workflow.Context, sreq signals.RequestSignal) error {
-	// NOTE(fd): platform will need to be set dynamically when we add support for other clouds
+	runner, err := activities.AwaitGetByRunnerID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner for platform detection")
+	}
+
+	platform := string(runner.RunnerGroup.Platform)
+	if platform == "" {
+		platform = "aws"
+	}
+
 	runnerJob, err := w.createMngJob(ctx, sreq.ID, app.RunnerJobTypeMngFetchToken, map[string]string{
-		"platform": "aws",
+		"platform": platform,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner job")

@@ -64,6 +64,9 @@ type AppRunner struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// warnings
+	Warnings []string `json:"warnings"`
 }
 
 // Validate validates this app runner
