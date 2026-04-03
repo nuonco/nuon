@@ -33,6 +33,15 @@ const (
 	// AppRunnerProcessStatusActive captures enum value "active"
 	AppRunnerProcessStatusActive AppRunnerProcessStatus = "active"
 
+	// AppRunnerProcessStatusOffline captures enum value "offline"
+	AppRunnerProcessStatusOffline AppRunnerProcessStatus = "offline"
+
+	// AppRunnerProcessStatusInactive captures enum value "inactive"
+	AppRunnerProcessStatusInactive AppRunnerProcessStatus = "inactive"
+
+	// AppRunnerProcessStatusPendingDashShutdown captures enum value "pending-shutdown"
+	AppRunnerProcessStatusPendingDashShutdown AppRunnerProcessStatus = "pending-shutdown"
+
 	// AppRunnerProcessStatusShuttingDashDown captures enum value "shutting-down"
 	AppRunnerProcessStatusShuttingDashDown AppRunnerProcessStatus = "shutting-down"
 
@@ -51,7 +60,7 @@ var appRunnerProcessStatusEnum []any
 
 func init() {
 	var res []AppRunnerProcessStatus
-	if err := json.Unmarshal([]byte(`["active","shutting-down","shut-down","error","unknown"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["active","offline","inactive","pending-shutdown","shutting-down","shut-down","error","unknown"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
