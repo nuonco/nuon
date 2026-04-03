@@ -72,7 +72,7 @@ type Client interface {
 
 	// authentication
 	RunnerAuthAWS(ctx context.Context, req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse, error)
-	RunnerAuthGCP(ctx context.Context, req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthGCPRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthGCPResponse, error)
+	RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error)
 }
 
 var _ Client = (*client)(nil)

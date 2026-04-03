@@ -114,8 +114,8 @@ func fetchTokenGCP(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 		return nil, fmt.Errorf("failed to build GCP metadata request: %w", err)
 	}
 
-	resp, err := apiClient.RunnerAuthGCP(ctx, &models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthGCPRequest{
-		IdentityToken: identityToken,
+	resp, err := apiClient.RunnerAuthGCP(ctx, &models.ServiceRunnerAuthGCPRequest{
+		IdentityToken: &identityToken,
 		Metadata: &models.GcpMetadataRequest{
 			Method:  metadataReq.Method,
 			URL:     metadataReq.URL,
