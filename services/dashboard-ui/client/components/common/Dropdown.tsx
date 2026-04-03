@@ -108,7 +108,7 @@ export const Dropdown = ({
     const trigger = triggerRef.current.getBoundingClientRect()
     const newStyles: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 20,
+      zIndex: 60,
     }
 
     if (position === 'below') {
@@ -206,6 +206,13 @@ export const Dropdown = ({
       isVisible={isOpen}
       style={styles}
       tabIndex={-1}
+      onClick={(e) => {
+        if (!closeOnBlur) return
+        const target = e.target as HTMLElement
+        if (target.closest('button, a, [role="menuitem"]')) {
+          handleClose()
+        }
+      }}
     >
       <DropdownNestingContext.Provider value={nestingContext}>
         {children}

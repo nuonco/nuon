@@ -54,6 +54,7 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
   install: [
     'run adhoc action',
     'edit inputs',
+    'view current inputs',
     'sync secrets',
     'reprovision install',
     'reprovision sandbox',
