@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -269,7 +270,7 @@ func validateGCPMetadataRequest(req *gcptypes.MetadataRequest) error {
 	}
 
 	for key := range req.Headers {
-		if _, ok := allowedGCPHeaders[key]; !ok {
+		if _, ok := allowedGCPHeaders[strings.ToLower(key)]; !ok {
 			return fmt.Errorf("header not allowed: %s", key)
 		}
 	}
