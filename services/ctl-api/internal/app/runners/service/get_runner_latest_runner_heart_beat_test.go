@@ -140,7 +140,7 @@ func (s *GetRunnerLatestHeartBeatTestSuite) makeRequest(method, path string) *ht
 	return rr
 }
 
-func (s *GetRunnerLatestHeartBeatTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcess, timestamp time.Time, aliveTime time.Duration, version string) string {
+func (s *GetRunnerLatestHeartBeatTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcessType, timestamp time.Time, aliveTime time.Duration, version string) string {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)

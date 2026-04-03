@@ -140,7 +140,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) makeRequest(method, path str
 	return rr
 }
 
-func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcess, timestamp time.Time, aliveTime time.Duration, version string) string {
+func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcessType, timestamp time.Time, aliveTime time.Duration, version string) string {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
@@ -433,7 +433,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				assert.Len(s.T(), heartBeats, 3, "Should have all three process types")
 
 				// Verify each process type
-				processTypes := []app.RunnerProcess{
+				processTypes := []app.RunnerProcessType{
 					app.RunnerProcessTypeMng,
 					app.RunnerProcessTypeInstall,
 					app.RunnerProcessTypeOrg,

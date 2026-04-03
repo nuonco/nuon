@@ -459,7 +459,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 
 func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 	processes := []struct {
-		process     app.RunnerProcess
+		process     app.RunnerProcessType
 		description string
 	}{
 		{app.RunnerProcessTypeMng, "mng process"},

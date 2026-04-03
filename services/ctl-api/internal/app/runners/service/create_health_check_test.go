@@ -386,7 +386,7 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheckProcessValidation() {
 	testCases := []struct {
 		name         string
-		process      app.RunnerProcess
+		process      app.RunnerProcessType
 		expectedCode int
 	}{
 		{
