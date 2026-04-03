@@ -102,7 +102,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		QueueID:     q.ID,
 		Name:        fmt.Sprintf("process-%s-uptime-check", process.ID),
 		Description: "Process uptime TTL check",
-		Mode:        app.QueueEmitterModeScheduled,
+		Mode:        app.QueueEmitterModeFireOnce,
 		ScheduledAt: generics.ToPtr(time.Now().Add(threshold)),
 		SignalType:  processUptimeCheckSignalType,
 		SignalTemplate: &processUptimeCheckSignalTemplate{

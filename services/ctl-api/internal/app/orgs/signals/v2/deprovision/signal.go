@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	runnerdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/deprovision"
@@ -38,20 +39,37 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// If not a force deprovision, check for active apps first
-	if !s.Force {
-		org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
-		if err != nil {
-			s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
-			return fmt.Errorf("unable to get org: %w", err)
-		}
-		if len(org.Apps) > 0 {
+	org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
+	if err != nil {
+		s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+
+	if len(org.Apps) > 0 {
+		if !s.Force {
 			s.updateStatus(ctx, app.OrgStatusError, "cannot deprovision org with active apps")
 			return temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("organization has %d app(s) that must be deleted before deprovisioning", len(org.Apps)),
 				"AppsStillPresent",
 				nil,
 			)
+		}
+
+		// Force mode: deprovision and delete all apps first
+		l := workflow.GetLogger(ctx)
+		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "force deprovisioning: deleting all apps")
+		for _, a := range org.Apps {
+			l.Info("enqueuing app deprovision signal", zap.String("app_id", a.ID))
+			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   a.ID,
+				OwnerType: "apps",
+				Signal: &appdeprovision.Signal{
+					AppID: a.ID,
+				},
+			})
+			if err != nil {
+				l.Error("unable to enqueue app deprovision signal, continuing anyway", zap.String("app_id", a.ID), zap.Error(err))
+			}
 		}
 	}
 
