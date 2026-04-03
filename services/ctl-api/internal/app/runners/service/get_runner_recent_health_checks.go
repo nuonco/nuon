@@ -19,6 +19,7 @@ import (
 // @Description.markdown	get_runner_recent_health_checks.md
 // @Param					runner_id					path	string	true	"runner ID"
 // @Param					window						query	string	false	"window of health checks to return"	Default(1h)
+// @Param					process_id					query	string	false	"filter by process ID"
 // @Param					offset						query	int		false	"offset of results to return"		Default(0)
 // @Param					limit						query	int		false	"limit of results to return"		Default(10)
 // @Param					x-nuon-pagination-enabled	header	bool	false	"Enable pagination"
@@ -56,7 +57,8 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	}
 
 	startTS := time.Now().Add(-windowDur)
-	healthChecks, err := s.getRunnerRecentHealthChecks(ctx, runnerID, startTS)
+	processID := ctx.Query("process_id")
+	healthChecks, err := s.getRunnerRecentHealthChecks(ctx, runnerID, processID, startTS)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -65,10 +67,10 @@ func (s *service) GetRunnerRecentHealthChecks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, healthChecks)
 }
 
-func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
+func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID, processID string, startTS time.Time) ([]*app.RunnerHealthCheck, error) {
 	healthChecks := []*app.RunnerHealthCheck{}
 
-	res := s.chDB.WithContext(ctx).
+	query := s.chDB.WithContext(ctx).
 		Scopes(
 			scopes.WithOverrideTable("runner_health_checks_view_v1"),
 			scopes.WithOffsetPagination,
@@ -76,7 +78,13 @@ func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID string,
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,
 		}).
-		Where("created_at > ?", startTS).
+		Where("created_at > ?", startTS)
+
+	if processID != "" {
+		query = query.Where("process_id = ?", processID)
+	}
+
+	res := query.
 		Order("created_at asc").
 		Find(&healthChecks)
 	if res.Error != nil {

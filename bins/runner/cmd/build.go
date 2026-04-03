@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -59,8 +60,9 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 			fx.Provide(sandboxctl.New),
 			fx.Invoke(func(*sandboxctl.Server) {}),
 
-			// registry and heartbeater
+			// registry, heartbeater, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
+			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*registry.Registry) {}),
 		}...,
 	)
