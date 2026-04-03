@@ -15,6 +15,23 @@ import { completeInstallStep } from '@/lib'
 import type { TAPIError, TOnboarding } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
+function SelectionIndicator({ selected }: { selected: boolean }) {
+  return (
+    <div
+      className={cn(
+        'shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+        selected
+          ? 'border-primary-600 bg-primary-600'
+          : 'border-cool-grey-400 dark:border-cool-grey-600'
+      )}
+    >
+      {selected && (
+        <div className="w-2 h-2 rounded-full bg-white" />
+      )}
+    </div>
+  )
+}
+
 type CloudSetupOption = 'cloud' | 'sandbox'
 type CloudPlatform = 'aws' | 'gcp' | 'azure'
 
@@ -99,8 +116,10 @@ export const CloudSetupStep = ({
         >
           <div
             className={cn(
-              'flex flex-col w-full gap-3 p-5 border rounded-md text-left',
-              selected === 'cloud' && '!border-primary-600'
+              'flex flex-col w-full gap-3 p-5 border-2 rounded-md text-left transition-all',
+              selected === 'cloud'
+                ? 'border-primary-600 bg-primary-50/50 dark:bg-primary-950/20'
+                : 'border-transparent ring-1 ring-border'
             )}
           >
             <div className="flex items-center gap-4">
@@ -114,10 +133,11 @@ export const CloudSetupStep = ({
               ) : (
                 <Icon variant="CloudArrowUp" size="24" />
               )}
-              <Text variant="base">
+              <Text variant="base" weight="strong" className="flex-1">
                 Connect{' '}
                 {cloudLabel ? `your ${cloudLabel} account` : 'a cloud account'}
               </Text>
+              <SelectionIndicator selected={selected === 'cloud'} />
             </div>
             <Text variant="body" theme="neutral" className="whitespace-normal">
               {cloudLabel
@@ -153,16 +173,19 @@ export const CloudSetupStep = ({
         >
           <div
             className={cn(
-              'flex flex-col w-full gap-3 p-5 border rounded-md text-left',
-              selected === 'sandbox' && '!border-primary-600'
+              'flex flex-col w-full gap-3 p-5 border-2 rounded-md text-left transition-all',
+              selected === 'sandbox'
+                ? 'border-primary-600 bg-primary-50/50 dark:bg-primary-950/20'
+                : 'border-transparent ring-1 ring-border'
             )}
           >
             <div className="flex items-center gap-4">
-              <Icon variant="TestTube" size="24" />
-              <Text variant="base">Use demo mode</Text>
-              <Badge size="sm" theme="brand">
+              <Icon variant="Flask" size="24" />
+              <Text variant="base" weight="strong" className="flex-1">Use demo mode</Text>
+              <Badge size="sm" theme="info">
                 Recommended
               </Badge>
+              <SelectionIndicator selected={selected === 'sandbox'} />
             </div>
             <Text variant="body" theme="neutral" className="whitespace-normal">
               We'll spin up a managed demo environment — no cloud account
@@ -186,7 +209,7 @@ export const CloudSetupStep = ({
           disabled={!selected || isWorking}
           onClick={handleAdvance}
         >
-          {waiting ? 'Setting up install...' : isPending ? 'Creating...' : (nextStepTitle ?? 'Continue')}{' '}
+          {waiting ? 'Setting up install...' : isPending ? 'Creating...' : 'Continue'}{' '}
           {!isWorking && <Icon variant="CaretRight" weight="bold" />}
         </Button>
       </div>
