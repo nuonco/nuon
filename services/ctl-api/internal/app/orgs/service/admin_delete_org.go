@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -74,10 +75,27 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type:        sigs.OperationDelete,
-		ForceDelete: req.Force,
-	})
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgdelete.Signal{OrgID: org.ID, ForceDelete: req.Force}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type:        sigs.OperationDelete,
+			ForceDelete: req.Force,
+		})
+	}
 
 	ctx.JSON(http.StatusOK, true)
 }
