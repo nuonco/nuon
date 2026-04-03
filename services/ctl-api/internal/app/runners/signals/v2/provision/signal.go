@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	kuberunner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -63,6 +64,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
+
+	// Set org and account context for downstream activities (e.g. BeforeCreate hooks)
+	ctx = cctx.SetOrgIDWorkflowContext(ctx, runner.OrgID)
+	ctx = cctx.SetAccountIDWorkflowContext(ctx, runner.CreatedByID)
 
 	// Create operation record
 	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
