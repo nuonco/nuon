@@ -36,6 +36,7 @@ function formatUptime(startedAt: string | undefined): string {
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
   if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes < 1) return 'less than a minute'
   return `${minutes}m`
 }
 

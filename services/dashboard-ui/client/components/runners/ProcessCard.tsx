@@ -29,22 +29,8 @@ function formatRelativeTime(dateStr: string | undefined): string {
   return `(${minutes} minutes ago)`
 }
 
-function getProcessWarnings(
-  configuredVersion: string,
-  reportedVersion: string,
-  warnings?: string[],
-): string[] {
-  const result = [...(warnings || [])]
-  if (
-    configuredVersion !== '-' &&
-    reportedVersion !== '-' &&
-    configuredVersion !== reportedVersion
-  ) {
-    result.push(
-      `Reported version (${reportedVersion}) does not match configured version (${configuredVersion}).`,
-    )
-  }
-  return result
+function getProcessWarnings(warnings?: string[]): string[] {
+  return [...(warnings || [])]
 }
 
 function formatUptime(startedAt: string | undefined): string {
@@ -55,6 +41,7 @@ function formatUptime(startedAt: string | undefined): string {
   const hours = Math.floor(diffMs / (1000 * 60 * 60))
   const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
   if (hours > 0) return `${hours}h ${minutes}m`
+  if (minutes < 1) return 'less than a minute'
   return `${minutes}m`
 }
 
@@ -189,11 +176,7 @@ export const ProcessCard = ({
   const isConnected = isLessThan15SecondsOld(heartbeat?.created_at)
   const configuredVersion = settings?.container_image_tag || '-'
   const reportedVersion = heartbeat?.version || process.version || '-'
-  const warnings = getProcessWarnings(
-    configuredVersion,
-    reportedVersion,
-    process.warnings,
-  )
+  const warnings = getProcessWarnings(process.warnings)
 
   return (
     <Card className="flex-1 min-w-[320px]">
