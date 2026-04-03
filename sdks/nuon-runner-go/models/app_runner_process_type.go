@@ -36,6 +36,9 @@ const (
 	// AppRunnerProcessTypeInstall captures enum value "install"
 	AppRunnerProcessTypeInstall AppRunnerProcessType = "install"
 
+	// AppRunnerProcessTypeBuild captures enum value "build"
+	AppRunnerProcessTypeBuild AppRunnerProcessType = "build"
+
 	// AppRunnerProcessTypeOrg captures enum value "org"
 	AppRunnerProcessTypeOrg AppRunnerProcessType = "org"
 
@@ -48,7 +51,7 @@ var appRunnerProcessTypeEnum []any
 
 func init() {
 	var res []AppRunnerProcessType
-	if err := json.Unmarshal([]byte(`["mng","install","org",""]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["mng","install","build","org",""]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

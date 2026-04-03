@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
@@ -17,6 +18,7 @@ type Params struct {
 	V          *validator.Validate
 	DB         *gorm.DB `name:"psql"`
 	L          *zap.Logger
+	Cfg        *internal.Config
 	AcctClient *account.Client
 }
 
@@ -24,6 +26,7 @@ type service struct {
 	v          *validator.Validate
 	l          *zap.Logger
 	db         *gorm.DB
+	cfg        *internal.Config
 	acctClient *account.Client
 }
 
@@ -34,6 +37,7 @@ func New(params Params) *service {
 		v:          params.V,
 		l:          params.L,
 		db:         params.DB,
+		cfg:        params.Cfg,
 		acctClient: params.AcctClient,
 	}
 }
@@ -46,6 +50,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	auth := api.Group("/v1/runner-auth")
 	{
 		auth.POST("/aws", s.RunnerAuthAWS)
+		auth.POST("/gcp", s.RunnerAuthGCP)
 	}
 	return nil
 }

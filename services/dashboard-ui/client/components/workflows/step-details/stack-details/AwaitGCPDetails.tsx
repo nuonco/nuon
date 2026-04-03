@@ -1,17 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Button } from '@/components/common/Button'
+import { useMemo } from 'react'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
-import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
-import { api } from '@/lib/api'
 import type { IStackDetails } from './types'
 
 function parseTfvars(contents: unknown): string {
@@ -39,53 +35,12 @@ function parseTfvars(contents: unknown): string {
 
 export const AwaitGCPDetails = ({ stack }: IStackDetails) => {
   const { install } = useInstall()
-  const { org } = useOrg()
-  const [tokenVisible, setTokenVisible] = useState(false)
-  const [runnerApiToken, setRunnerApiToken] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [tokenError, setTokenError] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
 
   const version = stack?.versions?.at(0)
   const tfvarsContent = useMemo(
     () => parseTfvars(version?.contents),
     [version?.contents]
   )
-
-  const generateToken = async () => {
-    if (!org?.id || !install?.id) return
-
-    setIsGenerating(true)
-    setTokenError('')
-    try {
-      const data = await api<{ token: string; expires_at: string }>({
-        method: 'POST',
-        orgId: org.id,
-        path: `installs/${install.id}/runner-bootstrap-token`,
-      })
-      setRunnerApiToken(data?.token ?? '')
-      setExpiresAt(data?.expires_at ?? '')
-    } catch (error: any) {
-      setTokenError(error?.error || 'Failed to generate token')
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
-  const maskedToken = runnerApiToken
-    ? `${runnerApiToken.slice(0, 8)}${'•'.repeat(24)}`
-    : ''
-
-  const applyCmd = runnerApiToken
-    ? `TF_VAR_runner_api_token="${runnerApiToken}" \\
-  terraform init && terraform apply -var-file=install.tfvars`
-    : `TF_VAR_runner_api_token="<generate token above>" \\
-  terraform init && terraform apply -var-file=install.tfvars`
-
-  const displayApplyCmd = runnerApiToken
-    ? `TF_VAR_runner_api_token="${maskedToken}" \\
-  terraform init && terraform apply -var-file=install.tfvars`
-    : applyCmd
 
   const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/gcp`
@@ -96,6 +51,8 @@ cd install-stacks/gcp`
     prefix = "nuon/${install?.id}"
   }
 }`
+
+  const applyCmd = `terraform init && terraform apply -var-file=install.tfvars`
 
   return (
     <>
@@ -158,69 +115,11 @@ cd install-stacks/gcp`
         </Text>
 
         <Card>
-          <Text variant="subtext">
-            Generate a runner API token below. Each token expires in 2 hours —
-            click again to rotate.
-          </Text>
-
-          <span className="flex justify-between items-center">
-            <Text>Runner API token</Text>
-            <span className="flex items-center gap-1">
-              {runnerApiToken && (
-                <>
-                  <button
-                    type="button"
-                    className="hover:bg-black/10 dark:hover:bg-white/5 flex items-center cursor-pointer border rounded-md p-1"
-                    onClick={() => setTokenVisible((v) => !v)}
-                    aria-label={tokenVisible ? 'Hide token' : 'Reveal token'}
-                  >
-                    <Icon
-                      variant={tokenVisible ? 'EyeSlash' : 'Eye'}
-                      size="16"
-                    />
-                  </button>
-                  <ClickToCopyButton textToCopy={runnerApiToken} />
-                </>
-              )}
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={generateToken}
-                disabled={isGenerating || !org?.id || !install?.id}
-              >
-                {isGenerating
-                  ? 'Generating...'
-                  : runnerApiToken
-                    ? 'Rotate token'
-                    : 'Generate token'}
-              </Button>
-            </span>
-          </span>
-
-          {tokenError && (
-            <Text variant="subtext">{tokenError}</Text>
-          )}
-
-          {runnerApiToken && (
-            <>
-              <Code variant="preformated">
-                {tokenVisible ? runnerApiToken : maskedToken}
-              </Code>
-              {expiresAt && (
-                <Text variant="subtext">
-                  Expires: {new Date(expiresAt).toLocaleString()}
-                </Text>
-              )}
-            </>
-          )}
-
-          <Divider />
-
           <span className="flex justify-between items-center">
             <Text>Run Terraform</Text>
             <ClickToCopyButton textToCopy={applyCmd} />
           </span>
-          <Code variant="preformated">{displayApplyCmd}</Code>
+          <Code variant="preformated">{applyCmd}</Code>
         </Card>
       </div>
     </>

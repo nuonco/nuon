@@ -32,6 +32,9 @@ type AppRunnerProcess struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// initial health check
+	InitialHealthCheck bool `json:"initial_health_check,omitempty"`
+
 	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
@@ -47,8 +50,10 @@ type AppRunnerProcess struct {
 	// started at
 	StartedAt string `json:"started_at,omitempty"`
 
-	// status
-	Status AppRunnerProcessStatus `json:"status,omitempty"`
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status struct {
+		AppRunnerProcessStatus
+	} `json:"status,omitempty"`
 
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
@@ -59,8 +64,14 @@ type AppRunnerProcess struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
+	// uptime
+	Uptime int64 `json:"uptime,omitempty"`
+
 	// version
 	Version string `json:"version,omitempty"`
+
+	// Warnings are computed server-side and not persisted.
+	Warnings []string `json:"warnings"`
 }
 
 // Validate validates this app runner process
@@ -145,19 +156,6 @@ func (m *AppRunnerProcess) validateShutdowns(formats strfmt.Registry) error {
 func (m *AppRunnerProcess) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
-	}
-
-	if err := m.Status.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("status")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("status")
-		}
-
-		return err
 	}
 
 	return nil
@@ -265,23 +263,6 @@ func (m *AppRunnerProcess) contextValidateShutdowns(ctx context.Context, formats
 }
 
 func (m *AppRunnerProcess) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Status) { // not required
-		return nil
-	}
-
-	if err := m.Status.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("status")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("status")
-		}
-
-		return err
-	}
 
 	return nil
 }
