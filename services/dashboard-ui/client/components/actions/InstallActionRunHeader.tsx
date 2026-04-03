@@ -118,11 +118,9 @@ export const InstallActionRunHeader = ({
           </LabeledValue>
 
           <LabeledValue label="Execution role">
-            {installActionRun.runner_job.json.permission_info.role ? (
+            {installActionRun?.runner_job?.json?.permission_info?.role ? (
               <Text variant="subtext" family='mono' className="text-xs">
-                {
-                  installActionRun.runner_job.json.permission_info.role
-                }
+                {installActionRun.runner_job.json.permission_info.role}
               </Text>
             ) : (
               <Text variant="subtext" theme="neutral">
