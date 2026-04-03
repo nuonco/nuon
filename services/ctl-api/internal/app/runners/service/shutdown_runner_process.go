@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -74,40 +73,30 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 		s.l.Warn("unable to set process pending-shutdown status", zap.Error(err))
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:         signals.OperationProcessShutdown,
-		ProcessID:    processID,
-		ShutdownType: string(req.ShutdownType),
-	})
+	// Write a red health check to ClickHouse so dashboards reflect the shutdown
+	s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
+
+	// Enqueue shutdown signal to the v2 process queue and stop health check emitters
+	if err := s.helpers.EnqueueProcessShutdown(ctx, runnerID, processID, req.ShutdownType); err != nil {
+		s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
+	}
 
 	ctx.JSON(http.StatusCreated, shutdown)
 }
 
 func (s *service) updateProcessStatusPendingShutdown(ctx context.Context, process *app.RunnerProcess) error {
 	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusPendingShutdown))
-	newComposite.StatusHumanDescription = "shutdown requested"
+	newComposite.StatusHumanDescription = "Shutdown pending"
 	newComposite.History = append([]app.CompositeStatus{process.CompositeStatus}, process.CompositeStatus.History...)
 	newComposite.History[0].History = nil
 
 	res := s.db.WithContext(ctx).
 		Model(&app.RunnerProcess{ID: process.ID}).
 		Updates(app.RunnerProcess{
-			Status:            app.RunnerProcessStatusPendingShutdown,
-			StatusDescription: "shutdown requested",
-			CompositeStatus:   newComposite,
+			CompositeStatus: newComposite,
 		})
 	if res.Error != nil {
 		return fmt.Errorf("unable to update process status: %w", res.Error)
-	}
-
-	// Create health check record marking pending shutdown
-	hc := app.RunnerHealthCheck{
-		RunnerID:  process.RunnerID,
-		ProcessID: process.ID,
-		Status:    app.RunnerStatusActive,
-	}
-	if res := s.chDB.WithContext(ctx).Create(&hc); res.Error != nil {
-		return fmt.Errorf("unable to create health check: %w", res.Error)
 	}
 
 	return nil
@@ -117,7 +106,6 @@ func (s *service) createRunnerProcessShutdown(ctx context.Context, processID str
 	shutdown := app.RunnerProcessShutdown{
 		RunnerProcessID: processID,
 		Type:            req.ShutdownType,
-		Status:          app.RunnerProcessShutdownStatusRequested,
 		CompositeStatus: app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessShutdownStatusRequested)),
 	}
 

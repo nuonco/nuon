@@ -29,9 +29,7 @@ func (a *Activities) UpdateRunnerProcessShutdownStatus(ctx context.Context, req 
 	res := a.db.WithContext(ctx).
 		Model(&app.RunnerProcessShutdown{ID: req.ShutdownID}).
 		Updates(app.RunnerProcessShutdown{
-			Status:            req.Status,
-			StatusDescription: req.StatusDescription,
-			CompositeStatus:   newComposite,
+			CompositeStatus: newComposite,
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner process shutdown status: %w", res.Error)

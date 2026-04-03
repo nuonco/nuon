@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -43,11 +43,23 @@ func (s *service) AdminShutdownRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type:         signals.OperationProcessShutdown,
-		ProcessID:    processID,
-		ShutdownType: string(req.ShutdownType),
-	})
+	// Mark process as pending-shutdown so health checks noop
+	process, err := s.getRunnerProcess(ctx, processID)
+	if err != nil {
+		s.l.Warn("unable to get runner process for pending-shutdown update", zap.Error(err))
+	} else {
+		if err := s.updateProcessStatusPendingShutdown(ctx, process); err != nil {
+			s.l.Warn("unable to set process pending-shutdown status", zap.Error(err))
+		}
+
+		// Write a red health check to ClickHouse so dashboards reflect the shutdown
+		s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
+	}
+
+	// Enqueue shutdown signal to the v2 process queue and stop health check emitters
+	if err := s.helpers.EnqueueProcessShutdown(ctx, runnerID, processID, req.ShutdownType); err != nil {
+		s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
+	}
 
 	ctx.JSON(http.StatusCreated, shutdown)
 }

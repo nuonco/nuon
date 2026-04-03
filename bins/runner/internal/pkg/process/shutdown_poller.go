@@ -95,10 +95,16 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			continue
 		}
 		if shutdown.Status == models.AppRunnerProcessShutdownStatusRequested {
-			sp.l.Info("shutdown requested, initiating graceful shutdown",
+			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
 				zap.String("process_id", processID),
+				zap.String("shutdown_id", shutdown.ID),
 				zap.String("shutdown_type", string(shutdown.Type)),
 			)
+
+			if _, err := sp.apiClient.CompleteShutdown(ctx, processID, shutdown.ID); err != nil {
+				sp.l.Warn("unable to mark shutdown as completed", zap.Error(err))
+			}
+
 			sp.shutdowner.Shutdown()
 			return
 		}

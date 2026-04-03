@@ -50,7 +50,7 @@ func (s *service) getCurrentRunnerProcesses(ctx context.Context, runnerID, orgID
 
 	// get the most recent active process per type using a subquery
 	res := s.db.WithContext(ctx).
-		Where("runner_id = ? AND org_id = ? AND status = ?", runnerID, orgID, app.RunnerProcessStatusActive).
+		Where("runner_id = ? AND org_id = ? AND composite_status->>'status' = ?", runnerID, orgID, string(app.RunnerProcessStatusActive)).
 		Preload("Shutdowns").
 		Order("created_at DESC").
 		Find(&processes)

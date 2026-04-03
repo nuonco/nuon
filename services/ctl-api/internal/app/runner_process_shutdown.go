@@ -44,13 +44,22 @@ type RunnerProcessShutdown struct {
 
 	RunnerProcessID string `json:"runner_process_id,omitzero" gorm:"index;not null"`
 
-	Type              RunnerProcessShutdownType   `json:"type,omitzero" gorm:"not null"`
-	Status            RunnerProcessShutdownStatus `json:"status,omitzero" gorm:"not null;default:'requested'"`
-	StatusDescription string                      `json:"status_description,omitzero"`
-	CompositeStatus   CompositeStatus             `json:"composite_status,omitzero" gorm:"type:jsonb"`
+	Type            RunnerProcessShutdownType `json:"type,omitzero" gorm:"not null"`
+	CompositeStatus CompositeStatus           `json:"composite_status,omitzero" gorm:"type:jsonb"`
 
-	RequestedByID string        `json:"requested_by_id,omitzero"`
-	Metadata      pgtype.Hstore `json:"metadata,omitempty" gorm:"type:hstore"`
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status            RunnerProcessShutdownStatus `json:"status,omitzero" gorm:"-"`
+	StatusDescription string                      `json:"status_description,omitzero" gorm:"-"`
+
+	Metadata pgtype.Hstore `json:"metadata,omitempty" gorm:"type:hstore"`
+}
+
+func (r *RunnerProcessShutdown) AfterQuery(tx *gorm.DB) error {
+	if r.CompositeStatus.Status != "" {
+		r.Status = RunnerProcessShutdownStatus(r.CompositeStatus.Status)
+		r.StatusDescription = r.CompositeStatus.StatusHumanDescription
+	}
+	return nil
 }
 
 func (r *RunnerProcessShutdown) BeforeCreate(tx *gorm.DB) error {

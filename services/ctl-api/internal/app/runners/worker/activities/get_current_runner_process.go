@@ -17,7 +17,7 @@ type GetCurrentRunnerProcessRequest struct {
 func (a *Activities) GetCurrentRunnerProcess(ctx context.Context, req GetCurrentRunnerProcessRequest) (*app.RunnerProcess, error) {
 	var process app.RunnerProcess
 	res := a.db.WithContext(ctx).
-		Where("runner_id = ? AND type = ? AND status = ?", req.RunnerID, req.ProcessType, app.RunnerProcessStatusActive).
+		Where("runner_id = ? AND type = ? AND composite_status->>'status' = ?", req.RunnerID, req.ProcessType, string(app.RunnerProcessStatusActive)).
 		Preload("Shutdowns").
 		Order("created_at DESC").
 		First(&process)

@@ -78,7 +78,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
 		RunnerProcessID: process.ID,
 		Type:            app.RunnerProcessShutdownTypeGraceful,
-		Status:          app.RunnerProcessShutdownStatusRequested,
 		CompositeStatus: app.CompositeStatus{
 			Status:                 app.Status(app.RunnerProcessShutdownStatusRequested),
 			StatusHumanDescription: "uptime threshold exceeded",

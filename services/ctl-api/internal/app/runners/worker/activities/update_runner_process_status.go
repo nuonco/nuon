@@ -11,6 +11,7 @@ type UpdateRunnerProcessStatusRequest struct {
 	ProcessID         string                  `validate:"required"`
 	Status            app.RunnerProcessStatus `validate:"required"`
 	StatusDescription string
+	Metadata          map[string]any
 }
 
 // @temporal-gen-v2 activity
@@ -24,15 +25,20 @@ func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRu
 
 	newComposite := app.NewCompositeStatus(ctx, app.Status(req.Status))
 	newComposite.StatusHumanDescription = req.StatusDescription
+	// Carry forward metadata from the previous status, then overlay any new metadata
+	for k, v := range current.CompositeStatus.Metadata {
+		newComposite.Metadata[k] = v
+	}
+	for k, v := range req.Metadata {
+		newComposite.Metadata[k] = v
+	}
 	newComposite.History = append([]app.CompositeStatus{current.CompositeStatus}, current.CompositeStatus.History...)
 	newComposite.History[0].History = nil
 
 	res := a.db.WithContext(ctx).
 		Model(&app.RunnerProcess{ID: req.ProcessID}).
 		Updates(app.RunnerProcess{
-			Status:            req.Status,
-			StatusDescription: req.StatusDescription,
-			CompositeStatus:   newComposite,
+			CompositeStatus: newComposite,
 		})
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner process status: %w", res.Error)

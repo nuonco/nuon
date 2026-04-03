@@ -57,7 +57,7 @@ func (s *service) adminListRunnerProcesses(ctx context.Context, runnerID, proces
 		query = query.Where("type = ?", processType)
 	}
 	if status != "" {
-		query = query.Where("status = ?", status)
+		query = query.Where("composite_status->>'status' = ?", status)
 	}
 
 	query = query.Limit(intFromString(limit, 25)).Offset(intFromString(offset, 0))

@@ -38,3 +38,17 @@ const (
 	RunnerProcessTypeOrg     RunnerProcessType = "org"
 	RunnerProcessTypeUnknown RunnerProcessType = ""
 )
+
+// HeartBeatProcessForRunnerGroupType maps a RunnerGroupType to the RunnerProcessType
+// used for heartbeat lookups. Install runner groups use the "mng" process type,
+// org runner groups use the "org" process type.
+func HeartBeatProcessForRunnerGroupType(gt RunnerGroupType) RunnerProcessType {
+	switch gt {
+	case RunnerGroupTypeInstall:
+		return RunnerProcessTypeMng
+	case RunnerGroupTypeOrg:
+		return RunnerProcessTypeOrg
+	default:
+		return RunnerProcessTypeUnknown
+	}
+}

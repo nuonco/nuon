@@ -44,10 +44,6 @@ const (
 	OperationProvision   eventloop.SignalType = "provision"
 	OperationDeprovision eventloop.SignalType = "deprovision"
 	OperationReprovision eventloop.SignalType = "reprovision"
-
-	// used for process lifecycle
-	OperationProcessCreated  eventloop.SignalType = "process_created"
-	OperationProcessShutdown eventloop.SignalType = "process_shutdown"
 )
 
 type Signal struct {
@@ -58,10 +54,6 @@ type Signal struct {
 	HealthCheckID            string `validate:"required_if=Type update_version"`
 	InstallStackVersionRunID string `validate:"required_if=Type install_stack_version_run"`
 	ForceDelete              bool
-
-	// process lifecycle fields
-	ProcessID    string
-	ShutdownType string
 }
 
 type RequestSignal struct {

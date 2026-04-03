@@ -24,7 +24,6 @@ const (
 	RunnerProcessStatusUnknown         RunnerProcessStatus = "unknown"
 )
 
-
 type RunnerProcess struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string  `gorm:"not null;default:null" json:"created_by_id,omitzero"`
@@ -42,15 +41,18 @@ type RunnerProcess struct {
 
 	Type RunnerProcessType `json:"type,omitzero" gorm:"not null"`
 
-	Status            RunnerProcessStatus `json:"status,omitzero" gorm:"not null;default:'active'"`
-	StatusDescription string              `json:"status_description,omitzero"`
-	CompositeStatus   CompositeStatus     `json:"composite_status,omitzero" gorm:"type:jsonb"`
+	CompositeStatus CompositeStatus `json:"composite_status,omitzero" gorm:"type:jsonb"`
+
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status            RunnerProcessStatus `json:"status,omitzero" gorm:"-"`
+	StatusDescription string              `json:"status_description,omitzero" gorm:"-"`
 
 	LogStreamID *string    `json:"log_stream_id,omitempty"`
 	LogStream   *LogStream `json:"-"`
 
-	Version   string     `json:"version,omitzero"`
-	StartedAt *time.Time `json:"started_at,omitempty"`
+	Version            string     `json:"version,omitzero"`
+	StartedAt          *time.Time `json:"started_at,omitempty"`
+	InitialHealthCheck bool       `json:"initial_health_check,omitzero" gorm:"default:false"`
 
 	Uptime time.Duration `json:"uptime,omitempty" gorm:"-" swaggertype:"primitive,integer"`
 
@@ -68,6 +70,27 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 	if r.StartedAt != nil {
 		r.Uptime = time.Since(*r.StartedAt)
 	}
+
+	// Initializing warning: active but no health check yet
+	if r.Status == RunnerProcessStatusActive && !r.InitialHealthCheck {
+		r.Warnings = append(r.Warnings, "This runner is still initializing and will not process jobs until its first health check")
+	}
+
+	// Surface status descriptions as warnings for non-healthy statuses
+	if r.CompositeStatus.StatusHumanDescription != "" {
+		switch r.Status {
+		case RunnerProcessStatusPendingShutdown, RunnerProcessStatusOffline, RunnerProcessStatusError:
+			r.Warnings = append(r.Warnings, r.CompositeStatus.StatusHumanDescription)
+		}
+	}
+
+	// Version warning from metadata
+	if vw, ok := r.CompositeStatus.Metadata["version_warning"]; ok {
+		if warning, ok := vw.(string); ok && warning != "" {
+			r.Warnings = append(r.Warnings, warning)
+		}
+	}
+
 	return nil
 }
 

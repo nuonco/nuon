@@ -116,11 +116,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 				ProcessID:         s.ProcessID,
 				Status:            app.RunnerProcessStatusOffline,
-				StatusDescription: "no heartbeat received for 1 minute",
+				StatusDescription: "Runner is offline and will be marked inactive in 5 minutes",
 			})
 			if err != nil {
 				return errors.Wrap(err, "unable to update process status to offline")
 			}
+		}
+
+		// Create red health check while offline
+		_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+			RunnerID:  s.RunnerID,
+			ProcessID: s.ProcessID,
+			Status:    app.RunnerStatusError,
+		})
+		if err != nil {
+			l.Warn("unable to create offline health check",
+				zap.String("process_id", s.ProcessID),
+				zap.Error(err),
+			)
 		}
 
 		return nil
@@ -151,6 +164,42 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create process health check")
+	}
+
+	// Version mismatch check: compare API version to runner's reported version
+	if heartbeat != nil && heartbeat.Version != "" {
+		apiVersion, err := activities.AwaitGetAPIVersion(ctx)
+		if err != nil {
+			l.Warn("unable to get API version for comparison",
+				zap.String("process_id", s.ProcessID),
+				zap.Error(err),
+			)
+		} else {
+			var metadata map[string]any
+			if apiVersion != heartbeat.Version {
+				metadata = map[string]any{
+					"version_warning": "Reported runner version does not match running API version and could cause issues. Please update the tag to the same version as the control plane (" + apiVersion + ")",
+				}
+			} else {
+				// Clear the warning if versions now match
+				metadata = map[string]any{
+					"version_warning": "",
+				}
+			}
+
+			_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+				ProcessID:         s.ProcessID,
+				Status:            app.RunnerProcessStatusActive,
+				StatusDescription: "",
+				Metadata:          metadata,
+			})
+			if err != nil {
+				l.Warn("unable to update version warning metadata",
+					zap.String("process_id", s.ProcessID),
+					zap.Error(err),
+				)
+			}
+		}
 	}
 
 	return nil

@@ -43,6 +43,13 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	// Stop the process queue emitters (health check cron, uptime check) as a safety net
+	// in case the HTTP handler's emitter stop failed.
+	_ = activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
+		RunnerID:  s.RunnerID,
+		ProcessID: s.ProcessID,
+	})
+
 	// Get process and find the requested shutdown
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {

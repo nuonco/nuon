@@ -68,9 +68,9 @@ func (s *service) listRunnerProcesses(ctx context.Context, runnerID, orgID, proc
 	if status != "" {
 		statuses := strings.Split(status, ",")
 		if len(statuses) == 1 {
-			query = query.Where("status = ?", status)
+			query = query.Where("composite_status->>'status' = ?", status)
 		} else {
-			query = query.Where("status IN ?", statuses)
+			query = query.Where("composite_status->>'status' IN ?", statuses)
 		}
 	}
 

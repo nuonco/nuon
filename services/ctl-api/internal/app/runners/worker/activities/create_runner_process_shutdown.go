@@ -10,7 +10,6 @@ import (
 type CreateRunnerProcessShutdownRequest struct {
 	RunnerProcessID string                        `validate:"required"`
 	Type            app.RunnerProcessShutdownType `validate:"required"`
-	Status          app.RunnerProcessShutdownStatus
 	CompositeStatus app.CompositeStatus
 }
 
@@ -20,12 +19,7 @@ func (a *Activities) CreateRunnerProcessShutdown(ctx context.Context, req Create
 	shutdown := app.RunnerProcessShutdown{
 		RunnerProcessID: req.RunnerProcessID,
 		Type:            req.Type,
-		Status:          req.Status,
 		CompositeStatus: req.CompositeStatus,
-	}
-
-	if shutdown.Status == "" {
-		shutdown.Status = app.RunnerProcessShutdownStatusRequested
 	}
 
 	if res := a.db.WithContext(ctx).Create(&shutdown); res.Error != nil {

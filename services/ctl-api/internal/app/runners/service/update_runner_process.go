@@ -67,9 +67,7 @@ func (s *service) updateRunnerProcess(ctx context.Context, processID string, req
 	newComposite.History[0].History = nil
 
 	updates := app.RunnerProcess{
-		Status:            req.Status,
-		StatusDescription: req.StatusDescription,
-		CompositeStatus:   newComposite,
+		CompositeStatus: newComposite,
 	}
 
 	res := s.db.WithContext(ctx).
