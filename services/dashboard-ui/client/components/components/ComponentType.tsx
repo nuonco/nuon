@@ -17,7 +17,7 @@ interface IComponentTypeConfig {
 }
 
 const COMPONENT_TYPE_CONFIG: Record<
-  TComponentType | 'unknown',
+  TComponentType | 'pulumi_module' | 'unknown',
   IComponentTypeConfig
 > = {
   docker_build: {
@@ -49,6 +49,12 @@ const COMPONENT_TYPE_CONFIG: Record<
     brandColorClass: 'text-[#FF9900] dark:text-[#FFB340]',
     icon: 'AWSLambda',
     name: 'Lambda',
+  },
+  pulumi_module: {
+    abbr: 'Pulumi',
+    brandColorClass: 'text-[#8A3391] dark:text-[#C48BCC]',
+    icon: 'Pulumi',
+    name: 'Pulumi',
   },
   kubernetes_manifest: {
     abbr: 'K8s',
