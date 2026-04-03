@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
 	runnersigs "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -97,18 +100,37 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 		return errors.Wrap(err, "unable to create org runner group")
 	}
 
-	// emit org-reprovision
+	// Runner signals stay v1 - runners don't have v2 queues
 	s.evClient.Send(ctx, rg.Runners[0].ID, &runnersigs.Signal{
 		Type: sigs.OperationCreated,
 	})
 	s.evClient.Send(ctx, rg.Runners[0].ID, &runnersigs.Signal{
 		Type: runnersigs.OperationProvision,
 	})
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationRestart,
-	})
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationReprovision,
-	})
+
+	// Org signals use v2 queues if enabled
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		return fmt.Errorf("checking features: %w", err)
+	}
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			return fmt.Errorf("unable to get org signals queue: %w", err)
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}); err != nil {
+			return fmt.Errorf("enqueue restart signal: %w", err)
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgreprovision.Signal{OrgID: org.ID}); err != nil {
+			return fmt.Errorf("enqueue reprovision signal: %w", err)
+		}
+	} else {
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationRestart,
+		})
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationReprovision,
+		})
+	}
 	return nil
 }

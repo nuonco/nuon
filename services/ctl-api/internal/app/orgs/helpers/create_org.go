@@ -5,7 +5,11 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
+
+const OrgSignalsQueueName = "org-signals"
 
 type CreateOrgParams struct {
 	Name           string
@@ -71,6 +75,19 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 
 	if _, err := h.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
 		return nil, fmt.Errorf("unable to create org runner group: %w", err)
+	}
+
+	// Create the org-signals queue
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     org.ID,
+		OwnerType:   plugins.TableName(h.db, app.Org{}),
+		Namespace:   "orgs",
+		Name:        OrgSignalsQueueName,
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)
 	}
 
 	return &org, nil

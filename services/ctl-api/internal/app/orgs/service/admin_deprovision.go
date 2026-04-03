@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -58,14 +59,30 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 		return
 	}
 
-	sigTyp := sigs.OperationDeprovision
-	if req.Force {
-		sigTyp = sigs.OperationForceDeprovision
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
 	}
-
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigTyp,
-	})
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		sigTyp := sigs.OperationDeprovision
+		if req.Force {
+			sigTyp = sigs.OperationForceDeprovision
+		}
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigTyp,
+		})
+	}
 
 	ctx.JSON(http.StatusOK, true)
 }
