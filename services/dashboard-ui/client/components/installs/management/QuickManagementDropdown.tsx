@@ -10,6 +10,7 @@ import { InstallProvider } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstall } from '@/types'
 import { EditInputsButton } from './EditInputs'
+import { ViewCurrentInputsButton } from './ViewCurrentInputs'
 import { EnableAutoApproveButton } from './EnableAutoApprove'
 import { ReprovisionButton } from './Reprovision'
 import { ForgetButton } from './Forget'
@@ -48,6 +49,7 @@ const QuickManagementMenu = () => {
         Settings
       </Text>
       <EditInputsButton isMenuButton />
+      <ViewCurrentInputsButton isMenuButton />
       <ViewStateButton isMenuButton />
       <EnableAutoApproveButton isMenuButton />
       <hr />

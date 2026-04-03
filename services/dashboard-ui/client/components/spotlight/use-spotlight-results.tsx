@@ -16,6 +16,7 @@ import {
   InstallReprovisionModal,
   InstallReprovisionSandboxModal,
   InstallDeployAllComponentsModal,
+  InstallViewCurrentInputsModal,
 } from './InstallCommandModals'
 import { AppBuildAllComponentsModal } from './AppCommandModals'
 import { RestartRunnerModal } from './RestartRunnerModal'
@@ -243,6 +244,13 @@ export function useSpotlightResults(parsed: ParsedQuery, liveParsed: ParsedQuery
             tag: 'command',
             icon: 'Lightning',
             action: () => addModal(<InstallEditInputsModal installId={installId} />),
+          },
+          {
+            label: `${name} › View current inputs`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal(<InstallViewCurrentInputsModal installId={installId} />),
           },
           {
             label: `${name} › Sync secrets`,

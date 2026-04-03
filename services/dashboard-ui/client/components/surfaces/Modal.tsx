@@ -73,7 +73,7 @@ export const ModalBase = ({
         />
         <div
           className={cn(
-            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-md shadow-lg',
+            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-md shadow-lg !max-h-[80vh]',
             {
               'max-w-xl': size === 'default',
               'max-w-1/2': size === 'half',
@@ -116,7 +116,7 @@ export const ModalBase = ({
           )}
           <div
             className={cn(
-              'p-6 flex flex-col gap-4 md:gap-6',
+              'p-6 flex flex-col gap-4 md:gap-6 overflow-y-auto',
               childrenClassName
             )}
           >

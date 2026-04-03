@@ -101,11 +101,11 @@ const InstallTemplate = () => {
                 iconVariant: 'TreeStructure',
                 text: 'Workflows',
               },
-              {
-                path: `/readme`,
-                iconVariant: 'BookOpen',
-                text: 'README',
-              },
+              /* {
+                  path: `/readme`,
+                  iconVariant: 'BookOpen',
+                  text: 'README',
+                  }, */
             ]}
           />
           <div className="flex flex-col flex-1 min-w-0">
@@ -199,7 +199,7 @@ const InstallTemplate = () => {
                   text: 'Install runner',
                 },
                 {
-                  path: '/sandbox', //`/sandbox/${install?.install_sandbox_runs?.at(0)?.id || ""}`,
+                  path: '/sandbox', 
                   iconVariant: 'ShippingContainer',
                   text: 'Sandbox',
                 },
@@ -228,11 +228,11 @@ const InstallTemplate = () => {
                   iconVariant: 'TreeStructure',
                   text: 'Workflows',
                 },
-                {
-                  path: `/readme`,
-                  iconVariant: 'BookOpen',
-                  text: 'README',
-                },
+                /* {
+                    path: `/readme`,
+                    iconVariant: 'BookOpen',
+                    text: 'README',
+                    }, */
               ]}
             />
             <Outlet />
