@@ -55,6 +55,9 @@ type RunnerProcess struct {
 	// Warnings are computed server-side and not persisted.
 	Warnings []string `json:"warnings,omitempty" gorm:"-"`
 
+	// Labels are computed server-side and not persisted.
+	Labels []string `json:"labels,omitempty" gorm:"-"`
+
 	Shutdowns []RunnerProcessShutdown `json:"shutdowns,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
@@ -87,6 +90,11 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 		if warning, ok := vw.(string); ok && warning != "" {
 			r.Warnings = append(r.Warnings, warning)
 		}
+	}
+
+	// Label local runners
+	if r.Version == "development" {
+		r.Labels = append(r.Labels, "Local Runner")
 	}
 
 	return nil

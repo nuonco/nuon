@@ -187,6 +187,9 @@ export const ProcessCard = ({
               {process.type || 'unknown'} process
             </Text>
             <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
+            {process.labels?.map((label) => (
+              <Badge key={label} theme="neutral">{label}</Badge>
+            ))}
           </div>
           <Text variant="subtext" theme="neutral" className="italic">
             {process.id}

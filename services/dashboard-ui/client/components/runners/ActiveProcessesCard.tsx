@@ -78,6 +78,9 @@ function ProcessHeartbeatInfo({
           {process.type || 'unknown'}
         </Text>
         <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
+        {process.labels?.map((label) => (
+          <Badge key={label} theme="neutral">{label}</Badge>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

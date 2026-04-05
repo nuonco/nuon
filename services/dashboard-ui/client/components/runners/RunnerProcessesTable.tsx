@@ -55,7 +55,12 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
         </Badge>
       </td>
       <td className="px-4 py-3">
-        <Text variant="small">{process.version || '-'}</Text>
+        <div className="flex items-center gap-2">
+          <Text variant="small">{process.version || '-'}</Text>
+          {process.labels?.map((label) => (
+            <Badge key={label} theme="neutral">{label}</Badge>
+          ))}
+        </div>
       </td>
       <td className="px-4 py-3">
         <Text variant="small">{formatUptime(process.started_at)}</Text>

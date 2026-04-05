@@ -15,7 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "deprovision"
+const SignalType signal.SignalType = "app-deprovision"
 
 const (
 	defaultPollTimeout time.Duration = time.Second * 10

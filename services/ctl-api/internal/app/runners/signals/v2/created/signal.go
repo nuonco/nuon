@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "created"
+const SignalType signal.SignalType = "runner-created"
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`

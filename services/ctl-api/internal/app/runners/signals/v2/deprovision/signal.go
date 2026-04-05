@@ -14,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "deprovision"
+const SignalType signal.SignalType = "runner-deprovision"
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
