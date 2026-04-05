@@ -25,6 +25,9 @@ const (
 	QueueEmitterModeCron QueueEmitterMode = "cron"
 	// QueueEmitterModeScheduled emits a signal once at a scheduled time, then stops
 	QueueEmitterModeScheduled QueueEmitterMode = "scheduled"
+	// QueueEmitterModeFireOnce emits a signal once at the scheduled time, then stops.
+	// Semantically equivalent to scheduled mode but indicates the emitter is a one-shot timer.
+	QueueEmitterModeFireOnce QueueEmitterMode = "fire_once"
 )
 
 type QueueEmitter struct {
@@ -90,6 +93,16 @@ func (r *QueueEmitter) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 	}
+}
+
+// IsFireOnce returns true if the emitter is a one-shot emitter (scheduled or fire_once mode).
+func (r *QueueEmitter) IsFireOnce() bool {
+	return r.Mode == QueueEmitterModeScheduled || r.Mode == QueueEmitterModeFireOnce
+}
+
+// HasFired returns true if a fire-once emitter has already emitted its signal.
+func (r *QueueEmitter) HasFired() bool {
+	return r.IsFireOnce() && r.Fired
 }
 
 func (r *QueueEmitter) BeforeCreate(tx *gorm.DB) error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "deprovision"
+const SignalType signal.SignalType = "runner-deprovision"
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
@@ -80,6 +81,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create operation")
 	}
 
+	// Shut down active processes before deprovisioning
+	s.shutdownActiveProcesses(ctx, runner)
+
 	// Execute deprovision based on runner group type
 	var execErr error
 	switch runner.RunnerGroup.Type {
@@ -109,7 +113,50 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	// Transition runner to deprovisioned status
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusDeprovisioned,
+		StatusDescription: "runner deprovisioned",
+	}); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// shutdownActiveProcesses creates shutdown records for all active runner processes.
+// We don't wait for completion — the Kubernetes deprovision handles actual teardown.
+func (s *Signal) shutdownActiveProcesses(ctx workflow.Context, runner *app.Runner) {
+	l := workflow.GetLogger(ctx)
+
+	processTypes := []string{
+		string(app.RunnerProcessTypeMng),
+		string(app.RunnerProcessTypeInstall),
+		string(app.RunnerProcessTypeBuild),
+		string(app.RunnerProcessTypeOrg),
+	}
+
+	for _, pt := range processTypes {
+		process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+			RunnerID:    s.RunnerID,
+			ProcessType: pt,
+		})
+		if err != nil {
+			l.Info("no active process found for type, skipping", zap.String("process_type", pt))
+			continue
+		}
+
+		_, err = activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+			RunnerProcessID: process.ID,
+			Type:            app.RunnerProcessShutdownTypeGraceful,
+		})
+		if err != nil {
+			l.Error("failed to create shutdown for process, continuing", zap.String("process_id", process.ID), zap.String("process_type", pt), zap.Error(err))
+		} else {
+			l.Info("created shutdown record for process", zap.String("process_id", process.ID), zap.String("process_type", pt))
+		}
+	}
 }
 
 // executeDeprovisionOrgRunner deprovisions an organization runner from Kubernetes

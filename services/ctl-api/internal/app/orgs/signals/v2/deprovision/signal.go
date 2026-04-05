@@ -2,12 +2,14 @@ package deprovision
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	runnerdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/deprovision"
@@ -38,20 +40,54 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// If not a force deprovision, check for active apps first
-	if !s.Force {
-		org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
-		if err != nil {
-			s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
-			return fmt.Errorf("unable to get org: %w", err)
-		}
-		if len(org.Apps) > 0 {
+	org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
+	if err != nil {
+		s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
+		return fmt.Errorf("unable to get org: %w", err)
+	}
+
+	if len(org.Apps) > 0 {
+		if !s.Force {
 			s.updateStatus(ctx, app.OrgStatusError, "cannot deprovision org with active apps")
 			return temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("organization has %d app(s) that must be deleted before deprovisioning", len(org.Apps)),
 				"AppsStillPresent",
 				nil,
 			)
+		}
+
+		// Force mode: check if any apps have installs — user must forget installs first
+		for _, a := range org.Apps {
+			if len(a.Installs) > 0 {
+				s.updateStatus(ctx, app.OrgStatusError, "cannot force deprovision: apps have installs that must be forgotten first")
+				return temporal.NewNonRetryableApplicationError(
+					fmt.Sprintf("app %s has %d install(s) that must be forgotten before force deprovisioning", a.ID, len(a.Installs)),
+					"InstallsStillPresent",
+					nil,
+				)
+			}
+		}
+
+		// No installs — safe to delete apps
+		l := workflow.GetLogger(ctx)
+		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "force deprovisioning: deleting all apps")
+		for _, a := range org.Apps {
+			l.Info("enqueuing app deprovision signal", zap.String("app_id", a.ID))
+			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   a.ID,
+				OwnerType: "apps",
+				Signal: &appdeprovision.Signal{
+					AppID: a.ID,
+				},
+			})
+			if err != nil {
+				l.Error("unable to enqueue app deprovision signal, continuing anyway", zap.String("app_id", a.ID), zap.Error(err))
+			}
+		}
+
+		// Wait for all apps to be deleted before proceeding
+		if err := s.pollAppsDeleted(ctx); err != nil {
+			return err
 		}
 	}
 
@@ -97,6 +133,36 @@ func (s *Signal) deprovisionOrg(ctx workflow.Context) error {
 	}
 	s.updateStatus(ctx, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil
+}
+
+func (s *Signal) pollAppsDeleted(ctx workflow.Context) error {
+	deadline := workflow.Now(ctx).Add(time.Minute * 60)
+	l := workflow.GetLogger(ctx)
+
+	for {
+		org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
+		if err != nil {
+			s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
+			return fmt.Errorf("unable to get org: %w", err)
+		}
+
+		if len(org.Apps) == 0 {
+			l.Info("all apps deleted, proceeding with org deprovision")
+			return nil
+		}
+
+		if workflow.Now(ctx).After(deadline) {
+			s.updateStatus(ctx, app.OrgStatusError, "timeout waiting for apps to be deleted")
+			return temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("timeout waiting for %d app(s) to be deleted", len(org.Apps)),
+				"AppsDeleteTimeout",
+				nil,
+			)
+		}
+
+		s.updateStatus(ctx, app.OrgStatusDeprovisioning, fmt.Sprintf("waiting for %d app(s) to be deleted", len(org.Apps)))
+		workflow.Sleep(ctx, time.Second*10)
+	}
 }
 
 func (s *Signal) updateStatus(ctx workflow.Context, status app.OrgStatus, statusDescription string) {

@@ -28,7 +28,6 @@ import (
 // @Success				201	{object}	app.RunnerProcessShutdown
 // @Router					/v1/runners/{runner_id}/processes/{process_id}/shutdown [POST]
 func (s *service) AdminShutdownRunnerProcess(ctx *gin.Context) {
-	runnerID := ctx.Param("runner_id")
 	processID := ctx.Param("process_id")
 
 	var req ShutdownRunnerProcessRequest
@@ -54,11 +53,11 @@ func (s *service) AdminShutdownRunnerProcess(ctx *gin.Context) {
 
 		// Write a red health check to ClickHouse so dashboards reflect the shutdown
 		s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
-	}
 
-	// Enqueue shutdown signal to the v2 process queue and stop health check emitters
-	if err := s.helpers.EnqueueProcessShutdown(ctx, runnerID, processID, req.ShutdownType); err != nil {
-		s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
+		// Enqueue the process_shutdown signal to drive the shutdown lifecycle
+		if err := s.helpers.EnqueueProcessShutdown(ctx, process); err != nil {
+			s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, shutdown)
