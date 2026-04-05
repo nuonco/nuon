@@ -1,6 +1,7 @@
 package processshutdown
 
 import (
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -8,8 +9,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "process_shutdown"
@@ -122,7 +125,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to poll runner process status")
 		}
 
-		if updated.Status == app.RunnerProcessStatusShutDown {
+		if updated.ProcessStatus() == app.RunnerProcessStatusShutDown {
 			// Process confirmed shut down
 			_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
 				ShutdownID:        shutdownID,
@@ -132,6 +135,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "unable to update shutdown status to completed")
 			}
+
+			// Enqueue on_inactive signal for shutdown completion
+			_, _ = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   s.RunnerID,
+				OwnerType: "runners",
+				QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
+				Signal: &oninactive.Signal{
+					RunnerID:  s.RunnerID,
+					ProcessID: s.ProcessID,
+					Reason:    "shutdown",
+				},
+			})
+
 			return nil
 		}
 

@@ -68,7 +68,7 @@ func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req 
 		return nil, fmt.Errorf("unable to create log stream: %w", res.Error)
 	}
 
-	composite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusActive))
+	composite := app.NewCompositeStatus(ctx, app.StatusPending)
 	composite.StatusHumanDescription = "This runner is still initializing and will not process jobs until its first health check"
 
 	process := app.RunnerProcess{

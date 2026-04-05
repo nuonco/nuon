@@ -1,6 +1,7 @@
 package processhealthcheck
 
 import (
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -10,9 +11,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "process_healthcheck"
@@ -50,16 +53,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Check if the process is still active or offline; noop for any other status
+	// Only run health checks for active or offline processes; noop for any other status
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return nil
 	}
-	if process.Status != app.RunnerProcessStatusActive && process.Status != app.RunnerProcessStatusOffline {
-		l.Info("skipping process health check - process not active/offline",
-			zap.String("process_id", s.ProcessID),
-			zap.String("status", string(process.Status)),
-		)
+
+	switch process.ProcessStatus() {
+	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
+		// continue with health check
+	default:
 		return nil
 	}
 
@@ -90,6 +93,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to update process status to inactive")
 		}
 
+		// Enqueue on_inactive signal before stopping the queue
+		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   s.RunnerID,
+			OwnerType: "runners",
+			QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
+			Signal: &oninactive.Signal{
+				RunnerID:  s.RunnerID,
+				ProcessID: s.ProcessID,
+				Reason:    "offline",
+			},
+		})
+		if err != nil {
+			l.Warn("unable to enqueue on_inactive signal",
+				zap.String("process_id", s.ProcessID),
+				zap.Error(err),
+			)
+		}
+
 		// Stop the process queue (terminates the cron emitter)
 		err = activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
 			RunnerID:  s.RunnerID,
@@ -107,7 +128,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Tier 2: no heartbeat for 1 minute → mark offline
 	if heartbeatAge >= offlineTimeout {
-		if process.Status != app.RunnerProcessStatusOffline {
+		if process.ProcessStatus() != app.RunnerProcessStatusOffline {
 			l.Warn("process offline - no heartbeat for 1 minute",
 				zap.String("runner_id", s.RunnerID),
 				zap.String("process_id", s.ProcessID),
@@ -140,7 +161,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Heartbeat is fresh — ensure process is active
-	if process.Status == app.RunnerProcessStatusOffline {
+	if process.ProcessStatus() == app.RunnerProcessStatusOffline {
 		l.Info("process back online",
 			zap.String("runner_id", s.RunnerID),
 			zap.String("process_id", s.ProcessID),

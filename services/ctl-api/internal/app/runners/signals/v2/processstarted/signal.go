@@ -1,4 +1,4 @@
-package processcreated
+package processstarted
 
 import (
 	"go.temporal.io/sdk/workflow"
@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "process_created"
+const SignalType signal.SignalType = "process_started"
 
 type Signal struct {
 	RunnerID  string `json:"runner_id"`
@@ -40,25 +40,39 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Verify the process is active
+	l := workflow.GetLogger(ctx)
+
+	// Get process and verify it's in pending state (processes start as pending)
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
 	}
 
-	if process.ProcessStatus() != app.RunnerProcessStatusActive {
+	// Only transition pending processes to active
+	if process.ProcessStatus() != app.RunnerProcessStatus(app.StatusPending) {
+		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(process.ProcessStatus()))
 		return nil
 	}
 
-	// Update runner status to healthy/active
-	err = activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+	// Transition process from pending to active
+	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		ProcessID:         s.ProcessID,
+		Status:            app.RunnerProcessStatusActive,
+		StatusDescription: "process started",
+	}); err != nil {
+		return errors.Wrap(err, "unable to update process status")
+	}
+
+	// Update runner status to indicate it's active
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusActive,
-		StatusDescription: "process created",
-	})
-	if err != nil {
+		StatusDescription: "process started",
+	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
+
+	l.Info("process started", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 
 	return nil
 }

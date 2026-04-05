@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/conc"
@@ -12,7 +13,10 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-const shutdownPollInterval = 5 * time.Second
+const (
+	shutdownPollInterval = 5 * time.Second
+	forceExitTimeout     = 5 * time.Second
+)
 
 type ShutdownPollerParams struct {
 	fx.In
@@ -94,8 +98,8 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		if shutdown == nil {
 			continue
 		}
-		if shutdown.Status.AppRunnerProcessShutdownStatus == models.AppRunnerProcessShutdownStatusRequested {
-			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
+		if shutdown.Status == string(models.AppRunnerProcessShutdownStatusRequested) {
+			sp.l.Info("shutdown requested, completing shutdown with control plane",
 				zap.String("process_id", processID),
 				zap.String("shutdown_id", shutdown.ID),
 				zap.String("shutdown_type", string(shutdown.Type)),
@@ -103,7 +107,21 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 
 			if _, err := sp.apiClient.CompleteShutdown(ctx, processID, shutdown.ID); err != nil {
 				sp.l.Warn("unable to mark shutdown as completed", zap.Error(err))
+			} else {
+				sp.l.Info("shutdown completed successfully, initiating process exit",
+					zap.String("process_id", processID),
+					zap.String("shutdown_id", shutdown.ID),
+				)
 			}
+
+			// Force-kill the process if fx.Shutdown doesn't complete in time.
+			go func() {
+				time.Sleep(forceExitTimeout)
+				sp.l.Warn("graceful shutdown did not complete in time, forcing exit",
+					zap.Duration("timeout", forceExitTimeout),
+				)
+				os.Exit(1)
+			}()
 
 			sp.shutdowner.Shutdown()
 			return

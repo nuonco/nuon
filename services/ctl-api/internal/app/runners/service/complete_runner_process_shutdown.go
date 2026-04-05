@@ -63,8 +63,9 @@ func (s *service) completeRunnerProcessShutdown(ctx context.Context, processID, 
 		return nil, fmt.Errorf("unable to update shutdown status: %w", res.Error)
 	}
 
-	// Transition the process from pending-shutdown to inactive
-	s.updateProcessStatusInactive(ctx, processID)
+	// Transition the process to shut-down so the process_shutdown signal
+	// workflow can detect it and complete cleanly.
+	s.updateProcessStatusShutDown(ctx, processID)
 
 	var updated app.RunnerProcessShutdown
 	if res := s.db.WithContext(ctx).First(&updated, "id = ?", shutdownID); res.Error != nil {
@@ -74,14 +75,14 @@ func (s *service) completeRunnerProcessShutdown(ctx context.Context, processID, 
 	return &updated, nil
 }
 
-func (s *service) updateProcessStatusInactive(ctx context.Context, processID string) {
+func (s *service) updateProcessStatusShutDown(ctx context.Context, processID string) {
 	var process app.RunnerProcess
 	if res := s.db.WithContext(ctx).First(&process, "id = ?", processID); res.Error != nil {
-		s.l.Warn("unable to get process for inactive transition", zap.String("process_id", processID), zap.Error(res.Error))
+		s.l.Warn("unable to get process for shut-down transition", zap.String("process_id", processID), zap.Error(res.Error))
 		return
 	}
 
-	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusInactive))
+	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusShutDown))
 	newComposite.StatusHumanDescription = "shutdown completed"
 	newComposite.History = append([]app.CompositeStatus{process.CompositeStatus}, process.CompositeStatus.History...)
 	newComposite.History[0].History = nil
@@ -91,6 +92,6 @@ func (s *service) updateProcessStatusInactive(ctx context.Context, processID str
 		Updates(app.RunnerProcess{
 			CompositeStatus: newComposite,
 		}); res.Error != nil {
-		s.l.Warn("unable to update process to inactive", zap.String("process_id", processID), zap.Error(res.Error))
+		s.l.Warn("unable to update process to shut-down", zap.String("process_id", processID), zap.Error(res.Error))
 	}
 }

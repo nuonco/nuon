@@ -48,7 +48,7 @@ type RunnerProcessShutdown struct {
 	CompositeStatus CompositeStatus           `json:"composite_status,omitzero" gorm:"type:jsonb"`
 
 	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
-	Status            RunnerProcessShutdownStatus `json:"status,omitzero" gorm:"-"`
+	Status            RunnerProcessShutdownStatus `json:"status,omitzero" gorm:"-" swaggertype:"string"`
 	StatusDescription string                      `json:"status_description,omitzero" gorm:"-"`
 
 	Metadata pgtype.Hstore `json:"metadata,omitempty" gorm:"type:hstore"`
