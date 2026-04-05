@@ -76,11 +76,6 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 	// Write a red health check to ClickHouse so dashboards reflect the shutdown
 	s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
 
-	// Enqueue shutdown signal to the v2 process queue and stop health check emitters
-	if err := s.helpers.EnqueueProcessShutdown(ctx, runnerID, processID, req.ShutdownType); err != nil {
-		s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
-	}
-
 	ctx.JSON(http.StatusCreated, shutdown)
 }
 

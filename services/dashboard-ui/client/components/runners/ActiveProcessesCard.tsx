@@ -121,7 +121,7 @@ export const ActiveProcessesCard = ({
       getRunnerProcesses({
         orgId: org.id,
         runnerId: runner.id,
-        status: 'active,offline,pending-shutdown',
+        status: 'pending,active,offline,pending-shutdown',
         limit: 10,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,

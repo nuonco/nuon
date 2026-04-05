@@ -1,6 +1,7 @@
 package processhealthcheck
 
 import (
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -10,9 +11,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "process_healthcheck"
@@ -55,13 +58,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return nil
 	}
-	if process.Status != app.RunnerProcessStatusActive && process.Status != app.RunnerProcessStatusOffline {
-		l.Info("skipping process health check - process not active/offline",
-			zap.String("process_id", s.ProcessID),
-			zap.String("status", string(process.Status)),
-		)
-		return nil
-	}
 
 	heartbeat, err := activities.AwaitGetMostRecentHeartBeatByProcess(ctx, activities.GetMostRecentHeartBeatByProcessRequest{
 		RunnerID:  s.RunnerID,
@@ -88,6 +84,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to update process status to inactive")
+		}
+
+		// Enqueue on_inactive signal before stopping the queue
+		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   s.RunnerID,
+			OwnerType: "runners",
+			QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
+			Signal: &oninactive.Signal{
+				RunnerID:  s.RunnerID,
+				ProcessID: s.ProcessID,
+				Reason:    "offline",
+			},
+		})
+		if err != nil {
+			l.Warn("unable to enqueue on_inactive signal",
+				zap.String("process_id", s.ProcessID),
+				zap.Error(err),
+			)
 		}
 
 		// Stop the process queue (terminates the cron emitter)

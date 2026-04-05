@@ -2,6 +2,7 @@ package deprovision
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -55,7 +56,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			)
 		}
 
-		// Force mode: deprovision and delete all apps first
+		// Force mode: check if any apps have installs — user must forget installs first
+		for _, a := range org.Apps {
+			if len(a.Installs) > 0 {
+				s.updateStatus(ctx, app.OrgStatusError, "cannot force deprovision: apps have installs that must be forgotten first")
+				return temporal.NewNonRetryableApplicationError(
+					fmt.Sprintf("app %s has %d install(s) that must be forgotten before force deprovisioning", a.ID, len(a.Installs)),
+					"InstallsStillPresent",
+					nil,
+				)
+			}
+		}
+
+		// No installs — safe to delete apps
 		l := workflow.GetLogger(ctx)
 		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "force deprovisioning: deleting all apps")
 		for _, a := range org.Apps {
@@ -70,6 +83,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			if err != nil {
 				l.Error("unable to enqueue app deprovision signal, continuing anyway", zap.String("app_id", a.ID), zap.Error(err))
 			}
+		}
+
+		// Wait for all apps to be deleted before proceeding
+		if err := s.pollAppsDeleted(ctx); err != nil {
+			return err
 		}
 	}
 
@@ -115,6 +133,36 @@ func (s *Signal) deprovisionOrg(ctx workflow.Context) error {
 	}
 	s.updateStatus(ctx, app.OrgStatusDeprovisioned, "organization successfully deprovisioned")
 	return nil
+}
+
+func (s *Signal) pollAppsDeleted(ctx workflow.Context) error {
+	deadline := workflow.Now(ctx).Add(time.Minute * 60)
+	l := workflow.GetLogger(ctx)
+
+	for {
+		org, err := activities.AwaitGetByOrgID(ctx, s.OrgID)
+		if err != nil {
+			s.updateStatus(ctx, app.OrgStatusError, "unable to get org from database")
+			return fmt.Errorf("unable to get org: %w", err)
+		}
+
+		if len(org.Apps) == 0 {
+			l.Info("all apps deleted, proceeding with org deprovision")
+			return nil
+		}
+
+		if workflow.Now(ctx).After(deadline) {
+			s.updateStatus(ctx, app.OrgStatusError, "timeout waiting for apps to be deleted")
+			return temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("timeout waiting for %d app(s) to be deleted", len(org.Apps)),
+				"AppsDeleteTimeout",
+				nil,
+			)
+		}
+
+		s.updateStatus(ctx, app.OrgStatusDeprovisioning, fmt.Sprintf("waiting for %d app(s) to be deleted", len(org.Apps)))
+		workflow.Sleep(ctx, time.Second*10)
+	}
 }
 
 func (s *Signal) updateStatus(ctx workflow.Context, status app.OrgStatus, statusDescription string) {
