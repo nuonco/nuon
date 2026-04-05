@@ -49,8 +49,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Only transition pending processes to active
-	if process.Status != app.RunnerProcessStatus(app.StatusPending) {
-		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(process.Status))
+	if process.ProcessStatus() != app.RunnerProcessStatus(app.StatusPending) {
+		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(process.ProcessStatus()))
 		return nil
 	}
 

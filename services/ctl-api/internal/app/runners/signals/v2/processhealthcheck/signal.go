@@ -53,9 +53,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Check if the process is still active or offline; noop for any other status
+	// Only run health checks for active or offline processes; noop for any other status
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
+		return nil
+	}
+
+	switch process.ProcessStatus() {
+	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
+		// continue with health check
+	default:
 		return nil
 	}
 
@@ -121,7 +128,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Tier 2: no heartbeat for 1 minute → mark offline
 	if heartbeatAge >= offlineTimeout {
-		if process.Status != app.RunnerProcessStatusOffline {
+		if process.ProcessStatus() != app.RunnerProcessStatusOffline {
 			l.Warn("process offline - no heartbeat for 1 minute",
 				zap.String("runner_id", s.RunnerID),
 				zap.String("process_id", s.ProcessID),
@@ -154,7 +161,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Heartbeat is fresh — ensure process is active
-	if process.Status == app.RunnerProcessStatusOffline {
+	if process.ProcessStatus() == app.RunnerProcessStatusOffline {
 		l.Info("process back online",
 			zap.String("runner_id", s.RunnerID),
 			zap.String("process_id", s.ProcessID),

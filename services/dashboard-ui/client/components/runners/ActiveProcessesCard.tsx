@@ -77,7 +77,7 @@ function ProcessHeartbeatInfo({
         <Text variant="label" weight="strong" className="capitalize">
           {process.type || 'unknown'}
         </Text>
-        <Badge theme={getStatusTheme(process.status)}>{process.status}</Badge>
+        <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

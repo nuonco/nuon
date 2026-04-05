@@ -50,8 +50,8 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
         <Text variant="small">{process.type || '-'}</Text>
       </td>
       <td className="px-4 py-3">
-        <Badge theme={getStatusTheme(process.status)}>
-          {process.status}
+        <Badge theme={getStatusTheme(process.composite_status?.status)}>
+          {process.composite_status?.status}
         </Badge>
       </td>
       <td className="px-4 py-3">

@@ -43,10 +43,6 @@ type RunnerProcess struct {
 
 	CompositeStatus CompositeStatus `json:"composite_status,omitzero" gorm:"type:jsonb"`
 
-	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
-	Status            RunnerProcessStatus `json:"status,omitzero" gorm:"-"`
-	StatusDescription string              `json:"status_description,omitzero" gorm:"-"`
-
 	LogStreamID *string    `json:"log_stream_id,omitempty"`
 	LogStream   *LogStream `json:"-"`
 
@@ -62,23 +58,25 @@ type RunnerProcess struct {
 	Shutdowns []RunnerProcessShutdown `json:"shutdowns,omitempty" gorm:"constraint:OnDelete:CASCADE;"`
 }
 
+func (r *RunnerProcess) ProcessStatus() RunnerProcessStatus {
+	return RunnerProcessStatus(r.CompositeStatus.Status)
+}
+
 func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
-	if r.CompositeStatus.Status != "" {
-		r.Status = RunnerProcessStatus(r.CompositeStatus.Status)
-		r.StatusDescription = r.CompositeStatus.StatusHumanDescription
-	}
 	if r.StartedAt != nil {
 		r.Uptime = time.Since(*r.StartedAt)
 	}
 
+	status := r.ProcessStatus()
+
 	// Initializing warning: active but no health check yet
-	if r.Status == RunnerProcessStatusActive && !r.InitialHealthCheck {
+	if status == RunnerProcessStatusActive && !r.InitialHealthCheck {
 		r.Warnings = append(r.Warnings, "This runner is still initializing and will not process jobs until its first health check")
 	}
 
 	// Surface status descriptions as warnings for non-healthy statuses
 	if r.CompositeStatus.StatusHumanDescription != "" {
-		switch r.Status {
+		switch status {
 		case RunnerProcessStatusPendingShutdown, RunnerProcessStatusOffline, RunnerProcessStatusError:
 			r.Warnings = append(r.Warnings, r.CompositeStatus.StatusHumanDescription)
 		}

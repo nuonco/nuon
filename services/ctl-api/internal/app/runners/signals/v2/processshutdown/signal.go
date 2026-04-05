@@ -125,7 +125,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to poll runner process status")
 		}
 
-		if updated.Status == app.RunnerProcessStatusShutDown {
+		if updated.ProcessStatus() == app.RunnerProcessStatusShutDown {
 			// Process confirmed shut down
 			_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
 				ShutdownID:        shutdownID,

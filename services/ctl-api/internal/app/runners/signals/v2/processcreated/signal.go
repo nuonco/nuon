@@ -46,7 +46,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner process")
 	}
 
-	if process.Status != app.RunnerProcessStatusActive {
+	if process.ProcessStatus() != app.RunnerProcessStatusActive {
 		return nil
 	}
 
