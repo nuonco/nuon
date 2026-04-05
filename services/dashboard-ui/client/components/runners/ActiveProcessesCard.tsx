@@ -77,7 +77,10 @@ function ProcessHeartbeatInfo({
         <Text variant="label" weight="strong" className="capitalize">
           {process.type || 'unknown'}
         </Text>
-        <Badge theme={getStatusTheme(process.status)}>{process.status}</Badge>
+        <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
+        {process.labels?.map((label) => (
+          <Badge key={label} theme="neutral">{label}</Badge>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -121,7 +124,7 @@ export const ActiveProcessesCard = ({
       getRunnerProcesses({
         orgId: org.id,
         runnerId: runner.id,
-        status: 'active,offline,pending-shutdown',
+        status: 'pending,active,offline,pending-shutdown',
         limit: 10,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,

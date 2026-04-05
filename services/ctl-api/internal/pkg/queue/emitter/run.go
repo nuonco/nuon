@@ -32,7 +32,7 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 	switch emitter.Mode {
 	case app.QueueEmitterModeCron:
 		return e.runCronMode(ctx, l, emitter)
-	case app.QueueEmitterModeScheduled:
+	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:
 		return e.runScheduledMode(ctx, l, emitter)
 	default:
 		return false, errors.Errorf("unknown emitter mode: %s", emitter.Mode)

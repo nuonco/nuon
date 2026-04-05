@@ -41,9 +41,7 @@ type AppRunnerProcessShutdown struct {
 	RunnerProcessID string `json:"runner_process_id,omitempty"`
 
 	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
-	Status struct {
-		AppRunnerProcessShutdownStatus
-	} `json:"status,omitempty"`
+	Status string `json:"status,omitempty"`
 
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
@@ -64,10 +62,6 @@ func (m *AppRunnerProcessShutdown) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateMetadata(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -127,14 +121,6 @@ func (m *AppRunnerProcessShutdown) validateMetadata(formats strfmt.Registry) err
 	return nil
 }
 
-func (m *AppRunnerProcessShutdown) validateStatus(formats strfmt.Registry) error {
-	if swag.IsZero(m.Status) { // not required
-		return nil
-	}
-
-	return nil
-}
-
 func (m *AppRunnerProcessShutdown) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -165,10 +151,6 @@ func (m *AppRunnerProcessShutdown) ContextValidate(ctx context.Context, formats 
 	}
 
 	if err := m.contextValidateMetadata(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -225,11 +207,6 @@ func (m *AppRunnerProcessShutdown) contextValidateMetadata(ctx context.Context, 
 
 		return err
 	}
-
-	return nil
-}
-
-func (m *AppRunnerProcessShutdown) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

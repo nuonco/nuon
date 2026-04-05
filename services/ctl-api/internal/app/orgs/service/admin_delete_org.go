@@ -56,7 +56,7 @@ func (s *service) AdminDeleteOrg(ctx *gin.Context) {
 		return
 	}
 
-	if len(orgWithApps.Apps) > 0 {
+	if !req.Force && len(orgWithApps.Apps) > 0 {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("cannot delete org with active apps"),
 			Description: fmt.Sprintf("organization has %d app(s) that must be deleted before the organization can be deleted", len(orgWithApps.Apps)),
