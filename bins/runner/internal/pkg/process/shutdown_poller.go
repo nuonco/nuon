@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/conc"
@@ -12,7 +13,10 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
-const shutdownPollInterval = 5 * time.Second
+const (
+	shutdownPollInterval = 5 * time.Second
+	forceExitTimeout     = 5 * time.Second
+)
 
 type ShutdownPollerParams struct {
 	fx.In
@@ -109,6 +113,15 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 					zap.String("shutdown_id", shutdown.ID),
 				)
 			}
+
+			// Force-kill the process if fx.Shutdown doesn't complete in time.
+			go func() {
+				time.Sleep(forceExitTimeout)
+				sp.l.Warn("graceful shutdown did not complete in time, forcing exit",
+					zap.Duration("timeout", forceExitTimeout),
+				)
+				os.Exit(1)
+			}()
 
 			sp.shutdowner.Shutdown()
 			return
