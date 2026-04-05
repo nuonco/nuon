@@ -34,11 +34,11 @@ export const ProcessManagementDropdown = ({
     >
       <Menu>
         <Text>Controls</Text>
-        {process.status === 'active' && settings ? (
+        {process.composite_status?.status === 'active' && settings ? (
           <UpdateRunnerButton settings={settings} isMenuButton />
         ) : null}
 
-        {process.status === 'active' ? (
+        {process.composite_status?.status === 'active' ? (
           <ShutdownRunnerControl isMenuButton runnerId={runner.id} processId={process.id} />
         ) : null}
 

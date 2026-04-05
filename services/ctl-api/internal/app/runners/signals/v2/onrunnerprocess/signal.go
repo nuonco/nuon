@@ -1,4 +1,4 @@
-package restart
+package onrunnerprocess
 
 import (
 	"go.temporal.io/sdk/workflow"
@@ -9,10 +9,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "runner-restart"
+const SignalType signal.SignalType = "on_runner_process"
 
 type Signal struct {
-	RunnerID string `json:"runner_id"`
+	RunnerID  string `json:"runner_id"`
+	ProcessID string `json:"process_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -25,19 +26,20 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.RunnerID == "" {
 		return errors.New("runner_id is required")
 	}
+	if s.ProcessID == "" {
+		return errors.New("process_id is required")
+	}
 
-	// Validate runner exists in database
-	_, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
+	_, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
-		return errors.Wrap(err, "runner not found")
+		return errors.Wrap(err, "runner process not found")
 	}
 
 	return nil
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// No business logic - the restart signal just validates the runner exists.
-	// This triggers a restart of the runner's event loop (handled by queue system).
-	// Health check workflow will be triggered via queue emitter in a later phase.
+	l := workflow.GetLogger(ctx)
+	l.Info("on_runner_process signal received", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 	return nil
 }

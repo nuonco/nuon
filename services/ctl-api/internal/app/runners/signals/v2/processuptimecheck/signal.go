@@ -54,7 +54,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Noop if the process is not active (offline, inactive, shut-down, etc.)
-	if process.Status != app.RunnerProcessStatusActive {
+	if process.ProcessStatus() != app.RunnerProcessStatusActive {
 		return nil
 	}
 

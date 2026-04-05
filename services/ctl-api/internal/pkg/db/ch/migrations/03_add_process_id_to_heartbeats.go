@@ -3,6 +3,7 @@ package migrations
 import (
 	"context"
 	_ "embed"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -11,10 +12,29 @@ import (
 var AddProcessIDToHeartBeats string
 
 func (m *Migrations) Migration003AddProcessIDToHeartBeats(ctx context.Context, db *gorm.DB) error {
-	if res := db.WithContext(ctx).
-		Exec(AddProcessIDToHeartBeats); res.Error != nil {
-		return res.Error
+	// ClickHouse does not support multi-statement queries in a single exec.
+	// Split on semicolons and execute each statement individually.
+	for _, stmt := range strings.Split(AddProcessIDToHeartBeats, ";") {
+		stmt = stripSQLComments(stmt)
+		if stmt == "" {
+			continue
+		}
+		if res := db.WithContext(ctx).Exec(stmt); res.Error != nil {
+			return res.Error
+		}
 	}
 
 	return nil
+}
+
+func stripSQLComments(s string) string {
+	var lines []string
+	for _, line := range strings.Split(s, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
+			continue
+		}
+		lines = append(lines, line)
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
 }

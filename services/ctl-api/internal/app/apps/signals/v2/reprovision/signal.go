@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "reprovision"
+const SignalType signal.SignalType = "app-reprovision"
 
 type Signal struct {
 	AppID string `json:"app_id"`

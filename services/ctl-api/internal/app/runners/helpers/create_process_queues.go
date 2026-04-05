@@ -44,6 +44,20 @@ func (s *processUptimeCheckSignalTemplate) Type() queuesignal.SignalType {
 func (s *processUptimeCheckSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *processUptimeCheckSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
+// processStartedSignalType mirrors the constant in runners/signals/v2/processstarted
+const processStartedSignalType queuesignal.SignalType = "process_started"
+
+type processStartedSignalTemplate struct {
+	RunnerID  string `json:"runner_id"`
+	ProcessID string `json:"process_id"`
+}
+
+func (s *processStartedSignalTemplate) Type() queuesignal.SignalType {
+	return processStartedSignalType
+}
+func (s *processStartedSignalTemplate) Validate(_ workflow.Context) error { return nil }
+func (s *processStartedSignalTemplate) Execute(_ workflow.Context) error  { return nil }
+
 // processCreatedSignalType mirrors the constant in runners/signals/v2/processcreated
 const processCreatedSignalType queuesignal.SignalType = "process_created"
 
@@ -57,6 +71,20 @@ func (s *processCreatedSignalTemplate) Type() queuesignal.SignalType {
 }
 func (s *processCreatedSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *processCreatedSignalTemplate) Execute(_ workflow.Context) error  { return nil }
+
+// onRunnerProcessSignalType mirrors the constant in runners/signals/v2/onrunnerprocess
+const onRunnerProcessSignalType queuesignal.SignalType = "on_runner_process"
+
+type onRunnerProcessSignalTemplate struct {
+	RunnerID  string `json:"runner_id"`
+	ProcessID string `json:"process_id"`
+}
+
+func (s *onRunnerProcessSignalTemplate) Type() queuesignal.SignalType {
+	return onRunnerProcessSignalType
+}
+func (s *onRunnerProcessSignalTemplate) Validate(_ workflow.Context) error { return nil }
+func (s *onRunnerProcessSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
 // Default uptime thresholds before triggering a shutdown
 const (
@@ -102,7 +130,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		QueueID:     q.ID,
 		Name:        fmt.Sprintf("process-%s-uptime-check", process.ID),
 		Description: "Process uptime TTL check",
-		Mode:        app.QueueEmitterModeScheduled,
+		Mode:        app.QueueEmitterModeFireOnce,
 		ScheduledAt: generics.ToPtr(time.Now().Add(threshold)),
 		SignalType:  processUptimeCheckSignalType,
 		SignalTemplate: &processUptimeCheckSignalTemplate{
@@ -113,7 +141,18 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process uptime check emitter: %w", err)
 	}
 
-	// Enqueue the process_created signal to the new queue
+	// Enqueue the process_started signal to transition process from pending to active
+	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal: &processStartedSignalTemplate{
+			RunnerID:  runnerID,
+			ProcessID: process.ID,
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("unable to enqueue process started signal: %w", err)
+	}
+
+	// Enqueue the process_created signal to update runner status
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &processCreatedSignalTemplate{
@@ -122,6 +161,17 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		},
 	}); err != nil {
 		return nil, fmt.Errorf("unable to enqueue process created signal: %w", err)
+	}
+
+	// Enqueue the on_runner_process signal to notify of the new process
+	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal: &onRunnerProcessSignalTemplate{
+			RunnerID:  runnerID,
+			ProcessID: process.ID,
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("unable to enqueue on_runner_process signal: %w", err)
 	}
 
 	return q, nil

@@ -1,20 +1,20 @@
-package processcreated
+package oninactive
 
 import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "process_created"
+const SignalType signal.SignalType = "on_inactive"
 
 type Signal struct {
 	RunnerID  string `json:"runner_id"`
 	ProcessID string `json:"process_id"`
+	Reason    string `json:"reason"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -30,6 +30,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.ProcessID == "" {
 		return errors.New("process_id is required")
 	}
+	if s.Reason == "" {
+		return errors.New("reason is required")
+	}
 
 	_, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
@@ -40,25 +43,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Verify the process is active
-	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get runner process")
-	}
-
-	if process.ProcessStatus() != app.RunnerProcessStatusActive {
-		return nil
-	}
-
-	// Update runner status to healthy/active
-	err = activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusActive,
-		StatusDescription: "process created",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to update runner status")
-	}
-
+	l := workflow.GetLogger(ctx)
+	l.Info("on_inactive signal received", "runner_id", s.RunnerID, "process_id", s.ProcessID, "reason", s.Reason)
 	return nil
 }

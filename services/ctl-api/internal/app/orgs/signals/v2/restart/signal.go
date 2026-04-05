@@ -3,19 +3,12 @@ package restart
 import (
 	"fmt"
 
-	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	actionssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
-	appssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
-	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
-	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 )
 
 const SignalType signal.SignalType = "org-restart"
@@ -48,51 +41,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	for _, ev := range evs {
-		if ev.WorkflowRef != nil {
-			queueclient.AwaitRestart(ctx, ev.ID)
+		// skip restarting own namespace to avoid infinite loop
+		if ev.Namespace == "orgs" {
 			continue
 		}
 
-		if err := s.restartEventLoop(ctx, l, ev.Namespace, ev.ID); err != nil {
-			return fmt.Errorf("unable to restart event loop: %w", err)
+		if err := queueclient.AwaitRestart(ctx, ev.ID); err != nil {
+			l.Error("unable to restart queue", zap.String("queue_id", ev.ID), zap.String("namespace", ev.Namespace))
+			return fmt.Errorf("unable to restart queue %s: %w", ev.ID, err)
 		}
-	}
-
-	return nil
-}
-
-func (s *Signal) restartEventLoop(ctx workflow.Context, l log.Logger, namespace, id string) error {
-	switch namespace {
-	case "orgs":
-		// skip restarting own namespace to avoid infinite loop
-		return nil
-	case "apps":
-		signalsactivities.AwaitPkgSignalsSendAppsSignal(ctx, &signalsactivities.SendSignalRequest[*appssignals.Signal]{
-			ID:     id,
-			Signal: &appssignals.Signal{Type: appssignals.OperationRestart},
-		})
-	case "components":
-		signalsactivities.AwaitPkgSignalsSendComponentsSignal(ctx, &signalsactivities.SendSignalRequest[*componentssignals.Signal]{
-			ID:     id,
-			Signal: &componentssignals.Signal{Type: componentssignals.OperationRestart},
-		})
-	case "runners":
-		signalsactivities.AwaitPkgSignalsSendRunnersSignal(ctx, &signalsactivities.SendSignalRequest[*runnerssignals.Signal]{
-			ID:     id,
-			Signal: &runnerssignals.Signal{Type: runnerssignals.OperationRestart},
-		})
-	case "installs":
-		signalsactivities.AwaitPkgSignalsSendInstallsSignal(ctx, &signalsactivities.SendSignalRequest[*installssignals.Signal]{
-			ID:     id,
-			Signal: &installssignals.Signal{Type: installssignals.OperationRestart},
-		})
-	case "actions":
-		signalsactivities.AwaitPkgSignalsSendActionsSignal(ctx, &signalsactivities.SendSignalRequest[*actionssignals.Signal]{
-			ID:     id,
-			Signal: &actionssignals.Signal{Type: actionssignals.OperationRestart},
-		})
-	default:
-		l.Error("unhandled namespace for restart", zap.String("namespace", namespace))
 	}
 
 	return nil
