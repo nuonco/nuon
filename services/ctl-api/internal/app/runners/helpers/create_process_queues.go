@@ -30,19 +30,19 @@ func (s *processHealthcheckSignalTemplate) Type() queuesignal.SignalType {
 func (s *processHealthcheckSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *processHealthcheckSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
-// processUptimeCheckSignalType mirrors the constant in runners/signals/v2/processuptimecheck
-const processUptimeCheckSignalType queuesignal.SignalType = "process_uptime_check"
+// triggerShutdownSignalType mirrors the constant in runners/signals/v2/triggershutdown
+const triggerShutdownSignalType queuesignal.SignalType = "trigger_shutdown"
 
-type processUptimeCheckSignalTemplate struct {
+type triggerShutdownSignalTemplate struct {
 	RunnerID    string `json:"runner_id"`
 	ProcessType string `json:"process_type"`
 }
 
-func (s *processUptimeCheckSignalTemplate) Type() queuesignal.SignalType {
-	return processUptimeCheckSignalType
+func (s *triggerShutdownSignalTemplate) Type() queuesignal.SignalType {
+	return triggerShutdownSignalType
 }
-func (s *processUptimeCheckSignalTemplate) Validate(_ workflow.Context) error { return nil }
-func (s *processUptimeCheckSignalTemplate) Execute(_ workflow.Context) error  { return nil }
+func (s *triggerShutdownSignalTemplate) Validate(_ workflow.Context) error { return nil }
+func (s *triggerShutdownSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
 // processStartedSignalType mirrors the constant in runners/signals/v2/processstarted
 const processStartedSignalType queuesignal.SignalType = "process_started"
@@ -143,17 +143,17 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:     q.ID,
-		Name:        fmt.Sprintf("process-%s-uptime-check", process.ID),
-		Description: "Process uptime TTL check",
+		Name:        fmt.Sprintf("process-%s-trigger-shutdown", process.ID),
+		Description: "Trigger process shutdown after uptime threshold",
 		Mode:        app.QueueEmitterModeFireOnce,
 		ScheduledAt: generics.ToPtr(time.Now().Add(threshold)),
-		SignalType:  processUptimeCheckSignalType,
-		SignalTemplate: &processUptimeCheckSignalTemplate{
+		SignalType:  triggerShutdownSignalType,
+		SignalTemplate: &triggerShutdownSignalTemplate{
 			RunnerID:    runnerID,
 			ProcessType: string(process.Type),
 		},
 	}); err != nil {
-		return nil, fmt.Errorf("unable to create process uptime check emitter: %w", err)
+		return nil, fmt.Errorf("unable to create trigger shutdown emitter: %w", err)
 	}
 
 	// Enqueue the process_started signal to transition process from pending to active

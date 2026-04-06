@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	defaultEmitterWorkflowIDTemplate string = "queue-emitter-%s"
+	cronEmitterWorkflowIDTemplate     string = "queue-emitter-%s-cron"
+	fireOnceEmitterWorkflowIDTemplate string = "queue-emitter-%s-fire-once"
 )
 
 type CreateEmitterRequest struct {
@@ -58,6 +59,11 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		return nil, errors.Wrap(err, "unable to get queue")
 	}
 
+	idTemplate := fireOnceEmitterWorkflowIDTemplate
+	if req.Mode == app.QueueEmitterModeCron {
+		idTemplate = cronEmitterWorkflowIDTemplate
+	}
+
 	em := app.QueueEmitter{
 		QueueID:      q.ID,
 		Name:         req.Name,
@@ -72,7 +78,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		Status: app.NewCompositeStatus(ctx, app.StatusPending),
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
-			IDTemplate: defaultEmitterWorkflowIDTemplate,
+			IDTemplate: idTemplate,
 		},
 	}
 
