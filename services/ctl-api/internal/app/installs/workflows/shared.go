@@ -389,3 +389,51 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	return steps, nil
 }
+
+func deploySandboxDependentComponents(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
+	componentIDs, err := activities.AwaitGetSandboxDependentAppGraph(ctx, activities.GetSandboxDependentAppGraphRequest{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get sandbox dependent components")
+	}
+
+	if len(componentIDs) == 0 {
+		return nil, nil
+	}
+
+	steps := make([]*app.WorkflowStep, 0)
+
+	sg.nextGroup() // runner health
+
+	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+		Type: signals.OperationAwaitRunnerHealthy,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	var lifecycleSteps []*app.WorkflowStep
+	if !flw.PlanOnly {
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, lifecycleSteps...)
+	}
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, deploySteps...)
+	if !flw.PlanOnly {
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, lifecycleSteps...)
+	}
+
+	return steps, nil
+}
