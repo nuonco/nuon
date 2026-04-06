@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -16,9 +15,7 @@ import { useOrg } from '@/hooks/use-org'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { getAppConfig, getAppConfigs } from '@/lib'
-import { hasNewerAppConfig } from '@/utils/app-utils'
-
-const CONTAINER_ID = 'install-stacks-page'
+import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
 
 export const Stacks = () => {
   const { org } = useOrg()
@@ -50,11 +47,25 @@ export const Stacks = () => {
       getAppConfigs({ orgId: org.id, appId: install.app_id, limit: 1, offset: 0 }),
     enabled: !!org?.id && !!install?.app_id,
   })
-  const latestConfig = latestConfigs?.[0]
-  const newerConfigAvailable = hasNewerAppConfig(latestConfig, install)
+  const latestConfigSummary = latestConfigs?.[0]
+  const newerAppConfig = hasNewerAppConfig(latestConfigSummary, install)
+
+  const { data: latestFullConfig } = useQuery({
+    queryKey: ['app-config', org?.id, install?.app_id, latestConfigSummary?.id, 'recurse'],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: latestConfigSummary!.id!,
+        recurse: true,
+      }),
+    enabled: newerAppConfig && !!latestConfigSummary?.id,
+  })
+
+  const stackChanged = hasStackConfigChanged(config, latestFullConfig)
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Stacks | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -76,14 +87,14 @@ export const Stacks = () => {
         </Text>
       </HeadingGroup>
 
-      {newerConfigAvailable && (
+      {stackChanged && (
         <Banner theme="info">
           <div className="flex items-center gap-8">
             <div className="flex flex-col">
               <Text weight="strong">New stack config available</Text>
               <Text variant="subtext" theme="neutral">
-                A newer app config (v{latestConfig.version}) is available. This install is
-                using v{config?.version}.
+                A newer stack config (v{latestFullConfig?.version}) is available. This install
+                is using v{config?.version}.
               </Text>
             </div>
             <Button
@@ -168,7 +179,6 @@ export const Stacks = () => {
         <Text weight="strong">Install stack versions</Text>
         <InstallStacksTable shouldPoll />
       </div>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }
