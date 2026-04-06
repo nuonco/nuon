@@ -63,12 +63,14 @@ const AppTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <PageHeadingGroup title={app.name} subtitle={<ID>{app.id}</ID>} />
-            <div className="flex items-center gap-4">
-              <TemporalLink namespace="apps" eventLoopId={app?.id} />
-              {app?.runner_config ? (
-                <CreateInstallButton variant="primary" />
-              ) : null}
+            <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between md:items-start">
+              <PageHeadingGroup title={app.name} subtitle={<ID>{app.id}</ID>} />
+              <div className="flex items-center gap-4">
+                <TemporalLink namespace="apps" eventLoopId={app?.id} />
+                {app?.runner_config ? (
+                  <CreateInstallButton variant="primary" />
+                ) : null}
+              </div>
             </div>
           </PageHeader>
           <PageContent className="border-t" variant="row">

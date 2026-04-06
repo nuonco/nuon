@@ -111,7 +111,7 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between">
               <HeadingGroup>
                 <Text variant="h3" weight="stronger" level={1}>
                   {install.name}
