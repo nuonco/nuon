@@ -18,7 +18,7 @@ import (
 )
 
 type clientConfig struct {
-	APIUrl        string `json:"apiUrl"`
+	APIUrl                string `json:"apiUrl"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
 	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
 	AppUrl                string `json:"appUrl"`
@@ -38,7 +38,7 @@ type clientConfig struct {
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	return clientConfig{
-		APIUrl:        cfg.APIUrl,
+		APIUrl:                cfg.APIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
 		AppUrl:                cfg.AppUrl,
