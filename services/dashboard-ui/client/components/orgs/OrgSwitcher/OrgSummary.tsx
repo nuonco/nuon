@@ -57,7 +57,8 @@ export const OrgSummary = ({
         <Text
           weight="strong"
           variant="subtext"
-          className="!flex items-center gap-1.5 text-nowrap"
+          flex
+          className="text-nowrap"
         >
           {org.sandbox_mode && (
             <Icon

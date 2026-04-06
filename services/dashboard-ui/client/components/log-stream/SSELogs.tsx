@@ -146,7 +146,9 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
         </Text>
         <span className="!inline-block w-full max-w-full overflow-hidden">
           <Text
-            className="!block !text-nowrap truncate"
+            nowrap
+            as="div"
+            className="truncate"
             family="mono"
             variant="subtext"
           >

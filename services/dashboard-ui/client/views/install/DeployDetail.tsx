@@ -1,6 +1,5 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
@@ -17,8 +16,6 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getComponent, getWorkflow } from '@/lib'
-
-const CONTAINER_ID = 'component-deploy-page'
 
 export const DeployDetail = () => {
   const { componentId, deployId, installId } = useParams()
@@ -64,7 +61,7 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
     step?.approval && (!!step?.approval?.response || responded) && step?.status?.status !== 'auto-skipped'
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection flush>
       <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -85,7 +82,7 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
 
-      <PageSection className="!pb-12" isScrollable={false}>
+      <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
           {pendingApproval ? (
             <div className="flex flex-col gap-4">
@@ -114,7 +111,6 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
           ) : null}
         </div>
 
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </PageSection>
   )

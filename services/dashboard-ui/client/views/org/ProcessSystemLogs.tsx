@@ -7,6 +7,7 @@ import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { PageLayout } from '@/components/layout/PageLayout'
+import { PageSection } from '@/components/layout/PageSection'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
@@ -39,7 +40,10 @@ export const ProcessSystemLogs = () => {
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
           { path: `/${org.id}/runner`, text: 'Build runner' },
-          { path: `/${org.id}/runner/processes/${processId}/logs`, text: 'System logs' },
+          {
+            path: `/${org.id}/runner/processes/${processId}/logs`,
+            text: 'System logs',
+          },
         ]}
       />
     </>
@@ -68,10 +72,7 @@ export const ProcessSystemLogs = () => {
             <Text variant="body" theme="neutral">
               This process does not have a log stream configured.
             </Text>
-            <Button
-              variant="ghost"
-              onClick={() => window.history.back()}
-            >
+            <Button variant="ghost" onClick={() => window.history.back()}>
               <Icon variant="ArrowLeftIcon" />
               Back to runner
             </Button>
@@ -90,7 +91,7 @@ export const ProcessSystemLogs = () => {
             System logs — {process.type} process
           </Text>
         </PageHeader>
-        <PageContent>
+        <PageSection>
           <LogStreamProvider logStreamId={process.log_stream_id} shouldPoll>
             <UnifiedLogsProvider>
               <LogViewerProvider>
@@ -98,7 +99,7 @@ export const ProcessSystemLogs = () => {
               </LogViewerProvider>
             </UnifiedLogsProvider>
           </LogStreamProvider>
-        </PageContent>
+        </PageSection>
       </PageLayout>
     </RunnerProvider>
   )

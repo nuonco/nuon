@@ -3,7 +3,6 @@ import { AppInputs } from '@/components/apps/config/AppInputs'
 import { AppRunner } from '@/components/apps/config/AppRunner'
 import { AppSandbox } from '@/components/apps/config/AppSandbox'
 import { AppStack } from '@/components/apps/config/AppStack'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { PropertyGridSkeleton } from '@/components/common/PropertyGrid'
@@ -15,8 +14,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs } from '@/lib'
-
-const CONTAINER_ID = 'app-overview-page'
 
 export const Overview = () => {
   const { org } = useOrg()
@@ -50,7 +47,7 @@ export const Overview = () => {
         ]}
       />
 
-      <PageSection id={CONTAINER_ID} isScrollable>
+      <PageSection>
         <div className="flex flex-col gap-4">
           <Text variant="h3" weight="strong">
             Inputs config
@@ -126,7 +123,6 @@ export const Overview = () => {
           </div>
         </div>
 
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </>
   )

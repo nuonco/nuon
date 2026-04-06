@@ -1,4 +1,4 @@
-import { Outlet, useParams, useLocation } from 'react-router'
+import { Outlet, useParams, useMatch } from 'react-router'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -38,11 +38,58 @@ export const InstallLayout = () => {
   )
 }
 
+const navLinks = [
+  {
+    path: `/`,
+    iconVariant: 'HouseSimple' as const,
+    text: 'Overview',
+  },
+  {
+    path: `/stacks`,
+    iconVariant: 'Stack' as const,
+    text: 'Stacks',
+  },
+  {
+    path: `/runner`,
+    iconVariant: 'SneakerMove' as const,
+    text: 'Install runner',
+  },
+  {
+    path: '/sandbox',
+    iconVariant: 'ShippingContainer' as const,
+    text: 'Sandbox',
+  },
+  {
+    path: `/components`,
+    iconVariant: 'Cards' as const,
+    text: 'Components',
+  },
+  {
+    path: `/actions`,
+    iconVariant: 'TerminalWindow' as const,
+    text: 'Actions',
+  },
+  {
+    path: `/roles`,
+    iconVariant: 'FileLock' as const,
+    text: 'Roles',
+  },
+  {
+    path: `/policies`,
+    iconVariant: 'ShieldCheck' as const,
+    text: 'Policy Evaluations',
+  },
+  {
+    path: `/workflows`,
+    iconVariant: 'TreeStructure' as const,
+    text: 'Workflows',
+  },
+]
+
 const InstallTemplate = () => {
-  const location = useLocation()
   const { org } = useOrg()
   const { install } = useInstall()
-  const isThirdLevel = location.pathname.split('/').length > 5
+  const isChildRoute = !!useMatch('/:orgId/installs/:installId/:section/:rest/*')
 
   if (!install) return null
 
@@ -51,62 +98,11 @@ const InstallTemplate = () => {
 
   return (
     <PageLayout>
-      {isThirdLevel ? (
-        <PageContent className="border-t" isScrollable variant="secondary">
+      {isChildRoute ? (
+        <PageContent className="border-t" variant="row">
           <SubNav
             basePath={`/${org?.id}/installs/${install?.id}`}
-            links={[
-              {
-                path: `/`,
-                iconVariant: 'HouseSimple',
-                text: 'Overview',
-              },
-              {
-                path: `/stacks`,
-                iconVariant: 'Stack',
-                text: 'Stacks',
-              },
-              {
-                path: `/runner`,
-                iconVariant: 'SneakerMove',
-                text: 'Install runner',
-              },
-              {
-                path: '/sandbox',
-                iconVariant: 'ShippingContainer',
-                text: 'Sandbox',
-              },
-              {
-                path: `/components`,
-                iconVariant: 'Cards',
-                text: 'Components',
-              },
-              {
-                path: `/actions`,
-                iconVariant: 'TerminalWindow',
-                text: 'Actions',
-              },
-              {
-                path: `/roles`,
-                iconVariant: 'FileLock',
-                text: 'Roles',
-              },
-              {
-                path: `/policies`,
-                iconVariant: 'ShieldCheck',
-                text: 'Policy Evaluations',
-              },
-              {
-                path: `/workflows`,
-                iconVariant: 'TreeStructure',
-                text: 'Workflows',
-              },
-              /* {
-                  path: `/readme`,
-                  iconVariant: 'BookOpen',
-                  text: 'README',
-                  }, */
-            ]}
+            links={navLinks}
           />
           <div className="flex flex-col flex-1 min-w-0">
             <Outlet />
@@ -115,7 +111,7 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between">
               <HeadingGroup>
                 <Text variant="h3" weight="stronger" level={1}>
                   {install.name}
@@ -179,61 +175,10 @@ const InstallTemplate = () => {
               </div>
             ) : null}
           </PageHeader>
-          <PageContent className="border-t" isScrollable variant="secondary">
+          <PageContent className="border-t" variant="row">
             <SubNav
               basePath={`/${org?.id}/installs/${install?.id}`}
-              links={[
-                {
-                  path: `/`,
-                  iconVariant: 'HouseSimple',
-                  text: 'Overview',
-                },
-                {
-                  path: `/stacks`,
-                  iconVariant: 'Stack',
-                  text: 'Stacks',
-                },
-                {
-                  path: `/runner`,
-                  iconVariant: 'SneakerMove',
-                  text: 'Install runner',
-                },
-                {
-                  path: '/sandbox', 
-                  iconVariant: 'ShippingContainer',
-                  text: 'Sandbox',
-                },
-                {
-                  path: `/components`,
-                  iconVariant: 'Cards',
-                  text: 'Components',
-                },
-                {
-                  path: `/actions`,
-                  iconVariant: 'TerminalWindow',
-                  text: 'Actions',
-                },
-                {
-                  path: `/roles`,
-                  iconVariant: 'FileLock',
-                  text: 'Roles',
-                },
-                {
-                  path: `/policies`,
-                  iconVariant: 'ShieldCheck',
-                  text: 'Policy Evaluations',
-                },
-                {
-                  path: `/workflows`,
-                  iconVariant: 'TreeStructure',
-                  text: 'Workflows',
-                },
-                /* {
-                    path: `/readme`,
-                    iconVariant: 'BookOpen',
-                    text: 'README',
-                    }, */
-              ]}
+              links={navLinks}
             />
             <Outlet />
           </PageContent>

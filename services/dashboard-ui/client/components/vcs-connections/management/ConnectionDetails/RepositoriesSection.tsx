@@ -62,7 +62,8 @@ export const RepositoriesSection = ({
                 className="flex flex-col gap-2 py-2 px-4 border rounded-md"
               >
                 <Text
-                  className="!flex items-center gap-4 flex-wrap"
+                  flex
+                  className="gap-4 flex-wrap"
                   variant="base"
                   family="mono"
                   weight="strong"
@@ -92,7 +93,8 @@ export const RepositoriesSection = ({
                   </Badge>
 
                   <Text
-                    className="!flex items-center gap-1"
+                    flex
+                    className="gap-1"
                     variant="subtext"
                     theme="neutral"
                   >

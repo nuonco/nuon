@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { InstallIAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
@@ -10,8 +9,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallAppPermissionsConfig } from '@/lib'
-
-const CONTAINER_ID = 'install-roles-page'
 
 export const Roles = () => {
   const { org } = useOrg()
@@ -35,7 +32,7 @@ export const Roles = () => {
     config?.custom_roles?.length
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Roles | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -69,7 +66,6 @@ export const Roles = () => {
           emptyMessage="You don't have any roles assigned yet. Contact your administrator to get access to roles."
         />
       )}
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }
