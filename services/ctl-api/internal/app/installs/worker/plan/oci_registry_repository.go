@@ -13,7 +13,6 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
@@ -149,25 +148,15 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		return nil, errors.Wrap(err, "unable to get install stack by install id")
 	}
 
+	var accessInfo *activities.OrgECRAccessInfo
 	if install.Org.SandboxMode {
 		l.Info("sandbox-mode enabled, creating fake access info")
-		accessInfo := generics.GetFakeObj[*activities.OrgECRAccessInfo]()
-		appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
-		return &configs.OCIRegistryRepository{
-			Repository:   appRepoName,
-			RegistryType: configs.OCIRegistryTypePrivateOCI,
-			OCIAuth: &configs.OCIRegistryAuth{
-				Username: accessInfo.Username,
-				Password: accessInfo.RegistryToken,
-			},
-			LoginServer: strings.TrimPrefix(accessInfo.ServerAddress, "https://"),
-		}, nil
-	}
-
-	// Fetch access info which handles both ECR and GAR paths.
-	accessInfo, err := activities.AwaitGetOrgECRAccessInfo(ctx, install.OrgID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get access info")
+		accessInfo = generics.GetFakeObj[*activities.OrgECRAccessInfo]()
+	} else {
+		accessInfo, err = activities.AwaitGetOrgECRAccessInfo(ctx, install.OrgID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get access info")
+		}
 	}
 
 	appRepoName := fmt.Sprintf("%s/%s", install.OrgID, install.AppID)
@@ -183,33 +172,17 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 			loginServer = garURL[:idx]
 			appRepoName = fmt.Sprintf("%s/%s/%s", garURL[idx+1:], install.OrgID, install.AppID)
 		}
-		return &configs.OCIRegistryRepository{
-			Repository:   appRepoName,
-			RegistryType: configs.OCIRegistryTypeGAR,
-			OCIAuth: &configs.OCIRegistryAuth{
-				Username: accessInfo.Username,
-				Password: accessInfo.RegistryToken,
-			},
-			LoginServer: loginServer,
-		}, nil
-	}
-
-	// For ECR, use IAM role assumption rather than static tokens.
-	ecrConfig, err := activities.AwaitGetOrgECRConfig(ctx, install.OrgID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org ecr config")
 	}
 
 	return &configs.OCIRegistryRepository{
 		Repository:   appRepoName,
-		RegistryType: configs.OCIRegistryTypeECR,
-		ECRAuth: &awscredentials.Config{
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				RoleARN:     ecrConfig.ManagementIAMRoleARN,
-				SessionName: fmt.Sprintf("oci-sync-%s-%s", installID, deployID),
-			},
+		Region:       "",
+		RegistryType: configs.OCIRegistryTypePrivateOCI,
+		OCIAuth: &configs.OCIRegistryAuth{
+			Username: accessInfo.Username,
+			Password: accessInfo.RegistryToken,
 		},
-		LoginServer: strings.TrimPrefix(ecrConfig.ServerAddress, "https://"),
+		LoginServer: loginServer,
 	}, nil
 }
 
