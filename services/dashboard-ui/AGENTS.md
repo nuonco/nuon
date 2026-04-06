@@ -336,7 +336,14 @@ export type TNewResource = components['schemas']['app.NewResource']
 
 ### Always Check Existing Components First
 
-Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs. Read the component's TypeScript interface and any `.stories.tsx` file to understand the correct props before using it.
+Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs.
+
+**Stories files (`.stories.tsx`) are the primary reference for how to use a component.** They contain live examples of correct prop usage, edge cases, and patterns. Always read a component's stories file before using or modifying it — this is faster and more reliable than inferring usage from the TypeScript interface alone.
+
+```bash
+# Find stories for a component
+glob pattern: client/components/**/*.stories.tsx
+```
 
 ### `Tabs` Component — Key Casing
 
