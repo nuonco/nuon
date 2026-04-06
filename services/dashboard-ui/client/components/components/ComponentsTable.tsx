@@ -60,7 +60,7 @@ function parseComponentToTableData(
                     weight="strong"
                   />
                   <hr className="my-1" />
-                  <Text className="!flex px-2 pb-2" variant="subtext">
+                  <Text as="div" className="flex px-2 pb-2" variant="subtext">
                     {toSentenceCase(
                       component?.latest_build?.status_v2
                         ?.status_human_description
@@ -68,7 +68,7 @@ function parseComponentToTableData(
                   </Text>
                 </>
               ) : (
-                <Text className="!flex p-2 !text-nowrap" variant="subtext">
+                <Text flex nowrap className="p-2" variant="subtext">
                   Status unknown
                 </Text>
               )}
@@ -115,7 +115,7 @@ const columns: ColumnDef<TComponentRow>[] = [
     accessorKey: 'dependencies',
     header: 'Dependencies',
     cell: (info) => (
-      <Text className="!flex">{info.getValue() as ReactNode}</Text>
+      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
     ),
   },
   {

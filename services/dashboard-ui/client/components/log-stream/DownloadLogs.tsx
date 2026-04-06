@@ -46,7 +46,8 @@ export const DownloadLogsModal = ({
     <Modal
       heading={
         <Text
-          className="!flex items-center gap-4"
+          flex
+          className="gap-4"
           variant="h3"
           theme="info"
           weight="strong"

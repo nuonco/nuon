@@ -71,19 +71,19 @@ export const DeployStepDetails = ({ step }: IStepDetails) => {
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
         {deploy?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={deploy.created_at} />
           </Text>
         ) : null}
         {deploy?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration variant="subtext" beginTime={deploy.created_at} endTime={deploy.updated_at} />
           </Text>
         ) : null}
         {deploy?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
             <Text variant="subtext">{deploy?.runner_jobs?.at(0)?.json?.permission_info?.role}</Text>
           </Text>

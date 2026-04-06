@@ -2,7 +2,6 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
-import { BackToTop } from '@/components/common/BackToTop'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -17,8 +16,6 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getWorkflow } from '@/lib'
-
-const CONTAINER_ID = 'sandbox-run-page'
 
 export const SandboxRunDetail = () => {
   const { runId } = useParams()
@@ -56,7 +53,7 @@ const SandboxRunDetailContent = () => {
     step?.approval && (!!step?.approval?.response || responded) && step?.status?.status !== 'auto-skipped'
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection flush>
       <PageTitle title={`Sandbox run | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -73,7 +70,7 @@ const SandboxRunDetailContent = () => {
 
       <SandboxHeader workflow={workflow} stepId={step?.id} />
 
-      <PageSection className="!pb-12" isScrollable={false}>
+      <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
           {pendingApproval ? (
             <div className="flex flex-col gap-4">
@@ -102,7 +99,6 @@ const SandboxRunDetailContent = () => {
           ) : null}
         </div>
 
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </PageSection>
   )

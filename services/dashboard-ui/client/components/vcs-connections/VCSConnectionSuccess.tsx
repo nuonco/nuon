@@ -38,7 +38,8 @@ const VCSConnectionSuccesModal = (props: IModal) => {
       heading={
         <div>
           <Text
-            className="!flex items-center gap-2"
+            flex
+            className="gap-2"
             variant="h3"
             theme="success"
           >

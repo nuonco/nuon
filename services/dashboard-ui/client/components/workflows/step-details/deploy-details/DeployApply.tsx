@@ -33,7 +33,7 @@ export const DeployApply = ({
               tooltipProps={{
                 position: 'right',
                 tipContent: (
-                  <Text className="!text-nowrap" variant="subtext">
+                  <Text nowrap variant="subtext">
                     {deploy?.status_v2?.status_human_description}
                   </Text>
                 ),

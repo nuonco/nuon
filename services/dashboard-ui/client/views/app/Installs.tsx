@@ -1,5 +1,4 @@
 import { AppInstallsTable } from '@/components/apps/AppInstallsTable'
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -8,14 +7,12 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 
-const CONTAINER_ID = 'app-installs-page'
-
 export const Installs = () => {
   const { org } = useOrg()
   const { app } = useApp()
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Installs | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -31,7 +28,6 @@ export const Installs = () => {
         </Text>
       </HeadingGroup>
       <AppInstallsTable appId={app?.id} />
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

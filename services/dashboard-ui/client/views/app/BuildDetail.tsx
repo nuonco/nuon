@@ -1,6 +1,5 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -19,8 +18,6 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TComponent } from '@/types'
-
-const CONTAINER_ID = 'build-detail-page'
 
 const BuildDetailInner = ({ component }: { component: TComponent | undefined }) => {
   const { build } = useBuild()
@@ -44,7 +41,7 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
           </div>
         </Banner>
       ) : null}
-      <PageSection id={CONTAINER_ID} isScrollable>
+      <PageSection>
         {build?.log_stream ? (
           <LogStreamProvider
             logStreamId={build.log_stream.id}
@@ -73,7 +70,6 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
             </Button>
           </div>
         )}
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </>
   )

@@ -164,7 +164,7 @@ const ResourceHeading = ({ resource }) => {
       <div className="flex items-center justify-between">
         <span className="flex flex-col gap-2 text-left">
           <Text weight="strong">{resource?.address}</Text>
-          <Text className="!flex items-center gap-6" theme="neutral">
+          <Text flex className="gap-6" theme="neutral">
             <Text variant="label">
               <b>Name:</b> {resource?.name}
             </Text>

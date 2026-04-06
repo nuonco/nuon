@@ -227,7 +227,7 @@ function CompletedOrgCard({
                 Your organization has been created successfully!
               </Text>
               {org?.status !== 'active' ? (
-                <Text variant="subtext" className="!block max-w-md">
+                <Text variant="subtext" as="p" className="max-w-md">
                   It may take a few minutes to fully provision, but you
                   don&apos;t have to wait for it. You can continue to the next
                   step while it finishes.

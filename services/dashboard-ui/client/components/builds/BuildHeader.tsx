@@ -36,11 +36,11 @@ export const BuildHeader = ({ component }: { component: TComponent }) => {
           <ID>{build?.id}</ID>
         </div>
         <div className="flex gap-8 items-center justify-start mt-2">
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={build.created_at} />
           </Text>
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration
               variant="subtext"
@@ -61,7 +61,7 @@ export const BuildHeader = ({ component }: { component: TComponent }) => {
             tooltipProps={{
               tipContentClassName: 'w-fit',
               tipContent: (
-                <Text className="!text-nowrap" variant="subtext">
+                <Text nowrap variant="subtext">
                   {toSentenceCase(build?.status_v2?.status_human_description)}
                 </Text>
               ),

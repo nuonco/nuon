@@ -13,7 +13,7 @@ export const StepTitle = ({ step }: IStepDetails) => {
         status={step?.retried ? 'retried' : step.status?.status || 'unknown'}
         variant="timeline"
       />
-      <Text className="!inline-block !text-nowrap truncate" variant="base">
+      <Text nowrap className="!inline-block truncate" variant="base">
         {toSentenceCase(step.name)}
       </Text>
     </span>

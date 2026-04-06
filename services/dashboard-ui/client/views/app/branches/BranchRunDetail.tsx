@@ -67,7 +67,7 @@ export const BranchRunDetail = () => {
   const statusDescription = run.status?.status_human_description || ''
 
   return (
-    <PageSection className="max-w-full" isScrollable>
+    <PageSection className="max-w-full">
       <PageTitle title={`Run | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

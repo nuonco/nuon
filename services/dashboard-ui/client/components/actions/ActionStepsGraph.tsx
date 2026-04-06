@@ -61,7 +61,8 @@ export const ActionStepGraph = ({
                 </div>
                 {s?.execution_duration ? (
                   <Text
-                    className="!inline-flex items-center gap-1"
+                    flex
+                    className="gap-1"
                     variant="label"
                   >
                     <Icon variant="Timer" size="13" />

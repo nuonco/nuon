@@ -52,7 +52,8 @@ export const InstallComponentHeader = ({
           <BackLink />
           <HeadingGroup className="gap-1">
             <Text
-              className="inline-flex items-center gap-2"
+              flex
+              className="gap-2"
               variant="h3"
               weight="strong"
             >

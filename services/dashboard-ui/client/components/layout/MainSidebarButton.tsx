@@ -10,7 +10,7 @@ export interface IMainSidebarButton
     IButtonAsButton,
     'variant' | 'children' | 'title' | 'aria-label'
   > {
-  variant?: 'mobile' | 'default'
+  variant?: 'mobile' | 'mobile-close' | 'default'
 }
 
 export const MainSidebarButton = ({
@@ -21,6 +21,19 @@ export const MainSidebarButton = ({
   // Dynamic labels based on sidebar state
   const ariaLabel = isSidebarOpen ? 'Close sidebar' : 'Open sidebar'
 
+  if (variant === 'mobile-close') {
+    return (
+      <Button
+        variant="ghost"
+        className="!px-2"
+        onClick={toggleSidebar}
+        aria-label="Close sidebar"
+      >
+        <Icon variant="X" aria-hidden="true" />
+      </Button>
+    )
+  }
+
   if (variant === 'mobile') {
     return (
       <Button
@@ -29,11 +42,7 @@ export const MainSidebarButton = ({
         onClick={toggleSidebar}
         aria-label={ariaLabel}
       >
-        {isSidebarOpen ? (
-          <Icon variant="ArrowLineLeft" aria-hidden="true" />
-        ) : (
-          <Icon variant="ArrowLineRight" aria-hidden="true" />
-        )}
+        <Icon variant="ListIcon" aria-hidden="true" />
       </Button>
     )
   }
@@ -45,7 +54,9 @@ export const MainSidebarButton = ({
       tipContent={
         <div className="w-fit">
           <Text
-            className="inline-flex gap-2 items-center !text-nowrap"
+            flex
+            nowrap
+            className="gap-2"
             variant="subtext"
           >
             {isSidebarOpen ? 'Collapse' : 'Expand'} sidebar
