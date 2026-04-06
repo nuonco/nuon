@@ -27,19 +27,70 @@ type Diff struct {
 	Children []*Diff
 }
 
+// String returns the full diff tree with +/-/~ prefixes indicating
+// added, removed, changed, and unchanged fields.
+// Empty unchanged fields (both old and new are "") are suppressed.
 func (d *Diff) String(indent string) string {
 	if d == nil {
 		return ""
 	}
 
 	if d.Diff != nil {
-		return fmt.Sprintf(indent+"%s: %s\n", d.Key, d.Diff.Diff)
+		// Suppress unchanged empty values — these are noise
+		if d.Diff.Op == OpNoop && d.Diff.Diff == "'' (unchanged)" {
+			return ""
+		}
+		prefix := opPrefix(d.Diff.Op)
+		return fmt.Sprintf("%s%s%s: %s\n", prefix, indent, d.Key, d.Diff.Diff)
 	}
-	diff := indent + d.Key + ":\n"
+
+	// Section node — only render if it has visible children
+	var childOutput string
 	for _, child := range d.Children {
-		diff = diff + child.String(indent+"\t")
+		childOutput += child.String(indent + "  ")
 	}
-	return diff
+	if childOutput == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s:\n%s", indent, d.Key, childOutput)
+}
+
+// FormatChanged returns only the parts of the diff tree that have changes
+// (added, removed, or changed). Unchanged fields and sections are omitted entirely.
+func (d *Diff) FormatChanged(indent string) string {
+	if d == nil {
+		return ""
+	}
+
+	if d.Diff != nil {
+		if d.Diff.Op == OpNoop {
+			return ""
+		}
+		prefix := opPrefix(d.Diff.Op)
+		return fmt.Sprintf("%s%s%s: %s\n", prefix, indent, d.Key, d.Diff.Diff)
+	}
+
+	var childOutput string
+	for _, child := range d.Children {
+		childOutput += child.FormatChanged(indent + "  ")
+	}
+	if childOutput == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s:\n%s", indent, d.Key, childOutput)
+}
+
+func opPrefix(op Op) string {
+	switch op {
+	case OpAdd:
+		return "+ "
+	case OpRemove:
+		return "- "
+	case OpChange:
+		return "~ "
+	default:
+		return "  "
+	}
 }
 
 type DiffSummary struct {

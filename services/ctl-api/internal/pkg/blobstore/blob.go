@@ -35,6 +35,7 @@ type Blob struct {
 	value    *string      // In-memory value (lazy loaded from S3)
 	loaded   bool         // Whether value has been loaded from S3
 	dirty    bool         // Whether value has been modified and needs upload
+	s3Prefix string       // Optional custom S3 prefix (bypasses org_id requirement)
 }
 
 // Scan implements database/sql.Scanner
@@ -100,19 +101,22 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 		return nil
 	}
 
-	// Get org ID from context using cctx
-	orgID, err := cctxOrgIDFromContext(tx.Statement.Context)
-	if err != nil {
-		return fmt.Errorf("failed to get org_id from context: %w", err)
-	}
-
 	// Generate blob ID if new
 	if b.metadata.BlobID == "" {
 		b.metadata.BlobID = domains.NewBlobID()
 	}
 
-	// Construct S3 key: org_id/blob_id
-	s3Key := buildS3Key(orgID, b.metadata.BlobID)
+	// Construct S3 key: use custom prefix if set, otherwise use org_id
+	var s3Key string
+	if b.s3Prefix != "" {
+		s3Key = fmt.Sprintf("%s/%s", b.s3Prefix, b.metadata.BlobID)
+	} else {
+		orgID, err := cctxOrgIDFromContext(tx.Statement.Context)
+		if err != nil {
+			return fmt.Errorf("failed to get org_id from context: %w", err)
+		}
+		s3Key = buildS3Key(orgID, b.metadata.BlobID)
+	}
 	b.metadata.S3Key = s3Key
 
 	// Get account ID for created_by
@@ -300,6 +304,12 @@ func (b *Blob) Metadata() BlobMetadata {
 // SetContentType sets the content type for the blob
 func (b *Blob) SetContentType(contentType string) {
 	b.metadata.ContentType = contentType
+}
+
+// SetS3Prefix sets a custom S3 key prefix, bypassing the org_id requirement.
+// Use this for cross-org records that don't belong to a specific organization.
+func (b *Blob) SetS3Prefix(prefix string) {
+	b.s3Prefix = prefix
 }
 
 // Helper functions to extract values from context using cctx

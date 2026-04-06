@@ -44,7 +44,8 @@ func AllModels() []any {
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
 		&app.VCSWebhookSubscription{},
-		&app.VCSEvent{},
+		&app.GithubEvent{},
+		&app.VCSConnectionEvent{},
 
 		// apps
 		&app.App{},
