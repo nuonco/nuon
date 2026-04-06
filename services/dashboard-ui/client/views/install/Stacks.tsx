@@ -13,7 +13,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig } from '@/lib'
+import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
+import { getAppConfig, getAppConfigs } from '@/lib'
+import { hasNewerAppConfig } from '@/utils/app-utils'
 
 const CONTAINER_ID = 'install-stacks-page'
 
@@ -41,6 +44,15 @@ export const Stacks = () => {
 
   const config = configResult
 
+  const { data: latestConfigs } = useQuery({
+    queryKey: ['app-configs', org?.id, install?.app_id, 'latest'],
+    queryFn: () =>
+      getAppConfigs({ orgId: org.id, appId: install.app_id, limit: 1, offset: 0 }),
+    enabled: !!org?.id && !!install?.app_id,
+  })
+  const latestConfig = latestConfigs?.[0]
+  const newerConfigAvailable = hasNewerAppConfig(latestConfig, install)
+
   return (
     <PageSection id={CONTAINER_ID} isScrollable>
       <PageTitle title={`Stacks | ${install?.name}`} />
@@ -63,6 +75,27 @@ export const Stacks = () => {
           View your install stack config and versions below.
         </Text>
       </HeadingGroup>
+
+      {newerConfigAvailable && (
+        <Banner theme="info">
+          <div className="flex items-center gap-8">
+            <div className="flex flex-col">
+              <Text weight="strong">New stack config available</Text>
+              <Text variant="subtext" theme="neutral">
+                A newer app config (v{latestConfig.version}) is available. This install is
+                using v{config?.version}.
+              </Text>
+            </div>
+            <Button
+              className="ml-auto"
+              href={`/${org.id}/apps/${install.app_id}`}
+              variant="secondary"
+            >
+              View latest config
+            </Button>
+          </div>
+        </Banner>
+      )}
 
       {isLoadingConfig ? (
         <Card>
