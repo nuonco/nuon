@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/kube"
 
 	"github.com/nuonco/nuon/pkg/helm"
 )
@@ -20,7 +21,11 @@ func (a *Activities) uninstall(ctx context.Context, actionCfg *action.Configurat
 		return nil
 	}
 
-	_, err = action.NewUninstall(actionCfg).Run(prevRel.Name)
+	client := action.NewUninstall(actionCfg)
+	client.WaitStrategy = kube.StatusWatcherStrategy
+	client.Timeout = defaultHelmOperationTimeout
+
+	_, err = client.Run(prevRel.Name)
 	if err != nil {
 		return fmt.Errorf("unable to uninstall previous release: %w", err)
 	}

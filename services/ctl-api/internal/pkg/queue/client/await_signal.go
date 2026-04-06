@@ -25,6 +25,11 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	// If the DB status already indicates completion (e.g. handler was slept),
 	// return immediately without trying to reach the workflow.
 	if isTerminalStatus(q.Status.Status) {
+		// Wake the handler if it's sleeping so it comes back online.
+		// Best-effort: ignore errors since the handler may not be sleeping
+		// or may already be terminated.
+		_ = c.tryWakeSignal(ctx, q)
+
 		if q.Status.Status == app.StatusError {
 			return nil, temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("signal execution failed with status: %s", q.Status.Status),
@@ -77,6 +82,17 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	}
 
 	return &resp, nil
+}
+
+// tryWakeSignal attempts to wake a sleeping handler. Errors are ignored
+// since the handler may not be sleeping or may already be terminated.
+func (c *Client) tryWakeSignal(ctx context.Context, q *app.QueueSignal) error {
+	_, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+		WorkflowID:   q.Workflow.ID,
+		UpdateName:   handler.WakeUpdateName,
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
+	return err
 }
 
 func (c *Client) getQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {
