@@ -25,7 +25,8 @@ interface INextStep {
 interface ISection {
   tabKey: string
   description: string
-  graphic: string
+  graphicLight: string
+  graphicDark: string
   steps: INextStep[]
 }
 
@@ -34,7 +35,8 @@ function buildSections(): ISection[] {
     {
       tabKey: 'connect your app',
       description: 'Wire your SaaS into Nuon. Define install inputs, connect your CI/CD pipeline, and configure component sources.',
-      graphic: '/onboarding-graphics/connect-app-dark.png',
+      graphicLight: '/onboarding-graphics/connect-app-light.png',
+      graphicDark: '/onboarding-graphics/connect-app-dark.png',
       steps: [
         {
           icon: 'SlidersHorizontal',
@@ -65,7 +67,8 @@ function buildSections(): ISection[] {
     {
       tabKey: 'day 2 operations',
       description: 'Keep customer installs healthy, secure, and auditable after go-live.',
-      graphic: '/onboarding-graphics/day2-ops-dark.png',
+      graphicLight: '/onboarding-graphics/day2-ops-light.png',
+      graphicDark: '/onboarding-graphics/day2-ops-dark.png',
       steps: [
         {
           icon: 'ArrowsClockwise',
@@ -96,7 +99,8 @@ function buildSections(): ISection[] {
     {
       tabKey: 'create an installer',
       description: 'Give customers a self-service portal to install, configure, and manage their own instance.',
-      graphic: '/onboarding-graphics/installer-dark.png',
+      graphicLight: '/onboarding-graphics/installer-light.png',
+      graphicDark: '/onboarding-graphics/installer-dark.png',
       steps: [
         {
           icon: 'Layout',
@@ -155,9 +159,14 @@ function SectionContent({ section }: { section: ISection }) {
     <div className="flex flex-col gap-5 pt-6">
       <div className="overflow-hidden rounded-lg border bg-cool-grey-50 dark:bg-dark-grey-900">
         <img
-          src={section.graphic}
+          src={section.graphicLight}
           alt={section.tabKey}
-          className="w-full h-auto object-cover"
+          className="w-full h-auto object-cover dark:hidden"
+        />
+        <img
+          src={section.graphicDark}
+          alt={section.tabKey}
+          className="w-full h-auto object-cover hidden dark:block"
         />
       </div>
       <Text variant="body" theme="neutral">{section.description}</Text>
