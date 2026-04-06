@@ -15,10 +15,9 @@ import (
 )
 
 type ReprovisionInstallSandboxRequest struct {
-	Role                string `json:"role,omitempty"`
-	PlanOnly            bool   `json:"plan_only"`
-	SkipComponents      bool   `json:"skip_components"`
-	DeployAllComponents bool   `json:"deploy_all_components"`
+	Role           string `json:"role,omitempty"`
+	PlanOnly       bool   `json:"plan_only"`
+	SkipComponents bool   `json:"skip_components"`
 }
 
 // @ID						ReprovisionInstallSandbox
@@ -57,10 +56,6 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 	if req.SkipComponents {
 		metadata["skip_components"] = "true"
 	}
-	if req.DeployAllComponents {
-		metadata["deploy_all_components"] = "true"
-	}
-
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovisionSandbox,

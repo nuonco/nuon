@@ -113,11 +113,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	steps = append(steps, step)
 
 	if generics.FromPtrStr(flw.Metadata["skip_components"]) != "true" {
-		deployFn := deploySandboxDependentComponents
-		if generics.FromPtrStr(flw.Metadata["deploy_all_components"]) == "true" {
-			deployFn = deployAllComponents
-		}
-		deploySteps, err := deployFn(ctx, installID, flw, sg)
+		deploySteps, err := deploySandboxDependentComponents(ctx, installID, flw, sg)
 		if err != nil {
 			return nil, err
 		}
