@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Menu',
+}
+
 import { Menu } from './Menu'
 import { Button } from './Button'
 import { Icon } from './Icon'

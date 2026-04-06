@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Showdown',
+}
+
 import { Markdown as Showdown } from './Showdown'
 import { Text } from './Text'
 import { Badge } from './Badge'

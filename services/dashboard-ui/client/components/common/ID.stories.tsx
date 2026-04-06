@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/ID',
+}
+
 import { ID } from './ID'
 import { Text } from './Text'
 

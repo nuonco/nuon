@@ -1,3 +1,7 @@
+export default {
+  title: 'Components/ComponentType',
+}
+
 import { ComponentType } from './ComponentType'
 import { Text } from '../common/Text'
 import { Badge } from '../common/Badge'

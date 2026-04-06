@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Expand',
+}
+
 import { Expand } from './Expand'
 import { Text } from './Text'
 import { Icon } from './Icon'

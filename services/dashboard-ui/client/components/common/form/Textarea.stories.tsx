@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Textarea } from './Textarea'
 
 export default {
-  title: 'Forms/Textarea',
+  title: 'Common/Forms/Textarea',
   component: Textarea,
 }
 
