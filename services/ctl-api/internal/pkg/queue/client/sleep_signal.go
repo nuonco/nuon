@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -26,6 +27,10 @@ func (c *Client) SleepSignal(ctx context.Context, queueSignalID string) error {
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 	})
 	if err != nil {
+		// If the workflow already completed (e.g. grace period expired), treat as success.
+		if strings.Contains(err.Error(), "workflow execution already completed") {
+			return nil
+		}
 		return errors.Wrap(err, "unable to call sleep handler")
 	}
 
