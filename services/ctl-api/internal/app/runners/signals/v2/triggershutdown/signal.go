@@ -1,8 +1,6 @@
-package processuptimecheck
+package triggershutdown
 
 import (
-	"time"
-
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -12,13 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "process_uptime_check"
-
-// Default uptime thresholds before triggering a shutdown
-const (
-	DefaultMngUptimeThreshold     = 24 * time.Hour
-	DefaultInstallUptimeThreshold = 12 * time.Hour
-)
+const SignalType signal.SignalType = "trigger_shutdown"
 
 type Signal struct {
 	RunnerID    string `json:"runner_id"`
@@ -49,28 +41,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		ProcessType: s.ProcessType,
 	})
 	if err != nil {
-		// No active process — nothing to check
+		// No active process — nothing to shut down
 		return nil
 	}
 
-	// Noop if the process is not active (offline, inactive, shut-down, etc.)
+	// Noop if the process is not active
 	if process.ProcessStatus() != app.RunnerProcessStatusActive {
-		return nil
-	}
-
-	if process.StartedAt == nil {
-		return nil
-	}
-
-	// Determine uptime threshold based on process type
-	threshold := DefaultInstallUptimeThreshold
-	if process.Type == app.RunnerProcessTypeMng {
-		threshold = DefaultMngUptimeThreshold
-	}
-
-	// Check if process has exceeded uptime threshold
-	uptime := workflow.Now(ctx).Sub(*process.StartedAt)
-	if uptime < threshold {
 		return nil
 	}
 
@@ -85,7 +61,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to create shutdown for process uptime check")
+		return errors.Wrap(err, "unable to create shutdown for process")
 	}
 
 	return nil

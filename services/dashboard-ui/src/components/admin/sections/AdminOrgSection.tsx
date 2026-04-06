@@ -23,6 +23,7 @@ import { gracefulOrgRunnerShutdown } from '@/actions/admin/graceful-org-runner-s
 import { forceOrgRunnerShutdown } from '@/actions/admin/force-org-runner-shutdown'
 import { invalidateOrgRunnerToken } from '@/actions/admin/invalidate-org-runner-token'
 import { enableOrgDebugMode } from '@/actions/admin/enable-org-debug-mode'
+import { forgetOrgInstalls } from '@/actions/admin/forget-org-installs'
 import { getOrgRunner } from '@/actions/admin/get-org-runner'
 
 interface AdminOrgSectionProps {
@@ -164,6 +165,20 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
           variant="warning"
           requiresConfirmation
           confirmationText="This will enable debug mode which logs all requests for this org."
+        />
+      </AdminActionGroup>
+
+      {/* Destructive Actions */}
+      <AdminActionGroup title="Destructive actions" icon="Trash" variant="danger">
+        <AdminActionCard
+          title="Forget all org installs"
+          description="Permanently delete ALL installs for this organization. This cannot be undone."
+          action={() => forgetOrgInstalls(orgId)}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          inputText="yesimsure"
+          confirmationText="WARNING: This will permanently and irreversibly delete ALL installs in this organization. All install data, deployment history, and associated resources will be lost forever. This action CANNOT be undone. Only proceed if you are absolutely certain."
         />
       </AdminActionGroup>
     </AdminSection>
