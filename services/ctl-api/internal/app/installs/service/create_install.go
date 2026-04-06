@@ -75,6 +75,13 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org: %w", err))
+		return
+	}
+	req.SandboxMode = org.SandboxMode
+
 	install, err := s.helpers.CreateInstall(ctx, req.AppID, &req.CreateInstallParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
@@ -215,6 +222,13 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
+
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org: %w", err))
+		return
+	}
+	req.SandboxMode = org.SandboxMode
 
 	install, err := s.helpers.CreateInstall(ctx, appID, &req.CreateInstallParams)
 	if err != nil {

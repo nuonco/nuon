@@ -120,12 +120,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		KubernetesSecrets: secrets,
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, req.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
-	}
-
-	if org.SandboxMode {
+	if install.SandboxMode.Bool {
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
 			Outputs: map[string]any{

@@ -196,9 +196,10 @@ type Config struct {
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
 
 	// flags for controlling the background workers
-	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
-	SandboxModeSleep         time.Duration `config:"sandbox_mode_sleep" validate:"required"`
-	SandboxModeEnableRunners bool          `config:"sandbox_mode_enable_runners"`
+	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
+	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
+	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
+	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`

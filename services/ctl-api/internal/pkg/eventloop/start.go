@@ -34,6 +34,16 @@ func (a *evClient) startEventLoop(ctx context.Context, id string, signal Signal)
 		sandboxMode = org.SandboxMode
 	}
 
+	// Install-level sandbox mode takes precedence when set.
+	if signal.Namespace() == "installs" {
+		var install app.Install
+		if err := a.db.WithContext(ctx).Select("sandbox_mode").First(&install, "id = ?", id).Error; err == nil {
+			if install.SandboxMode.Valid {
+				sandboxMode = install.SandboxMode.Bool
+			}
+		}
+	}
+
 	workflowID := signal.WorkflowID(id)
 	opts := tclient.StartWorkflowOptions{
 		ID:        workflowID,

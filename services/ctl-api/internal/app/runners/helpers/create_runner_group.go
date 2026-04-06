@@ -29,6 +29,12 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		platform = app.AppRunnerTypeLocal
 	}
 
+	// Install-level sandbox mode takes precedence when set, else fall back to org.
+	sandboxMode := install.Org.SandboxMode
+	if install.SandboxMode.Valid {
+		sandboxMode = install.SandboxMode.Bool
+	}
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
@@ -44,7 +50,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			SandboxMode:       install.Org.SandboxMode,
+			SandboxMode:       sandboxMode,
 			ContainerImageURL: h.cfg.RunnerContainerImageURL,
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,

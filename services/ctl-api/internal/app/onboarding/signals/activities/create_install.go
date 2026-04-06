@@ -61,9 +61,11 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 	}
 	ctx = cctx.SetOrgContext(ctx, &org)
 
+	sandboxMode := a.cfg.ForceOnboardingSandboxMode || org.SandboxMode || onboarding.InstallMode == app.OnboardingInstallModeSandbox
 	installParams := &helpers.CreateInstallParams{
-		Name:   input.Name,
-		Inputs: input.Inputs,
+		Name:        input.Name,
+		Inputs:      input.Inputs,
+		SandboxMode: sandboxMode,
 	}
 	if input.AWSAccount != nil {
 		installParams.AWSAccount = &struct {
