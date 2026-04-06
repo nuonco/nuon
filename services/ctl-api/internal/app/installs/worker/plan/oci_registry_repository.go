@@ -13,7 +13,6 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/pkg/errors"
 
-	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
@@ -194,22 +193,16 @@ func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID
 		}, nil
 	}
 
-	// For ECR, use IAM role assumption rather than static tokens.
-	ecrConfig, err := activities.AwaitGetOrgECRConfig(ctx, install.OrgID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org ecr config")
-	}
-
+	// For ECR, use the pre-fetched token from ctl-api. The runner's IAM role is
+	// not trusted by the management role, so it cannot assume it directly.
 	return &configs.OCIRegistryRepository{
 		Repository:   appRepoName,
-		RegistryType: configs.OCIRegistryTypeECR,
-		ECRAuth: &awscredentials.Config{
-			AssumeRole: &awscredentials.AssumeRoleConfig{
-				RoleARN:     ecrConfig.ManagementIAMRoleARN,
-				SessionName: fmt.Sprintf("oci-sync-%s-%s", installID, deployID),
-			},
+		RegistryType: configs.OCIRegistryTypePrivateOCI,
+		OCIAuth: &configs.OCIRegistryAuth{
+			Username: accessInfo.Username,
+			Password: accessInfo.RegistryToken,
 		},
-		LoginServer: strings.TrimPrefix(ecrConfig.ServerAddress, "https://"),
+		LoginServer: loginServer,
 	}, nil
 }
 
