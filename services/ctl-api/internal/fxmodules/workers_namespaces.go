@@ -25,6 +25,9 @@ import (
 	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	runnersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker"
 	runnersactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	vcsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker"
+	vcsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 )
 
 // GeneralWorkerModule provides the general namespace worker.
@@ -85,4 +88,11 @@ var ActionsWorkerModule = fx.Module("worker-actions",
 // OnboardingsWorkerModule provides the onboardings namespace worker.
 var OnboardingsWorkerModule = fx.Module("worker-onboardings",
 	fx.Provide(worker.AsWorker(onboardingworker.New)),
+)
+
+// VCSWorkerModule provides the vcs namespace worker.
+var VCSWorkerModule = fx.Module("worker-vcs",
+	fx.Provide(func(h *vcshelpers.Helpers) vcsactivities.GithubClient { return h }),
+	fx.Provide(vcsactivities.New),
+	fx.Provide(worker.AsWorker(vcsworker.New)),
 )

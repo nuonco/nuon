@@ -18,6 +18,7 @@ type GithubClient interface {
 	GetInstallation(ctx context.Context, installID string) (*github.Installation, error)
 	DeleteInstallation(ctx context.Context, installID string) error
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
+	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error)
 }
 
 func (h *Helpers) GetInstallationAccount(ctx context.Context, installID string) (*github.User, error) {
@@ -67,6 +68,30 @@ func (h *Helpers) DeleteInstallation(ctx context.Context, installID string) erro
 	}
 
 	return nil
+}
+
+func (h *Helpers) CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error) {
+	ghClient, err := h.GetVCSConnectionClient(ctx, vcsConn)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create GitHub client: %w", err)
+	}
+
+	active := true
+	hook := &github.Hook{
+		Config: map[string]interface{}{
+			"url":          webhookURL,
+			"content_type": "json",
+		},
+		Events: []string{"push", "pull_request", "create", "delete"},
+		Active: &active,
+	}
+
+	created, _, err := ghClient.Organizations.CreateHook(ctx, vcsConn.GithubAccountName, hook)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create org webhook: %w", err)
+	}
+
+	return created.GetID(), nil
 }
 
 func (h *Helpers) ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error) {

@@ -37,6 +37,9 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		vcs.POST("/connection-callback", s.CreateConnectionCallback)
 
+		// Webhook event receiver (public, no auth required)
+		vcs.POST("/:vcs_connection_id/events", s.WriteEvent)
+
 		connections := vcs.Group("/connections")
 		{
 			connections.POST("", s.CreateConnection)
