@@ -17,21 +17,20 @@ export const MainLayout = ({
   hideOrgContent,
 }: IMainLayout) => {
   useHashScroll()
-  const { isSidebarOpen } = useSidebar()
+  const { isSidebarOpen, toggleSidebar } = useSidebar()
 
   return (
-    <div className="w-screen overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden">
+      <MainSidebar versions={versions} hideOrgContent={hideOrgContent} />
       <div
         className={cn(
-          'flex h-screen w-[200vw] transition-transform duration-fast ease-cubic md:w-screen md:transition-none',
-          {
-            'md:translate-x-0 -translate-x-[100vw]': isSidebarOpen,
-          }
+          'fixed inset-0 z-40 bg-black/40 transition-opacity duration-fast md:hidden',
+          !isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
-      >
-        <MainSidebar versions={versions} hideOrgContent={hideOrgContent} />
-        <div className="flex-1 min-w-0">{children}</div>
-      </div>
+        onClick={toggleSidebar}
+        aria-hidden="true"
+      />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">{children}</div>
     </div>
   )
 }

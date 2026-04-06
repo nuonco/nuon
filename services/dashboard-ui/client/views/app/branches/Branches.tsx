@@ -11,7 +11,6 @@ import { getAppBranches } from '@/lib'
 import { BranchesTable } from '@/components/branches/BranchesTable'
 import { CreateBranchButton } from '@/components/branches/CreateBranchModal'
 
-const CONTAINER_ID = 'app-branches-page'
 const LIMIT = 20
 
 export const Branches = () => {
@@ -34,7 +33,7 @@ export const Branches = () => {
   }
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Branches | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

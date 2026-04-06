@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
 import { PendingApprovals } from '@/components/orgs/PendingApprovals'
 import {
@@ -29,8 +28,6 @@ import {
   getJobExecutionStatus,
 } from '@/utils/runner-utils'
 import announcementsData from '@/content/dashboard-announcements.json'
-
-const CONTAINER_ID = 'org-dashboard-page'
 
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
@@ -99,7 +96,7 @@ export const Dashboard = () => {
   }))
 
   return (
-    <PageLayout className="divide-y pb-6" id={CONTAINER_ID} isScrollable>
+    <PageLayout className="divide-y pb-6">
       <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
       <PageHeader>
@@ -155,7 +152,6 @@ export const Dashboard = () => {
           </PageSection>
         </PageGrid>
       </PageContent>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }

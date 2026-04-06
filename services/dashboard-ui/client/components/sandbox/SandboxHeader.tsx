@@ -45,7 +45,7 @@ export const SandboxHeader = ({
             tooltipProps={{
               tipContentClassName: 'w-fit',
               tipContent: (
-                <Text className="!text-nowrap" variant="subtext">
+                <Text nowrap variant="subtext">
                   {toSentenceCase(
                     sandboxRun?.status_v2?.status_human_description
                   )}
@@ -91,7 +91,8 @@ export const SandboxHeader = ({
               displayVariant="icon-only"
             />
             <Text
-              className="inline-flex items-center gap-4"
+              flex
+              className="gap-4"
               variant="h3"
               weight="strong"
             >
@@ -102,11 +103,11 @@ export const SandboxHeader = ({
         </div>
 
         <div className="flex flex-wrap gap-x-8 gap-y-1 items-center justify-start my-2">
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={sandboxRun?.created_at} />
           </Text>
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration
               variant="subtext"
@@ -115,7 +116,7 @@ export const SandboxHeader = ({
             />
           </Text>
           {sandboxRun?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
-            <Text theme="info" className="!flex items-center gap-1">
+            <Text theme="info" flex className="gap-1">
               <Icon variant="FileLockIcon" />
               <Text variant="subtext">{sandboxRun.runner_jobs.at(0).json.permission_info.role}</Text>
             </Text>

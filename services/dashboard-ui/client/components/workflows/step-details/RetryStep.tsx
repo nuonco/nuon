@@ -56,7 +56,7 @@ export const RetryStepModal = ({ step, ...props }: IRetryStep & IModal) => {
   return (
     <Modal
       heading={
-        <Text className="inline-flex gap-4 items-center" variant="h3" weight="stronger">
+        <Text flex className="gap-4" variant="h3" weight="stronger">
           Retry step?
         </Text>
       }

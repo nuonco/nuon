@@ -41,7 +41,8 @@ The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse pr
 client/
 ├── components/         ← Reusable UI components (organized by domain)
 │   ├── common/         ← Core primitives: Button, Card, Badge, Text, Modal, Toast
-│   ├── layout/         ← Page structure: PageLayout, PageContent, AsyncBoundary
+│   ├── layout/         ← Page structure: PageLayout, PageContent, PageSection
+│   ├── navigation/     ← SubNav, Breadcrumbs, MainNav
 │   ├── surfaces/       ← Modal/Panel system
 │   └── [domain]/       ← Feature components (actions, workflows, runners, installs, etc.)
 ├── hooks/              ← Custom React hooks (47+ hooks for state and utilities)
@@ -68,6 +69,97 @@ client/
 - **`views/`** contains **only**: page-level view components (route content), layout components (providers/breadcrumbs/tab nav), and route orchestration.
 - **`views/`** must **never** contain: modals, tables, reusable sub-components, action buttons, or any component meant to be consumed by a view.
 - All feature components belong in `client/components/[domain]/`. If a `components/[domain]/` directory doesn't exist yet, create it.
+
+## Layout System
+
+The layout system handles page structure, scrolling, and back-to-top automatically. Pages assemble from clear building blocks without worrying about scroll containers, overflow, or positioning.
+
+### Layout Component Hierarchy
+
+```
+MainLayout (flex row: sidebar + content)
+├── MainSidebar (desktop: static flex child, mobile: fixed overlay)
+├── Mobile backdrop
+└── Content wrapper (flex-1, flex-col, overflow-hidden)
+    ├── PageLayout (flex-1, contains topbar + scroll container)
+    │   ├── MainTopbar
+    │   └── Scroll container (overflow-y-auto, auto BackToTop)
+    │       ├── PageHeader (optional)
+    │       ├── PageContent (flex direction: column or row)
+    │       │   ├── SubNav (optional, sticky on desktop)
+    │       │   └── Page content / Outlet
+    │       └── BackToTop (automatic, sticky bottom-right)
+    └── OrgStatusBar (flex-none, pinned at bottom)
+```
+
+### Building Pages
+
+**Org-level page** (top-level route like Apps, Installs, Team):
+```tsx
+export const MyPage = () => (
+  <PageLayout>
+    <PageHeader>
+      <PageHeadingGroup title="My page" />
+    </PageHeader>
+    <PageContent>
+      <PageSection>
+        {/* content */}
+      </PageSection>
+    </PageContent>
+  </PageLayout>
+)
+```
+
+**Child page inside App/Install layout** (rendered via `<Outlet />`):
+```tsx
+export const MyChildPage = () => (
+  <PageSection>
+    {/* content — that's it */}
+  </PageSection>
+)
+```
+
+**Detail page with flush header**:
+```tsx
+export const DeployDetail = () => (
+  <>
+    <PageSection flush>
+      <DeployHeader />
+    </PageSection>
+    <PageSection>
+      <Logs />
+    </PageSection>
+  </>
+)
+```
+
+### Layout Components
+
+| Component | Purpose | Key Props |
+|-----------|---------|-----------|
+| `PageLayout` | Top-level page wrapper. Renders topbar, scroll container, and BackToTop automatically. | `variant` (`dashboard-page` / `single-page`), `hideBreadcrumbs` |
+| `PageContent` | Sets flex direction for content area. | `variant` (`column` default, `row` for SubNav layouts) |
+| `PageSection` | Content block with standard padding/gap. | `flush` (removes padding/gap for full-bleed content) |
+| `PageHeader` | Page heading area above content. | Standard div props |
+| `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
+
+### What You Get For Free
+
+- **Scrolling**: PageLayout's inner div is always the scroll container (`overflow-y-auto`)
+- **Back to top**: Auto-rendered inside PageLayout, appears after 400px scroll
+- **SubNav sticky**: Stays pinned on desktop while content scrolls beside it
+- **OrgStatusBar**: Pinned at the bottom, outside the scroll area
+
+### Do NOT
+
+- Add `isScrollable` to any component — it's ignored (kept for backwards compat only)
+- Create `CONTAINER_ID` constants or pass `id` props to scroll containers
+- Import or render `<BackToTop />` in view files — PageLayout handles it
+- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+
+### Mobile Sidebar
+
+The main sidebar uses a fixed overlay on mobile (`w-[280px]`, slides in from left) with a backdrop. On desktop it's a normal flex child with a collapsible width transition (Alt+S).
 
 ## Routing
 
@@ -244,7 +336,14 @@ export type TNewResource = components['schemas']['app.NewResource']
 
 ### Always Check Existing Components First
 
-Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs. Read the component's TypeScript interface and any `.stories.tsx` file to understand the correct props before using it.
+Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs.
+
+**Stories files (`.stories.tsx`) are the primary reference for how to use a component.** They contain live examples of correct prop usage, edge cases, and patterns. Always read a component's stories file before using or modifying it — this is faster and more reliable than inferring usage from the TypeScript interface alone.
+
+```bash
+# Find stories for a component
+glob pattern: client/components/**/*.stories.tsx
+```
 
 ### `Tabs` Component — Key Casing
 

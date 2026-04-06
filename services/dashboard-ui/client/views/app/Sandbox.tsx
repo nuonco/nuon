@@ -33,7 +33,7 @@ export const Sandbox = () => {
   })
 
   return (
-    <PageSection isScrollable>
+    <PageSection>
       <PageTitle title={`Sandbox | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

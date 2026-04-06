@@ -59,19 +59,19 @@ export const SandboxRunStepDetails = ({ step }: ISandboxRunStepDetails) => {
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
         {sandboxRun?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={sandboxRun.created_at} />
           </Text>
         ) : null}
         {sandboxRun?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration variant="subtext" beginTime={sandboxRun.created_at} endTime={sandboxRun.updated_at} />
           </Text>
         ) : null}
         {sandboxRun?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
             <Text variant="subtext">{sandboxRun.runner_jobs.at(0).json.permission_info.role}</Text>
           </Text>

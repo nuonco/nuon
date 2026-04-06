@@ -10,8 +10,6 @@ import { useBranch } from '@/hooks/use-branch'
 import { getBranchConfigs } from '@/lib'
 import { BranchProvider } from '@/providers/branch-provider'
 
-const CONTAINER_ID = 'branch-configs-page'
-
 const BranchConfigsContent = () => {
   const { org } = useOrg()
   const { app } = useApp()
@@ -26,7 +24,7 @@ const BranchConfigsContent = () => {
   })
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Configs | ${branch?.name ?? 'Branch'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
