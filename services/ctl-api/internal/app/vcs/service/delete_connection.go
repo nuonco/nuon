@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"gorm.io/gorm"
 )
 
 // @ID 					 	DeleteVCSConnection
@@ -47,6 +49,17 @@ func (s *service) DeleteConnection(ctx *gin.Context) {
 		// If we can't delete the Github App installation, we should still try
 		// to delete the connection from our DB.
 		s.l.Info(err.Error())
+	}
+
+	// Stop the health check queue if one exists
+	if vcsConn.QueueID != "" {
+		if err := s.helpers.StopConnectionQueue(ctx, vcsConn.QueueID); err != nil {
+			s.l.Warn("unable to stop vcs connection queue",
+				zap.String("vcs_connection_id", vcsConn.ID),
+				zap.String("queue_id", vcsConn.QueueID),
+				zap.Error(err),
+			)
+		}
 	}
 
 	err = s.deleteConnection(ctx, vcsConn)
