@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	kuberunner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "update_runner_tag"
@@ -103,6 +104,11 @@ func (s *Signal) handleInstallRunner(ctx workflow.Context, l log.Logger, runner 
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusActive,
+		StatusDescription: fmt.Sprintf("tag updated to %s, awaiting restart", s.Tag),
+	})
 
 	return nil
 }
@@ -121,6 +127,11 @@ func (s *Signal) handleOrgRunner(ctx workflow.Context, l log.Logger, runner *app
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: fmt.Sprintf("tag updated to %s, local runner must be restarted manually", s.Tag),
+		})
 		return nil
 	}
 
@@ -133,6 +144,11 @@ func (s *Signal) handleOrgRunner(ctx workflow.Context, l log.Logger, runner *app
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: fmt.Sprintf("tag updated to %s, integration mode", s.Tag),
+		})
 		return nil
 	}
 
@@ -177,6 +193,11 @@ func (s *Signal) handleOrgRunner(ctx workflow.Context, l log.Logger, runner *app
 		}); updateErr != nil {
 			return errors.Wrap(err, "unable to reprovision runner (also failed to update status)")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: fmt.Sprintf("unable to reprovision runner with tag %s", s.Tag),
+		})
 		return errors.Wrap(err, "unable to reprovision runner with new tag")
 	}
 
@@ -187,6 +208,11 @@ func (s *Signal) handleOrgRunner(ctx workflow.Context, l log.Logger, runner *app
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusActive,
+		StatusDescription: fmt.Sprintf("runner updated to tag %s", s.Tag),
+	})
 
 	return nil
 }

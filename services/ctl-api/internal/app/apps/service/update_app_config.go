@@ -164,5 +164,14 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 		return nil, fmt.Errorf("app config not found %s %w", appConfigID, gorm.ErrRecordNotFound)
 	}
 
+	// dual-write V2 status
+	if req.Status != "" {
+		compositeStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
+		compositeStatus.StatusHumanDescription = req.StatusDescription
+		s.db.WithContext(ctx).Model(&app.AppConfig{}).Where("id = ?", appConfigID).Updates(map[string]any{
+			"status_v2": compositeStatus,
+		})
+	}
+
 	return &cfg, nil
 }

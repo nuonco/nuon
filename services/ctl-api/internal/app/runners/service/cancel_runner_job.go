@@ -68,6 +68,12 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		return nil, fmt.Errorf("unable to cancel runner job: %w", res.Error)
 	}
 
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusCancelled))
+	s.db.WithContext(ctx).Model(&app.RunnerJob{ID: runnerJobID}).Updates(map[string]any{
+		"status_v2": compositeStatus,
+	})
+
 	job, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", err)
@@ -86,6 +92,12 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
+
+		// dual-write V2 status
+		execCompositeStatus := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobExecutionStatusCancelled))
+		s.db.WithContext(ctx).Model(&app.RunnerJobExecution{ID: execution.ID}).Updates(map[string]any{
+			"status_v2": execCompositeStatus,
+		})
 
 	}
 

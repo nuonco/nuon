@@ -16,7 +16,11 @@ type FlushOrphanedJobsRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) FlushOrphanedJobs(ctx context.Context, req FlushOrphanedJobsRequest) error {
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusCancelled))
+
 	res := a.db.WithContext(ctx).
+		Model(&app.RunnerJob{}).
 		Where(app.RunnerJob{
 			RunnerID: req.RunnerID,
 		}).
@@ -25,8 +29,9 @@ func (a *Activities) FlushOrphanedJobs(ctx context.Context, req FlushOrphanedJob
 			app.RunnerJobStatusQueued,
 			app.RunnerJobStatusInProgress,
 		}).
-		Updates(app.RunnerJob{
-			Status: app.RunnerJobStatusCancelled,
+		Updates(map[string]any{
+			"status":    app.RunnerJobStatusCancelled,
+			"status_v2": compositeStatus,
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to cancel orphaned jobs")

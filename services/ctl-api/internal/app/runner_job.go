@@ -237,6 +237,7 @@ type RunnerJob struct {
 
 	Status            RunnerJobStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	Type      RunnerJobType          `json:"type,omitzero" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
 	Group     RunnerJobGroup         `json:"group,omitzero" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`
