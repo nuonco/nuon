@@ -22,6 +22,7 @@ import {
   adminForceRunnerShutdown,
   adminInvalidateRunnerToken,
   adminEnableOrgDebugMode,
+  adminDeprovisionOrg,
   adminForgetOrgInstalls,
 } from '@/lib'
 
@@ -148,6 +149,16 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
       </AdminActionGroup>
 
       <AdminActionGroup title="Teardown & cleanup" icon="Trash" variant="danger">
+        <AdminActionCard
+          title="Deprovision org"
+          description="Deprovision all org infrastructure. Keeps database records but tears down cloud resources."
+          action={() => adminDeprovisionOrg({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          inputText="yesimsure"
+          confirmationText="WARNING: This will deprovision ALL infrastructure for this organization including runners and installs. Database records will be preserved. This may take a while to complete."
+        />
         <AdminActionCard
           title="Forget all org installs"
           description="Permanently forget all installs for this org. This cannot be undone."

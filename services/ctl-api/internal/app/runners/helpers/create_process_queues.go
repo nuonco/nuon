@@ -30,19 +30,19 @@ func (s *processHealthcheckSignalTemplate) Type() queuesignal.SignalType {
 func (s *processHealthcheckSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *processHealthcheckSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
-// processUptimeCheckSignalType mirrors the constant in runners/signals/v2/processuptimecheck
-const processUptimeCheckSignalType queuesignal.SignalType = "process_uptime_check"
+// triggerShutdownSignalType mirrors the constant in runners/signals/v2/triggershutdown
+const triggerShutdownSignalType queuesignal.SignalType = "trigger_shutdown"
 
-type processUptimeCheckSignalTemplate struct {
+type triggerShutdownSignalTemplate struct {
 	RunnerID    string `json:"runner_id"`
 	ProcessType string `json:"process_type"`
 }
 
-func (s *processUptimeCheckSignalTemplate) Type() queuesignal.SignalType {
-	return processUptimeCheckSignalType
+func (s *triggerShutdownSignalTemplate) Type() queuesignal.SignalType {
+	return triggerShutdownSignalType
 }
-func (s *processUptimeCheckSignalTemplate) Validate(_ workflow.Context) error { return nil }
-func (s *processUptimeCheckSignalTemplate) Execute(_ workflow.Context) error  { return nil }
+func (s *triggerShutdownSignalTemplate) Validate(_ workflow.Context) error { return nil }
+func (s *triggerShutdownSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
 // processStartedSignalType mirrors the constant in runners/signals/v2/processstarted
 const processStartedSignalType queuesignal.SignalType = "process_started"
@@ -86,10 +86,11 @@ func (s *onRunnerProcessSignalTemplate) Type() queuesignal.SignalType {
 func (s *onRunnerProcessSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *onRunnerProcessSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
-// Default uptime thresholds before triggering a shutdown
+// Fallback uptime thresholds when config values are not set
 const (
-	defaultMngUptimeThreshold     = 24 * time.Hour
-	defaultInstallUptimeThreshold = 12 * time.Hour
+	defaultMngUptimeThreshold     = 168 * time.Hour // 1 week
+	defaultInstallUptimeThreshold = 8 * time.Hour
+	defaultBuildUptimeThreshold   = 8 * time.Hour
 )
 
 // CreateProcessQueues creates a queue for the given runner process with a cron health check
@@ -120,25 +121,39 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process health check emitter: %w", err)
 	}
 
-	// Scheduled emitter: uptime TTL
-	threshold := defaultInstallUptimeThreshold
-	if process.Type == app.RunnerProcessTypeMng {
-		threshold = defaultMngUptimeThreshold
+	// Scheduled emitter: uptime TTL (from config, with fallback defaults)
+	var threshold time.Duration
+	switch process.Type {
+	case app.RunnerProcessTypeMng:
+		threshold = h.cfg.ProcessMngUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultMngUptimeThreshold
+		}
+	case app.RunnerProcessTypeBuild:
+		threshold = h.cfg.ProcessBuildUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultBuildUptimeThreshold
+		}
+	default:
+		threshold = h.cfg.ProcessInstallUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultInstallUptimeThreshold
+		}
 	}
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:     q.ID,
-		Name:        fmt.Sprintf("process-%s-uptime-check", process.ID),
-		Description: "Process uptime TTL check",
+		Name:        fmt.Sprintf("process-%s-trigger-shutdown", process.ID),
+		Description: "Trigger process shutdown after uptime threshold",
 		Mode:        app.QueueEmitterModeFireOnce,
 		ScheduledAt: generics.ToPtr(time.Now().Add(threshold)),
-		SignalType:  processUptimeCheckSignalType,
-		SignalTemplate: &processUptimeCheckSignalTemplate{
+		SignalType:  triggerShutdownSignalType,
+		SignalTemplate: &triggerShutdownSignalTemplate{
 			RunnerID:    runnerID,
 			ProcessType: string(process.Type),
 		},
 	}); err != nil {
-		return nil, fmt.Errorf("unable to create process uptime check emitter: %w", err)
+		return nil, fmt.Errorf("unable to create trigger shutdown emitter: %w", err)
 	}
 
 	// Enqueue the process_started signal to transition process from pending to active

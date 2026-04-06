@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -17,25 +16,21 @@ import (
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
-func (a *Activities) updateWorkflowSleep(ctx context.Context, workflowID string, updateID string) (*handler.SleepResponse, error) {
+func (a *Activities) updateWorkflowWake(ctx context.Context, workflowID string, updateID string) (*handler.WakeResponse, error) {
 	info := activity.GetInfo(ctx)
 
 	rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
 		tclient.UpdateWorkflowOptions{
 			WorkflowID:   workflowID,
-			UpdateName:   handler.SleepUpdateName,
+			UpdateName:   handler.WakeUpdateName,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		})
 	if err != nil {
-		// If the workflow already completed (e.g. grace period expired), treat as success.
-		if strings.Contains(err.Error(), "workflow execution already completed") {
-			return &handler.SleepResponse{}, nil
-		}
-		return nil, errors.Wrap(err, "unable to call sleep handler")
+		return nil, errors.Wrap(err, "unable to call wake handler")
 	}
 
-	var resp handler.SleepResponse
+	var resp handler.WakeResponse
 	if err := rawResp.Get(ctx, &resp); err != nil {
 		return nil, errors.Wrap(err, "unable get response")
 	}

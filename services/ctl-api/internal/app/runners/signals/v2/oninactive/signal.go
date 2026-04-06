@@ -45,5 +45,15 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 	l.Info("on_inactive signal received", "runner_id", s.RunnerID, "process_id", s.ProcessID, "reason", s.Reason)
+
+	// Terminate the process queue: stops all emitters and the queue workflow.
+	if err := activities.AwaitTerminateProcessQueue(ctx, activities.TerminateProcessQueueRequest{
+		RunnerID:  s.RunnerID,
+		ProcessID: s.ProcessID,
+	}); err != nil {
+		l.Error("failed to terminate process queue", "error", err)
+		return errors.Wrap(err, "unable to terminate process queue")
+	}
+
 	return nil
 }
