@@ -8,7 +8,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -72,14 +71,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Check if sandbox org - skip DNS provisioning for sandbox orgs
-	orgTyp, err := activities.AwaitGetOrgTypeByInstallID(ctx, s.InstallID)
+	// Check if sandbox - skip DNS provisioning for sandbox installs
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get org type")
+		return errors.Wrap(err, "unable to get install")
 	}
 
-	if orgTyp == app.OrgTypeSandbox {
-		l.Info("skipping dns delegation provisioning for sandbox org", "install_id", s.InstallID)
+	if install.SandboxMode.Bool {
+		l.Info("skipping dns delegation provisioning for sandbox install", "install_id", s.InstallID)
 		return nil
 	}
 

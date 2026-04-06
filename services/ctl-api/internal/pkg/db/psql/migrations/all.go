@@ -56,5 +56,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "095-backfill-org-support-role",
 			Fn:   m.Migration095BackfillOrgSupportRole,
 		},
+		{
+			Name: "096-backfill-install-sandbox-mode",
+			Fn:   m.Migration096BackfillInstallSandboxMode,
+		},
 	}
 }

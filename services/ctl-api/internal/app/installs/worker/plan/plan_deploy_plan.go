@@ -114,12 +114,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	}
 
-	// the following section is for sandbox mode only
-	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get org")
-	}
-	if org.SandboxMode {
+	if install.SandboxMode.Bool {
 		targetRefs := helpers.GetComponentReferences(appCfg, installDeploy.ComponentName)
 
 		plan.SandboxMode = &plantypes.SandboxMode{
