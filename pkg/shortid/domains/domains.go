@@ -338,6 +338,14 @@ func NewVCSCommitID() string {
 	return shortid.NewNanoID("vcc")
 }
 
+func NewVCSEventID() string {
+	return shortid.NewNanoID("vce")
+}
+
+func NewVCSWebhookSubscriptionID() string {
+	return shortid.NewNanoID("vws")
+}
+
 func NewVCSID() string {
 	return shortid.NewNanoID("vcs")
 }
