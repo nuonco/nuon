@@ -443,6 +443,7 @@ func (c *cli) installsCmd() *cobra.Command {
 	deprovisionInstallSandboxCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(deprovisionInstallSandboxCmd)
 
+	var skipComponents bool
 	reprovisionInstallSandboxCmd := &cobra.Command{
 		Use:         "reprovision-sandbox",
 		Short:       "Reprovision install sandbox [preview]",
@@ -459,10 +460,11 @@ func (c *cli) installsCmd() *cobra.Command {
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.ReprovisionSandbox(cmd.Context(), id, PrintJSON)
+			return svc.ReprovisionSandbox(cmd.Context(), id, skipComponents, PrintJSON)
 		}),
 	}
 	reprovisionInstallSandboxCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use (shows selector if omitted)")
+	reprovisionInstallSandboxCmd.Flags().BoolVar(&skipComponents, "skip-components", false, "Skip deploying components after reprovisioning the sandbox")
 	installsCmds.AddCommand(reprovisionInstallSandboxCmd)
 
 	var autoRetry bool
