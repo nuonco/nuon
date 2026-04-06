@@ -1,7 +1,6 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { Duration } from '@/components/common/Duration'
@@ -20,8 +19,6 @@ import { getAction } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
 
-const CONTAINER_ID = 'action-detail-page'
-
 export const ActionDetail = () => {
   const { actionId } = useParams()
   const { org } = useOrg()
@@ -38,7 +35,7 @@ export const ActionDetail = () => {
   const steps = config?.steps ? sortByIdx(config.steps) : undefined
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection flush>
       <PageTitle title={`${action?.name ?? 'Action'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -137,7 +134,6 @@ export const ActionDetail = () => {
         )}
       </PageSection>
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

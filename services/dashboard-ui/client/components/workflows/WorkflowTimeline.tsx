@@ -135,7 +135,8 @@ export const WorkflowTimeline = ({
             underline={
               <span className="flex items-center gap-6 mt-1">
                 <Text
-                  className="!flex items-center gap-1"
+                  flex
+                  className="gap-1"
                   variant="subtext"
                   theme="neutral"
                 >
@@ -143,7 +144,8 @@ export const WorkflowTimeline = ({
                   <Time time={workflow?.created_at} variant="subtext" />
                 </Text>
                 <Text
-                  className="!flex items-center gap-1"
+                  flex
+                  className="gap-1"
                   variant="subtext"
                   theme="neutral"
                 >
@@ -156,7 +158,8 @@ export const WorkflowTimeline = ({
                 </Text>
                 {workflow?.finished ? (
                   <Text
-                    className="!flex items-center gap-1"
+                    flex
+                    className="gap-1"
                     variant="subtext"
                     theme="neutral"
                   >

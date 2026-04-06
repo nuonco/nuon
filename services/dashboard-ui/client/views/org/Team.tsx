@@ -1,4 +1,3 @@
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -13,13 +12,11 @@ import { InvitedUsers } from '@/components/team/InvitedUsers'
 
 import { useOrg } from '@/hooks/use-org'
 
-const CONTAINER_ID = 'org-team-page'
-
 export const Team = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
+    <PageLayout className="pb-6">
       <PageTitle title={`Team | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -59,7 +56,6 @@ export const Team = () => {
           </div>
         </PageSection>
       </PageContent>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageLayout>
   )
 }

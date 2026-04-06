@@ -42,7 +42,8 @@ const ConfirmUpdateModal = ({
     <Modal
       heading={
         <Text
-          className="inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="warn"
@@ -214,7 +215,8 @@ export const EditInputsFormModal = ({ ...props }: IEditInputs & IModal) => {
       childrenClassName="overflow-y-auto"
       heading={
         <Text
-          className="inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
         >

@@ -1,7 +1,6 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -23,8 +22,6 @@ import { useOrg } from '@/hooks/use-org'
 import { getInstallAction, getInstallState } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
-
-const CONTAINER_ID = 'install-action-detail-page'
 
 export const ActionDetail = () => {
   const { actionId } = useParams()
@@ -59,7 +56,7 @@ export const ActionDetail = () => {
     action?.action_workflow?.configs?.[0]?.enable_kube_config
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection flush>
       <PageTitle
         title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`}
       />
@@ -221,7 +218,6 @@ export const ActionDetail = () => {
         </div>
       </div>
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

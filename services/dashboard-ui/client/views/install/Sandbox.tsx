@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -17,8 +16,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig } from '@/lib'
-
-const CONTAINER_ID = 'install-sandbox-detail-page'
 
 export const Sandbox = () => {
   const { org } = useOrg()
@@ -52,7 +49,7 @@ export const Sandbox = () => {
   )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Sandbox | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -97,7 +94,6 @@ export const Sandbox = () => {
         </div>
       </div>
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

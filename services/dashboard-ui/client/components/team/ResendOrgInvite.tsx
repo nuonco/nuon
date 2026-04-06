@@ -45,7 +45,7 @@ export const ResendOrgInviteModal = ({
   return (
     <Modal
       heading={
-        <Text className="inline-flex gap-4 items-center" variant="h3" weight="strong">
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="Envelope" size="24" />
           Resend invite
         </Text>

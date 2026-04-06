@@ -267,7 +267,7 @@ export const ComponentConfigContextTooltip = ({
       ]}
     >
       {children || (
-        <Text weight="strong" className="!flex items-center gap-1">
+        <Text weight="strong" flex className="gap-1">
           <Link
             href={`/${org.id}/apps/${appId}/components/${config?.component_id}`}
           >

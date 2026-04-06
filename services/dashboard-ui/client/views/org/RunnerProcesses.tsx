@@ -1,4 +1,3 @@
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -10,8 +9,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunnerProcessesTable } from '@/components/runners/RunnerProcessesTable'
 import { useOrg } from '@/hooks/use-org'
 import { RunnerProvider } from '@/providers/runner-provider'
-
-const CONTAINER_ID = 'org-runner-processes-page'
 
 export const RunnerProcesses = () => {
   const { org } = useOrg()
@@ -42,7 +39,7 @@ export const RunnerProcesses = () => {
 
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
-      <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
+      <PageLayout className="pb-6">
         <PageTitle title={`Runner processes | ${org?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
@@ -66,7 +63,6 @@ export const RunnerProcesses = () => {
             <RunnerProcessesTable shouldPoll />
           </PageSection>
         </PageContent>
-        <BackToTop containerId={CONTAINER_ID} />
       </PageLayout>
     </RunnerProvider>
   )
