@@ -1,7 +1,6 @@
 import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { InstallActionRunHeader } from '@/components/actions/InstallActionRunHeader'
-import { BackToTop } from '@/components/common/BackToTop'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TabNav } from '@/components/navigation/TabNav'
@@ -10,8 +9,6 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
 import { getWorkflow, getInstallAction } from '@/lib'
-
-const CONTAINER_ID = 'action-run-page'
 
 const ActionRunLayoutInner = () => {
   const { actionId, actionRunId } = useParams()
@@ -44,7 +41,7 @@ const ActionRunLayoutInner = () => {
   const actionName = action?.action_workflow?.name
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -79,7 +76,6 @@ const ActionRunLayoutInner = () => {
         ]}
       />
       <Outlet />
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

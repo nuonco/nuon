@@ -62,7 +62,7 @@ export const TerraformValuesDiff = ({
               {value?.changed ? (
                 <>
                   <Badge
-                    className="ml-2 line-through !text-nowrap !border-none !text-sm"
+                    className="ml-2 line-through !border-none !text-sm"
                     variant="code"
                     size="sm"
                     theme="error"
@@ -83,12 +83,13 @@ export const TerraformValuesDiff = ({
                     )}
                   </Badge>
                   <Text
-                    className="!text-nowrap mx-2"
+                    nowrap
+                    className="mx-2"
                     family="mono"
                     theme="neutral"
                   >{`->`}</Text>
                   <Badge
-                    className={cn('!text-nowrap !border-none !text-sm', {
+                    className={cn('!border-none !text-sm', {
                       'italic opacity-60 bg-black/5 dark:bg-white/5':
                         formattedAfter === 'Known after apply' ||
                         formattedAfter === 'Value known after apply',
@@ -125,7 +126,7 @@ export const TerraformValuesDiff = ({
                 </>
               ) : (
                 <Badge
-                  className="ml-2 !text-nowrap !border-none !text-sm"
+                  className="ml-2 !border-none !text-sm"
                   theme="neutral"
                   variant="code"
                   size="sm"

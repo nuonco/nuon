@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Markdown } from '@/components/common/Markdown'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -10,8 +9,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallReadme } from '@/lib'
-
-const CONTAINER_ID = 'install-readme-page'
 
 export const Readme = () => {
   const { org } = useOrg()
@@ -27,7 +24,7 @@ export const Readme = () => {
   const readme = result
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`README | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -65,7 +62,6 @@ export const Readme = () => {
           variant="diagram"
         />
       )}
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

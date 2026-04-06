@@ -46,7 +46,7 @@ export const RemoveUserModal = ({
   return (
     <Modal
       heading={
-        <Text className="inline-flex gap-4 items-center" variant="h3" weight="strong" theme="error">
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="Warning" size="24" />
           Remove team member?
         </Text>

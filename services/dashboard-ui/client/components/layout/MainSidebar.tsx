@@ -21,16 +21,19 @@ export const MainSidebar = ({
   return (
     <aside
       className={cn(
-        'md:transition-[width] md:duration-fast md:ease-cubic md:w-[4.5rem]',
-        'h-screen w-screen flex-none flex flex-col border-r',
-        'bg-gradient',
-        { 'md:w-[17.5rem]': isSidebarOpen }
+        'fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col border-r',
+        'transition-transform duration-fast ease-cubic',
+        !isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        'md:static md:z-auto md:flex-none md:w-[4.5rem] md:translate-x-0',
+        'md:transition-[width] md:duration-fast md:ease-cubic',
+        { 'md:w-[17.5rem]': isSidebarOpen },
+        'bg-gradient'
       )}
     >
       <header className="flex items-center justify-between h-16 px-4">
         <SidebarLogo />
         <div className="md:hidden">
-          <MainSidebarButton variant="mobile" />
+          <MainSidebarButton variant="mobile-close" />
         </div>
       </header>
       <div className="p-4 flex flex-col gap-4 flex-auto">

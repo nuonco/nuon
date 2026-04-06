@@ -1,7 +1,6 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { ID } from '@/components/common/ID'
@@ -21,8 +20,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs, getComponent } from '@/lib'
-
-const CONTAINER_ID = 'component-detail-page'
 
 export const ComponentDetail = () => {
   const { componentId } = useParams()
@@ -60,7 +57,7 @@ export const ComponentDetail = () => {
   )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`${component?.name ?? 'Component'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -137,7 +134,6 @@ export const ComponentDetail = () => {
         </div>
       </div>
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

@@ -56,19 +56,19 @@ export const ActionRunMetadata = ({
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
         {actionRun?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={actionRun.created_at} />
           </Text>
         ) : null}
         {actionRun?.created_at ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration variant="subtext" beginTime={actionRun.created_at} endTime={actionRun.updated_at} />
           </Text>
         ) : null}
         {actionRun?.runner_job?.json?.permission_info?.role ? (
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
             <Text variant="subtext">{actionRun.runner_job.json.permission_info.role}</Text>
           </Text>

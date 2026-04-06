@@ -1,6 +1,5 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -14,7 +13,6 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
 
-const CONTAINER_ID = 'install-workflows-page'
 const POLL_INTERVAL = 20000
 
 export const Workflows = () => {
@@ -47,7 +45,7 @@ export const Workflows = () => {
   )
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Workflows | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -86,7 +84,6 @@ export const Workflows = () => {
         planonly={showDrifts}
         type={type}
       />
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

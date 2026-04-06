@@ -1,5 +1,4 @@
 import { ComponentsTable } from '@/components/components/ComponentsTable'
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -8,14 +7,12 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 
-const CONTAINER_ID = 'app-components-page'
-
 export const Components = () => {
   const { org } = useOrg()
   const { app } = useApp()
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Components | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -33,7 +30,6 @@ export const Components = () => {
       <div className="flex flex-auto">
         <ComponentsTable />
       </div>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

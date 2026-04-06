@@ -31,7 +31,8 @@ export const InstallActionRunOutputs = () => {
               heading={
                 <div className="flex flex-col gap-1 items-start">
                   <Text
-                    className="!flex items-center gap-4"
+                    flex
+                    className="gap-4"
                     variant="base"
                     weight="strong"
                   >
@@ -41,14 +42,15 @@ export const InstallActionRunOutputs = () => {
                     <Status status={step?.status} />
 
                     <Text
-                      className="!flex items-center gap-1"
+                      flex
+                      className="gap-1"
                       variant="subtext"
                     >
                       <Icon variant="Package" />
                       {outputCount} item{outputCount > 1 ? 's' : null}
                     </Text>
                     {step?.execution_duration ? (
-                      <Text className="!flex items-center gap-1">
+                      <Text flex className="gap-1">
                         <Icon variant="Timer" />
                         <Duration
                           nanoseconds={step?.execution_duration}
@@ -68,10 +70,11 @@ export const InstallActionRunOutputs = () => {
                   </div>
                 ) : null}
                 <div className="flex flex-col gap-2">
-                  <Text className="!flex items-center gap-4" weight="strong">
+                  <Text flex className="gap-4" weight="strong">
                     Outputs JSON{' '}
                     <Text
-                      className="!flex items-center gap-1"
+                      flex
+                      className="gap-1"
                       variant="label"
                       theme="neutral"
                     >
@@ -93,7 +96,8 @@ export const InstallActionRunOutputs = () => {
               className="flex flex-col items-start border rounded-md w-full px-4 py-2"
             >
               <Text
-                className="!flex items-center gap-2"
+                flex
+                className="gap-2"
                 weight="strong"
                 theme="neutral"
               >

@@ -116,7 +116,7 @@ export const OrgStatusBar = () => {
   })
 
   return (
-    <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-full sticky bottom-0 bg-code z-[1] gap-3">
+    <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
       <Text family="mono" variant="subtext">
         {org.name}
       </Text>

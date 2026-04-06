@@ -35,7 +35,8 @@ export function OutputChangesList({ changes }: OutputChangesListProps) {
                   <div className="flex items-start justify-between w-full">
                     <div className="flex flex-col max-w-[550px]">
                       <Text
-                        className="block !text-nowrap truncate"
+                        nowrap
+                        className="block truncate"
                         weight="strong"
                       >
                         {change.output}

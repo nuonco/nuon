@@ -9,7 +9,7 @@ This skill enforces checking existing components before creating new ones and re
 
 1. Run `ls client/components/common/` and the relevant domain directory (e.g., `client/components/actions/`, `client/components/installs/`). Read the filenames.
 2. If an existing component meets your needs, use it. Do NOT create a new component that duplicates an existing one.
-3. Before writing JSX that uses a component, read its `interface I*` props definition in the component's source file. Do not guess prop names.
+3. Before writing JSX that uses a component, **read its `.stories.tsx` file first** — stories are the primary reference for correct prop usage, patterns, and edge cases. Then read the `interface I*` props definition in the source file. Do not guess prop names.
 4. For Modal or Panel: always use `Modal` or `Panel` from `client/components/surfaces/`. Never use `ModalBase` or `PanelBase` directly.
 5. For a new primitive (Button, Badge, Text, etc.): place the file flat in `client/components/common/MyComponent.tsx`.
 6. For a new domain-specific component: place the file in `client/components/<domain>/MyComponent.tsx`.

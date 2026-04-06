@@ -54,9 +54,8 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
     <aside
       className={cn(
         // Base styles (mobile)
-        'border-b flex shrink-0 overflow-x-auto overflow-y-visible w-screen md:w-[4.5rem]',
-        // Desktop styles
-        'md:overflow-visible md:relative md:max-h-screen  md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
+        'border-b flex shrink-0 overflow-x-auto overflow-y-visible w-full md:w-[4.5rem]',
+        'md:overflow-visible md:relative md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
         {
           'md:w-[17.5rem]': isPageSidebarOpen,
         }
@@ -66,8 +65,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
         className={cn(
           // Mobile nav
           'flex shrink-0 gap-8 px-4 py-3 h-16',
-          // Desktop nav
-          'md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full md:h-full'
+          'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full'
         )}
       >
         {links.map((link) => (
@@ -111,7 +109,9 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             tipContent={
               <div className="w-fit">
                 <Text
-                  className="inline-flex gap-2 items-center !text-nowrap"
+                  flex
+                  nowrap
+                  className="gap-2"
                   variant="subtext"
                 >
                   {isPageSidebarOpen ? 'Collapse' : 'Expand'} sidebar

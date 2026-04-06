@@ -90,7 +90,8 @@ export const ShutdownInstanceModal = ({ ...props }: IModal) => {
       heading={
         <div className="flex flex-col gap-2">
           <Text
-            className="inline-flex gap-4 items-center"
+            flex
+            className="gap-4"
             variant="h3"
             weight="strong"
             theme="warn"
