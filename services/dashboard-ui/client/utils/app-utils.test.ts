@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { hasNewerAppConfig, normalizeAppInputGroups } from './app-utils'
+import { hasNewerAppConfig, hasStackConfigChanged, normalizeAppInputGroups } from './app-utils'
 import type { TAppConfig, TInstall } from '@/types'
 
 describe('app-utils', () => {
@@ -34,6 +34,65 @@ describe('app-utils', () => {
 
     test('returns false when both are undefined', () => {
       expect(hasNewerAppConfig(undefined, undefined)).toBe(false)
+    })
+  })
+
+  describe('hasStackConfigChanged', () => {
+    const baseStack = {
+      type: 'eks',
+      name: 'my-stack',
+      runner_nested_template_url: 'https://example.com/runner.yaml',
+      vpc_nested_template_url: 'https://example.com/vpc.yaml',
+    }
+
+    test('returns false when stacks are identical', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      const b = { stack: { ...baseStack } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(false)
+    })
+
+    test('returns true when stack type differs', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      const b = { stack: { ...baseStack, type: 'ecs' } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(true)
+    })
+
+    test('returns true when stack name differs', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      const b = { stack: { ...baseStack, name: 'other-stack' } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(true)
+    })
+
+    test('returns true when runner_nested_template_url differs', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      const b = { stack: { ...baseStack, runner_nested_template_url: 'https://example.com/new.yaml' } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(true)
+    })
+
+    test('returns true when vpc_nested_template_url differs', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      const b = { stack: { ...baseStack, vpc_nested_template_url: 'https://example.com/new-vpc.yaml' } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(true)
+    })
+
+    test('returns false when currentConfig is undefined', () => {
+      const b = { stack: { ...baseStack } } as TAppConfig
+      expect(hasStackConfigChanged(undefined, b)).toBe(false)
+    })
+
+    test('returns false when latestConfig is undefined', () => {
+      const a = { stack: { ...baseStack } } as TAppConfig
+      expect(hasStackConfigChanged(a, undefined)).toBe(false)
+    })
+
+    test('returns false when currentConfig has no stack', () => {
+      const a = {} as TAppConfig
+      const b = { stack: { ...baseStack } } as TAppConfig
+      expect(hasStackConfigChanged(a, b)).toBe(false)
+    })
+
+    test('returns false when both are undefined', () => {
+      expect(hasStackConfigChanged(undefined, undefined)).toBe(false)
     })
   })
 
