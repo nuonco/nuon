@@ -43,11 +43,8 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
 		cfg.ECRAuth = &credentials.Config{
-			Region: compApp.Repository.Region,
-			AssumeRole: &credentials.AssumeRoleConfig{
-				RoleARN:     a.cfg.ManagementIAMRoleARN,
-				SessionName: "ctl-api-ecr-auth",
-			},
+			Region:     compApp.Repository.Region,
+			UseDefault: true,
 		}
 	}
 
