@@ -35,7 +35,7 @@ export function WizardStepView() {
         isTransitioning ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
       }`}
     >
-      <div className="mb-8">
+      <div className="mb-12">
         <Text variant="h2" role="heading" level={2} className="mb-2">
           {visibleStep.title}
         </Text>
