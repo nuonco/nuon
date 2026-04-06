@@ -498,7 +498,7 @@ export const AppProfileStep = ({
           disabled={!canAdvance || isWorking}
           onClick={() => submit()}
         >
-          {waiting ? 'Setting up app...' : isPending ? 'Saving...' : (nextStepTitle ?? 'Continue')}{' '}
+          {waiting ? 'Setting up app...' : isPending ? 'Saving...' : 'Continue'}{' '}
           {!isWorking && <Icon variant="CaretRight" weight="bold" />}
         </Button>
       </div>
