@@ -72,28 +72,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Update shutdown status to in-progress
-	_, err = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
-		ShutdownID:        shutdownID,
-		Status:            app.RunnerProcessShutdownStatusInProgress,
-		StatusDescription: "shutdown in progress",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to update shutdown status to in-progress")
-	}
-
-	// Transition process to shutting-down
-	_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
-		ProcessID:         s.ProcessID,
-		Status:            app.RunnerProcessStatusShuttingDown,
-		StatusDescription: "shutdown in progress",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to update process status to shutting-down")
-	}
-
-	// Wait for the runner process to report shut-down status
-	// Poll with timeout
+	// Wait for the runner to ACK the shutdown by calling CompleteRunnerProcessShutdown,
+	// which transitions the process to shut-down. We don't update intermediate statuses
+	// here to avoid racing with the runner's shutdown poller (which looks for "requested"
+	// shutdowns).
 	timeout := workflow.NewTimer(ctx, 5*time.Minute)
 	pollInterval := workflow.NewTimer(ctx, 10*time.Second)
 
@@ -110,12 +92,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		selector.Select(ctx)
 
 		if timedOut {
-			// Timeout: mark shutdown as failed
+			// Timeout: mark shutdown as failed and transition process to inactive
+			// so it doesn't stay stuck at pending-shutdown forever.
 			_, _ = activities.AwaitUpdateRunnerProcessShutdownStatus(ctx, activities.UpdateRunnerProcessShutdownStatusRequest{
 				ShutdownID:        shutdownID,
 				Status:            app.RunnerProcessShutdownStatusFailed,
 				StatusDescription: "shutdown timed out waiting for process to stop",
 			})
+
+			_, _ = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+				ProcessID:         s.ProcessID,
+				Status:            app.RunnerProcessStatusInactive,
+				StatusDescription: "shutdown timed out",
+			})
+
+			// Enqueue on_inactive to clean up the queue
+			_, _ = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   s.RunnerID,
+				OwnerType: "runners",
+				QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
+				Signal: &oninactive.Signal{
+					RunnerID:  s.RunnerID,
+					ProcessID: s.ProcessID,
+					Reason:    "shutdown_timeout",
+				},
+			})
+
 			return errors.New("shutdown timed out")
 		}
 

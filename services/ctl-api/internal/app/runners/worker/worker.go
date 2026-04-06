@@ -27,7 +27,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processhealthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processshutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processstarted"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processuptimecheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/updatetag"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
