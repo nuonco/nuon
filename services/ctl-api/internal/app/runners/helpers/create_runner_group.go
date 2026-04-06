@@ -108,8 +108,11 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	// Build cloud-specific identity for the org runner service account
 	var orgAWSIAMRoleARN string
 	var orgGCPServiceAccount string
-	if h.cfg.CloudProvider == "gcp" {
+	switch h.cfg.CloudProvider {
+	case "gcp":
 		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+	default:
+		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
 	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
