@@ -11,10 +11,30 @@ import (
 // GetConfigSandboxDependentComponentOrder returns the topologically sorted list of component IDs
 // that depend on sandbox outputs (directly or transitively through component dependencies).
 func (h *Helpers) GetConfigSandboxDependentComponentOrder(ctx context.Context, cfg *app.AppConfig) ([]string, error) {
-	// Build a map of componentID -> refs for quick lookup
+	sandboxDependent := sandboxDependentComponents(cfg.ComponentConfigConnections)
+
+	// Get the full deploy order, then filter to only sandbox-dependent components
+	allOrder, err := h.GetConfigDefaultComponentOrder(ctx, cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get default component order")
+	}
+
+	filtered := make([]string, 0, len(sandboxDependent))
+	for _, compID := range allOrder {
+		if sandboxDependent[compID] {
+			filtered = append(filtered, compID)
+		}
+	}
+
+	return filtered, nil
+}
+
+// sandboxDependentComponents identifies all component IDs that depend on sandbox outputs,
+// either directly (via RefTypeSandbox refs) or transitively through component dependencies.
+func sandboxDependentComponents(connections []app.ComponentConfigConnection) map[string]bool {
 	compRefs := make(map[string][]refs.Ref)
 	compDeps := make(map[string][]string)
-	for _, ccc := range cfg.ComponentConfigConnections {
+	for _, ccc := range connections {
 		compRefs[ccc.ComponentID] = ccc.Refs
 		compDeps[ccc.ComponentID] = ccc.ComponentDependencyIDs
 	}
@@ -54,18 +74,5 @@ func (h *Helpers) GetConfigSandboxDependentComponentOrder(ctx context.Context, c
 		}
 	}
 
-	// Get the full deploy order, then filter to only sandbox-dependent components
-	allOrder, err := h.GetConfigDefaultComponentOrder(ctx, cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get default component order")
-	}
-
-	filtered := make([]string, 0, len(sandboxDependent))
-	for _, compID := range allOrder {
-		if sandboxDependent[compID] {
-			filtered = append(filtered, compID)
-		}
-	}
-
-	return filtered, nil
+	return sandboxDependent
 }
