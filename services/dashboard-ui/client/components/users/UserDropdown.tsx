@@ -51,17 +51,39 @@ export const UserDropdown = ({
             Re-open onboarding <Icon variant="Signpost" />
           </Link>
         )}
-        {!hideOrgSettings && isAdmin ? (
+        {!hideOrgSettings && <hr />}
+        {!hideOrgSettings && isAdmin && (
+          <Text variant="label" theme="neutral">
+            Admin
+          </Text>
+        )}
+        {!hideOrgSettings && isAdmin && (
           <Button
             onClick={() => {
               addPanel(<AdminPanel />)
             }}
+            isMenuButton
           >
             Admin panel <Icon variant="Sliders" />
           </Button>
-        ) : null}
-        {!hideOrgSettings && <hr />}
-         {!hideOrgSettings && (
+        )}
+        {!hideOrgSettings && isAdmin && (
+          <Link href="/admin/temporal" isExternal>
+            Temporal UI <Icon variant="ArrowSquareOut" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && (
+          <Link href="/admin/swagger" isExternal>
+            Admin API swagger <Icon variant="ArrowSquareOut" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && (
+          <Link href="/public/swagger" isExternal>
+            API swagger <Icon variant="ArrowSquareOut" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && <hr />}
+        {!hideOrgSettings && (
           <Text variant="label" theme="neutral">
             User settings
           </Text>
