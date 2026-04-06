@@ -119,6 +119,43 @@ const { mutate: cancel, isPending } = useMutation({
 })
 ```
 
+## Layout System
+
+PageLayout handles scrolling and BackToTop automatically — views never manage these.
+
+**Org-level page** (top-level route):
+```tsx
+<PageLayout>
+  <PageHeader>
+    <PageHeadingGroup title="My page" />
+  </PageHeader>
+  <PageContent>
+    <PageSection>{/* content */}</PageSection>
+  </PageContent>
+</PageLayout>
+```
+
+**Child page inside App/Install layout** (rendered via Outlet):
+```tsx
+<PageSection>{/* content — that's it */}</PageSection>
+```
+
+**Detail page with flush header**:
+```tsx
+<>
+  <PageSection flush><MyHeader /></PageSection>
+  <PageSection>{/* content */}</PageSection>
+</>
+```
+
+| Component | Purpose | Key Props |
+|-----------|---------|-----------|
+| `PageLayout` | Top-level wrapper. Auto-renders scroll container + BackToTop. | `variant`, `hideBreadcrumbs` |
+| `PageContent` | Sets flex direction. | `variant` (`column` default, `row` for SubNav layouts) |
+| `PageSection` | Content block with padding/gap. | `flush` (removes padding/gap) |
+
+**Do NOT**: add `isScrollable`, `CONTAINER_ID`, `<BackToTop />`, or `className="!p-0 !gap-0"` to views.
+
 ## Component Patterns
 
 ### Always Check Existing Components First

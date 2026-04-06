@@ -49,7 +49,8 @@ export const InstallActionRunHeader = ({
         <HeadingGroup>
           <BackLink className="mb-4" />
           <Text
-            className="inline-flex items-center gap-4 mb-2"
+            flex
+            className="gap-4 mb-2"
             variant="h3"
             weight="strong"
           >

@@ -1,4 +1,3 @@
-import { BackToTop } from '@/components/common/BackToTop'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallComponentsTable } from '@/components/install-components/InstallComponentsTable'
@@ -8,14 +7,12 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 
-const CONTAINER_ID = 'install-components-page'
-
 export const Components = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Components | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -38,7 +35,6 @@ export const Components = () => {
       </HeadingGroup>
 
       <InstallComponentsTable shouldPoll />
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

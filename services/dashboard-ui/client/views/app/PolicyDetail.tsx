@@ -1,7 +1,6 @@
 import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -17,8 +16,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppPolicy, getComponents } from '@/lib'
-
-const CONTAINER_ID = 'app-policy-detail-page'
 
 function formatPolicyType(type: string): string {
   return type
@@ -65,7 +62,7 @@ export const PolicyDetail = () => {
     (policyComponents.length === 1 && policyComponents[0] === '*')
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`${policy?.name ?? 'Policy'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -184,7 +181,6 @@ export const PolicyDetail = () => {
           </Card>
         </div>
       </div>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

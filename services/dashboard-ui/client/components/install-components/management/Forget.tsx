@@ -86,7 +86,8 @@ export const ForgetComponentModal = ({
     <Modal
       heading={
         <Text
-          className="inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="error"

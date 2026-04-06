@@ -22,6 +22,7 @@ import { ViewStateButton } from './ViewState'
 
 const InstallManagementDropdownContent = () => {
   const { install } = useInstall()
+  const isMobile = !window.matchMedia('(min-width: 768px)').matches
   return (
     <Dropdown
       buttonText={
@@ -32,7 +33,7 @@ const InstallManagementDropdownContent = () => {
       }
       id="install-mgmt"
       variant="primary"
-      alignment="right"
+      alignment={isMobile ? 'left' : 'right'}
     >
       <Menu className="min-w-56">
         <Text variant="label" theme="neutral">

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { BackToTop } from '@/components/common/BackToTop'
 import { Logo } from '@/components/common/Logo'
 import { BreadcrumbNav } from '@/components/navigation/Breadcrumb'
 import { cn } from '@/utils/classnames'
@@ -15,27 +16,26 @@ export const PageLayout = ({
   className,
   children,
   hideBreadcrumbs = false,
-  isScrollable = false,
+  isScrollable: _isScrollable,
   variant = 'dashboard-page',
+  id,
   ...props
 }: IPageLayout) => {
+  const scrollContainerId = id || 'page-scroll-container'
+
   return (
-    <main className="flex flex-col h-screen w-[100vw] md:w-full min-w-0">
+    <main className="flex flex-col flex-1 min-h-0 w-full">
       <MainTopbar hideSidebarButtons={variant === 'single-page'}>
         {variant === 'single-page' ? <Logo /> : null}
         {hideBreadcrumbs ? null : <BreadcrumbNav />}
       </MainTopbar>
       <div
-        className={cn(
-          'flex-auto flex flex-col overflow-y-auto md:overflow-hidden',
-          {
-            'md:!overflow-y-auto': isScrollable,
-          },
-          className
-        )}
+        id={scrollContainerId}
+        className={cn('flex-auto flex flex-col overflow-y-auto min-h-0', className)}
         {...props}
       >
         {children}
+        <BackToTop containerId={scrollContainerId} />
       </div>
     </main>
   )

@@ -231,13 +231,36 @@ describe('Text component', () => {
     expect(screen.getByText('H6')).toHaveAttribute('aria-level', '6')
   })
 
-  test('does not set aria-level without heading role', () => {
-    render(<Text level={2}>Not a heading</Text>)
+  test('level alone implies heading element', () => {
+    render(<Text level={2}>Heading from level</Text>)
 
-    const element = screen.getByText('Not a heading')
-    expect(element.tagName).toBe('SPAN')
-    expect(element).not.toHaveAttribute('aria-level')
-    expect(element).not.toHaveAttribute('role')
+    const element = screen.getByText('Heading from level')
+    expect(element.tagName).toBe('H2')
+    expect(element).toHaveAttribute('aria-level', '2')
+    expect(element).toHaveAttribute('role', 'heading')
+  })
+
+  test('as prop overrides element resolution', () => {
+    render(
+      <Text as="p" variant="h3">
+        Paragraph with heading style
+      </Text>
+    )
+    expect(screen.getByText('Paragraph with heading style').tagName).toBe('P')
+  })
+
+  test('flex prop adds inline-flex classes', () => {
+    render(<Text flex>Flex text</Text>)
+    const element = screen.getByText('Flex text')
+    expect(element).toHaveClass('inline-flex', 'items-center', 'gap-1.5')
+    expect(element).not.toHaveClass('inline')
+  })
+
+  test('nowrap prop replaces text-wrap with text-nowrap', () => {
+    render(<Text nowrap>No wrap text</Text>)
+    const element = screen.getByText('No wrap text')
+    expect(element).toHaveClass('text-nowrap')
+    expect(element).not.toHaveClass('text-wrap')
   })
 
   test('combines multiple props correctly', () => {

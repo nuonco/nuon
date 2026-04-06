@@ -37,7 +37,7 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
         <span className="flex items-center gap-2 justify-between">
           <Text weight="strong">Log details</Text>
 
-          <Text variant="subtext" className="!flex items-center gap-2">
+          <Text variant="subtext" flex className="gap-2">
             Copy link
             <ClickToCopyButton textToCopy={url} />
           </Text>
@@ -67,7 +67,7 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
       <LogMetadata log={log} />
 
       <div className="flex w-full mt-auto">
-        <Text className="inline-flex gap-2 items-center !text-nowrap">
+        <Text flex nowrap className="gap-2">
           Use
           <span className="inline-flex items-center gap-1">
             <Badge variant="code" size="sm">

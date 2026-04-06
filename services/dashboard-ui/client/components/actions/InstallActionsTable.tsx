@@ -46,7 +46,7 @@ function parseInstallActionsLatestRunsToTableData(
       actionId: actionWithRuns.action_workflow_id,
       actionName: actionWithRuns.action_workflow?.name,
       actionRunDatetime: recentRun ? (
-        <Text className="!flex items-center gap-2">
+        <Text flex className="gap-2">
           <Icon variant="CalendarBlankIcon" />
           <Time
             time={recentRun?.created_at}
@@ -58,7 +58,7 @@ function parseInstallActionsLatestRunsToTableData(
         <Icon variant="Minus" />
       ),
       actionRunDuration: recentRun ? (
-        <Text className="!flex items-center gap-2">
+        <Text flex className="gap-2">
           <Icon variant="TimerIcon" />
           <Duration nanoseconds={recentRun?.execution_time} variant="subtext" />
         </Text>

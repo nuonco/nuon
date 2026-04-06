@@ -7,7 +7,9 @@ import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
 import { Tabs } from './Tabs'
-import { buildNuonComponents, extractTabs, type ExtractedTabs, type MarkdownMode } from './markdown-components'
+import { buildNuonComponents, extractTabs, nuonTagNames, type ExtractedTabs, type MarkdownMode } from './markdown-components'
+
+const BLOCK_TAG_NAMES = new Set(nuonTagNames)
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -82,9 +84,21 @@ const nuonComponentsByMode: Record<MarkdownMode, Record<string, any>> = {
   install: buildNuonComponents('install'),
 }
 
+function hasBlockChild(node: any): boolean {
+  return node?.children?.some(
+    (child: any) => child.type === 'element' && BLOCK_TAG_NAMES.has(child.tagName)
+  )
+}
+
 function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
   return {
   ...nuonComponentsByMode[mode],
+  p({ node, children, ...props }: any) {
+    if (hasBlockChild(node)) {
+      return <div {...props}>{children}</div>
+    }
+    return <p {...props}>{children}</p>
+  },
   code({ node, className, children, style, ...props }: any) {
       if (style || node?.properties?.style) {
         return <code className={className} style={style} {...props}>{children}</code>

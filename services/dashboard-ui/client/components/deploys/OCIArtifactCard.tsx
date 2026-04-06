@@ -71,7 +71,7 @@ export const OCIArtifactCard = ({
           id: `oci-artifact-media-`,
           title: 'Media type',
           subtitle: (
-            <Text className="!text-nowrap" variant="label" theme="neutral">
+            <Text nowrap variant="label" theme="neutral">
               {ociArtifact?.media_type}
             </Text>
           ),

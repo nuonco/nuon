@@ -20,7 +20,6 @@ import { BranchProvider } from '@/providers/branch-provider'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getWorkflowBadge } from '@/utils/workflow-utils'
 
-const CONTAINER_ID = 'branch-detail-page'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { InstallGroupsSection } from '@/components/branches/install-groups/InstallGroupsSection'
 import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
@@ -70,7 +69,7 @@ const BranchDetailContent = () => {
       : undefined
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`${branch?.name ?? 'Branch'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

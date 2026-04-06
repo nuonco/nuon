@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -11,8 +10,6 @@ import { useWorkflow } from '@/hooks/use-workflow'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { snakeToWords, toSentenceCase } from '@/utils/string-utils'
-
-const CONTAINER_ID = 'workflow-page'
 
 export const WorkflowDetail = () => {
   const { workflowId } = useParams()
@@ -34,7 +31,7 @@ const WorkflowDetailContent = () => {
     workflow?.name || toSentenceCase(snakeToWords(workflow?.type)) || 'Workflow'
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!gap-2 !pb-24">
+    <PageSection className="!gap-2 !pb-24">
       <PageTitle title={`${workflowName} | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -68,7 +65,6 @@ const WorkflowDetailContent = () => {
         )}
       </div>
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }
