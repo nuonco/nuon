@@ -19,7 +19,6 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'access-error': 'error',
   access_error: 'error',
   'timed-out': 'error',
-  unknown: 'error',
   unhealthy: 'error',
   'not connected': 'error',
   'not-connected': 'error',
@@ -55,6 +54,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
 
   // Neutral
   noop: 'neutral',
+  unknown: 'neutral',
   inactive: 'neutral',
   pending: 'neutral',
   offline: 'neutral',

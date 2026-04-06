@@ -1,8 +1,42 @@
 import { describe, expect, test } from 'vitest'
-import { normalizeAppInputGroups } from './app-utils'
-import type { TAppConfig } from '@/types'
+import { hasNewerAppConfig, normalizeAppInputGroups } from './app-utils'
+import type { TAppConfig, TInstall } from '@/types'
 
 describe('app-utils', () => {
+  describe('hasNewerAppConfig', () => {
+    test('returns true when latest config id differs from install app_config_id', () => {
+      const latestConfig = { id: 'config-2' } as TAppConfig
+      const install = { app_config_id: 'config-1' } as TInstall
+      expect(hasNewerAppConfig(latestConfig, install)).toBe(true)
+    })
+
+    test('returns false when ids match', () => {
+      const latestConfig = { id: 'config-1' } as TAppConfig
+      const install = { app_config_id: 'config-1' } as TInstall
+      expect(hasNewerAppConfig(latestConfig, install)).toBe(false)
+    })
+
+    test('returns false when latestConfig is undefined', () => {
+      const install = { app_config_id: 'config-1' } as TInstall
+      expect(hasNewerAppConfig(undefined, install)).toBe(false)
+    })
+
+    test('returns false when install is undefined', () => {
+      const latestConfig = { id: 'config-2' } as TAppConfig
+      expect(hasNewerAppConfig(latestConfig, undefined)).toBe(false)
+    })
+
+    test('returns false when install has no app_config_id', () => {
+      const latestConfig = { id: 'config-2' } as TAppConfig
+      const install = {} as TInstall
+      expect(hasNewerAppConfig(latestConfig, install)).toBe(false)
+    })
+
+    test('returns false when both are undefined', () => {
+      expect(hasNewerAppConfig(undefined, undefined)).toBe(false)
+    })
+  })
+
   describe('normalizeAppInputGroups', () => {
     test('should map inputs to their corresponding groups', () => {
       const groups: TAppConfig['input']['input_groups'] = [
