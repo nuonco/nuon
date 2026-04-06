@@ -107,6 +107,7 @@ const STEPS_V2 = [
     id: 'v2-step-5',
     title: "You're all set",
     navLabel: 'Get started',
+    hideTitle: true,
     component: NextStepsStep,
   },
 ]
