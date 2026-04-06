@@ -3,7 +3,6 @@ package ocicopy
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -83,14 +82,6 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 			CopyGraphOptions: cpo,
 		})
 	if err != nil {
-		if isTagAlreadyExistsErr(err) {
-			l.Info("destination tag already exists (immutable), resolving existing descriptor")
-			existing, _, resolveErr := dstRepo.FetchReference(ctx, dstTag)
-			if resolveErr != nil {
-				return nil, errors.Wrap(resolveErr, "tag exists but unable to resolve existing descriptor")
-			}
-			return &existing, nil
-		}
 		return nil, err
 	}
 
@@ -99,11 +90,6 @@ func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository
 	}
 
 	return &res, nil
-}
-
-func isTagAlreadyExistsErr(err error) bool {
-	msg := err.Error()
-	return strings.Contains(msg, "tag invalid") && strings.Contains(msg, "already exists")
 }
 
 func mediaNoun(mediatype string) string {
