@@ -40,9 +40,15 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.Metadata["runner.version"] = version.Version
 	s.OtelSchemaURL = s.Cfg.RunnerAPIURL
 
-	// platform: use CLOUD_PROVIDER env var if set, otherwise infer from settings
-	s.Platform = os.Getenv("CLOUD_PROVIDER")
-	if s.Platform == "" {
+	// Platform resolution: prefer explicit config, then env var, then infer from settings.
+	switch {
+	case s.Cfg.RunnerPlatform != "":
+		s.Platform = s.Cfg.RunnerPlatform
+	case os.Getenv("CLOUD_PROVIDER") != "":
+		s.Platform = os.Getenv("CLOUD_PROVIDER")
+	case settings.AwsCloudformationStackType != "" || settings.AwsInstanceType != "":
+		s.Platform = "aws"
+	default:
 		s.Platform = "aws"
 	}
 
