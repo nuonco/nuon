@@ -50,14 +50,6 @@ type AppRunnerProcess struct {
 	// started at
 	StartedAt string `json:"started_at,omitempty"`
 
-	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
-	Status struct {
-		AppRunnerProcessStatus
-	} `json:"status,omitempty"`
-
-	// status description
-	StatusDescription string `json:"status_description,omitempty"`
-
 	// type
 	Type AppRunnerProcessType `json:"type,omitempty"`
 
@@ -83,10 +75,6 @@ func (m *AppRunnerProcess) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateShutdowns(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -153,14 +141,6 @@ func (m *AppRunnerProcess) validateShutdowns(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppRunnerProcess) validateStatus(formats strfmt.Registry) error {
-	if swag.IsZero(m.Status) { // not required
-		return nil
-	}
-
-	return nil
-}
-
 func (m *AppRunnerProcess) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -191,10 +171,6 @@ func (m *AppRunnerProcess) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateShutdowns(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -258,11 +234,6 @@ func (m *AppRunnerProcess) contextValidateShutdowns(ctx context.Context, formats
 		}
 
 	}
-
-	return nil
-}
-
-func (m *AppRunnerProcess) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

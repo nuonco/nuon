@@ -14,7 +14,7 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-const SignalType signal.SignalType = "created"
+const SignalType signal.SignalType = "install-created"
 
 type Signal struct {
 	InstallID string `json:"install_id"`

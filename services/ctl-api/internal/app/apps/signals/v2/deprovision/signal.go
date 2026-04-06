@@ -15,7 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "deprovision"
+const SignalType signal.SignalType = "app-deprovision"
 
 const (
 	defaultPollTimeout time.Duration = time.Second * 10
@@ -52,7 +52,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
-		StatusDescription: "polling for installs and components to be deprovisioned",
+		StatusDescription: "polling for installs to be deprovisioned",
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
@@ -148,14 +148,15 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			}
 		}
 
-		// If no components and no installs remaining, we're done
-		if len(currentApp.Components) < 1 && installCnt < 1 {
+		// If no installs remaining, we're done.
+		// Components are cascade-deleted when the app is deleted.
+		if installCnt < 1 {
 			return nil
 		}
 
 		// Check timeout
 		if workflow.Now(ctx).After(deadline) {
-			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
+			err := fmt.Errorf("timeout waiting for installs to deprovision")
 			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            "error",

@@ -45,7 +45,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		if req.CronSchedule == "" {
 			return nil, errors.New("cron_schedule is required for cron mode")
 		}
-	case app.QueueEmitterModeScheduled:
+	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:
 		if req.ScheduledAt == nil {
 			return nil, errors.New("scheduled_at is required for scheduled mode")
 		}

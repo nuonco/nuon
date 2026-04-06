@@ -46,7 +46,7 @@ export const BuildRunner = () => {
       getRunnerProcesses({
         orgId: org.id,
         runnerId: runnerId!,
-        status: 'active,offline,pending-shutdown',
+        status: 'pending,active,offline,pending-shutdown',
         limit: 2,
       }),
     refetchInterval: 10000,

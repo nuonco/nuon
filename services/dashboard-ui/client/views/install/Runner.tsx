@@ -31,7 +31,7 @@ const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: s
       getRunnerProcesses({
         orgId: org.id,
         runnerId,
-        status: 'active,offline,pending-shutdown',
+        status: 'pending,active,offline,pending-shutdown',
         limit: 2,
       }),
     refetchInterval: 10000,
