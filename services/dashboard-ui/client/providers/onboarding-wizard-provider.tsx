@@ -15,6 +15,7 @@ export interface IWizardStepDef<TData = unknown> {
   title: string
   navLabel?: string
   description?: string
+  hideTitle?: boolean
   component: ComponentType<IWizardStepComponentProps>
   data?: TData
 }
