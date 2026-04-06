@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { reprovisionSandbox } from '@/actions/installs/reprovision-sandbox'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { RoleSelector } from '@/components/common/form/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -47,6 +48,7 @@ export const ReprovisionSandboxModal = ({
   const { removeModal } = useSurfaces()
 
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [skipComponents, setSkipComponents] = useState(false)
 
   const {
     data,
@@ -72,6 +74,7 @@ export const ReprovisionSandboxModal = ({
     execute({
       body: {
         plan_only: false,
+        skip_components: skipComponents,
         ...(selectedRole && { role: selectedRole }),
       },
       installId: install.id,
@@ -152,6 +155,28 @@ export const ReprovisionSandboxModal = ({
           onChange={(e) => setSelectedRole(e.target.value)}
           name="role"
         />
+
+        <div className="flex items-start">
+          <CheckboxInput
+            checked={skipComponents}
+            onChange={(e) => setSkipComponents(e.target.checked)}
+            className="mt-1.5"
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-2 gap-4 max-w-none !items-start',
+              labelText: (
+                <div className="flex flex-col gap-1">
+                  <Text variant="base" weight="stronger">
+                    Skip component deployments
+                  </Text>
+                  <Text variant="subtext" theme="neutral">
+                    Only reprovision the sandbox infrastructure without redeploying components on top.
+                  </Text>
+                </div>
+              ),
+            }}
+          />
+        </div>
       </div>
     </Modal>
   )
