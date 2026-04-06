@@ -60,11 +60,7 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		Dst:    dstCfg,
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, deploy.InstallID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get org")
-	}
-	if org.SandboxMode {
+	if install.SandboxMode.Bool {
 		pln.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
 			Outputs: map[string]any{

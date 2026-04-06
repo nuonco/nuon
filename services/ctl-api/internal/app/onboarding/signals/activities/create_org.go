@@ -25,7 +25,7 @@ func (a *Activities) createOnboardingOrg(ctx context.Context, accountID, orgName
 
 	org, err := a.orgsHelpers.CreateOrg(ctx, &account, &orgshelpers.CreateOrgParams{
 		Name:           orgName,
-		UseSandboxMode: true,
+		UseSandboxMode: a.cfg.ForceOnboardingSandboxMode,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
