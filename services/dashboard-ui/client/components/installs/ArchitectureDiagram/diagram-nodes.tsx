@@ -14,6 +14,7 @@ import { toSentenceCase } from '@/utils/string-utils'
 import type { TRoleInfo } from './diagram-layout'
 
 const CONTAINER_STYLES: Record<number, string> = {
+  0: 'border bg-cool-grey-100 dark:bg-dark-grey-800',
   1: 'border border-dashed bg-cool-grey-50 dark:bg-dark-grey-700',
   2: 'border bg-white dark:bg-dark-grey-900',
   3: 'border bg-cool-grey-50 dark:bg-dark-grey-800',
@@ -26,7 +27,6 @@ export const ContainerNode = memo(({ data }: NodeProps) => {
   const width = data.width as number
   const height = data.height as number
   const href = data.href as string | undefined
-  const isStack = level === 0
 
   const handleClick = useCallback(() => {
     if (href) navigate(href)
@@ -41,24 +41,6 @@ export const ContainerNode = memo(({ data }: NodeProps) => {
     },
     [href, navigate]
   )
-
-  if (isStack) {
-    return (
-      <div
-        className="rounded-xl border-2 bg-cool-grey-100 dark:bg-dark-grey-800 relative"
-        style={{ width, height }}
-      >
-        <div className="absolute -top-3.5 left-4 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-full">
-          <Status status={status || 'inactive'} variant="badge">
-            <span className="flex items-center gap-1.5">
-              <Icon variant={data.icon as TIconVariant} size={12} />
-              {data.label as string}
-            </span>
-          </Status>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div
@@ -111,28 +93,12 @@ const COMPONENT_TYPE_LABELS: Record<string, string> = {
 }
 
 export const ComponentCardNode = memo(({ data }: NodeProps) => {
-  const navigate = useNavigate()
   const status = data.status as string
   const isDrifted = data.isDrifted as boolean
   const width = data.width as number
   const componentType = data.componentType as TComponentType
   const href = data.href as string
   const name = data.name as string
-
-  const handleClick = useCallback(() => {
-    if (href) navigate(href)
-  }, [href, navigate])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (href && (e.key === 'Enter' || e.key === ' ')) {
-        e.preventDefault()
-        navigate(href)
-      }
-    },
-    [href, navigate]
-  )
-
   const latestDeployAt = data.latestDeployAt as string | undefined
   const deploysHref = data.deploysHref as string | undefined
 
@@ -234,12 +200,8 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
       ]}
     >
       <div
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        role="button"
-        tabIndex={0}
         aria-label={`${name} — ${COMPONENT_TYPE_LABELS[componentType] || 'Component'}`}
-        className="rounded-lg border bg-white dark:bg-dark-grey-900 cursor-pointer px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+        className="rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm"
         style={{ width, height: 56 }}
       >
         <ComponentType
@@ -265,7 +227,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
           {isDrifted && (
             <Icon variant="WarningIcon" size={12} theme="warn" />
           )}
-          <Status status={status || 'not-deployed'}>
+          <Status status={status || 'not-deployed'} variant="badge">
             {status ? undefined : 'Not deployed'}
           </Status>
         </div>
@@ -283,10 +245,10 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
     {
       id: 'status',
       title: 'Provisioned',
-      subtitle: role.enabledInStack ? 'Active in stack' : 'Not provisioned',
+      subtitle: role.enabled ? 'Provisioned' : 'Not provisioned',
       leftContent: (
         <Status
-          status={role.enabledInStack ? 'active' : 'inactive'}
+          status={role.enabled ? 'active' : 'inactive'}
           isWithoutText
           variant="timeline"
           iconSize={16}
@@ -300,20 +262,6 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
             title: 'Description',
             subtitle: role.description,
             leftContent: <Icon variant="Info" size={16} />,
-          },
-        ]
-      : []),
-    ...(role.cloudformationStackName
-      ? [
-          {
-            id: 'stack',
-            title: 'CloudFormation Stack',
-            subtitle: (
-              <Text variant="label" theme="neutral" family="mono">
-                {role.cloudformationStackName}
-              </Text>
-            ),
-            leftContent: <Icon variant="StackSimple" size={16} />,
           },
         ]
       : []),
@@ -358,7 +306,7 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
           {role.name}
         </Text>
         <Status
-          status={role.enabledInStack ? 'active' : 'inactive'}
+          status={role.enabled ? 'active' : 'inactive'}
           variant="badge"
         />
       </div>

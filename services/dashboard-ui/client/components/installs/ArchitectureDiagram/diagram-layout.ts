@@ -6,12 +6,14 @@ import type {
   TAppConfig,
   TComponentType,
 } from '@/types'
+import type { TInstallAppPermissionsConfig } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 
 export type TDiagramData = {
   install: TInstall
   components: TInstallComponent[]
   stack?: TInstallStack
   appConfig?: TAppConfig
+  permissionsConfig?: TInstallAppPermissionsConfig
   orgId: string
 }
 
@@ -20,8 +22,7 @@ export type TRoleInfo = {
   name: string
   displayName: string
   description: string
-  enabledInStack: boolean
-  cloudformationStackName?: string
+  enabled: boolean
   policies: Array<{ name?: string; contents?: string }>
 }
 
@@ -29,7 +30,7 @@ const CARD_W = 240
 const CARD_H = 64
 const CARD_GAP = 12
 const PAD = 16
-const HEADER = 36
+const HEADER = 48
 const COLS = 2
 const ROLE_W = 200
 const ROLE_H = 48
@@ -53,34 +54,28 @@ function cardXY(index: number, containerX: number, containerY: number) {
   }
 }
 
-export function extractRoles(appConfig?: TAppConfig): TRoleInfo[] {
-  const perms = appConfig?.permissions
-  if (!perms) return []
+export function extractRoles(permissionsConfig?: TInstallAppPermissionsConfig): TRoleInfo[] {
+  if (!permissionsConfig) return []
 
   const entries = [
-    { config: perms.provision_aws_iam_role, fallback: 'Provision' },
-    { config: perms.deprovision_aws_iam_role, fallback: 'Deprovision' },
-    { config: perms.maintenance_aws_iam_role, fallback: 'Maintenance' },
-    ...(perms.custom_aws_iam_roles || []).map((r) => ({
-      config: r,
+    { role: permissionsConfig.provision_role, fallback: 'Provision' },
+    { role: permissionsConfig.deprovision_role, fallback: 'Deprovision' },
+    { role: permissionsConfig.maintenance_role, fallback: 'Maintenance' },
+    ...(permissionsConfig.custom_roles || []).map((r) => ({
+      role: r,
       fallback: r?.display_name || r?.name || 'Custom',
     })),
   ]
 
   return entries
-    .filter((e) => e.config)
-    .map(({ config, fallback }) => ({
-      id: config!.id || fallback,
+    .filter((e) => e.role)
+    .map(({ role, fallback }) => ({
+      id: role!.id || fallback,
       name: fallback,
-      displayName: config!.display_name || fallback,
-      description: config!.description || '',
-      enabledInStack: !!(
-        config!.enabled_in_stack as { valid?: boolean; bool?: boolean }
-      )?.valid &&
-        !!(config!.enabled_in_stack as { valid?: boolean; bool?: boolean })
-          ?.bool,
-      cloudformationStackName: config!.cloudformation_stack_name,
-      policies: (config!.policies || []).map((p) => ({
+      displayName: role!.display_name || fallback,
+      description: role!.description || '',
+      enabled: role!.enabled,
+      policies: (role!.policies || []).map((p) => ({
         name: p.name,
         contents: p.contents,
       })),
@@ -116,10 +111,10 @@ function buildComponentNodeData(
 }
 
 export function computeLayout(data: TDiagramData): Node[] {
-  const { install, components, stack, appConfig, orgId } = data
+  const { install, components, stack, permissionsConfig, orgId } = data
   const nodes: Node[] = []
 
-  const roles = extractRoles(appConfig)
+  const roles = extractRoles(permissionsConfig)
   const clusterComps = components.filter((c) =>
     CLUSTER_TYPES.includes(c.component?.type as TComponentType)
   )
@@ -222,7 +217,7 @@ export function computeLayout(data: TDiagramData): Node[] {
     data: {
       label: 'VPC',
       icon: 'CloudIcon',
-      status: '',
+      status: install.sandbox_status || '',
       width: vpcW,
       height: vpcH,
       level: 1,
@@ -249,6 +244,15 @@ export function computeLayout(data: TDiagramData): Node[] {
   })
 
   if (clusterComps.length > 0) {
+    const clusterStatuses = clusterComps
+      .map((c) => c.status_v2?.status || '')
+      .filter(Boolean)
+    const clusterStatus =
+      clusterStatuses.find((s) => s === 'error') ||
+      clusterStatuses.find((s) => s === 'provisioning' || s === 'building' || s === 'in-progress') ||
+      clusterStatuses.find((s) => s === 'active' || s === 'success') ||
+      ''
+
     nodes.push({
       id: 'eks-cluster',
       type: 'containerNode',
@@ -256,7 +260,7 @@ export function computeLayout(data: TDiagramData): Node[] {
       data: {
         label: 'EKS Cluster',
         icon: 'Kubernetes',
-        status: '',
+        status: clusterStatus,
         width: eksGrid.w,
         height: eksGrid.h,
         level: 3,

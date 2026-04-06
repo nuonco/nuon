@@ -12,7 +12,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getInstallComponents, getInstallStack, getAppConfig } from '@/lib'
+import { getInstallComponents, getInstallStack, getAppConfig, getInstallAppPermissionsConfig } from '@/lib'
 import { computeLayout } from './diagram-layout'
 import { nodeTypes } from './diagram-nodes'
 
@@ -85,6 +85,16 @@ const DiagramCanvas = () => {
     enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
   })
 
+  const { data: permissionsConfig } = useQuery({
+    queryKey: ['install-permissions-config-diagram', org?.id, install?.id],
+    queryFn: () =>
+      getInstallAppPermissionsConfig({
+        orgId: org.id!,
+        installId: install.id!,
+      }),
+    enabled: !!org?.id && !!install?.id,
+  })
+
   const nodes = useMemo(() => {
     if (!install || !components) return []
     return computeLayout({
@@ -92,9 +102,10 @@ const DiagramCanvas = () => {
       components: Array.isArray(components) ? components : [],
       stack: stack ?? undefined,
       appConfig: appConfig ?? undefined,
+      permissionsConfig: permissionsConfig ?? undefined,
       orgId: org.id!,
     })
-  }, [install, components, stack, appConfig, org.id])
+  }, [install, components, stack, appConfig, permissionsConfig, org.id])
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [])
 
