@@ -61,11 +61,7 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return err
 	}
 
-	orgTyp, err := activities.AwaitGetOrgTypeByInstallID(ctx, install.ID)
-	if err != nil {
-		return err
-	}
-	if orgTyp == app.OrgTypeSandbox {
+	if install.SandboxMode.Bool {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 

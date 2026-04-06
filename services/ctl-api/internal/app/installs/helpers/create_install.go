@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -38,7 +39,8 @@ type CreateInstallParams struct {
 
 	InstallConfig *CreateInstallConfigParams `json:"install_config"`
 
-	Metadata InstallMetadata `json:"metadata,omitempty"`
+	Metadata    InstallMetadata `json:"metadata,omitempty"`
+	SandboxMode bool            `json:"sandbox_mode,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -74,6 +76,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
+		SandboxMode:        pkggenerics.NewNullBool(req.SandboxMode),
 		AppSandboxConfigID: parentApp.AppSandboxConfigs[0].ID,
 		AppRunnerConfigID:  parentApp.AppRunnerConfigs[0].ID,
 		AppConfigID:        parentApp.AppConfigs[0].ID,
