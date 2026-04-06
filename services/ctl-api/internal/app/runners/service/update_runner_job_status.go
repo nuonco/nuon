@@ -64,6 +64,12 @@ func (s *service) updateRunnerJob(ctx context.Context, runnerJobID string, req U
 		return nil, fmt.Errorf("unable to update runner job status: %w", res.Error)
 	}
 
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	s.db.WithContext(ctx).Model(&app.RunnerJob{ID: runnerJobID}).Updates(map[string]any{
+		"status_v2": compositeStatus,
+	})
+
 	return &job, nil
 }
 

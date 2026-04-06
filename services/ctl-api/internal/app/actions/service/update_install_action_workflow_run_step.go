@@ -76,5 +76,11 @@ func (s *service) updateInstallActionWorkflowRunStep(ctx context.Context, stepID
 		return nil, fmt.Errorf("no step found: %s %w", stepID, gorm.ErrRecordNotFound)
 	}
 
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(step.Status))
+	s.db.WithContext(ctx).Model(&app.InstallActionWorkflowRunStep{ID: stepID}).Updates(map[string]any{
+		"status_v2": compositeStatus,
+	})
+
 	return &step, nil
 }

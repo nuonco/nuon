@@ -34,6 +34,12 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 		return fmt.Errorf("invite not found %w", gorm.ErrRecordNotFound)
 	}
 
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(app.OrgInviteStatusAccepted))
+	h.db.WithContext(ctx).Model(&app.OrgInvite{ID: invite.ID}).Updates(map[string]any{
+		"status_v2": compositeStatus,
+	})
+
 	// send a notification to the correct org event flow that it was accepted
 	cctx.SetOrgContext(ctx, &invite.Org)
 

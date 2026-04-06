@@ -26,6 +26,13 @@ func (s *Helpers) MarkJobAvailable(ctx context.Context, runnerJobID string) erro
 		return fmt.Errorf("no job found: %s %w", runnerJobID, gorm.ErrRecordNotFound)
 	}
 
+	// dual-write V2 status
+	compositeStatus := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusAvailable))
+	compositeStatus.StatusHumanDescription = string(app.RunnerJobStatusAvailable)
+	s.db.WithContext(ctx).Model(&app.RunnerJob{ID: runnerJobID}).Updates(map[string]any{
+		"status_v2": compositeStatus,
+	})
+
 	return nil
 }
 
