@@ -7,10 +7,10 @@ import { TransitionDiv } from './TransitionDiv'
 
 interface IBackToTop {
   containerId?: string
-  scrollOffset?: number // Show button after scrolling this many pixels
+  scrollOffset?: number
 }
 
-export const BackToTop = ({ containerId, scrollOffset = 400 }: IBackToTop) => {
+export const BackToTop = ({ containerId = 'page-scroll-container', scrollOffset = 400 }: IBackToTop) => {
   const [isVisable, setIsVisable] = useState(false)
   const scrollToTop = useScrollToTop()
 
@@ -19,59 +19,46 @@ export const BackToTop = ({ containerId, scrollOffset = 400 }: IBackToTop) => {
       let scrollTop = 0
 
       if (containerId) {
-        // Get scroll position of specific container
         const container = document.getElementById(containerId)
         if (container) {
           scrollTop = container.scrollTop
         }
       } else {
-        // Get scroll position of window
         scrollTop = window.scrollY || document.documentElement.scrollTop
       }
 
-      // Show button if scrolled past threshold
       setIsVisable(scrollTop > scrollOffset)
     }
 
-    // Add scroll listener to appropriate element
     if (containerId) {
       const container = document.getElementById(containerId)
       if (container) {
         container.addEventListener('scroll', handleScroll)
-
-        // Cleanup
-        return () => {
-          container.removeEventListener('scroll', handleScroll)
-        }
+        return () => container.removeEventListener('scroll', handleScroll)
       }
     } else {
-      // Listen to window scroll
       window.addEventListener('scroll', handleScroll)
-
-      // Cleanup
-      return () => {
-        window.removeEventListener('scroll', handleScroll)
-      }
+      return () => window.removeEventListener('scroll', handleScroll)
     }
   }, [containerId, scrollOffset])
 
   return (
-    <TransitionDiv className="fade z-[2]" isVisible={isVisable}>
-      <Button
-        className={cn(
-          'absolute bottom-4 md:bottom-6 right-12 md:right-18 !p-3 drop-shadow-lg',
-          'bg-btn-gradient-light bg-btn-bg-light dark:bg-btn-gradient-dark dark:bg-btn-bg-dark'
-        )}
-        onClick={() => {
-          scrollToTop(containerId)
-        }}
-        size="lg"
-      >
-        <Icon size={18} variant="ArrowUp" />
-        <span className="!text-foreground text-sm font-strong">
-          Back to top
-        </span>
-      </Button>
-    </TransitionDiv>
+    <div className="sticky bottom-0 z-[2] flex justify-end pointer-events-none">
+      <TransitionDiv className="fade pointer-events-auto mb-4 md:mb-6 mr-8 md:mr-12" isVisible={isVisable}>
+        <Button
+          className={cn(
+            '!p-3 drop-shadow-lg',
+            'bg-btn-gradient-light bg-btn-bg-light dark:bg-btn-gradient-dark dark:bg-btn-bg-dark'
+          )}
+          onClick={() => scrollToTop(containerId)}
+          size="lg"
+        >
+          <Icon size={18} variant="ArrowUp" />
+          <span className="!text-foreground text-sm font-strong">
+            Back to top
+          </span>
+        </Button>
+      </TransitionDiv>
+    </div>
   )
 }

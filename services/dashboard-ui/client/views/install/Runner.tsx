@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
@@ -13,8 +12,6 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
-
-const CONTAINER_ID = 'install-runner-page'
 
 const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: string }) => {
   const { org } = useOrg()
@@ -89,7 +86,7 @@ export const Runner = () => {
 
   if (!install?.runner_id) {
     return (
-      <PageSection isScrollable>
+      <PageSection>
         <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
@@ -117,7 +114,7 @@ export const Runner = () => {
   return (
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
-      <PageSection id={CONTAINER_ID} isScrollable>
+      <PageSection>
         <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
@@ -134,7 +131,6 @@ export const Runner = () => {
           ]}
         />
         <RunnerContent runnerId={install.runner_id} installId={install.id} />
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
       </SurfacesProvider>
     </RunnerProvider>

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { Markdown } from '@/components/common/Markdown'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -9,8 +8,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs } from '@/lib'
-
-const CONTAINER_ID = 'app-readme-page'
 
 export const Readme = () => {
   const { org } = useOrg()
@@ -34,7 +31,7 @@ export const Readme = () => {
   const isLoading = isLoadingConfigs || isLoadingConfig
 
   return (
-    <PageSection id={CONTAINER_ID} className="!pb-6" isScrollable>
+    <PageSection className="!pb-6">
       <PageTitle title={`README | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -57,7 +54,6 @@ export const Readme = () => {
         />
       )}
 
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

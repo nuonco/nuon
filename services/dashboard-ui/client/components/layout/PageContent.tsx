@@ -1,26 +1,28 @@
 import React from 'react'
 import { cn } from '@/utils/classnames'
 
+type TVariant = 'column' | 'row' | 'primary' | 'secondary' | 'tertiary'
+
 interface IPageContent extends React.HTMLAttributes<HTMLDivElement> {
   isScrollable?: boolean
-  variant?: 'primary' | 'secondary' | 'tertiary'
+  variant?: TVariant
 }
+
+const isRowVariant = (v: TVariant) =>
+  v === 'row' || v === 'secondary' || v === 'tertiary'
 
 export const PageContent = ({
   className,
   children,
-  isScrollable = false,
-  variant = 'primary',
+  isScrollable: _isScrollable,
+  variant = 'column',
   ...props
 }: IPageContent) => {
   return (
     <div
       className={cn(
         'flex-1 flex flex-col',
-        {
-          'md:flex-row': variant !== 'primary',
-          'h-full overflow-y-auto overflow-x-hidden pb-7': isScrollable,
-        },
+        { 'md:flex-row': isRowVariant(variant) },
         className
       )}
       {...props}

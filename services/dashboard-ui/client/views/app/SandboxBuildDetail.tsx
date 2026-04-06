@@ -9,7 +9,6 @@ import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { BackToTop } from '@/components/common/BackToTop'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -21,8 +20,6 @@ import { SandboxBuildProvider } from '@/providers/sandbox-build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
-
-const CONTAINER_ID = 'sandbox-build-detail-page'
 
 const SandboxBuildDetailInner = () => {
   const { build } = useSandboxBuild()
@@ -79,7 +76,7 @@ const SandboxBuildDetailInner = () => {
         </div>
       </header>
 
-      <PageSection id={CONTAINER_ID} isScrollable>
+      <PageSection>
         {build?.log_stream ? (
           <LogStreamProvider
             logStreamId={build.log_stream.id}
@@ -108,7 +105,6 @@ const SandboxBuildDetailInner = () => {
             </Button>
           </div>
         )}
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </>
   )

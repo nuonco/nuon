@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { BackToTop } from '@/components/common/BackToTop'
 import { RunnerJobHeader } from '@/components/runners/job-details/RunnerJobHeader'
 import { RunnerJobLogs } from '@/components/runners/job-details/RunnerJobLogs'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -10,8 +9,6 @@ import { RunnerJobProvider } from '@/providers/runner-job-provider'
 import { useOrg } from '@/hooks/use-org'
 import { useRunnerJob } from '@/hooks/use-runner-job'
 import { getJobName } from '@/utils/runner-utils'
-
-const CONTAINER_ID = 'org-runner-job-page'
 
 const RunnerJobDetailContent = () => {
   const { org } = useOrg()
@@ -27,11 +24,10 @@ const RunnerJobDetailContent = () => {
           { path: '', text: getJobName(job) },
         ]}
       />
-      <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">       
+      <PageSection flush>
         <RunnerJobHeader />
-        <PageSection isScrollable={false} className="!pb-12">
+        <PageSection className="!pb-12">
           <RunnerJobLogs />
-          <BackToTop containerId={CONTAINER_ID} />
         </PageSection>
       </PageSection>
     </PageLayout>
