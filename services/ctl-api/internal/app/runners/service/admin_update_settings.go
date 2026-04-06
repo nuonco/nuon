@@ -26,6 +26,8 @@ type AdminUpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
 
+	RunnerBinaryURL string `json:"runner_binary_url"`
+
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime" validate:"omitnil,min=86400,max=31536000"`
 
@@ -87,6 +89,7 @@ func (s *service) adminUpdateRunnerSettings(ctx context.Context, runnerID string
 		RunnerAPIURL:             req.RunnerAPIURL,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
+		RunnerBinaryURL:          req.RunnerBinaryURL,
 	}
 
 	if req.AWSMaxInstanceLifetime != nil {
