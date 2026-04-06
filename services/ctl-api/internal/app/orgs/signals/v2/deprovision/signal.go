@@ -47,30 +47,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if len(org.Apps) > 0 {
-		if !s.Force {
-			s.updateStatus(ctx, app.OrgStatusError, "cannot deprovision org with active apps")
-			return temporal.NewNonRetryableApplicationError(
-				fmt.Sprintf("organization has %d app(s) that must be deleted before deprovisioning", len(org.Apps)),
-				"AppsStillPresent",
-				nil,
-			)
-		}
-
-		// Force mode: check if any apps have installs — user must forget installs first
+		// Check if any apps have installs — installs must be forgotten first
 		for _, a := range org.Apps {
 			if len(a.Installs) > 0 {
-				s.updateStatus(ctx, app.OrgStatusError, "cannot force deprovision: apps have installs that must be forgotten first")
+				s.updateStatus(ctx, app.OrgStatusError, "cannot deprovision: apps have installs that must be forgotten first")
 				return temporal.NewNonRetryableApplicationError(
-					fmt.Sprintf("app %s has %d install(s) that must be forgotten before force deprovisioning", a.ID, len(a.Installs)),
+					fmt.Sprintf("app %s has %d install(s) that must be forgotten before deprovisioning", a.ID, len(a.Installs)),
 					"InstallsStillPresent",
 					nil,
 				)
 			}
 		}
 
-		// No installs — safe to delete apps
+		// No installs — safe to delete apps as part of org deprovision
 		l := workflow.GetLogger(ctx)
-		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "force deprovisioning: deleting all apps")
+		s.updateStatus(ctx, app.OrgStatusDeprovisioning, "deprovisioning: deleting all apps")
 		for _, a := range org.Apps {
 			l.Info("enqueuing app deprovision signal", zap.String("app_id", a.ID))
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

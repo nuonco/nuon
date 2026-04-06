@@ -50,6 +50,10 @@ export const RunnerDetailsCard = ({
         Runner details
       </Text>
 
+      <LabeledValue label="Runner ID">
+        <ID theme="default">{runner?.id}</ID>
+      </LabeledValue>
+
       <div className="grid gap-6 md:grid-cols-2">
         <LabeledValue label="Status">
           <Status
@@ -84,10 +88,6 @@ export const RunnerDetailsCard = ({
         <LabeledValue label="Started at">
           <Time variant="subtext" time={runnerHeartbeat?.started_at} />
         </LabeledValue>
-
-        <LabeledValue label="Runner ID">
-          <ID theme="default">{runner?.id}</ID>
-        </LabeledValue>
       </div>
     </Card>
   )
@@ -117,10 +117,6 @@ export const RunnerDetailsCardSkeleton = (props: Omit<ICard, 'children'>) => {
 
         <LabeledValue label={<Skeleton height="17px" width="53px" />}>
           <Skeleton height="23px" width="148px" />
-        </LabeledValue>
-
-        <LabeledValue label={<Skeleton height="17px" width="53px" />}>
-          <Skeleton height="23px" width="215px" />
         </LabeledValue>
       </div>
     </Card>
