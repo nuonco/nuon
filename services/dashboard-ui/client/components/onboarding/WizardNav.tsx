@@ -31,10 +31,6 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
                 <Icon variant="SkipForwardIcon" size={14} /> Skip
               </Button>
             ) : null}
-
-            <Text variant="subtext" theme="neutral">
-              {completedSteps?.size} / {steps?.length}
-            </Text>
           </div>
         </div>
       ) : null}
@@ -57,7 +53,7 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
                   aria-label={`Go to step ${index + 1}: ${step.title}`}
                   className={cn(
                     'w-[26px] h-[26px] rounded-full flex items-center justify-center transition-colors duration-300',
-                    isComplete && !isActive && 'bg-primary-600',
+                    isComplete && !isActive && 'bg-green-600 dark:bg-green-500',
                     isActive &&
                       'bg-primary-100 dark:bg-primary-950 border-2 border-primary-600 dark:border-primary-400',
                     !isActive &&
@@ -100,7 +96,7 @@ export function WizardNav({ isScrolled = false }: { isScrolled?: boolean }) {
               {!isLast && (
                 <div className="relative flex-1 min-w-3 h-0.5 rounded-full bg-cool-grey-200 dark:bg-cool-grey-700 overflow-hidden">
                   <div
-                    className="absolute inset-y-0 left-0 rounded-full bg-primary-600"
+                    className="absolute inset-y-0 left-0 rounded-full bg-green-600 dark:bg-green-500"
                     style={{
                       width: isComplete ? '100%' : '0%',
                       transition: 'width 800ms cubic-bezier(0.65, 0, 0.35, 1)',
