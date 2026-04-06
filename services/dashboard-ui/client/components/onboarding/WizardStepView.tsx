@@ -35,16 +35,18 @@ export function WizardStepView() {
         isTransitioning ? 'opacity-0 translate-x-2' : 'opacity-100 translate-x-0'
       }`}
     >
-      <div className="mb-12">
-        <Text variant="h2" role="heading" level={2} className="mb-2">
-          {visibleStep.title}
-        </Text>
-        {visibleStep.description && (
-          <Text variant="body" theme="neutral" as="p" className="max-w-md !text-pretty">
-            {visibleStep.description}
+      {!visibleStep.hideTitle && (
+        <div className="mb-12">
+          <Text variant="h2" role="heading" level={2} className="mb-2">
+            {visibleStep.title}
           </Text>
-        )}
-      </div>
+          {visibleStep.description && (
+            <Text variant="body" theme="neutral" as="p" className="max-w-md !text-pretty">
+              {visibleStep.description}
+            </Text>
+          )}
+        </div>
+      )}
 
       <StepComponent
         isComplete={completedSteps.has(visibleStep.id)}
