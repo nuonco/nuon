@@ -60,5 +60,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "096-backfill-install-sandbox-mode",
 			Fn:   m.Migration096BackfillInstallSandboxMode,
 		},
+		{
+			Name: "097-backfill-runner-group-owner-name",
+			Fn:   m.Migration097BackfillRunnerGroupOwnerName,
+		},
 	}
 }
