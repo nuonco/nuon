@@ -48,11 +48,11 @@ export const DeployHeader = ({
           <ID>{deploy?.id}</ID>
         </div>
         <div className="flex gap-8 items-center justify-start my-2">
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={deploy?.created_at} />
           </Text>
-          <Text theme="info" className="!flex items-center gap-1">
+          <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
             <Duration
               variant="subtext"
@@ -61,7 +61,7 @@ export const DeployHeader = ({
             />
           </Text>
           {deploy?.runner_jobs?.at(0)?.json?.permission_info?.role ? (
-            <Text theme="info" className="!flex items-center gap-1">
+            <Text theme="info" flex className="gap-1">
               <Icon variant="FileLockIcon" />
               <Text variant="subtext">{deploy.runner_jobs.at(0).json.permission_info.role}</Text>
             </Text>
@@ -94,7 +94,7 @@ export const DeployHeader = ({
             tooltipProps={{
               tipContentClassName: 'w-fit',
               tipContent: (
-                <Text className="!text-nowrap" variant="subtext">
+                <Text nowrap variant="subtext">
                   {toSentenceCase(deploy?.status_v2?.status_human_description)}
                 </Text>
               ),
@@ -137,7 +137,8 @@ export const DeployHeader = ({
               <OCIArtifactCard ociArtifact={deploy?.oci_artifact}>
                 <Text
                   variant="subtext"
-                  className="!block truncate max-w-[80px]"
+                  as="div"
+                  className="truncate max-w-[80px]"
                   theme="neutral"
                 >
                   {deploy?.oci_artifact?.tag}

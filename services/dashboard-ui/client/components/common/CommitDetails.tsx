@@ -29,7 +29,8 @@ export const CommitDetails = ({ commit }: CommitDetailsProps) => {
             <Text
               variant="subtext"
               theme="neutral"
-              className="!block !max-w-[180px] !truncate"
+              as="div"
+              className="!max-w-[180px] !truncate"
             >
               {commit?.message}
             </Text>

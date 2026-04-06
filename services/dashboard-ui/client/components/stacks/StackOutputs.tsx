@@ -7,7 +7,7 @@ import { objectToKeyValueArray } from '@/utils/data-utils'
 export const StackOutputs = ({ runs }: { runs: TInstallStackVersionRun[] }) => {
   return runs?.map((run, i) => (
     <div key={run?.id} className="flex flex-col gap-4">
-      <Text className="!flex items-center justify-between">
+      <Text as="div" className="flex items-center justify-between">
         <Text variant="body" weight="strong">
           Run {i + 1}
         </Text>

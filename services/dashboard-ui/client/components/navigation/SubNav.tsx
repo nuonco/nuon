@@ -109,7 +109,9 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             tipContent={
               <div className="w-fit">
                 <Text
-                  className="inline-flex gap-2 items-center !text-nowrap"
+                  flex
+                  nowrap
+                  className="gap-2"
                   variant="subtext"
                 >
                   {isPageSidebarOpen ? 'Collapse' : 'Expand'} sidebar

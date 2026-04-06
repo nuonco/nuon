@@ -21,7 +21,8 @@ export const WorkflowHeader = () => {
         <BackLink />
         <HeadingGroup>
           <Text
-            className="inline-flex gap-2 items-center"
+            flex
+            className="gap-2"
             variant="h3"
             weight="strong"
           >
