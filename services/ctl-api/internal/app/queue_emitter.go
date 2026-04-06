@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultQueueEmitterWorkflowIDTemplate string = "queue-emitter-%s"
+	defaultQueueEmitterWorkflowIDTemplate string = "queue-emitter-%s-fire-once"
 )
 
 type QueueEmitterMode string
