@@ -196,8 +196,16 @@ func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueE
 		return nil, errors.Wrap(res.Error, "unable to update emitter status")
 	}
 
-	if err := c.tClient.CancelWorkflowInNamespace(ctx, em.Workflow.Namespace, em.Workflow.ID, ""); err != nil {
-		c.l.Warn("failed to cancel emitter workflow", zap.String("id", emitterID), zap.Error(err))
+	// Use the Temporal update handler to gracefully stop the emitter workflow.
+	// This sets e.stopped = true which causes the emitter's run loop to exit cleanly.
+	_, err = c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+		WorkflowID:   em.Workflow.ID,
+		UpdateName:   emitter.StopUpdateName,
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args:         []any{&emitter.StopRequest{}},
+	})
+	if err != nil {
+		c.l.Warn("failed to stop emitter workflow via update handler", zap.String("id", emitterID), zap.Error(err))
 	}
 
 	c.l.Debug("emitter stopped", zap.String("id", emitterID))

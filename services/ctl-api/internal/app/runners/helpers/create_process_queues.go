@@ -86,10 +86,11 @@ func (s *onRunnerProcessSignalTemplate) Type() queuesignal.SignalType {
 func (s *onRunnerProcessSignalTemplate) Validate(_ workflow.Context) error { return nil }
 func (s *onRunnerProcessSignalTemplate) Execute(_ workflow.Context) error  { return nil }
 
-// Default uptime thresholds before triggering a shutdown
+// Fallback uptime thresholds when config values are not set
 const (
-	defaultMngUptimeThreshold     = 24 * time.Hour
-	defaultInstallUptimeThreshold = 12 * time.Hour
+	defaultMngUptimeThreshold     = 168 * time.Hour // 1 week
+	defaultInstallUptimeThreshold = 8 * time.Hour
+	defaultBuildUptimeThreshold   = 8 * time.Hour
 )
 
 // CreateProcessQueues creates a queue for the given runner process with a cron health check
@@ -120,10 +121,24 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process health check emitter: %w", err)
 	}
 
-	// Scheduled emitter: uptime TTL
-	threshold := defaultInstallUptimeThreshold
-	if process.Type == app.RunnerProcessTypeMng {
-		threshold = defaultMngUptimeThreshold
+	// Scheduled emitter: uptime TTL (from config, with fallback defaults)
+	var threshold time.Duration
+	switch process.Type {
+	case app.RunnerProcessTypeMng:
+		threshold = h.cfg.ProcessMngUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultMngUptimeThreshold
+		}
+	case app.RunnerProcessTypeBuild:
+		threshold = h.cfg.ProcessBuildUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultBuildUptimeThreshold
+		}
+	default:
+		threshold = h.cfg.ProcessInstallUptimeThreshold
+		if threshold == 0 {
+			threshold = defaultInstallUptimeThreshold
+		}
 	}
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
