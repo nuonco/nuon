@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
 	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
@@ -35,6 +36,8 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(api.New),
 		fx.Provide(settings.New),
 		fx.Provide(heartbeater.New),
+		fx.Provide(process.New),
+		fx.Provide(process.NewShutdownPoller),
 		fx.Provide(metrics.New),
 	}
 }

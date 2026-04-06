@@ -11,6 +11,7 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/pkg/metrics"
 )
@@ -18,19 +19,21 @@ import (
 type Params struct {
 	fx.In
 
-	APIClient nuonrunner.Client
-	Cfg       *internal.Config
-	L         *zap.Logger `name:"system"`
-	LC        fx.Lifecycle
-	Settings  *settings.Settings
-	MW        metrics.Writer
-	Process   string `name:"process"`
+	APIClient        nuonrunner.Client
+	Cfg              *internal.Config
+	L                *zap.Logger `name:"system"`
+	LC               fx.Lifecycle
+	Settings         *settings.Settings
+	MW               metrics.Writer
+	Process          string `name:"process"`
+	ProcessRegistrar *process.Registrar
 }
 
 type HeartBeater struct {
-	settings  *settings.Settings
-	apiClient nuonrunner.Client
-	l         *zap.Logger
+	settings         *settings.Settings
+	apiClient        nuonrunner.Client
+	l                *zap.Logger
+	processRegistrar *process.Registrar
 
 	// internal state
 	ctx      context.Context
@@ -46,15 +49,16 @@ func New(params Params) (*HeartBeater, error) {
 	ctx, cancelFn := context.WithCancel(ctx)
 
 	hb := &HeartBeater{
-		settings:  params.Settings,
-		l:         params.L,
-		wg:        conc.NewWaitGroup(),
-		startTS:   time.Now(),
-		apiClient: params.APIClient,
-		ctx:       ctx,
-		cancelFn:  cancelFn,
-		mw:        params.MW,
-		process:   params.Process,
+		settings:         params.Settings,
+		l:                params.L,
+		wg:               conc.NewWaitGroup(),
+		startTS:          time.Now(),
+		apiClient:        params.APIClient,
+		ctx:              ctx,
+		cancelFn:         cancelFn,
+		mw:               params.MW,
+		process:          params.Process,
+		processRegistrar: params.ProcessRegistrar,
 	}
 
 	params.LC.Append(hb.LifecycleHook())

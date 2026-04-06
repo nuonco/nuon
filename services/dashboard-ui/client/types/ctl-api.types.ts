@@ -273,6 +273,11 @@ export type TRunnerMngHeartbeat = {
 }
 export type TRunnerSettings = components['schemas']['app.RunnerGroupSettings']
 export type TRunnerJobPlan = Record<string, any>
+export type TRunnerProcess = components['schemas']['app.RunnerProcess'] & {
+  labels?: string[]
+}
+export type TRunnerProcessShutdown =
+  components['schemas']['app.RunnerProcessShutdown']
 
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']

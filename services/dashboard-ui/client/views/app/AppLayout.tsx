@@ -36,24 +36,24 @@ const AppTemplate = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const isThirdLevel = location.pathname.split('/').length > 5
-  const hasAppBranches = !!org?.features?.['app-branches']
+  // const hasAppBranches = !!org?.features?.['app-branches']
 
   if (!app) return null
 
   const navLinks = [
     { path: `/`, iconVariant: 'HouseSimple' as const, text: 'Overview' },
-    hasAppBranches && {
-      path: `/sandbox`,
-      iconVariant: 'ShippingContainerIcon' as const,
-      text: 'Sandbox builds',
-    },
+    /* hasAppBranches && {
+     *   path: `/sandbox`,
+     *   iconVariant: 'ShippingContainerIcon' as const,
+     *   text: 'Sandbox builds',
+     * }, */
     { path: `/components`, iconVariant: 'Cards' as const, text: 'Components' },
     { path: `/actions`, iconVariant: 'TerminalWindow' as const, text: 'Actions' },
-    hasAppBranches && {
-      path: `/branches`,
-      iconVariant: 'GitBranch' as const,
-      text: 'Branches',
-    },
+    /* hasAppBranches && {
+     *   path: `/branches`,
+     *   iconVariant: 'GitBranch' as const,
+     *   text: 'Branches',
+     * }, */
     { path: `/roles`, iconVariant: 'FileLock' as const, text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheck' as const, text: 'Policies' },
     { path: `/installs`, iconVariant: 'Cube' as const, text: 'Installs' },

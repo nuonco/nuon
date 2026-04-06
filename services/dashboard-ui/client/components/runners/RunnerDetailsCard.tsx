@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { getRunnerLatestHeartbeat } from '@/lib'
 import type { TRunnerGroup, TRunnerMngHeartbeat } from '@/types'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isLessThan30SecondsOld } from '@/utils/time-utils'
 
 interface IRunnerDetailsCard extends Omit<ICard, 'children'> {
   initHeartbeat?: TRunnerMngHeartbeat
@@ -61,7 +61,7 @@ export const RunnerDetailsCard = ({
         <LabeledValue label="Connectivity">
           <Status
             status={
-              isLessThan15SecondsOld(runnerHeartbeat?.created_at)
+              isLessThan30SecondsOld(runnerHeartbeat?.created_at)
                 ? 'connected'
                 : 'not-connected'
             }

@@ -45,7 +45,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		if req.CronSchedule == "" {
 			return nil, errors.New("cron_schedule is required for cron mode")
 		}
-	case app.QueueEmitterModeScheduled:
+	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:
 		if req.ScheduledAt == nil {
 			return nil, errors.New("scheduled_at is required for scheduled mode")
 		}
@@ -182,6 +182,25 @@ func (c *Client) ResumeEmitter(ctx context.Context, emitterID string) (*app.Queu
 	}
 
 	c.l.Debug("emitter resumed", zap.String("id", emitterID))
+	return em, nil
+}
+
+func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
+	em, err := c.getEmitter(ctx, emitterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get emitter")
+	}
+
+	em.Status = app.NewCompositeStatus(ctx, app.StatusCancelled)
+	if res := c.db.WithContext(ctx).Save(em); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to update emitter status")
+	}
+
+	if err := c.tClient.CancelWorkflowInNamespace(ctx, em.Workflow.Namespace, em.Workflow.ID, ""); err != nil {
+		c.l.Warn("failed to cancel emitter workflow", zap.String("id", emitterID), zap.Error(err))
+	}
+
+	c.l.Debug("emitter stopped", zap.String("id", emitterID))
 	return em, nil
 }
 

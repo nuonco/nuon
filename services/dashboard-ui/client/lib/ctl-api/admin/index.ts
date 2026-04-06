@@ -75,3 +75,6 @@ export const adminInvalidateRunnerToken = ({ runnerId, adminEmail }: { runnerId:
 
 export const adminShutdownRunnerJob = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/runners/shutdown-job` })
+
+export const adminForgetOrgInstalls = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget-installs` })

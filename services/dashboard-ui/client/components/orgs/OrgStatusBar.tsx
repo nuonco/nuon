@@ -23,7 +23,7 @@ import {
 } from '@/lib'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isLessThan30SecondsOld } from '@/utils/time-utils'
 
 export const OrgStatusBar = () => {
   const { org } = useOrg()
@@ -74,7 +74,7 @@ export const OrgStatusBar = () => {
   })
   const runnerHeartbeat =
     heartbeats?.install ?? heartbeats?.org ?? heartbeats?.build ?? undefined
-  const runnerConnected = isLessThan15SecondsOld(runnerHeartbeat?.created_at)
+  const runnerConnected = isLessThan30SecondsOld(runnerHeartbeat?.created_at)
   const runnerStatus = runnerConnected ? 'connected' : 'not-connected'
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({

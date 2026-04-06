@@ -9,8 +9,9 @@ import (
 )
 
 type CreateHealthCheckRequest struct {
-	RunnerID string           `validate:"required"`
-	Status   app.RunnerStatus `validate:"required"`
+	RunnerID  string `validate:"required"`
+	ProcessID string
+	Status    app.RunnerStatus `validate:"required"`
 }
 
 // @temporal-gen-v2 activity
@@ -18,6 +19,7 @@ type CreateHealthCheckRequest struct {
 func (a *Activities) CreateHealthCheck(ctx context.Context, req CreateHealthCheckRequest) (*app.RunnerHealthCheck, error) {
 	hc := app.RunnerHealthCheck{
 		RunnerID:     req.RunnerID,
+		ProcessID:    req.ProcessID,
 		RunnerStatus: req.Status,
 	}
 

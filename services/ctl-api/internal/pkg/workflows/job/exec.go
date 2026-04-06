@@ -14,7 +14,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
@@ -69,9 +71,30 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) error
 		return errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
-	// now queue and execute the job
-	l.Info("queueing job on runner event loop", zap.String("runner-id", runnerID))
+	// Check if this runner uses queue-based job dispatch (parallel-runner-jobs feature flag).
+	// If a per-job-group queue exists, enqueue the processjob signal directly and skip the
+	// legacy event loop path entirely.
+	queueResp, err := activities.AwaitPkgWorkflowsJobGetRunnerJobGroupQueue(ctx, &activities.GetRunnerJobGroupQueueRequest{
+		RunnerID: runnerID,
+		JobID:    jobID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to check runner job group queue")
+	}
 
+	if queueResp.QueueID != "" {
+		l.Info("queueing job via job-group queue", zap.String("runner-id", runnerID), zap.String("queue-id", queueResp.QueueID))
+		_, err := queueclient.AwaitEnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   queueResp.QueueID,
+			Signal:    &processjobsignal.Signal{RunnerID: runnerID, JobID: jobID},
+			OwnerID:   jobID,
+			OwnerType: "runner_jobs",
+		})
+		return errors.Wrap(err, "unable to enqueue job to queue")
+	}
+
+	// Legacy path: dispatch through the runner event loop.
+	l.Info("queueing job on runner event loop", zap.String("runner-id", runnerID))
 	j.evClient.Send(ctx, runnerID, &runnersignals.Signal{
 		Type:  runnersignals.OperationProcessJob,
 		JobID: jobID,

@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -13,9 +12,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig } from '@/lib'
-
-const CONTAINER_ID = 'install-stacks-page'
+import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
+import { getAppConfig, getAppConfigs } from '@/lib'
+import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
 
 export const Stacks = () => {
   const { org } = useOrg()
@@ -41,8 +41,31 @@ export const Stacks = () => {
 
   const config = configResult
 
+  const { data: latestConfigs } = useQuery({
+    queryKey: ['app-configs', org?.id, install?.app_id, 'latest'],
+    queryFn: () =>
+      getAppConfigs({ orgId: org.id, appId: install.app_id, limit: 1, offset: 0 }),
+    enabled: !!org?.id && !!install?.app_id,
+  })
+  const latestConfigSummary = latestConfigs?.[0]
+  const newerAppConfig = hasNewerAppConfig(latestConfigSummary, install)
+
+  const { data: latestFullConfig } = useQuery({
+    queryKey: ['app-config', org?.id, install?.app_id, latestConfigSummary?.id, 'recurse'],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: latestConfigSummary!.id!,
+        recurse: true,
+      }),
+    enabled: newerAppConfig && !!latestConfigSummary?.id,
+  })
+
+  const stackChanged = hasStackConfigChanged(config, latestFullConfig)
+
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Stacks | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -63,6 +86,27 @@ export const Stacks = () => {
           View your install stack config and versions below.
         </Text>
       </HeadingGroup>
+
+      {stackChanged && (
+        <Banner theme="info">
+          <div className="flex items-center gap-8">
+            <div className="flex flex-col">
+              <Text weight="strong">New stack config available</Text>
+              <Text variant="subtext" theme="neutral">
+                A newer stack config (v{latestFullConfig?.version}) is available. This install
+                is using v{config?.version}.
+              </Text>
+            </div>
+            <Button
+              className="ml-auto"
+              href={`/${org.id}/apps/${install.app_id}`}
+              variant="secondary"
+            >
+              View latest config
+            </Button>
+          </div>
+        </Banner>
+      )}
 
       {isLoadingConfig ? (
         <Card>
@@ -135,7 +179,6 @@ export const Stacks = () => {
         <Text weight="strong">Install stack versions</Text>
         <InstallStacksTable shouldPoll />
       </div>
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

@@ -133,19 +133,25 @@ export function Onboarding() {
     ? ONBOARDING_STEP_TO_INDEX[onboarding.current_step] ?? 0
     : undefined
 
+  const wizard = (
+    <OnboardingWizard
+      steps={steps}
+      initialSharedData={initialSharedData}
+      initialStepIndex={initialStepIndex}
+      onComplete={() => {
+        window.location.href = '/'
+      }}
+    />
+  )
+
   return (
     <ToastProvider>
       <SurfacesProvider>
-        <OnboardingJourneyProvider>
-          <OnboardingWizard
-            steps={steps}
-            initialSharedData={initialSharedData}
-            initialStepIndex={initialStepIndex}
-            onComplete={() => {
-              window.location.href = '/'
-            }}
-          />
-        </OnboardingJourneyProvider>
+        {onboardingV2 ? wizard : (
+          <OnboardingJourneyProvider>
+            {wizard}
+          </OnboardingJourneyProvider>
+        )}
       </SurfacesProvider>
     </ToastProvider>
   )

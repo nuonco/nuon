@@ -10,6 +10,7 @@ import { InstallProvider } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstall } from '@/types'
 import { EditInputsButton } from './EditInputs'
+import { ViewCurrentInputsButton } from './ViewCurrentInputs'
 import { EnableAutoApproveButton } from './EnableAutoApprove'
 import { ReprovisionButton } from './Reprovision'
 import { ForgetButton } from './Forget'
@@ -18,7 +19,7 @@ import { ViewStateButton } from './ViewState'
 
 export const QuickManagementDropdown = ({ install }: { install: TInstall }) => {
   return (
-    <InstallProvider installId={install?.id}  shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />}>
+    <InstallProvider installId={install?.id} shouldPoll={false} loadingElement={<Skeleton height="24px" width="24px" />} errorElement={null}>
       <SurfacesProvider>
         <Dropdown
           alignment="right"
@@ -48,6 +49,7 @@ const QuickManagementMenu = () => {
         Settings
       </Text>
       <EditInputsButton isMenuButton />
+      <ViewCurrentInputsButton isMenuButton />
       <ViewStateButton isMenuButton />
       <EnableAutoApproveButton isMenuButton />
       <hr />

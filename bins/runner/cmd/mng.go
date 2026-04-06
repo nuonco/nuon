@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/spf13/cobra"
@@ -29,7 +30,7 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd := &cobra.Command{
 		Use:   "fetch-token",
 		Short: "Fetch and store the runner authentication token.",
-		Long:  "Authenticate with AWS using instance credentials and store the runner token.",
+		Long:  "Authenticate using cloud instance credentials (AWS or GCP) and store the runner token.",
 		Run:   c.runFetchToken,
 	}
 	fetchTokenCmd.Flags().Bool("json", false, "Output result as JSON (does not write token to disk)")
@@ -55,8 +56,10 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Provide(sandboxctl.New),
 			fx.Invoke(func(*sandboxctl.Server) {}),
 
-			// start registry and heartbeater
+			// start heartbeater, process registrar, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
+			fx.Invoke(func(*process.Registrar) {}),
+			fx.Invoke(func(*process.ShutdownPoller) {}),
 		}...,
 	)
 	// run
@@ -105,6 +108,11 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	fmt.Printf("authentication successful\n")
 	fmt.Printf("  runner_id:   %s\n", result.RunnerID)
 	fmt.Printf("  instance_id: %s\n", result.InstanceID)
-	fmt.Printf("  account_id:  %s\n", result.AccountID)
+	if result.AccountID != "" {
+		fmt.Printf("  account_id:  %s\n", result.AccountID)
+	}
+	if result.ProjectID != "" {
+		fmt.Printf("  project_id:  %s\n", result.ProjectID)
+	}
 	fmt.Printf("  token_path:  %s\n", result.TokenPath)
 }

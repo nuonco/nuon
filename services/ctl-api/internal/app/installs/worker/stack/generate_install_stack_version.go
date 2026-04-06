@@ -1,6 +1,8 @@
 package stack
 
 import (
+	"strings"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -124,14 +126,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// GCP uses a static Terraform module with tfvars.
-	// Use a long-lived token (90 days) since GCP runners don't yet have an
-	// IMDS-based token refresh flow like AWS runners do.
 	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
-		bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
-		if err != nil {
-			return errors.Wrap(err, "unable to create bootstrap token")
-		}
-
 		initScriptURL := DefaultGCPRunnerInitScript
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			initScriptURL = cfg.RunnerConfig.InitScriptURL
@@ -144,9 +139,18 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			AppCfg:                     cfg,
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
-			APIToken:                   generics.FromPtrStr(bootstrapToken),
 			RunnerInitScriptURL:        initScriptURL,
 			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
+		}
+
+		// Legacy init.sh needs a pre-provisioned bootstrap token.
+		// init-mng-v2.sh fetches its own token via GCP identity (POST /v1/runner-auth/gcp).
+		if isLegacyGCPInitScript(initScriptURL) {
+			bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
+			if err != nil {
+				return errors.Wrap(err, "unable to create bootstrap token")
+			}
+			inp.APIToken = generics.FromPtrStr(bootstrapToken)
 		}
 
 		tmplByts, checksum, err := gcp.Render(inp)
@@ -267,4 +271,8 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusPendingUser),
 	})
 	return nil
+}
+
+func isLegacyGCPInitScript(url string) bool {
+	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
 }

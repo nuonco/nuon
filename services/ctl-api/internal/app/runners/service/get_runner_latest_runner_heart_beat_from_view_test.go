@@ -140,7 +140,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) makeRequest(method, path str
 	return rr
 }
 
-func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcess, timestamp time.Time, aliveTime time.Duration, version string) string {
+func (s *GetRunnerLatestHeartBeatFromViewTestSuite) createRunnerHeartBeat(runnerID string, process app.RunnerProcessType, timestamp time.Time, aliveTime time.Duration, version string) string {
 	ctx := context.Background()
 	ctx = cctx.SetAccountContext(ctx, s.testAcc)
 	ctx = cctx.SetOrgContext(ctx, s.testOrg)
@@ -184,10 +184,10 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 
 				// Create heartbeats from different processes
 				baseTime := time.Now().Add(-10 * time.Minute)
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime, time.Minute*5, "1.0.0")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.1")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessInstall, baseTime.Add(1*time.Minute), time.Minute*6, "2.0.0")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessOrg, baseTime.Add(3*time.Minute), time.Minute*8, "3.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.1")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeInstall, baseTime.Add(1*time.Minute), time.Minute*6, "2.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeOrg, baseTime.Add(3*time.Minute), time.Minute*8, "3.0.0")
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(runner)
@@ -201,25 +201,25 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				assert.Len(s.T(), heartBeats, 3, "Should have 3 process types")
 
 				// Verify each process has the latest heartbeat
-				mngHB, ok := heartBeats[string(app.RunnerProcessMng)]
+				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
 				assert.True(s.T(), ok, "Should have mng process")
 				if ok {
 					assert.Equal(s.T(), "1.0.1", mngHB.Version, "Should have latest mng heartbeat")
-					assert.Equal(s.T(), app.RunnerProcessMng, mngHB.Process)
+					assert.Equal(s.T(), app.RunnerProcessTypeMng, mngHB.Process)
 				}
 
-				installHB, ok := heartBeats[string(app.RunnerProcessInstall)]
+				installHB, ok := heartBeats[string(app.RunnerProcessTypeInstall)]
 				assert.True(s.T(), ok, "Should have install process")
 				if ok {
 					assert.Equal(s.T(), "2.0.0", installHB.Version)
-					assert.Equal(s.T(), app.RunnerProcessInstall, installHB.Process)
+					assert.Equal(s.T(), app.RunnerProcessTypeInstall, installHB.Process)
 				}
 
-				orgHB, ok := heartBeats[string(app.RunnerProcessOrg)]
+				orgHB, ok := heartBeats[string(app.RunnerProcessTypeOrg)]
 				assert.True(s.T(), ok, "Should have org process")
 				if ok {
 					assert.Equal(s.T(), "3.0.0", orgHB.Version)
-					assert.Equal(s.T(), app.RunnerProcessOrg, orgHB.Process)
+					assert.Equal(s.T(), app.RunnerProcessTypeOrg, orgHB.Process)
 				}
 			},
 		},
@@ -242,10 +242,10 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 
 				// Create multiple heartbeats for same process
 				baseTime := time.Now().Add(-10 * time.Minute)
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime, time.Minute*5, "1.0.0")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime.Add(1*time.Minute), time.Minute*6, "1.0.1")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.2")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime.Add(3*time.Minute), time.Minute*8, "1.0.3")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "1.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(1*time.Minute), time.Minute*6, "1.0.1")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(2*time.Minute), time.Minute*7, "1.0.2")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime.Add(3*time.Minute), time.Minute*8, "1.0.3")
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(runner)
@@ -258,7 +258,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				// Should dedupe to one entry per process
 				assert.Len(s.T(), heartBeats, 1, "Should dedupe to single entry")
 
-				mngHB, ok := heartBeats[string(app.RunnerProcessMng)]
+				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
 				assert.True(s.T(), ok, "Should have mng process")
 				if ok {
 					assert.Equal(s.T(), "1.0.3", mngHB.Version, "Should have latest heartbeat after deduplication")
@@ -378,7 +378,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 
 				// Create heartbeat with known AliveTime
 				createdAt := time.Now()
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, createdAt, time.Minute*15, "1.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, createdAt, time.Minute*15, "1.0.0")
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(runner)
@@ -389,7 +389,7 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 			expectedCode: http.StatusOK,
 			validateFunc: func(heartBeats LatestRunnerHeartBeats) {
 				assert.Len(s.T(), heartBeats, 1)
-				mngHB, ok := heartBeats[string(app.RunnerProcessMng)]
+				mngHB, ok := heartBeats[string(app.RunnerProcessTypeMng)]
 				assert.True(s.T(), ok)
 				if ok {
 					// StartedAt should be CreatedAt - AliveTime
@@ -418,9 +418,9 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 
 				// Create heartbeats for all process types
 				baseTime := time.Now()
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessMng, baseTime, time.Minute*5, "mng-1.0.0")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessInstall, baseTime.Add(time.Minute), time.Minute*6, "install-2.0.0")
-				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessOrg, baseTime.Add(2*time.Minute), time.Minute*7, "org-3.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeMng, baseTime, time.Minute*5, "mng-1.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeInstall, baseTime.Add(time.Minute), time.Minute*6, "install-2.0.0")
+				s.createRunnerHeartBeat(runner.ID, app.RunnerProcessTypeOrg, baseTime.Add(2*time.Minute), time.Minute*7, "org-3.0.0")
 
 				s.T().Cleanup(func() {
 					s.service.DB.Unscoped().Delete(runner)
@@ -433,10 +433,10 @@ func (s *GetRunnerLatestHeartBeatFromViewTestSuite) TestGetRunnerLatestHeartBeat
 				assert.Len(s.T(), heartBeats, 3, "Should have all three process types")
 
 				// Verify each process type
-				processTypes := []app.RunnerProcess{
-					app.RunnerProcessMng,
-					app.RunnerProcessInstall,
-					app.RunnerProcessOrg,
+				processTypes := []app.RunnerProcessType{
+					app.RunnerProcessTypeMng,
+					app.RunnerProcessTypeInstall,
+					app.RunnerProcessTypeOrg,
 				}
 
 				for _, process := range processTypes {

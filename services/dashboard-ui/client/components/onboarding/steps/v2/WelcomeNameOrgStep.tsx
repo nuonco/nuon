@@ -114,17 +114,30 @@ export const WelcomeNameOrgStep = ({
           value={orgName}
           onChange={(e) => setOrgName(e.target.value)}
           labelProps={{ labelText: 'Organization name' }}
+          disabled={isWorking}
         />
         <Button
           className="!px-1"
           type="button"
           variant="ghost"
           onClick={() => generateName()}
+          disabled={isWorking}
         >
           <Icon variant="SparkleIcon" />
           Generate random name
         </Button>
       </div>
+      {waiting && (
+        <Card className="flex items-center gap-4 p-4 w-full md:max-w-[400px]">
+          <Icon variant="Loading" size={24} />
+          <div className="flex flex-col flex-1 min-w-0">
+            <Text weight="strong">{orgName}</Text>
+            <Text variant="subtext" theme="neutral">
+              Creating your organization...
+            </Text>
+          </div>
+        </Card>
+      )}
       <div className="flex justify-end w-full">
         <Button type="submit" variant="primary" disabled={!orgName.trim() || isWorking}>
           {waiting ? 'Setting up org...' : isPending ? 'Creating...' : (nextStepTitle ?? 'Continue')}{' '}

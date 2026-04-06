@@ -18,3 +18,15 @@ func (c *client) RunnerAuthAWS(ctx context.Context, req *models.GithubComNuoncoN
 
 	return resp.Payload, nil
 }
+
+func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error) {
+	resp, err := c.genClient.Operations.RunnerAuthGCP(&operations.RunnerAuthGCPParams{
+		Req:     req,
+		Context: ctx,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}

@@ -7,6 +7,7 @@ import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
 import { Login } from '@/views/Login'
 import { NotFound } from '@/views/NotFound'
+import { RouteError } from '@/views/RouteError'
 import { Onboarding } from '@/views/Onboarding'
 import { orgRoutes } from '@/views/org/routes'
 
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
   { index: true, element: <Login /> },
   {
     element: <AuthLayout />,
+    errorElement: <RouteError />,
     children: [
       { path: '/onboarding', element: <Onboarding /> },
       ...orgRoutes,
