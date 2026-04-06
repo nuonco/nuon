@@ -39,6 +39,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
+		OwnerName: install.Name,
 		Type:      app.RunnerGroupTypeInstall,
 		Platform:  install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
@@ -125,6 +126,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   org.ID,
 		OwnerType: "orgs",
+		OwnerName: org.Name,
 		Type:      app.RunnerGroupTypeOrg,
 		Platform:  platform,
 		Runners: []app.Runner{
