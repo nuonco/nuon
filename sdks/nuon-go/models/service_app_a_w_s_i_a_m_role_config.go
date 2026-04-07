@@ -23,7 +23,7 @@ import (
 type ServiceAppAWSIAMRoleConfig struct {
 
 	// cloud platform
-	// Enum: ["aws","gcp"]
+	// Enum: ["aws","gcp","azure"]
 	CloudPlatform string `json:"cloud_platform,omitempty"`
 
 	// description
@@ -83,7 +83,7 @@ var serviceAppAWSIAMRoleConfigTypeCloudPlatformPropEnum []any
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["aws","gcp"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["aws","gcp","azure"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -98,6 +98,9 @@ const (
 
 	// ServiceAppAWSIAMRoleConfigCloudPlatformGcp captures enum value "gcp"
 	ServiceAppAWSIAMRoleConfigCloudPlatformGcp string = "gcp"
+
+	// ServiceAppAWSIAMRoleConfigCloudPlatformAzure captures enum value "azure"
+	ServiceAppAWSIAMRoleConfigCloudPlatformAzure string = "azure"
 )
 
 // prop value enum
