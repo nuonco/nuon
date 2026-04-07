@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/TableSkeleton',
+}
+
 import { ColumnDef } from '@tanstack/react-table'
 import { TableSkeleton } from './TableSkeleton'
 import { Table } from './Table'

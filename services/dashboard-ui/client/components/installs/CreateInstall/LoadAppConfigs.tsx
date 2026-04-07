@@ -1,43 +1,26 @@
-import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { useOrg } from '@/hooks/use-org'
-import { getAppConfigs } from '@/lib'
-import type { TApp } from '@/types'
-import { CreateInstallFromApp } from './CreateInstallFromApp'
+import type { TApp, TAppConfig } from '@/types'
 import { FormSkeleton } from './FormSkeleton'
 
 interface LoadAppConfigsProps {
   app: TApp
+  configs: TAppConfig[] | undefined
+  isLoading: boolean
+  error: any
   onSelectApp: (app: TApp | undefined) => void
-  onClose: () => void
-  formRef?: React.RefObject<HTMLFormElement>
-  modalId?: string
-  onLoadingChange?: (loading: boolean) => void
-  onRegisterClearDraft?: (clearFn: () => void) => void
+  children?: React.ReactNode
 }
 
 export const LoadAppConfigs = ({
   app,
+  configs,
+  isLoading,
+  error,
   onSelectApp,
-  onClose,
-  formRef,
-  modalId,
-  onLoadingChange,
-  onRegisterClearDraft,
+  children,
 }: LoadAppConfigsProps) => {
-  const { org } = useOrg()
-  const {
-    data: configs,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['app-configs', org?.id, app.id],
-    queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id }),
-    enabled: !!org?.id,
-  })
-
   if (isLoading) {
     return (
       <div>
@@ -91,16 +74,5 @@ export const LoadAppConfigs = ({
     )
   }
 
-  return (
-    <CreateInstallFromApp
-      app={app}
-      configId={configs[0].id}
-      onSelectApp={onSelectApp}
-      onClose={onClose}
-      formRef={formRef}
-      modalId={modalId}
-      onLoadingChange={onLoadingChange}
-      onRegisterClearDraft={onRegisterClearDraft}
-    />
-  )
+  return <>{children}</>
 }

@@ -4,8 +4,8 @@ import { Banner } from '@/components/common/Banner'
 import { useInstall } from '@/hooks/use-install'
 
 const ComponentsGraphInline = lazy(() =>
-  import('@/components/apps/ConfigGraph/ComponentsGraphRenderer').then(
-    (mod) => ({ default: mod.ComponentsGraphInline })
+  import('@/components/apps/ConfigGraph/ComponentsGraphRendererContainer').then(
+    (mod) => ({ default: mod.ComponentsGraphInlineContainer })
   )
 )
 

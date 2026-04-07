@@ -3,7 +3,7 @@ import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
 
 export default {
-  title: 'Forms/Select',
+  title: 'Common/Forms/Select',
   component: Select,
 }
 

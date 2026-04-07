@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/EmptyState',
+}
+
 import { EmptyState } from './EmptyState'
 
 export const Default = () => <EmptyState />

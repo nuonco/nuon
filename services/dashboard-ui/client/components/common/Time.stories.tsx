@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Time',
+}
+
 import { Time } from './Time'
 import { Text } from './Text'
 import { Badge } from './Badge'
