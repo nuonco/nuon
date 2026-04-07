@@ -20,5 +20,18 @@ WHERE app_configs.id = v.id;
 		return res.Error
 	}
 
+	backfillComponentConfigConnection := `
+UPDATE component_config_connections
+SET version = v.version
+FROM (
+    SELECT id, row_number() OVER (PARTITION BY component_id ORDER BY created_at) AS version
+    FROM component_config_connections
+) v
+WHERE component_config_connections.id = v.id;
+`
+	if res := db.WithContext(ctx).Exec(backfillComponentConfigConnection); res.Error != nil {
+		return res.Error
+	}
+
 	return nil
 }

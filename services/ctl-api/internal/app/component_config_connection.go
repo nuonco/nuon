@@ -69,7 +69,8 @@ type ComponentConfigConnection struct {
 
 	Type ComponentType `gorm:"-" json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 
-	Version          int        `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	// version is computed at write time as the sequential config number for this component
+	Version          int        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 	AppConfigVersion int        `json:"app_config_version,omitzero" gorm:"->;-:migration" temporaljson:"app_config_version,omitzero,omitempty"`
 	Refs             []refs.Ref `gorm:"-"`
 }
@@ -90,8 +91,8 @@ func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 			AlwaysReapply: true,
 		},
 		{
-			Name:          views.CustomViewName(db, &ComponentConfigConnection{}, "latest_configs_view"),
-			SQL:           viewsql.LatestComponentConfigConnectionsV1,
+			Name:          views.CustomViewName(db, &ComponentConfigConnection{}, "latest_configs_view_v2"),
+			SQL:           viewsql.LatestComponentConfigConnectionsV2,
 			AlwaysReapply: true,
 		},
 	}
@@ -186,6 +187,19 @@ func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+
+	// compute version as max existing version for this component + 1
+	// use Unscoped to include soft-deleted rows so versions are never reused
+	if c.Version == 0 && c.ComponentID != "" {
+		var maxVersion *int
+		tx.Unscoped().Model(&ComponentConfigConnection{}).Where("component_id = ?", c.ComponentID).Select("MAX(version)").Scan(&maxVersion)
+		if maxVersion != nil {
+			c.Version = *maxVersion + 1
+		} else {
+			c.Version = 1
+		}
+	}
+
 	return nil
 }
 

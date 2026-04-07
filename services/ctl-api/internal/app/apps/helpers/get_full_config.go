@@ -82,7 +82,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 		res = h.db.WithContext(ctx).
 			Scopes(
 				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+				scopes.WithOverrideTable("component_config_connections_latest_configs_view_v2"),
 			).
 			// preload the component this belongs too
 			Preload("Component").
