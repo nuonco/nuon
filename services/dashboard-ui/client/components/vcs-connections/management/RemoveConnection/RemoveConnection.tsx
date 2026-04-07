@@ -54,7 +54,7 @@ export const RemoveConnectionModal = ({
         disabled: !canRemove,
         variant: 'danger',
       }}
-      size="half"
+      size="sm"
       {...props}
     >
       <div className="flex flex-col gap-6">
