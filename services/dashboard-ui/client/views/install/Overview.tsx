@@ -1,17 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { Markdown } from '@/components/common/Markdown'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { ArchitectureDiagramButton } from '@/components/installs/ArchitectureDiagram'
+import { ViewCurrentInputsModal } from '@/components/installs/management/ViewCurrentInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallReadme } from '@/lib'
 
 export const Overview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const { addModal } = useSurfaces()
 
   const { data: readme } = useQuery({
     queryKey: ['install-readme', org?.id, install?.id],
@@ -21,7 +28,7 @@ export const Overview = () => {
   })
 
   return (
-    <PageSection className="!pt-0">
+    <PageSection>
       <PageTitle title={`Overview | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -31,30 +38,48 @@ export const Overview = () => {
         ]}
       />
 
-      <div className="py-6 flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          README
-        </Text>
-        {readme?.readme ? (
-          <>
-            {readme.warnings?.map((warn, i) => (
-              <div
-                key={i}
-                className="p-3 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm"
-              >
-                {warn}
-              </div>
-            ))}
-            <Markdown content={readme.readme} mode="install" />
-          </>
-        ) : (
-          <EmptyState
-            emptyTitle="No README"
-            emptyMessage="No install README found."
-            variant="diagram"
-          />
-        )}
+      <div className="flex items-start justify-between">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Install overview
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            View the install README, architecture, and current inputs.
+          </Text>
+        </HeadingGroup>
+        <div className="flex items-center gap-2">
+          <ArchitectureDiagramButton variant="secondary" />
+          <Button
+            variant="primary"
+            onClick={() => {
+              addModal(<ViewCurrentInputsModal />)
+            }}
+          >
+            <Icon variant="ListChecks" />
+            Current inputs
+          </Button>
+        </div>
       </div>
+
+      {readme?.readme ? (
+        <div className="flex flex-col gap-4">
+          {readme.warnings?.map((warn, i) => (
+            <div
+              key={i}
+              className="p-3 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm"
+            >
+              {warn}
+            </div>
+          ))}
+          <Markdown content={readme.readme} mode="install" />
+        </div>
+      ) : (
+        <EmptyState
+          emptyTitle="No README"
+          emptyMessage="No install README found."
+          variant="diagram"
+        />
+      )}
     </PageSection>
   )
 }

@@ -135,7 +135,7 @@ const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
               </Text>
 
               <Modal
-                size="half"
+                size="sm"
                 heading={<>{policy?.name} policy JSON</>}
                 triggerButton={{
                   className: '!p-1',
