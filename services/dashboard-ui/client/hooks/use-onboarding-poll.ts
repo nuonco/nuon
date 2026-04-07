@@ -26,7 +26,7 @@ export function useOnboardingPoll({
 
   useEffect(() => {
     if (!data || !enabled) return
-    if (data.status_v2?.status !== 'processing') {
+    if (data.status_v2?.status !== 'in-progress') {
       onResolvedRef.current(data)
     }
   }, [data, enabled])

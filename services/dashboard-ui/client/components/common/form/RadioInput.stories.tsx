@@ -1,7 +1,7 @@
 import { RadioInput } from './RadioInput'
 
 export default {
-  title: 'Forms/RadioInput',
+  title: 'Common/Forms/RadioInput',
   component: RadioInput,
 }
 

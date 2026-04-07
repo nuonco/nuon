@@ -1,3 +1,7 @@
+export default {
+  title: 'Components/ComponentConfigCard',
+}
+
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ComponentConfigCard } from './ComponentConfigCard'
 import type { TComponentConfig } from '@/types'

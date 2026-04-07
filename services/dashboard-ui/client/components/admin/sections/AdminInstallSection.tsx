@@ -82,7 +82,7 @@ export const AdminInstallSection = ({ orgId, installId }: AdminInstallSectionPro
         <AdminActionCard
           title="Restart install queues"
           description="Restart all Temporal queue workflows for this install"
-          action={() => adminRestartInstallQueues({ installId, adminApiUrl, adminEmail })}
+          action={() => adminRestartInstallQueues({ installId, adminEmail })}
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart all queue Temporal workflows for this install. Continue?"

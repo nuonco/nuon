@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { cn } from '@/utils/classnames'
 import './OrgAvatar.css'
 import { OrgSummary } from './OrgSummary'
-import { OrgsNav } from './OrgsNav'
+import { OrgsNavContainer as OrgsNav } from './OrgsNavContainer'
 
 interface IOrgSwitcher
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {}

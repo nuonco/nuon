@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/GitRepo',
+}
+
 import type { TVCSGit, TVCSGitHub } from '@/types/ctl-api.types'
 import { GitRepo } from './GitRepo'
 

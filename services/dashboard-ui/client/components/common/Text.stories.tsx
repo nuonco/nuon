@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Text',
+}
+
 import { Text } from './Text'
 
 export const Themes = () => (
