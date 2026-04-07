@@ -37,6 +37,9 @@ var AppBranchConfigsViewV1 string
 //go:embed app_configs_latest_view_v1.sql
 var AppConfigsLatestViewV1 string
 
+//go:embed app_configs_latest_view_v2.sql
+var AppConfigsLatestViewV2 string
+
 //go:embed app_runner_configs_latest_view_v1.sql
 var AppRunnerConfigsLatestViewV1 string
 
@@ -45,6 +48,9 @@ var AppSandboxConfigsLatestViewV1 string
 
 //go:embed component_config_connections_v1.sql
 var ComponentConfigConnectionsV1 string
+
+//go:embed component_config_connections_v2.sql
+var ComponentConfigConnectionsV2 string
 
 //go:embed latest_component_config_connections_view_v1.sql
 var LatestComponentConfigConnectionsV1 string

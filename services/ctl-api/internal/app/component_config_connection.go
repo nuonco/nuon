@@ -79,14 +79,14 @@ func (c *ComponentConfigConnection) UseView() bool {
 }
 
 func (c *ComponentConfigConnection) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (c *ComponentConfigConnection) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 1),
-			SQL:           viewsql.ComponentConfigConnectionsV1,
+			Name:          views.DefaultViewName(db, &ComponentConfigConnection{}, 2),
+			SQL:           viewsql.ComponentConfigConnectionsV2,
 			AlwaysReapply: true,
 		},
 		{
