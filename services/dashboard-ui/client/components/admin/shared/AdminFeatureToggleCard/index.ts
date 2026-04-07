@@ -1,2 +1,2 @@
-export { AdminFeatureToggleCardContainer as default, AdminFeatureToggleCardContainer } from './AdminFeatureToggleCardContainer'
-export { AdminFeatureToggleCard } from './AdminFeatureToggleCard'
+export { AdminFeatureToggleCardContainer as AdminFeatureToggleCard } from './AdminFeatureToggleCardContainer'
+export { AdminFeatureToggleCard as AdminFeatureToggleCardComponent } from './AdminFeatureToggleCard'

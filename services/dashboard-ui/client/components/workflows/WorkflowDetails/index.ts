@@ -1,2 +1,2 @@
-export { WorkflowDetailsContainer as default, WorkflowDetailsContainer } from './WorkflowDetailsContainer'
-export { WorkflowDetails } from './WorkflowDetails'
+export { WorkflowDetailsContainer as WorkflowDetails } from './WorkflowDetailsContainer'
+export { WorkflowDetails as WorkflowDetailsComponent } from './WorkflowDetails'

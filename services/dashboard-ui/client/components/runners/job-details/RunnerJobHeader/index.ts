@@ -1,2 +1,2 @@
-export { RunnerJobHeaderContainer as default, RunnerJobHeaderContainer } from './RunnerJobHeaderContainer'
-export { RunnerJobHeader } from './RunnerJobHeader'
+export { RunnerJobHeaderContainer as RunnerJobHeader } from './RunnerJobHeaderContainer'
+export { RunnerJobHeader as RunnerJobHeaderComponent } from './RunnerJobHeader'

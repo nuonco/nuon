@@ -1,2 +1,2 @@
-export { BuildHeaderContainer as default, BuildHeaderContainer } from './BuildHeaderContainer'
-export { BuildHeader } from './BuildHeader'
+export { BuildHeaderContainer as BuildHeader } from './BuildHeaderContainer'
+export { BuildHeader as BuildHeaderComponent } from './BuildHeader'

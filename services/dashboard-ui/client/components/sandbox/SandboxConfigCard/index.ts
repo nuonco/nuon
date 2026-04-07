@@ -1,2 +1,2 @@
-export { SandboxConfigCardContainer as default, SandboxConfigCardContainer } from './SandboxConfigCardContainer'
-export { SandboxConfigCard, SandboxConfigCardSkeleton } from './SandboxConfigCard'
+export { SandboxConfigCardContainer as SandboxConfigCard } from './SandboxConfigCardContainer'
+export { SandboxConfigCard as SandboxConfigCardComponent, SandboxConfigCardSkeleton } from './SandboxConfigCard'

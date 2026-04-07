@@ -1,2 +1,2 @@
-export { MainNavContainer as default, MainNavContainer } from './MainNavContainer'
-export { MainNav } from './MainNav'
+export { MainNavContainer as MainNav } from './MainNavContainer'
+export { MainNav as MainNavComponent } from './MainNav'

@@ -1,2 +1,2 @@
-export { AdminConfirmationModalContainer as default, AdminConfirmationModalContainer } from './AdminConfirmationModalContainer'
-export { AdminConfirmationModal } from './AdminConfirmationModal'
+export { AdminConfirmationModalContainer as AdminConfirmationModal } from './AdminConfirmationModalContainer'
+export { AdminConfirmationModal as AdminConfirmationModalComponent } from './AdminConfirmationModal'

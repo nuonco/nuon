@@ -1,2 +1,2 @@
-export { PolicyReportsFilterContainer as default, PolicyReportsFilterContainer } from './PolicyReportsFilterContainer'
-export { PolicyReportsFilter } from './PolicyReportsFilter'
+export { PolicyReportsFilterContainer as PolicyReportsFilter } from './PolicyReportsFilterContainer'
+export { PolicyReportsFilter as PolicyReportsFilterComponent } from './PolicyReportsFilter'

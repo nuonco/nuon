@@ -48,7 +48,7 @@ export const CreateInstallFromAppContainer = ({
     enabled: !!org?.id,
   })
 
-  const { mutateAsync, isPending: isSubmitting } = useMutation({
+  const { mutateAsync, isPending: isSubmitting, error: submitError } = useMutation({
     mutationFn: (formData: FormData) => {
       const formDataObj = Object.fromEntries(formData)
       const inputs = Object.keys(formDataObj).reduce(
@@ -131,6 +131,7 @@ export const CreateInstallFromAppContainer = ({
       config={config}
       isLoading={isLoading}
       error={error}
+      submitError={submitError}
       isSubmitting={isSubmitting}
       onSelectApp={onSelectApp}
       onClose={onClose}

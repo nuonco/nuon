@@ -1,2 +1,2 @@
-export { PolicyReportPanelButtonContainer as default, PolicyReportPanelButtonContainer } from './PolicyReportPanelContainer'
-export { PolicyReportPanel, PolicyReportPanelButton } from './PolicyReportPanel'
+export { PolicyReportPanelButtonContainer as PolicyReportPanelButton } from './PolicyReportPanelContainer'
+export { PolicyReportPanel as PolicyReportPanelComponent, PolicyReportPanelButton as PolicyReportPanelButtonComponent } from './PolicyReportPanel'

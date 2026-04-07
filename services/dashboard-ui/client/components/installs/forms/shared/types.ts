@@ -3,6 +3,7 @@ import type { TAppInputConfig, TInstall } from '@/types'
 export interface ICreateInstallForm {
   appId: string
   platform: 'aws' | 'azure' | 'gcp'
+  nameError?: string
   inputConfig?: TAppInputConfig
   onSubmit?: (formData: FormData) => Promise<any>
   onSuccess?: (result: any) => void
