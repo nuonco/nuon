@@ -68,14 +68,14 @@ const sampledPhosphorVariants: TIconVariant[] = [
 const Row = ({ variant }: { variant: TIconVariant }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
     <Icon variant={variant} size={20} />
-    <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{variant}</span>
+    <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{String(variant)}</span>
   </div>
 )
 
 export const CustomIcons = () => (
   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
     {customVariants.map((v) => (
-      <Row key={v} variant={v} />
+      <Row key={String(v)} variant={v} />
     ))}
   </div>
 )
@@ -91,7 +91,7 @@ export const PhosphorSamples = () => (
     </p>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
       {sampledPhosphorVariants.map((v) => (
-        <Row key={v} variant={v} />
+        <Row key={String(v)} variant={v} />
       ))}
     </div>
   </div>

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -11,6 +11,7 @@ interface CreateInstallFromAppProps {
   config: TAppConfig | undefined
   isLoading: boolean
   error: any
+  submitError?: any
   isSubmitting: boolean
   onSelectApp: (app: TApp | undefined) => void
   onClose: () => void
@@ -24,6 +25,7 @@ export const CreateInstallFromApp = ({
   config,
   isLoading,
   error,
+  submitError,
   isSubmitting,
   onSelectApp,
   onClose,
@@ -33,6 +35,13 @@ export const CreateInstallFromApp = ({
 }: CreateInstallFromAppProps) => {
   const internalFormRef = useRef<HTMLFormElement>(null)
   const formRef = externalFormRef || internalFormRef
+
+  const isDuplicateName = submitError?.error?.includes('duplicated key not allowed')
+  const submitErrorMessage = useMemo(() => {
+    if (!submitError) return undefined
+    if (isDuplicateName) return 'Duplicate install names are not allowed. Please choose a different name.'
+    return submitError.error || submitError.description || 'Unable to create install.'
+  }, [submitError, isDuplicateName])
 
   const nestInputsUnderGroups = (
     groups: TAppConfig['input']['input_groups'],
@@ -95,10 +104,17 @@ export const CreateInstallFromApp = ({
         </Button>
       </div>
 
+      {submitErrorMessage && (
+        <Banner theme="error" className="mb-6">
+          {submitErrorMessage}
+        </Banner>
+      )}
+
       <CreateInstallForm
         ref={formRef}
         appId={app.id}
         platform={app.runner_config.app_runner_type as 'aws' | 'azure' | 'gcp'}
+        nameError={isDuplicateName ? 'This name is already in use' : undefined}
         inputConfig={{
           ...config.input,
           input_groups: nestInputsUnderGroups(

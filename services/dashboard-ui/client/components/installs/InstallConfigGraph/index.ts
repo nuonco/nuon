@@ -1,2 +1,2 @@
-export { InstallConfigGraphContainer as default, InstallConfigGraphContainer } from './InstallConfigGraphContainer'
-export { InstallConfigGraph } from './InstallConfigGraph'
+export { InstallConfigGraphContainer as InstallConfigGraph } from './InstallConfigGraphContainer'
+export { InstallConfigGraph as InstallConfigGraphComponent } from './InstallConfigGraph'

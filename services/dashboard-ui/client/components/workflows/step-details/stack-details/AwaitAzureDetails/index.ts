@@ -1,2 +1,2 @@
-export { AwaitAzureDetailsContainer as default, AwaitAzureDetailsContainer } from './AwaitAzureDetailsContainer'
-export { AwaitAzureDetails, AwaitAzureDetailsSkeleton } from './AwaitAzureDetails'
+export { AwaitAzureDetailsContainer as AwaitAzureDetails } from './AwaitAzureDetailsContainer'
+export { AwaitAzureDetails as AwaitAzureDetailsComponent, AwaitAzureDetailsSkeleton } from './AwaitAzureDetails'

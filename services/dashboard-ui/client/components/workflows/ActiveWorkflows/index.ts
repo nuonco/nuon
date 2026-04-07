@@ -1,2 +1,2 @@
-export { ActiveWorkflowsContainer as default, ActiveWorkflowsContainer } from './ActiveWorkflowsContainer'
-export { ActiveWorkflows } from './ActiveWorkflows'
+export { ActiveWorkflowsContainer as ActiveWorkflows } from './ActiveWorkflowsContainer'
+export { ActiveWorkflows as ActiveWorkflowsComponent } from './ActiveWorkflows'
