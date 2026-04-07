@@ -90,6 +90,8 @@ type ClientService interface {
 
 	AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error)
 
+	AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error)
+
 	BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error)
 
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
@@ -176,6 +178,8 @@ type ClientService interface {
 
 	CreateComponentBuild(params *CreateComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentBuildCreated, error)
 
+	CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error)
+
 	CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error)
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
@@ -239,6 +243,8 @@ type ClientService interface {
 	DeleteAppSecretV2(params *DeleteAppSecretV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretV2OK, error)
 
 	DeleteComponent(params *DeleteComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteComponentOK, error)
+
+	DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error)
 
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
@@ -410,6 +416,10 @@ type ClientService interface {
 
 	GetCurrentOrgFeatures(params *GetCurrentOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgFeaturesOK, error)
 
+	GetCurrentOrgWebhooks(params *GetCurrentOrgWebhooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgWebhooksOK, error)
+
+	GetCurrentRunnerProcesses(params *GetCurrentRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentRunnerProcessesOK, error)
+
 	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error)
 
 	GetDriftedObjects(params *GetDriftedObjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDriftedObjectsOK, error)
@@ -542,6 +552,16 @@ type ClientService interface {
 
 	GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgsOK, error)
 
+	GetProcessLatestHeartBeat(params *GetProcessLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProcessLatestHeartBeatOK, error)
+
+	GetQueue(params *GetQueueParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueOK, error)
+
+	GetQueueSignal(params *GetQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueSignalOK, error)
+
+	GetQueueSignals(params *GetQueueSignalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueSignalsOK, error)
+
+	GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueStatusOK, error)
+
 	GetRunnerCardDetails(params *GetRunnerCardDetailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerCardDetailsOK, error)
 
 	GetRunnerConnectStatus(params *GetRunnerConnectStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerConnectStatusOK, error)
@@ -555,6 +575,8 @@ type ClientService interface {
 	GetRunnerJobs(params *GetRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobsOK, error)
 
 	GetRunnerLatestHeartBeat(params *GetRunnerLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerLatestHeartBeatOK, error)
+
+	GetRunnerProcessPublic(params *GetRunnerProcessPublicParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerProcessPublicOK, error)
 
 	GetRunnerRecentHealthChecks(params *GetRunnerRecentHealthChecksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerRecentHealthChecksOK, error)
 
@@ -612,6 +634,10 @@ type ClientService interface {
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerCreated, error)
 
+	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
+
+	ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerProcessesOK, error)
+
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
@@ -641,6 +667,8 @@ type ClientService interface {
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
 
 	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngCreated, error)
+
+	ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -693,6 +721,8 @@ type ClientService interface {
 	UpdateUserJourneyStep(params *UpdateUserJourneyStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateUserJourneyStepOK, error)
 
 	UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowOK, error)
+
+	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -786,6 +816,52 @@ func (a *Client) AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for AddUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AwaitQueueSignal longs poll for queue signal completion
+
+Blocks until the queue signal finishes or the timeout is reached
+*/
+func (a *Client) AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAwaitQueueSignalParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AwaitQueueSignal",
+		Method:             "GET",
+		PathPattern:        "/v1/queues/{queue_id}/signals/{signal_id}/await",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AwaitQueueSignalReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AwaitQueueSignalOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AwaitQueueSignal: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -2834,6 +2910,50 @@ func (a *Client) CreateComponentBuild(params *CreateComponentBuildParams, authIn
 }
 
 /*
+CreateCurrentOrgWebhook creates a webhook for the current org
+*/
+func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateCurrentOrgWebhookCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateCurrentOrgWebhookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateCurrentOrgWebhook",
+		Method:             "POST",
+		PathPattern:        "/v1/orgs/current/webhooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateCurrentOrgWebhookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateCurrentOrgWebhookCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateCurrentOrgWebhook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateDockerBuildComponentConfig creates a docker build component config
 
 Create a Docker build component config.
@@ -4299,6 +4419,50 @@ func (a *Client) DeleteComponent(params *DeleteComponentParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteCurrentOrgWebhook deletes a webhook for the current org
+*/
+func (a *Client) DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteCurrentOrgWebhookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteCurrentOrgWebhook",
+		Method:             "DELETE",
+		PathPattern:        "/v1/orgs/current/webhooks/{webhook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteCurrentOrgWebhookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteCurrentOrgWebhookNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteCurrentOrgWebhook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -8313,6 +8477,94 @@ func (a *Client) GetCurrentOrgFeatures(params *GetCurrentOrgFeaturesParams, auth
 }
 
 /*
+GetCurrentOrgWebhooks lists webhooks for the current org
+*/
+func (a *Client) GetCurrentOrgWebhooks(params *GetCurrentOrgWebhooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentOrgWebhooksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCurrentOrgWebhooksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCurrentOrgWebhooks",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/current/webhooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCurrentOrgWebhooksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCurrentOrgWebhooksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCurrentOrgWebhooks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetCurrentRunnerProcesses gets current active runner processes
+*/
+func (a *Client) GetCurrentRunnerProcesses(params *GetCurrentRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentRunnerProcessesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetCurrentRunnerProcessesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetCurrentRunnerProcesses",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/current",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCurrentRunnerProcessesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetCurrentRunnerProcessesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetCurrentRunnerProcesses: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetCurrentUser gets current user
 
 Returns the current authenticated user account.
@@ -11355,6 +11607,234 @@ func (a *Client) GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
+GetProcessLatestHeartBeat gets the latest heartbeat for a runner process
+*/
+func (a *Client) GetProcessLatestHeartBeat(params *GetProcessLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProcessLatestHeartBeatOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetProcessLatestHeartBeatParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetProcessLatestHeartBeat",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetProcessLatestHeartBeatReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetProcessLatestHeartBeatOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetProcessLatestHeartBeat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetQueue gets queue by ID
+
+Retrieve a single queue by its ID
+*/
+func (a *Client) GetQueue(params *GetQueueParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetQueueParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetQueue",
+		Method:             "GET",
+		PathPattern:        "/v1/queues/{queue_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetQueueReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetQueueOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetQueue: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetQueueSignal gets queue signal details
+
+Get detailed information about a specific queue signal
+*/
+func (a *Client) GetQueueSignal(params *GetQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueSignalOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetQueueSignalParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetQueueSignal",
+		Method:             "GET",
+		PathPattern:        "/v1/queues/{queue_id}/signals/{signal_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetQueueSignalReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetQueueSignalOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetQueueSignal: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetQueueSignals lists queue signals
+
+Get a list of signals for a specific queue with optional filtering
+*/
+func (a *Client) GetQueueSignals(params *GetQueueSignalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueSignalsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetQueueSignalsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetQueueSignals",
+		Method:             "GET",
+		PathPattern:        "/v1/queues/{queue_id}/signals",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetQueueSignalsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetQueueSignalsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetQueueSignals: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetQueueStatus gets live queue status
+
+Get real-time status of a queue including depth and in-flight signals
+*/
+func (a *Client) GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueStatusOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetQueueStatusParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetQueueStatus",
+		Method:             "GET",
+		PathPattern:        "/v1/queues/{queue_id}/status",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetQueueStatusReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetQueueStatusOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetQueueStatus: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunnerCardDetails gets runner card details
 
 Returns runner card details for monitoring and status.
@@ -11677,6 +12157,50 @@ func (a *Client) GetRunnerLatestHeartBeat(params *GetRunnerLatestHeartBeatParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerLatestHeartBeat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunnerProcessPublic gets a runner process
+*/
+func (a *Client) GetRunnerProcessPublic(params *GetRunnerProcessPublicParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerProcessPublicOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerProcessPublicParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerProcessPublic",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerProcessPublicReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerProcessPublicOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerProcessPublic: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12969,6 +13493,96 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 }
 
 /*
+ListQueues lists queues
+
+List queues with optional filtering by owner
+*/
+func (a *Client) ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListQueuesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListQueues",
+		Method:             "GET",
+		PathPattern:        "/v1/queues",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListQueuesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListQueuesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListQueues: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListRunnerProcesses lists runner processes
+*/
+func (a *Client) ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerProcessesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListRunnerProcessesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListRunnerProcesses",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListRunnerProcessesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListRunnerProcessesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListRunnerProcesses: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 LockTerraformWorkspace locks terraform state
 
 Lock a terraform workspace to prevent concurrent modifications.
@@ -13656,6 +14270,50 @@ func (a *Client) ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ShutDownRunnerMng: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ShutdownRunnerProcess requests shutdown of a runner process
+*/
+func (a *Client) ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewShutdownRunnerProcessParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ShutdownRunnerProcess",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/shutdown",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ShutdownRunnerProcessReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ShutdownRunnerProcessCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ShutdownRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14862,6 +15520,51 @@ func (a *Client) UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+WriteVCSEvent writes a v c s webhook event
+
+Writes incoming webhook events for a VCS connection
+*/
+func (a *Client) WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewWriteVCSEventParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "WriteVCSEvent",
+		Method:             "POST",
+		PathPattern:        "/v1/vcs/{vcs_connection_id}/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &WriteVCSEventReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*WriteVCSEventOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for WriteVCSEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
