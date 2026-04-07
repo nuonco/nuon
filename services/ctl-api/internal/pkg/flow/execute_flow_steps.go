@@ -33,6 +33,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 		step := &steps[i]
 
 		reFetchSteps, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)
+
 		if reFetchSteps {
 			// outer steps loop should continue to retry the step since the result here is ordered by idx asc
 			steps, err = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{

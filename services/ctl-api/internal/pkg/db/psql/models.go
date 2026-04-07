@@ -24,6 +24,7 @@ func AllModels() []any {
 
 		// org basics
 		&app.Org{},
+		&app.Webhook{},
 		&app.OrgInvite{},
 
 		// installers
