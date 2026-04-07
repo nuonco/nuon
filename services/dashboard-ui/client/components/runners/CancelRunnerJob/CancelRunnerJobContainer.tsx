@@ -8,7 +8,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { cancelRunnerJob } from '@/lib'
-import type { TRunnerJob } from '@/types'
+import type { TAPIError, TRunnerJob } from '@/types'
 import {
   CancelRunnerJobModal as CancelRunnerJobModalComponent,
   CancelRunnerJobButton as CancelRunnerJobButtonComponent,
@@ -28,13 +28,13 @@ export const CancelRunnerJobModal = ({
   jobType,
   onSuccess,
   ...props
-}: ICancelRunnerJob & IModal) => {
+}: ICancelRunnerJob & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const cancelJobData = cancelJobOptions[jobType]
 
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const { mutate, isPending: isLoading, error } = useMutation<unknown, TAPIError>({
     mutationFn: () => cancelRunnerJob({ orgId: org.id, runnerJobId: runnerJob.id }),
     onSuccess: () => {
       addToast(

@@ -13,7 +13,7 @@ import type {
   TVCSConnection,
 } from '@/types'
 
-interface ICreateBranchModal extends IModal {
+interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
   orgId: string
   vcsConnections: TVCSConnection[]
   isSubmitting: boolean

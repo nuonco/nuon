@@ -20,7 +20,7 @@ export const DriftScanComponentModalContainer = ({
   component,
   currentBuildId,
   ...props
-}: IModal & {
+}: Omit<IModal, 'onSubmit'> & {
   component: TComponent
   currentBuildId?: string
 }) => {

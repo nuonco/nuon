@@ -23,7 +23,7 @@ const mockDriftedRun: TSandboxRun = {
   status: 'drifted',
   status_v2: { status: 'drifted' },
   run_type: 'drift_scan',
-} as TSandboxRun
+} as unknown as TSandboxRun
 
 export const Default = () => (
   <SandboxRunsTimeline

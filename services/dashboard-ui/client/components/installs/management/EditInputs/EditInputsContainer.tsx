@@ -45,7 +45,7 @@ export const ConfirmUpdateModalContainer = ({
   )
 }
 
-export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & IModal) => {
+export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()

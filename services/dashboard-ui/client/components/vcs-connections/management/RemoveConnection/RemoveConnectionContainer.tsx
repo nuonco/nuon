@@ -18,7 +18,7 @@ interface IRemoveConnection {
 export const RemoveConnectionModalContainer = ({
   vcs_connection,
   ...props
-}: IRemoveConnection & IModal) => {
+}: IRemoveConnection & Omit<IModal, 'onSubmit'>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const { org, refresh: refreshOrg } = useOrg()

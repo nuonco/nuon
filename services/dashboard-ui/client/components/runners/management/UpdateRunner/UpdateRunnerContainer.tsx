@@ -34,7 +34,7 @@ export const UpdateRunnerButton = ({
 export const UpdateRunnerModal = ({
   settings,
   ...props
-}: IModal & { settings: TRunnerSettings }) => {
+}: Omit<IModal, 'onSubmit'> & { settings: TRunnerSettings }) => {
   const { user } = useAuth()
   const { org } = useOrg()
   const { runner } = useRunner()

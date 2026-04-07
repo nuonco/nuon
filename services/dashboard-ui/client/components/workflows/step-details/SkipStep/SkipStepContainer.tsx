@@ -19,7 +19,7 @@ interface ISkipStep {
 export const SkipStepModalContainer = ({
   step,
   ...props
-}: ISkipStep & IModal) => {
+}: ISkipStep & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

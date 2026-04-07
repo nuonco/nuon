@@ -78,7 +78,7 @@ export const cancelJobOptions: Record<TCancelJobType, TCancelJobData> = {
   },
 }
 
-interface ICancelRunnerJobModal extends IModal {
+interface ICancelRunnerJobModal extends Omit<IModal, 'onSubmit'> {
   runnerJob: TRunnerJob
   jobType: TCancelJobType
   isPending: boolean

@@ -38,7 +38,7 @@ export const RoleSelectorContainer = ({
 
   return (
     <RoleSelector
-      roles={roles}
+      roles={roles as any}
       isLoading={isLoading}
       isError={isError}
       value={value}

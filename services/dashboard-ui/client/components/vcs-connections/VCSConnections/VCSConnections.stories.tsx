@@ -27,8 +27,8 @@ export const Default = () => (
   <VCSConnectionsComponent
     vcsConnections={mockConnections}
     statusMap={{
-      'vcs-1': { theme: 'active', isLoading: false },
-      'vcs-2': { theme: 'active', isLoading: false },
+      'vcs-1': { theme: 'success', isLoading: false },
+      'vcs-2': { theme: 'success', isLoading: false },
     }}
   />
 )

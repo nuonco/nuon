@@ -17,6 +17,7 @@ import { BuildComponentButton as BuildComponentButtonComponent, BuildComponentMo
 
 export const BuildComponentButtonContainer = ({
   component,
+  onClick: _onClick,
   ...props
 }: IButtonAsButton & {
   component: TComponent

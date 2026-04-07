@@ -19,7 +19,7 @@ const mockStep = {
 
 const mockActionRun = {
   id: 'run-1',
-  trigger_type: 'standard',
+  trigger_type: 'manual',
   created_by_id: 'acc-1',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:05:00Z',

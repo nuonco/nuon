@@ -39,7 +39,7 @@ export const WelcomeNameOrgStepContainer = ({
     mutationFn: () => completeOrganizationStep({ body: { name: orgName.trim() } }),
     onSuccess: (ob) => {
       setSharedData('onboarding', ob)
-      if (ob.status_v2?.status === 'processing') {
+      if (ob.status_v2?.status === 'in-progress') {
         setWaiting(true)
       } else {
         onAdvance()

@@ -10,7 +10,7 @@ const mockStep = {
   name: 'deploy component',
   created_by: { email: 'user@example.com' },
   status: {
-    status: 'succeeded',
+    status: 'success',
     history: [
       { status: 'pending', created_at_ts: 1704067200 },
       { status: 'in-progress', created_at_ts: 1704067260 },

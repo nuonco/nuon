@@ -14,7 +14,7 @@ import { SyncSecretsModal } from './SyncSecrets'
 
 interface ISyncSecrets {}
 
-export const SyncSecretsModalContainer = ({ ...props }: ISyncSecrets & IModal) => {
+export const SyncSecretsModalContainer = ({ ...props }: ISyncSecrets & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()

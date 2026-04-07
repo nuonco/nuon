@@ -36,7 +36,7 @@ export const ProcessManagementDropdown = ({
         ) : null}
 
         {process.composite_status?.status === 'active' ? (
-          <ShutdownRunnerControl isMenuButton runnerId={runnerId} processId={process.id} />
+          <ShutdownRunnerControl isMenuButton isManaged runnerId={runnerId} processId={process.id} />
         ) : null}
 
         {process.log_stream_id && onViewSystemLogs ? (

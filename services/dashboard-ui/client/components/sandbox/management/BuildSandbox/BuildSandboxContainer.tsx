@@ -11,7 +11,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { createSandboxBuild } from '@/lib'
 import { BuildSandboxModal } from './BuildSandbox'
 
-export const BuildSandboxModalContainer = ({ ...props }: IModal) => {
+export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()

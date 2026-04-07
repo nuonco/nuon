@@ -4,6 +4,11 @@ export default {
 
 import { AwaitStackDetails, AwaitStackDetailsSkeleton } from './AwaitStackDetails'
 
+const mockStep = {
+  id: 'step-1',
+  status: { status: 'active' },
+} as any
+
 const mockStack = {
   versions: [
     {
@@ -21,19 +26,19 @@ const mockStack = {
 
 export const AWS = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} runnerType="aws" />
+    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="aws" />
   </div>
 )
 
 export const GCP = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} runnerType="gcp" />
+    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="gcp" />
   </div>
 )
 
 export const Azure = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetails stack={mockStack} runnerType="azure" />
+    <AwaitStackDetails stack={mockStack} step={mockStep} runnerType="azure" />
   </div>
 )
 

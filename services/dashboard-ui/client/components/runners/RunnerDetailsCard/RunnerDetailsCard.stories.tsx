@@ -12,7 +12,7 @@ const mockRunner = {
 
 const mockRunnerGroup = {
   platform: 'EKS',
-} as TRunnerGroup
+} as unknown as TRunnerGroup
 
 const mockHeartbeat = {
   version: 'v1.2.3',

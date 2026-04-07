@@ -17,6 +17,7 @@ interface AdminOrgFeaturesPanelContainerProps extends IPanel {
 export const AdminOrgFeaturesPanelContainer = ({
   org,
   orgId,
+  onSubmit: _onSubmit,
   ...props
 }: AdminOrgFeaturesPanelContainerProps) => {
   const { addToast } = useToast()

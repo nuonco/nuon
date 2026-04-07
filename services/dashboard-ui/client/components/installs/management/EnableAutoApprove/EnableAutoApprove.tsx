@@ -51,7 +51,7 @@ export const ConfirmOverrideModal = ({
   )
 }
 
-interface IEnableAutoApproveModal extends IModal {
+interface IEnableAutoApproveModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   error: any
   isApproveAll: boolean

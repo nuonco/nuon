@@ -19,7 +19,7 @@ import { TeardownComponentModal } from './TeardownComponent'
 export const TeardownComponentModalContainer = ({
   component,
   ...props
-}: IModal & {
+}: Omit<IModal, 'onSubmit'> & {
   component: TComponent
 }) => {
   const navigate = useNavigate()

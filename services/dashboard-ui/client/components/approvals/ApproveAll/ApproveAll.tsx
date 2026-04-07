@@ -6,7 +6,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
-interface IApproveAllModal extends IModal {
+interface IApproveAllModal extends Omit<IModal, 'onSubmit'> {
   pendingSteps: { id: string; name: string }[]
   isPending: boolean
   error?: TAPIError | null

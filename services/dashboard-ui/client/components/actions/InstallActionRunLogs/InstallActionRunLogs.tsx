@@ -7,6 +7,7 @@ import { LogSeverity } from '@/components/log-stream/LogSeverity'
 import { LogFilters } from '@/components/log-stream/log-filters/LogFilters'
 import { LogLineSkeleton } from '@/components/log-stream/LogLine'
 import type { TOTELLog, TActionConfig } from '@/types'
+import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import { cn } from '@/utils/classnames'
 
 interface IInstallActionRunLogs {
@@ -19,7 +20,7 @@ interface IInstallActionRunLogs {
   isStreamOpen: boolean
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
-  filters: Record<string, unknown>
+  filters: TLogFiltersProps
   searchParamPanel?: string | null
 }
 
@@ -187,7 +188,7 @@ const StepAwareLogViewer = ({
   filteredLogs: TOTELLog[]
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
-  filters: Record<string, unknown>
+  filters: TLogFiltersProps
   searchParamPanel?: string | null
 }) => {
   const displayLogs = useMemo(() => {

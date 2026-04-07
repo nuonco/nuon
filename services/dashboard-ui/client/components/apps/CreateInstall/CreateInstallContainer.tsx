@@ -142,6 +142,7 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
 }
 
 export const CreateInstallButtonContainer = ({
+  onClick: _onClick,
   ...props
 }: ICreateInstall & IButtonAsButton) => {
   const { addModal } = useSurfaces()

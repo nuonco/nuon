@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface IUnlockTerraformWorkspaceModal extends IModal {
+interface IUnlockTerraformWorkspaceModal extends Omit<IModal, 'onSubmit'> {
   description?: string
   isPending: boolean
   error?: TAPIError | null

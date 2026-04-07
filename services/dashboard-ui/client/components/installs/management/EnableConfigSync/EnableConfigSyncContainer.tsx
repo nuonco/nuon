@@ -13,7 +13,7 @@ import { EnableConfigSyncModal } from './EnableConfigSync'
 
 interface IEnableConfigSync {}
 
-export const EnableConfigSyncModalContainer = ({ ...props }: IEnableConfigSync & IModal) => {
+export const EnableConfigSyncModalContainer = ({ ...props }: IEnableConfigSync & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { removeModal } = useSurfaces()

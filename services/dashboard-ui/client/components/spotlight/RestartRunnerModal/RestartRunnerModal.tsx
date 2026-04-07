@@ -4,12 +4,13 @@ import { ShutdownRunnerModal } from '@/components/runners/management/ShutdownRun
 
 interface IRestartRunnerModal extends IModal {
   runnerId: string
+  processId?: string
   isManaged: boolean
 }
 
-export const RestartRunnerModal = ({ runnerId, isManaged, ...modalProps }: IRestartRunnerModal) => {
+export const RestartRunnerModal = ({ runnerId, processId = '', isManaged, ...modalProps }: IRestartRunnerModal) => {
   if (isManaged) {
-    return <ShutdownMngRunnerModal runnerId={runnerId} {...modalProps} />
+    return <ShutdownMngRunnerModal runnerId={runnerId} processId={processId} {...modalProps} />
   }
-  return <ShutdownRunnerModal runnerId={runnerId} {...modalProps} />
+  return <ShutdownRunnerModal runnerId={runnerId} processId={processId} {...modalProps} />
 }

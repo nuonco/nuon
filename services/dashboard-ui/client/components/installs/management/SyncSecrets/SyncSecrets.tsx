@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface ISyncSecretsModal extends IModal {
+interface ISyncSecretsModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   error: any

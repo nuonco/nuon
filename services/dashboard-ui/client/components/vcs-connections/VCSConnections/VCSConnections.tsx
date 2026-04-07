@@ -3,14 +3,14 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import type { TVCSConnection } from '@/types'
-import type { TStatusTheme } from '@/utils/status-utils'
+import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 import { VCSManagementDropdown } from '../management/VCSManagementDropdown'
 import { VCSAccountLink } from '../VCSAccountLink'
 
 interface IVCSConnectionItem {
   vcs_connection: TVCSConnection
-  statusTheme?: TStatusTheme
+  statusTheme?: TTheme
   isLoadingStatus?: boolean
 }
 
@@ -36,7 +36,7 @@ export const VCSConnectionItem = ({
 
 interface IVCSConnections {
   vcsConnections: TVCSConnection[]
-  statusMap?: Record<string, { theme?: TStatusTheme; isLoading?: boolean }>
+  statusMap?: Record<string, { theme?: TTheme; isLoading?: boolean }>
 }
 
 export const VCSConnections = ({

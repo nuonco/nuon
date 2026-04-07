@@ -19,7 +19,7 @@ const retriedStep = {
 
 const succeededStep = {
   ...inProgressStep,
-  status: { status: 'succeeded' },
+  status: { status: 'success' },
 } as TWorkflowStep
 
 export const InProgress = () => <StepTitle step={inProgressStep} />

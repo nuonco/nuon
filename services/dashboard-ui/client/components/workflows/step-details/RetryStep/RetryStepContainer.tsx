@@ -19,7 +19,7 @@ interface IRetryStep {
 export const RetryStepModalContainer = ({
   step,
   ...props
-}: IRetryStep & IModal) => {
+}: IRetryStep & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

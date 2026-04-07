@@ -8,7 +8,7 @@ import type { TAPIError } from '@/types'
 export const BuildAllComponentsButton = ({
   onClick,
   ...props
-}: { onClick: () => void } & IButtonAsButton) => {
+}: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button onClick={onClick} {...props}>
       Build all components

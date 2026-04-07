@@ -22,7 +22,7 @@ export const DeployComponentModalContainer = ({
   currentBuildId,
   currentDeployStatus,
   ...props
-}: IModal & {
+}: Omit<IModal, 'onSubmit'> & {
   component: TComponent
   currentBuildId?: string
   currentDeployStatus?: string

@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TComponent } from '@/types'
 
-interface IDeployComponentModal extends IModal {
+interface IDeployComponentModal extends Omit<IModal, 'onSubmit'> {
   component: TComponent
   currentBuildId?: string
   currentDeployStatus?: string

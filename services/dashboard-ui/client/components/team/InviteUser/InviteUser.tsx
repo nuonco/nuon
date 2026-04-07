@@ -19,7 +19,7 @@ export const InviteUserModal = ({
   isPending: boolean
   error: TAPIError | null
   onSubmit: (params: { email: string; roleType: string }) => void
-} & IModal) => {
+} & Omit<IModal, 'onSubmit'>) => {
   const [email, setEmail] = useState('')
   const [roleType, setRoleType] = useState('org_admin')
 

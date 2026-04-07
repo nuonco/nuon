@@ -8,7 +8,7 @@ export const NewestFirst = () => (
   <LogSort
     filters={{
       handleSortToggle: () => {},
-      sortStats: { isNewestFirst: true },
+      sortStats: { direction: 'desc', isNewestFirst: true, isOldestFirst: false },
     }}
   />
 )
@@ -17,7 +17,7 @@ export const OldestFirst = () => (
   <LogSort
     filters={{
       handleSortToggle: () => {},
-      sortStats: { isNewestFirst: false },
+      sortStats: { direction: 'asc', isNewestFirst: false, isOldestFirst: true },
     }}
   />
 )

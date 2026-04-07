@@ -13,8 +13,6 @@ export const Default = () => (
         replace: 0,
         read: 3,
         'no-op': 5,
-        'create-before-destroy': 0,
-        'destroy-before-create': 0,
       }}
     />
   )
@@ -28,8 +26,6 @@ export const AllZero = () => (
         replace: 0,
         read: 0,
         'no-op': 0,
-        'create-before-destroy': 0,
-        'destroy-before-create': 0,
       }}
     />
   )

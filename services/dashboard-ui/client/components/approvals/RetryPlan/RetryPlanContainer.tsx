@@ -19,7 +19,7 @@ interface IRetryPlan {
 export const RetryPlanModalContainer = ({
   step,
   ...props
-}: IRetryPlan & IModal) => {
+}: IRetryPlan & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

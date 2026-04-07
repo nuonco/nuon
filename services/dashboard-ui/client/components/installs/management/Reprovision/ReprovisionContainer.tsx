@@ -16,7 +16,7 @@ import { ReprovisionModal } from './Reprovision'
 
 interface IReprovision {}
 
-export const ReprovisionModalContainer = ({ ...props }: IReprovision & IModal) => {
+export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()

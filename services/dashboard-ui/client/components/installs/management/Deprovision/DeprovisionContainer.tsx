@@ -14,7 +14,7 @@ import { DeprovisionModal } from './Deprovision'
 
 interface IDeprovision {}
 
-export const DeprovisionModalContainer = ({ ...props }: IDeprovision & IModal) => {
+export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()

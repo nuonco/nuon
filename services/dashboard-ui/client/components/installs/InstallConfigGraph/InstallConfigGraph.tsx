@@ -3,8 +3,8 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Banner } from '@/components/common/Banner'
 
 const ComponentsGraphInline = lazy(() =>
-  import('@/components/apps/ConfigGraph/ComponentsGraphRenderer').then(
-    (mod) => ({ default: mod.ComponentsGraphInline })
+  import('@/components/apps/ConfigGraph/ComponentsGraphRendererContainer').then(
+    (mod) => ({ default: mod.ComponentsGraphInlineContainer })
   )
 )
 

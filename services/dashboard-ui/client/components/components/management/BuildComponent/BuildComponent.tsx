@@ -8,7 +8,7 @@ import type { TComponent, TAPIError } from '@/types'
 export const BuildComponentButton = ({
   onClick,
   ...props
-}: { onClick: () => void } & IButtonAsButton) => {
+}: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button onClick={onClick} {...props}>
       {props?.isMenuButton ? null : <Icon variant="Hammer" />}

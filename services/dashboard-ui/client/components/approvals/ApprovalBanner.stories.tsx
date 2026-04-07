@@ -1,10 +1,7 @@
-import type { Meta, StoryObj } from '@ladle/react'
 import { ApprovalBanner } from './ApprovalBanner'
 import type { TWorkflowStep } from '@/types'
 
-export default {
-  title: 'Approvals/ApprovalBanner',
-} satisfies Meta
+export default { title: 'Approvals/ApprovalBanner' }
 
 const baseTerraformStep: TWorkflowStep = {
   id: 'step-1',
@@ -49,22 +46,12 @@ const k8sStep: TWorkflowStep = {
   },
 } as TWorkflowStep
 
-export const AwaitingTerraformApproval: StoryObj = {
-  render: () => <ApprovalBanner step={baseTerraformStep} />,
-}
+export const AwaitingTerraformApproval = () => <ApprovalBanner step={baseTerraformStep} />
 
-export const Approved: StoryObj = {
-  render: () => <ApprovalBanner step={approvedStep} />,
-}
+export const Approved = () => <ApprovalBanner step={approvedStep} />
 
-export const Denied: StoryObj = {
-  render: () => <ApprovalBanner step={deniedStep} />,
-}
+export const Denied = () => <ApprovalBanner step={deniedStep} />
 
-export const AwaitingHelmApproval: StoryObj = {
-  render: () => <ApprovalBanner step={helmStep} />,
-}
+export const AwaitingHelmApproval = () => <ApprovalBanner step={helmStep} />
 
-export const AwaitingKubernetesApproval: StoryObj = {
-  render: () => <ApprovalBanner step={k8sStep} />,
-}
+export const AwaitingKubernetesApproval = () => <ApprovalBanner step={k8sStep} />

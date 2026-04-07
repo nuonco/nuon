@@ -33,7 +33,7 @@ export const ShutdownRunnerButton = ({ runnerId, processId, showRunnerLabel, ...
   )
 }
 
-export const ShutdownRunnerModal = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerContainer & IModal) => {
+export const ShutdownRunnerModal = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerContainer & Omit<IModal, 'onSubmit'>) => {
   const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()

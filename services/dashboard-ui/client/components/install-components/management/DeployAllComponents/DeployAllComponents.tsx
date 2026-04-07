@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IDeployAllComponentsModal extends IModal {
+interface IDeployAllComponentsModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   isKickedOff: boolean

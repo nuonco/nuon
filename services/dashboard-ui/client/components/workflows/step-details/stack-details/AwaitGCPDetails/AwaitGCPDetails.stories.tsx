@@ -12,9 +12,14 @@ const mockStack = {
   ],
 } as any
 
+const mockStep = {
+  id: 'step-1',
+  status: { status: 'active' },
+} as any
+
 export const Default = () => (
   <div className="max-w-2xl p-4">
-    <AwaitGCPDetails stack={mockStack} installId="install-1" />
+    <AwaitGCPDetails stack={mockStack} step={mockStep} installId="install-1" />
   </div>
 )
 

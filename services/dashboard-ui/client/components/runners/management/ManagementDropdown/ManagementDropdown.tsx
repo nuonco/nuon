@@ -39,7 +39,7 @@ export const ManagementDropdown = ({
           <UpdateRunnerButton settings={settings} isMenuButton />
         ) : null}
 
-        <ShutdownRunnerControl isMenuButton runnerId={runner.id} />
+        <ShutdownRunnerControl isMenuButton isManaged={isManaged} runnerId={runner.id} />
 
         {isInstallRunner && isManaged ? (
           <ShutdownInstanceButton isMenuButton />

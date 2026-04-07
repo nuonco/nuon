@@ -58,7 +58,7 @@ export const UnlockTerraformWorkspaceModalContainer = ({
   description = 'the workspace',
   onSuccess,
   ...props
-}: IUnlockTerraformWorkspace & IModal) => {
+}: IUnlockTerraformWorkspace & Omit<IModal, 'onSubmit'>) => {
   const { user } = useAuth()
   const { org } = useOrg()
   const { install } = useInstall()

@@ -14,7 +14,7 @@ const mockPolicies: TAppPolicyConfig[] = [
     components: ['*'],
     contents: btoa('metadata:\n  name: no-privileged-containers'),
     created_at: '2024-01-01T00:00:00Z',
-  } as TAppPolicyConfig,
+  } as unknown as TAppPolicyConfig,
   {
     id: 'pol-2',
     name: 'resource-limits',
@@ -23,7 +23,7 @@ const mockPolicies: TAppPolicyConfig[] = [
     components: ['api', 'worker'],
     contents: btoa('package resource_limits'),
     created_at: '2024-01-02T00:00:00Z',
-  } as TAppPolicyConfig,
+  } as unknown as TAppPolicyConfig,
 ]
 
 export const Default = () => (

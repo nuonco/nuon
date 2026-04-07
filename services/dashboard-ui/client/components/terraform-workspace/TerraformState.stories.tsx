@@ -6,6 +6,8 @@ import { TerraformState } from './TerraformState'
 import type { TTerraformState } from '@/types'
 
 const mockTerraformState: TTerraformState = {
+  format_version: '1.0',
+  terraform_version: '1.5.7',
   values: {
     outputs: {
       cluster_endpoint: { value: 'https://k8s.example.com', sensitive: false },
@@ -45,7 +47,7 @@ const mockTerraformState: TTerraformState = {
       child_modules: [],
     },
   },
-} as TTerraformState
+} as unknown as TTerraformState
 
 export const Default = () => (
   <div className="max-w-4xl p-4">
@@ -55,6 +57,6 @@ export const Default = () => (
 
 export const Empty = () => (
   <div className="max-w-4xl p-4">
-    <TerraformState terraformState={{ values: { outputs: {}, root_module: { resources: [], child_modules: [] } } } as TTerraformState} />
+    <TerraformState terraformState={{ format_version: '1.0', terraform_version: '1.5.7', values: { outputs: {}, root_module: { resources: [], child_modules: [] } } } as unknown as TTerraformState} />
   </div>
 )

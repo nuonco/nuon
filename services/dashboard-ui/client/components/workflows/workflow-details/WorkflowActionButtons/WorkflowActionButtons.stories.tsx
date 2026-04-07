@@ -8,7 +8,7 @@ import type { TWorkflow } from '@/types'
 const mockWorkflow = {
   id: 'wf-123',
   owner_id: 'inst-456',
-  type: 'deploy',
+  type: 'deploy_components',
   status: { status: 'in-progress' },
   finished: false,
   approval_option: 'prompt',

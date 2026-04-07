@@ -6,7 +6,7 @@ import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IDeprovisionSandboxModal extends IModal {
+interface IDeprovisionSandboxModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   installId: string
   isPending: boolean

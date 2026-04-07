@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IBuildSandboxModal extends IModal {
+interface IBuildSandboxModal extends Omit<IModal, 'onSubmit'> {
   appName: string
   isPending: boolean
   error: any

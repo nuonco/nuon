@@ -21,6 +21,7 @@ interface IRunAdhocAction {
 
 export const RunAdhocActionModalContainer = ({
   initialValues,
+  onSubmit: _onSubmit,
   ...props
 }: IRunAdhocAction & IModal) => {
   const navigate = useNavigate()
@@ -73,7 +74,7 @@ export const RunAdhocActionModalContainer = ({
     onResume: () => void,
     onStartFresh: () => void,
     onClose: () => void,
-    draftTimestamp: number
+    draftTimestamp: string
   ) => {
     let modalId: string
     const modal = (

@@ -9,7 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface IConnectGithubModal extends IModal {
+interface IConnectGithubModal extends Omit<IModal, 'onSubmit'> {
   githubAppName: string
   orgId: string
   isPending: boolean

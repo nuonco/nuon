@@ -10,7 +10,7 @@ const mockActionRun: TInstallActionRun = {
   steps: [
     {
       id: 'step-1',
-      status: 'success',
+      status: 'finished',
       execution_duration: 8400000000,
       adhoc_config: {
         name: 'restart-service',

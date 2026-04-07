@@ -16,7 +16,7 @@ import { DriftScanSandboxModal } from './DriftScanSandbox'
 
 export const DriftScanSandboxModalContainer = ({
   ...props
-}: IModal) => {
+}: Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { org } = useOrg()

@@ -17,7 +17,7 @@ interface IApproveAll {
 export const ApproveAllModalContainer = ({
   workflow,
   ...props
-}: IApproveAll & IModal) => {
+}: IApproveAll & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

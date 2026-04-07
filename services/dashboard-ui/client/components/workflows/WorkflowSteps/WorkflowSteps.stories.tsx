@@ -52,7 +52,7 @@ const completedStep: TWorkflowStep = {
   step_target_type: 'runners',
   finished: true,
   execution_time: 60000000000,
-  status: { status: 'succeeded', history: [] },
+  status: { status: 'success', history: [] },
 } as TWorkflowStep
 
 export const Default = () => (

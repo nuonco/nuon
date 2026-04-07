@@ -45,7 +45,7 @@ export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
     <ViewCurrentInputsModal
       isLoading={isLoading}
       redactedValues={redactedValues}
-      inputGroups={inputGroups}
+      inputGroups={inputGroups as any}
       {...props}
     />
   )

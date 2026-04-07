@@ -4,13 +4,13 @@ import { Text } from '@/components/common/Text'
 import { RunnerDetailsCard, RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCard'
 import { RunnerHealthCard, RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCard'
 import { RunnerProvider } from '@/providers/runner-provider'
-import type { TRunner, TRunnerHeartbeat, TRunnerHealthCheck, TWorkflowStep } from '@/types'
+import type { TRunner, TRunnerMngHeartbeat, TRunnerHealthCheck, TWorkflowStep } from '@/types'
 
 export interface IRunnerStepDetails {
   step?: TWorkflowStep
   orgId: string
   runner?: TRunner
-  runnerHeartbeat?: TRunnerHeartbeat
+  runnerHeartbeat?: TRunnerMngHeartbeat
   runnerHealthCheck?: TRunnerHealthCheck[]
   isRunnerLoading: boolean
   isHeartbeatLoading: boolean

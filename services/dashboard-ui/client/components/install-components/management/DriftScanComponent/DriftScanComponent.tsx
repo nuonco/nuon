@@ -6,7 +6,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TComponent } from '@/types'
 
-interface IDriftScanComponentModal extends IModal {
+interface IDriftScanComponentModal extends Omit<IModal, 'onSubmit'> {
   component: TComponent
   currentBuildId?: string
   isPending: boolean

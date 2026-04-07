@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IDriftScanSandboxModal extends IModal {
+interface IDriftScanSandboxModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   error: any
   onSubmit: () => void

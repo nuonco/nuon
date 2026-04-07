@@ -1,9 +1,6 @@
-import type { Meta, StoryObj } from '@ladle/react'
 import { UnassignedInstallsSection } from './UnassignedInstallsSection'
 
-export default {
-  title: 'Branches/InstallGroups/UnassignedInstallsSection',
-} satisfies Meta
+export default { title: 'Branches/InstallGroups/UnassignedInstallsSection' }
 
 const mockInstalls = [
   { id: 'inst-1', name: 'Production US East' },
@@ -12,29 +9,23 @@ const mockInstalls = [
   { id: 'inst-4', name: 'Development' },
 ] as any[]
 
-export const Default: StoryObj = {
-  render: () => (
-    <UnassignedInstallsSection
-      installs={mockInstalls}
-      assignedInstallIds={['inst-2']}
-    />
-  ),
-}
+export const Default = () => (
+  <UnassignedInstallsSection
+    installs={mockInstalls}
+    assignedInstallIds={['inst-2']}
+  />
+)
 
-export const AllAssigned: StoryObj = {
-  render: () => (
-    <UnassignedInstallsSection
-      installs={mockInstalls}
-      assignedInstallIds={['inst-1', 'inst-2', 'inst-3', 'inst-4']}
-    />
-  ),
-}
+export const AllAssigned = () => (
+  <UnassignedInstallsSection
+    installs={mockInstalls}
+    assignedInstallIds={['inst-1', 'inst-2', 'inst-3', 'inst-4']}
+  />
+)
 
-export const Empty: StoryObj = {
-  render: () => (
-    <UnassignedInstallsSection
-      installs={[]}
-      assignedInstallIds={[]}
-    />
-  ),
-}
+export const Empty = () => (
+  <UnassignedInstallsSection
+    installs={[]}
+    assignedInstallIds={[]}
+  />
+)

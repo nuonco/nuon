@@ -3,7 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IEnableConfigSyncModal extends IModal {
+interface IEnableConfigSyncModal extends Omit<IModal, 'onSubmit'> {
   isManagedByConfig: boolean
   isPending: boolean
   error: any

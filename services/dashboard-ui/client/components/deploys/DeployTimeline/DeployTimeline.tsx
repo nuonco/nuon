@@ -16,7 +16,7 @@ interface IDeployTimeline {
   componentId: string
   componentName: string
   isLoading: boolean
-  error: Error | null
+  error: unknown
 }
 
 export const DeployTimeline = ({

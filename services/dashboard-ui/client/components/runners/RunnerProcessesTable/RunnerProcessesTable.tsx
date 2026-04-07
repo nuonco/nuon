@@ -11,11 +11,11 @@ function getStatusTheme(status: string) {
     case 'active':
       return 'success'
     case 'shutting-down':
-      return 'warning'
+      return 'warn'
     case 'shut-down':
       return 'neutral'
     case 'error':
-      return 'danger'
+      return 'error'
     default:
       return 'neutral'
   }
@@ -40,7 +40,7 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
         <ID id={process.id} />
       </td>
       <td className="px-4 py-3">
-        <Text variant="small">{process.type || '-'}</Text>
+        <Text variant="subtext">{process.type || '-'}</Text>
       </td>
       <td className="px-4 py-3">
         <Badge theme={getStatusTheme(process.composite_status?.status)}>
@@ -49,17 +49,17 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <Text variant="small">{process.version || '-'}</Text>
+          <Text variant="subtext">{process.version || '-'}</Text>
           {process.labels?.map((label) => (
             <Badge key={label} theme="neutral">{label}</Badge>
           ))}
         </div>
       </td>
       <td className="px-4 py-3">
-        <Text variant="small">{formatUptime(process.started_at)}</Text>
+        <Text variant="subtext">{formatUptime(process.started_at)}</Text>
       </td>
       <td className="px-4 py-3">
-        <Text variant="small">
+        <Text variant="subtext">
           {process.created_at
             ? new Date(process.created_at).toLocaleString()
             : '-'}
@@ -100,22 +100,22 @@ export const RunnerProcessesTable = ({
         <thead className="border-b border-neutral-200 bg-neutral-50">
           <tr>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">ID</Text>
+              <Text variant="subtext" weight="strong">ID</Text>
             </th>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">Type</Text>
+              <Text variant="subtext" weight="strong">Type</Text>
             </th>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">Status</Text>
+              <Text variant="subtext" weight="strong">Status</Text>
             </th>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">Version</Text>
+              <Text variant="subtext" weight="strong">Version</Text>
             </th>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">Uptime</Text>
+              <Text variant="subtext" weight="strong">Uptime</Text>
             </th>
             <th className="px-4 py-2">
-              <Text variant="small" weight="strong">Started</Text>
+              <Text variant="subtext" weight="strong">Started</Text>
             </th>
           </tr>
         </thead>

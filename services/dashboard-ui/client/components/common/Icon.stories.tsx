@@ -1,9 +1,6 @@
-import type { Meta } from '@ladle/react'
 import { Icon, type TIconVariant } from './Icon'
 
-export default {
-  title: 'Common/Icon',
-} satisfies Meta
+export default { title: 'Common/Icon' }
 
 const customVariants: TIconVariant[] = [
   'AWS',

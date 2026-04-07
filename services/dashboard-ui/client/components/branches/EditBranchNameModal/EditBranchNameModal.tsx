@@ -24,7 +24,7 @@ export interface IEditBranchNameModalSubmitData {
   pathFilter: string
 }
 
-interface IEditBranchNameModal extends IModal {
+interface IEditBranchNameModal extends Omit<IModal, 'onSubmit'> {
   branch: TAppBranch
   currentConfig?: TAppBranchConfig
   orgId: string

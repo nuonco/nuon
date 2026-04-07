@@ -11,7 +11,7 @@ const mockConfig = {
     description: 'A test stack',
     runner_nested_template_url: 'https://example.com/runner.yaml',
     vpc_nested_template_url: 'https://example.com/vpc.yaml',
-    type: 'cloudformation',
+    type: 'aws-cloudformation',
   },
 } as TAppConfig
 

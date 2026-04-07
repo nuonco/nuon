@@ -20,7 +20,7 @@ interface IApprovePlan {
 export const ApprovePlanModalContainer = ({
   step,
   ...props
-}: IApprovePlan & IModal) => {
+}: IApprovePlan & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

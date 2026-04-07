@@ -13,7 +13,7 @@ import { buildComponents } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 import { BuildAllComponentsButton as BuildAllComponentsButtonComponent, BuildAllComponentsModal } from './BuildAllComponents'
 
-export const BuildAllComponentsButtonContainer = ({ ...props }: IButtonAsButton) => {
+export const BuildAllComponentsButtonContainer = ({ onClick: _onClick, ...props }: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = <BuildAllComponentsModalContainer />
   return (

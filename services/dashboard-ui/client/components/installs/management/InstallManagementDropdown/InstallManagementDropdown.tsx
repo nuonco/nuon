@@ -56,6 +56,7 @@ const InstallManagementDropdownContent = () => {
           <ShutdownRunnerControl
             isMenuButton
             showRunnerLabel
+            isManaged={false}
             runnerId={install.runner_id}
           />
         ) : null}

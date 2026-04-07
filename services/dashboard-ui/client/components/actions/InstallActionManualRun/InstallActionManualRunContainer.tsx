@@ -24,6 +24,7 @@ interface IInstallActionManualRunModalContainer extends Omit<IModal, 'heading'> 
 export const InstallActionManualRunModalContainer = ({
   action,
   actionConfigId,
+  onSubmit: _onSubmit,
   ...props
 }: IInstallActionManualRunModalContainer) => {
   const navigate = useNavigate()

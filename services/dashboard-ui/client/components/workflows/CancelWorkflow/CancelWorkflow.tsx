@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface ICancelWorkflowModal extends IModal {
+interface ICancelWorkflowModal extends Omit<IModal, 'onSubmit'> {
   workflowType: string
   isPending: boolean
   error?: TAPIError | null

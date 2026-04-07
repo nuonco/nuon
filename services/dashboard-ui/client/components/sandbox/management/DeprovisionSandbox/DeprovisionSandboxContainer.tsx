@@ -16,7 +16,7 @@ import { DeprovisionSandboxModal } from './DeprovisionSandbox'
 
 export const DeprovisionSandboxModalContainer = ({
   ...props
-}: IModal) => {
+}: Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { org } = useOrg()

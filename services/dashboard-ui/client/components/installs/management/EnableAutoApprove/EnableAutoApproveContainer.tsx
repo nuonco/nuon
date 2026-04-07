@@ -34,7 +34,7 @@ export const ConfirmOverrideModalContainer = ({ onConfirm, ...props }: { onConfi
   )
 }
 
-export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove & IModal) => {
+export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove & Omit<IModal, 'onSubmit'>) => {
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()

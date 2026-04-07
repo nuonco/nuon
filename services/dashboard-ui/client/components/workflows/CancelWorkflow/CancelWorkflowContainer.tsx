@@ -19,7 +19,7 @@ interface ICancelWorkflow {
 export const CancelWorkflowModalContainer = ({
   workflow,
   ...props
-}: ICancelWorkflow & IModal) => {
+}: ICancelWorkflow & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

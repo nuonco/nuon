@@ -16,6 +16,7 @@ import { CreateBranchModal } from './CreateBranchModal'
 type ICreateBranchModalContainer = IModal
 
 export const CreateBranchModalContainer = ({
+  onSubmit: _onSubmit,
   ...props
 }: ICreateBranchModalContainer) => {
   const navigate = useNavigate()

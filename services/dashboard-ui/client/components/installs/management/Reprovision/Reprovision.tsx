@@ -4,7 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IReprovisionModal extends IModal {
+interface IReprovisionModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   error: any

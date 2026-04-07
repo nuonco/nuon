@@ -14,10 +14,16 @@ const mockStack = {
   ],
 } as any
 
+const mockStep = {
+  id: 'step-1',
+  status: { status: 'active' },
+} as any
+
 export const Default = () => (
   <div className="max-w-2xl p-4">
     <AwaitAWSDetails
       stack={mockStack}
+      step={mockStep}
       orgId="org-1"
       installId="install-1"
     />

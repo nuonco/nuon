@@ -17,7 +17,7 @@ import { TeardownAllComponentsModal } from './TeardownAllComponents'
 
 export const TeardownAllComponentsModalContainer = ({
   ...props
-}: IModal) => {
+}: Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { org } = useOrg()

@@ -17,7 +17,7 @@ import { DriftScanAllComponentsModal } from './DriftScanAllComponents'
 
 export const DriftScanAllComponentsModalContainer = ({
   ...props
-}: IModal) => {
+}: Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { org } = useOrg()

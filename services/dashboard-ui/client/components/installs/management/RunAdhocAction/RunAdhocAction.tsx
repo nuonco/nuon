@@ -9,13 +9,13 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useFormPersistence } from '@/hooks/use-form-persistence'
 import type { TRunAdhocActionBody } from '@/lib'
 
-interface IRunAdhocActionModal extends IModal {
+interface IRunAdhocActionModal extends Omit<IModal, 'onSubmit'> {
   installId: string
   initialValues?: TRunAdhocActionBody
   isPending: boolean
   error: any
   onSubmit: (body: TRunAdhocActionBody) => void
-  onDraftResume: (onResume: () => void, onStartFresh: () => void, onClose: () => void, draftTimestamp: number) => void
+  onDraftResume: (onResume: () => void, onStartFresh: () => void, onClose: () => void, draftTimestamp: string) => void
   onDraftClear?: () => void
   roleSelector: ReactNode
 }

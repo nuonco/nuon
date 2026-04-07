@@ -29,7 +29,7 @@ export const DenyPlanModalContainer = ({
   denyType,
   step,
   ...props
-}: IDenyPlan & { denyType: TDenyType } & IModal) => {
+}: IDenyPlan & { denyType: TDenyType } & Omit<IModal, 'onSubmit'>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()

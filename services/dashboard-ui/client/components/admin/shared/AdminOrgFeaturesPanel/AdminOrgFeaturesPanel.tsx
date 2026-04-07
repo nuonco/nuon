@@ -6,7 +6,7 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import type { TOrg } from '@/types'
 
-interface IAdminOrgFeaturesPanel extends IPanel {
+interface IAdminOrgFeaturesPanel extends Omit<IPanel, 'onSubmit'> {
   org: TOrg
   orgId: string
   featuresList: string[]

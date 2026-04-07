@@ -8,10 +8,10 @@ import type { TWorkflow } from '@/types'
 const mockWorkflow: TWorkflow = {
   id: 'wf-123',
   name: 'Deploy app',
-  type: 'deploy',
+  type: 'deploy_components',
   plan_only: false,
   finished: false,
-  approval_option: '',
+  approval_option: 'prompt',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:05:00Z',
   execution_time: 300000000000,
@@ -26,7 +26,7 @@ const completedWorkflow: TWorkflow = {
   name: 'Provision runner',
   type: 'provision',
   finished: true,
-  status: { status: 'succeeded' },
+  status: { status: 'success' },
 } as TWorkflow
 
 export const Default = () => (

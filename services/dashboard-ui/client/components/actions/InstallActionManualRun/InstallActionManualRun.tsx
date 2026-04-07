@@ -22,7 +22,7 @@ function normalizeEnvVars(steps: TActionConfig['steps']) {
   return envVars
 }
 
-interface IInstallActionManualRunModal extends IModal {
+interface IInstallActionManualRunModal extends Omit<IModal, 'onSubmit'> {
   action: TAction
   actionConfigId: string
   isLoading: boolean

@@ -26,6 +26,7 @@ export const EditBranchNameModalContainer = ({
   branch,
   currentConfig,
   onSuccess,
+  onSubmit: _onSubmit,
   ...props
 }: IEditBranchNameModalContainer) => {
   const { app } = useApp()

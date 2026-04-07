@@ -22,7 +22,7 @@ const mockDeploy = {
 const mockWorkflow = {
   id: 'wf-123',
   name: 'deploy',
-  type: 'deploy',
+  type: 'deploy_components',
   finished: false,
 } as TWorkflow
 

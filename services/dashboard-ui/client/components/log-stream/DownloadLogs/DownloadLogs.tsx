@@ -7,7 +7,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 
 type DownloadMode = 'all' | 'user'
 
-interface IDownloadLogsModal extends IModal {
+interface IDownloadLogsModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   onDownload: (mode: DownloadMode) => void
 }
@@ -72,7 +72,7 @@ export const DownloadLogsModal = ({
 export const DownloadLogsButton = ({
   onClick,
   ...props
-}: { onClick: () => void } & IButtonAsButton) => {
+}: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button variant="ghost" onClick={onClick} {...props}>
       Download

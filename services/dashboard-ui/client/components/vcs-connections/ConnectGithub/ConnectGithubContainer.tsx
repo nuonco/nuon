@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast'
 import { createVCSConnection } from '@/lib/ctl-api/vcs-connections'
 import { ConnectGithubModal } from './ConnectGithub'
 
-export const ConnectGithubModalContainer = (props: IModal) => {
+export const ConnectGithubModalContainer = ({ onSubmit: _onSubmit, ...props }: IModal) => {
   const { githubAppName } = useConfig()
   const { org, refresh: refreshOrg } = useOrg()
   const { removeModal } = useSurfaces()

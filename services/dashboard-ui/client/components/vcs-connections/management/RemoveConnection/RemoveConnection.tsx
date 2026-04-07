@@ -6,7 +6,7 @@ import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface IRemoveConnectionModal extends IModal {
+interface IRemoveConnectionModal extends Omit<IModal, 'onSubmit'> {
   connectionName: string
   isPending: boolean
   error?: TAPIError | null

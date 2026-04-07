@@ -45,7 +45,7 @@ export const DownloadLogsModalContainer = ({
   )
 }
 
-export const DownloadLogsButtonContainer = ({ ...props }: IButtonAsButton) => {
+export const DownloadLogsButtonContainer = ({ onClick: _onClick, ...props }: IButtonAsButton) => {
   const { org } = useOrg()
   const { logStream } = useLogStream()
   const { addModal } = useSurfaces()

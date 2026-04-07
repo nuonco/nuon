@@ -9,7 +9,7 @@ import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
-import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TRunnerHeartbeat, TWorkflow, TWorkflowApproval } from '@/types'
+import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TRunnerHeartbeat, TWorkflow, TWorkflowStepApproval } from '@/types'
 
 interface IOrgStatusBar {
   org: TOrg
@@ -22,7 +22,7 @@ interface IOrgStatusBar {
   runnerStatus: string
   runnerHeartbeat?: TRunnerHeartbeat
   runnerId?: string
-  approvals: TWorkflowApproval[]
+  approvals: TWorkflowStepApproval[]
   activeWorkflows: TWorkflow[]
   approvalItems: TContextTooltipItem[]
   workflowItems: TContextTooltipItem[]

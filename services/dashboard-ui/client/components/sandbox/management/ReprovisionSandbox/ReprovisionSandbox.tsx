@@ -6,7 +6,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IReprovisionSandboxModal extends IModal {
+interface IReprovisionSandboxModal extends Omit<IModal, 'onSubmit'> {
   installId: string
   isPending: boolean
   error: any

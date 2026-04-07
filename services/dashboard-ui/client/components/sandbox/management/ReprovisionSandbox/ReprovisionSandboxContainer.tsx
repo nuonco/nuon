@@ -15,6 +15,7 @@ import { trackEvent } from '@/lib/segment-analytics'
 import { ReprovisionSandboxModal } from './ReprovisionSandbox'
 
 export const ReprovisionSandboxModalContainer = ({
+  onSubmit: _onSubmit,
   ...props
 }: IModal) => {
   const navigate = useNavigate()

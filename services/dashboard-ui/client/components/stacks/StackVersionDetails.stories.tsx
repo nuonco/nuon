@@ -19,8 +19,8 @@ const mockVersion: TStackVersion = {
   composite_status: {
     status: 'active',
     history: [
-      { status: 'pending', created_at_ts: (Date.now() - 7200000).toString() },
-      { status: 'active', created_at_ts: (Date.now() - 3600000).toString() },
+      { status: 'pending', created_at_ts: Date.now() - 7200000 },
+      { status: 'active', created_at_ts: Date.now() - 3600000 },
     ],
   },
   runs: [

@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface IDenyPlanModal extends IModal {
+interface IDenyPlanModal extends Omit<IModal, 'onSubmit'> {
   modalCopy: { title: string; heading: string; message: string }
   isPending: boolean
   error?: TAPIError | null

@@ -93,7 +93,7 @@ interface IEditInputsFormModal extends IModal {
   onRoleChange: (role: string) => void
   deployDependents: boolean
   onDeployDependentsChange: (checked: boolean) => void
-  onMutate: (formData: FormData) => void
+  onMutate: (formData: FormData) => Promise<any>
 }
 
 export const EditInputsFormModal = ({

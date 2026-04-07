@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-interface IUpdateRunnerModal extends IModal {
+interface IUpdateRunnerModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   error: TAPIError | null
   onSubmit: (tag: string) => void

@@ -41,7 +41,7 @@ export const mockK8sStep: TWorkflowStep = {
 
 export const mockWorkflow: TWorkflow = {
   id: 'wf-001',
-  type: 'deploy',
+  type: 'deploy_components',
   steps: [
     mockWorkflowStep,
     { ...mockWorkflowStep, id: 'step-010', name: 'apply-terraform', execution_type: 'approval', approval: { id: 'a-010', type: 'terraform_plan', response: undefined } },

@@ -8,8 +8,8 @@ import type { TInstallActionRun } from '@/types'
 const mockActionRun: TInstallActionRun = {
   id: 'run-1',
   steps: [
-    { id: 'step-1', status: 'active', execution_duration: 5400000000 },
-    { id: 'step-2', status: 'success', execution_duration: 12800000000 },
+    { id: 'step-1', status: 'in-progress', execution_duration: 5400000000 },
+    { id: 'step-2', status: 'finished', execution_duration: 12800000000 },
     { id: 'step-3', status: 'pending', execution_duration: 0 },
   ],
   config: {
@@ -28,9 +28,9 @@ export const AllSucceeded = () => (
     actionRun={{
       ...mockActionRun,
       steps: [
-        { id: 'step-1', status: 'success', execution_duration: 5400000000 },
-        { id: 'step-2', status: 'success', execution_duration: 12800000000 },
-        { id: 'step-3', status: 'success', execution_duration: 3200000000 },
+        { id: 'step-1', status: 'finished', execution_duration: 5400000000 },
+        { id: 'step-2', status: 'finished', execution_duration: 12800000000 },
+        { id: 'step-3', status: 'finished', execution_duration: 3200000000 },
       ],
     } as TInstallActionRun}
   />

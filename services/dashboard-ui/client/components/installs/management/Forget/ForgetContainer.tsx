@@ -14,7 +14,7 @@ import { ForgetModal } from './Forget'
 
 interface IForget {}
 
-export const ForgetModalContainer = ({ ...props }: IForget & IModal) => {
+export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const queryClient = useQueryClient()

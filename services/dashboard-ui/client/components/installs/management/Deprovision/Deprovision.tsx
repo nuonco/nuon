@@ -5,7 +5,7 @@ import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
-interface IDeprovisionModal extends IModal {
+interface IDeprovisionModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   error: any

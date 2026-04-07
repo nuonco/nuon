@@ -26,7 +26,7 @@ const mockBuilds: TBuild[] = [
   } as TBuild,
   {
     id: 'bld-ghi789',
-    status_v2: { status: 'failed' },
+    status_v2: { status: 'error' },
     created_by: { email: 'ci@example.com' },
     created_at: '2024-01-13T14:00:00Z',
     vcs_connection_commit: { message: 'chore: bump dependencies' },

@@ -11,7 +11,7 @@ const mockDeploy: TDeploy = {
   updated_at: '2024-01-15T10:35:00Z',
   status: 'active',
   status_v2: { status: 'active' },
-  install_deploy_type: 'deploy',
+  install_deploy_type: 'apply',
   created_by: { email: 'user@example.com' },
 } as TDeploy
 

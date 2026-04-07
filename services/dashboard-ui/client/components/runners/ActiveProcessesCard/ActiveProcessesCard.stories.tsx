@@ -28,7 +28,7 @@ const mockProcesses: TProcessWithHeartbeat[] = [
       version: 'v1.2.3',
       composite_status: { status: 'offline' },
       labels: [],
-    } as TRunnerProcess,
+    } as unknown as TRunnerProcess,
     heartbeat: {
       version: 'v1.2.3',
       created_at: new Date(Date.now() - 60000).toISOString(),

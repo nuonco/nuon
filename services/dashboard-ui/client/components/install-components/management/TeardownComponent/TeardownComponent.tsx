@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TComponent } from '@/types'
 
-interface ITeardownComponentModal extends IModal {
+interface ITeardownComponentModal extends Omit<IModal, 'onSubmit'> {
   component: TComponent
   isPending: boolean
   error?: { error?: string } | null
