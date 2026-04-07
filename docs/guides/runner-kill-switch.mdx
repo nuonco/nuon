@@ -46,7 +46,11 @@ The Runner EC2 instance will be terminated within a few minutes. While scaled to
 
 ### Restoring the Runner
 
-To resume normal operation, edit the ASG and set the capacity back to **1/1/1** (Desired: 1, Min: 1, Max: 1). The Runner will start automatically and reconnect to the Nuon control plane.
+To resume normal operation, edit the ASG and set the capacity back to **1/1/1** (Desired: 1, Min: 1, Max: 1). The Runner will restart if you navigate to the Install's Runner and choose **Restart process** on the Runner.
+
+<Frame caption="Use the Manage install runner menu to restart the Runner process after restoring ASG capacity.">
+  <img src="/images/runner-restart-process.png" />
+</Frame>
 
 ## Hard Kill: Delete the ASG
 
@@ -62,12 +66,7 @@ This recreates the ASG and Runner from the Stack definition.
 
 ## Additional Lockdown Options
 
-For maximum control, customers can layer additional AWS-native restrictions:
-
-- **IAM Deny Policies**: Attach a deny policy to the Runner's IAM role to block specific actions even if the Runner is running.
-- **Service Control Policies (SCPs)**: Apply organization-wide policies that prevent the Runner from performing certain operations across all accounts in an AWS Organization.
-
-These can be combined with the ASG kill switch for defense-in-depth.
+For even more granular control over what the Runner can do, Nuon supports [Policies](/concepts/policies#policies) that let you define approval gates, scoping rules, and conditions on deployments and actions. Policies can be combined with the ASG kill switch for defense-in-depth.
 
 ## Related Resources
 
