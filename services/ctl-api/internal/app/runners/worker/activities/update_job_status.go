@@ -31,12 +31,5 @@ func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusReq
 		return fmt.Errorf("no job found: %s %w", req.JobID, gorm.ErrRecordNotFound)
 	}
 
-	// dual-write V2 status
-	compositeStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
-	compositeStatus.StatusHumanDescription = req.StatusDescription
-	a.db.WithContext(ctx).Model(&app.RunnerJob{ID: req.JobID}).Updates(map[string]any{
-		"status_v2": compositeStatus,
-	})
-
 	return nil
 }
