@@ -35,9 +35,6 @@ type AppRunnerProcess struct {
 	// initial health check
 	InitialHealthCheck bool `json:"initial_health_check,omitempty"`
 
-	// Labels are computed server-side and not persisted.
-	Labels []string `json:"labels"`
-
 	// log stream id
 	LogStreamID string `json:"log_stream_id,omitempty"`
 

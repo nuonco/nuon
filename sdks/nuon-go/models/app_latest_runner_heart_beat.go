@@ -26,9 +26,6 @@ type AppLatestRunnerHeartBeat struct {
 	// process
 	Process string `json:"process,omitempty"`
 
-	// process id
-	ProcessID string `json:"process_id,omitempty"`
-
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 
