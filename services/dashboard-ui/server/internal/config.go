@@ -49,6 +49,7 @@ type Config struct {
 	IsBYOC                bool   `config:"nuon_byoc"`
 	SFTrialEndpoint       string `config:"sf_trial_access_endpoint"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
+	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
 }
 
 func NewConfig() (*Config, error) {

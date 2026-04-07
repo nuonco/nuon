@@ -14,6 +14,8 @@ export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {
   hideOrgSettings?: boolean
   isAdmin: boolean
+  apiUrl: string
+  adminDashboardUrl?: string
   authServiceUrl: string
   notificationsSupported: boolean
   notificationPermission: string
@@ -30,6 +32,8 @@ export const UserDropdown = ({
   buttonClassName,
   hideOrgSettings,
   isAdmin,
+  apiUrl,
+  adminDashboardUrl,
   authServiceUrl,
   notificationsSupported,
   notificationPermission,
@@ -73,22 +77,32 @@ export const UserDropdown = ({
             onClick={() => onAddPanel(<AdminPanel />)}
             isMenuButton
           >
-            Admin panel <Icon variant="Sliders" />
+            Admin controls <Icon variant="Sliders" />
           </Button>
         )}
-        {!hideOrgSettings && isAdmin && (
-          <Link href="/admin/temporal" isExternal>
-            Temporal UI <Icon variant="ArrowSquareOut" />
+        {!hideOrgSettings && isAdmin && adminDashboardUrl && (
+          <Link href={adminDashboardUrl} isExternal>
+            Admin dashboard <Icon variant="ArrowSquareOut" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/swagger" isExternal>
-            Admin API swagger <Icon variant="ArrowSquareOut" />
+            Admin API <Icon variant="ArrowSquareOut" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && (
+          <Link href="/admin/temporal" isExternal>
+            Temporal dashboard <Icon variant="ArrowSquareOut" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/public/swagger" isExternal>
-            API swagger <Icon variant="ArrowSquareOut" />
+            Public API <Icon variant="ArrowSquareOut" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && (
+          <Link href={`${apiUrl}/httpbin`} isExternal>
+            HTTPBin <Icon variant="ArrowSquareOut" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && <hr />}
