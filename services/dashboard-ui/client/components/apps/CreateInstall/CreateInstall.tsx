@@ -85,7 +85,7 @@ interface ICreateInstallModal extends ICreateInstall, IModal {
   config?: TAppConfig
   configs?: TAppConfig[]
   isSubmitting: boolean
-  onFormSubmit: () => void
+  onFormSubmit?: () => void
   appId: string
   platform: 'aws' | 'azure' | 'gcp'
   onSubmitAction: (formData: FormData) => Promise<any>

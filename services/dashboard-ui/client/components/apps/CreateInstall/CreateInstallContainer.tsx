@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type IButtonAsButton } from '@/components/common/Button'
@@ -22,7 +21,6 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const formRef = useRef<HTMLFormElement>(null)
 
   const {
     data: configs,
@@ -131,7 +129,6 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       config={config}
       configs={configs}
       isSubmitting={isSubmitting}
-      onFormSubmit={() => formRef.current?.requestSubmit()}
       appId={app.id}
       platform={app?.runner_config?.app_runner_type as 'aws' | 'azure' | 'gcp'}
       onSubmitAction={(formData) => mutateAsync(formData)}
