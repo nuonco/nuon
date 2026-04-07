@@ -1,3 +1,7 @@
+export default {
+  title: 'Components/ComponentType',
+}
+
 import { ComponentType } from './ComponentType'
 import { Text } from '../common/Text'
 import { Badge } from '../common/Badge'
@@ -22,7 +26,7 @@ export const ColorVariants = () => (
         <ComponentType type="external_image" />
         <ComponentType type="helm_chart" />
         <ComponentType type="terraform_module" />
-        <ComponentType type="pulumi_module" />
+        <ComponentType type={'pulumi_module' as any} />
         <ComponentType type="job" />
         <ComponentType type="kubernetes_manifest" />
       </div>
@@ -35,7 +39,7 @@ export const ColorVariants = () => (
         <ComponentType type="external_image" colorVariant="color" />
         <ComponentType type="helm_chart" colorVariant="color" />
         <ComponentType type="terraform_module" colorVariant="color" />
-        <ComponentType type="pulumi_module" colorVariant="color" />
+        <ComponentType type={'pulumi_module' as any} colorVariant="color" />
         <ComponentType type="job" colorVariant="color" />
         <ComponentType type="kubernetes_manifest" colorVariant="color" />
       </div>
@@ -48,7 +52,7 @@ export const ColorVariants = () => (
         <ComponentType type="external_image" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="helm_chart" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="terraform_module" colorVariant="color" displayVariant="icon-only" />
-        <ComponentType type="pulumi_module" colorVariant="color" displayVariant="icon-only" />
+        <ComponentType type={'pulumi_module' as any} colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="job" colorVariant="color" displayVariant="icon-only" />
         <ComponentType type="kubernetes_manifest" colorVariant="color" displayVariant="icon-only" />
       </div>
@@ -97,7 +101,7 @@ export const BasicUsage = () => (
           </Text>
         </div>
         <div className="text-center space-y-2">
-          <ComponentType type="pulumi_module" />
+          <ComponentType type={'pulumi_module' as any} />
           <Text variant="label" className="text-xs">
             Pulumi
           </Text>
@@ -161,7 +165,7 @@ export const DisplayVariants = () => (
         <ComponentType type="external_image" displayVariant="name" />
         <ComponentType type="helm_chart" displayVariant="name" />
         <ComponentType type="terraform_module" displayVariant="name" />
-        <ComponentType type="pulumi_module" displayVariant="name" />
+        <ComponentType type={'pulumi_module' as any} displayVariant="name" />
         <ComponentType type="job" displayVariant="name" />
         <ComponentType type="kubernetes_manifest" displayVariant="name" />
       </div>
@@ -177,7 +181,7 @@ export const DisplayVariants = () => (
         <ComponentType type="external_image" displayVariant="abbr" />
         <ComponentType type="helm_chart" displayVariant="abbr" />
         <ComponentType type="terraform_module" displayVariant="abbr" />
-        <ComponentType type="pulumi_module" displayVariant="abbr" />
+        <ComponentType type={'pulumi_module' as any} displayVariant="abbr" />
         <ComponentType type="job" displayVariant="abbr" />
         <ComponentType type="kubernetes_manifest" displayVariant="abbr" />
       </div>
@@ -194,7 +198,7 @@ export const DisplayVariants = () => (
         <ComponentType type="external_image" displayVariant="icon-only" />
         <ComponentType type="helm_chart" displayVariant="icon-only" />
         <ComponentType type="terraform_module" displayVariant="icon-only" />
-        <ComponentType type="pulumi_module" displayVariant="icon-only" />
+        <ComponentType type={'pulumi_module' as any} displayVariant="icon-only" />
         <ComponentType type="job" displayVariant="icon-only" />
         <ComponentType type="kubernetes_manifest" displayVariant="icon-only" />
       </div>
@@ -404,9 +408,9 @@ export const UsageExamples = () => (
             Pulumi Module
           </Text>
           <div className="flex items-center gap-4">
-            <ComponentType type="pulumi_module" displayVariant="icon-only" />
-            <ComponentType type="pulumi_module" displayVariant="abbr" />
-            <ComponentType type="pulumi_module" displayVariant="name" />
+            <ComponentType type={'pulumi_module' as any} displayVariant="icon-only" />
+            <ComponentType type={'pulumi_module' as any} displayVariant="abbr" />
+            <ComponentType type={'pulumi_module' as any} displayVariant="name" />
           </div>
         </div>
         <div className="p-4 border rounded">

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Dropdown',
+}
+
 import { Button } from './Button'
 import { Dropdown } from './Dropdown'
 import { Icon } from './Icon'

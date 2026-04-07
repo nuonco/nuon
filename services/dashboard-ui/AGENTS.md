@@ -357,9 +357,35 @@ The `Tabs` component renders tab labels by running each object key through `toSe
 <Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
 ```
 
+### Container / Component Pattern
+
+Feature components use a **container/component split** to separate data-fetching from presentation. Every feature component directory follows this structure:
+
+```
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx              ← Pure presentational component (props in, JSX out)
+├── MyComponentContainer.tsx     ← Data-fetching wrapper (hooks, queries, mutations)
+├── MyComponent.stories.tsx      ← Ladle stories (required)
+├── index.ts                     ← Barrel export
+```
+
+**`MyComponent.tsx`** — The presentational component. Receives all data as props. No `useQuery`, `useMutation`, or context hooks that require providers. This is the component that stories render directly.
+
+**`MyComponentContainer.tsx`** — The container. Calls hooks (`useOrg()`, `useQuery()`, etc.) and passes resolved data to the presentational component. Views and other containers import this via the barrel.
+
+**`index.ts`** — Barrel export. Exports the container as the default/primary export, and the presentational component as a named export:
+```typescript
+export { MyComponentContainer as MyComponent } from './MyComponentContainer'
+export { MyComponent as MyComponentComponent } from './MyComponent'
+```
+
+**When to use this pattern**: Any component that calls context hooks (`useOrg`, `useInstall`, `useDeploy`, etc.) or TanStack Query hooks. Simple presentational components (Button, Badge, etc.) stay as flat files.
+
+**Important**: Never have both a flat file `MyComponent.tsx` and a directory `MyComponent/` at the same level — the flat file shadows the directory's `index.ts` and causes import resolution bugs.
+
 ### File Organization
 
-**Flat files (preferred for most components)**:
+**Flat files (for simple presentational components)**:
 ```
 client/components/common/
 ├── Button.tsx
@@ -367,13 +393,68 @@ client/components/common/
 └── Text.tsx
 ```
 
-**Directory structure (only when component has internal sub-components)**:
+**Directory structure (for feature components with container/component split)**:
 ```
-client/components/common/EmptyState/
-├── EmptyState.tsx
-├── EmptyGraphic.tsx   ← internal, not exported directly
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx
+├── MyComponentContainer.tsx
+├── MyComponent.stories.tsx
 └── index.ts
 ```
+
+### Ladle Stories (Required)
+
+Every component directory must include a `.stories.tsx` file. Stories are written for **Ladle v5** — not Storybook.
+
+**Story format** — plain function exports only. Ladle does NOT support `StoryObj` with `render:`:
+```tsx
+// ✅ Correct — Ladle v5 format
+export default {
+  title: 'Domain/MyComponent',
+}
+
+import { MyComponent } from './MyComponent'
+
+export const Default = () => <MyComponent items={mockItems} />
+export const Empty = () => <MyComponent items={[]} />
+```
+
+```tsx
+// ❌ Wrong — Storybook syntax, breaks Ladle ("got: object" error)
+import type { Meta, StoryObj } from '@ladle/react'
+export const Default: StoryObj = { render: () => <MyComponent /> }
+```
+
+**Stories render the presentational component**, not the container. Pass all data as props — no provider dependencies needed.
+
+**When a component needs a context provider** (because it renders a child that calls a hook), mock the context in the story:
+```tsx
+import { SomeContext } from '@/providers/some-provider'
+
+const mockValue = { /* mock context shape */ }
+
+export const Default = () => (
+  <SomeContext.Provider value={mockValue}>
+    <MyComponent />
+  </SomeContext.Provider>
+)
+```
+
+**Modal stories** — use the `ModalStory` helper from `@/components/__stories__/helpers`:
+```tsx
+import { ModalStory } from '@/components/__stories__/helpers'
+import { MyModal } from './MyModal'
+
+export const Default = () => (
+  <ModalStory>
+    <MyModal someData={mockData} />
+  </ModalStory>
+)
+```
+
+**Timeline stories** — mock items must have unique `created_at` timestamps on different calendar days. The `Timeline` component groups by date, so duplicate dates cause React key warnings.
+
+**Ladle provides a `MemoryRouter`** globally — never wrap stories in another `MemoryRouter` or you'll get "cannot render a `<Router>` inside another `<Router>`".
 
 ### Modal and Panel Components
 

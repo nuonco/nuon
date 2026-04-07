@@ -21,7 +21,16 @@ This skill enforces correct route registration, layout-aware provider usage, and
    - `const { install } = useInstall()` (install-level only)
    - `const { resourceId } = useParams()`
 
-5. Fetch data with `useQuery`, always including an `enabled` guard:
+5. Import **container** components (the default export from component directories), not presentational components. The container handles data-fetching; the view just composes containers:
+   ```typescript
+   // ✅ Correct — imports the container via barrel
+   import { MyComponent } from '@/components/domain/MyComponent'
+
+   // ❌ Wrong — imports the presentational component directly
+   import { MyComponent } from '@/components/domain/MyComponent/MyComponent'
+   ```
+
+6. Fetch data with `useQuery`, always including an `enabled` guard:
    ```typescript
    const { data: resource } = useQuery({
      queryKey: ['my-resource', org?.id, resourceId],
@@ -30,9 +39,9 @@ This skill enforces correct route registration, layout-aware provider usage, and
    })
    ```
 
-6. Do NOT add `SurfacesProvider` or `ToastProvider` inside the view — they are already provided by `InstallLayout`. Adding them again creates a nested context that breaks `useSurfaces()` lookups.
+7. Do NOT add `SurfacesProvider` or `ToastProvider` inside the view — they are already provided by `InstallLayout`. Adding them again creates a nested context that breaks `useSurfaces()` lookups.
 
-7. Use the correct page structure based on the route level:
+8. Use the correct page structure based on the route level:
 
    **Org-level page** (has its own PageLayout):
    ```tsx
