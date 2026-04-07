@@ -15,6 +15,7 @@ import (
 	runnerreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "org-reprovision"
@@ -101,6 +102,14 @@ func (s *Signal) updateStatus(ctx workflow.Context, status app.OrgStatus, status
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{OrgID: s.OrgID, Status: status, StatusDescription: statusDescription}); err != nil {
 		l := workflow.GetLogger(ctx)
 		l.Error("unable to update org status", zap.String("organization-id", s.OrgID), zap.Error(err))
+	}
+	if err := statusactivities.AwaitUpdateOrgStatusV2(ctx, statusactivities.UpdateOrgStatusV2Request{
+		OrgID:             s.OrgID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Error("unable to update org status v2", zap.String("organization-id", s.OrgID), zap.Error(err))
 	}
 }
 

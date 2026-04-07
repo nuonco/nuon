@@ -49,6 +49,7 @@ type RunnerOperation struct {
 	OpType            RunnerOperationType   `json:"operation_type,omitzero" temporaljson:"op_type,omitzero,omitempty"`
 	Status            RunnerOperationStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus       `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 }
 
 func (i *RunnerOperation) Indexes(db *gorm.DB) []migrations.Index {

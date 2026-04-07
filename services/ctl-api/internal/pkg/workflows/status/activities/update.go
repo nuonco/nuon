@@ -305,6 +305,253 @@ func (a *Activities) UpdateRunStatusV2(ctx context.Context, req UpdateRunStatusV
 	return nil
 }
 
+type UpdateOrgStatusV2Request struct {
+	OrgID             string        `validate:"required"`
+	Status            app.OrgStatus `validate:"required"`
+	StatusDescription string        `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateOrgStatusV2(ctx context.Context, req UpdateOrgStatusV2Request) error {
+	obj := app.Org{ID: req.OrgID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.Org
+		if err := a.getStatus(ctx, &obj, req.OrgID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateAppStatusV2Request struct {
+	AppID             string        `validate:"required"`
+	Status            app.AppStatus `validate:"required"`
+	StatusDescription string        `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateAppStatusV2(ctx context.Context, req UpdateAppStatusV2Request) error {
+	obj := app.App{ID: req.AppID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.App
+		if err := a.getStatus(ctx, &obj, req.AppID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateComponentStatusV2Request struct {
+	ComponentID       string              `validate:"required"`
+	Status            app.ComponentStatus `validate:"required"`
+	StatusDescription string              `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateComponentStatusV2(ctx context.Context, req UpdateComponentStatusV2Request) error {
+	obj := app.Component{ID: req.ComponentID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.Component
+		if err := a.getStatus(ctx, &obj, req.ComponentID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateRunnerStatusV2Request struct {
+	RunnerID          string           `validate:"required"`
+	Status            app.RunnerStatus `validate:"required"`
+	StatusDescription string           `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerStatusV2Request) error {
+	obj := app.Runner{ID: req.RunnerID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.Runner
+		if err := a.getStatus(ctx, &obj, req.RunnerID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateActionWorkflowStatusV2Request struct {
+	ActionWorkflowID  string                   `validate:"required"`
+	Status            app.ActionWorkflowStatus `validate:"required"`
+	StatusDescription string                   `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateActionWorkflowStatusV2(ctx context.Context, req UpdateActionWorkflowStatusV2Request) error {
+	obj := app.ActionWorkflow{ID: req.ActionWorkflowID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.ActionWorkflow
+		if err := a.getStatus(ctx, &obj, req.ActionWorkflowID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateRunnerOperationStatusV2Request struct {
+	RunnerOperationID string                    `validate:"required"`
+	Status            app.RunnerOperationStatus `validate:"required"`
+	StatusDescription string                    `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateRunnerOperationStatusV2(ctx context.Context, req UpdateRunnerOperationStatusV2Request) error {
+	obj := app.RunnerOperation{ID: req.RunnerOperationID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.RunnerOperation
+		if err := a.getStatus(ctx, &obj, req.RunnerOperationID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateRunnerJobStatusV2Request struct {
+	RunnerJobID       string              `validate:"required"`
+	Status            app.RunnerJobStatus `validate:"required"`
+	StatusDescription string              `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateRunnerJobStatusV2(ctx context.Context, req UpdateRunnerJobStatusV2Request) error {
+	obj := app.RunnerJob{ID: req.RunnerJobID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.RunnerJob
+		if err := a.getStatus(ctx, &obj, req.RunnerJobID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateRunnerJobExecutionStatusV2Request struct {
+	RunnerJobExecutionID string                       `validate:"required"`
+	Status               app.RunnerJobExecutionStatus `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateRunnerJobExecutionStatusV2(ctx context.Context, req UpdateRunnerJobExecutionStatusV2Request) error {
+	obj := app.RunnerJobExecution{ID: req.RunnerJobExecutionID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.RunnerJobExecution
+		if err := a.getStatus(ctx, &obj, req.RunnerJobExecutionID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateInstallActionWorkflowRunStepStatusV2Request struct {
+	StepID string                                 `validate:"required"`
+	Status app.InstallActionWorkflowRunStepStatus `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateInstallActionWorkflowRunStepStatusV2(ctx context.Context, req UpdateInstallActionWorkflowRunStepStatusV2Request) error {
+	obj := app.InstallActionWorkflowRunStep{ID: req.StepID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.InstallActionWorkflowRunStep
+		if err := a.getStatus(ctx, &obj, req.StepID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateAppConfigStatusV2Request struct {
+	AppConfigID       string              `validate:"required"`
+	Status            app.AppConfigStatus `validate:"required"`
+	StatusDescription string              `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateAppConfigStatusV2(ctx context.Context, req UpdateAppConfigStatusV2Request) error {
+	obj := app.AppConfig{ID: req.AppConfigID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.AppConfig
+		if err := a.getStatus(ctx, &obj, req.AppConfigID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateOrgInviteStatusV2Request struct {
+	OrgInviteID string              `validate:"required"`
+	Status      app.OrgInviteStatus `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateOrgInviteStatusV2(ctx context.Context, req UpdateOrgInviteStatusV2Request) error {
+	obj := app.OrgInvite{ID: req.OrgInviteID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.OrgInvite
+		if err := a.getStatus(ctx, &obj, req.OrgInviteID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.StatusV2, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
 type UpdateDeployStatusV2Request struct {
 	DeployID          string     `validate:"required"`
 	Status            app.Status `validate:"required"`
