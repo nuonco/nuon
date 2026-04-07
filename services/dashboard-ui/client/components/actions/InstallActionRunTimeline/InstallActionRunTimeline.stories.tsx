@@ -4,13 +4,15 @@ export default {
 
 import { InstallActionRunTimeline } from './InstallActionRunTimeline'
 
+const statuses = ['finished', 'in-progress', 'finished', 'error', 'queued']
+
 const mockRuns = Array.from({ length: 5 }, (_, i) => ({
   id: `run-${i + 1}`,
   created_at: new Date(Date.now() - i * 3600000).toISOString(),
-  status: i === 0 ? 'succeeded' : i === 1 ? 'running' : 'succeeded',
+  status: statuses[i],
   triggered_by_type: i % 2 === 0 ? 'manual' : 'post-deploy-component',
   run_env_vars: { COMPONENT_NAME: 'web-app', COMPONENT_ID: `comp-${i}` },
-  status_v2: { status: i === 0 ? 'succeeded' : 'running' },
+  status_v2: { status: statuses[i] },
   created_by: { email: 'user@example.com' },
 })) as any
 

@@ -2,23 +2,23 @@
 
 import { useWorkflow } from '@/hooks/use-workflow'
 import { StepBanner } from './step-details/StepBanner'
-import { WorkflowHeader } from './workflow-details/WorkflowHeader'
-import { WorkflowMetrics } from './workflow-details/WorkflowMetrics'
-import { WorkflowStatusSection } from './workflow-details/WorkflowStatusSection'
-import { WorkflowDetailsSection } from './workflow-details/WorkflowDetailsSection'
+import { WorkflowHeaderContainer } from './workflow-details/WorkflowHeader'
+import { WorkflowMetricsContainer } from './workflow-details/WorkflowMetrics'
+import { WorkflowStatusSectionContainer } from './workflow-details/WorkflowStatusSection'
+import { WorkflowDetailsSectionContainer } from './workflow-details/WorkflowDetailsSection'
 
 export const WorkflowDetails = () => {
   const { failedSteps, workflow } = useWorkflow()
 
   return (
     <>
-      <WorkflowHeader />
+      <WorkflowHeaderContainer />
 
-      <WorkflowMetrics />
+      <WorkflowMetricsContainer />
 
-      <WorkflowStatusSection />
+      <WorkflowStatusSectionContainer />
 
-      <WorkflowDetailsSection />
+      <WorkflowDetailsSectionContainer />
 
       {failedSteps?.length > 0 &&
         failedSteps.map((failedStep) => (

@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Avatar } from '@/components/common/Avatar'
 import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { getOrgs } from '@/lib/ctl-api/orgs'
+import type { TOrg } from '@/types'
 import { OrgSummary } from './OrgSummary'
 
 const LoadingOrgSummary = () => {
@@ -21,27 +20,35 @@ const LoadingOrgSummary = () => {
   )
 }
 
-export const OrgsNav = () => {
-  const enablePaginationCount = 6
-  const [offset] = useState<number>(0)
-  const [limit, setLimit] = useState<number>(10)
-  const [searchTerm, setSearchTerm] = useState<string>('')
+interface IOrgsNav {
+  orgs?: TOrg[]
+  isLoading: boolean
+  searchTerm: string
+  onSearchChange: (value: string) => void
+  onLoadMore: () => void
+  showSearch: boolean
+  showLoadMore: boolean
+}
 
-  const { data: orgs, isLoading } = useQuery({
-    queryKey: ['orgs', { offset, limit, q: searchTerm }],
-    queryFn: () => getOrgs({ offset, limit, q: searchTerm }),
-  })
-
+export const OrgsNav = ({
+  orgs,
+  isLoading,
+  searchTerm,
+  onSearchChange,
+  onLoadMore,
+  showSearch,
+  showLoadMore,
+}: IOrgsNav) => {
   return (
     <div className="w-full">
-      {orgs?.length > enablePaginationCount || searchTerm ? (
+      {showSearch ? (
         <div className="p-2 w-full">
           <SearchInput
             labelClassName="md:!min-w-full md:!w-full"
             className="md:!min-w-full md:!w-full"
             placeholder="Search org by name..."
             value={searchTerm}
-            onChange={(value) => setSearchTerm(value)}
+            onChange={onSearchChange}
           />
         </div>
       ) : null}
@@ -68,10 +75,10 @@ export const OrgsNav = () => {
           </Text>
         </div>
       )}
-      {orgs?.length > enablePaginationCount && orgs?.length === limit ? (
+      {showLoadMore ? (
         <Button
           className="w-full justify-center mt-4"
-          onClick={() => setLimit(limit + 10)}
+          onClick={onLoadMore}
           variant="ghost"
         >
           Load more

@@ -1,5 +1,5 @@
 export default {
-  title: 'Log Stream/DownloadLogs',
+  title: 'LogStream/DownloadLogs',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
