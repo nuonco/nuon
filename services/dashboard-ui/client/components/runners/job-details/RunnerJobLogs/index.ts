@@ -1,2 +1,2 @@
-export { RunnerJobLogsContainer as default, RunnerJobLogsContainer } from './RunnerJobLogsContainer'
-export { RunnerJobLogs } from './RunnerJobLogs'
+export { RunnerJobLogsContainer as RunnerJobLogs } from './RunnerJobLogsContainer'
+export { RunnerJobLogs as RunnerJobLogsComponent } from './RunnerJobLogs'

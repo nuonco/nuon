@@ -42,10 +42,7 @@ export const PolicyReportsTable = ({
         <Text variant="subtext" theme="neutral">
           {reports.length} {reports.length === 1 ? 'report' : 'reports'}
         </Text>
-        <PolicyReportsFilter
-          currentStatus={currentStatus}
-          currentOwnerType={currentOwnerType}
-        />
+        <PolicyReportsFilter />
       </div>
 
       {reports.length === 0 ? (

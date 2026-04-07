@@ -1,2 +1,2 @@
-export { AdminAppSectionContainer as default, AdminAppSectionContainer } from './AdminAppSectionContainer'
-export { AdminAppSection } from './AdminAppSection'
+export { AdminAppSectionContainer as AdminAppSection } from './AdminAppSectionContainer'
+export { AdminAppSection as AdminAppSectionComponent } from './AdminAppSection'

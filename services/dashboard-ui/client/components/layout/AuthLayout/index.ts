@@ -1,2 +1,2 @@
-export { AuthLayoutContainer as default, AuthLayoutContainer } from './AuthLayoutContainer'
-export { AuthLayout } from './AuthLayout'
+export { AuthLayoutContainer as AuthLayout } from './AuthLayoutContainer'
+export { AuthLayout as AuthLayoutComponent } from './AuthLayout'

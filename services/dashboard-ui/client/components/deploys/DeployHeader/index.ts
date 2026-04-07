@@ -1,2 +1,2 @@
-export { DeployHeaderContainer as default, DeployHeaderContainer } from './DeployHeaderContainer'
-export { DeployHeader } from './DeployHeader'
+export { DeployHeaderContainer as DeployHeader } from './DeployHeaderContainer'
+export { DeployHeader as DeployHeaderComponent } from './DeployHeader'

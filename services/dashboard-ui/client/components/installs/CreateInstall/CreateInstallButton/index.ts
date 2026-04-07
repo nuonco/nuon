@@ -1,2 +1,2 @@
-export { CreateInstallButtonContainer as default, CreateInstallButtonContainer } from './CreateInstallButtonContainer'
-export { CreateInstallButton } from './CreateInstallButton'
+export { CreateInstallButtonContainer as CreateInstallButton } from './CreateInstallButtonContainer'
+export { CreateInstallButton as CreateInstallButtonComponent } from './CreateInstallButton'
