@@ -116,6 +116,9 @@ type AppInstall struct {
 	// sandbox
 	Sandbox *AppInstallSandbox `json:"sandbox,omitempty"`
 
+	// sandbox mode
+	SandboxMode *SQLNullBool `json:"sandbox_mode,omitempty"`
+
 	// sandbox status
 	SandboxStatus string `json:"sandbox_status,omitempty"`
 
@@ -196,6 +199,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSandbox(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSandboxMode(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -603,6 +610,29 @@ func (m *AppInstall) validateSandbox(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validateSandboxMode(formats strfmt.Registry) error {
+	if swag.IsZero(m.SandboxMode) { // not required
+		return nil
+	}
+
+	if m.SandboxMode != nil {
+		if err := m.SandboxMode.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("sandbox_mode")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("sandbox_mode")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validateWorkflows(formats strfmt.Registry) error {
 	if swag.IsZero(m.Workflows) { // not required
 		return nil
@@ -694,6 +724,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateSandbox(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateSandboxMode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1101,6 +1135,31 @@ func (m *AppInstall) contextValidateSandbox(ctx context.Context, formats strfmt.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("sandbox")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateSandboxMode(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SandboxMode != nil {
+
+		if swag.IsZero(m.SandboxMode) { // not required
+			return nil
+		}
+
+		if err := m.SandboxMode.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("sandbox_mode")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("sandbox_mode")
 			}
 
 			return err
