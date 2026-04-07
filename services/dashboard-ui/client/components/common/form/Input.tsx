@@ -97,42 +97,36 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
 
     const sizeClasses = {
       sm: 'px-2 py-1 text-sm h-8',
-      md: 'px-3 py-2 text-sm h-10',
+      md: 'px-3 py-2 text-sm h-9',
       lg: 'px-4 py-3 text-base h-12',
     }
 
     const baseClasses = cn(
-      // Base styles
       'w-full rounded-md border transition-colors duration-200',
       'bg-white dark:bg-dark-grey-900',
-      'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700',
-      'font-mono',
-      
-      // Focus styles (brightest primary when focused)
+      'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]',
+      'placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-600',
+      'font-sans',
+
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:!border-primary-500',
-      
-      // HTML5 validation states - user-invalid overrides everything
+
       'user-invalid:!border-red-500 user-invalid:dark:!border-red-400',
       'user-invalid:focus:!border-red-500 user-invalid:focus:!ring-red-500',
-      
-      // Size
+
       sizeClasses[size],
-      
-      // States
+
       {
-        // Default state - dimmed primary (subtle but branded)
-        '!border-primary-700 dark:!border-primary-400/50': !error && !disabled && !isInvalid,
+        'border-cool-grey-500/24 dark:border-cool-grey-500/24': !error && !disabled && !isInvalid,
         'text-cool-grey-900 dark:text-cool-grey-100': !disabled,
-        
-        // Error state - red overrides everything
+
         '!border-red-500 dark:!border-red-400': error || isInvalid,
         'focus:!ring-red-500 focus:!border-red-500': error || isInvalid,
-        
-        // Disabled state - grey overrides everything
+
         '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
         '!bg-cool-grey-100 dark:!bg-dark-grey-700': disabled,
         'text-cool-grey-400 dark:text-cool-grey-500': disabled,
         'cursor-not-allowed': disabled,
+        '!shadow-none': disabled,
         'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
       },
       className

@@ -56,7 +56,6 @@ export const TriggeredByFilter = ({
   return (
     <Dropdown
       alignment="right"
-      buttonClassName="!p-2"
       buttonText={
         <>
           <Icon variant="SlidersIcon" />
@@ -64,7 +63,6 @@ export const TriggeredByFilter = ({
         </>
       }
       id="install-filter"
-      variant="ghost"
     >
       <Menu className="!p-0 !w-68">
         <form onReset={onClearFilter}>

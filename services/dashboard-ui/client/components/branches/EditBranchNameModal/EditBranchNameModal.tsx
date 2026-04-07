@@ -222,7 +222,7 @@ export const EditBranchNameModal = ({
   return (
     <Modal
       heading="Edit Branch"
-      size="3/4"
+      size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Saving...' : 'Save Changes',
         onClick: handleSubmit,

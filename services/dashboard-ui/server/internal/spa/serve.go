@@ -34,6 +34,7 @@ type clientConfig struct {
 	IsBYOC                bool   `json:"isByoc"`
 	SFTrialEndpoint       string `json:"sfTrialEndpoint,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
+	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -54,6 +55,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		IsBYOC:                cfg.IsBYOC,
 		SFTrialEndpoint:       cfg.SFTrialEndpoint,
 		OnboardingV2:          cfg.OnboardingV2,
+		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 	}
 }
 

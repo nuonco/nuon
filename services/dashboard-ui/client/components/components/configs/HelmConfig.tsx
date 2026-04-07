@@ -28,7 +28,7 @@ export const HelmValuesFilesModal = ({
           Helm Values Files
         </Text>
       }
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       {...props}
@@ -70,7 +70,7 @@ export const HelmValuesModal = ({
           Helm Values
         </Text>
       }
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       {...props}

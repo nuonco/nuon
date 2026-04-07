@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getRunnerLatestHeartbeat, getWorkflow, getWorkflowSteps } from '@/lib'
 import { isLessThan30SecondsOld } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
@@ -467,6 +468,7 @@ export const ProvisioningStepContainer = ({
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
   const appId = onboarding?.app_id
+  const cloudProvider = (onboarding?.cloud_provider as 'aws' | 'gcp' | 'azure') || 'aws'
 
   const { data: app } = useQuery({
     queryKey: ['app', appId],
@@ -518,7 +520,7 @@ export const ProvisioningStepContainer = ({
       {/* App card */}
       <Card className="!gap-0 !p-4">
         <div className="flex items-center gap-4">
-          <Icon variant="AWSColor" size={24} className="shrink-0" />
+          <CloudPlatform platform={cloudProvider} colorVariant="color" displayVariant="icon-only" iconSize="24" className="shrink-0" />
           <div className="flex flex-col flex-1 min-w-0 gap-0">
             <Text variant="base" weight="strong" className="truncate">{appName}</Text>
             <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">

@@ -181,7 +181,6 @@ export const ComponentTypeFilterDropdown: React.FC<
       className="!p-2"
       closeOnBlur={false}
       id="logs-filter"
-      variant="ghost"
       buttonClassName="!p-1"
       buttonText={
         <>
