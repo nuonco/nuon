@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "reprovision_service_account"
@@ -51,6 +52,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to get runner: %w (also failed to update status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to get runner from database",
+		})
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
@@ -74,6 +80,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return errors.Wrap(err, "unable to create account (also failed to update operation status)")
 		}
+		statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+			RunnerOperationID: op.ID,
+			Status:            app.RunnerOperationStatusError,
+			StatusDescription: "unable to create runner service account",
+		})
 		return errors.Wrap(err, "unable to create account")
 	}
 
@@ -84,6 +95,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+		RunnerOperationID: op.ID,
+		Status:            app.RunnerOperationStatusFinished,
+		StatusDescription: "operation finished",
+	})
 
 	return nil
 }

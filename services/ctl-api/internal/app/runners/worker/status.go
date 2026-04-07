@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (w *Workflows) updateStatus(ctx workflow.Context, runnerID string, status app.RunnerStatus, statusDescription string) {
@@ -30,6 +31,13 @@ func (w *Workflows) updateJobStatus(ctx workflow.Context, jobID string, status a
 		Status:            status,
 		StatusDescription: statusDescription,
 	})
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       jobID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	})
+
 	if err == nil {
 		return
 	}
@@ -45,6 +53,12 @@ func (w *Workflows) updateJobExecutionStatus(ctx workflow.Context, jobExecutionI
 		JobExecutionID: jobExecutionID,
 		Status:         status,
 	})
+
+	statusactivities.AwaitUpdateRunnerJobExecutionStatusV2(ctx, statusactivities.UpdateRunnerJobExecutionStatusV2Request{
+		RunnerJobExecutionID: jobExecutionID,
+		Status:               status,
+	})
+
 	if err == nil {
 		return
 	}

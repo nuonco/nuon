@@ -58,7 +58,8 @@ type InstallActionWorkflowRunStep struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Status InstallActionWorkflowRunStepStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	Status   InstallActionWorkflowRunStepStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	StatusV2 CompositeStatus                    `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	InstallActionWorkflowRunID string                   `json:"install_action_workflow_run_id,omitzero" temporaljson:"install_action_workflow_run_id,omitzero,omitempty"`
 	InstallActionWorkflowRun   InstallActionWorkflowRun `json:"-" temporaljson:"install_action_workflow_run,omitzero,omitempty"`

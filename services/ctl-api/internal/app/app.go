@@ -57,8 +57,9 @@ type App struct {
 	AppSecrets                 []AppSecret        `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_secrets,omitzero,omitempty"`
 	InstallerApps              []InstallerApp     `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installer_apps,omitzero,omitempty"`
 
-	Status            AppStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string    `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
+	Status            AppStatus       `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	// fields set via after query
 	AppInputConfig   AppInputConfig   `json:"input_config,omitzero" gorm:"-" temporaljson:"app_input_config,omitzero,omitempty"`

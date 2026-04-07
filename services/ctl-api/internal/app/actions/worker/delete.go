@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
 	installsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	"github.com/pkg/errors"
 )
 
@@ -32,6 +33,11 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 		}); statusErr != nil {
 			return errors.Wrap(statusErr, "unable to update status")
 		}
+		statusactivities.AwaitUpdateActionWorkflowStatusV2(ctx, statusactivities.UpdateActionWorkflowStatusV2Request{
+			ActionWorkflowID:  sreq.ID,
+			Status:            app.ActionWorkflowStatusError,
+			StatusDescription: "unable to delete action workflow",
+		})
 
 		return errors.Wrap(err, "unable to delete action workflow")
 	}
@@ -45,6 +51,11 @@ func (w *Workflows) Delete(ctx workflow.Context, sreq signals.RequestSignal) err
 		}); statusErr != nil {
 			return errors.Wrap(statusErr, "unable to update status")
 		}
+		statusactivities.AwaitUpdateActionWorkflowStatusV2(ctx, statusactivities.UpdateActionWorkflowStatusV2Request{
+			ActionWorkflowID:  sreq.ID,
+			Status:            app.ActionWorkflowStatusError,
+			StatusDescription: "unable to delete action workflow",
+		})
 
 		return errors.Wrap(err, "unable to get action workflow installs")
 	}

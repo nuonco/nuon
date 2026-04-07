@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type Signal struct {
@@ -34,18 +35,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 // updateStatus is a helper method to update component status
 func (s *Signal) updateStatus(ctx workflow.Context, compID string, status app.ComponentStatus, statusDescription string) {
+	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		ComponentID:       compID,
 		Status:            status,
 		StatusDescription: statusDescription,
 	})
-
-	if err == nil {
+	if err != nil {
+		l.Error("unable to update component status",
+			zap.String("component-id", compID),
+			zap.Error(err))
 		return
 	}
 
-	l := workflow.GetLogger(ctx)
-	l.Error("unable to update component status",
-		zap.String("component-id", compID),
-		zap.Error(err))
+	err = statusactivities.AwaitUpdateComponentStatusV2(ctx, statusactivities.UpdateComponentStatusV2Request{
+		ComponentID:       compID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	})
+	if err != nil {
+		l.Error("unable to update component status v2",
+			zap.String("component-id", compID),
+			zap.Error(err))
+		return
+	}
 }
