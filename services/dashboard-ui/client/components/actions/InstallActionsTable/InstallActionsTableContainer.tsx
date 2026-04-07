@@ -63,7 +63,7 @@ export const InstallActionsTableContainer = ({
             namespace="installs"
             eventLoopId={`${install?.id}-action-workflows`}
           />
-          <RunAdhocActionButton className="!p-2 !h-fit" variant="ghost" />
+          <RunAdhocActionButton />
           <TriggeredByFilter />
         </div>
       }

@@ -12,7 +12,6 @@ export const ManageAllDropdown = () => {
   return (
     <Dropdown
       id="install-components-mgmt"
-      variant="ghost"
       buttonText={
         <>
           <Icon variant="SlidersHorizontalIcon" /> Manage

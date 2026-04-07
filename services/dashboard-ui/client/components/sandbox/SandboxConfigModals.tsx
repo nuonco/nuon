@@ -35,7 +35,7 @@ export const SandboxEnvironmentVariablesModal = ({
           Environment Variables
         </Text>
       }
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       {...props}
@@ -69,7 +69,7 @@ export const SandboxVariablesFilesModal = ({
           Terraform Variables Files
         </Text>
       }
-      size="3/4"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="overflow-y-auto"
       {...props}

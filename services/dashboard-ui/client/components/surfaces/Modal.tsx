@@ -25,7 +25,7 @@ export interface IModal
   secondaryActionTrigger?: IButtonAsButton
   showFooter?: boolean
   showHeader?: boolean
-  size?: 'default' | 'half' | '3/4' | 'full'
+  size?: 'sm' | 'default' | 'lg' | 'xl'
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
 
@@ -73,11 +73,12 @@ export const ModalBase = ({
         />
         <div
           className={cn(
-            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-md shadow-lg !max-h-[80vh]',
+            'modal bg-white dark:bg-dark-grey-900 border flex flex-col m-auto rounded-lg shadow-lg w-full max-h-[80vh]',
             {
-              'max-w-xl': size === 'default',
-              'max-w-1/2': size === 'half',
-              'max-w-3/4': size === '3/4',
+              'max-w-[400px]': size === 'sm',
+              'max-w-[600px]': size === 'default',
+              'max-w-[800px]': size === 'lg',
+              'max-w-[968px]': size === 'xl',
             },
             className
           )}
