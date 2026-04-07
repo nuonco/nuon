@@ -1,0 +1,174 @@
+# Onboarding V2 QA Test Plan
+
+## Overview
+
+Test plan for verifying the onboarding v2 flow across all 16 example apps on AWS (15 apps) and GCP (1 app).
+Each test run covers the full flow: org creation, app selection, install mode, provisioning, and the "all set" page.
+
+---
+
+## Test Matrix
+
+### AWS Example Apps (15)
+
+| # | Slug | Display Name | Category | Difficulty | Deploy Modes to Test | Status | Notes |
+|---|------|-------------|----------|------------|---------------------|--------|-------|
+| 1 | `httpbin` | HTTPBin | architecture | simple | sandbox, cloud | pass | |
+| 2 | `eks-simple` | EKS Simple | architecture | simple | sandbox, cloud | fail | Generate install stack failed (completed in 2s) |
+| 3 | `eks-simple-auto` | EKS Simple Auto | architecture | simple | sandbox, cloud | fail | Stack/Runner/Sandbox OK. Failed at component "Whoami" deploy step |
+| 4 | `grafana` | Grafana | self-hosted | medium | sandbox, cloud | | |
+| 5 | `mattermost` | Mattermost | self-hosted | medium | sandbox, cloud | | |
+| 6 | `coder` | Coder | self-hosted | medium | sandbox, cloud | | |
+| 7 | `twenty` | Twenty CRM | self-hosted | medium | sandbox, cloud | | |
+| 8 | `penpot` | Penpot | self-hosted | medium | sandbox, cloud | | |
+| 9 | `baserow` | Baserow | self-hosted | medium | sandbox, cloud | | |
+| 10 | `clickhouse` | ClickHouse | self-hosted | medium | sandbox, cloud | | |
+| 11 | `clickhouse-tailscale` | ClickHouse + Tailscale | self-hosted | medium | sandbox, cloud | | |
+| 12 | `aws-lambda` | AWS Lambda | architecture | simple | sandbox, cloud | | |
+| 13 | `ecs-simple` | ECS Simple | architecture | simple | sandbox, cloud | | |
+| 14 | `cockroachdb` | CockroachDB | self-hosted | advanced | sandbox, cloud | | |
+| 15 | `uptime-monitor` | Uptime Monitor | architecture | simple | sandbox, cloud | | |
+
+### GCP Example Apps (1)
+
+| # | Slug | Display Name | Category | Difficulty | Deploy Modes to Test | Status | Notes |
+|---|------|-------------|----------|------------|---------------------|--------|-------|
+| 16 | `gke-simple` | GKE Simple | architecture | simple | sandbox, cloud | | |
+
+---
+
+## Test Flow Per App
+
+### Step 1: Organization (WelcomeNameOrgStep)
+
+- [ ] Org name input renders with placeholder
+- [ ] "Generate random name" button works
+- [ ] Org creation shows spinner + progress messages
+- [ ] Org card transitions to success state with green check
+- [ ] Continue button appears after org is created
+- [ ] If org already exists from prior run, shows success immediately
+
+### Step 2: App Profile (AppProfileStep)
+
+- [ ] Example apps catalog loads (16 apps visible)
+- [ ] Apps are grouped by category (architecture, self-hosted)
+- [ ] Selecting an app highlights the card
+- [ ] Search/filter works across apps
+- [ ] Continue advances to step 3
+- [ ] Cloud provider is correctly set from the selected app (aws/gcp)
+
+### Step 3: Deploy Mode (CloudSetupStep)
+
+- [ ] "Connect your [AWS/GCP] account" option shows correct cloud label
+- [ ] "Use demo mode" option shows with "Recommended" badge
+- [ ] Selecting "cloud" shows runner install curl command
+- [ ] Selecting "sandbox" hides runner command
+- [ ] Continue triggers install creation
+- [ ] Spinner/waiting state shows during install setup
+- [ ] Error banner shows if install creation fails
+
+### Step 4: Provisioning (ProvisioningStep)
+
+- [ ] App card shows app name and dynamic progress message
+- [ ] Progress ring animates with percentage
+- [ ] ETA displays and updates as rows complete
+  - Initial ETA uses 90s per row fallback
+  - After 10s + 1 completed row, switches to adaptive rate
+- [ ] Provisioning rows appear in order:
+  1. CloudFormation Stack
+  2. Runner
+  3. Sandbox
+  4. Individual components (varies by app)
+- [ ] Each row shows correct status transitions: pending -> active -> done
+- [ ] Active rows show blue description text
+- [ ] Done rows show green description text with checkmark
+- [ ] Runner row (when done) shows: Healthy, Connected/Disconnected, Version
+- [ ] Error state: red banner + error icon on failed row
+- [ ] Continue button enabled only after workflow finishes successfully
+- [ ] "Deploying components" placeholder row appears when infra rows are done but workflow continues
+
+### Step 5: All Set (NextStepsStep)
+
+- [ ] Title is hidden (hideTitle: true)
+- [ ] "Your install is live" header with Active status badge
+- [ ] Confetti animation fires (useConfetti hook)
+- [ ] Three pillar cards render with correct content and icons
+- [ ] Learn more links point to correct docs pages
+- [ ] Carousel images load for both light and dark mode
+- [ ] "View install" button navigates to the install page
+
+---
+
+## Per-App Provisioning Expectations
+
+### Architecture Apps (simple)
+
+| App | Expected Rows | Key Things to Verify |
+|-----|--------------|---------------------|
+| `httpbin` | Stack, Runner, Sandbox, httpbin | EC2-based, no EKS cluster |
+| `eks-simple` | Stack, Runner, Sandbox, eks-simple components | EKS cluster provisions, ALB created |
+| `eks-simple-auto` | Stack, Runner, Sandbox, eks-simple-auto components | Auto-provision mode |
+| `gke-simple` | Stack, Runner, Sandbox, gke-simple components | GCP-only, GKE cluster |
+| `aws-lambda` | Stack, Runner, Sandbox, lambda components | Lambda-based, no EKS |
+| `ecs-simple` | Stack, Runner, Sandbox, ecs components | ECS-based, no EKS |
+| `uptime-monitor` | Stack, Runner, Sandbox, uptime-monitor components | Terraform-only, monitoring |
+
+### Self-Hosted Apps (medium)
+
+| App | Expected Rows | Key Things to Verify |
+|-----|--------------|---------------------|
+| `grafana` | Stack, Runner, Sandbox, certificate, rds_subnet, rds_cluster_coder, grafana | RDS + Helm chart |
+| `mattermost` | Stack, Runner, Sandbox, mattermost components | Helm chart deployment |
+| `coder` | Stack, Runner, Sandbox, coder components | RDS + Helm, dev environments |
+| `twenty` | Stack, Runner, Sandbox, twenty components | CRM deployment |
+| `penpot` | Stack, Runner, Sandbox, penpot components | Design tool deployment |
+| `baserow` | Stack, Runner, Sandbox, baserow components | No-code platform |
+| `clickhouse` | Stack, Runner, Sandbox, clickhouse components | Analytics DB |
+| `clickhouse-tailscale` | Stack, Runner, Sandbox, clickhouse + tailscale components | Networking + analytics |
+| `cockroachdb` | Stack, Runner, Sandbox, cockroachdb components | Advanced DB setup |
+
+---
+
+## Error Scenarios to Test
+
+### Org Creation Failures
+- [ ] Invalid org name (empty, special chars)
+- [ ] Duplicate org name
+- [ ] Network timeout during org creation
+
+### App Selection Failures
+- [ ] API returns empty example apps list
+- [ ] Selected slug doesn't match catalog
+
+### Install Creation Failures
+- [ ] Sandbox mode unavailable (onboarding_sandbox: false)
+- [ ] Cloud mode without runner token
+- [ ] Backend returns processing but never resolves
+
+### Provisioning Failures
+- [ ] CloudFormation stack fails (IAM permissions)
+- [ ] Runner never becomes healthy (timeout)
+- [ ] Sandbox provisioning fails (resource limits)
+- [ ] Component deploy fails (image pull, helm values)
+- [ ] Workflow stuck in-progress indefinitely
+
+### Recovery Scenarios
+- [ ] Refresh page mid-provisioning (should resume from current step)
+- [ ] Back button during provisioning (should warn or prevent)
+- [ ] Re-entering onboarding after partial completion
+
+---
+
+## Environment Notes
+
+- **Local dev**: `nuonctl dev --dev=dashboard-ui,runner,ctl-api --dev-type=local`
+- **Dashboard**: http://localhost:4000
+- **CTL-API**: http://localhost:8081
+- **Example app configs repo**: https://github.com/nuonco/example-app-configs
+
+## ETA Calculation Reference
+
+The provisioning page ETA is computed by `useEta()`:
+- **Fallback**: `remainingRows * 90 seconds` (used initially)
+- **Adaptive**: After 10s elapsed + at least 1 row done, switches to `(elapsed / doneRows) * remainingRows`
+- **Display**: `< 1 min` for under 60s, otherwise `~N min` (rounded up)
