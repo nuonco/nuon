@@ -98,6 +98,11 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			// features
 			current.GET("/features", s.GetCurrentOrgFeatures)
 			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
+
+			// webhooks
+			current.GET("/webhooks", s.GetCurrentOrgWebhooks)
+			current.POST("/webhooks", s.CreateCurrentOrgWebhook)
+			current.DELETE("/webhooks/:webhook_id", s.DeleteCurrentOrgWebhook)
 		}
 	}
 

@@ -13,6 +13,8 @@ import (
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signalhooks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/hooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -48,6 +50,9 @@ var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 // SharedWorkflowsModule provides shared workflow activities and workflows
 // used across multiple worker namespaces.
 var SharedWorkflowsModule = fx.Module("shared-workflows",
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
+	fx.Provide(signal.NewSignalLifecycleActivities),
+
 	fx.Provide(jobactivities.New),
 	fx.Provide(flowactivities.New),
 	fx.Provide(signalsactivities.New),

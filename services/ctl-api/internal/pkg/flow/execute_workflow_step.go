@@ -136,7 +136,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			},
 		},
 	}); err != nil {
-		return refetchStepsInfo, errors.Wrap(err, "unable to mark step as success")
+		return refetchStepsInfo, errors.Wrap(err, "unable to mark step status as checking plan")
 	}
 
 	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
@@ -158,6 +158,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 
 		return refetchStepsInfo, errors.Wrap(err, "failed to check for noop plan")
 	}
+
 	// check for plan contents here, if noop then mark auto approved + nex step as skipped since its noop change
 	if noopPlan {
 		l.Debug("approval plan contents empty",
@@ -266,6 +267,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			}
 			return refetchStepsInfo, errors.Wrap(err, "failed to handle plan-only auto-approval")
 		}
+
 		return refetchStepsInfo, nil
 	}
 
@@ -369,6 +371,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				return refetchStepsInfo, errors.Wrap(err, "unable to mark workflow steps approval deined")
 			}
 		}
+
 		refetchStepsInfo = true
 		return refetchStepsInfo, nil
 		// update step status to approval denied and somehow figureout how to skip at the top
