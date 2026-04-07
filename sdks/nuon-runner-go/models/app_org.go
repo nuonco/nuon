@@ -62,6 +62,9 @@ type AppOrg struct {
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
 
+	// status v2
+	StatusV2 *AppCompositeStatus `json:"status_v2,omitempty"`
+
 	// tags
 	Tags []string `json:"tags"`
 
@@ -85,6 +88,10 @@ func (m *AppOrg) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRunnerGroup(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatusV2(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -167,6 +174,29 @@ func (m *AppOrg) validateRunnerGroup(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppOrg) validateStatusV2(formats strfmt.Registry) error {
+	if swag.IsZero(m.StatusV2) { // not required
+		return nil
+	}
+
+	if m.StatusV2 != nil {
+		if err := m.StatusV2.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppOrg) validateVcsConnections(formats strfmt.Registry) error {
 	if swag.IsZero(m.VcsConnections) { // not required
 		return nil
@@ -210,6 +240,10 @@ func (m *AppOrg) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 	}
 
 	if err := m.contextValidateRunnerGroup(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -286,6 +320,31 @@ func (m *AppOrg) contextValidateRunnerGroup(ctx context.Context, formats strfmt.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("runner_group")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppOrg) contextValidateStatusV2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.StatusV2 != nil {
+
+		if swag.IsZero(m.StatusV2) { // not required
+			return nil
+		}
+
+		if err := m.StatusV2.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
 			}
 
 			return err
