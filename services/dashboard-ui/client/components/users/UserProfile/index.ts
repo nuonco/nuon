@@ -1,2 +1,2 @@
-export { UserProfileContainer as default, UserProfileContainer } from './UserProfileContainer'
-export { UserProfile } from './UserProfile'
+export { UserProfileContainer as UserProfile } from './UserProfileContainer'
+export { UserProfile as UserProfileComponent } from './UserProfile'

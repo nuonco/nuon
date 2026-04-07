@@ -18,6 +18,7 @@ export type TRuntimeConfig = {
   isByoc: boolean
   sfTrialEndpoint?: string
   onboardingV2?: boolean
+  adminDashboardUrl?: string
 }
 
 declare global {
