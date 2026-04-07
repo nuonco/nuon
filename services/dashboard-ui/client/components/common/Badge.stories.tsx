@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Badge',
+}
+
 import { Badge } from './Badge'
 import { Text } from './Text'
 import { Icon } from './Icon'

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Status',
+}
+
 import { Status } from './Status'
 
 export const Variants = () => (

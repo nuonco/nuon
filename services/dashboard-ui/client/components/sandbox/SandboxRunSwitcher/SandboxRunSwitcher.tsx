@@ -1,5 +1,5 @@
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
-import { SandboxRunMenu } from './SandboxRunMenu'
+import { SandboxRunMenuContainer as SandboxRunMenu } from './SandboxRunMenuContainer'
 
 interface ISandboxRunSwitcher
   extends Omit<IDropdown, 'children' | 'id' | 'buttonText'> {

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { SpotlightModal } from '@/components/spotlight/Spotlight'
+import { SpotlightModalContainer } from '@/components/spotlight/Spotlight'
 import React from 'react'
 
 export function useSpotlight() {
@@ -13,7 +13,7 @@ export function useSpotlight() {
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
         e.preventDefault()
-        addModal(React.createElement(SpotlightModal))
+        addModal(React.createElement(SpotlightModalContainer))
       }
     },
     [addModal]

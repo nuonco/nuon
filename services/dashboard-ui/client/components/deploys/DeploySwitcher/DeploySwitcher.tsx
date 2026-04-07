@@ -1,5 +1,5 @@
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
-import { DeployMenu } from './DeployMenu'
+import { DeployMenuContainer as DeployMenu } from './DeployMenuContainer'
 
 interface IDeploySwitcher
   extends Omit<IDropdown, 'children' | 'id' | 'buttonText'> {

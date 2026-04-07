@@ -1,6 +1,6 @@
 import type { TIconVariant } from '@/components/common/Icon'
 
-type TStatusTheme = 'success' | 'warn' | 'neutral' | 'error' | 'info' | 'brand'
+export type TStatusTheme = 'success' | 'warn' | 'neutral' | 'error' | 'info' | 'brand'
 
 const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   // Success

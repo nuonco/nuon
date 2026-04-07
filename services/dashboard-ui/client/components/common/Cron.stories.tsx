@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Cron',
+}
+
 import { Cron } from './Cron'
 import { Text } from './Text'
 import { Icon } from './Icon'

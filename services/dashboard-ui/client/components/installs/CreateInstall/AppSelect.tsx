@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
@@ -10,82 +9,47 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RadioInput } from '@/components/common/form/RadioInput'
-import { useOrg } from '@/hooks/use-org'
-import { getApps } from '@/lib'
 import type { TApp } from '@/types'
 
 interface AppSelectProps {
+  apps: TApp[]
+  isLoading: boolean
+  isLoadingMore: boolean
+  hasMorePages: boolean
+  error: any
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  onLoadMore: () => void
   onSelectApp: (app: TApp) => void
   onClose: () => void
 }
 
-export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
-  const { org } = useOrg()
-  const [allApps, setAllApps] = useState<TApp[]>([])
-  const [currentPage, setCurrentPage] = useState(0)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [hasMorePages, setHasMorePages] = useState(true)
-  const limit = 5
-
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query)
-    setCurrentPage(0)
-    setAllApps([])
-    setHasMorePages(true)
-  }
-
-  const {
-    data: apps,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['apps', org?.id, currentPage, limit, searchQuery],
-    queryFn: () => getApps({
-      orgId: org.id,
-      offset: currentPage * limit,
-      limit,
-      q: searchQuery || undefined,
-    }),
-    enabled: !!org?.id,
-  })
-
-  useEffect(() => {
-    if (apps) {
-      const appData = apps.data
-      if (currentPage === 0) {
-        setAllApps(appData)
-      } else {
-        setAllApps((prev) => {
-          const existingIds = new Set(prev.map((app) => app.id))
-          const newApps = appData.filter((app) => !existingIds.has(app.id))
-          return [...prev, ...newApps]
-        })
-      }
-
-      setHasMorePages(appData.length === limit)
-
-      if (isLoadingMore) {
-        setTimeout(() => setIsLoadingMore(false), 800)
-      }
-    }
-  }, [apps, currentPage, isLoadingMore])
-
+export const AppSelect = ({
+  apps,
+  isLoading,
+  isLoadingMore,
+  hasMorePages,
+  error,
+  searchQuery,
+  onSearchChange,
+  onLoadMore,
+  onSelectApp,
+  onClose,
+}: AppSelectProps) => {
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100
 
       if (isNearBottom && !isLoading && !isLoadingMore && hasMorePages) {
-        setIsLoadingMore(true)
-        setCurrentPage((prev) => prev + 1)
+        onLoadMore()
       }
     },
-    [isLoading, isLoadingMore, hasMorePages]
+    [isLoading, isLoadingMore, hasMorePages, onLoadMore]
   )
 
   const renderContent = () => {
-    if (isLoading && currentPage === 0) {
+    if (isLoading && apps.length === 0) {
       return (
         <div className="flex flex-col gap-1">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -122,7 +86,7 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
       )
     }
 
-    if (allApps.length === 0 && !isLoading) {
+    if (apps.length === 0 && !isLoading) {
       if (searchQuery) {
         return (
           <EmptyState
@@ -147,7 +111,7 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
     return (
       <>
         <div className="flex flex-col gap-1">
-          {allApps.map((app) => {
+          {apps.map((app) => {
             const isProvisionable = app?.runner_config?.app_runner_type
             return (
               <RadioInput
@@ -241,7 +205,7 @@ export const AppSelect = ({ onSelectApp, onClose }: AppSelectProps) => {
       <div className="sticky border-b top-0 bg-background z-10 px-6 py-4 shadow-sm">
         <SearchInput
           value={searchQuery}
-          onChange={handleSearchChange}
+          onChange={onSearchChange}
           placeholder="Search apps..."
           className="w-full"
           labelClassName="w-full"
