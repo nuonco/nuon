@@ -8,17 +8,16 @@ package models
 import (
 	"context"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
-// AppRunnerProcess app runner process
+// AppRunnerProcessShutdown app runner process shutdown
 //
-// swagger:model app.RunnerProcess
-type AppRunnerProcess struct {
+// swagger:model app.RunnerProcessShutdown
+type AppRunnerProcessShutdown struct {
 
 	// composite status
 	CompositeStatus *AppCompositeStatus `json:"composite_status,omitempty"`
@@ -32,52 +31,37 @@ type AppRunnerProcess struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// initial health check
-	InitialHealthCheck bool `json:"initial_health_check,omitempty"`
-
-	// Labels are computed server-side and not persisted.
-	Labels []string `json:"labels"`
-
-	// log stream id
-	LogStreamID string `json:"log_stream_id,omitempty"`
+	// metadata
+	Metadata PgtypeHstore `json:"metadata,omitempty"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
-	// runner id
-	RunnerID string `json:"runner_id,omitempty"`
+	// runner process id
+	RunnerProcessID string `json:"runner_process_id,omitempty"`
 
-	// shutdowns
-	Shutdowns []*AppRunnerProcessShutdown `json:"shutdowns"`
+	// Status and StatusDescription are computed from CompositeStatus via AfterQuery.
+	Status string `json:"status,omitempty"`
 
-	// started at
-	StartedAt string `json:"started_at,omitempty"`
+	// status description
+	StatusDescription string `json:"status_description,omitempty"`
 
 	// type
-	Type AppRunnerProcessType `json:"type,omitempty"`
+	Type AppRunnerProcessShutdownType `json:"type,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
-
-	// uptime
-	Uptime int64 `json:"uptime,omitempty"`
-
-	// version
-	Version string `json:"version,omitempty"`
-
-	// Warnings are computed server-side and not persisted.
-	Warnings []string `json:"warnings"`
 }
 
-// Validate validates this app runner process
-func (m *AppRunnerProcess) Validate(formats strfmt.Registry) error {
+// Validate validates this app runner process shutdown
+func (m *AppRunnerProcessShutdown) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCompositeStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateShutdowns(formats); err != nil {
+	if err := m.validateMetadata(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -91,7 +75,7 @@ func (m *AppRunnerProcess) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppRunnerProcess) validateCompositeStatus(formats strfmt.Registry) error {
+func (m *AppRunnerProcessShutdown) validateCompositeStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.CompositeStatus) { // not required
 		return nil
 	}
@@ -114,37 +98,30 @@ func (m *AppRunnerProcess) validateCompositeStatus(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *AppRunnerProcess) validateShutdowns(formats strfmt.Registry) error {
-	if swag.IsZero(m.Shutdowns) { // not required
+func (m *AppRunnerProcessShutdown) validateMetadata(formats strfmt.Registry) error {
+	if swag.IsZero(m.Metadata) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Shutdowns); i++ {
-		if swag.IsZero(m.Shutdowns[i]) { // not required
-			continue
-		}
-
-		if m.Shutdowns[i] != nil {
-			if err := m.Shutdowns[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("shutdowns" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("shutdowns" + "." + strconv.Itoa(i))
-				}
-
-				return err
+	if m.Metadata != nil {
+		if err := m.Metadata.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("metadata")
 			}
-		}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("metadata")
+			}
 
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (m *AppRunnerProcess) validateType(formats strfmt.Registry) error {
+func (m *AppRunnerProcessShutdown) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
 	}
@@ -165,15 +142,15 @@ func (m *AppRunnerProcess) validateType(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this app runner process based on the context it is used
-func (m *AppRunnerProcess) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this app runner process shutdown based on the context it is used
+func (m *AppRunnerProcessShutdown) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCompositeStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateShutdowns(ctx, formats); err != nil {
+	if err := m.contextValidateMetadata(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -187,7 +164,7 @@ func (m *AppRunnerProcess) ContextValidate(ctx context.Context, formats strfmt.R
 	return nil
 }
 
-func (m *AppRunnerProcess) contextValidateCompositeStatus(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppRunnerProcessShutdown) contextValidateCompositeStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CompositeStatus != nil {
 
@@ -212,36 +189,29 @@ func (m *AppRunnerProcess) contextValidateCompositeStatus(ctx context.Context, f
 	return nil
 }
 
-func (m *AppRunnerProcess) contextValidateShutdowns(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppRunnerProcessShutdown) contextValidateMetadata(ctx context.Context, formats strfmt.Registry) error {
 
-	for i := 0; i < len(m.Shutdowns); i++ {
+	if swag.IsZero(m.Metadata) { // not required
+		return nil
+	}
 
-		if m.Shutdowns[i] != nil {
-
-			if swag.IsZero(m.Shutdowns[i]) { // not required
-				return nil
-			}
-
-			if err := m.Shutdowns[i].ContextValidate(ctx, formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("shutdowns" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("shutdowns" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
+	if err := m.Metadata.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("metadata")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("metadata")
 		}
 
+		return err
 	}
 
 	return nil
 }
 
-func (m *AppRunnerProcess) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppRunnerProcessShutdown) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -264,7 +234,7 @@ func (m *AppRunnerProcess) contextValidateType(ctx context.Context, formats strf
 }
 
 // MarshalBinary interface implementation
-func (m *AppRunnerProcess) MarshalBinary() ([]byte, error) {
+func (m *AppRunnerProcessShutdown) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -272,8 +242,8 @@ func (m *AppRunnerProcess) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AppRunnerProcess) UnmarshalBinary(b []byte) error {
-	var res AppRunnerProcess
+func (m *AppRunnerProcessShutdown) UnmarshalBinary(b []byte) error {
+	var res AppRunnerProcessShutdown
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
