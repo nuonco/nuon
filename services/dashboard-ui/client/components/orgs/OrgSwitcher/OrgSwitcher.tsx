@@ -24,10 +24,10 @@ export const OrgSwitcher = ({}: IOrgSwitcher) => {
       alignment="overlay"
       className="w-full md:w-[248px] duration-fastest transition-all"
       buttonClassName={cn(
-        'w-full text-left duration-fastest transition-all !text-foreground !border-[var(--border-color)]',
+        'w-full text-left duration-fastest transition-all !text-foreground !bg-white dark:!bg-dark-grey-900 !border-cool-grey-500/16 dark:!border-cool-grey-500/16 !shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)] !rounded-[10px]',
         {
-          '!px-4 !py-1.5 ': isSidebarOpen,
-          '!p-[3px] !size-10 ': !isSidebarOpen,
+          '!px-3 !py-2 !h-14': isSidebarOpen,
+          '!p-[3px] !size-10 !rounded-lg !shadow-none': !isSidebarOpen,
         }
       )}
       buttonText={
