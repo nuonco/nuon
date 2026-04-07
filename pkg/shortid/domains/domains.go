@@ -226,6 +226,10 @@ func NewNotificationsID() string {
 	return shortid.NewNanoID("ntf")
 }
 
+func NewWebhookID() string {
+	return shortid.NewNanoID("whk")
+}
+
 func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
