@@ -29,11 +29,5 @@ func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJob
 		return fmt.Errorf("no job execution found: %s %w", req.JobExecutionID, gorm.ErrRecordNotFound)
 	}
 
-	// dual-write V2 status
-	compositeStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
-	a.db.WithContext(ctx).Model(&app.RunnerJobExecution{ID: req.JobExecutionID}).Updates(map[string]any{
-		"status_v2": compositeStatus,
-	})
-
 	return nil
 }
