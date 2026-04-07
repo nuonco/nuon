@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "process_created"
@@ -59,6 +60,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusActive,
+		StatusDescription: "process created",
+	})
 
 	return nil
 }

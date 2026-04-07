@@ -26,6 +26,7 @@ type ActionWorkflow struct {
 	// TODO: change to default null after migration & after initial pr
 	Status            ActionWorkflowStatus  `json:"status,omitzero" gorm:"notnull;default:'active'" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus       `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 	CreatedByID       string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy         Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt         time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`

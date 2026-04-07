@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func cronShutdownVMWorkflowID(runnerID string) string {
@@ -75,6 +76,12 @@ func (w *Workflows) CronShutdownVM(ctx workflow.Context, req *CronShutdownVMRequ
 	}); err != nil {
 		return errors.Wrap(err, "unable to mark vm shutdown job available")
 	}
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       runnerJob.ID,
+		Status:            app.RunnerJobStatusAvailable,
+		StatusDescription: string(app.RunnerJobStatusAvailable),
+	})
 
 	l.Info("cron shutdown vm: job dispatched",
 		zap.String("runner_id", req.RunnerID),

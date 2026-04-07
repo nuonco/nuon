@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	kuberunner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "runner-deprovision"
@@ -52,6 +53,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to get runner: %w (also failed to update status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to get runner from database",
+		})
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
@@ -63,6 +69,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusDeprovisioning,
+		StatusDescription: "deprovisioning organization resources",
+	})
 
 	// Create operation record
 	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
@@ -77,6 +88,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return errors.Wrap(err, "unable to create operation (also failed to update status)")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to create operation",
+		})
 		return errors.Wrap(err, "unable to create operation")
 	}
 
@@ -98,6 +114,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("deprovision failed: %w (also failed to update operation status: %v)", execErr, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+			RunnerOperationID: op.ID,
+			Status:            app.RunnerOperationStatusError,
+			StatusDescription: "deprovision failed",
+		})
 		return execErr
 	}
 
@@ -108,6 +129,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+		RunnerOperationID: op.ID,
+		Status:            app.RunnerOperationStatusFinished,
+		StatusDescription: "operation finished",
+	})
 
 	// Transition runner to deprovisioned status
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
@@ -117,6 +143,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusDeprovisioned,
+		StatusDescription: "runner deprovisioned",
+	})
 
 	return nil
 }
@@ -149,6 +180,11 @@ func (s *Signal) executeDeprovisionOrgRunner(ctx workflow.Context, runner *app.R
 		}); updateErr != nil {
 			return fmt.Errorf("unable to deprovision runner: %w (also failed to update status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          runnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to deprovision runner",
+		})
 		return fmt.Errorf("unable to deprovision runner: %w", err)
 	}
 
