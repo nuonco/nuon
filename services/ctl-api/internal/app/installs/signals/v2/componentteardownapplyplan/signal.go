@@ -43,6 +43,14 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		ComponentID: &s.ComponentID,
+		Operation:   "component-teardown",
+	}
+}
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists
