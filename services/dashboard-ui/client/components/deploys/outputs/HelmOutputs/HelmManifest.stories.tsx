@@ -1,14 +1,12 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { HelmManifest } from './HelmManifest'
-
 export default {
   title: 'Deploys/HelmOutputs/HelmManifest',
-} satisfies Meta
+}
 
-export const Default: StoryObj = {
-  render: () => (
-    <HelmManifest
-      manifest={`---
+import { HelmManifest } from './HelmManifest'
+
+export const Default = () => (
+  <HelmManifest
+    manifest={`---
 # Source: my-app/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -39,6 +37,5 @@ spec:
   ports:
   - port: 80
     targetPort: 8080`}
-    />
-  ),
-}
+  />
+)

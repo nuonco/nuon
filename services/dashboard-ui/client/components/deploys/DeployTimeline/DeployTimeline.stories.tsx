@@ -18,12 +18,16 @@ const mockDeploy: TDeploy = {
 const mockTeardown: TDeploy = {
   ...mockDeploy,
   id: 'dep-456',
+  created_at: '2024-01-14T10:30:00Z',
+  updated_at: '2024-01-14T10:35:00Z',
   install_deploy_type: 'teardown',
 } as TDeploy
 
 const mockDrifted: TDeploy = {
   ...mockDeploy,
   id: 'dep-789',
+  created_at: '2024-01-13T10:30:00Z',
+  updated_at: '2024-01-13T10:35:00Z',
   status: 'drifted',
   status_v2: { status: 'drifted' },
 } as TDeploy

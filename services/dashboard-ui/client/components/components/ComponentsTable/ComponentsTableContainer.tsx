@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
-import { ManagementDropdown } from '@/components/components/management/ManagementDropdown'
+import { ManagementDropdownContainer as ManagementDropdown } from '@/components/components/management/ManagementDropdown'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getComponents } from '@/lib'

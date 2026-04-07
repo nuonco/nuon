@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { HelmDeploymentViewer } from './HelmRenderedValues'
-
 export default {
   title: 'Deploys/HelmRenderedValues',
-} satisfies Meta
+}
+
+import { HelmDeploymentViewer } from './HelmRenderedValues'
 
 const mockData = {
   deployments: {
@@ -55,6 +54,4 @@ metadata:
   name: my-app`,
 }
 
-export const Default: StoryObj = {
-  render: () => <HelmDeploymentViewer data={mockData} />,
-}
+export const Default = () => <HelmDeploymentViewer data={mockData} />

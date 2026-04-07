@@ -2,6 +2,7 @@ export default {
   title: 'Sandbox/SandboxHeader',
 }
 
+import { SandboxRunContext } from '@/providers/sandbox-run-provider'
 import { SandboxHeader } from './SandboxHeader'
 import type { TSandboxRun, TInstall, TWorkflow } from '@/types'
 
@@ -35,11 +36,13 @@ const mockWorkflow: TWorkflow = {
 } as unknown as TWorkflow
 
 export const Default = () => (
-  <SandboxHeader
-    workflow={mockWorkflow}
-    stepId="step-1"
-    sandboxRun={mockSandboxRun}
-    install={mockInstall}
-    orgId="org-1"
-  />
+  <SandboxRunContext.Provider value={{ sandboxRun: mockSandboxRun }}>
+    <SandboxHeader
+      workflow={mockWorkflow}
+      stepId="step-1"
+      sandboxRun={mockSandboxRun}
+      install={mockInstall}
+      orgId="org-1"
+    />
+  </SandboxRunContext.Provider>
 )

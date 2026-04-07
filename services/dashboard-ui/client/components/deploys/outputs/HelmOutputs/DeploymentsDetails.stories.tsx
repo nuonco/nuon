@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { DeploymentsDetails } from './DeploymentsDetails'
-
 export default {
   title: 'Deploys/HelmOutputs/DeploymentsDetails',
-} satisfies Meta
+}
+
+import { DeploymentsDetails } from './DeploymentsDetails'
 
 const mockDeployments = {
   default: {
@@ -27,7 +26,7 @@ const mockDeployments = {
     },
     'my-worker': {
       metadata: {
-        creationTimestamp: '2024-01-15T10:30:00Z',
+        creationTimestamp: '2024-01-14T10:30:00Z',
         generation: 2,
         resourceVersion: '67890',
         uid: 'xyz-ghi-456',
@@ -45,10 +44,6 @@ const mockDeployments = {
   },
 }
 
-export const Default: StoryObj = {
-  render: () => <DeploymentsDetails deployments={mockDeployments} />,
-}
+export const Default = () => <DeploymentsDetails deployments={mockDeployments} />
 
-export const Empty: StoryObj = {
-  render: () => <DeploymentsDetails deployments={{}} />,
-}
+export const Empty = () => <DeploymentsDetails deployments={{}} />

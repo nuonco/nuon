@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { ResourcesDetails } from './ResourcesDetails'
-
 export default {
   title: 'Deploys/HelmOutputs/ResourcesDetails',
-} satisfies Meta
+}
+
+import { ResourcesDetails } from './ResourcesDetails'
 
 const mockResources = {
   'default/my-configmap': {
@@ -38,6 +37,4 @@ spec:
   },
 }
 
-export const Default: StoryObj = {
-  render: () => <ResourcesDetails resources={mockResources} />,
-}
+export const Default = () => <ResourcesDetails resources={mockResources} />

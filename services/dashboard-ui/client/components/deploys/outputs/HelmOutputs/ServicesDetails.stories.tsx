@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { ServicesDetails } from './ServicesDetails'
-
 export default {
   title: 'Deploys/HelmOutputs/ServicesDetails',
-} satisfies Meta
+}
+
+import { ServicesDetails } from './ServicesDetails'
 
 const mockServices = {
   default: {
@@ -21,7 +20,7 @@ const mockServices = {
     },
     'my-app-lb': {
       metadata: {
-        creationTimestamp: '2024-01-15T10:30:00Z',
+        creationTimestamp: '2024-01-14T10:30:00Z',
         uid: 'svc-def-456',
         resourceVersion: '22222',
       },
@@ -34,10 +33,6 @@ const mockServices = {
   },
 }
 
-export const Default: StoryObj = {
-  render: () => <ServicesDetails services={mockServices} />,
-}
+export const Default = () => <ServicesDetails services={mockServices} />
 
-export const Empty: StoryObj = {
-  render: () => <ServicesDetails services={{}} />,
-}
+export const Empty = () => <ServicesDetails services={{}} />

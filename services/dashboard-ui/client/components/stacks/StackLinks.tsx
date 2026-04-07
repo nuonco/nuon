@@ -1,7 +1,7 @@
 import { Button } from '@/components/common/Button'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
-import { Link } from '@/components/old/Link'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 
 export const StackLinks = ({

@@ -3,6 +3,7 @@ export default {
 }
 
 import { SidebarContext } from '@/providers/sidebar-provider'
+import { NotificationContext } from '@/providers/notification-provider'
 import { MainSidebar } from './MainSidebar'
 
 const mockVersions = {
@@ -12,26 +13,43 @@ const mockVersions = {
 
 const noop = () => {}
 
+const mockNotifications = {
+  emitNotification: async () => false,
+  permission: 'default' as NotificationPermission,
+  requestPermission: async () => 'default' as NotificationPermission,
+  isSupported: false,
+  settings: { permissionRequested: false },
+  hasRequestedPermission: false,
+  muted: false,
+  toggleMute: noop,
+}
+
 export const Open = () => (
-  <SidebarContext.Provider
-    value={{ isSidebarOpen: true, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
-  >
-    <MainSidebar versions={mockVersions} />
-  </SidebarContext.Provider>
+  <NotificationContext.Provider value={mockNotifications}>
+    <SidebarContext.Provider
+      value={{ isSidebarOpen: true, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
+    >
+      <MainSidebar versions={mockVersions} />
+    </SidebarContext.Provider>
+  </NotificationContext.Provider>
 )
 
 export const Collapsed = () => (
-  <SidebarContext.Provider
-    value={{ isSidebarOpen: false, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
-  >
-    <MainSidebar versions={mockVersions} />
-  </SidebarContext.Provider>
+  <NotificationContext.Provider value={mockNotifications}>
+    <SidebarContext.Provider
+      value={{ isSidebarOpen: false, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
+    >
+      <MainSidebar versions={mockVersions} />
+    </SidebarContext.Provider>
+  </NotificationContext.Provider>
 )
 
 export const HideOrgContent = () => (
-  <SidebarContext.Provider
-    value={{ isSidebarOpen: true, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
-  >
-    <MainSidebar versions={mockVersions} hideOrgContent />
-  </SidebarContext.Provider>
+  <NotificationContext.Provider value={mockNotifications}>
+    <SidebarContext.Provider
+      value={{ isSidebarOpen: true, closeSidebar: noop, openSidebar: noop, toggleSidebar: noop }}
+    >
+      <MainSidebar versions={mockVersions} hideOrgContent />
+    </SidebarContext.Provider>
+  </NotificationContext.Provider>
 )

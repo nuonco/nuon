@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/CreateInstallStep',
+  title: 'Onboarding/V1 Steps/CreateInstallStep',
 }
 
 import { CompletedInstallCard } from './CreateInstallStep'

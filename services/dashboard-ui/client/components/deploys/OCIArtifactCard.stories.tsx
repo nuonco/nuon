@@ -1,10 +1,9 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { OCIArtifactCard, OCIArtifactSkeleton } from './OCIArtifactCard'
-import { Text } from '@/components/common/Text'
-
 export default {
   title: 'Deploys/OCIArtifactCard',
-} satisfies Meta
+}
+
+import { OCIArtifactCard, OCIArtifactSkeleton } from './OCIArtifactCard'
+import { Text } from '@/components/common/Text'
 
 const mockOciArtifact = {
   created_at: '2024-01-15T10:30:00Z',
@@ -18,14 +17,10 @@ const mockOciArtifact = {
   architecture: 'amd64',
 } as any
 
-export const Default: StoryObj = {
-  render: () => (
-    <OCIArtifactCard ociArtifact={mockOciArtifact}>
-      <Text variant="subtext">View OCI artifact</Text>
-    </OCIArtifactCard>
-  ),
-}
+export const Default = () => (
+  <OCIArtifactCard ociArtifact={mockOciArtifact}>
+    <Text variant="subtext">View OCI artifact</Text>
+  </OCIArtifactCard>
+)
 
-export const Skeleton: StoryObj = {
-  render: () => <OCIArtifactSkeleton />,
-}
+export const Skeleton = () => <OCIArtifactSkeleton />

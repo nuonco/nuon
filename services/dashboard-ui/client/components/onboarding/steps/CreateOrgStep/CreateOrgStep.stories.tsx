@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/CreateOrgStep',
+  title: 'Onboarding/V1 Steps/CreateOrgStep',
 }
 
 import { useState } from 'react'

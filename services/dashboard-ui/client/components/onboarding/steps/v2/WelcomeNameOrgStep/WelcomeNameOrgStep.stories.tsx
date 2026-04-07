@@ -1,5 +1,5 @@
 export default {
-  title: 'Onboarding/WelcomeNameOrgStep',
+  title: 'Onboarding/V2 Steps/WelcomeNameOrgStep',
 }
 
 import { WelcomeNameOrgStep } from './WelcomeNameOrgStep'

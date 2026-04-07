@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { IngressesDetails } from './IngressesDetails'
-
 export default {
   title: 'Deploys/HelmOutputs/IngressesDetails',
-} satisfies Meta
+}
+
+import { IngressesDetails } from './IngressesDetails'
 
 const mockIngresses = {
   default: {
@@ -34,10 +33,6 @@ const mockIngresses = {
   },
 }
 
-export const Default: StoryObj = {
-  render: () => <IngressesDetails ingresses={mockIngresses} />,
-}
+export const Default = () => <IngressesDetails ingresses={mockIngresses} />
 
-export const Empty: StoryObj = {
-  render: () => <IngressesDetails ingresses={{}} />,
-}
+export const Empty = () => <IngressesDetails ingresses={{}} />

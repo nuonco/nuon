@@ -18,6 +18,8 @@ const mockRun: TSandboxRun = {
 const mockDriftedRun: TSandboxRun = {
   ...mockRun,
   id: 'sr-456',
+  created_at: '2024-01-14T10:30:00Z',
+  updated_at: '2024-01-14T10:35:00Z',
   status: 'drifted',
   status_v2: { status: 'drifted' },
   run_type: 'drift_scan',

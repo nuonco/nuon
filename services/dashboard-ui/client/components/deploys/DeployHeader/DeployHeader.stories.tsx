@@ -3,6 +3,7 @@ export default {
 }
 
 import { DeployHeader } from './DeployHeader'
+import { DeployContext } from '@/providers/deploy-provider'
 
 const mockDeploy = {
   id: 'deploy-1',
@@ -39,11 +40,13 @@ const mockWorkflow = {
 } as any
 
 export const Default = () => (
-  <DeployHeader
-    component={mockComponent}
-    workflow={mockWorkflow}
-    stepId="step-1"
-    deploy={mockDeploy}
-    install={mockInstall}
-  />
+  <DeployContext.Provider value={{ deploy: mockDeploy }}>
+    <DeployHeader
+      component={mockComponent}
+      workflow={mockWorkflow}
+      stepId="step-1"
+      deploy={mockDeploy}
+      install={mockInstall}
+    />
+  </DeployContext.Provider>
 )

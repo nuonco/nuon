@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { DeploySummary } from './DeploySummary'
-
 export default {
   title: 'Deploys/DeploySwitcher/DeploySummary',
-} satisfies Meta
+}
+
+import { DeploySummary } from './DeploySummary'
 
 const mockDeploy = {
   id: 'dep_abc123xyz456',
@@ -12,18 +11,12 @@ const mockDeploy = {
   status_v2: { status: 'installed' },
 } as any
 
-export const Default: StoryObj = {
-  render: () => <DeploySummary deploy={mockDeploy} />,
-}
+export const Default = () => <DeploySummary deploy={mockDeploy} />
 
-export const Latest: StoryObj = {
-  render: () => <DeploySummary deploy={mockDeploy} isLatest />,
-}
+export const Latest = () => <DeploySummary deploy={mockDeploy} isLatest />
 
-export const Deploying: StoryObj = {
-  render: () => (
-    <DeploySummary
-      deploy={{ ...mockDeploy, status_v2: { status: 'deploying' } }}
-    />
-  ),
-}
+export const Deploying = () => (
+  <DeploySummary
+    deploy={{ ...mockDeploy, status_v2: { status: 'deploying' } }}
+  />
+)

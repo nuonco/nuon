@@ -1,9 +1,8 @@
-import type { Meta, StoryObj } from '@ladle/react'
-import { Overview } from './Overview'
-
 export default {
   title: 'Deploys/HelmOutputs/Overview',
-} satisfies Meta
+}
+
+import { Overview } from './Overview'
 
 const mockOutputs = {
   deployments: {
@@ -35,8 +34,6 @@ const mockOutputs = {
   },
 }
 
-export const Default: StoryObj = {
-  render: () => (
-    <Overview createdAt="2024-01-15T10:30:00Z" outputs={mockOutputs} />
-  ),
-}
+export const Default = () => (
+  <Overview createdAt="2024-01-15T10:30:00Z" outputs={mockOutputs} />
+)

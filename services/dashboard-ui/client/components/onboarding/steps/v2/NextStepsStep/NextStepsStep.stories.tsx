@@ -1,9 +1,22 @@
 export default {
-  title: 'Onboarding/NextStepsStep',
+  title: 'Onboarding/V2 Steps/NextStepsStep',
 }
 
-export const Placeholder = () => (
-  <div className="p-4">
-    <p>NextStepsStep requires onboarding provider context to render.</p>
-  </div>
-)
+import { NextStepsStepContainer } from './NextStepsStepContainer'
+
+const mockProps = {
+  onAdvance: () => {},
+  onGoBack: () => {},
+  isComplete: false,
+  sharedData: {
+    onboarding: {
+      org_id: 'org-1',
+      install_id: 'install-1',
+      status_v2: { status: 'active' },
+    },
+  },
+  setSharedData: () => {},
+  nextStepTitle: 'Done',
+}
+
+export const Default = () => <NextStepsStepContainer {...mockProps} />
