@@ -47,7 +47,7 @@ func (s *service) GetConnection(ctx *gin.Context) {
 func (s *service) getConnection(ctx context.Context, orgID, vcsID string) (*app.VCSConnection, error) {
 	vcsConn := app.VCSConnection{}
 
-	res := s.db.WithContext(ctx).Where("org_id = ?", orgID).First(&vcsConn, "id = ?", vcsID)
+	res := s.db.WithContext(ctx).Preload("Queues").Where("org_id = ?", orgID).First(&vcsConn, "id = ?", vcsID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get vcs connection: %w", res.Error)
 	}
