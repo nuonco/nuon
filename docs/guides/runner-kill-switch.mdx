@@ -5,13 +5,11 @@ icon: "power-off"
 keywords: ["runner", "kill switch", "shutdown", "ASG", "auto scaling group", "security", "BYOC", "pause", "disable"]
 ---
 
-A core promise of BYOC is that the customer always has ultimate control over what runs in their cloud. Because the Nuon [Runner](/concepts/runners) is an EC2 instance inside an Auto Scaling Group (ASG) in the **customer's** AWS account, the customer can shut it down at any time — and Nuon cannot override that decision.
-
-This is especially important for customers in regulated industries (healthcare, defense, financial services) who need assurance that a vendor cannot access their infrastructure without explicit permission.
+The runner is managed via the CloudFormation stack, and is responsible for all actions. While you can also remove permissions, you can also entirely disable the runner. This is useful for partial-airgapped installs, release windows and customers who want more control.
 
 ## How It Works
 
-The Runner's ASG is created by the customer's [Stack](/concepts/stacks) during install provisioning. The customer has full ownership of this ASG in their AWS account. By changing the ASG capacity settings, the customer controls whether the Runner is running.
+The Runner is created by the customer's [Stack](/concepts/stacks) during install provisioning. The customer has full ownership of this ASG in their AWS account. By changing the ASG capacity settings, the customer controls whether the Runner is running.
 
 | Approach | Method | Reversibility | Use case |
 |----------|--------|---------------|----------|
