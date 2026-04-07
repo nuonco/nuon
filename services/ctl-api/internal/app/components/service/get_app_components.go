@@ -75,7 +75,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 		Where("id IN ?", []string(appCfg.ComponentIDs)).
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
+			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view_v2"))
 		}).
 		Preload("ComponentConfigs.ComponentBuilds", func(db *gorm.DB) *gorm.DB {
 			return db.Order("component_builds.created_at DESC")
