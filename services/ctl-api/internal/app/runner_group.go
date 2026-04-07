@@ -33,7 +33,6 @@ type RunnerGroup struct {
 	// parent can org, install or in the future, builtin runner group
 	OwnerID   string `json:"owner_id,omitzero" gorm:"index:idx_runner_group_owner;notnull;default null" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"notnull;default null" temporaljson:"owner_type,omitzero,omitempty"`
-	OwnerName string `json:"owner_name,omitzero" gorm:"notnull;default null" temporaljson:"owner_name,omitzero,omitempty"`
 
 	Runners  []Runner            `json:"runners,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runners,omitzero,omitempty"`
 	Settings RunnerGroupSettings `json:"settings,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"settings,omitzero,omitempty"`

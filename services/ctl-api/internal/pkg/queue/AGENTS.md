@@ -21,6 +21,41 @@ Some requirements of the queue system:
 The queue system has a nice client that we can use anywhere. It uses activities for things, so we want to be able to
 embed it and expose as much functionality as we can in different places.
 
+## Queue Ownership Pattern
+
+Queues use a **polymorphic relationship** via `OwnerID` and `OwnerType` fields on the `Queue` model. Owner models
+should declare a GORM polymorphic association to access their queues — **do NOT store a `QueueID` foreign key** on the
+owner model. The Queue already knows its owner.
+
+**Correct pattern** (follow `Runner` as the reference implementation):
+
+```go
+// On the owner model:
+Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:vcs_connections"`
+
+// When creating a queue, set OwnerID/OwnerType:
+queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+    OwnerID:   owner.ID,
+    OwnerType: "vcs_connections",
+    // ...
+})
+
+// To access queues, use Preload:
+db.Preload("Queues").First(&owner, "id = ?", ownerID)
+```
+
+**Anti-pattern — do NOT do this:**
+
+```go
+// ❌ Storing a QueueID on the owner and manually updating it
+QueueID string `json:"queue_id" gorm:"default:null"`
+
+db.Model(&Owner{}).Where("id = ?", id).Update("queue_id", q.ID)
+```
+
+The polymorphic relationship is the single source of truth. The Queue's `OwnerID`/`OwnerType` fields are indexed and
+used for lookups. Adding a reverse FK creates redundancy and drift risk.
+
 ## Testing
 
 We are building tests into the core system here, so that we can easily make sure the core queue tooling works properly
