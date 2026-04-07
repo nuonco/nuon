@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Avatar',
+}
+
 import { Avatar } from './Avatar'
 import { Text } from './Text'
 

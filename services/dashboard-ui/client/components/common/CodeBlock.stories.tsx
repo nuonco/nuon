@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/CodeBlock',
+}
+
 import { CodeBlock } from './CodeBlock'
 import { Text } from './Text'
 import { ClickToCopy } from './ClickToCopy'

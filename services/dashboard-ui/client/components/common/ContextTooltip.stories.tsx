@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/ContextTooltip',
+}
+
 import { ContextTooltip } from './ContextTooltip'
 import { Button } from './Button'
 import { Icon } from './Icon'

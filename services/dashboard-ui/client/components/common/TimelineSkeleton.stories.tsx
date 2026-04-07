@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/TimelineSkeleton',
+}
+
 import { TimelineSkeleton } from './TimelineSkeleton'
 import { Text } from './Text'
 import { Button } from './Button'

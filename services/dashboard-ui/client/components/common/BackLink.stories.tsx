@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/BackLink',
+}
+
 import { BackLink } from './BackLink'
 import { Text } from './Text'
 import { Icon } from './Icon'

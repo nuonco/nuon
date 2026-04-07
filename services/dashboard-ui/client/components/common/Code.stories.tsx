@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Code',
+}
+
 import { Code } from './Code'
 import { Text } from './Text'
 import { ClickToCopy } from './ClickToCopy'

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Tabs',
+}
+
 import { Tabs } from './Tabs'
 import { Text } from './Text'
 import { Button } from './Button'

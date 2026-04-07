@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Banner',
+}
+
 import { Banner } from './Banner'
 import { Button } from './Button'
 import { Text } from './Text'

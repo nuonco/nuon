@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/KeyValueList',
+}
+
 import { Button } from './Button'
 import { KeyValueList, KeyValueListSkeleton } from './KeyValueList'
 import { Text } from './Text'

@@ -24,7 +24,7 @@ export const AwaitAWSDetails = ({ stack }: IStackDetails) => {
   const templateUrl = version?.template_url
   const isS3Template = templateUrl?.includes('s3.amazonaws.com') || templateUrl?.includes('.s3.')
   const stackName = quickLink?.match(/stackName=([^&]+)/)?.[1] || `nuon-${install?.id || 'install'}`
-  const region = version?.region || quickLink?.match(/region=([^&#]+)/)?.[1] || install?.aws_account?.region || 'us-east-1'
+  const region = (version as any)?.region || quickLink?.match(/region=([^&#]+)/)?.[1] || install?.aws_account?.region || 'us-east-1'
   const consoleUrl = `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
 
   const handleDownloadTerraformConfig = async () => {

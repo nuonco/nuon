@@ -1,0 +1,127 @@
+import { useState } from 'react'
+import { Banner } from '@/components/common/Banner'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Input } from '@/components/common/form/Input'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
+import type { TAPIError } from '@/types'
+
+interface IRemoveConnectionModal extends Omit<IModal, 'onSubmit'> {
+  connectionName: string
+  isPending: boolean
+  error?: TAPIError | null
+  onSubmit: () => void
+}
+
+export const RemoveConnectionModal = ({
+  connectionName,
+  isPending,
+  error,
+  onSubmit,
+  ...props
+}: IRemoveConnectionModal) => {
+  const [confirmName, setConfirmName] = useState('')
+
+  const isConfirmValid = confirmName === connectionName
+  const canRemove = isConfirmValid && !isPending
+
+  return (
+    <Modal
+      heading={
+        <Text
+          flex
+          className="gap-4"
+          variant="h3"
+          weight="strong"
+          theme="error"
+        >
+          <Icon variant="Trash" size="24" />
+          Are you sure you want to disconnect this GitHub account?
+        </Text>
+      }
+      primaryActionTrigger={{
+        children: isPending ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="Loading" /> Disconnecting...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <Icon variant="Trash" />
+            Disconnect GitHub
+          </span>
+        ),
+        onClick: onSubmit,
+        disabled: !canRemove,
+        variant: 'danger',
+      }}
+      size="half"
+      {...props}
+    >
+      <div className="flex flex-col gap-6">
+        {error ? (
+          <Banner theme="error">
+            {error?.error || 'Unable to remove VCS connection'}
+          </Banner>
+        ) : null}
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Icon
+              variant="GitHub"
+              size="20"
+              className="text-red-800 dark:text-red-400"
+            />
+            <Text
+              variant="body"
+              weight="strong"
+              className="text-red-800 dark:text-red-400"
+            >
+              {connectionName}
+            </Text>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Text variant="body">This will:</Text>
+          <ul className="flex flex-col gap-1 list-disc pl-6 text-sm text-cool-grey-700 dark:text-cool-grey-300">
+            <li>
+              Remove your Nuon organization&apos;s access to private repositories
+            </li>
+            <li>Potentially affect any workflows using private repos</li>
+            <li>Allow you to reconnect this account at any time</li>
+          </ul>
+        </div>
+
+        <Banner theme="warn">
+          <Text variant="body">
+            <strong>Warning:</strong> This action cannot be undone, but you can
+            reconnect later.
+          </Text>
+        </Banner>
+
+        <div className="flex flex-col gap-2">
+          <Text variant="body">
+            To verify, type{' '}
+            <span className="font-mono font-medium text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1 py-0.5 rounded">
+              {connectionName}
+            </span>{' '}
+            below.
+          </Text>
+          <Input
+            id="confirm-connection-name"
+            placeholder="GitHub connection name"
+            type="text"
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            error={confirmName.length > 0 && !isConfirmValid}
+            errorMessage={
+              confirmName.length > 0 && !isConfirmValid
+                ? "Connection name doesn't match"
+                : undefined
+            }
+          />
+        </div>
+      </div>
+    </Modal>
+  )
+}
