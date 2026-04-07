@@ -1,11 +1,15 @@
 package processjob
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -46,16 +50,18 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// TODO: Implement full process_job logic
-	// This is a complex signal with ~533 lines of logic across multiple files.
-	// For now, this is a stub that validates inputs.
-	// Full implementation requires:
-	// 1. Sandbox mode handling (needs config access via activity)
-	// 2. Queue timeout checking
-	// 3. Retry logic with multiple execution attempts
-	// 4. Job execution monitoring with polling
-	// 5. Metrics emission (needs metrics wrapper via activity)
-	// 6. Complex timeout handling (available, execution, overall)
+	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+		WorkflowExecutionTimeout: 70 * time.Minute,
+	})
 
-	return errors.New("process_job signal not yet fully implemented")
+	// RequestSignal uses EventLoopRequest.ID for the runner ID and Signal.JobID for the job ID.
+	req := signals.NewRequestSignal(
+		eventloop.EventLoopRequest{ID: s.RunnerID},
+		&signals.Signal{
+			Type:  signals.OperationProcessJob,
+			JobID: s.JobID,
+		},
+	)
+
+	return workflow.ExecuteChildWorkflow(childCtx, "ProcessJob", req).Get(ctx, nil)
 }

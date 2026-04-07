@@ -11,13 +11,14 @@ import (
 )
 
 type GetMostRecentHeartBeatRequest struct {
-	RunnerID string `validate:"required"`
+	RunnerID string                `validate:"required"`
+	Process  app.RunnerProcessType `json:"process,omitempty"`
 }
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
-	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID)
+	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID, req.Process)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get runner heart beat: %w", err)
 	}
@@ -25,12 +26,31 @@ func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetM
 	return hb, nil
 }
 
-func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string) (*app.RunnerHeartBeat, error) {
+func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcessType) (*app.RunnerHeartBeat, error) {
+	if process != "" {
+		hb, err := a.queryHeartBeat(ctx, runnerID, process)
+		if err != nil {
+			return nil, err
+		}
+		if hb != nil {
+			return hb, nil
+		}
+
+		// TODO: remove this fallback once all runners send the correct process
+		return a.queryHeartBeat(ctx, runnerID, app.RunnerProcessTypeUnknown)
+	}
+
+	return a.queryHeartBeat(ctx, runnerID, "")
+}
+
+func (a *Activities) queryHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcessType) (*app.RunnerHeartBeat, error) {
 	var hb app.RunnerHeartBeat
-	res := a.chDB.WithContext(ctx).
-		Where(app.RunnerHeartBeat{
-			RunnerID: runnerID,
-		}).
+	db := a.chDB.WithContext(ctx).
+		Where("runner_id = ?", runnerID)
+	if process != "" {
+		db = db.Where("process = ?", process)
+	}
+	res := db.
 		Order("created_at desc").
 		Limit(1).
 		First(&hb)

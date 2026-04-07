@@ -37,12 +37,13 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 			}
 		}
 
-		if len(currentApp.Components) < 1 && installCnt < 1 {
+		// Components are cascade-deleted when the app is deleted.
+		if installCnt < 1 {
 			return nil
 		}
 
 		if workflow.Now(ctx).After(deadline) {
-			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
+			err := fmt.Errorf("timeout waiting for installs to deprovision")
 			w.updateStatus(ctx, appID, "error", err.Error())
 			return err
 		}
@@ -58,7 +59,7 @@ func (w *Workflows) pollChildrenDeprovisioned(ctx workflow.Context, appID string
 // @task-timeout 15m
 func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal) error {
 	l := workflow.GetLogger(ctx)
-	w.updateStatus(ctx, sreq.ID, app.AppStatusActive, "polling for installs and components to be deprovisioned")
+	w.updateStatus(ctx, sreq.ID, app.AppStatusActive, "polling for installs to be deprovisioned")
 	if err := w.pollChildrenDeprovisioned(ctx, sreq.ID); err != nil {
 		return err
 	}

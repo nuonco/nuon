@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "deprovision"
+const SignalType signal.SignalType = "runner-deprovision"
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
@@ -105,6 +105,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := activities.AwaitUpdateOperation(ctx, activities.UpdateOperationRequest{
 		OperationID: op.ID,
 		Status:      app.RunnerOperationStatusFinished,
+	}); err != nil {
+		return err
+	}
+
+	// Transition runner to deprovisioned status
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusDeprovisioned,
+		StatusDescription: "runner deprovisioned",
 	}); err != nil {
 		return err
 	}

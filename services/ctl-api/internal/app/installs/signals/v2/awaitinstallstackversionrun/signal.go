@@ -30,9 +30,14 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -85,12 +90,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	orgTyp, err := activities.AwaitGetOrgTypeByInstallID(ctx, install.ID)
-	if err != nil {
-		return err
-	}
-
-	if orgTyp == app.OrgTypeSandbox {
+	if install.SandboxMode.Bool {
 		l.Info("sandbox mode org")
 		workflow.Sleep(ctx, time.Second*5)
 
@@ -183,13 +183,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update status")
 	}
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
 		TriggeredByType: "install_stack_version_runs",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 
 	return nil

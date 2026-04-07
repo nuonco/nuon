@@ -7,9 +7,10 @@ export const getRunnerRecentHealthChecks = ({
   limit,
   offset,
   orgId,
+  processId,
   window,
-}: { runnerId: string; orgId: string; window?: string } & TPaginationParams) =>
+}: { runnerId: string; orgId: string; processId?: string; window?: string } & TPaginationParams) =>
   api<TRunnerHealthCheck[]>({
-    path: `runners/${runnerId}/recent-health-checks${buildQueryParams({ limit, offset, window })}`,
+    path: `runners/${runnerId}/recent-health-checks${buildQueryParams({ limit, offset, process_id: processId, window })}`,
     orgId,
   })

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type ReactNode } from 'react'
+import React, { useEffect, useMemo, useState, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -7,7 +7,9 @@ import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
 import { Tabs } from './Tabs'
-import { buildNuonComponents, extractSegments, type MarkdownMode } from './markdown-components'
+import { buildNuonComponents, extractTabs, nuonTagNames, type ExtractedTabs, type MarkdownMode } from './markdown-components'
+
+const BLOCK_TAG_NAMES = new Set(nuonTagNames)
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -82,9 +84,21 @@ const nuonComponentsByMode: Record<MarkdownMode, Record<string, any>> = {
   install: buildNuonComponents('install'),
 }
 
+function hasBlockChild(node: any): boolean {
+  return node?.children?.some(
+    (child: any) => child.type === 'element' && BLOCK_TAG_NAMES.has(child.tagName)
+  )
+}
+
 function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
   return {
   ...nuonComponentsByMode[mode],
+  p({ node, children, ...props }: any) {
+    if (hasBlockChild(node)) {
+      return <div {...props}>{children}</div>
+    }
+    return <p {...props}>{children}</p>
+  },
   code({ node, className, children, style, ...props }: any) {
       if (style || node?.properties?.style) {
         return <code className={className} style={style} {...props}>{children}</code>
@@ -301,50 +315,50 @@ const proseClassName = cn(
   'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
 )
 
-function MarkdownBlock({ content, components }: { content: string; components: Record<string, any> }) {
-  const processed = preprocessContent(content)
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
-      components={components}
-    >
-      {processed}
-    </ReactMarkdown>
-  )
+function TabsPlaceholder({
+  tabsMap,
+  mode,
+  dataId,
+}: {
+  tabsMap: Map<string, ExtractedTabs>
+  mode: MarkdownMode
+  dataId: string
+}) {
+  const extracted = tabsMap.get(dataId)
+  if (!extracted) return null
+
+  const tabs: Record<string, ReactNode> = {}
+  for (const tab of extracted) {
+    tabs[tab.name] = <Markdown content={tab.content} mode={mode} />
+  }
+  return <Tabs tabs={tabs} />
 }
 
 export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: string; mode?: MarkdownMode }) => {
-  const components = getMarkdownComponents(mode)
-  const segments = extractSegments(content)
+  const { content: processedContent, tabsMap } = useMemo(() => extractTabs(content), [content])
+  const processed = preprocessContent(processedContent)
 
-  const hasOnlyMarkdown = segments.length === 1 && segments[0].type === 'markdown'
-
-  if (hasOnlyMarkdown) {
-    return (
-      <>
-        <style>{markdownStyles}</style>
-        <div className={proseClassName}>
-          <MarkdownBlock content={content} components={components} />
-        </div>
-      </>
-    )
-  }
+  const components = useMemo(() => {
+    const base = getMarkdownComponents(mode)
+    if (tabsMap.size > 0) {
+      base['nuon-tabs-rendered'] = ({ node, ...attrs }: any) => (
+        <TabsPlaceholder tabsMap={tabsMap} mode={mode} dataId={attrs['data-id']} />
+      )
+    }
+    return base
+  }, [mode, tabsMap])
 
   return (
     <>
       <style>{markdownStyles}</style>
       <div className={proseClassName}>
-        {segments.map((segment, i) => {
-          if (segment.type === 'markdown') {
-            return <MarkdownBlock key={i} content={segment.content} components={components} />
-          }
-          const tabs: Record<string, ReactNode> = {}
-          for (const tab of segment.tabs) {
-            tabs[tab.name] = <MarkdownBlock content={tab.content} components={components} />
-          }
-          return <Tabs key={i} tabs={tabs} />
-        })}
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={components}
+        >
+          {processed}
+        </ReactMarkdown>
       </div>
     </>
   )

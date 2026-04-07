@@ -13,7 +13,7 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-const SignalType signal.SignalType = "created"
+const SignalType signal.SignalType = "app-created"
 
 type Signal struct {
 	AppID string `json:"app_id"`

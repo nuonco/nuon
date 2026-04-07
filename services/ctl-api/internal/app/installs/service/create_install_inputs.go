@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -89,9 +90,28 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationUpdated,
-	})
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &installupdated.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationUpdated,
+		})
+	}
 
 	ctx.JSON(http.StatusCreated, inputs)
 }

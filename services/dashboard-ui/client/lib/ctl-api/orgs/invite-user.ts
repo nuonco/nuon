@@ -3,6 +3,7 @@ import type { TOrgInvite } from '@/types'
 
 export type TInviteUserBody = {
   email: string
+  role_type?: string
 }
 
 export const inviteUser = ({

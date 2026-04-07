@@ -2,6 +2,7 @@ import { api } from '@/lib/api'
 
 export type TReprovisionSandboxBody = {
   plan_only: boolean
+  skip_components?: boolean
 }
 
 export async function reprovisionSandbox({

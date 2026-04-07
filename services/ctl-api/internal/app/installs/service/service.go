@@ -14,8 +14,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
@@ -33,8 +35,10 @@ type Params struct {
 	AccountsHelpers  *accountshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
+	ActionsHelpers   *actionshelpers.Helpers
 	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
+	QueueClient      *queueclient.Client
 	EndpointAudit    *api.EndpointAudit
 }
 
@@ -50,8 +54,10 @@ type service struct {
 	accountsHelpers  *accountshelpers.Helpers
 	appsHelpers      *appshelpers.Helpers
 	runnersHelpers   *runnershelpers.Helpers
+	actionsHelpers   *actionshelpers.Helpers
 	featuresClient   *features.Features
 	evClient         eventloop.Client
+	queueClient      *queueclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -247,6 +253,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		install := installs.Group("/:install_id")
 		{
 			install.POST("/admin-restart", s.RestartInstall)
+			install.POST("/admin-restart-queues", s.RestartInstallQueues)
 			install.GET("/admin-get", s.AdminGetInstall)
 			install.GET("/admin-get-runner-group", s.AdminGetInstallRunnerGroup)
 			install.GET("/admin-get-runner", s.AdminGetInstallRunner)
@@ -299,8 +306,10 @@ func New(params Params) *service {
 		helpers:          params.Helpers,
 		accountsHelpers:  params.AccountsHelpers,
 		evClient:         params.EvClient,
+		queueClient:      params.QueueClient,
 		appsHelpers:      params.AppsHelpers,
 		runnersHelpers:   params.RunnersHelpers,
+		actionsHelpers:   params.ActionsHelpers,
 		featuresClient:   params.FeaturesClient,
 	}
 }

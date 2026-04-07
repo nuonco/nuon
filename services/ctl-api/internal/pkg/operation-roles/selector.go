@@ -63,7 +63,16 @@ type RoleSelection struct {
 	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
 	RoleARN string
 	Source  RoleSelectionSource
+	Trace   []app.RunnerJobPermissionTraceRecord
 }
+
+type SelectionError struct {
+	Err   error
+	Trace []app.RunnerJobPermissionTraceRecord
+}
+
+func (e *SelectionError) Error() string { return e.Err.Error() }
+func (e *SelectionError) Unwrap() error { return e.Err }
 
 // SelectRole determines which role to use based on precedence rules
 // Precedence (highest to lowest):
@@ -78,7 +87,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 
 	selection, err := selectRole(ctx)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "unable to select role for input context")
+		return nil, err
 	}
 
 	// If RoleARN is already set (e.g., Azure placeholder), return as-is
@@ -88,12 +97,23 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 
 	renderedRoleName, err := renderRoleName(selection.RoleName, ctx.InstallState)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to render default role name")
+		return nil, &SelectionError{
+			Err:   errors.Wrap(err, "unable to render default role name"),
+			Trace: selection.Trace,
+		}
 	}
 
-	roleARN, err := resolveRoleARN(renderedRoleName, ctx.AppConfig, ctx.StackOutputs, ctx.InstallState)
+	roleARN, err := resolveRoleARN(
+		renderedRoleName,
+		ctx.AppConfig,
+		ctx.StackOutputs,
+		ctx.InstallState,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedRoleName, err)
+		return nil, &SelectionError{
+			Err:   fmt.Errorf("unable to resolve role ARN for %q: %w", renderedRoleName, err),
+			Trace: selection.Trace,
+		}
 	}
 
 	selection.RoleARN = roleARN
@@ -101,7 +121,7 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 	return selection, nil
 }
 
-func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
+func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 	if ctx.DefaultRole == "" {
 		return nil, fmt.Errorf("no default role configured for %s", ctx.Operation)
 	}
@@ -110,7 +130,12 @@ func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to render default role name: %w", err)
 	}
-	roleARN, err := resolveRoleARN(renderedDefaultRole, ctx.AppConfig, ctx.StackOutputs, ctx.InstallState)
+	roleARN, err := resolveRoleARN(
+		renderedDefaultRole,
+		ctx.AppConfig,
+		ctx.StackOutputs,
+		ctx.InstallState,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve role ARN for %q: %w", renderedDefaultRole, err)
 	}
@@ -119,6 +144,14 @@ func GetDefaultRoleSelection(ctx *SelectionContext) (*RoleSelection, error) {
 		RoleName: renderedDefaultRole,
 		Source:   RoleSelectionSourceDefault,
 		RoleARN:  roleARN,
+		Trace: []app.RunnerJobPermissionTraceRecord{
+			{
+				RoleName:   renderedDefaultRole,
+				RoleSource: string(RoleSelectionSourceDefault),
+				Available:  true,
+				Selected:   true,
+			},
+		},
 	}, nil
 }
 
@@ -128,94 +161,156 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		return nil, fmt.Errorf("stack outputs are required")
 	}
 
+	var trace []app.RunnerJobPermissionTraceRecord
+
 	// early exit for azure since architecturally azure uses single tenant<> sub id combination
 	if ctx.StackOutputs.AzureStackOutputs != nil {
+		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+			RoleName:   "azure-placeholder-name",
+			RoleSource: string(RoleSelectionSourceDefault),
+			RoleID:     "azure-placeholder-arn",
+			Available:  true,
+			Selected:   true,
+		})
 		return &RoleSelection{
 			// in case of azure this will be empty, till we figureout azure role based permissions
 			RoleName: "azure-placeholder-name",
 			RoleARN:  "azure-placeholder-arn",
 			Source:   RoleSelectionSourceDefault,
+			Trace:    trace,
 		}, nil
 	}
 
 	if ctx.DefaultRole == "" {
-		return nil, fmt.Errorf("no default role configured for %s", ctx.Operation)
+		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("no default role configured for %s", ctx.Operation)}
 	}
 
 	// Render default role name with install state (fixes template rendering in sandbox and default paths)
 	renderedDefaultRole, err := renderRoleName(ctx.DefaultRole, ctx.InstallState)
 	if err != nil {
-		return nil, fmt.Errorf("unable to render default role name: %w", err)
+		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render default role name: %w", err)}
 	}
 
 	// 1. Runtime override (highest precedence)
-	if ctx.RuntimeRole != "" {
+	runtimeAvailable := ctx.RuntimeRole != ""
+	if runtimeAvailable {
 		renderedRuntimeRole, err := renderRoleName(ctx.RuntimeRole, ctx.InstallState)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render runtime role name: %w", err)
+			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render runtime role name: %w", err)}
 		}
+		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+			RoleName:   renderedRuntimeRole,
+			RoleSource: string(RoleSelectionSourceRuntime),
+			Available:  true,
+			Selected:   true,
+		})
 		return &RoleSelection{
 			RoleName: renderedRuntimeRole,
 			Source:   RoleSelectionSourceRuntime,
+			Trace:    trace,
 		}, nil
 	}
-
-	// // 1.1 for testing purposes we keep sandbox mode at lower priority so we can select roles on runtime
-	// if ctx.SandboxMode {
-	// 	return &RoleSelection{
-	// 		RoleName: renderedDefaultRole,
-	// 		Source:   RoleSelectionSourceDefault,
-	// 	}, nil
-	// }
+	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		RoleName:   ctx.RuntimeRole,
+		RoleSource: string(RoleSelectionSourceRuntime),
+		Available:  false,
+	})
 
 	// 2. Break glass situation, we should respect break glass role definition
-	if ctx.BreakGlassRole != "" {
+	breakGlassAvailable := ctx.BreakGlassRole != ""
+	if breakGlassAvailable {
 		renderedBreakGlassRole, err := renderRoleName(ctx.BreakGlassRole, ctx.InstallState)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render break glass role name: %w", err)
+			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render break glass role name: %w", err)}
 		}
+		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+			RoleName:   renderedBreakGlassRole,
+			RoleSource: string(RoleSelectionSourceBreakGlass),
+			Available:  true,
+			Selected:   true,
+		})
 		return &RoleSelection{
 			RoleName: renderedBreakGlassRole,
 			Source:   RoleSelectionSourceBreakGlass,
+			Trace:    trace,
 		}, nil
 	}
+	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		RoleName:   ctx.BreakGlassRole,
+		RoleSource: string(RoleSelectionSourceBreakGlass),
+		Available:  false,
+	})
 
 	// 3. Entity-level config
-	if roleName := findEntityRole(ctx.EntityRoles, ctx.Operation); roleName != "" {
-		renderedEntityRole, err := renderRoleName(roleName, ctx.InstallState)
+	entityRoleName := findEntityRole(ctx.EntityRoles, ctx.Operation)
+	entityAvailable := entityRoleName != ""
+	if entityAvailable {
+		renderedEntityRole, err := renderRoleName(entityRoleName, ctx.InstallState)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render entity role name: %w", err)
+			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render entity role name: %w", err)}
 		}
+		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+			RoleName:   renderedEntityRole,
+			RoleSource: string(RoleSelectionSourceEntity),
+			Available:  true,
+			Selected:   true,
+		})
 		return &RoleSelection{
 			RoleName: renderedEntityRole,
 			Source:   RoleSelectionSourceEntity,
+			Trace:    trace,
 		}, nil
 	}
+	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		RoleName:   entityRoleName,
+		RoleSource: string(RoleSelectionSourceEntity),
+		Available:  false,
+	})
 
 	// 4. Matrix rules
-	roleName, found, err := findMatrixRole(
+	matrixRoleName, matrixFound, err := findMatrixRole(
 		ctx.MatrixRules,
 		ctx.PrincipalType,
 		ctx.PrincipalName,
 		ctx.Operation,
 		ctx.InstallState)
 	if err != nil {
-		return nil, fmt.Errorf("unable to evaluate matrix rules: %w", err)
+		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to evaluate matrix rules: %w", err)}
 	}
-	if found {
-		renderedMatrixRole, err := renderRoleName(roleName, ctx.InstallState)
+	if matrixFound {
+		renderedMatrixRole, err := renderRoleName(matrixRoleName, ctx.InstallState)
 		if err != nil {
-			return nil, fmt.Errorf("unable to render matrix role name: %w", err)
+			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render matrix role name: %w", err)}
 		}
+		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+			RoleName:   renderedMatrixRole,
+			RoleSource: string(RoleSelectionSourceMatrix),
+			Available:  true,
+			Selected:   true,
+		})
 		return &RoleSelection{
 			RoleName: renderedMatrixRole,
 			Source:   RoleSelectionSourceMatrix,
+			Trace:    trace,
 		}, nil
 	}
+	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		RoleName:   matrixRoleName,
+		RoleSource: string(RoleSelectionSourceMatrix),
+		Available:  false,
+	})
+
+	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		RoleName:   renderedDefaultRole,
+		RoleSource: string(RoleSelectionSourceDefault),
+		Available:  true,
+		Selected:   true,
+	})
 
 	return &RoleSelection{
 		RoleName: renderedDefaultRole,
 		Source:   RoleSelectionSourceDefault,
+		Trace:    trace,
 	}, nil
 }
 
@@ -295,7 +390,12 @@ func renderRoleName(roleName string, installState *state.State) (string, error) 
 
 // ResolveRoleARN looks up the ARN for a given role name from stack outputs.
 // Currently mostly does heavy lifting for AWS since Azure is not yet supported.
-func resolveRoleARN(renderedRoleName string, appCfg *app.AppConfig, installStackOutputs *app.InstallStackOutputs, installState *state.State) (string, error) {
+func resolveRoleARN(
+	renderedRoleName string,
+	appCfg *app.AppConfig,
+	installStackOutputs *app.InstallStackOutputs,
+	installState *state.State,
+) (string, error) {
 	if installStackOutputs == nil {
 		return "", fmt.Errorf("stack outputs are required")
 	}
@@ -354,35 +454,26 @@ func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installStat
 		return nil, fmt.Errorf("unable to convert install state to map: %w", err)
 	}
 
-	renderedProvisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.ProvisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.ProvisionRole.Name, err)
+	standardRoles := []struct {
+		name   string
+		idFunc func() (string, error)
+	}{
+		{appCfg.PermissionsConfig.ProvisionRole.Name, stackOutputs.ProvisionRoleID},
+		{appCfg.PermissionsConfig.DeprovisionRole.Name, stackOutputs.DeprovisionRoleID},
+		{appCfg.PermissionsConfig.MaintenanceRole.Name, stackOutputs.MaintenanceRoleID},
 	}
-	provisionRoleID, err := stackOutputs.ProvisionRoleID()
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch provision role %w", err)
-	}
-	availableRoles[renderedProvisionRoleName] = provisionRoleID
 
-	renderedDeprovisionRoleName, err := render.RenderV2(appCfg.PermissionsConfig.DeprovisionRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.DeprovisionRole.Name, err)
+	for _, r := range standardRoles {
+		rendered, err := render.RenderV2(r.name, stateMap)
+		if err != nil {
+			return nil, fmt.Errorf("unable to render role name template %q: %w", r.name, err)
+		}
+		roleID, err := r.idFunc()
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch role ID for %q: %w", r.name, err)
+		}
+		availableRoles[rendered] = roleID
 	}
-	deprovisionRoleID, err := stackOutputs.DeprovisionRoleID()
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch deprovision role %w", err)
-	}
-	availableRoles[renderedDeprovisionRoleName] = deprovisionRoleID
-
-	renderedMaintenanceRoleName, err := render.RenderV2(appCfg.PermissionsConfig.MaintenanceRole.Name, stateMap)
-	if err != nil {
-		return nil, fmt.Errorf("unable to render role name template %q: %w", appCfg.PermissionsConfig.MaintenanceRole.Name, err)
-	}
-	maintenanceRoleID, err := stackOutputs.MaintenanceRoleID()
-	if err != nil {
-		return nil, fmt.Errorf("unable to fetch maintenance role %w", err)
-	}
-	availableRoles[renderedMaintenanceRoleName] = maintenanceRoleID
 
 	return availableRoles, nil
 }

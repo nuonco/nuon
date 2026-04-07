@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		queueDetail.GET("/status", s.GetQueueStatus)
 		queueDetail.GET("/signals", s.GetQueueSignals)
 		queueDetail.GET("/signals/:signal_id", s.GetQueueSignal)
+		queueDetail.GET("/signals/:signal_id/await", s.AwaitQueueSignal)
 	}
 
 	return nil
@@ -72,6 +73,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	queues := api.Group("/v1/queues")
 	{
 		queues.POST("/:queue_id/admin-restart", s.RestartQueue)
+		queues.POST("/:queue_id/signals/:signal_id/admin-force-execute", s.ForceExecuteSignal)
 	}
 	return nil
 }

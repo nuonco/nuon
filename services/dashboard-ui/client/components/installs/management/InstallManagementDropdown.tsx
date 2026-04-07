@@ -9,6 +9,7 @@ import { AuditHistoryButton } from './AuditHistory'
 import { DeprovisionButton } from './Deprovision'
 import { DeprovisionStackButton } from './DeprovisionStack'
 import { EditInputsButton } from './EditInputs'
+import { ViewCurrentInputsButton } from './ViewCurrentInputs'
 import { EnableAutoApproveButton } from './EnableAutoApprove'
 import { EnableConfigSyncButton } from './EnableConfigSync'
 import { ForgetButton } from './Forget'
@@ -21,6 +22,7 @@ import { ViewStateButton } from './ViewState'
 
 const InstallManagementDropdownContent = () => {
   const { install } = useInstall()
+  const isMobile = !window.matchMedia('(min-width: 768px)').matches
   return (
     <Dropdown
       buttonText={
@@ -31,13 +33,14 @@ const InstallManagementDropdownContent = () => {
       }
       id="install-mgmt"
       variant="primary"
-      alignment="right"
+      alignment={isMobile ? 'left' : 'right'}
     >
       <Menu className="min-w-56">
         <Text variant="label" theme="neutral">
           Settings
         </Text>
         <EditInputsButton isMenuButton />
+        <ViewCurrentInputsButton isMenuButton />
         <AuditHistoryButton isMenuButton />
         <ViewStateButton isMenuButton />
         <EnableAutoApproveButton isMenuButton />

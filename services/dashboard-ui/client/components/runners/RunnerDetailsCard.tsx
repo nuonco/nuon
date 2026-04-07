@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { getRunnerLatestHeartbeat } from '@/lib'
 import type { TRunnerGroup, TRunnerMngHeartbeat } from '@/types'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isLessThan30SecondsOld } from '@/utils/time-utils'
 
 interface IRunnerDetailsCard extends Omit<ICard, 'children'> {
   initHeartbeat?: TRunnerMngHeartbeat
@@ -50,6 +50,10 @@ export const RunnerDetailsCard = ({
         Runner details
       </Text>
 
+      <LabeledValue label="Runner ID">
+        <ID theme="default">{runner?.id}</ID>
+      </LabeledValue>
+
       <div className="grid gap-6 md:grid-cols-2">
         <LabeledValue label="Status">
           <Status
@@ -61,7 +65,7 @@ export const RunnerDetailsCard = ({
         <LabeledValue label="Connectivity">
           <Status
             status={
-              isLessThan15SecondsOld(runnerHeartbeat?.created_at)
+              isLessThan30SecondsOld(runnerHeartbeat?.created_at)
                 ? 'connected'
                 : 'not-connected'
             }
@@ -83,10 +87,6 @@ export const RunnerDetailsCard = ({
 
         <LabeledValue label="Started at">
           <Time variant="subtext" time={runnerHeartbeat?.started_at} />
-        </LabeledValue>
-
-        <LabeledValue label="Runner ID">
-          <ID theme="default">{runner?.id}</ID>
         </LabeledValue>
       </div>
     </Card>
@@ -117,10 +117,6 @@ export const RunnerDetailsCardSkeleton = (props: Omit<ICard, 'children'>) => {
 
         <LabeledValue label={<Skeleton height="17px" width="53px" />}>
           <Skeleton height="23px" width="148px" />
-        </LabeledValue>
-
-        <LabeledValue label={<Skeleton height="17px" width="53px" />}>
-          <Skeleton height="23px" width="215px" />
         </LabeledValue>
       </div>
     </Card>

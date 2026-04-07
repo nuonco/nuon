@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { BackToTop } from '@/components/common/BackToTop'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -10,16 +9,12 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { RunnerDetailsCard } from '@/components/runners/RunnerDetailsCard'
-import { RunnerHealthCard } from '@/components/runners/RunnerHealthCard'
+import { ProcessCard, ProcessCardSkeleton } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
-import { ManagementDropdown } from '@/components/runners/management/ManagementDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getRunnerSettings } from '@/lib'
+import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
-
-const CONTAINER_ID = 'org-build-runner-page'
 
 const heading = (
   <HeadingGroup>
@@ -41,6 +36,21 @@ export const BuildRunner = () => {
     queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
     enabled: !!org?.id && !!runnerId,
   })
+
+  const { data: processResult, isLoading: processesLoading } = useQuery({
+    queryKey: ['runner-processes-active', org?.id, runnerId],
+    queryFn: () =>
+      getRunnerProcesses({
+        orgId: org.id,
+        runnerId: runnerId!,
+        status: 'pending,active,offline,pending-shutdown',
+        limit: 2,
+      }),
+    refetchInterval: 10000,
+    enabled: !!org?.id && !!runnerId,
+  })
+
+  const processes = processResult?.data ?? []
 
   const breadcrumbs = (
     <>
@@ -75,33 +85,51 @@ export const BuildRunner = () => {
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
       <SurfacesProvider>
-      <PageLayout className="pb-6" id={CONTAINER_ID} isScrollable>
+      <PageLayout className="pb-6">
         {breadcrumbs}
-        <PageHeader className="flex items-center justify-between">
+        <PageHeader>
           {heading}
-          {settings && <ManagementDropdown settings={settings} />}
         </PageHeader>
 
         <PageContent>
-          <PageSection className="flex-row gap-6">
-            <RunnerDetailsCard
-              className="flex-initial"
-              runnerGroup={org.runner_group}
-              shouldPoll
-            />
-            <RunnerHealthCard className="flex-auto" shouldPoll />
+          <PageSection>
+            <Text variant="base" weight="strong">
+              Processes
+            </Text>
+            {processesLoading ? (
+              <div className="flex flex-wrap gap-6">
+                <ProcessCardSkeleton />
+                <ProcessCardSkeleton />
+              </div>
+            ) : processes.length === 0 ? (
+              <Card>
+                <EmptyState
+                  emptyTitle="No active processes"
+                  emptyMessage="No runner processes are currently active or offline."
+                  variant="table"
+                />
+              </Card>
+            ) : (
+              <div className="flex flex-wrap gap-6">
+                {processes.map((process) => (
+                  <ProcessCard
+                    key={process.id}
+                    process={process}
+                    settings={settings}
+                    shouldPoll
+                  />
+                ))}
+              </div>
+            )}
           </PageSection>
 
-          <div className="flex gap-6">
-            <PageSection>
-              <Text variant="base" weight="strong">
-                Recent activity
-              </Text>
-              <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/runner`} />
-            </PageSection>
-          </div>
+          <PageSection>
+            <Text variant="base" weight="strong">
+              Recent jobs
+            </Text>
+            <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/runner`} />
+          </PageSection>
         </PageContent>
-        <BackToTop containerId={CONTAINER_ID} />
       </PageLayout>
       </SurfacesProvider>
     </RunnerProvider>

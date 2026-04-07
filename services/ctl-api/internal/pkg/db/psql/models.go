@@ -34,6 +34,8 @@ func AllModels() []any {
 		// vcs basics
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
+		&app.VCSWebhookSubscription{},
+		&app.VCSEvent{},
 
 		// apps
 		&app.App{},
@@ -114,6 +116,8 @@ func AllModels() []any {
 		&app.RunnerOperation{},
 		&app.RunnerGroupSettings{},
 		&app.Runner{},
+		&app.RunnerProcess{},
+		&app.RunnerProcessShutdown{},
 		&app.RunnerJob{},
 		&app.RunnerJobPlan{},
 		&app.RunnerJobExecution{},

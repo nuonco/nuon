@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -9,12 +10,14 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type ReprovisionInstallSandboxRequest struct {
-	Role     string `json:"role,omitempty"`
-	PlanOnly bool   `json:"plan_only"`
+	Role           string `json:"role,omitempty"`
+	PlanOnly       bool   `json:"plan_only"`
+	SkipComponents bool   `json:"skip_components"`
 }
 
 // @ID						ReprovisionInstallSandbox
@@ -49,10 +52,15 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		return
 	}
 
+	metadata := map[string]string{}
+	if req.SkipComponents {
+		metadata["skip_components"] = "true"
+	}
+
 	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
 		install.ID,
 		app.WorkflowTypeReprovisionSandbox,
-		map[string]string{},
+		metadata,
 		req.PlanOnly,
 		req.Role,
 	)
@@ -60,10 +68,29 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
+	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 

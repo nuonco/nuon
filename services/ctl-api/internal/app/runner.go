@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -79,6 +80,8 @@ type Runner struct {
 	Status            RunnerStatus `json:"status,omitzero" gorm:"not null;default null" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string       `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
 
+	Warnings pq.StringArray `json:"warnings,omitempty" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"warnings,omitempty"`
+
 	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`
 
@@ -89,6 +92,20 @@ type Runner struct {
 	Operations []RunnerOperation `json:"operations,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operations,omitzero,omitempty"`
 
 	RunnerJob *RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+
+	// Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled.
+	Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:runners" temporaljson:"queues,omitzero,omitempty"`
+}
+
+// GetQueueForGroup returns the queue for the given job group from the runner's preloaded Queues slice.
+// Returns nil if no queue exists for the group (e.g. feature flag was off at runner creation time).
+func (r *Runner) GetQueueForGroup(group RunnerJobGroup) *Queue {
+	for i := range r.Queues {
+		if r.Queues[i].Name == string(group) {
+			return &r.Queues[i]
+		}
+	}
+	return nil
 }
 
 func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {

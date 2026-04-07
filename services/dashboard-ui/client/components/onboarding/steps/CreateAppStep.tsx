@@ -92,7 +92,7 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
                 />
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <Text variant="body" weight="strong">{app.name}</Text>
-                  <Text variant="subtext" theme="neutral" className="!block truncate">{app.description}</Text>
+                  <Text variant="subtext" theme="neutral" as="div" className="truncate">{app.description}</Text>
                 </div>
               </label>
             )

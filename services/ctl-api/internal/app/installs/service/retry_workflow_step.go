@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	rerunflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/rerunflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -191,16 +192,42 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, workflow.OwnerID, &signals.Signal{
-		Type:              signals.OperationRerunFlow,
-		InstallWorkflowID: workflow.ID,
-		RerunConfiguration: signals.RerunConfiguration{
-			StepID:        req.StepID,
-			StepOperation: signals.RerunOperation(req.Operation),
-			StalePlan:     stalePlan,
-			RePlanStepID:  rePlanStepID,
-		},
-	})
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getInstallWorkflowsQueueID(ctx, workflow.OwnerID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &rerunflow.Signal{
+			InstallID:         workflow.OwnerID,
+			InstallWorkflowID: workflow.ID,
+			RerunConfiguration: signals.RerunConfiguration{
+				StepID:        req.StepID,
+				StepOperation: signals.RerunOperation(req.Operation),
+				StalePlan:     stalePlan,
+				RePlanStepID:  rePlanStepID,
+			},
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, workflow.OwnerID, &signals.Signal{
+			Type:              signals.OperationRerunFlow,
+			InstallWorkflowID: workflow.ID,
+			RerunConfiguration: signals.RerunConfiguration{
+				StepID:        req.StepID,
+				StepOperation: signals.RerunOperation(req.Operation),
+				StalePlan:     stalePlan,
+				RePlanStepID:  rePlanStepID,
+			},
+		})
+	}
 
 	ctx.JSON(201, RetryWorkflowByIDResponse{
 		WorkflowID: workflow.ID,

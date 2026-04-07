@@ -22,6 +22,8 @@ import {
   adminForceRunnerShutdown,
   adminInvalidateRunnerToken,
   adminEnableOrgDebugMode,
+  adminDeprovisionOrg,
+  adminForgetOrgInstalls,
 } from '@/lib'
 
 interface AdminOrgSectionProps {
@@ -143,6 +145,29 @@ export const AdminOrgSection = ({ orgId }: AdminOrgSectionProps) => {
           requiresConfirmation
           requiresInput
           confirmationText="This will forcefully shutdown the org runner and may cause data loss."
+        />
+      </AdminActionGroup>
+
+      <AdminActionGroup title="Teardown & cleanup" icon="Trash" variant="danger">
+        <AdminActionCard
+          title="Deprovision org"
+          description="Deprovision all org infrastructure. Keeps database records but tears down cloud resources."
+          action={() => adminDeprovisionOrg({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          inputText="yesimsure"
+          confirmationText="WARNING: This will deprovision ALL infrastructure for this organization including runners and installs. Database records will be preserved. This may take a while to complete."
+        />
+        <AdminActionCard
+          title="Forget all org installs"
+          description="Permanently forget all installs for this org. This cannot be undone."
+          action={() => adminForgetOrgInstalls({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          inputText="yesimsure"
+          confirmationText="WARNING: This will permanently delete ALL install records for this organization. Any running infrastructure will be orphaned and must be cleaned up manually (e.g. via aws-nuke). This action CANNOT be undone. Only use this when installs are broken beyond repair."
         />
       </AdminActionGroup>
 

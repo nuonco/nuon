@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router'
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -13,7 +14,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, reprovisionSandbox } from '@/lib'
+import { reprovisionSandbox } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 
 export const ReprovisionSandboxButton = ({
@@ -47,26 +48,8 @@ export const ReprovisionSandboxModal = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: appConfig } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id, 'recurse'],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
-
-  const sandboxOperationRoles = appConfig?.sandbox?.operation_roles
-  const defaultRole = sandboxOperationRoles?.reprovision
-    ?.replace('{{.nuon.install.id}}', install.id)
-  const mappedRoleNames = sandboxOperationRoles
-    ? Object.values(sandboxOperationRoles).map((r) => r.replace('{{.nuon.install.id}}', install.id))
-    : undefined
-
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [skipComponents, setSkipComponents] = useState(false)
 
   const { mutate: execute, isPending: isLoading, error } = useMutation({
     mutationFn: (params: { body: Parameters<typeof reprovisionSandbox>[0]['body'] }) =>
@@ -116,6 +99,7 @@ export const ReprovisionSandboxModal = ({
     execute({
       body: {
         plan_only: false,
+        skip_components: skipComponents,
         ...(selectedRole && { role: selectedRole }),
       },
     })
@@ -165,9 +149,29 @@ export const ReprovisionSandboxModal = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
-          defaultRoleName={defaultRole}
-          mappedRoleNames={mappedRoleNames}
         />
+
+        <div className="flex items-start">
+          <CheckboxInput
+            checked={skipComponents}
+            onChange={(e) => setSkipComponents(e.target.checked)}
+            className="mt-1.5"
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !p-2 gap-4 max-w-none !items-start',
+              labelText: (
+                <div className="flex flex-col gap-1">
+                  <Text variant="base" weight="stronger">
+                    Skip component deployments
+                  </Text>
+                  <Text variant="subtext" theme="neutral">
+                    Only reprovision the sandbox infrastructure without redeploying components on top.
+                  </Text>
+                </div>
+              ),
+            }}
+          />
+        </div>
       </div>
     </Modal>
   )

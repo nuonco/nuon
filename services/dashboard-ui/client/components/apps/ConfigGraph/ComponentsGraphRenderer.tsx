@@ -77,7 +77,8 @@ export const ComponentsGraphRenderer = ({
       childrenClassName="overflow-y-auto"
       heading={
         <Text
-          className="!inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="info"
@@ -116,7 +117,7 @@ export const ComponentsGraphRenderer = ({
           </li>
         </ul>
       </div>
-      <ComponentsGraph appId={appId} configId={configId} />
+      <ComponentsGraphInline appId={appId} configId={configId} />
     </Modal>
   )
 }
@@ -162,7 +163,7 @@ const nodeTypes = {
   customComponent: CustomComponentNode,
 }
 
-const ComponentsGraph = ({
+export const ComponentsGraphInline = ({
   appId,
   configId,
 }: {

@@ -18,13 +18,14 @@ type RunnerHeartBeat struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	RunnerID string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerID  string `json:"runner_id,omitzero" temporaljson:"runner_id,omitzero,omitempty"`
+	ProcessID string `json:"process_id,omitzero" gorm:"not null;default:''" temporaljson:"process_id,omitzero,omitempty"`
 
 	AliveTime time.Duration `json:"alive_time,omitzero" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
 	Version   string        `json:"version,omitzero" temporaljson:"version,omitzero,omitempty"`
 	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-" temporaljson:"started_at,omitzero,omitempty"`
 
-	Process RunnerProcess `json:"process" gorm:"not null;default:''" swaggertype:"string"`
+	Process RunnerProcessType `json:"process" gorm:"not null;default:''" swaggertype:"string"`
 }
 
 func (r *RunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
@@ -59,12 +60,13 @@ func (r RunnerHeartBeat) GetTableClusterOptions() string {
 // Struct for a read-only materialized view. the view is created directly in sql.
 // NOTE(fd): i am not registering this model so GORM never thinks about it when migrating.
 type LatestRunnerHeartBeat struct {
-	RunnerID  string        `json:"runner_id,omitzero"  gorm:"->" temporaljson:"runner_id,omitzero,omitempty"`
-	Process   RunnerProcess `json:"process"             gorm:"->" swaggertype:"string"`
-	Version   string        `json:"version,omitzero"    gorm:"->" temporaljson:"version,omitzero,omitempty"`
-	StartedAt time.Time     `json:"started_at,omitzero" gorm:"-"  temporaljson:"started_at,omitzero,omitempty"`
-	AliveTime time.Duration `json:"alive_time,omitzero" gorm:"->" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
-	CreatedAt time.Time     `json:"created_at,omitzero" gorm:"->;column:created_at_latest" temporaljson:"CreatedAt,omitzero,omitempty"`
+	RunnerID  string            `json:"runner_id,omitzero"  gorm:"->" temporaljson:"runner_id,omitzero,omitempty"`
+	ProcessID string            `json:"process_id,omitzero" gorm:"->" temporaljson:"process_id,omitzero,omitempty"`
+	Process   RunnerProcessType `json:"process"             gorm:"->" swaggertype:"string"`
+	Version   string            `json:"version,omitzero"    gorm:"->" temporaljson:"version,omitzero,omitempty"`
+	StartedAt time.Time         `json:"started_at,omitzero" gorm:"-"  temporaljson:"started_at,omitzero,omitempty"`
+	AliveTime time.Duration     `json:"alive_time,omitzero" gorm:"->" swaggertype:"primitive,integer" temporaljson:"alive_time,omitzero,omitempty"`
+	CreatedAt time.Time         `json:"created_at,omitzero" gorm:"->;column:created_at_latest" temporaljson:"CreatedAt,omitzero,omitempty"`
 }
 
 func (r *LatestRunnerHeartBeat) AfterQuery(tx *gorm.DB) error {

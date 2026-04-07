@@ -9,8 +9,6 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/principal"
-	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -177,7 +175,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	l.Info("creating plan for executing action run")
-	runPlan, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
+	planResponse, err := plan.AwaitCreateActionWorkflowRunPlan(ctx, &plan.CreateActionRunPlanRequest{
 		ActionWorkflowRunID: actionWorkflowRunID,
 		WorkflowID:          fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
@@ -217,27 +215,27 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	// save runner job plan
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
 	compositePlan := plantypes.CompositePlan{
-		ActionWorkflowRunPlan: runPlan,
+		ActionWorkflowRunPlan: planResponse.Plan,
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:         runnerJob.ID,
-		PlanJSON:      string(planJSON),
-		CompositePlan: compositePlan,
+		JobID:          runnerJob.ID,
+		PlanJSON:       string(planJSON),
+		CompositePlan:  compositePlan,
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
 
 	planJSON = nil
-	runPlan = nil
 
 	// now queue and execute the job
 	l.Info("executing runner job")
@@ -263,72 +261,4 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 	}
 
 	return nil
-}
-
-func (w *Workflows) getRoleForAction(
-	l *zap.Logger,
-	appConfig *app.AppConfig,
-	run *app.InstallActionWorkflowRun,
-	stack *app.InstallStack,
-	installState *state.State,
-) (*operationroles.RoleSelection, app.OperationType, error) {
-	operation := app.OperationTrigger
-
-	var entityRoles map[app.OperationType]string
-	if run.ActionWorkflowConfig.Role != "" {
-		entityRoles = map[app.OperationType]string{
-			operation: run.ActionWorkflowConfig.Role,
-		}
-	}
-
-	var defaultRole string
-	switch {
-	case stack.InstallStackOutputs.AWSStackOutputs != nil:
-		defaultRole = appConfig.PermissionsConfig.MaintenanceRole.Name
-	case stack.InstallStackOutputs.AzureStackOutputs != nil:
-		defaultRole = "azure-maintainence-mock-role-name"
-	case stack.InstallStackOutputs.GCPStackOutputs != nil:
-		defaultRole = appConfig.PermissionsConfig.MaintenanceRole.Name
-	default:
-	}
-
-	var breakGlassRole string
-	if run.ActionWorkflowConfig.BreakGlassRoleARN.Valid {
-		breakGlassRole = run.ActionWorkflowConfig.BreakGlassRoleARN.String
-	}
-
-	selectionCtx := &operationroles.SelectionContext{
-		Operation:      operation,
-		PrincipalType:  principal.TypeAction,
-		PrincipalName:  run.ActionWorkflowConfig.ActionWorkflow.Name,
-		RuntimeRole:    run.Role,
-		EntityRoles:    entityRoles,
-		MatrixRules:    appConfig.OperationRoleConfig.Rules,
-		DefaultRole:    defaultRole,
-		AppConfig:      appConfig,
-		StackOutputs:   &stack.InstallStackOutputs,
-		BreakGlassRole: breakGlassRole,
-		InstallState:   installState,
-	}
-
-	roleSelection, err := operationroles.SelectRole(selectionCtx, l)
-	if err != nil {
-		l.Warn("dynamic role selection failed, falling back to default role",
-			zap.Error(err),
-			zap.String("default_role", selectionCtx.DefaultRole),
-		)
-
-		var fallbackErr error
-		roleSelection, fallbackErr = operationroles.GetDefaultRoleSelection(selectionCtx)
-		if fallbackErr != nil {
-			return nil, "", fmt.Errorf("unable to get default role: %w", fallbackErr)
-		}
-
-		l.Warn("using default role for action",
-			zap.String("role_name", roleSelection.RoleName),
-			zap.String("role_arn", roleSelection.RoleARN),
-		)
-	}
-
-	return roleSelection, operation, nil
 }

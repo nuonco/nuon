@@ -1,12 +1,15 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
 )
 
 // DEPRECATED: This endpoint is deprecated and will be removed in a future release.
@@ -45,14 +48,44 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
 
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationForget,
-	})
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+			InstallWorkflowID: workflow.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
+			InstallID: install.ID,
+		}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type:              signals.OperationExecuteFlow,
+			InstallWorkflowID: workflow.ID,
+		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationForget,
+		})
+	}
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 

@@ -23,7 +23,7 @@ import {
 } from '@/lib'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isLessThan30SecondsOld } from '@/utils/time-utils'
 
 export const OrgStatusBar = () => {
   const { org } = useOrg()
@@ -74,7 +74,7 @@ export const OrgStatusBar = () => {
   })
   const runnerHeartbeat =
     heartbeats?.install ?? heartbeats?.org ?? heartbeats?.build ?? undefined
-  const runnerConnected = isLessThan15SecondsOld(runnerHeartbeat?.created_at)
+  const runnerConnected = isLessThan30SecondsOld(runnerHeartbeat?.created_at)
   const runnerStatus = runnerConnected ? 'connected' : 'not-connected'
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
@@ -116,7 +116,7 @@ export const OrgStatusBar = () => {
   })
 
   return (
-    <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-full sticky bottom-0 bg-code z-[1] gap-3">
+    <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
       <Text family="mono" variant="subtext">
         {org.name}
       </Text>

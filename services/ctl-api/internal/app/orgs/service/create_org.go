@@ -10,7 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/created"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -80,12 +81,21 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	}
 	cctx.SetOrgGinContext(ctx, newOrg)
 
-	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
-		Type: sigs.OperationCreated,
-	})
-	s.evClient.Send(ctx, newOrg.ID, &sigs.Signal{
-		Type: sigs.OperationProvision,
-	})
+	// Always use v2 queue signals for org creation — the org was just created
+	// so feature flags won't be set yet (race condition with v1 event loop).
+	signalsQueueID, err := s.getOrgSignalsQueueID(ctx, newOrg.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+		return
+	}
+	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgcreated.Signal{OrgID: newOrg.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue org created signal: %w", err))
+		return
+	}
+	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgprovision.Signal{OrgID: newOrg.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue org provision signal: %w", err))
+		return
+	}
 
 	// Update user journey for first org creation
 	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstOrg(ctx, acct.ID, newOrg.ID); err != nil {

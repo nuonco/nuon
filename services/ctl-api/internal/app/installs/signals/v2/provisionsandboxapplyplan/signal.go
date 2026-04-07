@@ -9,13 +9,16 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "provision-sandbox-apply-plan"
@@ -26,14 +29,27 @@ type Signal struct {
 	FlowStepID        string
 	InstallWorkflowID string
 	SandboxMode       bool
-	DNSRootDomain     string
+
+	cfg *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
 
+func (s *Signal) WithParams(params *signal.Params) {
+	s.cfg = params.Cfg
+}
+
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.FlowStepID = stepID
+	s.FlowID = flowID
+	s.InstallWorkflowID = flowID
+}
+
+var _ signal.SignalWithStepContext = (*Signal)(nil)
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallSandboxID == "" {
@@ -72,19 +88,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}()
 
 	l.Info("executing plan")
-	if err := s.executeApplyPlan(ctx, install, sandboxRun, s.FlowStepID, s.SandboxMode, s.DNSRootDomain); err != nil {
+	if err := s.executeApplyPlan(ctx, install, sandboxRun, s.FlowStepID, s.SandboxMode, s.cfg.DNSRootDomain); err != nil {
 		s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   s.InstallWorkflowID,
 		TriggeredByType: "install_sandbox_runs",
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to generate state")
+	}); err != nil {
+		l.Warn("unable to generate state", zap.Error(err))
 	}
 	return nil
 }
@@ -138,10 +153,11 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	}
 
 	l.Info("creating sandbox run plan")
-	runPlan, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
+	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,
 		InstallID:  install.ID,
 		RootDomain: dnsRootDomain,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("%s-create-api-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
@@ -162,8 +178,8 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	// Add Plan contents from the result to the plan
 	if len(planJob.Execution.Result.Contents) > 0 {
 		l.Info("using the legacy contents from the runner job execution result")
-		runPlan.ApplyPlanContents = planJob.Execution.Result.Contents
-		runPlan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
+		planResponse.Plan.ApplyPlanContents = planJob.Execution.Result.Contents
+		planResponse.Plan.ApplyPlanDisplay = planJob.Execution.Result.ContentsDisplay
 	} else if len(planJob.Execution.Result.ContentsGzip) > 0 {
 		l.Info(
 			"using the compressed contents from the runner job execution result",
@@ -178,15 +194,15 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 			zap.Int("contents.bytes.compressed", len(planJob.Execution.Result.ContentsGzip)),
 			zap.Int("contents.bytes.compressed.b64", len(applyPlanContents)),
 		)
-		runPlan.ApplyPlanContents = applyPlanContents
+		planResponse.Plan.ApplyPlanContents = applyPlanContents
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayDecompressedBytes()
 		if err != nil {
 			return errors.Wrap(err, "unable to get contents display bytes")
 		}
-		runPlan.ApplyPlanDisplay = applyPlanContentsDisplay
+		planResponse.Plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
 
-	planJSON, err := json.Marshal(runPlan)
+	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
 		return errors.Wrap(err, "unable to create json")
 	}
@@ -195,8 +211,9 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
-			SandboxRunPlan: runPlan,
+			SandboxRunPlan: planResponse.Plan,
 		},
+		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
 	}); err != nil {
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
@@ -205,8 +222,9 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	// queue job
 	l.Info("queued job and waiting on it to be picked up by runner event loop")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		JobID:      runnerJob.ID,
-		RunnerID:   install.RunnerID,
+		JobID:    runnerJob.ID,
+		RunnerID: install.RunnerID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
@@ -232,5 +250,13 @@ func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.
 		SkipStatusSync:    false,
 	}); err != nil {
 		l.Error("unable to update run status", zap.String("run-id", runID), zap.Error(err))
+	}
+
+	if err := statusactivities.AwaitUpdateRunStatusV2(ctx, statusactivities.UpdateRunStatusV2Request{
+		RunID:             runID,
+		Status:            status,
+		StatusDescription: statusDescription,
+	}); err != nil {
+		l.Error("unable to update run status v2", zap.String("run-id", runID), zap.Error(err))
 	}
 }

@@ -27,6 +27,21 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 			},
 		},
 
+		// support role
+		{
+			OrgID:    generics.NewNullString(orgID),
+			RoleType: app.RoleTypeOrgSupport,
+			Policies: []app.Policy{
+				{
+					OrgID: generics.NewNullString(orgID),
+					Name:  app.PolicyNameOrgSupport,
+					Permissions: pgtype.Hstore(map[string]*string{
+						orgID: permissions.PermissionAll.ToStrPtr(),
+					}),
+				},
+			},
+		},
+
 		// installer role
 		{
 			OrgID:    generics.NewNullString(orgID),

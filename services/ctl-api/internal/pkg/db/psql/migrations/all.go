@@ -53,8 +53,20 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration094VCSCommitPolymorphicOwnership,
 		},
 		{
-			Name: "095-backfill-app-config-version",
-			Fn:   m.Migration095BackfillAppConfigVersion,
+			Name: "095-backfill-org-support-role",
+			Fn:   m.Migration095BackfillOrgSupportRole,
 		},
+		{
+			Name: "096-backfill-install-sandbox-mode",
+			Fn:   m.Migration096BackfillInstallSandboxMode,
+		},
+		{
+			Name: "097-backfill-runner-group-owner-name",
+			Fn:   m.Migration097BackfillRunnerGroupOwnerName,
+		},
+    { 
+			Name: "098-backfill-app-config-version",
+			Fn:   m.Migration098BackfillAppConfigVersion,
+    }
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 const (
@@ -28,12 +29,19 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		platform = app.AppRunnerTypeLocal
 	}
 
+	// Install-level sandbox mode takes precedence when set, else fall back to org.
+	sandboxMode := install.Org.SandboxMode
+	if install.SandboxMode.Valid {
+		sandboxMode = install.SandboxMode.Bool
+	}
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
-		Type:      app.RunnerGroupTypeInstall,
-		Platform:  install.AppRunnerConfig.Type,
+		// OwnerName: install.Name,
+		Type:     app.RunnerGroupTypeInstall,
+		Platform: install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
 			{
 				Name:              "default",
@@ -43,7 +51,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			SandboxMode:       install.Org.SandboxMode,
+			SandboxMode:       sandboxMode,
 			ContainerImageURL: h.cfg.RunnerContainerImageURL,
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,
@@ -75,6 +83,16 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
+	parallelJobs, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureParallelRunnerJobs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check parallel runner jobs feature: %w", err)
+	}
+	if parallelJobs {
+		if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+			return nil, fmt.Errorf("unable to create runner queues: %w", err)
+		}
+	}
+
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
@@ -97,16 +115,20 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	// Build cloud-specific identity for the org runner service account
 	var orgAWSIAMRoleARN string
 	var orgGCPServiceAccount string
-	if h.cfg.CloudProvider == "gcp" {
+	switch h.cfg.CloudProvider {
+	case "gcp":
 		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+	default:
+		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
 	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   org.ID,
 		OwnerType: "orgs",
-		Type:      app.RunnerGroupTypeOrg,
-		Platform:  platform,
+		// OwnerName: org.Name,
+		Type:     app.RunnerGroupTypeOrg,
+		Platform: platform,
 		Runners: []app.Runner{
 			{
 				Name:              "default",
@@ -144,6 +166,22 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	res := h.db.WithContext(ctx).Create(&runnerGroup)
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     runnerGroup.Runners[0].ID,
+		OwnerType:   "runners",
+		Namespace:   "runners",
+		Name:        "runner-signals",
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create runner queue: %w", err)
+	}
+
+	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+		return nil, fmt.Errorf("unable to create runner queues: %w", err)
 	}
 
 	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{

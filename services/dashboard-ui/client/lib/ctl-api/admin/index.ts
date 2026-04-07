@@ -52,6 +52,9 @@ export const adminReprovisionInstallRunner = ({ runnerId, adminEmail }: { runner
 export const adminRestartInstall = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart` })
 
+export const adminRestartInstallQueues = ({ installId, adminApiUrl, adminEmail }: { installId: string } & AdminMutation) =>
+  api<void>({ baseUrl: adminApiUrl, method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart-queues` })
+
 export const adminTeardownInstallComponents = ({ installId, orgId }: { installId: string; orgId: string }) =>
   api<void>({ method: 'POST', body: {}, orgId, path: `installs/${installId}/components/teardown-all` })
 
@@ -72,3 +75,9 @@ export const adminInvalidateRunnerToken = ({ runnerId, adminEmail }: { runnerId:
 
 export const adminShutdownRunnerJob = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/runners/shutdown-job` })
+
+export const adminDeprovisionOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-deprovision` })
+
+export const adminForgetOrgInstalls = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget-installs` })

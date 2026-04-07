@@ -5,13 +5,14 @@ import { ShutdownMngRunnerButton } from './ShutdownMngRunner'
 
 interface IShutdownRunnerControl extends IButtonAsButton {
   runnerId: string
+  processId: string
   showRunnerLabel?: boolean
 }
 
-export const ShutdownRunnerControl = ({ runnerId, showRunnerLabel, ...props }: IShutdownRunnerControl) => {
+export const ShutdownRunnerControl = ({ runnerId, processId, showRunnerLabel, ...props }: IShutdownRunnerControl) => {
   const { isManaged } = useRunner()
   if (isManaged) {
-    return <ShutdownMngRunnerButton runnerId={runnerId} showRunnerLabel={showRunnerLabel} {...props} />
+    return <ShutdownMngRunnerButton runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} {...props} />
   }
-  return <ShutdownRunnerButton runnerId={runnerId} showRunnerLabel={showRunnerLabel} {...props} />
+  return <ShutdownRunnerButton runnerId={runnerId} processId={processId} showRunnerLabel={showRunnerLabel} {...props} />
 }

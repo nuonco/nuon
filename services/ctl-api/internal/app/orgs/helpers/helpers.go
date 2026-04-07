@@ -9,6 +9,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -20,6 +21,7 @@ type Params struct {
 	AcctClient     *account.Client
 	AuthzClient    *authz.Client
 	RunnersHelpers *runnershelpers.Helpers
+	QueueClient    *queueclient.Client
 }
 
 type Helpers struct {
@@ -29,6 +31,7 @@ type Helpers struct {
 	acctClient     *account.Client
 	authzClient    *authz.Client
 	runnersHelpers *runnershelpers.Helpers
+	queueClient    *queueclient.Client
 }
 
 func New(params Params) *Helpers {
@@ -39,5 +42,6 @@ func New(params Params) *Helpers {
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
 		runnersHelpers: params.RunnersHelpers,
+		queueClient:    params.QueueClient,
 	}
 }

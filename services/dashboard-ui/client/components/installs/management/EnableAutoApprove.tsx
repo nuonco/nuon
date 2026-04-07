@@ -27,7 +27,8 @@ export const ConfirmOverrideModal = ({ onConfirm, ...props }: { onConfirm: () =>
     <Modal
       heading={
         <Text
-          className="inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="warn"
@@ -125,7 +126,8 @@ export const EnableAutoApproveModal = ({ ...props }: IEnableAutoApprove & IModal
     <Modal
       heading={
         <Text
-          className="inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="info"

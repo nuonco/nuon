@@ -17,7 +17,7 @@ interface IComponentTypeConfig {
 }
 
 const COMPONENT_TYPE_CONFIG: Record<
-  TComponentType | 'unknown',
+  TComponentType | 'pulumi_module' | 'unknown',
   IComponentTypeConfig
 > = {
   docker_build: {
@@ -50,6 +50,12 @@ const COMPONENT_TYPE_CONFIG: Record<
     icon: 'AWSLambda',
     name: 'Lambda',
   },
+  pulumi_module: {
+    abbr: 'Pulumi',
+    brandColorClass: 'text-[#8A3391] dark:text-[#C48BCC]',
+    icon: 'Pulumi',
+    name: 'Pulumi',
+  },
   kubernetes_manifest: {
     abbr: 'K8s',
     brandColorClass: 'text-[#326CE5] dark:text-[#5A8DEF]',
@@ -77,7 +83,8 @@ export const ComponentType = ({
 
   return (
     <Text
-      className="!flex items-center gap-1 text-nowrap"
+      flex
+      className="gap-1 text-nowrap"
       {...props}
       title={isIconOnly ? config.name : undefined}
     >

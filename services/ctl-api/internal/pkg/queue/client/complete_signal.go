@@ -9,6 +9,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) CompleteSignal(ctx context.Context, signalID, updateName string) error {
 	var signal app.QueueSignal
 	if err := c.db.WithContext(ctx).First(&signal, "id = ?", signalID).Error; err != nil {

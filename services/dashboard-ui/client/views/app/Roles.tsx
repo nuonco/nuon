@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { IAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -10,8 +9,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getAppConfigs } from '@/lib'
-
-const CONTAINER_ID = 'app-roles-page'
 
 export const Roles = () => {
   const { org } = useOrg()
@@ -35,7 +32,7 @@ export const Roles = () => {
   const isLoading = isLoadingConfigs || isLoadingConfig
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable>
+    <PageSection>
       <PageTitle title={`Roles | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -65,7 +62,6 @@ export const Roles = () => {
           emptyMessage="You don't have any roles assigned yet. Contact your administrator to get access to roles."
         />
       )}
-      <BackToTop containerId={CONTAINER_ID} />
     </PageSection>
   )
 }

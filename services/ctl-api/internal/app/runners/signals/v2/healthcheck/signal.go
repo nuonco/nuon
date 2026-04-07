@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -117,7 +118,10 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 
 	// Determine new status based on heartbeat
 	newStatus := app.RunnerStatusActive
-	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, s.RunnerID)
+	heartbeat, err := activities.AwaitGetMostRecentHeartBeatRequest(ctx, activities.GetMostRecentHeartBeatRequest{
+		RunnerID: s.RunnerID,
+		Process:  app.HeartBeatProcessForRunnerGroupType(runner.RunnerGroup.Type),
+	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newStatus = app.RunnerStatusError
@@ -166,5 +170,30 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 		}
 	}
 
+	// Compute and update warnings
+	warnings := s.computeWarnings(runner, heartbeat)
+	if err := activities.AwaitUpdateWarnings(ctx, activities.UpdateWarningsRequest{
+		RunnerID: s.RunnerID,
+		Warnings: warnings,
+	}); err != nil {
+		l.Warn("unable to update runner warnings", zap.Error(err))
+	}
+
 	return newStatus, isChanged, nil
+}
+
+func (s *Signal) computeWarnings(runner *app.Runner, heartbeat *app.RunnerHeartBeat) pq.StringArray {
+	var warnings pq.StringArray
+
+	if heartbeat == nil {
+		return warnings
+	}
+
+	expectedVersion := runner.RunnerGroup.Settings.ContainerImageTag
+	reportedVersion := heartbeat.Version
+	if expectedVersion != "" && reportedVersion != "" && expectedVersion != reportedVersion {
+		warnings = append(warnings, fmt.Sprintf("Reported version (%s) does not match configured version (%s).", reportedVersion, expectedVersion))
+	}
+
+	return warnings
 }

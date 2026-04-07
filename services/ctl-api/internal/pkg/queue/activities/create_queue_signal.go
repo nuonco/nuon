@@ -2,6 +2,8 @@ package activities
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 
 	"github.com/pkg/errors"
 
@@ -27,6 +29,9 @@ type CreateQueueSignalRequest struct {
 func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSignalRequest) (*app.QueueSignal, error) {
 	info := activity.GetInfo(ctx)
 
+	suffix := make([]byte, 3)
+	_, _ = rand.Read(suffix)
+
 	queueSignal := app.QueueSignal{
 		Signal: signaldb.SignalData{
 			Signal: req.Signal,
@@ -37,7 +42,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 		OwnerType: req.OwnerType,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  info.WorkflowNamespace,
-			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()),
+			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
 		},
 	}
 

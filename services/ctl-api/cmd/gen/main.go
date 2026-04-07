@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -22,6 +24,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd"
+
 	"github.com/nuonco/nuon/pkg/command"
 	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
@@ -102,7 +105,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "auth,accounts,apps,actions,components,installs,installers,general,onboarding,orgs,releases,sandboxes,vcs,runners",
+		"-t", "auth,accounts,apps,actions,components,installs,installers,general,onboarding,orgs,releases,sandboxes,vcs,runners,queues",
 	}
 
 	cmd, err := command.New(v,
@@ -166,7 +169,30 @@ func generateTemporal(ctx context.Context) error {
 }
 
 func generateTempl(ctx context.Context) error {
-	return generatecmd.Run(ctx, os.Stdout, os.Stderr, []string{"-path", "./internal/app/admin-dashboard"})
+	if err := generatecmd.Run(ctx, os.Stdout, os.Stderr, []string{"-path", "./internal/app/admin-dashboard"}); err != nil {
+		return err
+	}
+	return gofmtDir("./internal/app/admin-dashboard")
+}
+
+func gofmtDir(dir string) error {
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+		src, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("unable to read %s: %w", path, err)
+		}
+		formatted, err := format.Source(src)
+		if err != nil {
+			return fmt.Errorf("unable to format %s: %w", path, err)
+		}
+		return os.WriteFile(path, formatted, info.Mode())
+	})
 }
 
 func main() {

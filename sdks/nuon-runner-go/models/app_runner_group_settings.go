@@ -59,6 +59,10 @@ type AppRunnerGroupSettings struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+	// e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+	JobGroupParallelism map[string]string `json:"job_group_parallelism,omitempty"`
+
 	// local aws iam role arn
 	LocalAwsIamRoleArn string `json:"local_aws_iam_role_arn,omitempty"`
 
@@ -70,6 +74,9 @@ type AppRunnerGroupSettings struct {
 
 	// org runner specifics
 	OrgAwsIamRoleArn string `json:"org_aws_iam_role_arn,omitempty"`
+
+	// org gcp service account
+	OrgGcpServiceAccount string `json:"org_gcp_service_account,omitempty"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`

@@ -15,8 +15,11 @@ export type TTextWeight = 'normal' | 'strong' | 'stronger'
 export type TTextTheme = TTheme
 
 export interface IText extends HTMLAttributes<HTMLSpanElement> {
+  as?: ElementType
   family?: TTextFamily
+  flex?: boolean
   level?: 1 | 2 | 3 | 4 | 5 | 6
+  nowrap?: boolean
   role?: 'paragraph' | 'heading' | 'code' | 'time'
   theme?: TTextTheme
   variant?: TTextVariant
@@ -63,43 +66,55 @@ const THEME_CLASSES: Record<TTextTheme, string> = {
 }
 
 export const Text = ({
+  as,
   className,
   children,
   family = 'sans',
+  flex,
   level,
+  nowrap,
   role,
   variant = 'body',
   theme = 'default',
   weight = 'normal',
   ...props
 }: IText) => {
-  // Optionally render as semantic element
+  const isHeading = role === 'heading' || (level && !role)
   let Element: ElementType = 'span'
-  if (role === 'heading' && level) Element = `h${level}` as const
+  if (as) Element = as
+  else if (isHeading && level) Element = `h${level}` as const
   else if (role === 'paragraph') Element = 'p'
   else if (role === 'code') Element = 'code'
   else if (role === 'time') Element = 'time'
 
-  // Add special tracking tweak for headings + mono
   const extraTracking =
     family === 'mono' && ['h1', 'h2', 'h3'].includes(variant)
       ? headingMonoTracking
       : ''
 
+  let display: string
+  if (flex) {
+    display = 'inline-flex items-center gap-1.5'
+  } else if (Element === 'span' || Element === 'time') {
+    display = 'inline'
+  } else {
+    display = 'block'
+  }
+
   return (
     <Element
-      aria-level={role === 'heading' && level ? level : undefined}
+      aria-level={isHeading && level ? level : undefined}
       className={cn(
-        Element === 'span' || Element === 'time' ? 'inline' : 'block',
+        display,
         FAMILY_CLASSES[family],
         VARIANT_CLASSES[variant],
         WEIGHT_CLASSES[weight],
         THEME_CLASSES[theme],
         extraTracking,
-        'text-wrap',
+        nowrap ? 'text-nowrap' : 'text-wrap',
         className
       )}
-      role={role === 'heading' ? 'heading' : undefined}
+      role={isHeading ? 'heading' : undefined}
       {...props}
     >
       {children}

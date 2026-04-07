@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -62,6 +63,10 @@ type RunnerGroupSettings struct {
 
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+
+	// JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+	// e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+	JobGroupParallelism pgtype.Hstore `json:"job_group_parallelism,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"job_group_parallelism,omitzero,omitempty"`
 
 	// org runner specifics
 	OrgAWSIAMRoleARN         string `json:"org_aws_iam_role_arn,omitzero" temporaljson:"org_awsiam_role_arn,omitzero,omitempty"`
@@ -132,4 +137,18 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 		r.Platform = CloudPlatformGCP
 	}
 	return nil
+}
+
+// MaxInFlightForGroup returns the configured max-in-flight for a job group, defaulting to 1.
+func (r *RunnerGroupSettings) MaxInFlightForGroup(group RunnerJobGroup) int {
+	if r.JobGroupParallelism == nil {
+		return 1
+	}
+	if v, ok := r.JobGroupParallelism[string(group)]; ok && v != nil {
+		n, err := strconv.Atoi(*v)
+		if err == nil && n > 0 {
+			return n
+		}
+	}
+	return 1
 }

@@ -101,7 +101,7 @@ export const UnlockTerraformWorkspaceModal = ({
     <Modal
       heading={
         <div className="flex flex-col gap-2">
-          <Text className="inline-flex gap-4 items-center" variant="h3" weight="strong">
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="LockOpen" size="24" />
             Unlock Terraform workspace
           </Text>

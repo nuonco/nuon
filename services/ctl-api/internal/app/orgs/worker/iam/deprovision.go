@@ -57,7 +57,7 @@ func (w *Wkflow) execDeprovisionRole(ctx workflow.Context,
 	req *DeprovisionIAMRequest,
 	nameFn func(string) string,
 ) error {
-	policyARN := fmt.Sprintf("arn:aws:iam:%s:root:policy/orgs/%s/%s", w.cfg.ManagementAccountID, req.OrgID, nameFn(req.OrgID))
+	policyARN := fmt.Sprintf("arn:aws:iam::%s:policy%s%s", w.cfg.ManagementAccountID, defaultIAMPath(req.OrgID), nameFn(req.OrgID))
 
 	deleteAttachmentReq := DeleteIAMRolePolicyAttachmentRequest{
 		AssumeRoleARN: w.cfg.ManagementIAMRoleARN,

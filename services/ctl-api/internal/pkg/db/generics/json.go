@@ -44,6 +44,8 @@ func (jq *JSONBQuerier) WhereJSON(queryArgs JSONBQuery) *gorm.DB {
 		query = fmt.Sprintf("(%s->>'%s')::numeric %s ?", queryArgs.Field, queryArgs.Path, queryArgs.Operator)
 	case "LIKE", "ILIKE":
 		query = fmt.Sprintf("%s->>'%s' %s ?", queryArgs.Field, queryArgs.Path, queryArgs.Operator)
+	case "IN":
+		query = fmt.Sprintf("%s->>'%s' IN ?", queryArgs.Field, queryArgs.Path)
 	case "@>":
 		query = fmt.Sprintf("%s @> ?", queryArgs.Field)
 	case "?":

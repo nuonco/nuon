@@ -93,6 +93,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews).Order("created_at desc").Limit(10)
 		}).
+		Preload("RunnerJobs.Plan").
 		Preload("ActionWorkflowRuns").
 		Preload("LogStream").
 		Preload("OCIArtifact").

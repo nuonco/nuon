@@ -42,6 +42,12 @@ type ConfigsOCIRegistryRepository struct {
 
 	// based on the type of access, either the repository (ecr) or login server (acr) will be provided.
 	Repository string `json:"repository,omitempty"`
+
+	// service account email
+	ServiceAccountEmail string `json:"serviceAccountEmail,omitempty"`
+
+	// workload identity provider
+	WorkloadIdentityProvider string `json:"workloadIdentityProvider,omitempty"`
 }
 
 // Validate validates this configs o c i registry repository

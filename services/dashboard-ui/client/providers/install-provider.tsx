@@ -22,6 +22,7 @@ export function InstallProvider({
   shouldPoll = false,
   isSkeletonLoading = false,
   loadingElement = <ProviderLoading />,
+  errorElement,
 }: {
   children: ReactNode
   installId: string
@@ -29,6 +30,7 @@ export function InstallProvider({
   shouldPoll?: boolean
   isSkeletonLoading?: boolean
   loadingElement?: ReactNode
+  errorElement?: ReactNode
 }) {
   const { org } = useOrg()
   const {
@@ -43,7 +45,7 @@ export function InstallProvider({
     enabled: !!org.id && !!installId,
   })
 
-  if (error) return <ProviderError error={error} />
+  if (error) return errorElement !== undefined ? <>{errorElement}</> : <ProviderError error={error} />
 
   if (isLoading || !install) return loadingElement
 

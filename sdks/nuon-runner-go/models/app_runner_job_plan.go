@@ -34,6 +34,9 @@ type AppRunnerJobPlan struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// permission info
+	PermissionInfo *AppRunnerJobPermissionInfo `json:"permission_info,omitempty"`
+
 	// plan json
 	PlanJSON string `json:"plan_json,omitempty"`
 
@@ -49,6 +52,10 @@ func (m *AppRunnerJobPlan) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCompositePlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePermissionInfo(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,11 +88,38 @@ func (m *AppRunnerJobPlan) validateCompositePlan(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *AppRunnerJobPlan) validatePermissionInfo(formats strfmt.Registry) error {
+	if swag.IsZero(m.PermissionInfo) { // not required
+		return nil
+	}
+
+	if m.PermissionInfo != nil {
+		if err := m.PermissionInfo.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("permission_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("permission_info")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app runner job plan based on the context it is used
 func (m *AppRunnerJobPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateCompositePlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePermissionInfo(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -111,6 +145,31 @@ func (m *AppRunnerJobPlan) contextValidateCompositePlan(ctx context.Context, for
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("composite_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJobPlan) contextValidatePermissionInfo(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PermissionInfo != nil {
+
+		if swag.IsZero(m.PermissionInfo) { // not required
+			return nil
+		}
+
+		if err := m.PermissionInfo.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("permission_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("permission_info")
 			}
 
 			return err

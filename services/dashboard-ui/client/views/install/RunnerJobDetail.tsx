@@ -1,5 +1,4 @@
 import { useParams } from 'react-router'
-import { BackToTop } from '@/components/common/BackToTop'
 import { RunnerJobHeader } from '@/components/runners/job-details/RunnerJobHeader'
 import { RunnerJobLogs } from '@/components/runners/job-details/RunnerJobLogs'
 import { PageSection } from '@/components/layout/PageSection'
@@ -11,15 +10,13 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunnerJob } from '@/hooks/use-runner-job'
 import { getJobName } from '@/utils/runner-utils'
 
-const CONTAINER_ID = 'install-runner-job-page'
-
 const RunnerJobDetailContent = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { job } = useRunnerJob()
 
   return (
-    <PageSection id={CONTAINER_ID} isScrollable className="!p-0 !gap-0">
+    <PageSection flush>
       <PageTitle title={`Job | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -31,9 +28,8 @@ const RunnerJobDetailContent = () => {
         ]}
       />
       <RunnerJobHeader />
-      <PageSection isScrollable={false} className="!pb-12">
+      <PageSection className="!pb-12">
         <RunnerJobLogs />
-        <BackToTop containerId={CONTAINER_ID} />
       </PageSection>
     </PageSection>
   )
