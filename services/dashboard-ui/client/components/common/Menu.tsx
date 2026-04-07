@@ -23,7 +23,7 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
             ? React.cloneElement<IButtonAsButton | ILink>(c, {
                 variant: 'ghost',
                 className: cn(
-                  '!p-2 text-sm !leading-none h-8 w-full flex justify-between',
+                  '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !text-cool-grey-800 dark:!text-white/70',
                   c?.props.className,
                   {
                     '!text-red-600 dark:!text-red-400':
@@ -35,7 +35,7 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
               ? React.cloneElement(c as React.ReactElement<IDropdown>, {
                   variant: 'ghost',
                   buttonClassName:
-                    '!p-2 text-sm !leading-none h-8 w-full flex justify-between',
+                    '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !text-cool-grey-800 dark:!text-white/70',
                 })
               : c.type === Text
                 ? React.cloneElement<IText>(c, {

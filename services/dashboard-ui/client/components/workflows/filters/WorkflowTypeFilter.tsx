@@ -67,7 +67,6 @@ export const WorkflowTypeFilter = () => {
         </>
       }
       id="workflow-type-filter"
-      variant="ghost"
     >
       <Menu className="!p-0 !w-68">
         <form onReset={handleClearFilter}>

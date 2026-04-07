@@ -63,7 +63,7 @@ export const ConnectionDetailsModal = ({
           </div>
         </div>
       }
-      size="half"
+      size="sm"
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       {...props}

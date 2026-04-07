@@ -167,7 +167,7 @@ export const RunAdhocActionModal = ({
         disabled: isPending,
         variant: 'primary',
       }}
-      size="half"
+      size="lg"
       {...props}
     >
       <form
@@ -223,6 +223,7 @@ export const RunAdhocActionModal = ({
               type="text"
               placeholder="echo 'Hello, world!'"
               required
+              className="!font-mono"
               defaultValue={
                 draftValues?.['command'] || initialValues?.command || ''
               }
