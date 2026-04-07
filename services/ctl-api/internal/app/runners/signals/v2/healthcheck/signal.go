@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "healthcheck"
@@ -168,6 +169,11 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 		}); err != nil {
 			return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to update runner status")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            newStatus,
+			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", runner.Status, newStatus),
+		})
 	}
 
 	// Compute and update warnings

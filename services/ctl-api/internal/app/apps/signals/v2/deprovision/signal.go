@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "app-deprovision"
@@ -56,6 +57,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
+	statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+		AppID:             s.AppID,
+		Status:            app.AppStatusActive,
+		StatusDescription: "polling for installs to be deprovisioned",
+	})
 
 	// Poll until all children are deprovisioned
 	if err := s.pollChildrenDeprovisioned(ctx); err != nil {
@@ -70,6 +76,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
+	statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+		AppID:             s.AppID,
+		Status:            app.AppStatusDeprovisioning,
+		StatusDescription: "deleting app resources",
+	})
 
 	// Get current app
 	currentApp, err := activities.AwaitGetByAppID(ctx, s.AppID)
@@ -81,6 +92,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			l.Error("failed to update app status", zap.Error(updateErr))
 		}
+		statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+			AppID:             s.AppID,
+			Status:            app.AppStatusError,
+			StatusDescription: "unable to get app from database",
+		})
 		return errors.Wrap(err, "unable to get app from database")
 	}
 
@@ -112,6 +128,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			l.Error("failed to update app status", zap.Error(updateErr))
 		}
+		statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+			AppID:             s.AppID,
+			Status:            app.AppStatusError,
+			StatusDescription: "unable to delete app",
+		})
 		return errors.Wrap(err, "unable to delete app")
 	}
 
@@ -131,6 +152,11 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			}); updateErr != nil {
 				workflow.GetLogger(ctx).Error("failed to update app status", updateErr)
 			}
+			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+				AppID:             s.AppID,
+				Status:            app.AppStatusError,
+				StatusDescription: "unable to get app from database",
+			})
 			return fmt.Errorf("unable to get app from database: %w", err)
 		}
 
@@ -164,6 +190,11 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			}); updateErr != nil {
 				workflow.GetLogger(ctx).Error("failed to update app status", updateErr)
 			}
+			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+				AppID:             s.AppID,
+				Status:            app.AppStatusError,
+				StatusDescription: err.Error(),
+			})
 			return err
 		}
 

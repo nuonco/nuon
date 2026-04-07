@@ -137,6 +137,7 @@ type Component struct {
 
 	Status            ComponentStatus `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	ConfigVersions               int                           `gorm:"-" json:"config_versions,omitzero" temporaljson:"config_versions,omitzero,omitempty"`
 	ComponentConfigs             []ComponentConfigConnection   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_configs,omitzero,omitempty"`
