@@ -109,19 +109,19 @@ func (a *AppConfig) Indexes(db *gorm.DB) []migrations.Index {
 	}
 }
 
-func (a AppConfig) UseView() bool {
+func (a *AppConfig) UseView() bool {
 	return false
 }
 
-func (a AppConfig) ViewVersion() string {
+func (a *AppConfig) ViewVersion() string {
 	return "v2"
 }
 
 func (i *AppConfig) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.CustomViewName(db, &AppConfig{}, "latest_view_v1"),
-			SQL:           viewsql.AppConfigsLatestViewV1,
+			Name:          views.CustomViewName(db, &AppConfig{}, "latest_view_v2"),
+			SQL:           viewsql.AppConfigsLatestViewV2,
 			AlwaysReapply: true,
 		},
 	}
