@@ -5,6 +5,11 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TVCSConnection, TVCSConnectionReposResponse } from '@/types'
+import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { checkVCSConnectionStatus, getVCSConnectionRepos } from '@/lib/ctl-api/vcs-connections'
+import type { TVCSConnection } from '@/types'
+import { CommitsSection } from './CommitsSection'
 import { GitHubAccountSection } from './GitHubAccountSection'
 import { RepositoriesSection } from './RepositoriesSection'
 
@@ -70,6 +75,7 @@ export const ConnectionDetailsModal = ({
     >
       <div className="flex flex-col gap-6">
         <GitHubAccountSection vcs_connection={vcs_connection} />
+        <CommitsSection vcs_connection={vcs_connection} />
         <RepositoriesSection
           repos={repos}
           error={reposError}

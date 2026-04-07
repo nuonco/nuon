@@ -42,6 +42,12 @@ func (v *VCSConnection) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &VCSConnection{}, "github_install_id"),
+			Columns: []string{
+				"github_install_id",
+			},
+		},
 	}
 }
 

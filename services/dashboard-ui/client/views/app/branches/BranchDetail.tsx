@@ -20,8 +20,11 @@ import { BranchProvider } from '@/providers/branch-provider'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getWorkflowBadge } from '@/utils/workflow-utils'
 
+import { Button } from '@/components/common/Button'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
+import { CancelWorkflowModal } from '@/components/workflows/CancelWorkflow'
 import { InstallGroupsSection } from '@/components/branches/install-groups/InstallGroupsSection'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
 import type { TInstall } from '@/types'
 
@@ -29,6 +32,7 @@ const BranchDetailContent = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const { branch } = useBranch()
+  const { addModal } = useSurfaces()
   const params = useParams()
   const orgId = params.orgId as string
   const appId = params.appId as string
@@ -101,6 +105,43 @@ const BranchDetailContent = () => {
         </div>
       </div>
 
+      {(() => {
+        const latestCommit = runs.map((r: any) => r.app_branch_runs?.[0]?.vcs_connection_commit).find((c: any) => c?.sha)
+        if (!latestCommit?.sha) return null
+        return (
+          <Card className="mb-6">
+            <div>
+              <Text variant="label" theme="neutral" className="mb-2">
+                Latest commit
+              </Text>
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Icon variant="GitCommit" size={16} />
+                    <Text variant="base" family="mono" weight="strong">
+                      {latestCommit.sha.substring(0, 7)}
+                    </Text>
+                  </div>
+                  {latestCommit.message && (
+                    <Text variant="base">{latestCommit.message}</Text>
+                  )}
+                  {latestCommit.author_name && (
+                    <Text variant="subtext" theme="neutral">
+                      by {latestCommit.author_name}
+                    </Text>
+                  )}
+                </div>
+                {latestCommit.created_at && (
+                  <Text variant="subtext" theme="neutral">
+                    <Time time={latestCommit.created_at} format="relative" />
+                  </Text>
+                )}
+              </div>
+            </div>
+          </Card>
+        )
+      })()}
+
       <Card className="mb-6">
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -152,6 +193,7 @@ const BranchDetailContent = () => {
             pagination={{ hasNext: false, offset: 0, limit: 5 }}
             renderEvent={(run: any) => {
               const commitSha = run.app_branch_runs?.[0]?.commit_sha
+              const isInProgress = run.status?.status === 'in-progress'
               return (
                 <TimelineEvent
                   key={run.id}
@@ -170,6 +212,16 @@ const BranchDetailContent = () => {
                       <Icon variant="GitCommit" size={12} />
                       {commitSha.substring(0, 7)}
                     </span>
+                  ) : undefined}
+                  actions={isInProgress ? (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => addModal(<CancelWorkflowModal workflow={run} />)}
+                    >
+                      <Icon variant="StopCircle" size={14} />
+                      Cancel
+                    </Button>
                   ) : undefined}
                 />
               )

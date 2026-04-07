@@ -19,11 +19,14 @@ func (s *Helpers) CreateWorkflow(ctx context.Context,
 
 	metadata["app_branch_id"] = appBranchID
 	installWorkflow := app.Workflow{
-		Type:              workflowType,
-		OwnerID:           appBranchID,
-		OwnerType:         "app_branches",
-		Metadata:          generics.ToHstore(metadata),
-		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
+		Type:      workflowType,
+		OwnerID:   appBranchID,
+		OwnerType: "app_branches",
+		Metadata:  generics.ToHstore(metadata),
+		Status: app.CompositeStatus{
+			Status:                 app.StatusPending,
+			StatusHumanDescription: "queued",
+		},
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,

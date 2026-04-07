@@ -45,13 +45,30 @@ func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWe
 		return nil, fmt.Errorf("unable to get vcs connection: %w", err)
 	}
 
-	// Build webhook URL from config.
-	webhookURL := fmt.Sprintf("%s/v1/vcs/%s/events", a.cfg.PublicAPIURL, req.VCSConnectionID)
+	// Generic webhook URL — events are routed by installation ID in the payload.
+	webhookURL := fmt.Sprintf("%s/v1/vcs/events", a.cfg.PublicAPIURL)
 
-	// Create the GitHub org webhook.
-	hookID, err := a.ghClient.CreateOrgWebhook(ctx, &vcsConn, webhookURL)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create github org webhook: %w", err)
+	// Check if another VCS connection with the same github_install_id already
+	// has a webhook subscription. If so, skip the GitHub API call to avoid
+	// duplicate webhook registration errors.
+	var existingSibling app.VCSWebhookSubscription
+	err = a.db.WithContext(ctx).
+		Joins("JOIN vcs_connections ON vcs_connections.id = vcs_webhook_subscriptions.vcs_connection_id").
+		Where("vcs_connections.github_install_id = ?", vcsConn.GithubInstallID).
+		First(&existingSibling).Error
+
+	var hookID int64
+	if err == nil {
+		// Reuse the existing GitHub webhook hook ID.
+		hookID = existingSibling.GithubHookID
+	} else if err == gorm.ErrRecordNotFound {
+		// No existing webhook for this GitHub installation — create one.
+		hookID, err = a.ghClient.CreateOrgWebhook(ctx, &vcsConn, webhookURL)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create github org webhook: %w", err)
+		}
+	} else {
+		return nil, fmt.Errorf("unable to check existing webhook for github install: %w", err)
 	}
 
 	// Persist the subscription.

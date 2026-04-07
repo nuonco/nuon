@@ -33,7 +33,7 @@ export const BranchDetailActionsContainer = ({
         orgId,
         request: {
           config_id: currentConfig?.id,
-          force: false,
+          force: true,
         },
       }),
     onSuccess: () => {
@@ -60,6 +60,41 @@ export const BranchDetailActionsContainer = ({
     },
   })
 
+  const checkForUpdatesMutation = useMutation({
+    mutationFn: () =>
+      triggerBranchRun({
+        appId,
+        branchId: branch.id!,
+        orgId,
+        request: {
+          config_id: currentConfig?.id,
+          force: false,
+        },
+      }),
+    onSuccess: () => {
+      addToast(
+        <Toast theme="success" heading="Checking for updates">
+          <Text>Checking for new commits and triggering a run if updated.</Text>
+        </Toast>
+      )
+      refresh()
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        typeof error === 'string'
+          ? error
+          : error.user_error ||
+            error.error ||
+            error.description ||
+            'Failed to check for updates'
+      addToast(
+        <Toast theme="error" heading="Failed to check for updates">
+          <Text>{errorMessage}</Text>
+        </Toast>
+      )
+    },
+  })
+
   const handleTriggerRun = () => {
     if (!currentConfig) {
       addToast(
@@ -73,6 +108,19 @@ export const BranchDetailActionsContainer = ({
     triggerRunMutation.mutate()
   }
 
+  const handleCheckForUpdates = () => {
+    if (!currentConfig) {
+      addToast(
+        <Toast theme="error" heading="No configuration available">
+          <Text>Create a config first before checking for updates.</Text>
+        </Toast>
+      )
+      return
+    }
+
+    checkForUpdatesMutation.mutate()
+  }
+
   return (
     <BranchDetailActions
       editButton={
@@ -83,7 +131,9 @@ export const BranchDetailActionsContainer = ({
       }
       hasConfig={!!currentConfig}
       isTriggerPending={triggerRunMutation.isPending}
+      isCheckPending={checkForUpdatesMutation.isPending}
       onTriggerRun={handleTriggerRun}
+      onCheckForUpdates={handleCheckForUpdates}
     />
   )
 }

@@ -72,7 +72,7 @@ func parseOwnerRepo(repoStr string) (string, string, error) {
 
 // GithubCommitToVCSConnectionCommit converts a GitHub API commit response to a VCSConnectionCommit struct.
 // The struct is not saved to the database - caller is responsible for persistence.
-func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryCommit, ownerID, ownerType string, vcsConnectionID string) *app.VCSConnectionCommit {
+func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryCommit, ownerID, ownerType string, vcsConnectionID string, branch, repoOwner, repoName, source string) *app.VCSConnectionCommit {
 	if ghCommit == nil || ghCommit.SHA == nil {
 		return nil
 	}
@@ -81,6 +81,10 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 		SHA:       *ghCommit.SHA,
 		OwnerID:   ownerID,
 		OwnerType: ownerType,
+		Branch:    branch,
+		RepoOwner: repoOwner,
+		RepoName:  repoName,
+		Source:    source,
 	}
 	if vcsConnectionID != "" {
 		vcsCommit.VCSConnectionID = generics.ToPtr(vcsConnectionID)

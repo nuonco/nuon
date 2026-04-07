@@ -9,24 +9,27 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
 	fx.In
 
-	L        *zap.Logger
-	DB       *gorm.DB `name:"psql"`
-	V        *validator.Validate
-	Helpers  *helpers.Helpers
-	GhClient helpers.GithubClient `optional:"true"`
+	L           *zap.Logger
+	DB          *gorm.DB `name:"psql"`
+	V           *validator.Validate
+	Helpers     *helpers.Helpers
+	GhClient    helpers.GithubClient `optional:"true"`
+	QueueClient *queueclient.Client
 }
 
 type service struct {
-	l        *zap.Logger
-	db       *gorm.DB
-	v        *validator.Validate
-	helpers  *helpers.Helpers
-	ghClient helpers.GithubClient
+	l           *zap.Logger
+	db          *gorm.DB
+	v           *validator.Validate
+	helpers     *helpers.Helpers
+	ghClient    helpers.GithubClient
+	queueClient *queueclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -38,7 +41,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		vcs.POST("/connection-callback", s.CreateConnectionCallback)
 
 		// Webhook event receiver (public, no auth required)
-		vcs.POST("/:vcs_connection_id/events", s.WriteEvent)
+		vcs.POST("/events", s.WriteEvent)
 
 		connections := vcs.Group("/connections")
 		{
@@ -49,6 +52,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 			connections.DELETE("/:connection_id", s.DeleteConnection)
 			connections.GET("/:connection_id/check-status", s.CheckConnectionStatus)
 			connections.GET("/:connection_id/repos", s.ListConnectionRepos)
+			connections.GET("/:connection_id/commits", s.ListCommits)
 		}
 	}
 	return nil
@@ -79,10 +83,11 @@ func New(params Params) *service {
 	}
 
 	return &service{
-		v:        params.V,
-		l:        params.L,
-		db:       params.DB,
-		helpers:  params.Helpers,
-		ghClient: ghClient,
+		v:           params.V,
+		l:           params.L,
+		db:          params.DB,
+		helpers:     params.Helpers,
+		ghClient:    ghClient,
+		queueClient: params.QueueClient,
 	}
 }

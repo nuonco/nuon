@@ -46,6 +46,13 @@ func (c *ConnectedGithubVCSConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &ConnectedGithubVCSConfig{}, "repo_owner_repo_name"),
+			Columns: []string{
+				"repo_owner",
+				"repo_name",
+			},
+		},
 	}
 }
 

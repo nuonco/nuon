@@ -17,6 +17,16 @@ func (a *Activities) createCommit(ctx context.Context, vcsCommit *app.VCSConnect
 		return nil, fmt.Errorf("vcsCommit cannot be nil")
 	}
 
+	// Check if a commit with this SHA already exists for the same owner+branch
+	var existing app.VCSConnectionCommit
+	findRes := a.db.WithContext(ctx).
+		Where("sha = ? AND owner_id = ? AND owner_type = ? AND branch = ?",
+			vcsCommit.SHA, vcsCommit.OwnerID, vcsCommit.OwnerType, vcsCommit.Branch).
+		First(&existing)
+	if findRes.Error == nil {
+		return &existing, nil
+	}
+
 	createRes := a.db.WithContext(ctx).Create(vcsCommit)
 	if createRes.Error != nil {
 		return nil, fmt.Errorf("unable to create VCS commit record: %w", createRes.Error)

@@ -5,10 +5,19 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
+<<<<<<< HEAD
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
+<<<<<<< HEAD
 
+=======
+>>>>>>> 83557fd6f (chore: update endpoints for vcs)
+=======
+>>>>>>> 14c8ec420 (update)
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"

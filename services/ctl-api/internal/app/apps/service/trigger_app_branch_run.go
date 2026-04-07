@@ -129,7 +129,8 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		appBranchID,
 		app.WorkflowTypeAppBranchesRun,
 		map[string]string{
-			"run_id":        run.ID, // NEW: Include run ID
+			"run_id":        run.ID,
+			"app_id":        appID,
 			"config_id":     config.ID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         strconv.FormatBool(req.Force),

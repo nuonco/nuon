@@ -91,6 +91,9 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string) ([]app.
 		Preload("Steps.Approval.Response").
 		Preload("AppBranchRuns").
 		Preload("AppBranchRuns.AppBranchConfig").
+		Preload("AppBranchRuns.AppBranchConfig.ConnectedGithubVCSConfig").
+		Preload("AppBranchRuns.AppBranchConfig.PublicGitVCSConfig").
+		Preload("AppBranchRuns.VCSConnectionCommit").
 		Where("owner_type = ?", "app_branches").
 		Where("owner_id = ?", appBranchID).
 		Order("created_at DESC").

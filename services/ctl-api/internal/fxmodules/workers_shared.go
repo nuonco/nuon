@@ -36,6 +36,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 
 	// Register VCS queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
 )

@@ -80,6 +80,7 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 		app.WorkflowTypeAppBranchesRun,
 		map[string]string{
 			"run_id":        run.ID,
+			"app_id":        branch.AppID,
 			"config_id":     config.ID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         strconv.FormatBool(req.Force),

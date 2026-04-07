@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -34,10 +35,22 @@ type VCSConnectionCommit struct {
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 
 	SHA         string `json:"sha,omitzero" gorm:"notnull" temporaljson:"sha,omitzero,omitempty"`
+	Branch      string `json:"branch,omitzero" temporaljson:"branch,omitzero,omitempty"`
+	RepoOwner   string `json:"repo_owner,omitzero" temporaljson:"repo_owner,omitzero,omitempty"`
+	RepoName    string `json:"repo_name,omitzero" temporaljson:"repo_name,omitzero,omitempty"`
+	Source      string `json:"source,omitzero" temporaljson:"source,omitzero,omitempty"`
 	AuthorName  string `json:"author_name,omitzero" temporaljson:"author_name,omitzero,omitempty"`
 	AuthorEmail string `json:"author_email,omitzero" temporaljson:"author_email,omitzero,omitempty"`
 	Message     string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
 }
+
+// VCS commit source constants
+const (
+	VCSCommitSourceWebhook = "webhook"
+	VCSCommitSourcePoll    = "poll"
+	VCSCommitSourceManual  = "manual"
+	VCSCommitSourceBuild   = "build"
+)
 
 func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
@@ -52,6 +65,16 @@ func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"owner_id",
 				"owner_type",
+			},
+		},
+		{
+			Name:        indexes.Name(db, &VCSConnectionCommit{}, "sha_owner_branch"),
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Columns: []string{
+				"sha",
+				"owner_id",
+				"owner_type",
+				"branch",
 			},
 		},
 	}

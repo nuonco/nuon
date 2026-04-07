@@ -50,7 +50,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 		zap.String("phase", string(req.Event.Phase)),
 	)
 
-	l.Info("running signal lifecycle before-phase hooks", zap.Int("registered_hooks", len(a.hooks)))
+	l.Debug("running signal lifecycle before-phase hooks", zap.Int("registered_hooks", len(a.hooks)))
 
 	resp := &RunSignalLifecycleBeforePhaseResponse{Allow: true}
 	processedHooks := 0
@@ -76,14 +76,14 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 			l.Warn("signal lifecycle phase blocked by hook",
 				zap.String("hook", hook.Name()),
 				zap.String("reason", decision.Reason))
-			l.Info("completed signal lifecycle before-phase hooks",
+			l.Debug("completed signal lifecycle before-phase hooks",
 				zap.Int("hooks_processed", processedHooks),
 				zap.Bool("allow", resp.Allow))
 			return resp, nil
 		}
 	}
 
-	l.Info("completed signal lifecycle before-phase hooks",
+	l.Debug("completed signal lifecycle before-phase hooks",
 		zap.Int("hooks_processed", processedHooks),
 		zap.Bool("allow", resp.Allow))
 
@@ -110,7 +110,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		zap.String("status", string(req.Outcome.Status)),
 	)
 
-	l.Info("running signal lifecycle after-phase hooks", zap.Int("registered_hooks", len(a.hooks)))
+	l.Debug("running signal lifecycle after-phase hooks", zap.Int("registered_hooks", len(a.hooks)))
 
 	processedHooks := 0
 	failedHooks := 0
@@ -128,7 +128,7 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		}
 	}
 
-	l.Info("completed signal lifecycle after-phase hooks",
+	l.Debug("completed signal lifecycle after-phase hooks",
 		zap.Int("hooks_processed", processedHooks),
 		zap.Int("hooks_failed", failedHooks))
 

@@ -15,7 +15,8 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
-import { getBranchWorkflowRuns } from '@/lib'
+import { getBranchWorkflowRuns, getAppBuilds } from '@/lib'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useEffect, useState } from 'react'
 import type { TInstallWorkflow, TInstallWorkflowStep } from '@/types'
 
@@ -43,6 +44,27 @@ export const BranchRunDetail = () => {
 
   const run = runs.find((r) => r.id === runId)
   const steps = run?.steps || []
+  const branchRun = run?.app_branch_runs?.[0] as any
+  const commit = branchRun?.vcs_connection_commit
+  const vcsConfig = branchRun?.app_branch_config?.connected_github_vcs_config || branchRun?.app_branch_config?.public_git_vcs_config
+  const repoName = commit?.repo_owner && commit?.repo_name
+    ? `${commit.repo_owner}/${commit.repo_name}`
+    : vcsConfig?.repo || null
+  const branchName = commit?.branch || vcsConfig?.branch || null
+  const directory = vcsConfig?.directory || null
+
+  const { data: builds = [] } = useQuery({
+    queryKey: ['branch-run-builds', orgId, appId, branchRun?.app_config_id],
+    queryFn: () => getAppBuilds({ appId, orgId }),
+    enabled: !!orgId && !!appId && !!branchRun?.app_config_id,
+    refetchInterval: 5000,
+    select: (result) => {
+      const allBuilds = Array.isArray(result) ? result : []
+      return allBuilds.filter(
+        (b) => b.component_config_connection?.app_config_id === branchRun?.app_config_id
+      )
+    },
+  })
 
   useEffect(() => {
     if (steps.length > 0 && !selectedStep) {
@@ -80,6 +102,24 @@ export const BranchRunDetail = () => {
           { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs/${runId}`, text: runId },
         ]}
       />
+      {repoName && (
+        <div className="flex items-center gap-2 text-sm">
+          <Icon variant="GitBranch" size={14} />
+          <Text variant="base" family="mono" weight="strong">{repoName}</Text>
+          {branchName && (
+            <>
+              <Text variant="subtext" theme="neutral">/</Text>
+              <Text variant="base" family="mono">{branchName}</Text>
+            </>
+          )}
+          {directory && (
+            <>
+              <Text variant="subtext" theme="neutral">/</Text>
+              <Text variant="base" family="mono" theme="neutral">{directory}</Text>
+            </>
+          )}
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <HeadingGroup>
           <Text variant="h3" weight="strong">
@@ -107,21 +147,37 @@ export const BranchRunDetail = () => {
               </Text>
             )}
           </div>
+          {commit?.sha && (
+            <div className="flex items-center gap-2 mt-2">
+              <Icon variant="GitCommit" size={14} />
+              <Text variant="base" family="mono" weight="strong">
+                {commit.sha.substring(0, 7)}
+              </Text>
+              {commit.message && (
+                <Text variant="subtext" theme="neutral" className="truncate max-w-md">
+                  {commit.message.split('\n')[0]}
+                </Text>
+              )}
+            </div>
+          )}
         </HeadingGroup>
-        <div className="flex flex-col items-end gap-1">
-          <Text variant="subtext" theme="neutral">
-            Created <Time time={run.created_at} format="relative" />
-          </Text>
-          {run.started_at && (
+        <div className="flex items-end gap-4">
+          <CancelWorkflowButton workflow={run} />
+          <div className="flex flex-col items-end gap-1">
             <Text variant="subtext" theme="neutral">
-              Started <Time time={run.started_at} format="relative" />
+              Created <Time time={run.created_at} format="relative" />
             </Text>
-          )}
-          {run.finished_at && (
-            <Text variant="subtext" theme="neutral">
-              Finished <Time time={run.finished_at} format="relative" />
-            </Text>
-          )}
+            {run.started_at && (
+              <Text variant="subtext" theme="neutral">
+                Started <Time time={run.started_at} format="relative" />
+              </Text>
+            )}
+            {run.finished_at && (
+              <Text variant="subtext" theme="neutral">
+                Finished <Time time={run.finished_at} format="relative" />
+              </Text>
+            )}
+          </div>
         </div>
       </div>
 
@@ -314,6 +370,65 @@ export const BranchRunDetail = () => {
                   <Text variant="base">
                     {selectedStep.status.status_human_description}
                   </Text>
+                </div>
+              )}
+
+              {selectedStep.name?.toLowerCase().includes('commit') && commit && (
+                <div className="p-4 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
+                  <Text variant="label" theme="neutral" className="mb-2">
+                    Commit
+                  </Text>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Icon variant="GitCommit" size={16} />
+                      <Text variant="base" family="mono" weight="strong">
+                        {commit.sha?.substring(0, 7)}
+                      </Text>
+                    </div>
+                    {commit.message && (
+                      <Text variant="base">{commit.message}</Text>
+                    )}
+                    {commit.author_name && (
+                      <Text variant="subtext" theme="neutral">
+                        by {commit.author_name}
+                        {commit.author_email ? ` <${commit.author_email}>` : ''}
+                      </Text>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedStep.name?.toLowerCase().includes('build') && builds.length > 0 && (
+                <div className="p-4 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
+                  <Text variant="label" theme="neutral" className="mb-2">
+                    Builds
+                  </Text>
+                  <div className="flex flex-col gap-3">
+                    {builds.map((build) => (
+                      <div key={build.id} className="flex items-center justify-between p-3 bg-white dark:bg-dark-grey-900 rounded-md border border-cool-grey-200 dark:border-dark-grey-600">
+                        <div className="flex items-center gap-3">
+                          <Badge
+                            theme={
+                              build.status_v2?.status === 'success'
+                                ? 'success'
+                                : build.status_v2?.status === 'error'
+                                ? 'error'
+                                : build.status_v2?.status === 'in-progress'
+                                ? 'info'
+                                : 'neutral'
+                            }
+                            size="sm"
+                          >
+                            {build.status_v2?.status || 'pending'}
+                          </Badge>
+                          <Text variant="base" weight="strong">
+                            {build.component_name || 'Build'}
+                          </Text>
+                        </div>
+                        <ID>{build.id}</ID>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

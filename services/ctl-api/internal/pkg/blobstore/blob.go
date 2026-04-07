@@ -29,12 +29,14 @@ type BlobMetadata struct {
 
 // Blob is a GORM custom type that stores large strings in S3
 // The database column stores JSONB metadata including the S3 key
-// The actual content is stored in S3 at: {org_id}/{owner_type}/{owner_id}/{blob_id}
+// The actual content is stored in S3 at: {prefix}/{blob_id}
+// The prefix defaults to the org_id from context, but can be set explicitly via SetPrefix.
 type Blob struct {
 	metadata BlobMetadata // Metadata stored in JSONB
 	value    *string      // In-memory value (lazy loaded from S3)
 	loaded   bool         // Whether value has been loaded from S3
 	dirty    bool         // Whether value has been modified and needs upload
+	prefix   string       // S3 key prefix; defaults to org_id from context if empty
 }
 
 // Scan implements database/sql.Scanner
@@ -100,10 +102,14 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 		return nil
 	}
 
-	// Get org ID from context using cctx
-	orgID, err := cctxOrgIDFromContext(tx.Statement.Context)
-	if err != nil {
-		return fmt.Errorf("failed to get org_id from context: %w", err)
+	// Determine the S3 key prefix: explicit prefix takes precedence, then org_id from context.
+	prefix := b.prefix
+	if prefix == "" {
+		orgID, err := cctxOrgIDFromContext(tx.Statement.Context)
+		if err != nil {
+			return fmt.Errorf("failed to get prefix for blob: %w", err)
+		}
+		prefix = orgID
 	}
 
 	// Generate blob ID if new
@@ -111,8 +117,8 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 		b.metadata.BlobID = domains.NewBlobID()
 	}
 
-	// Construct S3 key: org_id/blob_id
-	s3Key := buildS3Key(orgID, b.metadata.BlobID)
+	// Construct S3 key: prefix/blob_id
+	s3Key := buildS3Key(prefix, b.metadata.BlobID)
 	b.metadata.S3Key = s3Key
 
 	// Get account ID for created_by
@@ -302,6 +308,11 @@ func (b *Blob) SetContentType(contentType string) {
 	b.metadata.ContentType = contentType
 }
 
+// SetPrefix sets an explicit S3 key prefix, bypassing the default org_id lookup.
+func (b *Blob) SetPrefix(prefix string) {
+	b.prefix = prefix
+}
+
 // Helper functions to extract values from context using cctx
 
 // cctxOrgIDFromContext extracts org ID from context using cctx package
@@ -323,7 +334,7 @@ func cctxAccountIDFromContext(ctx context.Context) (string, error) {
 }
 
 // buildS3Key constructs the S3 key for blob storage
-// Format: {org_id}/{blob_id}
-func buildS3Key(orgID, blobID string) string {
-	return fmt.Sprintf("blobs/%s/%s", orgID, blobID)
+// Format: blobs/{prefix}/{blob_id}
+func buildS3Key(prefix, blobID string) string {
+	return fmt.Sprintf("blobs/%s/%s", prefix, blobID)
 }

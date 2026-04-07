@@ -58,22 +58,27 @@ export const ActiveWorkflowCard = ({
   install?: TInstall
 }) => {
   const { org } = useOrg()
-  const installId = workflow.owner_id
-  const installName = workflow.metadata?.owner_name
+  const ownerType = workflow.owner_type
+  const ownerId = workflow.owner_id
+  const ownerName = workflow.metadata?.owner_name
   const elapsed = useElapsed(workflow.created_at)
   const pendingApprovals = getPendingApprovalCount(workflow)
 
+  const workflowHref = ownerType === 'app_branches'
+    ? `/${org.id}/apps/${workflow.metadata?.app_id}/branches/${ownerId}/runs/${workflow.id}`
+    : `/${org.id}/installs/${ownerId}/workflows/${workflow.id}`
+
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-cool-grey-200 dark:border-white/10 bg-cool-grey-50 dark:bg-white/[0.03] p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-cool-grey-200 dark:border-white/10 bg-cool-grey-50 dark:bg-dark-grey-800 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5 min-w-0">
           <Link
-            href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
+            href={workflowHref}
           >
             <Text variant="base" weight="strong" className="truncate">
-              {installName && !install && (
+              {ownerName && !install && (
                 <span className="text-cool-grey-500 dark:text-white/50 mr-1.5">
-                  {installName} /
+                  {ownerName} /
                 </span>
               )}
               {getWorkflowTitle(workflow)}

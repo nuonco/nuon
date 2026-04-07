@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 
 	// Blank imports to register v2 queue signal types in the catalog.
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
 )

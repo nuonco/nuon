@@ -9,15 +9,23 @@ package toast
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import (
-	"strconv"
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
 
+<<<<<<< HEAD
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
+<<<<<<< HEAD
 
+=======
+>>>>>>> 83557fd6f (chore: update endpoints for vcs)
+=======
+import (
+>>>>>>> 14c8ec420 (update)
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/icon"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/utils"
+	"strconv"
 )
 
 type Variant string

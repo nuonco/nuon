@@ -19,6 +19,8 @@ type GithubClient interface {
 	DeleteInstallation(ctx context.Context, installID string) error
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
 	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error)
+	GetLatestCommit(ctx context.Context, vcsConn *app.VCSConnection, owner, repo, branch string) (*github.RepositoryCommit, error)
+	ListRepoCommits(ctx context.Context, vcsConn *app.VCSConnection, owner, repo, branch string, perPage int) ([]*github.RepositoryCommit, error)
 }
 
 func (h *Helpers) GetInstallationAccount(ctx context.Context, installID string) (*github.User, error) {
@@ -92,6 +94,38 @@ func (h *Helpers) CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnecti
 	}
 
 	return created.GetID(), nil
+}
+
+func (h *Helpers) GetLatestCommit(ctx context.Context, vcsConn *app.VCSConnection, owner, repo, branch string) (*github.RepositoryCommit, error) {
+	client, err := h.GetVCSConnectionClient(ctx, vcsConn)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create github client: %w", err)
+	}
+
+	commit, _, err := client.Repositories.GetCommit(ctx, owner, repo, branch, &github.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest commit for %s/%s@%s: %w", owner, repo, branch, err)
+	}
+
+	return commit, nil
+}
+
+func (h *Helpers) ListRepoCommits(ctx context.Context, vcsConn *app.VCSConnection, owner, repo, branch string, perPage int) ([]*github.RepositoryCommit, error) {
+	client, err := h.GetVCSConnectionClient(ctx, vcsConn)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create github client: %w", err)
+	}
+
+	opts := &github.CommitsListOptions{
+		SHA:         branch,
+		ListOptions: github.ListOptions{PerPage: perPage},
+	}
+	commits, _, err := client.Repositories.ListCommits(ctx, owner, repo, opts)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list commits for %s/%s@%s: %w", owner, repo, branch, err)
+	}
+
+	return commits, nil
 }
 
 func (h *Helpers) ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error) {

@@ -16,6 +16,10 @@ import (
 func (h *Helpers) EnsureAppBranchQueue(ctx context.Context, branchID string) error {
 	var existing app.Queue
 	if res := h.db.WithContext(ctx).First(&existing, "owner_id = ?", branchID); res.Error == nil {
+		// Ensure MaxInFlight is up to date before restarting
+		if existing.MaxInFlight != 10 {
+			h.db.WithContext(ctx).Model(&existing).Update("max_in_flight", 10)
+		}
 		// DB record exists but Temporal workflow may not be running — Restart uses
 		// UpdateWithStart which starts the workflow if it doesn't exist.
 		if err := h.queueClient.Restart(ctx, existing.ID); err != nil {
@@ -28,7 +32,7 @@ func (h *Helpers) EnsureAppBranchQueue(ctx context.Context, branchID string) err
 		OwnerID:     branchID,
 		OwnerType:   plugins.TableName(h.db, app.AppBranch{}),
 		Namespace:   "apps",
-		MaxInFlight: 2,
+		MaxInFlight: 10,
 		MaxDepth:    50,
 	})
 	if err != nil {

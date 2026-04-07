@@ -346,6 +346,10 @@ func NewVCSEventID() string {
 	return shortid.NewNanoID("vce")
 }
 
+func NewVCSWebhookEventID() string {
+	return shortid.NewNanoID("vwe")
+}
+
 func NewVCSWebhookSubscriptionID() string {
 	return shortid.NewNanoID("vws")
 }

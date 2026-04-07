@@ -28,7 +28,9 @@ export const Default = () => (
     manageInstallsButton={<MockManageButton />}
     hasConfig={true}
     isTriggerPending={false}
+    isCheckPending={false}
     onTriggerRun={noop}
+    onCheckForUpdates={noop}
   />
 )
 
@@ -38,7 +40,9 @@ export const NoConfig = () => (
     manageInstallsButton={<MockManageButton />}
     hasConfig={false}
     isTriggerPending={false}
+    isCheckPending={false}
     onTriggerRun={noop}
+    onCheckForUpdates={noop}
   />
 )
 
@@ -48,6 +52,8 @@ export const TriggerPending = () => (
     manageInstallsButton={<MockManageButton />}
     hasConfig={true}
     isTriggerPending={true}
+    isCheckPending={false}
     onTriggerRun={noop}
+    onCheckForUpdates={noop}
   />
 )

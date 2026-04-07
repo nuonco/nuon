@@ -17,6 +17,7 @@ type GithubClient interface {
 	GetInstallation(ctx context.Context, installID string) (*github.Installation, error)
 	ListInstallationRepos(ctx context.Context, vcsConn *app.VCSConnection) ([]*github.Repository, error)
 	CreateOrgWebhook(ctx context.Context, vcsConn *app.VCSConnection, webhookURL string) (int64, error)
+	GetLatestCommit(ctx context.Context, vcsConn *app.VCSConnection, owner, repo, branch string) (*github.RepositoryCommit, error)
 }
 
 type Params struct {

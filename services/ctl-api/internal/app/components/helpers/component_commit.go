@@ -26,10 +26,12 @@ func (s *Helpers) GetComponentCommit(ctx context.Context, cmpID string) (*app.VC
 	}
 
 	// Use mapper to convert GitHub commit to VCSConnectionCommit
+	cfg := cmp.LatestConfig.ConnectedGithubVCSConfig
 	vcsCommit := s.vcsHelpers.GithubCommitToVCSConnectionCommit(commit,
-		cmp.LatestConfig.ConnectedGithubVCSConfig.ID,
+		cfg.ID,
 		plugins.TableName(s.db, &app.ConnectedGithubVCSConfig{}),
-		cmp.LatestConfig.ConnectedGithubVCSConfig.VCSConnectionID)
+		cfg.VCSConnectionID,
+		cfg.Branch, cfg.RepoOwner, cfg.RepoName, app.VCSCommitSourceBuild)
 	if vcsCommit == nil {
 		return nil, fmt.Errorf("invalid commit data from GitHub")
 	}

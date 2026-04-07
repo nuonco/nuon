@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
+	webhooksubscription "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -51,6 +52,16 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		},
 	}); err != nil {
 		return nil, fmt.Errorf("unable to enqueue initial health check: %w", err)
+	}
+
+	// Enqueue webhook subscription signal to create GitHub org webhook
+	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal: &webhooksubscription.Signal{
+			VCSConnectionID: vcsConn.ID,
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("unable to enqueue webhook subscription: %w", err)
 	}
 
 	return q, nil

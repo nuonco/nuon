@@ -31,7 +31,8 @@ func (a *Activities) fetchLatestCommit(ctx context.Context, vcsConfigID string) 
 		vcsCommit := vcsHelpers.GithubCommitToVCSConnectionCommit(ghCommit,
 			connectedCfg.ID,
 			plugins.TableName(a.db, connectedCfg),
-			connectedCfg.VCSConnectionID)
+			connectedCfg.VCSConnectionID,
+			connectedCfg.Branch, connectedCfg.RepoOwner, connectedCfg.RepoName, app.VCSCommitSourceBuild)
 		if vcsCommit == nil {
 			return nil, fmt.Errorf("invalid commit data from GitHub")
 		}
@@ -52,7 +53,8 @@ func (a *Activities) fetchLatestCommit(ctx context.Context, vcsConfigID string) 
 		vcsCommit := vcsHelpers.GithubCommitToVCSConnectionCommit(ghCommit,
 			publicCfg.ID,
 			plugins.TableName(a.db, publicCfg),
-			"")
+			"",
+			publicCfg.Branch, "", "", app.VCSCommitSourceBuild)
 		if vcsCommit == nil {
 			return nil, fmt.Errorf("invalid commit data from GitHub")
 		}

@@ -36,7 +36,7 @@ func AllModels() []any {
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
 		&app.VCSWebhookSubscription{},
-		&app.VCSEvent{},
+		&app.VCSWebhookEvent{},
 
 		// apps
 		&app.App{},

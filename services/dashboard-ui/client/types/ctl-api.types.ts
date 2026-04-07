@@ -29,7 +29,7 @@ export type TAppSandboxBuild = {
   status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
   log_stream?: { id: string; open?: boolean }
   runner_job?: { id: string }
-  vcs_connection_commit?: { sha?: string; message?: string }
+  vcs_connection_commit?: { sha?: string; message?: string; branch?: string; repo_owner?: string; repo_name?: string; author_name?: string; author_email?: string; source?: string }
 }
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
@@ -219,6 +219,12 @@ export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
 export type TVCSCommit = components['schemas']['app.VCSConnectionCommit']
+export type TVCSConnectionCommit = TVCSCommit & {
+  branch?: string
+  repo_owner?: string
+  repo_name?: string
+  source?: string
+}
 export type TVCSConnectionStatus = {
   status: 'active' | 'suspended' | 'unknown'
   github_install_id: string
