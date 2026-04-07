@@ -236,7 +236,8 @@
             "pages": [
               "guides/customer-portal",
               "guides/control-plane-integration",
-              "guides/vendor-customers"
+              "guides/vendor-customers",
+              "guides/runner-kill-switch"
             ]
           },
           {
