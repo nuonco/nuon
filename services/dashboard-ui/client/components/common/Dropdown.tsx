@@ -233,7 +233,6 @@ export const Dropdown = ({
           'dropdown-trigger flex items-center justify-between gap-2',
           {
             '!outline-0': position === 'overlay' && alignment === 'overlay',
-            '!text-cool-grey-800 dark:!text-white': variant !== 'ghost',
           },
           buttonClassName
         )}

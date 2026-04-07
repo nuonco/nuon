@@ -138,21 +138,17 @@ const DiagramCanvas = () => {
           ctx.globalAlpha = 0.4
           ctx.fillStyle = getComputedStyle(document.documentElement)
             .getPropertyValue('--foreground').trim() || '#19171C'
-          ctx.font = '500 20px Inter, sans-serif'
+          ctx.font = '500 24px Inter, sans-serif'
           ctx.textBaseline = 'bottom'
-          ctx.fillText('Exported from', pad, canvas.height - 10)
-
-          const textW = ctx.measureText('Exported from').width
-          const logoSize = 16
-          const logoX = pad + textW + 8
-          const logoY = canvas.height - 10 - logoSize
-
-          const nuonPath = new Path2D()
-          const s = logoSize / 200
-          nuonPath.addPath(new Path2D(
-            'M121.15 40.3118L97.9645 53.715V75.4151L79.1959 64.5597H79.1852L56.8232 77.492V148.651L79.1852 161.584H79.1959L103.205 147.699V126.951L121.161 137.325L144.346 123.922V53.715L121.161 40.3118H121.15ZM62.0528 80.5216L79.1745 70.6297H79.1852L97.9538 81.4744V117.862L62.0528 97.1151V80.5216ZM97.9538 144.669L79.1745 155.514L62.0528 145.622V103.174L97.9538 123.922V144.669ZM139.095 120.881L121.15 131.255L103.205 120.892V84.504L139.106 105.251V120.881H139.095ZM139.095 99.192L103.194 78.4447V56.7447L121.15 46.3711L139.095 56.7447V99.192Z'
-          ), { a: s, b: 0, c: 0, d: s, e: logoX, f: logoY })
-          ctx.fill(nuonPath)
+          const timestamp = new Date().toLocaleString(undefined, {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: 'numeric', minute: '2-digit',
+          })
+          const installName = install?.name || 'install'
+          ctx.fillText(
+            `Exported from Nuon · ${timestamp} · ${installName}`,
+            pad, canvas.height - 10
+          )
           ctx.globalAlpha = 1
 
           const a = document.createElement('a')

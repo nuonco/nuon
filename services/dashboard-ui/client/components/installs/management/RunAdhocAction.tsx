@@ -274,6 +274,7 @@ export const RunAdhocActionModal = ({
               type="text"
               placeholder="echo 'Hello, world!'"
               required
+              className="!font-mono"
               defaultValue={
                 draftValues?.['command'] || initialValues?.command || ''
               }

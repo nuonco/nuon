@@ -7,6 +7,7 @@ import type {
   TComponentType,
 } from '@/types'
 import type { TInstallAppPermissionsConfig } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
+import { getStatusTheme } from '@/utils/status-utils'
 
 export type TDiagramData = {
   install: TInstall
@@ -61,6 +62,10 @@ export function extractRoles(permissionsConfig?: TInstallAppPermissionsConfig): 
     { role: permissionsConfig.provision_role, fallback: 'Provision' },
     { role: permissionsConfig.deprovision_role, fallback: 'Deprovision' },
     { role: permissionsConfig.maintenance_role, fallback: 'Maintenance' },
+    ...(permissionsConfig.break_glass_roles || []).map((r) => ({
+      role: r,
+      fallback: r?.display_name || r?.name || 'Break Glass',
+    })),
     ...(permissionsConfig.custom_roles || []).map((r) => ({
       role: r,
       fallback: r?.display_name || r?.name || 'Custom',
@@ -105,8 +110,8 @@ function buildComponentNodeData(
     latestDeployAt: latestDeploy?.created_at,
     configVersion: comp.component?.config_versions,
     updatedAt: comp.updated_at,
-    href: comp.component_id ? `/${orgId}/installs/${installId}/components/${comp.component_id}` : undefined,
-    deploysHref: comp.component_id ? `/${orgId}/installs/${installId}/components/${comp.component_id}/deploys` : undefined,
+    href: comp.component_id && installId ? `/${orgId}/installs/${installId}/components/${comp.component_id}` : undefined,
+    deploysHref: comp.component_id && installId ? `/${orgId}/installs/${installId}/components/${comp.component_id}/deploys` : undefined,
   }
 }
 
@@ -247,11 +252,12 @@ export function computeLayout(data: TDiagramData): Node[] {
     const clusterStatuses = clusterComps
       .map((c) => c.status_v2?.status || '')
       .filter(Boolean)
+    const themePriority = ['error', 'warn', 'info', 'success', 'neutral'] as const
     const clusterStatus =
-      clusterStatuses.find((s) => s === 'error') ||
-      clusterStatuses.find((s) => s === 'provisioning' || s === 'building' || s === 'in-progress') ||
-      clusterStatuses.find((s) => s === 'active' || s === 'success') ||
-      ''
+      themePriority.reduce<string>((found, theme) => {
+        if (found) return found
+        return clusterStatuses.find((s) => getStatusTheme(s) === theme) || ''
+      }, '')
 
     nodes.push({
       id: 'eks-cluster',
