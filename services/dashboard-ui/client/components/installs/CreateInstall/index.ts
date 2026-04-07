@@ -1,1 +1,1 @@
-export { CreateInstallButton } from './CreateInstallButton'
+export { CreateInstallButton } from './CreateInstallButton/index'

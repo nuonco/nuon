@@ -1,2 +1,2 @@
-export { PendingApprovalsContainer as default, PendingApprovalsContainer } from './PendingApprovalsContainer'
-export { PendingApprovals } from './PendingApprovals'
+export { PendingApprovalsContainer as PendingApprovals } from './PendingApprovalsContainer'
+export { PendingApprovals as PendingApprovalsComponent } from './PendingApprovals'

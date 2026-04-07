@@ -1,2 +1,2 @@
-export { InstallComponentBuildCardContainer as default, InstallComponentBuildCardContainer } from './InstallComponentBuildCardContainer'
-export { InstallComponentBuildCard, InstallComponentBuildCardSkeleton } from './InstallComponentBuildCard'
+export { InstallComponentBuildCardContainer as InstallComponentBuildCard } from './InstallComponentBuildCardContainer'
+export { InstallComponentBuildCard as InstallComponentBuildCardComponent, InstallComponentBuildCardSkeleton } from './InstallComponentBuildCard'

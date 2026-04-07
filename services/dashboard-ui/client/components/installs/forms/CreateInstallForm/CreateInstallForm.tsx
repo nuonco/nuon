@@ -9,6 +9,7 @@ import type { TAppInputConfig } from '@/types'
 interface ICreateInstallFormPresentation {
   appId: string
   platform: 'aws' | 'azure' | 'gcp'
+  nameError?: string
   inputConfig?: TAppInputConfig
   draftValues?: Record<string, string> | null
   formKey?: string
@@ -25,6 +26,7 @@ export const CreateInstallForm = forwardRef<
   (
     {
       platform,
+      nameError,
       inputConfig,
       draftValues,
       formKey,
@@ -85,6 +87,8 @@ export const CreateInstallForm = forwardRef<
               name="name"
               placeholder="Enter install name"
               required
+              error={!!nameError}
+              errorMessage={nameError}
               defaultValue={draftValues?.name || ''}
             />
           </div>

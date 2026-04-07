@@ -1,2 +1,2 @@
-export { AdminInstallSectionContainer as default, AdminInstallSectionContainer } from './AdminInstallSectionContainer'
-export { AdminInstallSection } from './AdminInstallSection'
+export { AdminInstallSectionContainer as AdminInstallSection } from './AdminInstallSectionContainer'
+export { AdminInstallSection as AdminInstallSectionComponent } from './AdminInstallSection'

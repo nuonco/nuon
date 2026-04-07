@@ -1,2 +1,2 @@
-export { ManagementDropdownContainer as default, ManagementDropdownContainer } from './ManagementDropdownContainer'
-export { ManagementDropdown } from './ManagementDropdown'
+export { ManagementDropdownContainer as ManagementDropdown } from './ManagementDropdownContainer'
+export { ManagementDropdown as ManagementDropdownComponent } from './ManagementDropdown'

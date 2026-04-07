@@ -1,2 +1,2 @@
-export { ActionRunMetadataContainer as default, ActionRunMetadataContainer } from './ActionRunMetadataContainer'
-export { ActionRunMetadata, ActionRunMetadataSkeleton } from './ActionRunMetadata'
+export { ActionRunMetadataContainer as ActionRunMetadata } from './ActionRunMetadataContainer'
+export { ActionRunMetadata as ActionRunMetadataComponent, ActionRunMetadataSkeleton } from './ActionRunMetadata'
