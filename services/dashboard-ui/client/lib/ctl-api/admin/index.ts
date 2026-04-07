@@ -52,8 +52,8 @@ export const adminReprovisionInstallRunner = ({ runnerId, adminEmail }: { runner
 export const adminRestartInstall = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart` })
 
-export const adminRestartInstallQueues = ({ installId, adminApiUrl, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: adminApiUrl, method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart-queues` })
+export const adminRestartInstallQueues = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart-queues` })
 
 export const adminTeardownInstallComponents = ({ installId, orgId }: { installId: string; orgId: string }) =>
   api<void>({ method: 'POST', body: {}, orgId, path: `installs/${installId}/components/teardown-all` })

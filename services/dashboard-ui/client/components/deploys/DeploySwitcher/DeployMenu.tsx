@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Menu, type IMenu } from '@/components/common/Menu'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
-import { useInstall } from '@/hooks/use-install'
-import { useScrollToBottom } from '@/hooks/use-on-scroll-to-bottom'
-import { useOrg } from '@/hooks/use-org'
-import { useQueryParams } from '@/hooks/use-query-params'
-import { getComponentDeploys } from '@/lib'
 import type { TDeploy } from '@/types'
 import { cn } from '@/utils/classnames'
 import { DeploySummary } from './DeploySummary'
@@ -17,57 +11,28 @@ import { DeploysSkeleton } from './DeploysSkeleton'
 
 interface IDeployMenu extends Omit<IMenu, 'children'> {
   activeDeployId: string
+  deploys: TDeploy[]
+  isLoading: boolean
+  hasError: boolean
+  orgId: string
+  installId: string
   componentId: string
+  scrollRef: React.RefObject<HTMLDivElement | null>
+  limit: number
 }
 
-export const DeployMenu = ({ activeDeployId, componentId }: IDeployMenu) => {
-  const limit = 8
+export const DeployMenu = ({
+  activeDeployId,
+  deploys,
+  isLoading,
+  hasError,
+  orgId,
+  installId,
+  componentId,
+  scrollRef,
+  limit,
+}: IDeployMenu) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [offset, setOffset] = useState(0)
-  const [deploys, setDeploys] = useState<TDeploy[]>([])
-  const { install } = useInstall()
-  const { org } = useOrg()
-  const queryParams = useQueryParams({
-    limit,
-    offset,
-  })
-
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['component-deploys-menu', org?.id, install?.id, componentId, queryParams],
-    queryFn: () =>
-      getComponentDeploys({
-        orgId: org.id,
-        installId: install.id,
-        componentId,
-        limit,
-        offset,
-      }),
-    enabled: !!org?.id && !!install?.id,
-  })
-
-  const scrollToBottom = useScrollToBottom({
-    onScrollToBottom: () => {
-      if (data?.pagination?.hasNext) {
-        setOffset((prev) => {
-          if (prev === 0) {
-            return limit + 1
-          } else {
-            return prev + limit
-          }
-        })
-      }
-    },
-  })
-
-  useEffect(() => {
-    const newDeploys = data?.data ?? []
-    setDeploys((prev) => {
-      const deployMap = new Map(prev.map((deploy) => [deploy.id, deploy]))
-      newDeploys.forEach((deploy) => deployMap.set(deploy.id, deploy))
-      return Array.from(deployMap.values())
-    })
-    scrollToBottom.reset()
-  }, [data])
 
   const filteredDeploys = deploys
     ? deploys.filter(
@@ -93,10 +58,10 @@ export const DeployMenu = ({ activeDeployId, componentId }: IDeployMenu) => {
         />
       </div>
       <div
-        ref={scrollToBottom.elementRef}
+        ref={scrollRef}
         className="flex flex-col gap-2 p-2 max-h-56 overflow-y-auto"
       >
-        {filteredDeploys?.length && !error ? (
+        {filteredDeploys?.length && !hasError ? (
           <>
             {filteredDeploys?.map((deploy, idx) => (
               <span key={deploy.id} className="rounded-lg border">
@@ -105,7 +70,7 @@ export const DeployMenu = ({ activeDeployId, componentId }: IDeployMenu) => {
                     '!bg-primary-600/5 dark:!bg-primary-600/5':
                       deploy?.id === activeDeployId,
                   })}
-                  href={`/${org.id}/installs/${install.id}/components/${componentId}/deploys/${deploy?.id}`}
+                  href={`/${orgId}/installs/${installId}/components/${componentId}/deploys/${deploy?.id}`}
                   variant="ghost"
                 >
                   <DeploySummary deploy={deploy} isLatest={idx === 0} />

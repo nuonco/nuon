@@ -3,8 +3,8 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TApp } from '@/types'
-import { AppSelect } from './AppSelect'
-import { LoadAppConfigs } from './LoadAppConfigs'
+import { AppSelectContainer as AppSelect } from './AppSelectContainer'
+import { LoadAppConfigsContainer as LoadAppConfigs } from './LoadAppConfigsContainer'
 
 interface ICreateInstall {}
 

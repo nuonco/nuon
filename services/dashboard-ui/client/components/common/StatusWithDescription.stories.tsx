@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/StatusWithDescription',
+}
+
 import { StatusWithDescription } from './StatusWithDescription'
 import { Text } from './Text'
 import { Badge } from './Badge'

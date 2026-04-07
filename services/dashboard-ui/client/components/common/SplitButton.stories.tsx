@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/SplitButton',
+}
+
 import { Menu } from './Menu'
 import { Button } from './Button'
 import { SplitButton } from './SplitButton'

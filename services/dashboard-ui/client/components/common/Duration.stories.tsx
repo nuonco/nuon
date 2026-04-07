@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Duration',
+}
+
 import { Duration } from './Duration'
 import { Text } from './Text'
 import { Icon } from './Icon'

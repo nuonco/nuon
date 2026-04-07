@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Pagination',
+}
+
 import { Pagination } from './Pagination'
 import { Text } from './Text'
 

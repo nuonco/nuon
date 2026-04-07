@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Skeleton',
+}
+
 import { Skeleton } from './Skeleton'
 import { Text } from './Text'
 

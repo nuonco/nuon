@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/LabeledValue',
+}
+
 import { LabeledValue } from './LabeledValue'
 import { Text } from './Text'
 import { Badge } from './Badge'

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Tooltip',
+}
+
 import { Button } from './Button'
 import { Icon } from './Icon'
 import { Status } from './Status'

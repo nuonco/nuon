@@ -1,46 +1,31 @@
-import { useQuery } from '@tanstack/react-query'
-import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { useOrg } from '@/hooks/use-org'
-import { useSurfaces } from '@/hooks/use-surfaces'
-import { checkVCSConnectionStatus, getVCSConnectionRepos } from '@/lib/ctl-api/vcs-connections'
-import type { TVCSConnection } from '@/types'
+import type { TVCSConnection, TVCSConnectionReposResponse } from '@/types'
 import { GitHubAccountSection } from './GitHubAccountSection'
 import { RepositoriesSection } from './RepositoriesSection'
 
-interface IConnectionDetails {
+interface IConnectionDetailsModal extends IModal {
   vcs_connection: TVCSConnection
+  status?: { status?: string; checked_at?: string } | null
+  isLoadingStatus?: boolean
+  repos?: TVCSConnectionReposResponse
+  reposError?: any
+  isLoadingRepos?: boolean
 }
 
 export const ConnectionDetailsModal = ({
   vcs_connection,
+  status,
+  isLoadingStatus,
+  repos,
+  reposError,
+  isLoadingRepos = false,
   ...props
-}: IConnectionDetails & IModal) => {
-  const { org } = useOrg()
-
-  const { data: status, isLoading: isLoadingStatus } = useQuery({
-    queryKey: ['vcs-connection-status', org?.id, vcs_connection?.id],
-    queryFn: () =>
-      checkVCSConnectionStatus({ orgId: org!.id, connectionId: vcs_connection.id }),
-    enabled: !!org?.id && !!vcs_connection?.id,
-  })
-
-  const {
-    data: repos,
-    error: reposError,
-    isLoading: isLoadingRepos,
-  } = useQuery({
-    queryKey: ['vcs-connection-repos', org?.id, vcs_connection?.id],
-    queryFn: () =>
-      getVCSConnectionRepos({ orgId: org!.id, connectionId: vcs_connection.id }),
-    enabled: !!org?.id && !!vcs_connection?.id,
-  })
-
+}: IConnectionDetailsModal) => {
   return (
     <Modal
       heading={
@@ -92,25 +77,5 @@ export const ConnectionDetailsModal = ({
         />
       </div>
     </Modal>
-  )
-}
-
-export const ConnectionDetailsButton = ({
-  vcs_connection,
-  ...props
-}: IConnectionDetails & IButtonAsButton) => {
-  const { addModal } = useSurfaces()
-  const modal = <ConnectionDetailsModal vcs_connection={vcs_connection} />
-
-  return (
-    <Button
-      onClick={() => {
-        addModal(modal)
-      }}
-      {...props}
-    >
-      View connection
-      <Icon variant="Info" />
-    </Button>
   )
 }

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/JSONViewer',
+}
+
 import { JSONViewer } from './JSONViewer'
 import { Text } from './Text'
 
