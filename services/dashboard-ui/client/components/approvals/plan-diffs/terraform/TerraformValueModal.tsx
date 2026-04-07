@@ -14,7 +14,7 @@ export const TerraformValueModal = ({
 }) => {
   return (
     <Modal
-      size="half"
+      size="sm"
       heading={`${isBefore ? 'Before:' : 'After:'} ${valueKey}`}
       triggerButton={{
         children: (

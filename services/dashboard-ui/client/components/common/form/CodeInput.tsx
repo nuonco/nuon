@@ -59,20 +59,17 @@ export const CodeInput = forwardRef<HTMLTextAreaElement, ICodeInput>(
 
     const baseClasses = cn(
       'rounded-md border transition-colors duration-200 overflow-auto',
-      // Focus styles (brightest primary when focused) - note: CodeEditor handles focus internally
+      'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]',
       'focus-within:!border-primary-500 dark:focus-within:!border-primary-500',
-      // HTML5 validation states - user-invalid overrides everything
       'user-invalid:!border-red-500 user-invalid:dark:!border-red-400',
       'user-invalid:focus-within:!border-red-500',
       {
-        // Default state - dimmed primary (subtle but branded)
-        '!border-primary-700 dark:!border-primary-400/50': !error && !disabled,
-        
-        // Error state - red overrides everything
+        'border-cool-grey-500/24 dark:border-cool-grey-500/24': !error && !disabled,
+
         '!border-red-500 dark:!border-red-400': error,
-        
-        // Disabled state - grey overrides everything
+
         '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
+        '!shadow-none': disabled,
         'opacity-50 cursor-not-allowed': disabled,
         'focus-within:!border-cool-grey-300 dark:focus-within:!border-dark-grey-600': disabled,
       },

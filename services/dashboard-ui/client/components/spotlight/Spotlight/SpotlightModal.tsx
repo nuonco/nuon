@@ -96,7 +96,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
 
   return (
     <Modal
-      size="half"
+      size="lg"
       showHeader={false}
       showFooter={false}
       {...props}
