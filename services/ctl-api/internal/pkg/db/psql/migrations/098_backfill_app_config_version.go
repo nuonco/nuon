@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (m *Migrations) Migration095BackfillAppConfigVersion(ctx context.Context, db *gorm.DB) error {
+func (m *Migrations) Migration098BackfillAppConfigVersion(ctx context.Context, db *gorm.DB) error {
 	backfill := `
 UPDATE app_configs
 SET version = v.version
