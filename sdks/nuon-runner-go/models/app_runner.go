@@ -62,6 +62,9 @@ type AppRunner struct {
 	// status description
 	StatusDescription string `json:"status_description,omitempty"`
 
+	// status v2
+	StatusV2 *AppCompositeStatus `json:"status_v2,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -90,6 +93,10 @@ func (m *AppRunner) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRunnerJob(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatusV2(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -235,6 +242,29 @@ func (m *AppRunner) validateRunnerJob(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppRunner) validateStatusV2(formats strfmt.Registry) error {
+	if swag.IsZero(m.StatusV2) { // not required
+		return nil
+	}
+
+	if m.StatusV2 != nil {
+		if err := m.StatusV2.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app runner based on the context it is used
 func (m *AppRunner) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -256,6 +286,10 @@ func (m *AppRunner) ContextValidate(ctx context.Context, formats strfmt.Registry
 	}
 
 	if err := m.contextValidateRunnerJob(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -393,6 +427,31 @@ func (m *AppRunner) contextValidateRunnerJob(ctx context.Context, formats strfmt
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("runner_job")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppRunner) contextValidateStatusV2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.StatusV2 != nil {
+
+		if swag.IsZero(m.StatusV2) { // not required
+			return nil
+		}
+
+		if err := m.StatusV2.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
 			}
 
 			return err
