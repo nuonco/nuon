@@ -1,2 +1,2 @@
-export { WorkflowTypeFilterContainer as default, WorkflowTypeFilterContainer } from './WorkflowTypeFilterContainer'
-export { WorkflowTypeFilter } from './WorkflowTypeFilter'
+export { WorkflowTypeFilterContainer as WorkflowTypeFilter } from './WorkflowTypeFilterContainer'
+export { WorkflowTypeFilter as WorkflowTypeFilterComponent } from './WorkflowTypeFilter'

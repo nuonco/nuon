@@ -76,7 +76,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           )}
         </div>
       }
-      size={selectedApp ? '3/4' : 'default'}
+      size={selectedApp ? 'xl' : 'default'}
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}

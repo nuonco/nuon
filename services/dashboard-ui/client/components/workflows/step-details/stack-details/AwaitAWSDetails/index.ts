@@ -1,2 +1,2 @@
-export { AwaitAWSDetailsContainer as default, AwaitAWSDetailsContainer } from './AwaitAWSDetailsContainer'
-export { AwaitAWSDetails, AwaitAWSDetailsSkeleton } from './AwaitAWSDetails'
+export { AwaitAWSDetailsContainer as AwaitAWSDetails } from './AwaitAWSDetailsContainer'
+export { AwaitAWSDetails as AwaitAWSDetailsComponent, AwaitAWSDetailsSkeleton } from './AwaitAWSDetails'

@@ -1,2 +1,2 @@
-export { SandboxRunOutputsButtonContainer as default, SandboxRunOutputsButtonContainer } from './SandboxRunOutputsModalContainer'
-export { SandboxRunOutputsModal, SandboxRunOutputsButton } from './SandboxRunOutputsModal'
+export { SandboxRunOutputsButtonContainer as SandboxRunOutputsButton } from './SandboxRunOutputsModalContainer'
+export { SandboxRunOutputsModal as SandboxRunOutputsModalComponent, SandboxRunOutputsButton as SandboxRunOutputsButtonComponent } from './SandboxRunOutputsModal'

@@ -1,2 +1,2 @@
-export { CreateInstallFormContainer as default, CreateInstallFormContainer } from './CreateInstallFormContainer'
-export { CreateInstallForm } from './CreateInstallForm'
+export { CreateInstallFormContainer as CreateInstallForm } from './CreateInstallFormContainer'
+export { CreateInstallForm as CreateInstallFormComponent } from './CreateInstallForm'

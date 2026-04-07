@@ -1,2 +1,2 @@
-export { OrgSwitcherContainer as default, OrgSwitcherContainer } from './OrgSwitcherContainer'
-export { OrgSwitcher } from './OrgSwitcher'
+export { OrgSwitcherContainer as OrgSwitcher } from './OrgSwitcherContainer'
+export { OrgSwitcher as OrgSwitcherComponent } from './OrgSwitcher'

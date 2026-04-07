@@ -1,2 +1,2 @@
-export { UpdateInstallFormContainer as default, UpdateInstallFormContainer } from './UpdateInstallFormContainer'
-export { UpdateInstallForm } from './UpdateInstallForm'
+export { UpdateInstallFormContainer as UpdateInstallForm } from './UpdateInstallFormContainer'
+export { UpdateInstallForm as UpdateInstallFormComponent } from './UpdateInstallForm'

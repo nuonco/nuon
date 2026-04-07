@@ -1,2 +1,2 @@
-export { WizardNavContainer as default, WizardNavContainer } from './WizardNavContainer'
-export { WizardNav } from './WizardNav'
+export { WizardNavContainer as WizardNav } from './WizardNavContainer'
+export { WizardNav as WizardNavComponent } from './WizardNav'

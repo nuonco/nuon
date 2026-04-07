@@ -1,2 +1,2 @@
-export { AdminOrgSectionContainer as default, AdminOrgSectionContainer } from './AdminOrgSectionContainer'
-export { AdminOrgSection } from './AdminOrgSection'
+export { AdminOrgSectionContainer as AdminOrgSection } from './AdminOrgSectionContainer'
+export { AdminOrgSection as AdminOrgSectionComponent } from './AdminOrgSection'
