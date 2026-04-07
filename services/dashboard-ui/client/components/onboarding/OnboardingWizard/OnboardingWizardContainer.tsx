@@ -8,6 +8,15 @@ import { OnboardingWizardLayout } from './OnboardingWizard'
 
 function ConnectedWizardLayout() {
   const { onboardingV2 } = useConfig()
+
+  if (onboardingV2) {
+    return <OnboardingWizardLayout onboardingV2 skipHref={null} />
+  }
+
+  return <V1WizardLayout />
+}
+
+function V1WizardLayout() {
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
   const orgCreated = isStepComplete('org_created')
   const orgId = getStepMetadata('org_created', 'org_id') as string | undefined
@@ -15,7 +24,7 @@ function ConnectedWizardLayout() {
 
   return (
     <OnboardingWizardLayout
-      onboardingV2={onboardingV2}
+      onboardingV2={false}
       skipHref={skipHref}
     />
   )
