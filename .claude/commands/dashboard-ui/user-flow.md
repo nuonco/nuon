@@ -7,7 +7,7 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
 
 ## Steps
 
-1. Create two components in the same file: `MyActionModal` and `MyActionButton`.
+1. Create two components in the same file: `MyActionModal` and `MyActionButton`. Place the file in the relevant domain directory (e.g., `client/components/installs/management/MyAction.tsx`). If the component needs a container/component split, follow the pattern in `dashboard-ui:component`.
 
 2. In the Modal component, use `({ item, ...props }: IMyAction & IModal)` — keep `...props` as a rest; never destructure `modalId`, `isVisible`, or `onClose` from it.
 

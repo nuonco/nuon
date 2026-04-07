@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Editor',
+}
+
 import { useState } from 'react'
 import { Editor } from './Editor'
 import { Text } from './Text'

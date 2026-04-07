@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Card',
+}
+
 import { Card } from './Card'
 import { Text } from './Text'
 import { Button } from './Button'

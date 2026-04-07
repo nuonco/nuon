@@ -1,14 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Menu, type IMenu } from '@/components/common/Menu'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
-import { useInstall } from '@/hooks/use-install'
-import { useScrollToBottom } from '@/hooks/use-on-scroll-to-bottom'
-import { useOrg } from '@/hooks/use-org'
-import { getInstallSandboxRuns } from '@/lib'
 import type { TSandboxRun } from '@/types'
 import { cn } from '@/utils/classnames'
 import { SandboxRunSummary } from './SandboxRunSummary'
@@ -16,54 +11,26 @@ import { SandboxRunsSkeleton } from './SandboxRunsSkeleton'
 
 interface ISandboxRunMenu extends Omit<IMenu, 'children'> {
   activeSandboxRunId: string
+  sandboxRuns: TSandboxRun[]
+  isLoading: boolean
+  hasError: boolean
+  orgId: string
+  installId: string
+  scrollRef: React.RefObject<HTMLDivElement | null>
+  limit: number
 }
 
-export const SandboxRunMenu = ({ activeSandboxRunId }: ISandboxRunMenu) => {
-  const limit = 8
+export const SandboxRunMenu = ({
+  activeSandboxRunId,
+  sandboxRuns,
+  isLoading,
+  hasError,
+  orgId,
+  installId,
+  scrollRef,
+  limit,
+}: ISandboxRunMenu) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [offset, setOffset] = useState(0)
-  const [sandboxRuns, setSandboxRuns] = useState<TSandboxRun[]>([])
-  const { install } = useInstall()
-  const { org } = useOrg()
-
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['sandbox-runs-menu', org?.id, install?.id, offset],
-    queryFn: () =>
-      getInstallSandboxRuns({
-        orgId: org.id,
-        installId: install.id,
-        limit,
-        offset,
-      }),
-    enabled: !!org?.id && !!install?.id,
-  })
-
-  const scrollToBottom = useScrollToBottom({
-    onScrollToBottom: () => {
-      if (data?.pagination?.hasNext) {
-        setOffset((prev) => {
-          if (prev === 0) {
-            return limit + 1
-          } else {
-            return prev + limit
-          }
-        })
-      }
-    },
-  })
-
-  useEffect(() => {
-    if (data?.data) {
-      setSandboxRuns((prev) => {
-        const sandboxRunMap = new Map(
-          prev.map((sandboxRun) => [sandboxRun.id, sandboxRun])
-        )
-        data.data.forEach((sandboxRun) => sandboxRunMap.set(sandboxRun.id, sandboxRun))
-        return Array.from(sandboxRunMap.values())
-      })
-      scrollToBottom.reset()
-    }
-  }, [data])
 
   const filteredSandboxRuns = sandboxRuns
     ? sandboxRuns.filter(
@@ -89,10 +56,10 @@ export const SandboxRunMenu = ({ activeSandboxRunId }: ISandboxRunMenu) => {
         />
       </div>
       <div
-        ref={scrollToBottom.elementRef}
+        ref={scrollRef}
         className="flex flex-col gap-2 p-2 max-h-56 overflow-y-auto"
       >
-        {filteredSandboxRuns?.length && !error ? (
+        {filteredSandboxRuns?.length && !hasError ? (
           <>
             {filteredSandboxRuns?.map((sandboxRun, idx) => (
               <span key={sandboxRun.id} className="rounded-lg border">
@@ -101,7 +68,7 @@ export const SandboxRunMenu = ({ activeSandboxRunId }: ISandboxRunMenu) => {
                     '!bg-primary-600/5 dark:!bg-primary-600/5':
                       sandboxRun?.id === activeSandboxRunId,
                   })}
-                  href={`/${org.id}/installs/${install.id}/sandbox/${sandboxRun?.id}`}
+                  href={`/${orgId}/installs/${installId}/sandbox/${sandboxRun?.id}`}
                   variant="ghost"
                 >
                   <SandboxRunSummary

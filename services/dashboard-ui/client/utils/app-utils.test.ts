@@ -39,7 +39,7 @@ describe('app-utils', () => {
 
   describe('hasStackConfigChanged', () => {
     const baseStack = {
-      type: 'eks',
+      type: 'aws-cloudformation',
       name: 'my-stack',
       runner_nested_template_url: 'https://example.com/runner.yaml',
       vpc_nested_template_url: 'https://example.com/vpc.yaml',
@@ -53,7 +53,7 @@ describe('app-utils', () => {
 
     test('returns true when stack type differs', () => {
       const a = { stack: { ...baseStack } } as TAppConfig
-      const b = { stack: { ...baseStack, type: 'ecs' } } as TAppConfig
+      const b = { stack: { ...baseStack, type: 'gcp-terraform' } } as TAppConfig
       expect(hasStackConfigChanged(a, b)).toBe(true)
     })
 

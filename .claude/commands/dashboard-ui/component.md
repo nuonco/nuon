@@ -3,7 +3,7 @@ name: dashboard-ui:component
 description: Use when adding or using a UI component in the dashboard-ui client/ SPA
 ---
 
-This skill enforces checking existing components before creating new ones and reading TypeScript interfaces before using component props.
+This skill enforces checking existing components before creating new ones, using the container/component pattern, and including Ladle stories.
 
 ## Steps
 
@@ -11,9 +11,71 @@ This skill enforces checking existing components before creating new ones and re
 2. If an existing component meets your needs, use it. Do NOT create a new component that duplicates an existing one.
 3. Before writing JSX that uses a component, **read its `.stories.tsx` file first** — stories are the primary reference for correct prop usage, patterns, and edge cases. Then read the `interface I*` props definition in the source file. Do not guess prop names.
 4. For Modal or Panel: always use `Modal` or `Panel` from `client/components/surfaces/`. Never use `ModalBase` or `PanelBase` directly.
-5. For a new primitive (Button, Badge, Text, etc.): place the file flat in `client/components/common/MyComponent.tsx`.
-6. For a new domain-specific component: place the file in `client/components/<domain>/MyComponent.tsx`.
-7. Use a directory (`client/components/common/MyComponent/`) only when the component has internal sub-components that should not be exported directly.
+
+## Container / Component Pattern
+
+Feature components that fetch data or use context hooks must use this pattern:
+
+```
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx              ← Pure presentational (props in, JSX out)
+├── MyComponentContainer.tsx     ← Data-fetching wrapper (hooks, queries, mutations)
+├── MyComponent.stories.tsx      ← Ladle stories (required)
+├── index.ts                     ← Barrel export
+```
+
+**`MyComponent.tsx`** — No `useQuery`, `useMutation`, or context hooks that require providers. All data comes via props.
+
+**`MyComponentContainer.tsx`** — Calls hooks (`useOrg()`, `useQuery()`, etc.) and passes resolved data to the presentational component.
+
+**`index.ts`** — Exports the container as the default/primary name:
+```typescript
+export { MyComponentContainer as MyComponent } from './MyComponentContainer'
+export { MyComponent as MyComponentComponent } from './MyComponent'
+```
+
+**Simple presentational components** (no data-fetching) stay as flat files in `client/components/common/MyComponent.tsx` or `client/components/[domain]/MyComponent.tsx`.
+
+**Never have both a flat file `MyComponent.tsx` and a directory `MyComponent/` at the same level** — the flat file shadows the directory's `index.ts` and causes import resolution bugs.
+
+## Ladle Stories (Required)
+
+Every component directory must include a `.stories.tsx` file. Stories use **Ladle v5** format — NOT Storybook.
+
+```tsx
+// ✅ Correct
+export default { title: 'Domain/MyComponent' }
+import { MyComponent } from './MyComponent'
+export const Default = () => <MyComponent items={mockItems} />
+```
+
+```tsx
+// ❌ Wrong — breaks Ladle with "got: object" error
+import type { StoryObj } from '@ladle/react'
+export const Default: StoryObj = { render: () => <MyComponent /> }
+```
+
+**Stories render the presentational component** with mock props — not the container.
+
+**When a child component needs a context provider**, mock the context:
+```tsx
+import { SomeContext } from '@/providers/some-provider'
+export const Default = () => (
+  <SomeContext.Provider value={mockValue}>
+    <MyComponent />
+  </SomeContext.Provider>
+)
+```
+
+**Modal stories** use the `ModalStory` helper:
+```tsx
+import { ModalStory } from '@/components/__stories__/helpers'
+export const Default = () => <ModalStory><MyModal data={mock} /></ModalStory>
+```
+
+**Timeline stories** — mock items must have unique `created_at` on different calendar days.
+
+**Do not** wrap stories in `MemoryRouter` — Ladle provides one globally.
 
 ## Text & Copy Style
 
@@ -26,7 +88,10 @@ For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowe
 
 ## Anti-Patterns
 
-- **Do not** create `LoadingSpinner.tsx` if `Spinner.tsx` already exists in `common/` — always check existing components first
-- **Do not** pass props to a component without reading its interface — wrong props cause runtime errors that TypeScript may not catch at the call site if the type is broad
+- **Do not** create a component that duplicates an existing one — always check existing components first
+- **Do not** pass props to a component without reading its interface — wrong props cause runtime errors
 - **Do not** use `ModalBase` or `PanelBase` directly — always use the `Modal`/`Panel` wrappers from `surfaces/`
 - **Do not** put a domain-specific component (e.g., `InstallCard`) into `client/components/common/`
+- **Do not** leave both a flat file and directory with the same name — delete the flat file after migrating to the directory pattern
+- **Do not** skip the `.stories.tsx` file — every component directory must have one
+- **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Table',
+}
+
 import { ColumnDef } from '@tanstack/react-table'
 import { Table } from './Table'
 import { Link } from './Link'
