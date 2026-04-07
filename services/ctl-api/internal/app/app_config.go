@@ -56,6 +56,7 @@ type AppConfig struct {
 
 	Status            AppConfigStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" gorm:"notnull;default null" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	State      string `json:"state,omitzero" temporaljson:"state,omitzero,omitempty"`
 	Readme     string `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`

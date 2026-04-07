@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "poll_dependencies"
@@ -55,6 +56,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				// Log error but continue
 				workflow.GetLogger(ctx).Error("failed to update app status", updateErr)
 			}
+			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+				AppID:             s.AppID,
+				Status:            app.AppStatusError,
+				StatusDescription: "unable to get app from database",
+			})
 			return errors.Wrap(err, "unable to get app from database")
 		}
 
@@ -73,6 +79,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			}); err != nil {
 				return errors.Wrap(err, "unable to update status")
 			}
+			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+				AppID:             s.AppID,
+				Status:            app.AppStatusError,
+				StatusDescription: "org is in error state",
+			})
 		}
 
 		// Sleep and poll again

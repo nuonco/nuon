@@ -69,7 +69,8 @@ type RunnerJobExecution struct {
 	RunnerJobID string    `json:"runner_job_id,omitzero" gorm:"notnull;defaultnull;index:idx_runner_job_execution_runner_job_id,type:btree" temporaljson:"runner_job_id,omitzero,omitempty"`
 	RunnerJob   RunnerJob `json:"-" temporaljson:"runner_job,omitzero,omitempty"`
 
-	Status RunnerJobExecutionStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash" temporaljson:"status,omitzero,omitempty"`
+	Status   RunnerJobExecutionStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_job_execution_status,type:hash" temporaljson:"status,omitzero,omitempty"`
+	StatusV2 CompositeStatus          `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	Result  *RunnerJobExecutionResult  `json:"result,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"result,omitzero,omitempty"`
 	Outputs *RunnerJobExecutionOutputs `json:"outputs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"outputs,omitzero,omitempty"`
