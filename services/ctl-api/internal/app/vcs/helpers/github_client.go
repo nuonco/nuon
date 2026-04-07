@@ -1,6 +1,6 @@
 package helpers
 
-//go:generate go run github.com/golang/mock/mockgen -destination=mock_github_client.go -package=helpers . GithubClient
+//go:generate go run github.com/golang/mock/mockgen -source=github_client.go -destination=mock_github_client.go -package=helpers
 
 import (
 	"context"

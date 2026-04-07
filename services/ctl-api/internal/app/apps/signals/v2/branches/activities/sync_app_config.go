@@ -44,6 +44,12 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		"status":             app.AppConfigStatusSyncing,
 		"status_description": "syncing config",
 	})
+	// dual-write V2 status
+	syncingStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusSyncing))
+	syncingStatus.StatusHumanDescription = "syncing config"
+	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]any{
+		"status_v2": syncingStatus,
+	})
 
 	// Deserialize the intermediate config
 	l := activity.GetLogger(ctx)
@@ -70,6 +76,12 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 			"status":             app.AppConfigStatusError,
 			"status_description": fmt.Sprintf("sync failed: %s", err.Error()),
 		})
+		// dual-write V2 status
+		errorStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusError))
+		errorStatus.StatusHumanDescription = fmt.Sprintf("sync failed: %s", err.Error())
+		a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]any{
+			"status_v2": errorStatus,
+		})
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
@@ -79,6 +91,12 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		"status_description": "synced successfully",
 		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
 		"action_ids":         pq.StringArray(s.GetActionStateIds()),
+	})
+	// dual-write V2 status
+	activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
+	activeStatus.StatusHumanDescription = "synced successfully"
+	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]any{
+		"status_v2": activeStatus,
 	})
 
 	return &SyncAppConfigOutput{

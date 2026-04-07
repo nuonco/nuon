@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // @temporal-gen-v2 workflow
@@ -29,6 +30,12 @@ func (w *Workflows) MngUpdate(ctx workflow.Context, sreq signals.RequestSignal) 
 	}); err != nil {
 		return errors.Wrap(err, "unable to update job status")
 	}
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       runnerJob.ID,
+		Status:            app.RunnerJobStatusAvailable,
+		StatusDescription: string(app.RunnerJobStatusAvailable),
+	})
 
 	return nil
 }

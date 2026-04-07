@@ -230,7 +230,7 @@ export const Dropdown = ({
         aria-expanded={isOpen}
         aria-controls={`dropdown-content-${id}`}
         className={cn(
-          'dropdown-trigger flex items-center justify-between gap-2 h-fit focus:outline-primary-400/80',
+          'dropdown-trigger flex items-center justify-between gap-2',
           {
             '!outline-0': position === 'overlay' && alignment === 'overlay',
           },

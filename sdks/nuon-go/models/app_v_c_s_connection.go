@@ -38,6 +38,12 @@ type AppVCSConnection struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// queues
+	Queues []*AppQueue `json:"queues"`
+
+	// status
+	Status *AppCompositeStatus `json:"status,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -49,6 +55,14 @@ type AppVCSConnection struct {
 func (m *AppVCSConnection) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateQueues(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateVcsConnectionCommit(formats); err != nil {
 		res = append(res, err)
 	}
@@ -56,6 +70,59 @@ func (m *AppVCSConnection) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppVCSConnection) validateQueues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queues) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Queues); i++ {
+		if swag.IsZero(m.Queues[i]) { // not required
+			continue
+		}
+
+		if m.Queues[i] != nil {
+			if err := m.Queues[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppVCSConnection) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if m.Status != nil {
+		if err := m.Status.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -93,6 +160,14 @@ func (m *AppVCSConnection) validateVcsConnectionCommit(formats strfmt.Registry) 
 func (m *AppVCSConnection) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateQueues(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateVcsConnectionCommit(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -100,6 +175,60 @@ func (m *AppVCSConnection) ContextValidate(ctx context.Context, formats strfmt.R
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppVCSConnection) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Queues); i++ {
+
+		if m.Queues[i] != nil {
+
+			if swag.IsZero(m.Queues[i]) { // not required
+				return nil
+			}
+
+			if err := m.Queues[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppVCSConnection) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Status != nil {
+
+		if swag.IsZero(m.Status) { // not required
+			return nil
+		}
+
+		if err := m.Status.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

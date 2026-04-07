@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	kuberunner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "runner-reprovision"
@@ -56,6 +57,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          s.RunnerID,
+		Status:            app.RunnerStatusProvisioning,
+		StatusDescription: "provisioning organization resources",
+	})
 
 	// Create operation record (reuses Provision type)
 	op, err := activities.AwaitCreateOperationRequest(ctx, activities.CreateOperationRequest{
@@ -70,6 +76,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return errors.Wrap(err, "unable to create operation (also failed to update status)")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to create operation",
+		})
 		return errors.Wrap(err, "unable to create operation")
 	}
 
@@ -84,6 +95,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to create account: %w (also failed to update operation status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+			RunnerOperationID: op.ID,
+			Status:            app.RunnerOperationStatusError,
+			StatusDescription: "unable to create runner service account",
+		})
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
 			Status:            app.RunnerStatusError,
@@ -91,6 +107,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to create account: %w (also failed to update runner status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to create runner service account",
+		})
 		return fmt.Errorf("unable to create account: %w", err)
 	}
 
@@ -105,6 +126,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to create token: %w (also failed to update operation status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+			RunnerOperationID: op.ID,
+			Status:            app.RunnerOperationStatusError,
+			StatusDescription: "unable to create runner token",
+		})
 		if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
 			Status:            app.RunnerStatusError,
@@ -112,6 +138,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return fmt.Errorf("unable to create token: %w (also failed to update runner status: %v)", err, updateErr)
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to create runner token",
+		})
 		return fmt.Errorf("unable to create token: %w", err)
 	}
 
@@ -133,6 +164,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			return errors.Wrap(execErr, "reprovision failed (also failed to update operation status)")
 		}
+		statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+			RunnerOperationID: op.ID,
+			Status:            app.RunnerOperationStatusError,
+			StatusDescription: "reprovision failed",
+		})
 		return errors.Wrap(execErr, "unable to reprovision")
 	}
 
@@ -143,6 +179,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerOperationStatusV2(ctx, statusactivities.UpdateRunnerOperationStatusV2Request{
+		RunnerOperationID: op.ID,
+		Status:            app.RunnerOperationStatusFinished,
+		StatusDescription: "operation finished",
+	})
 
 	return nil
 }
@@ -160,6 +201,11 @@ func (s *Signal) executeProvisionOrgRunner(ctx workflow.Context, runner *app.Run
 		}); err != nil {
 			return err
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          runnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: "local runner must be run locally",
+		})
 		return nil
 	}
 
@@ -172,6 +218,11 @@ func (s *Signal) executeProvisionOrgRunner(ctx workflow.Context, runner *app.Run
 		}); err != nil {
 			return err
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          runnerID,
+			Status:            app.RunnerStatusActive,
+			StatusDescription: "integration mode, bypassing provisioning",
+		})
 		return nil
 	}
 
@@ -210,6 +261,11 @@ func (s *Signal) executeProvisionOrgRunner(ctx workflow.Context, runner *app.Run
 		}); updateErr != nil {
 			return errors.Wrap(err, "unable to provision runner (also failed to update status)")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          runnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to provision runner",
+		})
 		return errors.Wrap(err, "unable to provision runner")
 	}
 
@@ -221,6 +277,11 @@ func (s *Signal) executeProvisionOrgRunner(ctx workflow.Context, runner *app.Run
 	}); err != nil {
 		return err
 	}
+	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+		RunnerID:          runnerID,
+		Status:            app.RunnerStatusActive,
+		StatusDescription: "runner is active and ready to process jobs",
+	})
 
 	return nil
 }
