@@ -36,6 +36,14 @@ type Signal struct {
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		InstallID: &s.InstallID,
+		Operation: "action-workflow-run",
+	}
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

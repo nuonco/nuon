@@ -27,6 +27,9 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		return nil, ErrAlreadyExecuted
 	}
 
+	start := workflow.Now(ctx)
+	event := h.buildSignalPhaseEvent(signal.SignalPhaseCancel)
+
 	h.canceled = true
 	h.finished = true
 	h.stopped = true
@@ -57,6 +60,12 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		statusReq.StatusDescription = "cancel-callback-invoked"
 	}
 	_ = activities.AwaitUpdateQueueSignalStatus(ctx, statusReq)
+
+	dur := workflow.Now(ctx).Sub(start)
+	h.runAfterPhaseSafe(ctx, event, signal.SignalPhaseOutcome{
+		Status:   signal.SignalStatusCancelled,
+		Duration: dur,
+	})
 
 	return &CancelResponse{}, nil
 }
