@@ -105,8 +105,8 @@ func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID str
 	}
 
 	sig := &actionworkflowrun.Signal{
-		InstallID:               installID,
-		InstallActionWorkflowID: run.InstallActionWorkflowID.String,
+		InstallID:        installID,
+		AdhocActionRunID: run.ID,
 	}
 
 	sg.nextGroup()
