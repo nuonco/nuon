@@ -39,6 +39,12 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		return nil, err
 	}
 
+	if err := workflow.Await(ctx, func() bool {
+		return w.ready
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to await for ready")
+	}
+
 	q, err := activities.AwaitGetQueueByQueueID(ctx, w.queueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue")
