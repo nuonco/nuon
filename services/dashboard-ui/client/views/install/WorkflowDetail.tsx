@@ -31,7 +31,7 @@ const WorkflowDetailContent = () => {
     workflow?.name || toSentenceCase(snakeToWords(workflow?.type)) || 'Workflow'
 
   return (
-    <PageSection className="!gap-2 !pb-24">
+    <PageSection className="!gap-2">
       <PageTitle title={`${workflowName} | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[

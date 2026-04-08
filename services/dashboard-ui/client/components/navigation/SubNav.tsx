@@ -92,10 +92,10 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
         <button
           className={cn(
             // Base styles (hidden by default)
-            'absolute left-[-0.875rem] top-1/2 opacity-0  md:cursor-pointer',
+            'fixed top-1/2 opacity-0 md:cursor-pointer',
             'border rounded-lg shadow-md p-1 bg-white dark:bg-dark-grey-300',
             'transition-opacity duration-fastest ease-cubic',
-            'translate-y-[-50%]',
+            '-translate-x-1/2 -translate-y-1/2',
             // Show on parent hover
             'group-hover:opacity-100' // If you wrap handle in a group, or use peer
             // Show on hover (simulate with parent hover via CSS, or just always show for demo)
