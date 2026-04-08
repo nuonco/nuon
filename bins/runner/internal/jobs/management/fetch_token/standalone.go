@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgaws "github.com/nuonco/nuon/bins/runner/internal/pkg/aws"
+	pkgazure "github.com/nuonco/nuon/bins/runner/internal/pkg/azure"
 	pkggcp "github.com/nuonco/nuon/bins/runner/internal/pkg/gcp"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/token"
 )
@@ -36,6 +37,21 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenRe
 	}
 }
 
+// FetchTokenAzure authenticates with Azure managed identity and returns the token without writing to disk.
+func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
+	f := &pkgazure.Fetcher{RunnerID: runnerID}
+	result, err := f.FetchToken(ctx, apiClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with azure: %w", err)
+	}
+
+	return &FetchTokenResult{
+		RunnerID:  result.RunnerID,
+		AccountID: result.AccountID,
+		Token:     result.Token,
+	}, nil
+}
+
 // FetchAndStoreToken authenticates using cloud instance credentials and writes the token to disk.
 func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
 	result, err := FetchToken(ctx, apiClient)
@@ -43,6 +59,20 @@ func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client) (*Fetc
 		return nil, err
 	}
 
+	return storeToken(result)
+}
+
+// FetchAndStoreTokenAzure authenticates with Azure managed identity and writes the token to disk.
+func FetchAndStoreTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
+	result, err := FetchTokenAzure(ctx, apiClient, runnerID)
+	if err != nil {
+		return nil, err
+	}
+
+	return storeToken(result)
+}
+
+func storeToken(result *FetchTokenResult) (*FetchTokenResult, error) {
 	if err := token.WriteFile(result.Token); err != nil {
 		return nil, fmt.Errorf("failed to write token: %w", err)
 	}
