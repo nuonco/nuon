@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -34,11 +35,17 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 	}
 
 	switch a.cfg.CloudProvider {
-	case "gcp":
+	case string(app.CloudPlatformGCP):
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
 		// LoginServer is the GAR host (e.g. "us-central1-docker.pkg.dev")
 		if idx := strings.Index(compApp.Repository.RepositoryURI, "/"); idx != -1 {
 			cfg.LoginServer = compApp.Repository.RepositoryURI[:idx]
+		}
+	case string(app.CloudPlatformAzure):
+		cfg.RegistryType = configs.OCIRegistryTypeACR
+		cfg.LoginServer = a.cfg.ManagementACRRegistryURL
+		cfg.ACRAuth = &azurecredentials.Config{
+			UseDefault: true,
 		}
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
