@@ -103,7 +103,7 @@ export const DeprovisionModal = ({
 
           <Banner theme="warn">
             <Text variant="body">
-              <strong>Important:</strong> After this workflow completes, please manually teardown the CloudFormation stack in the AWS console.
+              <strong>Important:</strong> After this workflow completes, please manually teardown the install stack.
             </Text>
           </Banner>
         </div>
