@@ -28,6 +28,7 @@ type Signal struct {
 	InstallWorkflowID       string
 	WorkflowStepID          string
 	InstallActionWorkflowID string
+	AdhocActionRunID        string
 	TriggerType             app.ActionWorkflowTriggerType
 	TriggeredByID           string
 	TriggeredByType         string
@@ -55,6 +56,14 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
+	if s.AdhocActionRunID != "" {
+		_, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, s.AdhocActionRunID)
+		if err != nil {
+			return fmt.Errorf("unable to get adhoc action run: %w", err)
+		}
+		return nil
+	}
+
 	if s.InstallActionWorkflowID == "" {
 		return fmt.Errorf("install action workflow id is required")
 	}
@@ -70,6 +79,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
+
+	if s.AdhocActionRunID != "" {
+		return s.executeAdhocRun(ctx)
+	}
+
 	l.Info("executing action workflow run signal",
 		zap.String("install_action_workflow_id", s.InstallActionWorkflowID))
 
@@ -129,6 +143,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
+	l := workflow.GetLogger(ctx)
+	l.Info("executing adhoc action workflow run signal",
+		zap.String("adhoc_action_run_id", s.AdhocActionRunID))
+
+	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, s.AdhocActionRunID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get adhoc action run")
+	}
+
+	if s.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         s.WorkflowStepID,
+			StepTargetID:   run.ID,
+			StepTargetType: "install_action_workflow_runs",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update install action workflow")
+		}
+	}
+
+	return s.executeActionWorkflowRun(ctx, run.InstallID, run.ID)
 }
 
 func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actionWorkflowRunID string) error {
