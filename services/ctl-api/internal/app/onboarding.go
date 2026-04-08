@@ -65,7 +65,7 @@ type OnboardingStepStatus string
 
 const (
 	OnboardingStepStatusActive     OnboardingStepStatus = "active"
-	OnboardingStepStatusProcessing OnboardingStepStatus = "processing"
+	OnboardingStepStatusInProgress OnboardingStepStatus = "in-progress"
 	OnboardingStepStatusError      OnboardingStepStatus = "error"
 )
 
