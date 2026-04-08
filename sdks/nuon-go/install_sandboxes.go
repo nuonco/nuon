@@ -67,14 +67,11 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (string, error) {
 	hr := newResponseHeaderReader(&operations.ReprovisionInstallSandboxReader{})
 
-	skip := len(skipComponents) > 0 && skipComponents[0]
-
 	_, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallSandboxRequest{
-			PlanOnly:       false,
-			SkipComponents: skip,
+			PlanOnly: false,
 		},
 	}, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
