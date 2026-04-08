@@ -1,6 +1,7 @@
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
+import { Duration } from '@/components/common/Duration'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -8,54 +9,13 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
-import type { TRunnerProcess, TRunnerHealthCheck, TRunnerSettings } from '@/types'
+import type {
+  TRunnerProcess,
+  TRunnerHealthCheck,
+  TRunnerSettings,
+} from '@/types'
 import { cn } from '@/utils/classnames'
-
-function formatRelativeTime(dateStr: string | undefined): string {
-  if (!dateStr) return ''
-  const diffMs = Date.now() - new Date(dateStr).getTime()
-  const minutes = Math.floor(diffMs / (1000 * 60))
-  if (minutes < 1) return '(less than a minute ago)'
-  if (minutes === 1) return '(1 minute ago)'
-  return `(${minutes} minutes ago)`
-}
-
-function getProcessWarnings(warnings?: string[]): string[] {
-  return [...(warnings || [])]
-}
-
-function formatUptime(startedAt: string | undefined): string {
-  if (!startedAt) return '-'
-  const start = new Date(startedAt)
-  const now = new Date()
-  const diffMs = now.getTime() - start.getTime()
-  const hours = Math.floor(diffMs / (1000 * 60 * 60))
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes < 1) return 'less than a minute'
-  return `${minutes}m`
-}
-
-function getStatusTheme(status: string) {
-  switch (status) {
-    case 'active':
-      return 'success' as const
-    case 'offline':
-      return 'warn' as const
-    case 'pending-shutdown':
-      return 'warn' as const
-    case 'shutting-down':
-      return 'warn' as const
-    case 'shut-down':
-      return 'neutral' as const
-    case 'inactive':
-      return 'neutral' as const
-    case 'error':
-      return 'error' as const
-    default:
-      return 'neutral' as const
-  }
-}
+import { toSentenceCase } from '@/utils/string-utils'
 
 function HealthCheckGraph({
   healthchecks,
@@ -64,7 +24,7 @@ function HealthCheckGraph({
 }) {
   if (!healthchecks?.length) {
     return (
-      <div className="flex items-center justify-center h-10 text-cool-grey-500">
+      <div className="flex items-center justify-center h-10">
         <Text variant="subtext" theme="neutral">
           No health data
         </Text>
@@ -82,7 +42,7 @@ function HealthCheckGraph({
             className={cn(
               'flex-auto transition-all duration-fastest ease-cubic group heartbeat-item-parent',
               '[&:has(+.heartbeat-item-parent:hover)]:scale-y-[1.15]',
-              '[&:hover+.heartbeat-item-parent_.heartbeat-item]:scale-y-[1.15]',
+              '[&:hover+.heartbeat-item-parent_.heartbeat-item]:scale-y-[1.15]'
             )}
             tipContent={
               <div className="flex flex-col w-36">
@@ -116,7 +76,7 @@ function HealthCheckGraph({
                   'bg-red-500':
                     hc?.status_code !== 0 && hc?.status_code !== 900,
                   'bg-cool-grey-500': hc?.status_code === 900,
-                },
+                }
               )}
             />
           </Tooltip>
@@ -129,7 +89,6 @@ function HealthCheckGraph({
 interface IProcessCard {
   process: TRunnerProcess
   settings?: TRunnerSettings
-  runnerId?: string
   isConnected: boolean
   heartbeatCreatedAt?: string
   configuredVersion: string
@@ -141,7 +100,6 @@ interface IProcessCard {
 export const ProcessCard = ({
   process,
   settings,
-  runnerId,
   isConnected,
   heartbeatCreatedAt,
   configuredVersion,
@@ -149,24 +107,24 @@ export const ProcessCard = ({
   healthchecks,
   managementDropdown,
 }: IProcessCard) => {
-  const warnings = getProcessWarnings(process.warnings)
+  const warnings = process.warnings ?? []
 
   return (
-    <Card className="flex-1 min-w-[320px]">
-      <div className="flex items-center justify-between">
+    <Card className="min-w-0">
+      <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <Text variant="base" weight="strong" className="capitalize">
-              {process.type || 'unknown'} process
+            <Text variant="base" weight="strong">
+              {toSentenceCase(process.type || 'unknown')} process
             </Text>
-            <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
+            <Status status={process.composite_status?.status} variant="badge" />
             {process.labels?.map((label) => (
-              <Badge key={label} theme="neutral">{label}</Badge>
+              <Badge key={label} theme="neutral" variant="code" size="sm">
+                {label}
+              </Badge>
             ))}
           </div>
-          <Text variant="subtext" theme="neutral" className="italic">
-            {process.id}
-          </Text>
+          <ID>{process.id}</ID>
         </div>
         {managementDropdown}
       </div>
@@ -179,7 +137,7 @@ export const ProcessCard = ({
 
       <HealthCheckGraph healthchecks={healthchecks} />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="flex flex-wrap gap-x-8 gap-y-4">
         <LabeledValue label="Connectivity">
           <Status
             status={isConnected ? 'connected' : 'not-connected'}
@@ -188,17 +146,21 @@ export const ProcessCard = ({
         </LabeledValue>
 
         <LabeledValue label="Uptime">
-          <Text variant="subtext">{formatUptime(process.started_at)}</Text>
+          <Duration
+            variant="subtext"
+            beginTime={process.started_at}
+            durationUnits={['hours', 'minutes']}
+            unitDisplay="short"
+          />
         </LabeledValue>
 
         <LabeledValue label="Last heartbeat">
           {heartbeatCreatedAt ? (
-            <div className="flex flex-col">
-              <Time variant="subtext" time={heartbeatCreatedAt} />
-              <Text variant="subtext" theme="neutral">
-                {formatRelativeTime(heartbeatCreatedAt)}
-              </Text>
-            </div>
+            <Time
+              variant="subtext"
+              time={heartbeatCreatedAt}
+              format="relative"
+            />
           ) : (
             <Text variant="subtext">-</Text>
           )}
@@ -211,17 +173,13 @@ export const ProcessCard = ({
         <LabeledValue label="Reported version">
           <Text variant="subtext">{reportedVersion}</Text>
         </LabeledValue>
-
-        <LabeledValue label="Runner ID">
-          <ID theme="default">{runnerId}</ID>
-        </LabeledValue>
       </div>
     </Card>
   )
 }
 
 export const ProcessCardSkeleton = () => (
-  <Card className="flex-1 min-w-[320px]">
+  <Card className="min-w-0">
     <div className="flex items-center justify-between">
       <Skeleton height="24px" width="160px" />
       <Skeleton height="32px" width="80px" />
