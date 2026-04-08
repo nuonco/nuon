@@ -42,9 +42,9 @@ export const Duration = ({
     }
     const milliseconds = Math.round(nanoseconds / 1e6)
     duration = LuxonDuration.fromMillis(milliseconds)
-  } else if (beginTime && endTime) {
+  } else if (beginTime) {
     const bt = DateTime.fromISO(beginTime)
-    const et = DateTime.fromISO(endTime)
+    const et = endTime ? DateTime.fromISO(endTime) : DateTime.now()
     duration = et.diff(bt, durationUnits)
   }
 

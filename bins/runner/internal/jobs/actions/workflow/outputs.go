@@ -73,12 +73,27 @@ func (h *handler) parseOutputs(ctx context.Context) (map[string]interface{}, err
 	steps := make(map[string]any, 0)
 	outputs := make(map[string]interface{}, 0)
 
-	// if the workflow config is not defined, this is an adhoc action
-	if h.state.workflowCfg == nil {
+	// build the list of step configs to read outputs from
+	var stepCfgs []*models.AppActionWorkflowStepConfig
+	if h.state.workflowCfg != nil {
+		stepCfgs = h.state.workflowCfg.Steps
+	} else {
+		// for adhoc actions, build configs from run steps
+		for idx, step := range h.state.run.Steps {
+			if step.AdhocConfig != nil {
+				stepCfgs = append(stepCfgs, &models.AppActionWorkflowStepConfig{
+					Idx:  int64(idx),
+					Name: step.AdhocConfig.Name,
+				})
+			}
+		}
+	}
+
+	if len(stepCfgs) == 0 {
 		return outputs, nil
 	}
 
-	for _, stepCfg := range h.state.workflowCfg.Steps {
+	for _, stepCfg := range stepCfgs {
 		fh, err := os.Open(h.outputsFP(stepCfg))
 		if err != nil {
 			l.Error("error opening outputs file", zap.Error(err))

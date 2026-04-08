@@ -1,6 +1,12 @@
 import type { TIconVariant } from '@/components/common/Icon'
 
-export type TStatusTheme = 'success' | 'warn' | 'neutral' | 'error' | 'info' | 'brand'
+export type TStatusTheme =
+  | 'success'
+  | 'warn'
+  | 'neutral'
+  | 'error'
+  | 'info'
+  | 'brand'
 
 const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   // Success
@@ -22,7 +28,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   unhealthy: 'error',
   'not connected': 'error',
   'not-connected': 'error',
-  'suspended': 'error',
+  suspended: 'error',
   policy_failed: 'error',
 
   // Warn
@@ -33,6 +39,9 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   warn: 'warn',
   drifted: 'warn',
   expired: 'warn',
+  'pending-shutdown': 'warn',
+  'shutting-down': 'warn',
+  offline: 'warn',
 
   // Info
   executing: 'info',
@@ -50,14 +59,14 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   info: 'info',
   retried: 'info',
   applying: 'info',
-  "awaiting-user-run": 'info',
+  'awaiting-user-run': 'info',
 
   // Neutral
   noop: 'neutral',
+  'shut-down': 'neutral',
   unknown: 'neutral',
   inactive: 'neutral',
   pending: 'neutral',
-  offline: 'neutral',
   'Not deployed': 'neutral',
   'No build': 'neutral',
   'not-attempted': 'neutral',

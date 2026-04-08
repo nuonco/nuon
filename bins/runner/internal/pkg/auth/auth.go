@@ -34,9 +34,8 @@ func New(params Params) (*Token, error) {
 		return &Token{Value: params.Cfg.RunnerAPIToken}, nil
 	}
 
-	// TODO(fd): we need to branch here based on platform. but the platform comes from the api.
-	// for now, we'll leave this as is. in the future, we'll likely autodetect the platform.
-	params.L.Info("fetching runner API token via IMDS")
+	params.L.Info("fetching runner API token via IMDS",
+		zap.String("platform", params.Cfg.RunnerPlatform))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -48,7 +47,13 @@ func New(params Params) (*Token, error) {
 		return nil, fmt.Errorf("unable to create unauthenticated client for token fetch: %w", err)
 	}
 
-	result, err := fetchtoken.FetchToken(ctx, apiClient)
+	var result *fetchtoken.FetchTokenResult
+	switch params.Cfg.RunnerPlatform {
+	case "azure":
+		result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, params.Cfg.RunnerID)
+	default:
+		result, err = fetchtoken.FetchToken(ctx, apiClient)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch runner token via IMDS: %w", err)
 	}

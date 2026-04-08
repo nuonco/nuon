@@ -17,6 +17,7 @@ interface IWizardNav {
   currentStepIndex: number
   completedSteps: Set<string>
   onboardingV2: boolean
+  skipHref: string | null
   onGoToStep: (index: number) => void
 }
 
@@ -26,6 +27,7 @@ export const WizardNav = ({
   currentStepIndex,
   completedSteps,
   onboardingV2,
+  skipHref,
   onGoToStep,
 }: IWizardNav) => {
   return (
@@ -42,8 +44,8 @@ export const WizardNav = ({
             <Button variant="ghost" href="https://docs.nuon.co" size="sm">
               <Icon variant="BookOpenIcon" size={14} /> Docs
             </Button>
-            {currentStepIndex >= 1 ? (
-              <Button variant="ghost" size="sm" href="/">
+            {skipHref ? (
+              <Button variant="ghost" size="sm" href={skipHref}>
                 <Icon variant="SkipForwardIcon" size={14} /> Skip
               </Button>
             ) : null}

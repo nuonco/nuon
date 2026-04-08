@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
@@ -9,22 +10,25 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { ProcessCard, ProcessCardSkeleton } from '@/components/runners/ProcessCard'
+import {
+  ProcessCard,
+  ProcessCardSkeleton,
+} from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 
-const heading = (
-  <HeadingGroup>
-    <Text variant="h3" weight="strong" level={1}>
-      Build runner
-    </Text>
-    <Text theme="neutral">
-      View your organizations build runner performance and activities.
-    </Text>
-  </HeadingGroup>
+const RunnerHeading = ({ runnerId }: { runnerId?: string }) => (
+  <PageHeader>
+    <HeadingGroup>
+      <Text variant="h3" weight="strong" level={1}>
+        Build runner
+      </Text>
+      {runnerId ? <ID>{runnerId}</ID> : null}
+    </HeadingGroup>
+  </PageHeader>
 )
 
 export const BuildRunner = () => {
@@ -68,7 +72,7 @@ export const BuildRunner = () => {
     return (
       <PageLayout>
         {breadcrumbs}
-        <PageHeader>{heading}</PageHeader>
+        <RunnerHeading />
         <PageContent>
           <Card>
             <EmptyState
@@ -85,52 +89,58 @@ export const BuildRunner = () => {
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
       <SurfacesProvider>
-      <PageLayout className="pb-6">
-        {breadcrumbs}
-        <PageHeader>
-          {heading}
-        </PageHeader>
+        <PageLayout className="pb-6">
+          {breadcrumbs}
+          <RunnerHeading runnerId={runnerId} />
 
-        <PageContent>
-          <PageSection>
-            <Text variant="base" weight="strong">
-              Processes
-            </Text>
-            {processesLoading ? (
-              <div className="flex flex-wrap gap-6">
-                <ProcessCardSkeleton />
-                <ProcessCardSkeleton />
-              </div>
-            ) : processes.length === 0 ? (
-              <Card>
-                <EmptyState
-                  emptyTitle="No active processes"
-                  emptyMessage="No runner processes are currently active or offline."
-                  variant="table"
-                />
-              </Card>
-            ) : (
-              <div className="flex flex-wrap gap-6">
-                {processes.map((process) => (
-                  <ProcessCard
-                    key={process.id}
-                    process={process}
-                    settings={settings}
-                    shouldPoll
+          <PageContent>
+            <PageSection>
+              <Text variant="base" weight="strong">
+                Processes
+              </Text>
+
+              {processesLoading ? (
+                <div className="@container">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+                    <ProcessCardSkeleton />
+                    <ProcessCardSkeleton />
+                  </div>
+                </div>
+              ) : processes.length === 0 ? (
+                <Card>
+                  <EmptyState
+                    emptyTitle="No active processes"
+                    emptyMessage="No runner processes are currently active or offline."
+                    variant="table"
                   />
-                ))}
-              </div>
-            )}
-          </PageSection>
+                </Card>
+              ) : (
+                <div className="@container">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+                    {processes.map((process) => (
+                      <ProcessCard
+                        key={process.id}
+                        process={process}
+                        settings={settings}
+                        shouldPoll
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </PageSection>
 
-          <PageSection>
-            <Text variant="base" weight="strong">
-              Recent jobs
-            </Text>
-            <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/runner`} />
-          </PageSection>
-        </PageContent>
-      </PageLayout>
+            <PageSection>
+              <Text variant="base" weight="strong">
+                Recent jobs
+              </Text>
+              <RunnerRecentActivity
+                shouldPoll
+                jobDetailBasePath={`/${org?.id}/runner`}
+              />
+            </PageSection>
+          </PageContent>
+        </PageLayout>
       </SurfacesProvider>
     </RunnerProvider>
   )
