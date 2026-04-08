@@ -28,7 +28,7 @@ type Config struct {
 	RunnerAPIToken   string `config:"runner_api_token"`
 	RunnerID         string `config:"runner_id" validate:"required"`
 	RunnerPlatform   string `config:"runner_platform"`
-	RunnerAuthMethod string `config:"runner_auth_method"` // "sts" (default) or "iid"
+	RunnerAuthMethod string `config:"runner_auth_method"` // default if "" or "iid" for aws
 
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`

@@ -35,9 +35,9 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 	case "aws":
 		switch authMethod {
 		case "iid":
-			return fetchTokenIID(ctx, apiClient, runnerID)
+			return fetchTokenAWSIID(ctx, apiClient, runnerID)
 		default:
-			return fetchTokenSTS(ctx, apiClient)
+			return fetchTokenAWSSTS(ctx, apiClient)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported or undetected cloud provider: %s", provider)
@@ -102,7 +102,7 @@ func detectCloudProvider(ctx context.Context) string {
 	return "aws"
 }
 
-func fetchTokenSTS(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
+func fetchTokenAWSSTS(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
 	stsRequest, err := pkgaws.GetPresignedSTSRequest(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get presigned STS request: %w", err)
@@ -132,7 +132,7 @@ func fetchTokenSTS(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 	}, nil
 }
 
-func fetchTokenIID(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
+func fetchTokenAWSIID(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
 	if runnerID == "" {
 		return nil, fmt.Errorf("runner ID is required for IID auth")
 	}
