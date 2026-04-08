@@ -314,8 +314,10 @@ var customData = '''
 #!/bin/bash
 
 RUNNER_ID={{.Runner.ID}}
-RUNNER_API_TOKEN={{.APIToken}}
 RUNNER_API_URL={{.Settings.RunnerAPIURL}}
+RUNNER_PLATFORM=azure
+CONTAINER_IMAGE_URL={{.Settings.ContainerImageURL}}
+CONTAINER_IMAGE_TAG={{.Settings.ContainerImageTag}}
 AWS_REGION={{.Install.AzureAccount.Location}}
 
 # Remove any existing Docker packages
@@ -323,7 +325,7 @@ apt-get remove -y docker docker-engine docker.io containerd runc
 
 # Update package index and install prerequisites
 apt-get update
-apt-get install -y ca-certificates curl gnupg lsb-release
+apt-get install -y ca-certificates curl gnupg lsb-release jq
 
 # Add Docker's official GPG key
 mkdir -p /etc/apt/keyrings
@@ -353,64 +355,42 @@ chown -R runner:runner /opt/nuon/runner
 
 cat << EOF > /opt/nuon/runner/env
 RUNNER_ID=$RUNNER_ID
-RUNNER_API_TOKEN=$RUNNER_API_TOKEN
 RUNNER_API_URL=$RUNNER_API_URL
+RUNNER_PLATFORM=$RUNNER_PLATFORM
 ARM_USE_MSI=true
-# FIXME(sdboyer) this hack must be fixed - userdata is only run on instance creation, and ip can change on each boot
 HOST_IP=$(curl -s https://checkip.amazonaws.com)
 EOF
 
-# this ⤵ is wrapped w/ single quotes to prevent variable expansion.
-cat << 'EOF' > /opt/nuon/runner/get_image_tag.sh
-#!/bin/bash
+# Install the runner binary on the host for mng mode
+RUNNER_BINARY_URL="{{.Settings.RunnerBinaryURL}}"
+if [ -z "$RUNNER_BINARY_URL" ]; then
+  RUNNER_BINARY_URL="https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/$CONTAINER_IMAGE_TAG/runner_linux_amd64"
+fi
+curl -sSL "$RUNNER_BINARY_URL" -o /usr/local/bin/runner \
+  || curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/latest/runner_linux_amd64 -o /usr/local/bin/runner
+chmod +x /usr/local/bin/runner
 
-set -u
-
-# source this file to get some env vars
-. /opt/nuon/runner/env
-
-# Fetch runner settings from the API
-echo "Fetching runner settings from $RUNNER_API_URL/v1/runners/$RUNNER_ID/settings"
-RUNNER_SETTINGS=$(curl -s -H "Authorization: Bearer $RUNNER_API_TOKEN" "$RUNNER_API_URL/v1/runners/$RUNNER_ID/settings")
-
-# Extract container image URL and tag from the response
-CONTAINER_IMAGE_URL=$(echo "$RUNNER_SETTINGS" | grep -o '"container_image_url":"[^"]*"' | cut -d '"' -f 4)
-CONTAINER_IMAGE_TAG=$(echo "$RUNNER_SETTINGS" | grep -o '"container_image_tag":"[^"]*"' | cut -d '"' -f 4)
-
-# echo into a file for easier retrieval; re-create the file to avoid duplicate values.
-rm -f /opt/nuon/runner/image
-echo "CONTAINER_IMAGE_URL=$CONTAINER_IMAGE_URL" >> /opt/nuon/runner/image
-echo "CONTAINER_IMAGE_TAG=$CONTAINER_IMAGE_TAG" >> /opt/nuon/runner/image
-
-# export so we can get these values by sourcing this file
-export CONTAINER_IMAGE_URL=$CONTAINER_IMAGE_URL
-export CONTAINER_IMAGE_TAG=$CONTAINER_IMAGE_TAG
-
-echo "Using container image: $CONTAINER_IMAGE_URL:$CONTAINER_IMAGE_TAG"
+# Write initial image config for the mng monitor
+cat << EOF > /opt/nuon/runner/image
+CONTAINER_IMAGE_URL=$CONTAINER_IMAGE_URL
+CONTAINER_IMAGE_TAG=$CONTAINER_IMAGE_TAG
 EOF
 
-chmod +x /opt/nuon/runner/get_image_tag.sh
-/opt/nuon/runner/get_image_tag.sh
+chown -R runner:runner /opt/nuon/runner
 
-# Create systemd unit file for runner
-cat << 'EOF' > /etc/systemd/system/nuon-runner.service
+# Create systemd unit file for mng mode
+# The mng process runs on the host and manages the nuon-runner.service (Docker container)
+cat << 'EOF' > /etc/systemd/system/nuon-runner-mng.service
 [Unit]
-Description=Nuon Runner Service
+Description=Nuon Runner Management Service
 After=docker.service
 Requires=docker.service
 
 [Service]
 TimeoutStartSec=0
-User=runner
-ExecStartPre=-/bin/sh -c '/usr/bin/docker stop $(/usr/bin/docker ps -a -q --filter="name=%n")'
-ExecStartPre=-/bin/sh -c '/usr/bin/docker rm $(/usr/bin/docker ps -a -q --filter="name=%n")'
-ExecStartPre=-/bin/sh -c "yes | /usr/bin/docker system prune"
-ExecStartPre=-/bin/sh /opt/nuon/runner/get_image_tag.sh
-EnvironmentFile=/opt/nuon/runner/image
+User=root
 EnvironmentFile=/opt/nuon/runner/env
-ExecStartPre=echo "Using container image: ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG}"
-ExecStartPre=/usr/bin/docker pull ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG}
-ExecStart=/usr/bin/docker run --network host -v /tmp/nuon-runner:/tmp --rm --name %n -p 5000:5000 --memory "3750g" --cpus="1.75" --env-file /opt/nuon/runner/env ${CONTAINER_IMAGE_URL}:${CONTAINER_IMAGE_TAG} run
+ExecStart=/usr/local/bin/runner mng
 Restart=always
 RestartSec=5
 
@@ -418,9 +398,10 @@ RestartSec=5
 WantedBy=default.target
 EOF
 
-# Reload systemd and start the service (no SELinux on Ubuntu)
+# Reload systemd and start the mng service
+# The mng monitor will create and manage nuon-runner.service automatically
 systemctl daemon-reload
-systemctl enable --now nuon-runner
+systemctl enable --now nuon-runner-mng
 '''
 
 // Virtual Machine Scale Set

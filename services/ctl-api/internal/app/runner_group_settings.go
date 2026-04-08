@@ -82,6 +82,10 @@ type RunnerGroupSettings struct {
 
 	// azure runner specifics
 
+	// RunnerBinaryURL overrides the URL used to download the runner binary onto the
+	// host for mng mode. When empty, defaults to the S3 artifacts URL.
+	RunnerBinaryURL string `json:"runner_binary_url,omitzero" gorm:"default null" temporaljson:"runner_binary_url,omitzero,omitempty"`
+
 	// platform variable for use in the runner
 	Platform CloudPlatform `json:"platform" temporaljson:"-" gorm:"-" swaggertype:"string"`
 }
