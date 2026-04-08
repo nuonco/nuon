@@ -15,6 +15,8 @@ serviceAccount:
   name: runner
   annotations: {}
 
+podLabels: {}
+
 autoscaling:
   minReplicas: 1
   maxReplicas: 1
