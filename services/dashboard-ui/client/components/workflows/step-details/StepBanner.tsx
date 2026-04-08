@@ -22,6 +22,7 @@ export const StepBanner = ({
     stepStatus === 'discarded'
   const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
     getPolicyViolationCounts(step)
+  const isAutoSkipped = step?.status?.status === 'auto-skipped'
 
   return (
     <>
@@ -51,6 +52,12 @@ export const StepBanner = ({
         <Banner theme="success">
           <Text weight="strong">
             All policy checks passed successfully
+          </Text>
+        </Banner>
+      ) : isAutoSkipped && !hasPolicyData ? (
+        <Banner theme="default">
+          <Text variant="subtext" theme="neutral">
+            Policy checks were skipped because the plan had no changes
           </Text>
         </Banner>
       ) : null}
