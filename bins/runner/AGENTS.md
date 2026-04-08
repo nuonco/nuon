@@ -250,6 +250,45 @@ go build -o runner .
 docker build -t nuon-runner .
 ```
 
+### Deploying Local Builds to Cloud Runners
+
+Use `scripts/runner-dev-push.sh` to build, upload, and deploy locally-built runner artifacts to a cloud VM runner.
+
+**Docker image only** (updates the install-mode container via ttl.sh):
+```bash
+./scripts/runner-dev-push.sh <runner_id>
+```
+
+**Docker image + host binary** (also cross-compiles the mng binary, uploads to Azure Blob Storage, and deploys to the VM via `az vmss run-command`):
+```bash
+./scripts/runner-dev-push.sh <runner_id> --with-binary
+```
+
+The `--with-binary` flow is the recommended path for Azure VM runners. It:
+1. Builds the Docker image (for install-mode container) and pushes to ttl.sh
+2. Cross-compiles the runner binary for linux/amd64
+3. Uploads the binary to Azure Blob Storage and generates a SAS URL
+4. PATCHes runner settings via the admin API (`CTL_API_URL`, default `http://localhost:8082`)
+5. Deploys the binary to the VMSS instance(s) via `az vmss run-command invoke` (downloads binary, replaces `/usr/local/bin/runner`, restarts `nuon-runner-mng.service`)
+6. Polls until the runner reaches "active" status
+
+**Key environment variables:**
+| Variable | Default | Description |
+|---|---|---|
+| `CTL_API_URL` | `http://localhost:8082` | Admin API base URL |
+| `MONO_ROOT` | `../mono` relative to script | Path to mono repo (for Docker image build) |
+| `AZURE_RG` | auto-detected | Azure resource group |
+| `AZURE_SA` | auto-created `nuondevrunner*` | Azure storage account for binary upload |
+| `AZURE_VMSS` | auto-detected from RG | VMSS name |
+| `AZURE_VMSS_IDS` | all instances | Space-separated VMSS instance IDs |
+| `TTL` | `2h` | ttl.sh image expiry |
+| `ADMIN_TOKEN` | _(none)_ | Bearer token for remote admin API |
+
+**Important notes:**
+- The runner's mng process does **not** auto-update the host binary from settings. The script handles deployment directly via `az vmss run-command`. The `runner_binary_url` setting is only used during initial VM provisioning (in the Bicep template).
+- The Docker image update path (settings PATCH → restart signal → docker pull) works for the install-mode container but not the mng binary.
+- Requires `az` CLI authenticated with access to the runner's resource group.
+
 ## Configuration
 
 ### Environment Variables
