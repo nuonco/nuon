@@ -25,18 +25,24 @@ export function hydrateActionRunSteps({
   steps: TInstallActionRun['steps']
   stepConfigs: TActionConfig['steps']
 }): THydratedActionRunSteps {
-  if (!steps || !stepConfigs) return steps ?? []
+  if (!steps) return []
 
   // Build a map for fast lookup by step id
-  const configMap = stepConfigs.reduce<
+  const configMap = (stepConfigs ?? []).reduce<
     Record<string, { name?: string; idx?: number }>
   >((acc, cfg) => {
     acc[cfg.id] = { name: cfg.name, idx: cfg.idx }
     return acc
   }, {})
 
-  return steps.map((step) => ({
-    ...step,
-    ...configMap[String(step.step_id)], // name and idx from config
-  }))
+  return steps.map((step, index) => {
+    const config = configMap[String(step.step_id)]
+    const adhocName = (step as any).adhoc_config?.name
+    return {
+      ...step,
+      ...config,
+      name: config?.name ?? adhocName,
+      idx: config?.idx ?? index,
+    }
+  })
 }
