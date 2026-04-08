@@ -239,6 +239,11 @@ type Config struct {
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
 	GCSInstallTemplateBucket   string `config:"gcs_install_template_bucket"`
 
+	// Azure management (not required for AWS/GCP)
+	ManagementACRRegistryURL string `config:"management_acr_registry_url"`
+	ManagementAzureTenantID  string `config:"management_azure_tenant_id"`
+	ManagementAzureClientID  string `config:"management_azure_client_id"`
+
 	// configuration for org runners (shared across cloud providers)
 	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`
 	OrgRunnerK8sPublicEndpoint string `config:"org_runner_k8s_public_endpoint" validate:"required"`
@@ -301,6 +306,18 @@ type Config struct {
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+}
+
+func (c *Config) IsAWS() bool {
+	return c.CloudProvider != "gcp" && c.CloudProvider != "azure"
+}
+
+func (c *Config) IsGCP() bool {
+	return c.CloudProvider == "gcp"
+}
+
+func (c *Config) IsAzure() bool {
+	return c.CloudProvider == "azure"
 }
 
 func NewConfig() (*Config, error) {
