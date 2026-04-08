@@ -24,7 +24,7 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
       buttonClassName={cn(
         'w-full text-left duration-fastest transition-all !text-foreground !border-[var(--border-color)]',
         {
-          '!px-4 !py-1.5 ': isSidebarOpen,
+          '!px-4 !py-1.5 !h-fit': isSidebarOpen,
           '!p-[3px] !size-10 ': !isSidebarOpen,
         }
       )}
