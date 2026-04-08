@@ -23,42 +23,19 @@ type FetchTokenResult struct {
 	TokenPath  string `json:"token_path,omitempty"`
 }
 
-type fetchTokenOptions struct {
-	method   string
-	runnerID string
-}
-
-// FetchTokenOption configures FetchToken behavior.
-type FetchTokenOption func(*fetchTokenOptions)
-
-// WithAuthMethod sets the auth method ("iid" or "sts").
-func WithAuthMethod(method string) FetchTokenOption {
-	return func(o *fetchTokenOptions) { o.method = method }
-}
-
-// WithRunnerID sets the runner ID for IID auth (read from user-data).
-func WithRunnerID(id string) FetchTokenOption {
-	return func(o *fetchTokenOptions) { o.runnerID = id }
-}
-
 // FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
 // It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
-// For AWS, it supports the auth method specified via options: "iid" for Instance Identity Document,
-// or "sts" (default) for presigned STS requests.
-func FetchToken(ctx context.Context, apiClient nuonrunner.Client, opts ...FetchTokenOption) (*FetchTokenResult, error) {
-	o := &fetchTokenOptions{method: "sts"}
-	for _, opt := range opts {
-		opt(o)
-	}
-
+// For AWS, authMethod selects the authentication strategy: "iid" for Instance Identity Document
+// (requires runnerID), or "" / "sts" (default) for presigned STS requests.
+func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
 	provider := detectCloudProvider(ctx)
 	switch provider {
 	case "gcp":
 		return fetchTokenGCP(ctx, apiClient)
 	case "aws":
-		switch o.method {
+		switch authMethod {
 		case "iid":
-			return fetchTokenIID(ctx, apiClient, o.runnerID)
+			return fetchTokenIID(ctx, apiClient, runnerID)
 		default:
 			return fetchTokenSTS(ctx, apiClient)
 		}
@@ -83,8 +60,8 @@ func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID 
 }
 
 // FetchAndStoreToken authenticates using cloud instance credentials and writes the token to disk.
-func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, opts ...FetchTokenOption) (*FetchTokenResult, error) {
-	result, err := FetchToken(ctx, apiClient, opts...)
+func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
+	result, err := FetchToken(ctx, apiClient, authMethod, runnerID)
 	if err != nil {
 		return nil, err
 	}

@@ -52,12 +52,7 @@ func New(params Params) (*Token, error) {
 	case "azure":
 		result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, params.Cfg.RunnerID)
 	default:
-		var opts []fetchtoken.FetchTokenOption
-		if params.Cfg.RunnerAuthMethod == "iid" {
-			opts = append(opts, fetchtoken.WithAuthMethod("iid"))
-			opts = append(opts, fetchtoken.WithRunnerID(params.Cfg.RunnerID))
-		}
-		result, err = fetchtoken.FetchToken(ctx, apiClient, opts...)
+		result, err = fetchtoken.FetchToken(ctx, apiClient, params.Cfg.RunnerAuthMethod, params.Cfg.RunnerID)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch runner token via IMDS: %w", err)
