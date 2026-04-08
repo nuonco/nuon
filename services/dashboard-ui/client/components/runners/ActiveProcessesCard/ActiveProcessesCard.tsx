@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TRunnerProcess, TRunnerHeartbeat } from '@/types'
+import { toSentenceCase } from '@/utils/string-utils'
 import { isLessThan15SecondsOld } from '@/utils/time-utils'
 
 function getStatusTheme(status: string) {
@@ -54,8 +55,8 @@ function ProcessHeartbeatInfo({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-neutral-100 p-3">
       <div className="flex items-center justify-between">
-        <Text variant="label" weight="strong" className="capitalize">
-          {process.type || 'unknown'}
+        <Text variant="label" weight="strong">
+          {toSentenceCase(process.type || 'unknown')}
         </Text>
         <Badge theme={getStatusTheme(process.composite_status?.status)}>{process.composite_status?.status}</Badge>
         {process.labels?.map((label) => (
