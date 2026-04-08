@@ -16,8 +16,8 @@ import (
 func (w Wkflow) DeprovisionIAM(ctx workflow.Context, req *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	resp := &DeprovisionIAMResponse{}
 
-	// GCP uses Workload Identity — no AWS IAM roles to deprovision.
-	if w.cfg.CloudProvider == "gcp" {
+	// GCP and Azure use Workload Identity — no AWS IAM roles to deprovision.
+	if w.cfg.IsGCP() || w.cfg.IsAzure() {
 		return resp, nil
 	}
 

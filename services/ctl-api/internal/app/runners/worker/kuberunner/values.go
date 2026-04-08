@@ -32,11 +32,13 @@ type helmValues struct {
 	Env   helmValuesEnv   `mapstructure:"env"`
 
 	ServiceAccount serviceAccountValues `mapstructure:"serviceAccount"`
+	PodLabels      map[string]string    `mapstructure:"podLabels"`
 	NodePool       nodePoolValues       `mapstructure:"node_pool"`
 }
 
 func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 	annotations := map[string]string{}
+	podLabels := map[string]string{}
 	enableNodePool := true
 	switch req.CloudProvider {
 	case "gcp":
@@ -44,6 +46,13 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			annotations["iam.gke.io/gcp-service-account"] = req.RunnerIAMRole
 		}
 		// GKE uses Autopilot or node auto-provisioning, not Karpenter
+		enableNodePool = false
+	case "azure":
+		if req.RunnerIAMRole != "" {
+			annotations["azure.workload.identity/client-id"] = req.RunnerIAMRole
+		}
+		podLabels["azure.workload.identity/use"] = "true"
+		// AKS manages node pools separately
 		enableNodePool = false
 	default:
 		if req.RunnerIAMRole != "" {
@@ -66,6 +75,7 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			Name:        req.RunnerServiceAccountName,
 			Annotations: annotations,
 		},
+		PodLabels: podLabels,
 		NodePool: nodePoolValues{
 			Enabled: enableNodePool,
 			InstanceType: instanceType{

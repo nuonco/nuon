@@ -33,7 +33,7 @@ func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*P
 	resp := &ProvisionIAMResponse{}
 
 	// GCP uses Workload Identity — create GCP service account + binding.
-	if w.cfg.CloudProvider == "gcp" {
+	if w.cfg.IsGCP() {
 		activityOpts := workflow.ActivityOptions{
 			ScheduleToCloseTimeout: defaultActivityTimeout,
 		}
@@ -49,6 +49,11 @@ func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*P
 		if err != nil {
 			return resp, fmt.Errorf("unable to provision GCP service account: %w", err)
 		}
+		return resp, nil
+	}
+
+	// Azure uses AKS Workload Identity — identity setup is external (Bicep/Terraform).
+	if w.cfg.IsAzure() {
 		return resp, nil
 	}
 

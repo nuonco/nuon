@@ -31,9 +31,12 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 	}
 
 	var runnerIAMRole string
-	if w.cfg.CloudProvider == "gcp" {
+	switch w.cfg.CloudProvider {
+	case string(app.CloudPlatformGCP):
 		runnerIAMRole = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", runner.OrgID, w.cfg.ManagementAccountID)
-	} else {
+	case string(app.CloudPlatformAzure):
+		runnerIAMRole = w.cfg.ManagementAzureClientID
+	default:
 		runnerIAMRole = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runner.OrgID, runner.OrgID)
 	}
 

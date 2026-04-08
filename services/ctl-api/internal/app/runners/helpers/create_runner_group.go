@@ -105,8 +105,11 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
 
 	platform := app.AppRunnerTypeAWSEKS
-	if h.cfg.CloudProvider == "gcp" {
+	if h.cfg.IsGCP() {
 		platform = app.AppRunnerTypeGCPGKE
+	}
+	if h.cfg.IsAzure() {
+		platform = app.AppRunnerTypeAzureAKS
 	}
 	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
 		platform = app.AppRunnerTypeLocal
@@ -115,9 +118,14 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	// Build cloud-specific identity for the org runner service account
 	var orgAWSIAMRoleARN string
 	var orgGCPServiceAccount string
+	var orgAzureClientID string
 	switch h.cfg.CloudProvider {
-	case "gcp":
+	case string(app.CloudPlatformGCP):
 		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+	case string(app.CloudPlatformAzure):
+		// Azure uses a shared management identity; tenant isolation is enforced
+		// at the K8s service account + namespace level, not per-org managed identity.
+		orgAzureClientID = h.cfg.ManagementAzureClientID
 	default:
 		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
 	}
@@ -159,6 +167,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 
 			OrgAWSIAMRoleARN:         orgAWSIAMRoleARN,
 			OrgGCPServiceAccount:     orgGCPServiceAccount,
+			OrgAzureClientID:         orgAzureClientID,
 			LocalAWSIAMRoleARN:       "",
 			OrgK8sServiceAccountName: fmt.Sprintf("runner-%s", org.ID),
 		},

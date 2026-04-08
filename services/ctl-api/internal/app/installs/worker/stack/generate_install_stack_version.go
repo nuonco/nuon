@@ -233,7 +233,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 	// Upload stack template to cloud storage.
 	switch w.cfg.CloudProvider {
-	case "gcp":
+	case string(app.CloudPlatformGCP):
 		gcsResp, err := activities.AwaitUploadGCSInstallStackTemplate(ctx, &activities.UploadGCSInstallStackTemplateRequest{
 			Bucket:   w.cfg.GCSInstallTemplateBucket,
 			Key:      stackVersion.AWSBucketKey,
