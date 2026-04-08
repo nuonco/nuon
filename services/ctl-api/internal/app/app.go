@@ -45,26 +45,28 @@ type App struct {
 	NotificationsConfig NotificationsConfig `gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" json:"notifications_config,omitempty,omitzero" temporaljson:"notifications_config,omitzero,omitempty"`
 	Repository          AppRepository       `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"repository,omitzero,omitempty"`
 
-	Components                 []Component        `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
-	Installs                   []Install          `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`
-	ActionWorkflows            []ActionWorkflow   `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflows,omitzero,omitempty"`
-	AppBranches                []AppBranch        `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branches,omitzero,omitempty"`
-	AppInputConfigs            []AppInputConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_input_configs,omitzero,omitempty"`
-	AppSandboxConfigs          []AppSandboxConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_sandbox_configs,omitzero,omitempty"`
-	AppRunnerConfigs           []AppRunnerConfig  `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_runner_configs,omitzero,omitempty"`
-	CloudFormationStackConfigs []AppStackConfig   `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"cloud_formation_stack_configs,omitzero,omitempty"`
-	AppConfigs                 []AppConfig        `json:"app_configs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_configs,omitzero,omitempty"`
-	AppSecrets                 []AppSecret        `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_secrets,omitzero,omitempty"`
-	InstallerApps              []InstallerApp     `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installer_apps,omitzero,omitempty"`
+	Components                 []Component            `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
+	Installs                   []Install              `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`
+	ActionWorkflows            []ActionWorkflow       `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflows,omitzero,omitempty"`
+	AppBranches                []AppBranch            `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branches,omitzero,omitempty"`
+	AppInputConfigs            []AppInputConfig       `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_input_configs,omitzero,omitempty"`
+	AppPermissionsConfigs      []AppPermissionsConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_permissions_config,omitzero,omitempty"`
+	AppSandboxConfigs          []AppSandboxConfig     `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_sandbox_configs,omitzero,omitempty"`
+	AppRunnerConfigs           []AppRunnerConfig      `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_runner_configs,omitzero,omitempty"`
+	CloudFormationStackConfigs []AppStackConfig       `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"cloud_formation_stack_configs,omitzero,omitempty"`
+	AppConfigs                 []AppConfig            `json:"app_configs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_configs,omitzero,omitempty"`
+	AppSecrets                 []AppSecret            `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_secrets,omitzero,omitempty"`
+	InstallerApps              []InstallerApp         `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installer_apps,omitzero,omitempty"`
 
 	Status            AppStatus       `json:"status,omitzero" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	// fields set via after query
-	AppInputConfig   AppInputConfig   `json:"input_config,omitzero" gorm:"-" temporaljson:"app_input_config,omitzero,omitempty"`
-	AppSandboxConfig AppSandboxConfig `json:"sandbox_config,omitzero" gorm:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
-	AppRunnerConfig  AppRunnerConfig  `json:"runner_config,omitzero" gorm:"-" temporaljson:"app_runner_config,omitzero,omitempty"`
+	AppInputConfig       AppInputConfig       `json:"input_config,omitzero" gorm:"-" temporaljson:"app_input_config,omitzero,omitempty"`
+	AppPermissionsConfig AppPermissionsConfig `json:"permissions_config,omitzero" gorm:"-" temporaljson:"app_permissions_config,omitzero,omitempty"`
+	AppSandboxConfig     AppSandboxConfig     `json:"sandbox_config,omitzero" gorm:"-" temporaljson:"app_sandbox_config,omitzero,omitempty"`
+	AppRunnerConfig      AppRunnerConfig      `json:"runner_config,omitzero" gorm:"-" temporaljson:"app_runner_config,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
@@ -116,6 +118,9 @@ func (a *App) AfterQuery(tx *gorm.DB) error {
 	}
 	if len(a.AppInputConfigs) > 0 {
 		a.AppInputConfig = a.AppInputConfigs[0]
+	}
+	if len(a.AppPermissionsConfigs) > 0 {
+		a.AppPermissionsConfig = a.AppPermissionsConfigs[0]
 	}
 	if len(a.AppSandboxConfigs) > 0 {
 		a.AppSandboxConfig = a.AppSandboxConfigs[0]

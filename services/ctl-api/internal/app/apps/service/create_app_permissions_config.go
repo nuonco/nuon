@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -250,6 +251,11 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 	res := s.db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create app permissions config")
+	}
+
+	// sync install roles for all existing installs
+	if err := s.installsHelpers.SyncInstallRoles(ctx, appID, obj); err != nil {
+		s.l.Warn("failed to sync install roles", zap.Error(err))
 	}
 
 	return &obj, nil

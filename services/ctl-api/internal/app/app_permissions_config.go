@@ -23,7 +23,6 @@ type AppPermissionsConfig struct {
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	AppID string `json:"app_id,omitzero" temporaljson:"app_id,omitzero,omitempty"`
-	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`
 
 	AppConfigID string `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 

@@ -56,6 +56,9 @@ type Install struct {
 	InstallConfig           *InstallConfig            `json:"install_config,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config,omitzero,omitempty"`
 	InstallStates           []InstallState            `json:"install_states,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_states,omitzero,omitempty"`
 
+	// InstallRoles is a list of roles associated with that install at given app config ID
+	InstallRoles []InstallRoles `json:"install_roles,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_roles,omitzero,omitempty"`
+
 	InstallStack *InstallStack `json:"install_stack,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_stack,omitzero,omitempty"`
 	AWSAccount   *AWSAccount   `json:"aws_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account,omitzero,omitempty"`
 	AzureAccount *AzureAccount `json:"azure_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"azure_account,omitzero,omitempty"`
