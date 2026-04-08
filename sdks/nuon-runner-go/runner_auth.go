@@ -30,3 +30,15 @@ func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAut
 
 	return resp.Payload, nil
 }
+
+func (c *client) RunnerAuthAzure(ctx context.Context, req *models.ServiceRunnerAuthAzureRequest) (*models.ServiceRunnerAuthAzureResponse, error) {
+	resp, err := c.genClient.Operations.RunnerAuthAzure(&operations.RunnerAuthAzureParams{
+		Req:     req,
+		Context: ctx,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}

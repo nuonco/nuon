@@ -30,10 +30,11 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd := &cobra.Command{
 		Use:   "fetch-token",
 		Short: "Fetch and store the runner authentication token.",
-		Long:  "Authenticate using cloud instance credentials (AWS or GCP) and store the runner token.",
+		Long:  "Authenticate with a cloud provider using instance credentials and store the runner token.",
 		Run:   c.runFetchToken,
 	}
 	fetchTokenCmd.Flags().Bool("json", false, "Output result as JSON (does not write token to disk)")
+	fetchTokenCmd.Flags().String("platform", "", "Cloud platform to use for authentication (aws, azure, gcp). Defaults to auto-detect.")
 
 	mngCmd.AddCommand(fetchTokenCmd)
 	rootCmd.AddCommand(mngCmd)
@@ -69,6 +70,12 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 	ctx := context.Background()
 	jsonOutput, _ := cmd.Flags().GetBool("json")
+	platform, _ := cmd.Flags().GetString("platform")
+
+	// Fall back to env var if flag not set.
+	if platform == "" {
+		platform = os.Getenv("RUNNER_PLATFORM")
+	}
 
 	apiURL := os.Getenv("RUNNER_API_URL")
 	if apiURL == "" {
@@ -83,26 +90,34 @@ func (c *cli) runFetchToken(cmd *cobra.Command, _ []string) {
 		os.Exit(1)
 	}
 
-	if jsonOutput {
-		result, err := fetchtoken.FetchToken(ctx, apiClient)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to fetch token: %v\n", err)
-			os.Exit(1)
+	// Azure uses the TokenFetcher interface; AWS/GCP use existing inline code paths.
+	var result *fetchtoken.FetchTokenResult
+	if platform == "azure" {
+		runnerID := os.Getenv("RUNNER_ID")
+		if jsonOutput {
+			result, err = fetchtoken.FetchTokenAzure(ctx, apiClient, runnerID)
+		} else {
+			result, err = fetchtoken.FetchAndStoreTokenAzure(ctx, apiClient, runnerID)
 		}
+	} else {
+		if jsonOutput {
+			result, err = fetchtoken.FetchToken(ctx, apiClient)
+		} else {
+			result, err = fetchtoken.FetchAndStoreToken(ctx, apiClient)
+		}
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to fetch token: %v\n", err)
+		os.Exit(1)
+	}
 
+	if jsonOutput {
 		enc := json.NewEncoder(os.Stdout)
 		if err := enc.Encode(result); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to encode result: %v\n", err)
 			os.Exit(1)
 		}
 		return
-	}
-
-	// NOTE(fd) we keep this because we'll let this new approach cook for some time so they will co-exist
-	result, err := fetchtoken.FetchAndStoreToken(ctx, apiClient)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to fetch token: %v\n", err)
-		os.Exit(1)
 	}
 
 	fmt.Printf("authentication successful\n")

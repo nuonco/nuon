@@ -39,6 +39,9 @@ var runnerServiceAWS string
 //go:embed templates/runner-service.gcp.service
 var runnerServiceGCP string
 
+//go:embed templates/runner-service.azure.service
+var runnerServiceAzure string
+
 func (h *Monitor) checkRunnerService(ctx context.Context) error {
 	h.l.Info("checking runner service")
 
@@ -138,7 +141,9 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 		return errors.Wrap(err, "unable to validate runner token")
 	}
 
-	h.l.Warn("runner token is invalid - fetching new token via IMDS")
+	h.l.Warn("runner token is invalid - fetching new token via IMDS",
+		zap.String("platform", h.settings.Platform))
+
 	unauthClient, err := nuonrunner.New(
 		nuonrunner.WithURL(h.settings.Cfg.RunnerAPIURL),
 	)
@@ -146,7 +151,13 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 		return errors.Wrap(err, "unable to create unauthenticated client")
 	}
 
-	result, err := fetchtoken.FetchToken(ctx, unauthClient)
+	var result *fetchtoken.FetchTokenResult
+	switch h.settings.Platform {
+	case "azure":
+		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID)
+	default:
+		result, err = fetchtoken.FetchToken(ctx, unauthClient)
+	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new token")
 	}
@@ -167,10 +178,12 @@ func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	// dynamically choose the template based on cloud platform
 	var serviceTemplate string
 	switch h.settings.Platform {
-	case "aws":
+	case "aws", "":
 		serviceTemplate = runnerServiceAWS
 	case "gcp":
 		serviceTemplate = runnerServiceGCP
+	case "azure":
+		serviceTemplate = runnerServiceAzure
 	default:
 		serviceTemplate = runnerServiceAWS
 	}
