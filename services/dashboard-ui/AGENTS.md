@@ -520,7 +520,27 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 
 The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
 
+## Dates, Times & Durations
 
+**Always use [Luxon](https://moment.github.io/luxon/) for date/time operations.** Never use raw `Date` objects or manual millisecond math.
+
+**Use the existing components for rendering:**
+
+- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`.
+- **`<Duration>`** (`client/components/common/Duration.tsx`) — Renders durations between two times. Pass `beginTime` and optionally `endTime` (defaults to now). Supports `durationUnits`, `unitDisplay`, and `format` props.
+
+```tsx
+// ✅ Correct — use Time and Duration components
+<Time variant="subtext" time={item.created_at} format="relative" />
+<Duration variant="subtext" beginTime={process.started_at} durationUnits={['hours', 'minutes']} />
+
+// ❌ Wrong — manual date formatting
+const diffMs = Date.now() - new Date(dateStr).getTime()
+const minutes = Math.floor(diffMs / (1000 * 60))
+return `${minutes} minutes ago`
+```
+
+**For utility functions** that need date logic (not rendering), use Luxon's `DateTime` and `Duration` classes directly. Place shared helpers in `client/utils/time-utils.ts`.
 
 Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does (no "// loop through items", "// close modal", "// fetch data" style comments). Let clear naming and structure document the code.
 
