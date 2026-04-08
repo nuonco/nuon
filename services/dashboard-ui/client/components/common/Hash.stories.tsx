@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Hash',
+}
+
 import { Hash } from './Hash'
 import { LabeledValue } from './LabeledValue'
 

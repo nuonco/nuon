@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "update_version"
@@ -77,6 +78,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			l.Error("failed to update runner status", zap.Error(updateErr))
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            app.RunnerStatusError,
+			StatusDescription: "unable to create update-version job",
+		})
 		return errors.Wrap(err, "unable to create job")
 	}
 

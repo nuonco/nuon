@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/CloudPlatform',
+}
+
 import { CloudPlatform } from './CloudPlatform'
 import { Text } from './Text'
 import { Badge } from './Badge'

@@ -1,0 +1,71 @@
+import { useQuery } from '@tanstack/react-query'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import type { IModal } from '@/components/surfaces/Modal'
+import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { getAppConfig, getInstallCurrentInputs } from '@/lib'
+import { normalizeAppInputGroups } from '@/utils/app-utils'
+import { ViewCurrentInputsModal } from './ViewCurrentInputs'
+
+export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+
+  const { data: inputs, isLoading: inputsLoading } = useQuery({
+    queryKey: ['install-inputs', org?.id, install?.id],
+    queryFn: () =>
+      getInstallCurrentInputs({ orgId: org.id, installId: install.id }),
+    enabled: !!org?.id && !!install?.id,
+  })
+
+  const { data: config, isLoading: configLoading } = useQuery({
+    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id],
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: install.app_id,
+        appConfigId: install.app_config_id,
+        recurse: true,
+      }),
+    enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
+  })
+
+  const isLoading = inputsLoading || configLoading
+  const redactedValues = inputs?.redacted_values ?? {}
+  const inputGroups = config
+    ? normalizeAppInputGroups(
+        config.input?.input_groups ?? [],
+        config.input?.inputs ?? []
+      )
+    : []
+
+  return (
+    <ViewCurrentInputsModal
+      isLoading={isLoading}
+      redactedValues={redactedValues}
+      inputGroups={inputGroups as any}
+      {...props}
+    />
+  )
+}
+
+export const ViewCurrentInputsButton = ({ ...props }: IButtonAsButton) => {
+  const { addModal } = useSurfaces()
+
+  return (
+    <Button
+      className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
+      variant="ghost"
+      onClick={() => {
+        const modal = <ViewCurrentInputsModalContainer />
+        addModal(modal)
+      }}
+      {...props}
+    >
+      Current inputs
+      <Icon variant="ListChecks" />
+    </Button>
+  )
+}

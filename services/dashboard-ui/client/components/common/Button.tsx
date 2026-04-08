@@ -43,7 +43,7 @@ const SIZE_CLASSES: Record<TButtonSize, string> = {
 
 const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   danger: `
-    border rounded-md bg-white dark:bg-dark-grey-900 text-red-800 dark:text-red-500
+    border rounded-lg bg-white dark:bg-dark-grey-900 text-red-800 dark:text-red-500
     hover:bg-red-50 dark:hover:bg-[#1D0D10]
     focus:outline-red-400 dark:focus:outline-red-500/50
     focus:bg-white dark:focus:bg-dark-grey-900
@@ -52,23 +52,25 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
   `,
   primary: `
-    border border-transparent rounded-md bg-primary-600 text-white
+    border border-transparent rounded-lg bg-primary-600 text-white
     hover:bg-primary-700
     focus:outline-primary-400/80 focus:bg-primary-600
     active:bg-primary-900
     disabled:opacity-50 disabled:hover:bg-primary-600
   `,
   ghost: `
-    border border-transparent rounded-md bg-inherit
-    hover:bg-black/3 dark:hover:bg-white/3
-    focus:outline-primary-400/80 focus:bg-black/5 dark:focus:bg-white/5
-    active:bg-black/6 dark:active:bg-white/6
-    disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:dark:bg-transparent
+    border border-transparent rounded-lg bg-inherit
+    hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
+    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
+    disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
   `,
   secondary: `
-    border rounded-md bg-white dark:bg-dark-grey-700 text-primary-600 dark:text-primary-400
+    border rounded-lg bg-white dark:bg-dark-grey-700 text-primary-600 dark:text-primary-400
+    shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]
     hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500
-    focus:outline-primary-400/80 focus:bg-cool-grey-50 dark:focus:bg-dark-grey-500
+    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    focus:bg-white dark:focus:bg-dark-grey-700
     active:bg-cool-grey-100 dark:active:bg-dark-grey-400
     disabled:opacity-50 disabled:hover:bg-white disabled:hover:dark:bg-dark-grey-700
   `,
@@ -108,7 +110,7 @@ export const Button = forwardRef<
       {
         '!border-primary-600 !hover:!border-primary-600':
           isActive && variant === 'tab',
-        '!p-2 text-sm !leading-none h-8 w-full flex justify-between':
+        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !text-cool-grey-800 dark:!text-white/70':
           isMenuButton,
       },
       className

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/HeadingGroup',
+}
+
 import { HeadingGroup } from './HeadingGroup'
 import { Text } from './Text'
 import { Badge } from './Badge'

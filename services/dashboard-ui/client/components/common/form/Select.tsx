@@ -322,7 +322,8 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
           onKeyDown={handleKeyDown}
           disabled={disabled}
           className={cn(
-            'flex items-center justify-between w-full border border-solid rounded shadow-sm transition-all duration-300 font-mono',
+            'flex items-center justify-between w-full border border-solid rounded-md transition-all duration-300 font-sans',
+            'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]',
             'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:!border-primary-500',
             'user-invalid:!border-red-500 user-invalid:dark:!border-red-400',
             'user-invalid:focus:!border-red-500 user-invalid:focus:!ring-red-500',
@@ -330,10 +331,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             {
               '!bg-cool-grey-200 text-cool-grey-500 dark:!bg-dark-grey-600 dark:text-dark-grey-900 cursor-not-allowed': disabled,
               '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
+              '!shadow-none': disabled,
               'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
 
               'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100': !disabled && !error && !isInvalid,
-              '!border-primary-700 dark:!border-primary-400/50': !disabled && !error && !isInvalid,
+              'border-cool-grey-500/24 dark:border-cool-grey-500/24': !disabled && !error && !isInvalid,
 
               '!border-red-500 dark:!border-red-400': error || isInvalid,
               'focus:!ring-red-500 focus:!border-red-500': error || isInvalid,
@@ -426,7 +428,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                     onMouseEnter={() => setHighlightedIndex(idx)}
                     disabled={option.disabled}
                     className={cn(
-                      'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-mono text-left flex items-center justify-between gap-2',
+                      'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
                       {
                         'text-white bg-primary-600': currentValue?.value === option.value && highlightedIndex !== idx,
                         'bg-primary-100 dark:bg-primary-900/40': highlightedIndex === idx && currentValue?.value !== option.value,

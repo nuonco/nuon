@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CodeInput } from './CodeInput'
 
 export default {
-  title: 'Forms/CodeInput',
+  title: 'Common/Forms/CodeInput',
   component: CodeInput,
 }
 

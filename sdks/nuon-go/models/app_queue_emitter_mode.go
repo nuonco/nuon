@@ -35,6 +35,9 @@ const (
 
 	// AppQueueEmitterModeScheduled captures enum value "scheduled"
 	AppQueueEmitterModeScheduled AppQueueEmitterMode = "scheduled"
+
+	// AppQueueEmitterModeFireOnce captures enum value "fire_once"
+	AppQueueEmitterModeFireOnce AppQueueEmitterMode = "fire_once"
 )
 
 // for schema
@@ -42,7 +45,7 @@ var appQueueEmitterModeEnum []any
 
 func init() {
 	var res []AppQueueEmitterMode
-	if err := json.Unmarshal([]byte(`["cron","scheduled"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["cron","scheduled","fire_once"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

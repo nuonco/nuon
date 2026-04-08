@@ -1,7 +1,7 @@
 import { Input } from './Input'
 
 export default {
-  title: 'Forms/Input',
+  title: 'Common/Forms/Input',
   component: Input,
 }
 

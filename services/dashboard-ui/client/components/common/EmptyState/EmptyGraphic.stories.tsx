@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/EmptyGraphic',
+}
+
 import { EmptyGraphic } from './EmptyGraphic'
 
 export const Default = () => <EmptyGraphic />

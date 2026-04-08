@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Loading',
+}
+
 import { Loading } from './Loading'
 import { Button } from './Button'
 import { Card } from './Card'

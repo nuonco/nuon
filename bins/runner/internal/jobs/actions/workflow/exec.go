@@ -71,6 +71,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 		stepPlan := h.state.plan.Steps[idx]
 		stepCfg, stepName := resolveStepConfig(configStepCfg, step, stepPlan)
+		if stepCfg != nil {
+			stepCfg.Idx = int64(idx)
+		}
 
 		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepName, idx+1, len(h.state.run.Steps)))
 		err := h.executeWorkflowStep(ctx, execCtx, step, stepCfg, stepPlan)

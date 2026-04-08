@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "app-provision"
@@ -52,6 +53,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); updateErr != nil {
 			l.Error("failed to update app status", zap.Error(updateErr))
 		}
+		statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+			AppID:             s.AppID,
+			Status:            app.AppStatusError,
+			StatusDescription: "unable to get app from database",
+		})
 		return errors.Wrap(err, "unable to get app from database")
 	}
 
@@ -88,6 +94,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
+	statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+		AppID:             s.AppID,
+		Status:            app.AppStatusProvisioning,
+		StatusDescription: "provisioning app resources",
+	})
 
 	// Provision ECR repository (only for default org type)
 	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
@@ -126,6 +137,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
+	statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
+		AppID:             s.AppID,
+		Status:            app.AppStatusActive,
+		StatusDescription: "app resources are provisioned",
+	})
 
 	return nil
 }

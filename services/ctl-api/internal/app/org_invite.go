@@ -32,6 +32,7 @@ type OrgInvite struct {
 
 	Email    string          `gorm:"notnull;default null;index:idx_invite_org_email,unique" json:"email,omitzero" temporaljson:"email,omitzero,omitempty"`
 	Status   OrgInviteStatus `json:"status,omitzero" gorm:"notnull;default null" temporaljson:"status,omitzero,omitempty"`
+	StatusV2 CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 	RoleType RoleType        `json:"role_type,omitzero" temporaljson:"role_type,omitzero,omitempty"`
 }
 

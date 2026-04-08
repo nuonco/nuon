@@ -107,7 +107,7 @@ const ToastPortal = ({ toasts }: { toasts: TToasts }) => {
 
   return createPortal(
     <div
-      className="fixed bottom-6 right-6 z-20 w-full max-w-72 block overflow-visible hover:bottom-10"
+      className="fixed bottom-6 right-6 z-[100] w-full max-w-72 block overflow-visible hover:bottom-10"
       id="toast-portal"
       onMouseEnter={() => {
         setPauseTimeout(true)

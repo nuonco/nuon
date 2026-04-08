@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Divider',
+}
+
 import { Divider } from './Divider'
 import { Text } from './Text'
 import { Button } from './Button'
