@@ -93,6 +93,10 @@ type AppRunnerGroupSettings struct {
 	// runner api url
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 
+	// RunnerBinaryURL overrides the URL used to download the runner binary onto the
+	// host for mng mode. When empty, defaults to the S3 artifacts URL.
+	RunnerBinaryURL string `json:"runner_binary_url,omitempty"`
+
 	// runner group id
 	RunnerGroupID string `json:"runner_group_id,omitempty"`
 
