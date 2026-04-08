@@ -39,8 +39,9 @@ type CreateInstallParams struct {
 
 	InstallConfig *CreateInstallConfigParams `json:"install_config"`
 
-	Metadata    InstallMetadata `json:"metadata,omitempty"`
-	SandboxMode bool            `json:"sandbox_mode,omitempty"`
+	Metadata InstallMetadata `json:"metadata,omitempty"`
+
+	SandboxMode bool `json:"sandbox_mode,omitempty" swaggerignore:"true"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
