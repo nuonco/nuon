@@ -43,7 +43,7 @@ export const BackToTop = ({ containerId = 'page-scroll-container', scrollOffset 
   }, [containerId, scrollOffset])
 
   return (
-    <div className="sticky bottom-0 z-[2] flex justify-end pointer-events-none">
+    <div className="fixed bottom-10 right-0 z-[2] flex justify-end pointer-events-none">
       <TransitionDiv className="fade pointer-events-auto mb-4 md:mb-6 mr-8 md:mr-12" isVisible={isVisable}>
         <Button
           className={cn(
