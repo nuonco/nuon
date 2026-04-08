@@ -56,7 +56,6 @@ export const ProcessCardContainer = ({
     <ProcessCard
       process={process}
       settings={settings}
-      runnerId={runner?.id}
       isConnected={isConnected}
       heartbeatCreatedAt={heartbeat?.created_at}
       configuredVersion={configuredVersion}

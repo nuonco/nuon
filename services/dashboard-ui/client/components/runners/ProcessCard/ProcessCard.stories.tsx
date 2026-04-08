@@ -17,7 +17,7 @@ const mockProcess = {
 export const Default = () => (
   <ProcessCard
     process={mockProcess}
-    runnerId="runner-456"
+
     isConnected={true}
     heartbeatCreatedAt="2024-01-15T12:00:00Z"
     configuredVersion="1.2.3"
@@ -29,7 +29,7 @@ export const Default = () => (
 export const Disconnected = () => (
   <ProcessCard
     process={mockProcess}
-    runnerId="runner-456"
+
     isConnected={false}
     configuredVersion="1.2.3"
     reportedVersion="1.2.2"
@@ -40,7 +40,7 @@ export const Disconnected = () => (
 export const WithWarnings = () => (
   <ProcessCard
     process={{ ...mockProcess, warnings: ['Version mismatch detected'] }}
-    runnerId="runner-456"
+
     isConnected={true}
     heartbeatCreatedAt="2024-01-15T12:00:00Z"
     configuredVersion="1.2.3"

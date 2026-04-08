@@ -1,8 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
-import { ProcessCard, ProcessCardSkeleton } from '@/components/runners/ProcessCard'
+import {
+  ProcessCard,
+  ProcessCardSkeleton,
+} from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -11,10 +16,18 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useRunner } from '@/hooks/use-runner'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 
-const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: string }) => {
+const RunnerContent = ({
+  runnerId,
+  installId,
+}: {
+  runnerId: string
+  installId: string
+}) => {
   const { org } = useOrg()
+  const { runner } = useRunner()
 
   const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
@@ -39,25 +52,28 @@ const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: s
 
   return (
     <>
-      <PageSection>
-        <Text variant="base" weight="strong">
-          Processes
-        </Text>
-        {processesLoading ? (
-          <div className="flex flex-wrap gap-6">
+      <Text variant="base" weight="strong">
+        Processes
+      </Text>
+
+      {processesLoading ? (
+        <div className="@container">
+          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
             <ProcessCardSkeleton />
             <ProcessCardSkeleton />
           </div>
-        ) : processes.length === 0 ? (
-          <Card>
-            <EmptyState
-              emptyTitle="No active processes"
-              emptyMessage="No runner processes are currently active or offline."
-              variant="table"
-            />
-          </Card>
-        ) : (
-          <div className="flex flex-wrap gap-6">
+        </div>
+      ) : processes.length === 0 ? (
+        <Card>
+          <EmptyState
+            emptyTitle="No active processes"
+            emptyMessage="No runner processes are currently active or offline."
+            variant="table"
+          />
+        </Card>
+      ) : (
+        <div className="@container">
+          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
             {processes.map((process) => (
               <ProcessCard
                 key={process.id}
@@ -67,15 +83,16 @@ const RunnerContent = ({ runnerId, installId }: { runnerId: string; installId: s
               />
             ))}
           </div>
-        )}
-      </PageSection>
+        </div>
+      )}
 
-      <PageSection>
-        <Text variant="base" weight="strong">
-          Recent jobs
-        </Text>
-        <RunnerRecentActivity shouldPoll jobDetailBasePath={`/${org?.id}/installs/${installId}/runner`} />
-      </PageSection>
+      <Text variant="base" weight="strong">
+        Recent jobs
+      </Text>
+      <RunnerRecentActivity
+        shouldPoll
+        jobDetailBasePath={`/${org?.id}/installs/${installId}/runner`}
+      />
     </>
   )
 }
@@ -114,7 +131,6 @@ export const Runner = () => {
   return (
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
-      <PageSection>
         <PageTitle title={`Install runner | ${install?.name}`} />
         <Breadcrumbs
           breadcrumbs={[
@@ -130,8 +146,15 @@ export const Runner = () => {
             },
           ]}
         />
-        <RunnerContent runnerId={install.runner_id} installId={install.id} />
-      </PageSection>
+        <PageSection>
+          <HeadingGroup>
+            <Text variant="base" weight="strong">
+              Install runner
+            </Text>
+            <ID>{install?.runner_id}</ID>
+          </HeadingGroup>
+          <RunnerContent runnerId={install.runner_id} installId={install.id} />
+        </PageSection>
       </SurfacesProvider>
     </RunnerProvider>
   )
