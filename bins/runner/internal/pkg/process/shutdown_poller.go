@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 const (
@@ -98,7 +97,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		if shutdown == nil {
 			continue
 		}
-		if shutdown.Status == string(models.AppRunnerProcessShutdownStatusRequested) {
+		if shutdown.Status == "requested" {
 			sp.l.Info("shutdown requested, completing shutdown with control plane",
 				zap.String("process_id", processID),
 				zap.String("shutdown_id", shutdown.ID),
