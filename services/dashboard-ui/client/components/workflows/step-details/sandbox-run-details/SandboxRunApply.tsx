@@ -35,7 +35,7 @@ export const SandboxRunApply = ({
               tooltipProps={{
                 position: 'right',
                 tipContent: (
-                  <Text className="!text-nowrap" variant="subtext">
+                  <Text nowrap variant="subtext">
                     {sandboxRun?.status_v2?.status_human_description}
                   </Text>
                 ),

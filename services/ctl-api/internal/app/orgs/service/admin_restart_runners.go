@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgrestartrunners "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_runners"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -40,8 +41,25 @@ func (s *service) AdminRestartRunners(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationRestartRunners,
-	})
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestartrunners.Signal{OrgID: org.ID}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationRestartRunners,
+		})
+	}
 	ctx.JSON(http.StatusOK, true)
 }

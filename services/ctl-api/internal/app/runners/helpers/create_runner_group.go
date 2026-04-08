@@ -29,12 +29,19 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		platform = app.AppRunnerTypeLocal
 	}
 
+	// Install-level sandbox mode takes precedence when set, else fall back to org.
+	sandboxMode := install.Org.SandboxMode
+	if install.SandboxMode.Valid {
+		sandboxMode = install.SandboxMode.Bool
+	}
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
 		OwnerType: "installs",
-		Type:      app.RunnerGroupTypeInstall,
-		Platform:  install.AppRunnerConfig.Type,
+		// OwnerName: install.Name,
+		Type:     app.RunnerGroupTypeInstall,
+		Platform: install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
 			{
 				Name:              "default",
@@ -44,7 +51,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			},
 		},
 		Settings: app.RunnerGroupSettings{
-			SandboxMode:       install.Org.SandboxMode,
+			SandboxMode:       sandboxMode,
 			ContainerImageURL: h.cfg.RunnerContainerImageURL,
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,
@@ -108,16 +115,20 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	// Build cloud-specific identity for the org runner service account
 	var orgAWSIAMRoleARN string
 	var orgGCPServiceAccount string
-	if h.cfg.CloudProvider == "gcp" {
+	switch h.cfg.CloudProvider {
+	case "gcp":
 		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+	default:
+		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
 	}
 
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultOrgRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   org.ID,
 		OwnerType: "orgs",
-		Type:      app.RunnerGroupTypeOrg,
-		Platform:  platform,
+		// OwnerName: org.Name,
+		Type:     app.RunnerGroupTypeOrg,
+		Platform: platform,
 		Runners: []app.Runner{
 			{
 				Name:              "default",

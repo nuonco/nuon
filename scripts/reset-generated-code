@@ -112,7 +112,6 @@ generate_repo() {
 
   ordered_files=(
     "pkg/config/schema/gen.go"
-    "pkg/types/components/components.go"
     "bins/runner/main.go"
   )
 
@@ -131,12 +130,6 @@ generate_repo() {
 
   bucket=$(printf "%s\n" "$remaining" | grep "pkg/config/schema/gen.go" || true)
   remaining=$(printf "%s\n" "$remaining" | grep -v "pkg/config/schema/gen.go" || true)
-  if [ -n "$bucket" ]; then
-    printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
-  fi
-
-  bucket=$(printf "%s\n" "$remaining" | grep "pkg/types/components/components.go" || true)
-  remaining=$(printf "%s\n" "$remaining" | grep -v "pkg/types/components/components.go" || true)
   if [ -n "$bucket" ]; then
     printf "%s\n" "$bucket" | xargs -n 1 -P 10 go generate
   fi

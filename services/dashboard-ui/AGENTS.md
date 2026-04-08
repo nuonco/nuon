@@ -41,7 +41,8 @@ The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse pr
 client/
 ├── components/         ← Reusable UI components (organized by domain)
 │   ├── common/         ← Core primitives: Button, Card, Badge, Text, Modal, Toast
-│   ├── layout/         ← Page structure: PageLayout, PageContent, AsyncBoundary
+│   ├── layout/         ← Page structure: PageLayout, PageContent, PageSection
+│   ├── navigation/     ← SubNav, Breadcrumbs, MainNav
 │   ├── surfaces/       ← Modal/Panel system
 │   └── [domain]/       ← Feature components (actions, workflows, runners, installs, etc.)
 ├── hooks/              ← Custom React hooks (47+ hooks for state and utilities)
@@ -68,6 +69,97 @@ client/
 - **`views/`** contains **only**: page-level view components (route content), layout components (providers/breadcrumbs/tab nav), and route orchestration.
 - **`views/`** must **never** contain: modals, tables, reusable sub-components, action buttons, or any component meant to be consumed by a view.
 - All feature components belong in `client/components/[domain]/`. If a `components/[domain]/` directory doesn't exist yet, create it.
+
+## Layout System
+
+The layout system handles page structure, scrolling, and back-to-top automatically. Pages assemble from clear building blocks without worrying about scroll containers, overflow, or positioning.
+
+### Layout Component Hierarchy
+
+```
+MainLayout (flex row: sidebar + content)
+├── MainSidebar (desktop: static flex child, mobile: fixed overlay)
+├── Mobile backdrop
+└── Content wrapper (flex-1, flex-col, overflow-hidden)
+    ├── PageLayout (flex-1, contains topbar + scroll container)
+    │   ├── MainTopbar
+    │   └── Scroll container (overflow-y-auto, auto BackToTop)
+    │       ├── PageHeader (optional)
+    │       ├── PageContent (flex direction: column or row)
+    │       │   ├── SubNav (optional, sticky on desktop)
+    │       │   └── Page content / Outlet
+    │       └── BackToTop (automatic, sticky bottom-right)
+    └── OrgStatusBar (flex-none, pinned at bottom)
+```
+
+### Building Pages
+
+**Org-level page** (top-level route like Apps, Installs, Team):
+```tsx
+export const MyPage = () => (
+  <PageLayout>
+    <PageHeader>
+      <PageHeadingGroup title="My page" />
+    </PageHeader>
+    <PageContent>
+      <PageSection>
+        {/* content */}
+      </PageSection>
+    </PageContent>
+  </PageLayout>
+)
+```
+
+**Child page inside App/Install layout** (rendered via `<Outlet />`):
+```tsx
+export const MyChildPage = () => (
+  <PageSection>
+    {/* content — that's it */}
+  </PageSection>
+)
+```
+
+**Detail page with flush header**:
+```tsx
+export const DeployDetail = () => (
+  <>
+    <PageSection flush>
+      <DeployHeader />
+    </PageSection>
+    <PageSection>
+      <Logs />
+    </PageSection>
+  </>
+)
+```
+
+### Layout Components
+
+| Component | Purpose | Key Props |
+|-----------|---------|-----------|
+| `PageLayout` | Top-level page wrapper. Renders topbar, scroll container, and BackToTop automatically. | `variant` (`dashboard-page` / `single-page`), `hideBreadcrumbs` |
+| `PageContent` | Sets flex direction for content area. | `variant` (`column` default, `row` for SubNav layouts) |
+| `PageSection` | Content block with standard padding/gap. | `flush` (removes padding/gap for full-bleed content) |
+| `PageHeader` | Page heading area above content. | Standard div props |
+| `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
+
+### What You Get For Free
+
+- **Scrolling**: PageLayout's inner div is always the scroll container (`overflow-y-auto`)
+- **Back to top**: Auto-rendered inside PageLayout, appears after 400px scroll
+- **SubNav sticky**: Stays pinned on desktop while content scrolls beside it
+- **OrgStatusBar**: Pinned at the bottom, outside the scroll area
+
+### Do NOT
+
+- Add `isScrollable` to any component — it's ignored (kept for backwards compat only)
+- Create `CONTAINER_ID` constants or pass `id` props to scroll containers
+- Import or render `<BackToTop />` in view files — PageLayout handles it
+- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+
+### Mobile Sidebar
+
+The main sidebar uses a fixed overlay on mobile (`w-[280px]`, slides in from left) with a backdrop. On desktop it's a normal flex child with a collapsible width transition (Alt+S).
 
 ## Routing
 
@@ -244,7 +336,14 @@ export type TNewResource = components['schemas']['app.NewResource']
 
 ### Always Check Existing Components First
 
-Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs. Read the component's TypeScript interface and any `.stories.tsx` file to understand the correct props before using it.
+Before building a new component, **check `client/components/common/` and other domain directories** for an existing component that meets your needs.
+
+**Stories files (`.stories.tsx`) are the primary reference for how to use a component.** They contain live examples of correct prop usage, edge cases, and patterns. Always read a component's stories file before using or modifying it — this is faster and more reliable than inferring usage from the TypeScript interface alone.
+
+```bash
+# Find stories for a component
+glob pattern: client/components/**/*.stories.tsx
+```
 
 ### `Tabs` Component — Key Casing
 
@@ -258,9 +357,35 @@ The `Tabs` component renders tab labels by running each object key through `toSe
 <Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
 ```
 
+### Container / Component Pattern
+
+Feature components use a **container/component split** to separate data-fetching from presentation. Every feature component directory follows this structure:
+
+```
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx              ← Pure presentational component (props in, JSX out)
+├── MyComponentContainer.tsx     ← Data-fetching wrapper (hooks, queries, mutations)
+├── MyComponent.stories.tsx      ← Ladle stories (required)
+├── index.ts                     ← Barrel export
+```
+
+**`MyComponent.tsx`** — The presentational component. Receives all data as props. No `useQuery`, `useMutation`, or context hooks that require providers. This is the component that stories render directly.
+
+**`MyComponentContainer.tsx`** — The container. Calls hooks (`useOrg()`, `useQuery()`, etc.) and passes resolved data to the presentational component. Views and other containers import this via the barrel.
+
+**`index.ts`** — Barrel export. Exports the container as the default/primary export, and the presentational component as a named export:
+```typescript
+export { MyComponentContainer as MyComponent } from './MyComponentContainer'
+export { MyComponent as MyComponentComponent } from './MyComponent'
+```
+
+**When to use this pattern**: Any component that calls context hooks (`useOrg`, `useInstall`, `useDeploy`, etc.) or TanStack Query hooks. Simple presentational components (Button, Badge, etc.) stay as flat files.
+
+**Important**: Never have both a flat file `MyComponent.tsx` and a directory `MyComponent/` at the same level — the flat file shadows the directory's `index.ts` and causes import resolution bugs.
+
 ### File Organization
 
-**Flat files (preferred for most components)**:
+**Flat files (for simple presentational components)**:
 ```
 client/components/common/
 ├── Button.tsx
@@ -268,13 +393,68 @@ client/components/common/
 └── Text.tsx
 ```
 
-**Directory structure (only when component has internal sub-components)**:
+**Directory structure (for feature components with container/component split)**:
 ```
-client/components/common/EmptyState/
-├── EmptyState.tsx
-├── EmptyGraphic.tsx   ← internal, not exported directly
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx
+├── MyComponentContainer.tsx
+├── MyComponent.stories.tsx
 └── index.ts
 ```
+
+### Ladle Stories (Required)
+
+Every component directory must include a `.stories.tsx` file. Stories are written for **Ladle v5** — not Storybook.
+
+**Story format** — plain function exports only. Ladle does NOT support `StoryObj` with `render:`:
+```tsx
+// ✅ Correct — Ladle v5 format
+export default {
+  title: 'Domain/MyComponent',
+}
+
+import { MyComponent } from './MyComponent'
+
+export const Default = () => <MyComponent items={mockItems} />
+export const Empty = () => <MyComponent items={[]} />
+```
+
+```tsx
+// ❌ Wrong — Storybook syntax, breaks Ladle ("got: object" error)
+import type { Meta, StoryObj } from '@ladle/react'
+export const Default: StoryObj = { render: () => <MyComponent /> }
+```
+
+**Stories render the presentational component**, not the container. Pass all data as props — no provider dependencies needed.
+
+**When a component needs a context provider** (because it renders a child that calls a hook), mock the context in the story:
+```tsx
+import { SomeContext } from '@/providers/some-provider'
+
+const mockValue = { /* mock context shape */ }
+
+export const Default = () => (
+  <SomeContext.Provider value={mockValue}>
+    <MyComponent />
+  </SomeContext.Provider>
+)
+```
+
+**Modal stories** — use the `ModalStory` helper from `@/components/__stories__/helpers`:
+```tsx
+import { ModalStory } from '@/components/__stories__/helpers'
+import { MyModal } from './MyModal'
+
+export const Default = () => (
+  <ModalStory>
+    <MyModal someData={mockData} />
+  </ModalStory>
+)
+```
+
+**Timeline stories** — mock items must have unique `created_at` timestamps on different calendar days. The `Timeline` component groups by date, so duplicate dates cause React key warnings.
+
+**Ladle provides a `MemoryRouter`** globally — never wrap stories in another `MemoryRouter` or you'll get "cannot render a `<Router>` inside another `<Router>`".
 
 ### Modal and Panel Components
 

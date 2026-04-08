@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -12,7 +13,8 @@ import (
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-// SleepSignal puts a handler workflow to sleep, causing it to terminate.
+// SleepSignal puts a handler workflow into a dormant sleep state. The handler
+// remains alive in Temporal and can be woken later via WakeSignal.
 func (c *Client) SleepSignal(ctx context.Context, queueSignalID string) error {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
@@ -25,6 +27,10 @@ func (c *Client) SleepSignal(ctx context.Context, queueSignalID string) error {
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
 	})
 	if err != nil {
+		// If the workflow already completed (e.g. grace period expired), treat as success.
+		if strings.Contains(err.Error(), "workflow execution already completed") {
+			return nil
+		}
 		return errors.Wrap(err, "unable to call sleep handler")
 	}
 

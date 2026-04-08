@@ -9,8 +9,12 @@ import (
 	validateinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/validate"
 	queue "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
+	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signalhooks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/hooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -30,6 +34,10 @@ import (
 
 	// Register install queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
+
+	// Register VCS queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
 )
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.
@@ -42,11 +50,15 @@ var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 // SharedWorkflowsModule provides shared workflow activities and workflows
 // used across multiple worker namespaces.
 var SharedWorkflowsModule = fx.Module("shared-workflows",
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
+	fx.Provide(signal.NewSignalLifecycleActivities),
+
 	fx.Provide(jobactivities.New),
 	fx.Provide(flowactivities.New),
 	fx.Provide(signalsactivities.New),
 	fx.Provide(queueactivities.New),
 	fx.Provide(handleractivities.New),
+	fx.Provide(emitteractivities.New),
 	fx.Provide(statusactivities.New),
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
@@ -58,4 +70,5 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(workflows.NewWorkflows),
 	fx.Provide(queue.NewWorkflows),
 	fx.Provide(handler.NewWorkflows),
+	fx.Provide(emitter.NewWorkflows),
 )

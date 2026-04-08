@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -33,6 +34,8 @@ type Install struct {
 	Name  string `json:"name,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"name,omitzero,omitempty"`
 	App   App    `swaggerignore:"true" json:"app,omitzero" temporaljson:"app,omitzero,omitempty"`
 	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_install_name,unique" temporaljson:"app_id,omitzero,omitempty"`
+
+	SandboxMode sql.NullBool `json:"sandbox_mode,omitempty" gorm:"column:sandbox_mode" temporaljson:"sandbox_mode,omitempty"`
 
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
@@ -153,6 +156,16 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 
 	i.Status = "deprecated"
 	i.StatusDescription = "deprecated, please use individual runner, sandbox and component statuses instead"
+
+	// If sandbox mode not explicitly set on the install, inherit from org.
+	if !i.SandboxMode.Valid {
+		org := i.Org
+		if org.Name == "" {
+			tx.Where("id = ?", i.OrgID).First(&org)
+		}
+		i.SandboxMode.Valid = true
+		i.SandboxMode.Bool = org.SandboxMode
+	}
 
 	if i.AppRunnerConfig.ID != "" {
 		i.CloudPlatform = i.AppRunnerConfig.CloudPlatform

@@ -8,15 +8,25 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // @temporal-gen-v2 workflow
 // @execution-timeout 10m
 // @task-timeout 5m
 func (w *Workflows) MngFetchToken(ctx workflow.Context, sreq signals.RequestSignal) error {
-	// NOTE(fd): platform will need to be set dynamically when we add support for other clouds
+	runner, err := activities.AwaitGetByRunnerID(ctx, sreq.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner for platform detection")
+	}
+
+	platform := string(runner.RunnerGroup.Platform)
+	if platform == "" {
+		platform = "aws"
+	}
+
 	runnerJob, err := w.createMngJob(ctx, sreq.ID, app.RunnerJobTypeMngFetchToken, map[string]string{
-		"platform": "aws",
+		"platform": platform,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create runner job")
@@ -31,6 +41,12 @@ func (w *Workflows) MngFetchToken(ctx workflow.Context, sreq signals.RequestSign
 	}); err != nil {
 		return errors.Wrap(err, "unable to update job status")
 	}
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       runnerJob.ID,
+		Status:            app.RunnerJobStatusAvailable,
+		StatusDescription: string(app.RunnerJobStatusAvailable),
+	})
 
 	return nil
 }

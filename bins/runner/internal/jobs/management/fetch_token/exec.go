@@ -34,16 +34,30 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	l.Info("exec", zap.String("job_type", "fetch_token"))
 
-	l.Info("authenticating with AWS presigned requests")
-	result, err := FetchAndStoreToken(ctx, h.apiClient)
+	var result *FetchTokenResult
+	switch h.settings.Platform {
+	case "azure":
+		l.Info("authenticating with Azure managed identity")
+		result, err = FetchAndStoreTokenAzure(ctx, h.apiClient, h.settings.Cfg.RunnerID)
+	default:
+		l.Info("authenticating with cloud instance credentials")
+		result, err = FetchAndStoreToken(ctx, h.apiClient)
+	}
 	if err != nil {
 		return err
 	}
 
-	l.Info("authentication successful",
+	fields := []zap.Field{
 		zap.String("runner_id", result.RunnerID),
 		zap.String("instance_id", result.InstanceID),
-		zap.String("aws_account_id", result.AccountID))
+	}
+	if result.AccountID != "" {
+		fields = append(fields, zap.String("account_id", result.AccountID))
+	}
+	if result.ProjectID != "" {
+		fields = append(fields, zap.String("project_id", result.ProjectID))
+	}
+	l.Info("authentication successful", fields...)
 
 	l.Info("token written successfully", zap.String("path", result.TokenPath))
 

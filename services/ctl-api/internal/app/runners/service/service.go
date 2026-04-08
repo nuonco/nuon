@@ -59,6 +59,13 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.GET("/v1/runners/:runner_id/card-details", s.GetRunnerCardDetails)
 
+	// runner process endpoints
+	api.GET("/v1/runners/:runner_id/processes", s.ListRunnerProcesses)
+	api.GET("/v1/runners/:runner_id/processes/current", s.GetCurrentRunnerProcesses)
+	api.GET("/v1/runners/:runner_id/processes/:process_id", s.GetRunnerProcessPublic)
+	api.GET("/v1/runners/:runner_id/processes/:process_id/heart-beats/latest", s.GetProcessLatestHeartBeat)
+	api.POST("/v1/runners/:runner_id/processes/:process_id/shutdown", s.ShutdownRunnerProcess)
+
 	// trigger specific jobs
 	api.POST("/v1/runners/:runner_id/graceful-shutdown", s.GracefulShutDown)
 	api.POST("/v1/runners/:runner_id/force-shutdown", s.ForceShutDown)
@@ -143,6 +150,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/flush-orphaned-jobs", s.AdminFlushOrphanedJobs)
 			runner.GET("/jobs/queue", s.AdminGetRunnerJobsQueue)
 
+			// runner processes
+			runner.GET("/processes", s.AdminListRunnerProcesses)
+			runner.GET("/processes/:process_id", s.AdminGetRunnerProcess)
+			runner.POST("/processes/:process_id/shutdown", s.AdminShutdownRunnerProcess)
+
 			// trigger specific jobs
 			runner.POST("/graceful-shutdown", s.AdminGracefulShutDown)
 			runner.POST("/force-shutdown", s.AdminForceShutDown)
@@ -199,6 +211,12 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
 	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
 	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+
+	// runner process lifecycle
+	runners.POST("/processes", s.CreateRunnerProcess)
+	runners.GET("/processes/:process_id", s.GetRunnerProcess)
+	runners.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
+	runners.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
 	s.GET(runnerJobs, "", s.GetRunnerJob, apiPkg.APIContextTypeRunner, true)

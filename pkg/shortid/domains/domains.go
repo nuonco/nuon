@@ -226,6 +226,10 @@ func NewNotificationsID() string {
 	return shortid.NewNanoID("ntf")
 }
 
+func NewWebhookID() string {
+	return shortid.NewNanoID("whk")
+}
+
 func NewOrgID() string {
 	return shortid.NewNanoID("org")
 }
@@ -338,6 +342,14 @@ func NewVCSCommitID() string {
 	return shortid.NewNanoID("vcc")
 }
 
+func NewVCSEventID() string {
+	return shortid.NewNanoID("vce")
+}
+
+func NewVCSWebhookSubscriptionID() string {
+	return shortid.NewNanoID("vws")
+}
+
 func NewVCSID() string {
 	return shortid.NewNanoID("vcs")
 }
@@ -396,4 +408,12 @@ func NewOnboardingID() string {
 
 func NewBlobID() string {
 	return shortid.NewNanoID("blb")
+}
+
+func NewRunnerProcessID() string {
+	return shortid.NewNanoID("rpr")
+}
+
+func NewRunnerProcessShutdownID() string {
+	return shortid.NewNanoID("rps")
 }

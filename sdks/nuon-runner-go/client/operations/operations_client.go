@@ -56,6 +56,8 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShutdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteRunnerProcessShutdownOK, error)
+
 	CreateHelmRelease(params *CreateHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmReleaseOK, error)
 
 	CreateRunnerHealthCheck(params *CreateRunnerHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHealthCheckCreated, error)
@@ -67,6 +69,8 @@ type ClientService interface {
 	CreateRunnerJobExecutionOutputs(params *CreateRunnerJobExecutionOutputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerJobExecutionOutputsCreated, error)
 
 	CreateRunnerJobExecutionResult(params *CreateRunnerJobExecutionResultParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerJobExecutionResultCreated, error)
+
+	CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerProcessCreated, error)
 
 	CreateTerraformWorkspaceV2(params *CreateTerraformWorkspaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceV2Created, error)
 
@@ -108,6 +112,8 @@ type ClientService interface {
 
 	GetRunnerJobs(params *GetRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobsOK, error)
 
+	GetRunnerProcess(params *GetRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerProcessOK, error)
+
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
@@ -124,6 +130,10 @@ type ClientService interface {
 
 	RunnerAuthAWS(params *RunnerAuthAWSParams, opts ...ClientOption) (*RunnerAuthAWSOK, error)
 
+	RunnerAuthAzure(params *RunnerAuthAzureParams, opts ...ClientOption) (*RunnerAuthAzureOK, error)
+
+	RunnerAuthGCP(params *RunnerAuthGCPParams, opts ...ClientOption) (*RunnerAuthGCPOK, error)
+
 	RunnerOtelWriteMetrics(params *RunnerOtelWriteMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteMetricsCreated, error)
 
 	RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesCreated, error)
@@ -138,11 +148,59 @@ type ClientService interface {
 
 	UpdateRunnerJobV2(params *UpdateRunnerJobV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerJobV2OK, error)
 
+	UpdateRunnerProcess(params *UpdateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerProcessOK, error)
+
 	UpdateTerraformState(params *UpdateTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateOK, error)
 
 	UpdateTerraformStateJSON(params *UpdateTerraformStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateJSONOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+CompleteRunnerProcessShutdown marks a runner process shutdown as completed
+
+Mark a runner process shutdown as completed by the runner.
+*/
+func (a *Client) CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShutdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteRunnerProcessShutdownOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCompleteRunnerProcessShutdownParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CompleteRunnerProcessShutdown",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/shutdowns/{shutdown_id}/complete",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CompleteRunnerProcessShutdownReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CompleteRunnerProcessShutdownOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CompleteRunnerProcessShutdown: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
@@ -420,6 +478,50 @@ func (a *Client) CreateRunnerJobExecutionResult(params *CreateRunnerJobExecution
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateRunnerJobExecutionResult: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateRunnerProcess creates a runner process
+*/
+func (a *Client) CreateRunnerProcess(params *CreateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerProcessCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunnerProcessParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunnerProcess",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/processes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunnerProcessReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunnerProcessCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -1344,6 +1446,50 @@ func (a *Client) GetRunnerJobs(params *GetRunnerJobsParams, authInfo runtime.Cli
 }
 
 /*
+GetRunnerProcess gets a runner process
+*/
+func (a *Client) GetRunnerProcess(params *GetRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerProcessOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerProcessParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerProcess",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerProcessReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerProcessOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunnerSettings gets runner settings
 
 Return runner settings for the provided runner.
@@ -1711,6 +1857,96 @@ func (a *Client) RunnerAuthAWS(params *RunnerAuthAWSParams, opts ...ClientOption
 }
 
 /*
+RunnerAuthAzure authenticates a runner using azure managed identity j w t
+
+Validates runner identity by verifying an Azure IMDS JWT token
+*/
+func (a *Client) RunnerAuthAzure(params *RunnerAuthAzureParams, opts ...ClientOption) (*RunnerAuthAzureOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRunnerAuthAzureParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RunnerAuthAzure",
+		Method:             "POST",
+		PathPattern:        "/v1/runner-auth/azure",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RunnerAuthAzureReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RunnerAuthAzureOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RunnerAuthAzure: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RunnerAuthGCP authenticates a runner using a g c p identity token
+
+Validates runner identity by verifying a GCP identity token and independently reading instance metadata
+*/
+func (a *Client) RunnerAuthGCP(params *RunnerAuthGCPParams, opts ...ClientOption) (*RunnerAuthGCPOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRunnerAuthGCPParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RunnerAuthGCP",
+		Method:             "POST",
+		PathPattern:        "/v1/runner-auth/gcp",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RunnerAuthGCPReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RunnerAuthGCPOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RunnerAuthGCP: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	RunnerOtelWriteMetrics runners write metrics
 
 	OTEL Exporter compatible endpoint for writing metrics. Designed to work with the custom, runner otel collector/exporter
@@ -2037,6 +2273,50 @@ func (a *Client) UpdateRunnerJobV2(params *UpdateRunnerJobV2Params, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateRunnerJobV2: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateRunnerProcess updates a runner process
+*/
+func (a *Client) UpdateRunnerProcess(params *UpdateRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerProcessOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateRunnerProcessParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateRunnerProcess",
+		Method:             "PATCH",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateRunnerProcessReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateRunnerProcessOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

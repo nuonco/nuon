@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/nuonco/nuon/bins/runner/internal/version"
@@ -39,10 +40,15 @@ func (s *Settings) fetch(ctx context.Context) error {
 	s.Metadata["runner.version"] = version.Version
 	s.OtelSchemaURL = s.Cfg.RunnerAPIURL
 
-	// TODO(fd): return the platform on the RunnerGroupSettings object
-	// platform
-	s.Platform = "aws"
-	if settings.AwsCloudformationStackType != "" && settings.AwsInstanceType != "" {
+	// Platform resolution: prefer explicit config, then env var, then infer from settings.
+	switch {
+	case s.Cfg.RunnerPlatform != "":
+		s.Platform = s.Cfg.RunnerPlatform
+	case os.Getenv("CLOUD_PROVIDER") != "":
+		s.Platform = os.Getenv("CLOUD_PROVIDER")
+	case settings.AwsCloudformationStackType != "" || settings.AwsInstanceType != "":
+		s.Platform = "aws"
+	default:
 		s.Platform = "aws"
 	}
 

@@ -1,4 +1,5 @@
 export {
-  ConnectionDetailsModal,
+  ConnectionDetailsModalContainer as ConnectionDetailsModal,
   ConnectionDetailsButton,
-} from './ConnectionDetails'
+} from './ConnectionDetailsContainer'
+export { ConnectionDetailsModal as ConnectionDetailsModalComponent } from './ConnectionDetails'

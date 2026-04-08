@@ -1,47 +1,34 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { Markdown } from '@/components/common/Markdown'
-import { BackToTop } from '@/components/common/BackToTop'
 import { EmptyState } from '@/components/common/EmptyState'
-import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { ArchitectureDiagramButton } from '@/components/installs/ArchitectureDiagram'
+import { ViewCurrentInputsModal } from '@/components/installs/management/ViewCurrentInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallReadme, getInstallCurrentInputs } from '@/lib'
-
-const CONTAINER_ID = 'install-overview-page'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { getInstallReadme } from '@/lib'
 
 export const Overview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const { addModal } = useSurfaces()
 
-  const { data: readmeResult } = useQuery({
+  const { data: readme } = useQuery({
     queryKey: ['install-readme', org?.id, install?.id],
     queryFn: () =>
       getInstallReadme({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
 
-  const { data: inputsResult } = useQuery({
-    queryKey: ['install-inputs', org?.id, install?.id],
-    queryFn: () =>
-      getInstallCurrentInputs({ orgId: org.id, installId: install.id }),
-    enabled: !!org?.id && !!install?.id,
-  })
-
-  const readme = readmeResult
-  const inputs = inputsResult
-  const inputEntries = inputs?.redacted_values
-    ? Object.entries(inputs.redacted_values).map(([key, value]) => ({
-        key,
-        value,
-      }))
-    : []
-
   return (
-    <PageSection id={CONTAINER_ID} className="!pt-0" isScrollable>
+    <PageSection>
       <PageTitle title={`Overview | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -51,46 +38,48 @@ export const Overview = () => {
         ]}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
-        <div className="md:col-span-8 py-6 pr-6 flex flex-col gap-4 min-w-0">
+      <div className="flex items-start justify-between">
+        <HeadingGroup>
           <Text variant="base" weight="strong">
-            README
+            Install overview
           </Text>
-          {readme?.readme ? (
-            <>
-              {readme.warnings?.map((warn, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm"
-                >
-                  {warn}
-                </div>
-              ))}
-              <Markdown content={readme.readme} mode="install" />
-            </>
-          ) : (
-            <EmptyState
-              emptyTitle="No README"
-              emptyMessage="No install README found."
-              variant="diagram"
-            />
-          )}
-        </div>
-
-        <div className="md:col-span-4 py-6 pl-6 flex flex-col gap-4">
-          <Text variant="base" weight="strong">
+          <Text variant="subtext" theme="neutral">
+            View the install README, architecture, and current inputs.
+          </Text>
+        </HeadingGroup>
+        <div className="flex items-center gap-2">
+          <ArchitectureDiagramButton variant="secondary" />
+          <Button
+            variant="primary"
+            onClick={() => {
+              addModal(<ViewCurrentInputsModal />)
+            }}
+          >
+            <Icon variant="ListChecks" />
             Current inputs
-          </Text>
-          {inputEntries.length > 0 ? (
-            <PropertyGrid values={inputEntries} />
-          ) : (
-            <Text variant="subtext" theme="neutral">
-              No inputs configured.
-            </Text>
-          )}
+          </Button>
         </div>
       </div>
-      <BackToTop containerId={CONTAINER_ID} />
+
+      {readme?.readme ? (
+        <div className="flex flex-col gap-4">
+          {readme.warnings?.map((warn, i) => (
+            <div
+              key={i}
+              className="p-3 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm"
+            >
+              {warn}
+            </div>
+          ))}
+          <Markdown content={readme.readme} mode="install" />
+        </div>
+      ) : (
+        <EmptyState
+          emptyTitle="No README"
+          emptyMessage="No install README found."
+          variant="diagram"
+        />
+      )}
     </PageSection>
   )
 }

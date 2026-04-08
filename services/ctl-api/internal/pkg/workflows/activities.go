@@ -5,7 +5,9 @@ import (
 
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
@@ -25,21 +27,25 @@ type Params struct {
 	StatusActivities *statusactivities.Activities
 
 	// queues / signals
-	QueueActs         *queueactivities.Activities
-	QueueClient       *queueclient.Client
-	HandlerActs       *handleractivities.Activities
-	SignalsActivities *signalsactivities.Activities
+	QueueActs                 *queueactivities.Activities
+	QueueClient               *queueclient.Client
+	EmitterActs               *emitteractivities.Activities
+	HandlerActs               *handleractivities.Activities
+	SignalsActivities         *signalsactivities.Activities
+	SignalLifecycleActivities *signal.SignalLifecycleActivities
 }
 
 type Activities struct {
-	JobActivities     *jobactivities.Activities
-	FlowActivities    *flowactivities.Activities
-	SignalsActivities *signalsactivities.Activities
-	StatusActivities  *statusactivities.Activities
-	Activities        *activities.Activities
-	QueueActivities   *queueactivities.Activities
-	HandlerActivities *handleractivities.Activities
-	QueueClient       *queueclient.Client
+	JobActivities             *jobactivities.Activities
+	FlowActivities            *flowactivities.Activities
+	SignalsActivities         *signalsactivities.Activities
+	StatusActivities          *statusactivities.Activities
+	Activities                *activities.Activities
+	QueueActivities           *queueactivities.Activities
+	EmitterActivities         *emitteractivities.Activities
+	HandlerActivities         *handleractivities.Activities
+	QueueClient               *queueclient.Client
+	SignalLifecycleActivities *signal.SignalLifecycleActivities
 }
 
 func (a *Activities) AllActivities() []any {
@@ -50,20 +56,24 @@ func (a *Activities) AllActivities() []any {
 		a.SignalsActivities,
 		a.StatusActivities,
 		a.QueueActivities,
+		a.EmitterActivities,
 		a.HandlerActivities,
 		a.QueueClient,
+		a.SignalLifecycleActivities,
 	}
 }
 
 func NewActivities(params Params) *Activities {
 	return &Activities{
-		Activities:        params.Activities,
-		JobActivities:     params.JobActivities,
-		FlowActivities:    params.FlowActivities,
-		SignalsActivities: params.SignalsActivities,
-		StatusActivities:  params.StatusActivities,
-		QueueActivities:   params.QueueActs,
-		HandlerActivities: params.HandlerActs,
-		QueueClient:       params.QueueClient,
+		Activities:                params.Activities,
+		JobActivities:             params.JobActivities,
+		FlowActivities:            params.FlowActivities,
+		SignalsActivities:         params.SignalsActivities,
+		StatusActivities:          params.StatusActivities,
+		QueueActivities:           params.QueueActs,
+		EmitterActivities:         params.EmitterActs,
+		HandlerActivities:         params.HandlerActs,
+		QueueClient:               params.QueueClient,
+		SignalLifecycleActivities: params.SignalLifecycleActivities,
 	}
 }

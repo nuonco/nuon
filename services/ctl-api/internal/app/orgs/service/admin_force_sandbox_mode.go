@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/services/config"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgforcesandboxmode "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_sandbox_mode"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -45,11 +47,32 @@ func (s *service) AdminForceSandboxMode(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationRestart,
-	})
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationForceSandboxMode,
-	})
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgforcesandboxmode.Signal{OrgID: org.ID}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationRestart,
+		})
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigs.OperationForceSandboxMode,
+		})
+	}
 	ctx.JSON(http.StatusOK, true)
 }

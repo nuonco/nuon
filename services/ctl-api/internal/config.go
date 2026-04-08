@@ -70,10 +70,22 @@ func init() {
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
 	config.RegisterDefault("evaluation_journey_enabled", true)
+	config.RegisterDefault("webhook_urls", []string{})
+	config.RegisterDefault("webhook_timeout", "5s")
 
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
 
 	config.RegisterDefault("action_crons_enabled", false)
+
+	// queue handler grace period: how long a finished handler stays alive before auto-terminating
+	// short for local dev; prod overrides via config
+	config.RegisterDefault("queue_handler_grace_period", "1m")
+
+	// runner process uptime thresholds: how long before auto-shutdown
+	// defaults are short for local dev; prod overrides via config
+	config.RegisterDefault("process_install_uptime_threshold", "8h")
+	config.RegisterDefault("process_mng_uptime_threshold", "168h")
+	config.RegisterDefault("process_build_uptime_threshold", "8h")
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
@@ -186,9 +198,10 @@ type Config struct {
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
 
 	// flags for controlling the background workers
-	ForceSandboxMode         bool          `config:"force_sandbox_mode"`
-	SandboxModeSleep         time.Duration `config:"sandbox_mode_sleep" validate:"required"`
-	SandboxModeEnableRunners bool          `config:"sandbox_mode_enable_runners"`
+	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
+	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
+	SandboxModeSleep           time.Duration `config:"sandbox_mode_sleep" validate:"required"`
+	SandboxModeEnableRunners   bool          `config:"sandbox_mode_enable_runners"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
@@ -197,6 +210,10 @@ type Config struct {
 	LoopsAPIKey             string `config:"loops_api_key" validate:"required"`
 	InternalSlackWebhookURL string `config:"internal_slack_webhook_url" validate:"required"`
 	DisableNotifications    bool   `config:"disable_notifications"`
+
+	// webhook configuration
+	WebhookURLs    []string      `config:"webhook_urls"`
+	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
 	// configuration for runners
 	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
@@ -264,6 +281,14 @@ type Config struct {
 	ChaosErrors []string      `config:"chaos_errors"`
 	ChaosRoutes []string      `config:"chaos_routes"`
 	ChaosSleep  time.Duration `config:"chaos_sleep"`
+
+	// Runner process uptime thresholds
+	ProcessInstallUptimeThreshold time.Duration `config:"process_install_uptime_threshold"`
+	ProcessMngUptimeThreshold     time.Duration `config:"process_mng_uptime_threshold"`
+	ProcessBuildUptimeThreshold   time.Duration `config:"process_build_uptime_threshold"`
+
+	// Queue handler grace period
+	QueueHandlerGracePeriod time.Duration `config:"queue_handler_grace_period"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`

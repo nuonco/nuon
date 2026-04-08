@@ -18,6 +18,7 @@ func init() {
 	config.RegisterDefault("registry_port", "5001")
 	config.RegisterDefault("sandbox_job_duration", "5s")
 	config.RegisterDefault("sandbox_control_port", "9095")
+	config.RegisterDefault("git_ref", "dev")
 }
 
 type Config struct {
@@ -26,6 +27,7 @@ type Config struct {
 	RunnerAPIURL   string `config:"runner_api_url" validate:"required"`
 	RunnerAPIToken string `config:"runner_api_token"`
 	RunnerID       string `config:"runner_id" validate:"required"`
+	RunnerPlatform string `config:"runner_platform"`
 
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`

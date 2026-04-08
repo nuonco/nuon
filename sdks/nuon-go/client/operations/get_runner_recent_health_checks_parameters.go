@@ -76,6 +76,12 @@ type GetRunnerRecentHealthChecksParams struct {
 	*/
 	Offset *int64
 
+	/* ProcessID.
+
+	   filter by process ID
+	*/
+	ProcessID *string
+
 	/* RunnerID.
 
 	   runner ID
@@ -188,6 +194,17 @@ func (o *GetRunnerRecentHealthChecksParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
+// WithProcessID adds the processID to the get runner recent health checks params
+func (o *GetRunnerRecentHealthChecksParams) WithProcessID(processID *string) *GetRunnerRecentHealthChecksParams {
+	o.SetProcessID(processID)
+	return o
+}
+
+// SetProcessID adds the processId to the get runner recent health checks params
+func (o *GetRunnerRecentHealthChecksParams) SetProcessID(processID *string) {
+	o.ProcessID = processID
+}
+
 // WithRunnerID adds the runnerID to the get runner recent health checks params
 func (o *GetRunnerRecentHealthChecksParams) WithRunnerID(runnerID string) *GetRunnerRecentHealthChecksParams {
 	o.SetRunnerID(runnerID)
@@ -258,6 +275,23 @@ func (o *GetRunnerRecentHealthChecksParams) WriteToRequest(r runtime.ClientReque
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ProcessID != nil {
+
+		// query param process_id
+		var qrProcessID string
+
+		if o.ProcessID != nil {
+			qrProcessID = *o.ProcessID
+		}
+		qProcessID := qrProcessID
+		if qProcessID != "" {
+
+			if err := r.SetQueryParam("process_id", qProcessID); err != nil {
 				return err
 			}
 		}

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/PropertyGrid',
+}
+
 import { PropertyGrid } from './PropertyGrid'
 import { Badge } from './Badge'
 import { Link } from './Link'

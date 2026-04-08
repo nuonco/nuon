@@ -14,12 +14,12 @@ export const KubernetesManifestModal = ({
 }: KubernetesManifestModalProps) => (
   <Modal
     heading={
-      <Text variant="h3" weight="strong" className="!flex items-center gap-2">
+      <Text variant="h3" weight="strong" flex className="gap-2">
         <Icon variant="FileCode" size="20" />
         Kubernetes Manifest
       </Text>
     }
-    size="3/4"
+    size="lg"
     className="!max-h-[80vh]"
     childrenClassName="overflow-y-auto"
     {...props}

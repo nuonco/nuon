@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -42,30 +42,33 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 		return
 	}
 
-	// Validate that all apps have been deprovisioned before allowing org deprovision
-	// Force flag does NOT bypass this check - apps must always be deleted first
-	var orgWithApps app.Org
-	if err := s.db.WithContext(ctx).Preload("Apps").First(&orgWithApps, "id = ?", org.ID).Error; err != nil {
-		ctx.Error(fmt.Errorf("unable to check org apps: %w", err))
+	// App deletion is handled by the deprovision signal automatically.
+	// The signal will fail if any apps still have installs that need to be forgotten first.
+
+	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
-
-	if len(orgWithApps.Apps) > 0 {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("cannot deprovision org with active apps"),
-			Description: fmt.Sprintf("organization has %d app(s) that must be deleted before the organization can be deprovisioned", len(orgWithApps.Apps)),
+	if useQueues {
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
+			return
+		}
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		sigTyp := sigs.OperationDeprovision
+		if req.Force {
+			sigTyp = sigs.OperationForceDeprovision
+		}
+		s.evClient.Send(ctx, org.ID, &sigs.Signal{
+			Type: sigTyp,
 		})
-		return
 	}
-
-	sigTyp := sigs.OperationDeprovision
-	if req.Force {
-		sigTyp = sigs.OperationForceDeprovision
-	}
-
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigTyp,
-	})
 
 	ctx.JSON(http.StatusOK, true)
 }

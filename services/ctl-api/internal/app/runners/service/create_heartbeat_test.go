@@ -169,7 +169,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 5 * time.Minute,
 					Version:   "v1.2.3",
-					Process:   app.RunnerProcessInstall,
+					Process:   app.RunnerProcessTypeInstall,
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -177,7 +177,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				assert.Equal(s.T(), s.testRunner.ID, hb.RunnerID)
 				assert.Equal(s.T(), 5*time.Minute, hb.AliveTime)
 				assert.Equal(s.T(), "v1.2.3", hb.Version)
-				assert.Equal(s.T(), app.RunnerProcessInstall, hb.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeInstall, hb.Process)
 				assert.NotEmpty(s.T(), hb.ID)
 				assert.False(s.T(), hb.CreatedAt.IsZero())
 
@@ -194,12 +194,12 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 10 * time.Minute,
 					Version:   "v2.0.0",
-					Process:   app.RunnerProcessMng,
+					Process:   app.RunnerProcessTypeMng,
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
-				assert.Equal(s.T(), app.RunnerProcessMng, hb.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeMng, hb.Process)
 				assert.Equal(s.T(), 10*time.Minute, hb.AliveTime)
 			},
 		},
@@ -209,12 +209,12 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 3 * time.Minute,
 					Version:   "v1.0.0",
-					Process:   app.RunnerProcessOrg,
+					Process:   app.RunnerProcessTypeOrg,
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
-				assert.Equal(s.T(), app.RunnerProcessOrg, hb.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeOrg, hb.Process)
 			},
 		},
 		{
@@ -228,7 +228,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
-				assert.Equal(s.T(), app.RunnerProcessUknown, hb.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeUnknown, hb.Process)
 				assert.Equal(s.T(), 2*time.Minute, hb.AliveTime)
 			},
 		},
@@ -237,14 +237,14 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 			setupFunc: func() (string, CreateRunnerHeartBeatRequest) {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 1 * time.Minute,
-					Process:   app.RunnerProcessInstall,
+					Process:   app.RunnerProcessTypeInstall,
 					// Version field omitted
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(hb *app.RunnerHeartBeat) {
 				assert.Equal(s.T(), "", hb.Version)
-				assert.Equal(s.T(), app.RunnerProcessInstall, hb.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeInstall, hb.Process)
 			},
 		},
 		{
@@ -258,7 +258,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 					RunnerID:  s.testRunner.ID,
 					AliveTime: 1 * time.Minute,
 					Version:   "v1.0.0",
-					Process:   app.RunnerProcessInstall,
+					Process:   app.RunnerProcessTypeInstall,
 				}
 				err := s.service.CHDB.WithContext(ctx).Create(hb1).Error
 				require.NoError(s.T(), err)
@@ -270,7 +270,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return s.testRunner.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 2 * time.Minute,
 					Version:   "v1.0.0",
-					Process:   app.RunnerProcessInstall,
+					Process:   app.RunnerProcessTypeInstall,
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -335,7 +335,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeat() {
 				return runner2.ID, CreateRunnerHeartBeatRequest{
 					AliveTime: 5 * time.Minute,
 					Version:   "v1.2.3",
-					Process:   app.RunnerProcessInstall,
+					Process:   app.RunnerProcessTypeInstall,
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -380,7 +380,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 			name: "missing alive_time still succeeds",
 			request: map[string]interface{}{
 				"version": "v1.0.0",
-				"process": string(app.RunnerProcessInstall),
+				"process": string(app.RunnerProcessTypeInstall),
 			},
 			// The struct uses validate:"required" not binding:"required",
 			// so Gin's ShouldBindJSON does not enforce validation.
@@ -392,7 +392,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatValidation() {
 			request: CreateRunnerHeartBeatRequest{
 				AliveTime: 0,
 				Version:   "v1.0.0",
-				Process:   app.RunnerProcessInstall,
+				Process:   app.RunnerProcessTypeInstall,
 			},
 			// Same as above: validate:"required" is not enforced by ShouldBindJSON.
 			expectedCode: http.StatusCreated,
@@ -441,7 +441,7 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 		req := CreateRunnerHeartBeatRequest{
 			AliveTime: 5 * time.Minute,
 			Version:   "v1.0.0",
-			Process:   app.RunnerProcessInstall,
+			Process:   app.RunnerProcessTypeInstall,
 		}
 
 		path := fmt.Sprintf("/v1/runners/%s/heart-beats", nonexistentRunnerID)
@@ -459,12 +459,12 @@ func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatRunnerNotFound() {
 
 func (s *CreateHeartbeatTestSuite) TestCreateHeartbeatDifferentProcesses() {
 	processes := []struct {
-		process     app.RunnerProcess
+		process     app.RunnerProcessType
 		description string
 	}{
-		{app.RunnerProcessMng, "mng process"},
-		{app.RunnerProcessInstall, "install process"},
-		{app.RunnerProcessOrg, "org process"},
+		{app.RunnerProcessTypeMng, "mng process"},
+		{app.RunnerProcessTypeInstall, "install process"},
+		{app.RunnerProcessTypeOrg, "org process"},
 	}
 
 	for _, tc := range processes {

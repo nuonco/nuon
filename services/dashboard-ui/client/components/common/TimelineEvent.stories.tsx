@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/TimelineEvent',
+}
+
 import { TimelineEvent } from './TimelineEvent'
 import { Text } from './Text'
 import { Badge } from './Badge'

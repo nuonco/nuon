@@ -38,14 +38,16 @@ export const StackVersionDetails = ({
         <div className="flex flex-col">
           <Status status={version?.composite_status?.status} />
           <Text
-            className="!flex items-center gap-2"
+            flex
+            className="gap-2"
             variant="h3"
             weight="stronger"
           >
             Stack version details
           </Text>
           <Text
-            className="!flex items-center gap-8"
+            flex
+            className="gap-8"
             theme="neutral"
             variant="subtext"
           >

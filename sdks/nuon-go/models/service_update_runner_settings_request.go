@@ -30,6 +30,10 @@ type ServiceUpdateRunnerSettingsRequest struct {
 	// container image url
 	ContainerImageURL string `json:"container_image_url,omitempty"`
 
+	// JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
+	// e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
+	JobGroupParallelism map[string]int64 `json:"job_group_parallelism,omitempty"`
+
 	// org awsiam role arn
 	OrgAwsiamRoleArn string `json:"org_awsiam_role_arn,omitempty"`
 

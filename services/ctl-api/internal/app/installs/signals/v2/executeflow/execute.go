@@ -1,7 +1,7 @@
 package executeflow
 
 import (
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -63,7 +63,7 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 			SignalOwnerType: "install_workflow_steps",
 		})
 		if err != nil {
-			return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
+			return pkgerrors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
 		}
 
 		logger.Info("waiting for queue signal to complete",
@@ -73,7 +73,7 @@ func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.Sig
 
 		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
 		if err != nil {
-			return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
+			return pkgerrors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 		}
 
 		logger.Info("queue signal completed successfully", "step_name", step.Name)

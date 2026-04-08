@@ -36,6 +36,12 @@ var imageConfigTemplate string
 //go:embed templates/runner-service.aws.service
 var runnerServiceAWS string
 
+//go:embed templates/runner-service.gcp.service
+var runnerServiceGCP string
+
+//go:embed templates/runner-service.azure.service
+var runnerServiceAzure string
+
 func (h *Monitor) checkRunnerService(ctx context.Context) error {
 	h.l.Info("checking runner service")
 
@@ -135,7 +141,9 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 		return errors.Wrap(err, "unable to validate runner token")
 	}
 
-	h.l.Warn("runner token is invalid - fetching new token via IMDS")
+	h.l.Warn("runner token is invalid - fetching new token via IMDS",
+		zap.String("platform", h.settings.Platform))
+
 	unauthClient, err := nuonrunner.New(
 		nuonrunner.WithURL(h.settings.Cfg.RunnerAPIURL),
 	)
@@ -143,7 +151,13 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 		return errors.Wrap(err, "unable to create unauthenticated client")
 	}
 
-	result, err := fetchtoken.FetchToken(ctx, unauthClient)
+	var result *fetchtoken.FetchTokenResult
+	switch h.settings.Platform {
+	case "azure":
+		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID)
+	default:
+		result, err = fetchtoken.FetchToken(ctx, unauthClient)
+	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new token")
 	}
@@ -161,11 +175,19 @@ func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 	path := filepath.Join(RunnerServiceDir, RunnerServiceName)
 	h.l.Debug(fmt.Sprintf("ensuring runner unit file exists: %s", path))
 
-	// dynamically choose the template
-	var tmpl *template.Template
-	if h.settings.Platform == "aws" {
-		tmpl = template.Must(template.New("").Parse(runnerServiceAWS))
+	// dynamically choose the template based on cloud platform
+	var serviceTemplate string
+	switch h.settings.Platform {
+	case "aws", "":
+		serviceTemplate = runnerServiceAWS
+	case "gcp":
+		serviceTemplate = runnerServiceGCP
+	case "azure":
+		serviceTemplate = runnerServiceAzure
+	default:
+		serviceTemplate = runnerServiceAWS
 	}
+	tmpl := template.Must(template.New("").Parse(serviceTemplate))
 
 	var shouldWrite bool
 	// check the nuon-runner.service file
@@ -180,7 +202,7 @@ func (h *Monitor) ensureRunnerServiceDefinition(ctx context.Context) error {
 		}
 	}
 	// 2. if it exists, but it is empty, overwrite it w/ the template
-	if info.Size() == 0 {
+	if info != nil && info.Size() == 0 {
 		h.l.Info(fmt.Sprintf("the file (%s) exists, but it is empty - will overwrite it", path))
 		shouldWrite = true
 	}

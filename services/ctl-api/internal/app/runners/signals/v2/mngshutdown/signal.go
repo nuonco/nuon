@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "mng-shutdown"
@@ -37,6 +38,23 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	// Try process-based shutdown first
+	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+		RunnerID:    s.RunnerID,
+		ProcessType: string(app.RunnerProcessTypeMng),
+	})
+	if err == nil && process != nil && process.ID != "" {
+		_, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+			RunnerProcessID: process.ID,
+			Type:            app.RunnerProcessShutdownTypeGraceful,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create process shutdown")
+		}
+		return nil
+	}
+
+	// Fallback: create legacy mng shutdown job for runners without process tracking
 	runnerJob, err := s.createMngJob(ctx, s.RunnerID, app.RunnerJobTypeMngShutDown, map[string]string{
 		"shutdown_type": "graceful",
 	})
@@ -51,6 +69,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update job status")
 	}
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       runnerJob.ID,
+		Status:            app.RunnerJobStatusAvailable,
+		StatusDescription: string(app.RunnerJobStatusAvailable),
+	})
 
 	return nil
 }

@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/Link',
+}
+
 import { Link } from './Link'
 import { Icon } from './Icon'
 import { Text } from './Text'

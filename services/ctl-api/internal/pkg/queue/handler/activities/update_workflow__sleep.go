@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -27,6 +28,10 @@ func (a *Activities) updateWorkflowSleep(ctx context.Context, workflowID string,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 		})
 	if err != nil {
+		// If the workflow already completed (e.g. grace period expired), treat as success.
+		if strings.Contains(err.Error(), "workflow execution already completed") {
+			return &handler.SleepResponse{}, nil
+		}
 		return nil, errors.Wrap(err, "unable to call sleep handler")
 	}
 

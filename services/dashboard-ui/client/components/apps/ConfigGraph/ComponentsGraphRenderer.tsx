@@ -1,5 +1,4 @@
 import { useEffect, memo, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   ReactFlow,
   Node,
@@ -23,9 +22,9 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { Modal } from '@/components/surfaces/Modal'
-import { useOrg } from '@/hooks/use-org'
-import { getAppConfigGraph } from '@/lib'
 import type { TComponentType } from '@/types'
+import type { TAPIError } from '@/types'
+import { ComponentsGraphInlineContainer } from './ComponentsGraphRendererContainer'
 
 const getLayoutedElements = (
   nodes: Node[],
@@ -77,7 +76,8 @@ export const ComponentsGraphRenderer = ({
       childrenClassName="overflow-y-auto"
       heading={
         <Text
-          className="!inline-flex gap-4 items-center"
+          flex
+          className="gap-4"
           variant="h3"
           weight="strong"
           theme="info"
@@ -95,7 +95,7 @@ export const ComponentsGraphRenderer = ({
         isMenuButton: true,
         variant: 'ghost',
       }}
-      size="full"
+      size="xl"
     >
       <div className="flex flex-col gap-2">
         <Text>
@@ -116,7 +116,7 @@ export const ComponentsGraphRenderer = ({
           </li>
         </ul>
       </div>
-      <ComponentsGraphInline appId={appId} configId={configId} />
+      <ComponentsGraphInlineContainer appId={appId} configId={configId} />
     </Modal>
   )
 }
@@ -162,24 +162,21 @@ const nodeTypes = {
   customComponent: CustomComponentNode,
 }
 
+interface IComponentsGraphInline {
+  dotGraph?: string
+  error?: TAPIError | null
+  isLoading: boolean
+}
+
 export const ComponentsGraphInline = ({
-  appId,
-  configId,
-}: {
-  appId: string
-  configId: string
-}) => {
-  const { org } = useOrg()
+  dotGraph,
+  error,
+  isLoading,
+}: IComponentsGraphInline) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
-  const { data, error, isLoading } = useQuery({
-    queryKey: ['app-config-graph', org?.id, appId, configId],
-    queryFn: () => getAppConfigGraph({ orgId: org.id, appId, appConfigId: configId }),
-    enabled: !!org?.id,
-  })
-
-  const convertDotToFlowData = (dotGraph: string) => {
+  const convertDotToFlowData = (dotGraphStr: string) => {
     const nodesMap = new Map<string, Node>()
     const edges: Edge[] = []
     const allNodeIds = new Set<string>()
@@ -187,7 +184,7 @@ export const ComponentsGraphInline = ({
     const nodeWithAttrsRegex = /^\s*"([^"]+)"\s*\[\s*([^\]]+?)\s*\];?\s*$/gm
     let match
 
-    while ((match = nodeWithAttrsRegex.exec(dotGraph)) !== null) {
+    while ((match = nodeWithAttrsRegex.exec(dotGraphStr)) !== null) {
       const [fullMatch, id, attrs] = match
 
       allNodeIds.add(id)
@@ -216,7 +213,7 @@ export const ComponentsGraphInline = ({
 
     const edgeRegex =
       /^\s*"([^"]+)"\s*->\s*"([^"]+)"\s*\[\s*([^\]]*)\s*\];?\s*$/gm
-    while ((match = edgeRegex.exec(dotGraph)) !== null) {
+    while ((match = edgeRegex.exec(dotGraphStr)) !== null) {
       const [, source, target, attrs] = match
 
       allNodeIds.add(source)
@@ -270,12 +267,12 @@ export const ComponentsGraphInline = ({
   }
 
   useEffect(() => {
-    if (data) {
-      const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(data)
+    if (dotGraph) {
+      const { nodes: newNodes, edges: newEdges } = convertDotToFlowData(dotGraph)
       setNodes(newNodes)
       setEdges(newEdges)
     }
-  }, [data, setNodes, setEdges])
+  }, [dotGraph, setNodes, setEdges])
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [])
 

@@ -70,7 +70,7 @@ describe('action-utils', () => {
     })
 
     test('handles all undefined idx values', () => {
-      const items = [{ name: 'a' }, { name: 'b' }, { name: 'c' }]
+      const items: { name: string; idx?: number }[] = [{ name: 'a' }, { name: 'b' }, { name: 'c' }]
       expect(sortByIdx(items)).toEqual([
         { name: 'a' },
         { name: 'b' },
@@ -79,7 +79,7 @@ describe('action-utils', () => {
     })
 
     test('places undefined idx items before defined ones', () => {
-      const items = [{ idx: 2 }, { name: 'no-idx' }, { idx: 1 }]
+      const items: { idx?: number; name?: string }[] = [{ idx: 2 }, { name: 'no-idx' }, { idx: 1 }]
       expect(sortByIdx(items)).toEqual([
         { name: 'no-idx' },
         { idx: 1 },

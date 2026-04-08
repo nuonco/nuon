@@ -4,7 +4,9 @@ const tmpl = `nuon_install_id          = "{{.Install.ID}}"
 nuon_org_id              = "{{.Runner.OrgID}}"
 nuon_app_id              = "{{.Install.AppID}}"
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
+{{- if .APIToken}}
 runner_api_token         = "{{.APIToken}}"
+{{- end}}
 runner_id                = "{{.Runner.ID}}"
 runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"

@@ -108,7 +108,7 @@ export const Dropdown = ({
     const trigger = triggerRef.current.getBoundingClientRect()
     const newStyles: React.CSSProperties = {
       position: 'fixed',
-      zIndex: 20,
+      zIndex: 60,
     }
 
     if (position === 'below') {
@@ -187,16 +187,12 @@ export const Dropdown = ({
       className={cn(
         'dropdown-content',
         'border',
-        'divide-y',
-        'rounded-md',
-        'shadow-md',
+        'rounded-lg',
+        'shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_10px_32px_0px_rgba(0,0,0,0.08)]',
         'outline-none',
         'bg-white',
         'dark:bg-dark-grey-900',
         'w-fit',
-        'outline-offset-0',
-        'outline-1',
-        'outline-primary-400/10',
         alignment,
         position,
         dropdownClassName
@@ -206,6 +202,13 @@ export const Dropdown = ({
       isVisible={isOpen}
       style={styles}
       tabIndex={-1}
+      onClick={(e) => {
+        if (!closeOnBlur) return
+        const target = e.target as HTMLElement
+        if (target.closest('button, a, [role="menuitem"]')) {
+          handleClose()
+        }
+      }}
     >
       <DropdownNestingContext.Provider value={nestingContext}>
         {children}
@@ -227,7 +230,7 @@ export const Dropdown = ({
         aria-expanded={isOpen}
         aria-controls={`dropdown-content-${id}`}
         className={cn(
-          'dropdown-trigger flex items-center justify-between gap-2 h-fit focus:outline-primary-400/80',
+          'dropdown-trigger flex items-center justify-between gap-2',
           {
             '!outline-0': position === 'overlay' && alignment === 'overlay',
           },

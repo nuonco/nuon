@@ -1833,6 +1833,48 @@ export interface paths {
      */
     get: operations["GetOrgFeatures"];
   };
+  "/v1/queues": {
+    /**
+     * List queues
+     * @description List queues with optional filtering by owner
+     */
+    get: operations["ListQueues"];
+  };
+  "/v1/queues/{queue_id}": {
+    /**
+     * Get queue by ID
+     * @description Retrieve a single queue by its ID
+     */
+    get: operations["GetQueue"];
+  };
+  "/v1/queues/{queue_id}/signals": {
+    /**
+     * List queue signals
+     * @description Get a list of signals for a specific queue with optional filtering
+     */
+    get: operations["GetQueueSignals"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}": {
+    /**
+     * Get queue signal details
+     * @description Get detailed information about a specific queue signal
+     */
+    get: operations["GetQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}/await": {
+    /**
+     * Long-poll for queue signal completion
+     * @description Blocks until the queue signal finishes or the timeout is reached
+     */
+    get: operations["AwaitQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/status": {
+    /**
+     * Get live queue status
+     * @description Get real-time status of a queue including depth and in-flight signals
+     */
+    get: operations["GetQueueStatus"];
+  };
   "/v1/runner-jobs/{runner_job_id}": {
     /**
      * get runner job
@@ -1988,6 +2030,29 @@ export interface paths {
   "/v1/runners/{runner_id}/mng/update": {
     /** update an install runner via the mng process. this is practically a restart. */
     post: operations["UpdateRunnerMng"];
+  };
+  "/v1/runners/{runner_id}/processes": {
+    /** list runner processes */
+    get: operations["ListRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/current": {
+    /** get current active runner processes */
+    get: operations["GetCurrentRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}": {
+    /** get a runner process */
+    get: operations["GetRunnerProcessPublic"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest": {
+    /**
+     * get the latest heartbeat for a runner process
+     * @description
+     */
+    get: operations["GetProcessLatestHeartBeat"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/shutdown": {
+    /** request shutdown of a runner process */
+    post: operations["ShutdownRunnerProcess"];
   };
   "/v1/runners/{runner_id}/prune-tokens": {
     /**
@@ -3111,6 +3176,7 @@ export interface components {
       component_config_connection_id?: string;
       created_at?: string;
       created_by_id?: string;
+      gcp_gar_image_config?: components["schemas"]["app.GCPGARImageConfig"];
       id?: string;
       image_url?: string;
       tag?: string;
@@ -3123,6 +3189,18 @@ export interface components {
       project_id?: string;
       region?: string;
       updated_at?: string;
+    };
+    "app.GCPGARImageConfig": {
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      gcp_project_id?: string;
+      gcp_region?: string;
+      id?: string;
+      service_account_email?: string;
+      updated_at?: string;
+      workload_identity_provider?: string;
     };
     "app.GCPStackOutputs": {
       break_glass_sa_emails?: {
@@ -3594,6 +3672,7 @@ export interface components {
       alive_time?: number;
       created_at?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       started_at?: string;
       version?: string;
@@ -3774,7 +3853,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "installer" | "runner" | "hosted_installer";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -3851,6 +3930,10 @@ export interface components {
       id?: string;
       max_depth?: number;
       max_in_flight?: number;
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -3892,7 +3975,7 @@ export interface components {
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
     /** @enum {string} */
-    "app.QueueEmitterMode": "cron" | "scheduled";
+    "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
       created_at?: string;
       created_by_id?: string;
@@ -3920,7 +4003,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "installer" | "runner" | "hosted-installer";
     "app.Runner": {
       created_at?: string;
       created_by_id?: string;
@@ -3930,12 +4013,15 @@ export interface components {
       name?: string;
       operations?: components["schemas"]["app.RunnerOperation"][];
       org_id?: string;
+      /** @description Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled. */
+      queues?: components["schemas"]["app.Queue"][];
       runner_group?: components["schemas"]["app.RunnerGroup"];
       runner_group_id?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
       status?: string;
       status_description?: string;
       updated_at?: string;
+      warnings?: string[];
     };
     "app.RunnerGroup": {
       created_at?: string;
@@ -3973,6 +4059,13 @@ export interface components {
       /** @description Various settings for the runner to handle internally */
       heart_beat_timeout?: number;
       id?: string;
+      /**
+       * @description JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+       * e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+       */
+      job_group_parallelism?: {
+        [key: string]: string;
+      };
       local_aws_iam_role_arn?: string;
       logging_level?: string;
       /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
@@ -4001,6 +4094,7 @@ export interface components {
       id?: string;
       minute_bucket?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
       status?: components["schemas"]["app.RunnerStatus"];
@@ -4013,6 +4107,7 @@ export interface components {
       created_by_id?: string;
       id?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       started_at?: string;
       updated_at?: string;
@@ -4051,6 +4146,7 @@ export interface components {
       /** @description queue timeout is how long a job can be queued, before being made available */
       queue_timeout?: number;
       runner_id?: string;
+      runner_process_id?: string;
       started_at?: string;
       status?: components["schemas"]["app.RunnerJobStatus"];
       status_description?: string;
@@ -4149,6 +4245,42 @@ export interface components {
     };
     /** @enum {string} */
     "app.RunnerOperationType": "provision" | "provision_service_account" | "reprovision" | "deprovision";
+    "app.RunnerProcess": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      initial_health_check?: boolean;
+      log_stream_id?: string;
+      org_id?: string;
+      runner_id?: string;
+      shutdowns?: components["schemas"]["app.RunnerProcessShutdown"][];
+      started_at?: string;
+      type?: components["schemas"]["app.RunnerProcessType"];
+      updated_at?: string;
+      uptime?: number;
+      version?: string;
+      /** @description Warnings are computed server-side and not persisted. */
+      warnings?: string[];
+    };
+    "app.RunnerProcessShutdown": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      metadata?: components["schemas"]["pgtype.Hstore"];
+      org_id?: string;
+      runner_process_id?: string;
+      /** @description Status and StatusDescription are computed from CompositeStatus via AfterQuery. */
+      status?: string;
+      status_description?: string;
+      type?: components["schemas"]["app.RunnerProcessShutdownType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerProcessShutdownType": "graceful" | "force" | "restart";
+    /** @enum {string} */
+    "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
     "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
     /** @enum {string} */
@@ -4473,6 +4605,8 @@ export interface components {
       registryType?: components["schemas"]["configs.OCIRegistryType"];
       /** @description based on the type of access, either the repository (ecr) or login server (acr) will be provided. */
       repository?: string;
+      serviceAccountEmail?: string;
+      workloadIdentityProvider?: string;
     };
     /** @enum {string} */
     "configs.OCIRegistryType": "ecr" | "acr" | "gar" | "private_oci" | "public_oci";
@@ -4482,6 +4616,7 @@ export interface components {
       session_name: string;
       /** @description configuration for two stepping before assuming this role */
       two_step_config?: components["schemas"]["iam.TwoStepConfig"];
+      use_gcp_oidc?: boolean;
       use_github_oidc?: boolean;
     };
     "credentials.ServicePrincipalCredentials": {
@@ -4689,6 +4824,9 @@ export interface components {
     "permissions.Permission": "unknown" | "all" | "create" | "read" | "update" | "delete";
     "permissions.Set": {
       [key: string]: components["schemas"]["permissions.Permission"];
+    };
+    "pgtype.Hstore": {
+      [key: string]: string;
     };
     "plantypes.ActionWorkflowRunPlan": {
       attrs?: {
@@ -4995,6 +5133,14 @@ export interface components {
       state_json?: number[];
       workspace_id?: string;
     };
+    "queue.StatusResponse": {
+      inFlight?: string[];
+      inFlightCount?: number;
+      paused?: boolean;
+      queueDepthCount?: number;
+      ready?: boolean;
+      stopped?: boolean;
+    };
     "refs.Ref": {
       input?: string;
       name?: string;
@@ -5012,7 +5158,7 @@ export interface components {
     };
     "service.AppAWSIAMRoleConfig": {
       /** @enum {string} */
-      cloud_platform?: "aws" | "gcp";
+      cloud_platform?: "aws" | "gcp" | "azure";
       description: string;
       display_name: string;
       enabled_in_stack?: boolean | null;
@@ -5341,6 +5487,7 @@ export interface components {
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
+      gcp_gar_image_config?: components["schemas"]["service.gcpGARImageConfigRequest"];
       image_url: string;
       operation_roles?: {
         [key: string]: string;
@@ -5479,6 +5626,7 @@ export interface components {
     };
     "service.CreateOrgInviteRequest": {
       email: string;
+      role_type?: components["schemas"]["app.RoleType"];
     };
     "service.CreateOrgRequest": {
       name: string;
@@ -5692,6 +5840,9 @@ export interface components {
       connected?: boolean;
       latest_heartbeat_timestamp?: number;
     };
+    "service.ShutdownRunnerProcessRequest": {
+      shutdown_type: string;
+    };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
     };
@@ -5766,6 +5917,13 @@ export interface components {
       aws_max_instance_lifetime?: number;
       container_image_tag?: string;
       container_image_url?: string;
+      /**
+       * @description JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
+       * e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
+       */
+      job_group_parallelism?: {
+        [key: string]: number;
+      };
       org_awsiam_role_arn?: string;
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
@@ -5818,6 +5976,14 @@ export interface components {
     "service.awsECRImageConfigRequest": {
       aws_region?: string;
       iam_role_arn?: string;
+    };
+    "service.gcpGARImageConfigRequest": {
+      gcp_project_id?: string;
+      gcp_region?: string;
+      image_url?: string;
+      service_account_email?: string;
+      tag?: string;
+      workload_identity_provider?: string;
     };
     "signaldb.SignalData": {
       signal?: unknown;
@@ -18939,6 +19105,196 @@ export interface operations {
     };
   };
   /**
+   * List queues
+   * @description List queues with optional filtering by owner
+   */
+  ListQueues: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., 'app_branches') */
+        owner_type?: string;
+        /** @description Limit results */
+        limit?: number;
+        /** @description Offset results */
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue by ID
+   * @description Retrieve a single queue by its ID
+   */
+  GetQueue: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List queue signals
+   * @description Get a list of signals for a specific queue with optional filtering
+   */
+  GetQueueSignals: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., app_branches) */
+        owner_type?: string;
+        /** @description Filter by status */
+        status?: string;
+        /** @description Filter by signal type */
+        type?: string;
+        /** @description Limit results (default: 50) */
+        limit?: number;
+        /** @description Offset for pagination (default: 0) */
+        offset?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue signal details
+   * @description Get detailed information about a specific queue signal
+   */
+  GetQueueSignal: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Long-poll for queue signal completion
+   * @description Blocks until the queue signal finishes or the timeout is reached
+   */
+  AwaitQueueSignal: {
+    parameters: {
+      query?: {
+        /** @description Timeout in seconds (default 30, max 120) */
+        timeout?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get live queue status
+   * @description Get real-time status of a queue including depth and in-flight signals
+   */
+  GetQueueStatus: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["queue.StatusResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get runner job
    * @deprecated
    * @description Return a runner job.
@@ -20128,6 +20484,266 @@ export interface operations {
       };
     };
   };
+  /** list runner processes */
+  ListRunnerProcesses: {
+    parameters: {
+      query?: {
+        /** @description filter by process type */
+        type?: string;
+        /** @description filter by status */
+        status?: string;
+        /** @description limit */
+        limit?: number;
+        /** @description offset */
+        offset?: number;
+      };
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get current active runner processes */
+  GetCurrentRunnerProcesses: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a runner process */
+  GetRunnerProcessPublic: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the latest heartbeat for a runner process
+   * @description
+   */
+  GetProcessLatestHeartBeat: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerHeartBeat"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** request shutdown of a runner process */
+  ShutdownRunnerProcess: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ShutdownRunnerProcessRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcessShutdown"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * Prune old tokens for a runner
    * @description Prune old tokens for a specific runner by invalidating all tokens except the most recent one.
@@ -20192,6 +20808,8 @@ export interface operations {
       query?: {
         /** @description window of health checks to return */
         window?: string;
+        /** @description filter by process ID */
+        process_id?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */

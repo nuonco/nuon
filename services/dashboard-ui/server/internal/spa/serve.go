@@ -18,7 +18,7 @@ import (
 )
 
 type clientConfig struct {
-	APIUrl        string `json:"apiUrl"`
+	APIUrl                string `json:"apiUrl"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
 	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
 	AppUrl                string `json:"appUrl"`
@@ -34,11 +34,12 @@ type clientConfig struct {
 	IsBYOC                bool   `json:"isByoc"`
 	SFTrialEndpoint       string `json:"sfTrialEndpoint,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
+	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	return clientConfig{
-		APIUrl:        cfg.APIUrl,
+		APIUrl:                cfg.APIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
 		AppUrl:                cfg.AppUrl,
@@ -54,6 +55,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		IsBYOC:                cfg.IsBYOC,
 		SFTrialEndpoint:       cfg.SFTrialEndpoint,
 		OnboardingV2:          cfg.OnboardingV2,
+		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 	}
 }
 

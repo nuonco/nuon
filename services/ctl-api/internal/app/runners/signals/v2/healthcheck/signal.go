@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "healthcheck"
@@ -167,7 +169,37 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 		}); err != nil {
 			return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to update runner status")
 		}
+		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+			RunnerID:          s.RunnerID,
+			Status:            newStatus,
+			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", runner.Status, newStatus),
+		})
+	}
+
+	// Compute and update warnings
+	warnings := s.computeWarnings(runner, heartbeat)
+	if err := activities.AwaitUpdateWarnings(ctx, activities.UpdateWarningsRequest{
+		RunnerID: s.RunnerID,
+		Warnings: warnings,
+	}); err != nil {
+		l.Warn("unable to update runner warnings", zap.Error(err))
 	}
 
 	return newStatus, isChanged, nil
+}
+
+func (s *Signal) computeWarnings(runner *app.Runner, heartbeat *app.RunnerHeartBeat) pq.StringArray {
+	var warnings pq.StringArray
+
+	if heartbeat == nil {
+		return warnings
+	}
+
+	expectedVersion := runner.RunnerGroup.Settings.ContainerImageTag
+	reportedVersion := heartbeat.Version
+	if expectedVersion != "" && reportedVersion != "" && expectedVersion != reportedVersion {
+		warnings = append(warnings, fmt.Sprintf("Reported version (%s) does not match configured version (%s).", reportedVersion, expectedVersion))
+	}
+
+	return warnings
 }

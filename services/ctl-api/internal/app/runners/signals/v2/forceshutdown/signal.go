@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "force_shutdown"
@@ -38,7 +39,23 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Create shutdown job
+	// Try process-based shutdown first
+	process, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+		RunnerID:    s.RunnerID,
+		ProcessType: string(app.RunnerProcessTypeInstall),
+	})
+	if err == nil && process != nil && process.ID != "" {
+		_, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+			RunnerProcessID: process.ID,
+			Type:            app.RunnerProcessShutdownTypeForce,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create process shutdown")
+		}
+		return nil
+	}
+
+	// Fallback: create legacy shutdown job for runners without process tracking
 	runnerJob, err := s.createRunnerShutdownJob(ctx, s.RunnerID, map[string]string{
 		"shutdown_type": "force",
 	})
@@ -46,7 +63,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create runner job")
 	}
 
-	// Automatically set the job status to available so it's picked up immediately
 	if err := activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
 		JobID:             runnerJob.ID,
 		Status:            app.RunnerJobStatusAvailable,
@@ -54,6 +70,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update job status")
 	}
+
+	statusactivities.AwaitUpdateRunnerJobStatusV2(ctx, statusactivities.UpdateRunnerJobStatusV2Request{
+		RunnerJobID:       runnerJob.ID,
+		Status:            app.RunnerJobStatusAvailable,
+		StatusDescription: string(app.RunnerJobStatusAvailable),
+	})
 
 	return nil
 }

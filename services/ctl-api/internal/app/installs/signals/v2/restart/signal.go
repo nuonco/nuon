@@ -9,13 +9,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "restart"
+const SignalType signal.SignalType = "install-restart"
 
 type Signal struct {
 	InstallID string `json:"install_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		InstallID: &s.InstallID,
+		Operation: "install-restart",
+	}
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

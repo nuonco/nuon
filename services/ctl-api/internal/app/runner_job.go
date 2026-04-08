@@ -221,10 +221,11 @@ type RunnerJob struct {
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	RunnerID    string  `json:"runner_id,omitzero" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
-	OwnerID     string  `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType   string  `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
-	LogStreamID *string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
+	RunnerID        string  `json:"runner_id,omitzero" gorm:"index:idx_runner_name,unique;index:idx_runner_jobs_query,priority:1" temporaljson:"runner_id,omitzero,omitempty"`
+	RunnerProcessID *string `json:"runner_process_id,omitempty" gorm:"index" temporaljson:"runner_process_id,omitzero,omitempty"`
+	OwnerID         string  `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType       string  `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+	LogStreamID     *string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
 
 	// queue timeout is how long a job can be queued, before being made available
 	QueueTimeout time.Duration `json:"queue_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"queue_timeout,omitzero,omitempty"`
@@ -240,6 +241,7 @@ type RunnerJob struct {
 
 	Status            RunnerJobStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string          `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	Type      RunnerJobType          `json:"type,omitzero" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
 	Group     RunnerJobGroup         `json:"group,omitzero" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`
@@ -282,12 +284,14 @@ func (*RunnerJob) ViewVersion() string {
 func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name: views.DefaultViewName(db, &RunnerJob{}, 1),
-			SQL:  viewsql.RunnerJobViewV1,
+			Name:          views.DefaultViewName(db, &RunnerJob{}, 1),
+			SQL:           viewsql.RunnerJobViewV1,
+			AlwaysReapply: true,
 		},
 		{
-			Name: views.DefaultViewName(db, &RunnerJob{}, 2),
-			SQL:  viewsql.RunnerJobViewV2,
+			Name:          views.DefaultViewName(db, &RunnerJob{}, 2),
+			SQL:           viewsql.RunnerJobViewV2,
+			AlwaysReapply: true,
 		},
 	}
 }

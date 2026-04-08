@@ -61,7 +61,8 @@ export const CloudPlatform = ({
 
   return (
     <Text
-      className="!flex items-center gap-2 text-nowrap"
+      flex
+      className="gap-2 text-nowrap"
       {...props}
       title={isIconOnly ? config.name : undefined}
     >

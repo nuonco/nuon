@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -76,8 +77,11 @@ type Runner struct {
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_runner_name,unique" temporaljson:"deleted_at,omitzero,omitempty"`
 
-	Status            RunnerStatus `json:"status,omitzero" gorm:"not null;default null" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string       `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	Status            RunnerStatus    `json:"status,omitzero" gorm:"not null;default null" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string          `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+
+	Warnings pq.StringArray `json:"warnings,omitempty" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"warnings,omitempty"`
 
 	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`

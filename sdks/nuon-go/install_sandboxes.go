@@ -64,7 +64,7 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 	return nil
 }
 
-func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string) (string, error) {
+func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (string, error) {
 	hr := newResponseHeaderReader(&operations.ReprovisionInstallSandboxReader{})
 
 	_, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{

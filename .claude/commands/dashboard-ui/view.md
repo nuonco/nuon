@@ -21,7 +21,16 @@ This skill enforces correct route registration, layout-aware provider usage, and
    - `const { install } = useInstall()` (install-level only)
    - `const { resourceId } = useParams()`
 
-5. Fetch data with `useQuery`, always including an `enabled` guard:
+5. Import **container** components (the default export from component directories), not presentational components. The container handles data-fetching; the view just composes containers:
+   ```typescript
+   // ✅ Correct — imports the container via barrel
+   import { MyComponent } from '@/components/domain/MyComponent'
+
+   // ❌ Wrong — imports the presentational component directly
+   import { MyComponent } from '@/components/domain/MyComponent/MyComponent'
+   ```
+
+6. Fetch data with `useQuery`, always including an `enabled` guard:
    ```typescript
    const { data: resource } = useQuery({
      queryKey: ['my-resource', org?.id, resourceId],
@@ -30,9 +39,50 @@ This skill enforces correct route registration, layout-aware provider usage, and
    })
    ```
 
-6. Do NOT add `SurfacesProvider` or `ToastProvider` inside the view — they are already provided by `InstallLayout`. Adding them again creates a nested context that breaks `useSurfaces()` lookups.
+7. Do NOT add `SurfacesProvider` or `ToastProvider` inside the view — they are already provided by `InstallLayout`. Adding them again creates a nested context that breaks `useSurfaces()` lookups.
 
-7. Wrap page content in `<PageSection isScrollable>` for consistent scroll behavior.
+8. Use the correct page structure based on the route level:
+
+   **Org-level page** (has its own PageLayout):
+   ```tsx
+   export const MyPage = () => (
+     <PageLayout>
+       <PageHeader>
+         <PageHeadingGroup title="My page" />
+       </PageHeader>
+       <PageContent>
+         <PageSection>
+           {/* content */}
+         </PageSection>
+       </PageContent>
+     </PageLayout>
+   )
+   ```
+
+   **Child page inside App/Install layout** (just content, no PageLayout):
+   ```tsx
+   export const MyChildPage = () => (
+     <PageSection>
+       {/* content */}
+     </PageSection>
+   )
+   ```
+
+   **Detail page with flush header** (inside App/Install layout):
+   ```tsx
+   export const MyDetailPage = () => (
+     <>
+       <PageSection flush>
+         <MyHeader />
+       </PageSection>
+       <PageSection>
+         {/* content */}
+       </PageSection>
+     </>
+   )
+   ```
+
+   Scrolling, BackToTop, and SubNav sticky are all handled automatically by PageLayout — do not add them manually.
 
 ## Anti-Patterns
 
@@ -40,3 +90,5 @@ This skill enforces correct route registration, layout-aware provider usage, and
 - **Do not** omit the `enabled` guard on `useQuery` — `org` and `install` are `undefined` on the first render before providers hydrate, causing "Cannot read properties of undefined"
 - **Do not** add `SurfacesProvider` or `ToastProvider` in a child view — `InstallLayout` already provides them
 - **Do not** call `useInstall()` outside a route that is a child of `InstallLayout` — the provider won't be present
+- **Do not** add `isScrollable`, `CONTAINER_ID`, or `<BackToTop />` to view files — PageLayout handles scrolling and back-to-top automatically
+- **Do not** use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead

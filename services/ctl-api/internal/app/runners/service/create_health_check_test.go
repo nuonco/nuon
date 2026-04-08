@@ -190,59 +190,59 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 			name: "successfully creates health check with mng process",
 			setupFunc: func() (string, CreateRunnerHealthCheckRequest) {
 				return s.testRunner.ID, CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessMng,
+					Process: app.RunnerProcessTypeMng,
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
 				assert.NotEmpty(s.T(), healthCheck.ID)
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
-				assert.Equal(s.T(), app.RunnerProcessMng, healthCheck.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeMng, healthCheck.Process)
 
 				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
 				assert.Equal(s.T(), healthCheck.ID, stored.ID)
 				assert.Equal(s.T(), runnerID, stored.RunnerID)
-				assert.Equal(s.T(), app.RunnerProcessMng, stored.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeMng, stored.Process)
 			},
 		},
 		{
 			name: "successfully creates health check with install process",
 			setupFunc: func() (string, CreateRunnerHealthCheckRequest) {
 				return s.testRunner.ID, CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessInstall,
+					Process: app.RunnerProcessTypeInstall,
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
 				assert.NotEmpty(s.T(), healthCheck.ID)
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
-				assert.Equal(s.T(), app.RunnerProcessInstall, healthCheck.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeInstall, healthCheck.Process)
 
 				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
-				assert.Equal(s.T(), app.RunnerProcessInstall, stored.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeInstall, stored.Process)
 			},
 		},
 		{
 			name: "successfully creates health check with org process",
 			setupFunc: func() (string, CreateRunnerHealthCheckRequest) {
 				return s.testRunner.ID, CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessOrg,
+					Process: app.RunnerProcessTypeOrg,
 				}
 			},
 			expectedCode: http.StatusCreated,
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
 				assert.NotEmpty(s.T(), healthCheck.ID)
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
-				assert.Equal(s.T(), app.RunnerProcessOrg, healthCheck.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeOrg, healthCheck.Process)
 
 				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
-				assert.Equal(s.T(), app.RunnerProcessOrg, stored.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeOrg, stored.Process)
 			},
 		},
 		{
@@ -256,12 +256,12 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 			validateFunc: func(healthCheck *app.RunnerHealthCheck, runnerID string) {
 				assert.NotEmpty(s.T(), healthCheck.ID)
 				assert.Equal(s.T(), runnerID, healthCheck.RunnerID)
-				assert.Equal(s.T(), app.RunnerProcessUknown, healthCheck.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeUnknown, healthCheck.Process)
 
 				// Verify stored in ClickHouse
 				stored := s.getHealthCheckFromClickHouse(healthCheck.ID)
 				require.NotNil(s.T(), stored)
-				assert.Equal(s.T(), app.RunnerProcessUknown, stored.Process)
+				assert.Equal(s.T(), app.RunnerProcessTypeUnknown, stored.Process)
 			},
 		},
 		{
@@ -288,7 +288,7 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 
 				// Create first health check
 				firstReq := CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessMng,
+					Process: app.RunnerProcessTypeMng,
 				}
 				path := fmt.Sprintf("/v1/runners/%s/health-checks", runner.ID)
 				rr := s.makeRequest("POST", path, firstReq)
@@ -298,7 +298,7 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 				time.Sleep(200 * time.Millisecond)
 
 				return runner.ID, CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessInstall,
+					Process: app.RunnerProcessTypeInstall,
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -316,7 +316,7 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 			setupFunc: func() (string, CreateRunnerHealthCheckRequest) {
 				nonExistentID := "rn1nonexistent123456789012"
 				return nonExistentID, CreateRunnerHealthCheckRequest{
-					Process: app.RunnerProcessMng,
+					Process: app.RunnerProcessTypeMng,
 				}
 			},
 			expectedCode: http.StatusCreated,
@@ -386,22 +386,22 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheck() {
 func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheckProcessValidation() {
 	testCases := []struct {
 		name         string
-		process      app.RunnerProcess
+		process      app.RunnerProcessType
 		expectedCode int
 	}{
 		{
 			name:         "valid mng process",
-			process:      app.RunnerProcessMng,
+			process:      app.RunnerProcessTypeMng,
 			expectedCode: http.StatusCreated,
 		},
 		{
 			name:         "valid install process",
-			process:      app.RunnerProcessInstall,
+			process:      app.RunnerProcessTypeInstall,
 			expectedCode: http.StatusCreated,
 		},
 		{
 			name:         "valid org process",
-			process:      app.RunnerProcessOrg,
+			process:      app.RunnerProcessTypeOrg,
 			expectedCode: http.StatusCreated,
 		},
 		{
@@ -437,7 +437,7 @@ func (s *CreateHealthCheckTestSuite) TestCreateRunnerHealthCheckProcessValidatio
 
 				expectedProcess := tc.process
 				if tc.process == "" {
-					expectedProcess = app.RunnerProcessUknown
+					expectedProcess = app.RunnerProcessTypeUnknown
 				}
 				assert.Equal(s.T(), expectedProcess, healthCheck.Process)
 

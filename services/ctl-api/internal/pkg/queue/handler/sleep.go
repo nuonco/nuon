@@ -13,6 +13,5 @@ type SleepResponse struct{}
 
 func (h *handler) sleepHandler(ctx workflow.Context) (*SleepResponse, error) {
 	h.sleeping = true
-	h.stopped = true
 	return &SleepResponse{}, nil
 }

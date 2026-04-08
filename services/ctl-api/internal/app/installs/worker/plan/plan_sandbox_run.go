@@ -157,11 +157,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		},
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, install.ID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get org")
-	}
-	if org.SandboxMode {
+	if install.SandboxMode.Bool {
 		pdcJSONByts := new(bytes.Buffer)
 		if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get json")

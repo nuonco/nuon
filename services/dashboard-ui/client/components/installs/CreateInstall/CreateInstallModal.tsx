@@ -3,8 +3,8 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TApp } from '@/types'
-import { AppSelect } from './AppSelect'
-import { LoadAppConfigs } from './LoadAppConfigs'
+import { AppSelectContainer as AppSelect } from './AppSelectContainer'
+import { LoadAppConfigsContainer as LoadAppConfigs } from './LoadAppConfigsContainer'
 
 interface ICreateInstall {}
 
@@ -58,7 +58,8 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       heading={
         <div className="flex flex-col gap-2">
           <Text
-            className="inline-flex gap-4 items-center"
+            flex
+            className="gap-4"
             variant="h3"
             weight="strong"
           >
@@ -75,7 +76,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           )}
         </div>
       }
-      size={selectedApp ? '3/4' : 'default'}
+      size={selectedApp ? 'xl' : 'default'}
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}

@@ -32,11 +32,6 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, nil, errors.Wrap(err, "unable to get run")
 	}
 
-	org, err := activities.AwaitGetOrgByInstallID(ctx, run.InstallID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get install id")
-	}
-
 	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get install")
@@ -128,7 +123,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
-	if org.SandboxMode {
+	if install.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
 		plan.SandboxMode = &plantypes.SandboxMode{

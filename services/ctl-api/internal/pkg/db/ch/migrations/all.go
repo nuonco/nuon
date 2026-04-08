@@ -12,5 +12,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "02-create-latest-runner-heart-beats-mv-v1",
 			Fn:   m.Migration002LatestRunnerHeartBeatsMaterializedViewV1,
 		},
+		{
+			Name: "03-add-process-id-to-heartbeats",
+			Fn:   m.Migration003AddProcessIDToHeartBeats,
+		},
 	}
 }

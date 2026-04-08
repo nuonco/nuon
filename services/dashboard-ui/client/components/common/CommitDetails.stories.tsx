@@ -1,3 +1,7 @@
+export default {
+  title: 'Common/CommitDetails',
+}
+
 import { CommitDetails } from './CommitDetails'
 import { LabeledValue } from './LabeledValue'
 import { Text } from './Text'

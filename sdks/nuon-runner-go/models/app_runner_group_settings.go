@@ -59,6 +59,10 @@ type AppRunnerGroupSettings struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+	// e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+	JobGroupParallelism map[string]string `json:"job_group_parallelism,omitempty"`
+
 	// local aws iam role arn
 	LocalAwsIamRoleArn string `json:"local_aws_iam_role_arn,omitempty"`
 
@@ -88,6 +92,10 @@ type AppRunnerGroupSettings struct {
 
 	// runner api url
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
+	// RunnerBinaryURL overrides the URL used to download the runner binary onto the
+	// host for mng mode. When empty, defaults to the S3 artifacts URL.
+	RunnerBinaryURL string `json:"runner_binary_url,omitempty"`
 
 	// runner group id
 	RunnerGroupID string `json:"runner_group_id,omitempty"`

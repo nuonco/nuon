@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -37,6 +38,7 @@ type Params struct {
 	AccountsHelpers *accountshelpers.Helpers
 	Features        *features.Features
 	EndpointAudit   *api.EndpointAudit
+	QueueClient     *queueclient.Client
 }
 
 type service struct {
@@ -55,6 +57,7 @@ type service struct {
 	accountsHelpers *accountshelpers.Helpers
 	features        *features.Features
 	endpointAudit   *api.EndpointAudit
+	queueClient     *queueclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -95,6 +98,11 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			// features
 			current.GET("/features", s.GetCurrentOrgFeatures)
 			current.PATCH("/features", s.UpdateOrgFeatures) // requires user-managed-features flag
+
+			// webhooks
+			current.GET("/webhooks", s.GetCurrentOrgWebhooks)
+			current.POST("/webhooks", s.CreateCurrentOrgWebhook)
+			current.DELETE("/webhooks/:webhook_id", s.DeleteCurrentOrgWebhook)
 		}
 	}
 
@@ -179,5 +187,6 @@ func New(params Params) *service {
 		helpers:         params.Helpers,
 		accountsHelpers: params.AccountsHelpers,
 		features:        params.Features,
+		queueClient:     params.QueueClient,
 	}
 }
