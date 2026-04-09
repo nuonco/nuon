@@ -58,6 +58,14 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	defer cancel()
 
 	start := workflow.Now(ctx)
+	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		QueueSignalID: h.queueSignalID,
+		Status:        app.StatusInProgress,
+		Metadata: map[string]any{
+			"execute_started_at": start.UTC().Format(time.RFC3339),
+		},
+	})
+
 	err := h.sig.Execute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
 
@@ -75,6 +83,9 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: execErr.Error(),
+			Metadata: map[string]any{
+				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
 		})
 		return nil, execErr
 	}
@@ -83,6 +94,9 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusSuccess,
+		Metadata: map[string]any{
+			"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+		},
 	})
 
 	return nil, nil
