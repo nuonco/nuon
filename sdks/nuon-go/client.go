@@ -184,6 +184,7 @@ type Client interface {
 
 	// install stacks
 	GetInstallStack(ctx context.Context, installID string) (*models.AppInstallStack, error)
+	GetInstallStackByID(ctx context.Context, stackID string) (*models.AppInstallStack, error)
 
 	// log stream/logs
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)

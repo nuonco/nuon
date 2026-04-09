@@ -859,6 +859,54 @@ Available service names: api, runner (or any service name present in the logs)`,
 	runnerShutdownCmd.MarkFlagRequired("install-id")
 	runnerCmd.AddCommand(runnerShutdownCmd)
 
+	stacksCmd := &cobra.Command{
+		Use:   "stacks",
+		Short: "View install stacks",
+		Long:  "View install stacks and stack versions",
+	}
+	installsCmds.AddCommand(stacksCmd)
+
+	stacksListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List install stack versions",
+		Long:    "List all stack versions for an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.StacksList(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	stacksListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	stacksListCmd.MarkFlagRequired("install-id")
+	stacksCmd.AddCommand(stacksListCmd)
+
+	var installStackID string
+	stacksGetCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get an install stack",
+		Long:  "Get an install stack by stack ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.StacksGet(cmd.Context(), installStackID, PrintJSON)
+		}),
+	}
+	stacksGetCmd.Flags().StringVar(&installStackID, "install-stack-id", "", "The ID of the install stack")
+	stacksGetCmd.MarkFlagRequired("install-stack-id")
+	stacksCmd.AddCommand(stacksGetCmd)
+
+	stacksLatestCmd := &cobra.Command{
+		Use:   "latest",
+		Short: "Get the latest install stack version",
+		Long:  "Get the latest stack version for an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.StacksLatest(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	stacksLatestCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	stacksLatestCmd.MarkFlagRequired("install-id")
+	stacksCmd.AddCommand(stacksLatestCmd)
+
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
 		Use:         "actions",
