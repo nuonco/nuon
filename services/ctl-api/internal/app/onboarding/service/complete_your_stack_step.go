@@ -99,9 +99,8 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 		}
 	}
 
-	// Advance step immediately so the frontend can proceed; signal will
-	// set the same value on completion (idempotent) plus clear StepStatus.
-	onboarding.CurrentStep = app.OnboardingStepInstall
+	// Mark step as in-progress; the signal will advance to the next step
+	// after the app is created and config is synced.
 	onboarding.StepStatus = app.OnboardingStepStatusInProgress
 	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
 

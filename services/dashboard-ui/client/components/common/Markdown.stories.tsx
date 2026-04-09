@@ -8,6 +8,8 @@ import { OrgContext } from '@/providers/org-provider'
 import { InstallContext } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TOrg, TInstall } from '@/types'
+import { ComponentCardComponent } from '@/components/install-components/ComponentCard'
+import { SandboxCardComponent } from '@/components/sandbox/SandboxCard'
 import { Markdown } from './Markdown'
 
 const mockOrg = { id: 'org-mock', name: 'Mock Org' } as TOrg
@@ -844,6 +846,70 @@ Follow these steps:
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Component card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they fetch and render the component.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
+          <div className="space-y-2">
+            <ComponentCardComponent
+              name="networking"
+              type="terraform_module"
+              status="active"
+              href="/org-mock/installs/install-mock/components/comp-123"
+            />
+            <ComponentCardComponent
+              name="ingress-nginx"
+              type="helm_chart"
+              status="provisioning"
+              href="/org-mock/installs/install-mock/components/comp-456"
+            />
+            <ComponentCardComponent
+              name="api-server"
+              type="docker_build"
+              status="error"
+              href="/org-mock/installs/install-mock/components/comp-789"
+            />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Reference a component by name: <nuon-component-card name="networking"></nuon-component-card>
+
+Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Sandbox card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they render the sandbox status.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
+          <SandboxCardComponent
+            status="active"
+            href="/org-mock/installs/install-mock/sandbox"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Sandbox status: <nuon-sandbox-card></nuon-sandbox-card>`}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Combined example</h4>
       <div className="p-4 border rounded-lg">
         <Markdown
@@ -936,6 +1002,101 @@ Current environment status:
         />
       </div>
     </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Modal</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`Click below for full details:
+
+<nuon-modal heading="Deployment details" size="lg" trigger="View details">
+
+### Step 1: prepare
+
+Make sure your environment is ready.
+
+| Check | Status |
+|-------|--------|
+| VPC | <nuon-badge theme="success">Ready</nuon-badge> |
+| IAM | <nuon-badge theme="warn">Pending</nuon-badge> |
+
+### Step 2: deploy
+
+\`\`\`bash
+nuon installs deploy --install-id inst_123
+\`\`\`
+
+<nuon-banner theme="info">This typically takes 5-10 minutes.</nuon-banner>
+
+</nuon-modal>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Panel</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`<nuon-panel heading="Configuration reference" size="half" trigger="Open reference">
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| \`API_URL\` | Yes | Base API URL |
+| \`LOG_LEVEL\` | No | Defaults to \`info\` |
+
+### Example config
+
+\`\`\`json
+{
+  "api_url": "https://api.example.com",
+  "log_level": "debug",
+  "features": {
+    "analytics": true
+  }
+}
+\`\`\`
+
+</nuon-panel>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Multiple surfaces inline</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`Quick links: <nuon-modal heading="Runbook" trigger="Runbook">
+
+### Restart procedure
+
+1. Pause traffic
+2. Restart pods
+3. Verify health
+
+<nuon-banner theme="warn">Only during maintenance windows.</nuon-banner>
+
+</nuon-modal> <nuon-panel heading="Logs" size="3/4" trigger="View logs">
+
+### Recent logs
+
+\`\`\`
+2024-01-15 10:30:00 INFO  Deploy started
+2024-01-15 10:31:00 INFO  Health check passed
+2024-01-15 10:31:05 INFO  Deploy complete
+\`\`\`
+
+</nuon-panel>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
   </div>
 )
 
@@ -964,6 +1125,10 @@ Check the current install state:
 View the dependency graph:
 
 <nuon-config-graph></nuon-config-graph>
+
+Component card: <nuon-component-card name="networking"></nuon-component-card>
+
+Sandbox card: <nuon-sandbox-card></nuon-sandbox-card>
 
 Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
         />
@@ -1000,6 +1165,12 @@ Check the current install state:
 View the dependency graph:
 
 <nuon-config-graph></nuon-config-graph>
+
+View a specific component:
+
+<nuon-component-card name="networking"></nuon-component-card>
+
+<nuon-component-card id="comp_abc123"></nuon-component-card>
 
 Display components also render: <nuon-badge theme="success">Healthy</nuon-badge>`}
           />
@@ -1134,3 +1305,4 @@ Regular markdown continues to work perfectly alongside the HTML elements.
     </div>
   </div>
 )
+

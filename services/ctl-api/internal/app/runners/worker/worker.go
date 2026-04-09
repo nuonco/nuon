@@ -22,11 +22,9 @@ import (
 	// importing these packages runs their init() which calls catalog.Register().
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/onrunnerprocess"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processcreated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processhealthcheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processinit"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processshutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processstarted"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/updatetag"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"

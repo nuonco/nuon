@@ -2,7 +2,9 @@ import type { ComponentType } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
+import { ComponentCard } from '@/components/install-components/ComponentCard'
 import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
+import { SandboxCard } from '@/components/sandbox/SandboxCard'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -49,9 +51,40 @@ const registry: Record<string, NuonComponent> = {
     mapProps: noProps,
     requiresInstall: true,
   },
+  'nuon-component-card': {
+    component: ComponentCard,
+    mapProps: (attrs) => ({
+      id: attrs.id,
+      name: attrs.name,
+    }),
+    requiresInstall: true,
+  },
+  'nuon-sandbox-card': {
+    component: SandboxCard,
+    mapProps: noProps,
+    requiresInstall: true,
+  },
 }
 
 export type ExtractedTabs = { name: string; content: string }[]
+
+export type ExtractedSurface = {
+  type: 'modal' | 'panel'
+  heading: string
+  size: string
+  trigger: string
+  content: string
+}
+
+function parseTagAttrs(tag: string): Record<string, string> {
+  const attrs: Record<string, string> = {}
+  const attrRegex = /(\w+)="([^"]*)"/g
+  let m: RegExpExecArray | null
+  while ((m = attrRegex.exec(tag)) !== null) {
+    attrs[m[1]] = m[2]
+  }
+  return attrs
+}
 
 export function extractTabs(content: string): {
   content: string
@@ -77,6 +110,32 @@ export function extractTabs(content: string): {
   )
 
   return { content: replaced, tabsMap }
+}
+
+export function extractSurfaces(content: string): {
+  content: string
+  surfaceMap: Map<string, ExtractedSurface>
+} {
+  const surfaceMap = new Map<string, ExtractedSurface>()
+  let idx = 0
+
+  const replaced = content.replace(
+    /<nuon-(modal|panel)\s([^>]*)>([\s\S]*?)<\/nuon-\1>/g,
+    (_match, type: string, attrStr: string, inner: string) => {
+      const attrs = parseTagAttrs(attrStr)
+      const id = `nuon-surface-${idx++}`
+      surfaceMap.set(id, {
+        type: type as 'modal' | 'panel',
+        heading: attrs.heading || '',
+        size: attrs.size || 'default',
+        trigger: attrs.trigger || 'View',
+        content: inner.trim(),
+      })
+      return `<nuon-surface-rendered data-id="${id}"></nuon-surface-rendered>`
+    }
+  )
+
+  return { content: replaced, surfaceMap }
 }
 
 function hasUnresolvedTemplates(attrs: Record<string, string>): boolean {

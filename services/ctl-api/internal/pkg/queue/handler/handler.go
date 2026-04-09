@@ -64,12 +64,6 @@ type handler struct {
 	restarted bool
 	finished  bool
 	canceled  bool
-	sleeping  bool
-
-	// graceExpired is set by a timer goroutine after the post-finish grace period elapses
-	graceExpired bool
-	// woken is set by the wake update handler to bring a sleeping handler back online
-	woken bool
 
 	// cancelable context for execution
 	executingCtx    workflow.Context

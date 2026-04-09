@@ -76,6 +76,7 @@ type queue struct {
 	stopped   bool
 	restarted bool
 	paused    bool
+	maxDepth  int
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
