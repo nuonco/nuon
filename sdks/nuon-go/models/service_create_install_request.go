@@ -41,9 +41,6 @@ type ServiceCreateInstallRequest struct {
 	// name
 	// Required: true
 	Name *string `json:"name"`
-
-	// sandbox mode
-	SandboxMode bool `json:"sandbox_mode,omitempty"`
 }
 
 // Validate validates this service create install request
