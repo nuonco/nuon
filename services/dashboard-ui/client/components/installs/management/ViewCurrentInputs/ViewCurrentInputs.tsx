@@ -180,6 +180,8 @@ export const ViewCurrentInputsModal = ({
 
   return (
     <Modal
+      className="!m-0 !mx-auto !mt-[10vh] !h-[80vh]"
+      childrenClassName="flex-1"
       heading={
         <Text
           flex
