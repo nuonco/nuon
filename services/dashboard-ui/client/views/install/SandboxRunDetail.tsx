@@ -47,10 +47,12 @@ const SandboxRunDetailContent = () => {
   const { hasResponded } = useRespondedApprovals()
   const responded = step ? hasResponded(step.id) : false
   const logStream = sandboxRun?.log_stream
+  const stepStatus = step?.status?.status
+  const isTerminal = stepStatus === 'error' || stepStatus === 'cancelled' || stepStatus === 'discarded'
   const pendingApproval =
-    step?.approval && !step?.approval?.response && !responded && step?.status?.status !== 'auto-skipped'
+    step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
   const completedApproval =
-    step?.approval && (!!step?.approval?.response || responded) && step?.status?.status !== 'auto-skipped'
+    step?.approval && (!!step?.approval?.response || responded) && !isTerminal && stepStatus !== 'auto-skipped'
 
   return (
     <PageSection flush>

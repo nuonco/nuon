@@ -15,12 +15,17 @@ export const StepBanner = ({
 }) => {
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
+  const stepStatus = step?.status?.status
+  const isTerminal =
+    stepStatus === 'error' ||
+    stepStatus === 'cancelled' ||
+    stepStatus === 'discarded'
   const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
     getPolicyViolationCounts(step)
 
   return (
     <>
-      {hasApproval && !planOnly ? (
+      {hasApproval && !planOnly && !isTerminal ? (
         <ApprovalBanner step={step} />
       ) : bannerCfg ? (
         <Banner theme={bannerCfg.theme}>
