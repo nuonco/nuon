@@ -45,6 +45,11 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
+type scheduledActivity struct {
+	name        string
+	scheduledAt time.Time
+}
+
 func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) *views.WorkflowInfo {
 	ctx := c.Request.Context()
 
@@ -68,14 +73,9 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 
 	iter := nsClient.GetWorkflowHistory(ctx, workflowID, "", false, enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
 
-	// Track scheduled activities by event ID
-	type scheduledActivity struct {
-		name        string
-		scheduledAt time.Time
-	}
 	scheduled := map[int64]scheduledActivity{}
-	started := map[int64]time.Time{}   // keyed by scheduled event ID
-	attempts := map[int64]int32{}      // keyed by scheduled event ID
+	started := map[int64]time.Time{} // keyed by scheduled event ID
+	attempts := map[int64]int32{}    // keyed by scheduled event ID
 
 	var activities []views.ActivityInfo
 
@@ -183,16 +183,8 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	return info
 }
 
-type scheduledMap = map[int64]struct {
-	name        string
-	scheduledAt time.Time
-}
-
 func (s *service) buildActivityInfo(
-	scheduled map[int64]struct {
-		name        string
-		scheduledAt time.Time
-	},
+	scheduled map[int64]scheduledActivity,
 	started map[int64]time.Time,
 	attempts map[int64]int32,
 	scheduledEventID int64,

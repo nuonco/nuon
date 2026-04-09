@@ -70,9 +70,9 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						}
 					}
 					@card.Content() {
-						<div class="relative pl-6">
+						<div class="relative pl-8">
 							<!-- Vertical line -->
-							<div class="absolute left-[9px] top-2 bottom-2 w-px bg-border"></div>
+							<div class="absolute left-[11px] top-2 bottom-2 w-px bg-border"></div>
 
 							<!-- Enqueued -->
 							@timelineStep("Enqueued", enqueuedAt, true)
@@ -282,9 +282,9 @@ templ timelineStep(label, value string, active bool) {
 	<div class="relative flex items-start gap-3 py-2">
 		<!-- Dot -->
 		if active {
-			<div class="absolute left-[-18px] top-3 w-2.5 h-2.5 rounded-full bg-cyan border-2 border-background"></div>
+			<div class="absolute left-[-21px] top-3 w-2.5 h-2.5 rounded-full bg-cyan border-2 border-background"></div>
 		} else {
-			<div class="absolute left-[-18px] top-3 w-2.5 h-2.5 rounded-full bg-muted-foreground/30 border-2 border-background"></div>
+			<div class="absolute left-[-21px] top-3 w-2.5 h-2.5 rounded-full bg-muted-foreground/30 border-2 border-background"></div>
 		}
 		<div>
 			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
@@ -393,4 +393,61 @@ func computeQueueWait(signal *app.QueueSignal) string {
 		return ""
 	}
 	return formatDuration(dequeued.Sub(signal.CreatedAt))
+}
+
+templ workflowStatusBadge(status string) {
+	switch status {
+		case "Running":
+			@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
+				{ status }
+			}
+		case "Completed":
+			@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+				{ status }
+			}
+		case "Failed", "Timed Out":
+			@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) {
+				{ status }
+			}
+		case "Canceled", "Terminated":
+			@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+				{ status }
+			}
+		default:
+			@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+				{ status }
+			}
+	}
+}
+
+templ activityStatusDot(status string) {
+	switch status {
+		case "Completed":
+			<div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
+		case "Running":
+			<div class="w-2 h-2 rounded-full bg-cyan animate-pulse shrink-0"></div>
+		case "Failed", "Timed Out":
+			<div class="w-2 h-2 rounded-full bg-red-500 shrink-0"></div>
+		case "Canceled":
+			<div class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
+		case "Scheduled":
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
+		default:
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
+	}
+}
+
+templ activityStatusText(status string) {
+	switch status {
+		case "Completed":
+			<span class="text-green-500">{ status }</span>
+		case "Running":
+			<span class="text-cyan">{ status }</span>
+		case "Failed", "Timed Out":
+			<span class="text-red-400">{ status }</span>
+		case "Canceled":
+			<span class="text-amber-500">{ status }</span>
+		default:
+			<span class="text-muted-foreground">{ status }</span>
+	}
 }
