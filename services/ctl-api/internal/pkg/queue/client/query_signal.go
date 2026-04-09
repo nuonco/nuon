@@ -54,11 +54,7 @@ func statusResponseFromDBStatus(status app.CompositeStatus) *handler.StatusRespo
 		resp.Finished = true
 		resp.Canceled = true
 	default:
-		// For queued/in-progress/etc the handler was sleeping before completion
-		// which shouldn't normally happen, but treat as finished since the
-		// workflow is gone.
 		resp.Finished = true
-		resp.Sleeping = true
 	}
 
 	return resp
