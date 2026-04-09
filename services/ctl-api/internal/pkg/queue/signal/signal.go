@@ -1,6 +1,7 @@
 package signal
 
 import (
+	"encoding/json"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
@@ -24,3 +25,20 @@ type SleepAfter interface {
 }
 
 const DefaultSleepAfter = 1 * time.Minute
+
+// Raw is a signal envelope for enqueueing without importing the concrete signal
+// package. The queue handler deserializes into the real registered type via the
+// catalog at execution time.
+type Raw struct {
+	signalType SignalType
+	data       map[string]any
+}
+
+func NewRaw(typ SignalType, data map[string]any) Signal {
+	return &Raw{signalType: typ, data: data}
+}
+
+func (r *Raw) Type() SignalType                  { return r.signalType }
+func (r *Raw) Validate(_ workflow.Context) error { return nil }
+func (r *Raw) Execute(_ workflow.Context) error  { return nil }
+func (r *Raw) MarshalJSON() ([]byte, error)      { return json.Marshal(r.data) }

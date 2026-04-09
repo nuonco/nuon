@@ -57,7 +57,9 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 
 	// Trigger initial health check on first heartbeat for this process
 	if req.ProcessID != "" {
-		s.maybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID)
+		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID); err != nil {
+			s.l.Warn("unable to maybe enqueue initial health check", zap.String("process_id", req.ProcessID), zap.Error(err))
+		}
 	}
 
 	runner, err := s.heartbeatGetRunner(ctx, runnerID)
@@ -101,22 +103,6 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	}
 
 	return &runnerHeartBeat, nil
-}
-
-func (s *service) maybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, processID string) {
-	var process app.RunnerProcess
-	if res := s.db.WithContext(ctx).First(&process, "id = ?", processID); res.Error != nil {
-		s.l.Warn("unable to fetch process for initial health check", zap.String("process_id", processID), zap.Error(res.Error))
-		return
-	}
-
-	if process.InitialHealthCheck {
-		return
-	}
-
-	if err := s.helpers.EnqueueInitialHealthCheck(ctx, runnerID, &process); err != nil {
-		s.l.Warn("unable to enqueue initial health check", zap.String("process_id", processID), zap.Error(err))
-	}
 }
 
 func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
