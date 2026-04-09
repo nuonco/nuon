@@ -42,6 +42,10 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		OrgType:             orgTyp,
 		NotificationsConfig: notificationsCfg,
 		Tags:                params.Tags,
+		Features: map[string]bool{
+			"queues":               true,
+			"parallel-runner-jobs": true,
+		},
 	}
 	if h.cfg.ForceSandboxMode {
 		org.SandboxMode = true
