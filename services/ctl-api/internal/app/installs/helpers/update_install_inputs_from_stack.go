@@ -84,6 +84,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			InstallID:        installID,
 			AppInputConfigID: appInputConfig.ID,
 		}).
+		Order("created_at DESC").
 		Attrs(app.InstallInputs{Values: pgtype.Hstore{}}).
 		FirstOrCreate(&installInputs)
 
