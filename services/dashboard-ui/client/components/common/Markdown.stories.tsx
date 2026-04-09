@@ -8,6 +8,7 @@ import { OrgContext } from '@/providers/org-provider'
 import { InstallContext } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TOrg, TInstall } from '@/types'
+import { ComponentCardComponent } from '@/components/install-components/ComponentCard'
 import { Markdown } from './Markdown'
 
 const mockOrg = { id: 'org-mock', name: 'Mock Org' } as TOrg
@@ -844,6 +845,46 @@ Follow these steps:
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Component card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they fetch and render the component.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
+          <div className="space-y-2">
+            <ComponentCardComponent
+              name="networking"
+              type="terraform_module"
+              status="active"
+              href="/org-mock/installs/install-mock/components/comp-123"
+            />
+            <ComponentCardComponent
+              name="ingress-nginx"
+              type="helm_chart"
+              status="provisioning"
+              href="/org-mock/installs/install-mock/components/comp-456"
+            />
+            <ComponentCardComponent
+              name="api-server"
+              type="docker_build"
+              status="error"
+            />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Reference a component by name: <nuon-component-card name="networking"></nuon-component-card>
+
+Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Combined example</h4>
       <div className="p-4 border rounded-lg">
         <Markdown
@@ -1060,6 +1101,8 @@ View the dependency graph:
 
 <nuon-config-graph></nuon-config-graph>
 
+Component card: <nuon-component-card name="networking"></nuon-component-card>
+
 Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
         />
       </div>
@@ -1095,6 +1138,12 @@ Check the current install state:
 View the dependency graph:
 
 <nuon-config-graph></nuon-config-graph>
+
+View a specific component:
+
+<nuon-component-card name="networking"></nuon-component-card>
+
+<nuon-component-card id="comp_abc123"></nuon-component-card>
 
 Display components also render: <nuon-badge theme="success">Healthy</nuon-badge>`}
           />
