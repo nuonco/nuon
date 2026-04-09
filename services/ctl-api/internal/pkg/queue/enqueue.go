@@ -45,17 +45,12 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
-	q, err := activities.AwaitGetQueueByQueueID(ctx, w.queueID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get queue")
-	}
-
-	if len(w.state.QueueRefs) > q.MaxDepth {
-		return nil, errors.Wrapf(err, "unable to queue item, depth of %d reached", q.MaxDepth)
+	if len(w.state.QueueRefs) > w.maxDepth {
+		return nil, errors.Errorf("unable to queue item, depth of %d reached", w.maxDepth)
 	}
 
 	qSignal, err := activities.AwaitCreateQueueSignal(ctx, &activities.CreateQueueSignalRequest{
-		QueueID:   q.ID,
+		QueueID:   w.queueID,
 		Signal:    input.Signal,
 		OwnerID:   input.OwnerID,
 		OwnerType: input.OwnerType,
@@ -67,17 +62,19 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 	}
 
 	handlerworkflow.StartHandler(ctx, qSignal.Workflow.ID, handlerworkflow.HandlerRequest{
-		QueueID:       q.ID,
+		QueueID:       w.queueID,
 		QueueSignalID: qSignal.ID,
 	})
 
 	l.Info("queueing signal for processing", zap.String("workflow-id", qSignal.Workflow.ID))
-	w.ch.Send(ctx, QueueRef{
+	if !w.ch.SendAsync(QueueRef{
 		WorkflowID: qSignal.Workflow.ID,
 		ID:         qSignal.ID,
-	})
+	}) {
+		l.Warn("channel full, signal will be picked up on next requeue cycle",
+			zap.String("signal-id", qSignal.ID))
+	}
 
-	// and now, we queue it in our internal queueu
 	return &EnqueueResponse{
 		ID:         qSignal.ID,
 		WorkflowID: qSignal.Workflow.ID,
