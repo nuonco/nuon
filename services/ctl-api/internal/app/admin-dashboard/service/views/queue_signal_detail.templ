@@ -70,29 +70,13 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						}
 					}
 					@card.Content() {
-						<div class="relative pl-8">
-							<!-- Vertical line -->
-							<div class="absolute left-[11px] top-2 bottom-2 w-px bg-border"></div>
-
-							<!-- Enqueued -->
+						<div class="space-y-0">
 							@timelineStep("Enqueued", enqueuedAt, true)
-
-							<!-- Duration: Queue wait -->
 							@timelineDuration(computeQueueWait(signal))
-
-							<!-- Dequeued -->
 							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
-
-							<!-- Duration: Dequeue → Execute -->
 							@timelineDuration(computeDequeuedToExecute(signal))
-
-							<!-- Execute Started -->
 							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
-
-							<!-- Duration: Execution time -->
 							@timelineDuration(computeDuration(signal))
-
-							<!-- Execute Finished -->
 							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
 						</div>
 					}
@@ -114,40 +98,63 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						@card.Content() {
 							if len(wfInfo.Activities) > 0 {
 								<div class="space-y-2">
-									for _, act := range wfInfo.Activities {
-										<div class="flex items-center gap-4 py-2 px-3 rounded border border-border text-xs">
-											<div class="flex items-center gap-2 w-64 shrink-0">
-												@activityStatusDot(act.Status)
-												<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
+									for i, act := range wfInfo.Activities {
+										<details class="group rounded border border-border">
+											<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
+												<div class="flex items-center gap-2 w-64 shrink-0">
+													@activityStatusDot(act.Status)
+													<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
+												</div>
+												<div class="w-20 shrink-0">
+													@activityStatusText(act.Status)
+												</div>
+												if !act.StartedAt.IsZero() {
+													<div class="text-muted-foreground w-36 shrink-0">
+														{ act.StartedAt.Format("15:04:05.000") }
+														if !act.FinishedAt.IsZero() {
+															<span class="text-foreground/40"> → </span>
+															{ act.FinishedAt.Format("15:04:05.000") }
+														}
+													</div>
+												}
+												if act.Duration > 0 {
+													<div class="font-mono text-cyan">
+														{ formatDuration(act.Duration) }
+													</div>
+												}
+												if act.Attempt > 1 {
+													<div class="text-amber-500">
+														attempt { fmt.Sprintf("%d", act.Attempt) }
+													</div>
+												}
+												if act.Failure != "" {
+													<div class="text-red-400 truncate flex-1" title={ act.Failure }>
+														{ act.Failure }
+													</div>
+												}
+												<div class="ml-auto text-muted-foreground shrink-0">
+													<span class="group-open:hidden">▸</span>
+													<span class="hidden group-open:inline">▾</span>
+												</div>
+											</summary>
+											<div class="border-t border-border px-3 py-2 space-y-2">
+												if act.Input != "" {
+													<div>
+														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Request</div>
+														<pre id={ fmt.Sprintf("act-input-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Input }</pre>
+													</div>
+												}
+												if act.Result != "" {
+													<div>
+														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Response</div>
+														<pre id={ fmt.Sprintf("act-result-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Result }</pre>
+													</div>
+												}
+												if act.Input == "" && act.Result == "" {
+													<div class="text-xs text-muted-foreground">No input/output data available.</div>
+												}
 											</div>
-											<div class="w-20 shrink-0">
-												@activityStatusText(act.Status)
-											</div>
-											if !act.StartedAt.IsZero() {
-												<div class="text-muted-foreground w-36 shrink-0">
-													{ act.StartedAt.Format("15:04:05.000") }
-													if !act.FinishedAt.IsZero() {
-														<span class="text-foreground/40"> → </span>
-														{ act.FinishedAt.Format("15:04:05.000") }
-													}
-												</div>
-											}
-											if act.Duration > 0 {
-												<div class="font-mono text-cyan">
-													{ formatDuration(act.Duration) }
-												</div>
-											}
-											if act.Attempt > 1 {
-												<div class="text-amber-500">
-													attempt { fmt.Sprintf("%d", act.Attempt) }
-												</div>
-											}
-											if act.Failure != "" {
-												<div class="text-red-400 truncate flex-1" title={ act.Failure }>
-													{ act.Failure }
-												</div>
-											}
-										</div>
+										</details>
 									}
 								</div>
 							} else {
@@ -279,14 +286,16 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 }
 
 templ timelineStep(label, value string, active bool) {
-	<div class="relative flex items-start gap-3 py-2">
-		<!-- Dot -->
-		if active {
-			<div class="absolute left-[-21px] top-3 w-2.5 h-2.5 rounded-full bg-cyan border-2 border-background"></div>
-		} else {
-			<div class="absolute left-[-21px] top-3 w-2.5 h-2.5 rounded-full bg-muted-foreground/30 border-2 border-background"></div>
-		}
-		<div>
+	<div class="flex items-start gap-3 py-2">
+		<div class="flex flex-col items-center pt-1 shrink-0">
+			if active {
+				<div class="w-2.5 h-2.5 rounded-full bg-cyan"></div>
+			} else {
+				<div class="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"></div>
+			}
+			<div class="w-px flex-1 bg-border mt-1"></div>
+		</div>
+		<div class="min-w-0">
 			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
 			if value != "" {
 				<div class="text-sm font-mono mt-0.5">{ value }</div>
@@ -299,8 +308,11 @@ templ timelineStep(label, value string, active bool) {
 
 templ timelineDuration(duration string) {
 	if duration != "" {
-		<div class="relative py-1 pl-4">
-			<div class="text-xs font-mono text-cyan/70">{ duration }</div>
+		<div class="flex items-start gap-3 py-0.5">
+			<div class="flex flex-col items-center shrink-0">
+				<div class="w-px flex-1 bg-border" style="min-height: 16px;"></div>
+			</div>
+			<div class="text-xs font-mono text-cyan/70 pl-0.5">{ duration }</div>
 		</div>
 	}
 }

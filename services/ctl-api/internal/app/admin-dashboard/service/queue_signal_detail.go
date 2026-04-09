@@ -1,11 +1,14 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
+	commonpb "go.temporal.io/api/common/v1"
 	enumspb "go.temporal.io/api/enums/v1"
 	historypb "go.temporal.io/api/history/v1"
 	"go.uber.org/zap"
@@ -48,6 +51,7 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 type scheduledActivity struct {
 	name        string
 	scheduledAt time.Time
+	input       string // JSON-formatted activity input
 }
 
 func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) *views.WorkflowInfo {
@@ -97,6 +101,7 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 				scheduled[event.GetEventId()] = scheduledActivity{
 					name:        name,
 					scheduledAt: event.GetEventTime().AsTime(),
+					input:       formatPayloads(attrs.GetInput()),
 				}
 			}
 
@@ -110,11 +115,13 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 		case enumspb.EVENT_TYPE_ACTIVITY_TASK_COMPLETED:
 			attrs := event.GetActivityTaskCompletedEventAttributes()
 			if attrs != nil {
-				activities = append(activities, s.buildActivityInfo(
+				ai := s.buildActivityInfo(
 					scheduled, started, attempts,
 					attrs.GetScheduledEventId(),
 					event, "Completed", "",
-				))
+				)
+				ai.Result = formatPayloads(attrs.GetResult())
+				activities = append(activities, ai)
 			}
 
 		case enumspb.EVENT_TYPE_ACTIVITY_TASK_FAILED:
@@ -200,6 +207,7 @@ func (s *service) buildActivityInfo(
 
 	if sched, ok := scheduled[scheduledEventID]; ok {
 		ai.Name = sched.name
+		ai.Input = sched.input
 	}
 	if startTime, ok := started[scheduledEventID]; ok {
 		ai.StartedAt = startTime
@@ -210,6 +218,41 @@ func (s *service) buildActivityInfo(
 	}
 
 	return ai
+}
+
+// formatPayloads extracts and pretty-prints the JSON data from Temporal payloads.
+func formatPayloads(payloads *commonpb.Payloads) string {
+	if payloads == nil {
+		return ""
+	}
+	var parts []json.RawMessage
+	for _, p := range payloads.GetPayloads() {
+		if p == nil || len(p.GetData()) == 0 {
+			continue
+		}
+		// Check if the data is valid JSON; if so use it directly, otherwise quote it as a string
+		if json.Valid(p.GetData()) {
+			parts = append(parts, json.RawMessage(p.GetData()))
+		} else {
+			quoted, _ := json.Marshal(string(p.GetData()))
+			parts = append(parts, json.RawMessage(quoted))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	// Single payload: format it directly. Multiple: wrap in array.
+	var raw []byte
+	if len(parts) == 1 {
+		raw = parts[0]
+	} else {
+		raw, _ = json.Marshal(parts)
+	}
+	var buf bytes.Buffer
+	if err := json.Indent(&buf, raw, "", "  "); err != nil {
+		return string(raw)
+	}
+	return buf.String()
 }
 
 func formatWorkflowStatus(status enumspb.WorkflowExecutionStatus) string {

@@ -17,4 +17,6 @@ type ActivityInfo struct {
 	Duration   time.Duration
 	Attempt    int32
 	Failure    string
+	Input      string // JSON-formatted activity input
+	Result     string // JSON-formatted activity result
 }
