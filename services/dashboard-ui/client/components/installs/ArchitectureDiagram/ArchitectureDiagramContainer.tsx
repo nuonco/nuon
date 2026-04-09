@@ -113,8 +113,8 @@ export const ArchitectureDiagramButton = ({
       }}
       {...props}
     >
-      Architecture
       <Icon variant="TreeStructure" />
+      Architecture   
     </Button>
   )
 }
