@@ -1,7 +1,7 @@
 package handler
 
 import (
-        "time"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
