@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
+import { ComponentCard } from '@/components/install-components/ComponentCard'
 import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
@@ -47,6 +48,14 @@ const registry: Record<string, NuonComponent> = {
   'nuon-config-graph': {
     component: InstallConfigGraph,
     mapProps: noProps,
+    requiresInstall: true,
+  },
+  'nuon-component-card': {
+    component: ComponentCard,
+    mapProps: (attrs) => ({
+      id: attrs.id,
+      name: attrs.name,
+    }),
     requiresInstall: true,
   },
 }
