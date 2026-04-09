@@ -1,6 +1,8 @@
-package processcreated
+package processinit
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -11,7 +13,7 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const SignalType signal.SignalType = "process_created"
+const SignalType signal.SignalType = "process_init"
 
 type Signal struct {
 	RunnerID  string `json:"runner_id"`
@@ -19,9 +21,14 @@ type Signal struct {
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SleepAfter = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) SleepAfter() time.Duration {
+	return 0
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -41,30 +48,44 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Verify the process is active
+	l := workflow.GetLogger(ctx)
+
+	// Get process and verify it's in pending state
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
 	}
 
-	if process.ProcessStatus() != app.RunnerProcessStatusActive {
+	// Only transition pending processes to active
+	if process.ProcessStatus() != app.RunnerProcessStatus(app.StatusPending) {
+		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(process.ProcessStatus()))
 		return nil
 	}
 
-	// Update runner status to healthy/active
-	err = activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+	// Transition process from pending to active
+	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		ProcessID:         s.ProcessID,
+		Status:            app.RunnerProcessStatusActive,
+		StatusDescription: "process initialized",
+	}); err != nil {
+		return errors.Wrap(err, "unable to update process status")
+	}
+
+	// Update runner status to active
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusActive,
-		StatusDescription: "process created",
-	})
-	if err != nil {
+		StatusDescription: "process initialized",
+	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
 	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusActive,
-		StatusDescription: "process created",
+		StatusDescription: "process initialized",
 	})
+
+	l.Info("process initialized", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 
 	return nil
 }

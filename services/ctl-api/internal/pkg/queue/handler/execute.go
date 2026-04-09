@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -84,6 +86,15 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusSuccess,
 	})
+
+	// sleep after execution — signals can implement SleepAfter to override the default
+	sleepDur := signal.DefaultSleepAfter
+	if sa, ok := h.sig.(signal.SleepAfter); ok {
+		sleepDur = sa.SleepAfter()
+	}
+	if sleepDur >= time.Second {
+		_ = workflow.Sleep(ctx, sleepDur)
+	}
 
 	return nil, nil
 }

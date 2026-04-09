@@ -26,7 +26,7 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			nil,
 		},
 		ReadyHandlerName: {
-			handlerTypeUpdate,
+			handlerTypeQuery,
 			w.readyHandler,
 			nil,
 		},

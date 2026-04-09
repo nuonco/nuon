@@ -185,8 +185,9 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 	// wait for the job
 	s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   comp.Org.RunnerGroup.Runners[0].ID,
-		JobID:      runnerJob.ID,
+		RunnerID: comp.Org.RunnerGroup.Runners[0].ID,
+		JobID:    runnerJob.ID,
+	}, &workflow.ChildWorkflowOptions{
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
 	if err != nil {
