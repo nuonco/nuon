@@ -56,10 +56,12 @@ export const PolicyDetail = () => {
     }
   })
 
+  const isSandboxPolicy = policy?.type === 'sandbox'
   const policyComponents = policy?.components ?? []
   const isAllComponents =
-    policyComponents.length === 0 ||
-    (policyComponents.length === 1 && policyComponents[0] === '*')
+    !isSandboxPolicy &&
+    (policyComponents.length === 0 ||
+      (policyComponents.length === 1 && policyComponents[0] === '*'))
 
   return (
     <PageSection>
@@ -140,7 +142,14 @@ export const PolicyDetail = () => {
               </Text>
             </div>
             <div className="p-4">
-              {isAllComponents ? (
+              {isSandboxPolicy ? (
+                <div className="flex items-center gap-2 text-grey-600 dark:text-grey-400">
+                  <Icon variant="ShippingContainer" size={16} />
+                  <Text variant="body" className="italic">
+                    Sandbox
+                  </Text>
+                </div>
+              ) : isAllComponents ? (
                 <div className="flex items-center gap-2 text-grey-600 dark:text-grey-400">
                   <Icon variant="Stack" size={16} />
                   <Text variant="body" className="italic">

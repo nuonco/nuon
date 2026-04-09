@@ -114,6 +114,12 @@ export const BuildRunner = () => {
                     variant="table"
                   />
                 </Card>
+              ) : processes.length === 1 ? (
+                <ProcessCard
+                  process={processes[0]}
+                  settings={settings}
+                  shouldPoll
+                />
               ) : (
                 <div className="@container">
                   <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">

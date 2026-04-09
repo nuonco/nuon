@@ -64,7 +64,7 @@ export const ActiveWorkflowCard = ({
   const pendingApprovals = getPendingApprovalCount(workflow)
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-cool-grey-200 dark:border-white/10 bg-cool-grey-50 dark:bg-white/[0.03] p-6">
+    <div className="flex flex-col gap-4 rounded-lg border border-cool-grey-200 dark:border-white/10 bg-cool-grey-50 dark:bg-white/[0.03] p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5 min-w-0">
           <Link
@@ -84,7 +84,7 @@ export const ActiveWorkflowCard = ({
         <Icon variant="Loading" size={16} className="shrink-0 mt-1" />
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 flex-wrap">
         <CardInfo label="Initiated by">
           {workflow?.created_by?.email?.split('@')[0] ?? '—'}
         </CardInfo>
