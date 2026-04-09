@@ -51,6 +51,11 @@ export function getStepBadge(
       return WORKFLOW_BADGE_MAP['approved']
     } else if (step?.status?.status === 'pending') {
       return WORKFLOW_BADGE_MAP['auto-approved']
+    } else if (
+      step?.approval?.type === 'approve-all' ||
+      step?.approval?.response?.type === 'auto-approve'
+    ) {
+      return WORKFLOW_BADGE_MAP['auto-approved']
     }
   }
   const status = step?.status?.status
