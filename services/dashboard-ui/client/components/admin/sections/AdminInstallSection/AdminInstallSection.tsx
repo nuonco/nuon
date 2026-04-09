@@ -4,6 +4,7 @@ import { AdminActionGroup } from '../../shared/AdminActionGroup'
 import { AdminActionCard } from '../../shared/AdminActionCard'
 import { AdminMetadataPanel, AdminInfoCard } from '../../shared/AdminMetadata'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import {
   adminReprovisionInstall,
   adminReprovisionInstallRunner,
@@ -44,6 +45,14 @@ export const AdminInstallSection = ({
       />
       <div className="space-y-1">
         <TemporalLink namespace="installs" eventLoopId={installId} />
+        <AdminDashboardLink
+          path={`/queues?owner_id=${installId}&owner_type=installs`}
+          label="View queues"
+        />
+        <AdminDashboardLink
+          path={`/installs/${installId}`}
+          label="View in admin dashboard"
+        />
       </div>
     </AdminMetadataPanel>
   )

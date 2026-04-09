@@ -72,6 +72,8 @@ type Install struct {
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
+	Queues []Queue `json:"queues,omitzero" gorm:"polymorphic:Owner;" temporaljson:"queues,omitzero,omitempty"`
+
 	// after queries
 
 	CurrentInstallInputs                *InstallInputs         `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`

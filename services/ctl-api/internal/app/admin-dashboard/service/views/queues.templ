@@ -1,0 +1,73 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
+)
+
+const ActivePageQueues ActivePage = "queues"
+
+templ Queues(queues []app.Queue, ownerID, ownerType, searchQuery string, currentPage, totalPages int) {
+	@Layout("Queues", ActivePageQueues) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Queues
+					}
+					@card.Description() {
+						if ownerID != "" {
+							Queues for { ownerType } { ownerID }
+						} else {
+							All queues in the system
+						}
+					}
+				}
+				@card.Content() {
+					<div class="flex gap-4 mb-4">
+						<div class="flex-1">
+							<label class="text-sm font-medium mb-2 block">Search</label>
+							@search.SearchInput(search.Props{
+								Placeholder: "Search by ID, owner ID, or name...",
+								TargetURL:   "queues/table",
+								TargetID:    "queues-table",
+								Value:       searchQuery,
+							})
+						</div>
+						if ownerID != "" {
+							<input type="hidden" name="owner_id" value={ ownerID }/>
+							<input type="hidden" name="owner_type" value={ ownerType }/>
+						}
+					</div>
+					@QueuesTable(queues, ownerID, ownerType, searchQuery, currentPage, totalPages)
+				}
+			}
+		</div>
+		@copybutton.Script()
+	}
+}
+
+func buildQueuesPageURL(page int, ownerID, ownerType, searchQuery string) string {
+	url := fmt.Sprintf("queues/table?page=%d", page)
+	if ownerID != "" {
+		url += fmt.Sprintf("&owner_id=%s&owner_type=%s", ownerID, ownerType)
+	}
+	if searchQuery != "" {
+		url += fmt.Sprintf("&search=%s", searchQuery)
+	}
+	return url
+}
+
+func buildQueuesBrowserURL(page int, ownerID, ownerType, searchQuery string) string {
+	url := fmt.Sprintf("/queues?page=%d", page)
+	if ownerID != "" {
+		url += fmt.Sprintf("&owner_id=%s&owner_type=%s", ownerID, ownerType)
+	}
+	if searchQuery != "" {
+		url += fmt.Sprintf("&search=%s", searchQuery)
+	}
+	return url
+}

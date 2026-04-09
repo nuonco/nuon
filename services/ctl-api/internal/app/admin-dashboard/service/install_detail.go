@@ -176,6 +176,7 @@ func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Preload("AppRunnerConfig").
+		Preload("Queues").
 		Where("id = ?", installID).
 		First(&install).Error
 
