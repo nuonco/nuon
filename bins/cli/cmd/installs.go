@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -978,7 +980,6 @@ Available service names: api, runner (or any service name present in the logs)`,
 	stacksLatestCmd.MarkFlagRequired("install-id")
 	stacksCmd.AddCommand(stacksLatestCmd)
 
-	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
 		Use:   "actions",
 		Short: "Manage install actions [preview]",
@@ -1020,6 +1021,51 @@ By default, launches an interactive TUI to browse and execute actions.`,
 		}),
 	}
 	actionsCmd.AddCommand(actionsListCmd)
+
+	var (
+		actionEnvVars []string
+		actionWait    bool
+		actionTimeout time.Duration
+	)
+	actionsRunCmd := &cobra.Command{
+		Use:         "run",
+		Short:       "Run an action and optionally wait for completion",
+		Args:        cobra.NoArgs,
+		Annotations: previewAnnotation(),
+		Long: `Trigger an action on an install. Use --wait to block until completion
+and print the outputs. Use --env to pass parameters.
+
+Examples:
+  nuon installs actions run -i <install> --action-workflow-id my_action --wait
+  nuon installs actions run -i <install> --action-workflow-id my_action --env KEY=val --env KEY2=val2 --wait -j`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if actionWorkflowID == "" {
+				ui.PrintWarning("missing --action-workflow-id; pass an action workflow ID or slug")
+				return nil
+			}
+			envVars := make(map[string]string)
+			for _, kv := range actionEnvVars {
+				parts := strings.SplitN(kv, "=", 2)
+				if len(parts) != 2 {
+					return ui.PrintError(fmt.Errorf("invalid --env value %q, expected KEY=VALUE", kv))
+				}
+				envVars[parts[0]] = parts[1]
+			}
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ActionRun(cmd.Context(), installs.ActionRunOpts{
+				InstallID: id,
+				ActionID:  actionWorkflowID,
+				EnvVars:   envVars,
+				Wait:      actionWait,
+				Timeout:   actionTimeout,
+				AsJSON:    PrintJSON,
+			})
+		}),
+	}
+	actionsRunCmd.Flags().StringArrayVar(&actionEnvVars, "env", nil, "Environment variables (KEY=VALUE, repeatable)")
+	actionsRunCmd.Flags().BoolVarP(&actionWait, "wait", "w", false, "Wait for action to complete and print outputs")
+	actionsRunCmd.Flags().DurationVar(&actionTimeout, "timeout", 5*time.Minute, "Timeout when waiting")
+	actionsCmd.AddCommand(actionsRunCmd)
 
 	actionsOutputsCmd := &cobra.Command{
 		Use:         "outputs",
