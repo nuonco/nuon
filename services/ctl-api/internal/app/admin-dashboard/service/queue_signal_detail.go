@@ -101,7 +101,7 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 				scheduled[event.GetEventId()] = scheduledActivity{
 					name:        name,
 					scheduledAt: event.GetEventTime().AsTime(),
-					input:       formatPayloads(attrs.GetInput()),
+					input:       s.formatPayloads(attrs.GetInput()),
 				}
 			}
 
@@ -120,7 +120,7 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 					attrs.GetScheduledEventId(),
 					event, "Completed", "",
 				)
-				ai.Result = formatPayloads(attrs.GetResult())
+				ai.Result = s.formatPayloads(attrs.GetResult())
 				activities = append(activities, ai)
 			}
 
@@ -220,17 +220,35 @@ func (s *service) buildActivityInfo(
 	return ai
 }
 
-// formatPayloads extracts and pretty-prints the JSON data from Temporal payloads.
-func formatPayloads(payloads *commonpb.Payloads) string {
+// decodePayloads runs the codec chain to decode Temporal payloads (e.g. gzip, large payload, s3).
+func (s *service) decodePayloads(payloads *commonpb.Payloads) *commonpb.Payloads {
+	if payloads == nil || len(payloads.GetPayloads()) == 0 {
+		return payloads
+	}
+	decoded := payloads.GetPayloads()
+	for _, codec := range s.codecs {
+		out, err := codec.Decode(decoded)
+		if err != nil {
+			s.l.Debug("codec decode failed, using raw payload", zap.Error(err))
+			return payloads
+		}
+		decoded = out
+	}
+	return &commonpb.Payloads{Payloads: decoded}
+}
+
+// formatPayloads decodes and pretty-prints the JSON data from Temporal payloads.
+func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 	if payloads == nil {
 		return ""
 	}
+	payloads = s.decodePayloads(payloads)
+
 	var parts []json.RawMessage
 	for _, p := range payloads.GetPayloads() {
 		if p == nil || len(p.GetData()) == 0 {
 			continue
 		}
-		// Check if the data is valid JSON; if so use it directly, otherwise quote it as a string
 		if json.Valid(p.GetData()) {
 			parts = append(parts, json.RawMessage(p.GetData()))
 		} else {
@@ -241,7 +259,6 @@ func formatPayloads(payloads *commonpb.Payloads) string {
 	if len(parts) == 0 {
 		return ""
 	}
-	// Single payload: format it directly. Multiple: wrap in array.
 	var raw []byte
 	if len(parts) == 1 {
 		raw = parts[0]
