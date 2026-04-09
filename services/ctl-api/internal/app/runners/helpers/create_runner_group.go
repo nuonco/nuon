@@ -123,9 +123,8 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	case string(app.CloudPlatformGCP):
 		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
 	case string(app.CloudPlatformAzure):
-		// Azure uses a shared management identity; tenant isolation is enforced
-		// at the K8s service account + namespace level, not per-org managed identity.
-		orgAzureClientID = h.cfg.ManagementAzureClientID
+		// Azure per-org managed identity is created by ProvisionIAM workflow.
+		// OrgAzureClientID is populated after IAM provisioning completes.
 	default:
 		orgAWSIAMRoleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", h.cfg.ManagementAccountID, org.ID, org.ID)
 	}

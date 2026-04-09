@@ -33,11 +33,11 @@ func (w *Workflows) executeProvisionOrgRunner(ctx workflow.Context, runnerID, ap
 	var runnerIAMRole string
 	switch w.cfg.CloudProvider {
 	case string(app.CloudPlatformGCP):
-		runnerIAMRole = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", runner.OrgID, w.cfg.ManagementAccountID)
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgGCPServiceAccount
 	case string(app.CloudPlatformAzure):
-		runnerIAMRole = w.cfg.ManagementAzureClientID
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgAzureClientID
 	default:
-		runnerIAMRole = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", w.cfg.ManagementAccountID, runner.OrgID, runner.OrgID)
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgAWSIAMRoleARN
 	}
 
 	req := &kuberunner.ProvisionRunnerRequest{

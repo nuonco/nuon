@@ -240,9 +240,12 @@ type Config struct {
 	GCSInstallTemplateBucket   string `config:"gcs_install_template_bucket"`
 
 	// Azure management (not required for AWS/GCP)
-	ManagementACRRegistryURL string `config:"management_acr_registry_url"`
-	ManagementAzureTenantID  string `config:"management_azure_tenant_id"`
-	ManagementAzureClientID  string `config:"management_azure_client_id"`
+	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
+	ManagementAzureTenantID       string `config:"management_azure_tenant_id"`
+	ManagementAzureClientID       string `config:"management_azure_client_id"`
+	ManagementAzureSubscriptionID string `config:"management_azure_subscription_id"`
+	ManagementAzureResourceGroup  string `config:"management_azure_resource_group"`
+	ManagementAzureOIDCIssuerURL  string `config:"management_azure_oidc_issuer_url"`
 
 	// configuration for org runners (shared across cloud providers)
 	OrgRunnerK8sClusterID      string `config:"org_runner_k8s_cluster_id" validate:"required"`

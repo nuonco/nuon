@@ -22,9 +22,16 @@ type instanceType struct {
 	Name string `mapstructure:"name"`
 }
 
+type nodeClassRefValues struct {
+	Group string `mapstructure:"group"`
+	Kind  string `mapstructure:"kind"`
+	Name  string `mapstructure:"name"`
+}
+
 type nodePoolValues struct {
-	Enabled      bool         `mapstructure:"enabled"`
-	InstanceType instanceType `mapstructure:"instance_type"`
+	Enabled      bool               `mapstructure:"enabled"`
+	InstanceType instanceType       `mapstructure:"instance_type"`
+	NodeClassRef nodeClassRefValues `mapstructure:"node_class_ref"`
 }
 
 type helmValues struct {
@@ -40,6 +47,11 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 	annotations := map[string]string{}
 	podLabels := map[string]string{}
 	enableNodePool := true
+	nodeClassRef := nodeClassRefValues{
+		Group: "karpenter.k8s.aws",
+		Kind:  "EC2NodeClass",
+		Name:  "default",
+	}
 	switch req.CloudProvider {
 	case "gcp":
 		if req.RunnerIAMRole != "" {
@@ -52,8 +64,12 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			annotations["azure.workload.identity/client-id"] = req.RunnerIAMRole
 		}
 		podLabels["azure.workload.identity/use"] = "true"
-		// AKS manages node pools separately
-		enableNodePool = false
+		// AKS uses Node Auto-Provisioning (NAP) with Karpenter
+		nodeClassRef = nodeClassRefValues{
+			Group: "karpenter.azure.com",
+			Kind:  "AKSNodeClass",
+			Name:  "default",
+		}
 	default:
 		if req.RunnerIAMRole != "" {
 			annotations["eks.amazonaws.com/role-arn"] = req.RunnerIAMRole
@@ -81,6 +97,7 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			InstanceType: instanceType{
 				Name: req.InstanceTypeName,
 			},
+			NodeClassRef: nodeClassRef,
 		},
 	}
 }

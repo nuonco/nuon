@@ -16,8 +16,21 @@ import (
 func (w Wkflow) DeprovisionIAM(ctx workflow.Context, req *DeprovisionIAMRequest) (*DeprovisionIAMResponse, error) {
 	resp := &DeprovisionIAMResponse{}
 
-	// GCP and Azure use Workload Identity — no AWS IAM roles to deprovision.
-	if w.cfg.IsGCP() || w.cfg.IsAzure() {
+	// GCP uses Workload Identity — no AWS IAM roles to deprovision.
+	if w.cfg.IsGCP() {
+		return resp, nil
+	}
+
+	// Azure — delete the per-org managed identity (cascades federated creds + role assignments).
+	if w.cfg.IsAzure() {
+		_, err := AwaitDeleteAzureManagedIdentity(ctx, &DeleteAzureManagedIdentityRequest{
+			SubscriptionID: w.cfg.ManagementAzureSubscriptionID,
+			ResourceGroup:  w.cfg.ManagementAzureResourceGroup,
+			OrgID:          req.OrgID,
+		})
+		if err != nil {
+			return resp, fmt.Errorf("unable to delete Azure managed identity: %w", err)
+		}
 		return resp, nil
 	}
 
