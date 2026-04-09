@@ -18,3 +18,15 @@ func (c *client) GetInstallStack(ctx context.Context, installID string) (*models
 	}
 	return resp.Payload, nil
 }
+
+func (c *client) GetInstallStackByID(ctx context.Context, stackID string) (*models.AppInstallStack, error) {
+	resp, err := c.genClient.Operations.GetInstallStack(
+		&operations.GetInstallStackParams{StackID: stackID, Context: ctx},
+		c.getOrgIDAuthInfo(),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
