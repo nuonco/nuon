@@ -3,6 +3,8 @@ package generateinstallstackversion
 import (
 	"fmt"
 
+	"strings"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -23,6 +26,7 @@ const SignalType signal.SignalType = "generate-install-stack-version"
 const (
 	DefaultAzureRunnerInitScript string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#azure"
 	DefaultAWSRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init.sh#default"
+	DefaultGCPRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 )
 
 type Signal struct {
@@ -80,6 +84,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if !generics.SliceContains(cfg.RunnerConfig.Type, []app.AppRunnerType{
 		app.AppRunnerTypeAWS,
 		app.AppRunnerTypeAzure,
+		app.AppRunnerTypeGCP,
 	}) {
 		return nil
 	}
@@ -136,6 +141,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		region = install.AWSAccount.Region
 	case install.AzureAccount != nil:
 		region = install.AzureAccount.Location
+	case install.GCPAccount != nil:
+		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
 		InstallID:      install.ID,
@@ -143,6 +150,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		AppConfigID:    cfg.ID,
 		StackName:      cfg.StackConfig.Name,
 		Region:         region,
+		Platform:       string(cfg.RunnerConfig.Type),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -156,6 +164,54 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}); err != nil {
 			return errors.Wrap(err, "unable to update stack version")
 		}
+	}
+
+	// GCP uses a static Terraform module with tfvars — no S3 upload needed.
+	if cfg.RunnerConfig.Type == app.AppRunnerTypeGCP {
+		initScriptURL := DefaultGCPRunnerInitScript
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			initScriptURL = cfg.RunnerConfig.InitScriptURL
+		}
+
+		inp := &stacks.TemplateInput{
+			Install:                    install,
+			CloudFormationStackVersion: stackVersion,
+			InstallState:               installState,
+			AppCfg:                     cfg,
+			Runner:                     runner,
+			Settings:                   &runner.RunnerGroup.Settings,
+			RunnerInitScriptURL:        initScriptURL,
+			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
+		}
+
+		// Legacy init.sh needs a pre-provisioned bootstrap token.
+		// init-mng-v2.sh fetches its own token via GCP identity (POST /v1/runner-auth/gcp).
+		if isLegacyGCPInitScript(initScriptURL) {
+			bootstrapToken, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
+			if err != nil {
+				return errors.Wrap(err, "unable to create bootstrap token")
+			}
+			inp.APIToken = generics.FromPtrStr(bootstrapToken)
+		}
+
+		tmplByts, checksum, err := gcp.Render(inp)
+		if err != nil {
+			return errors.Wrap(err, "unable to render gcp tfvars")
+		}
+
+		if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
+			ID:       stackVersion.ID,
+			Template: tmplByts,
+			Checksum: checksum,
+		}); err != nil {
+			return errors.Wrap(err, "unable to save gcp tfvars")
+		}
+
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     stackVersion.ID,
+			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusPendingUser),
+		})
+		return nil
 	}
 
 	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
@@ -252,4 +308,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusPendingUser),
 	})
 	return nil
+}
+
+func isLegacyGCPInitScript(url string) bool {
+	return strings.HasSuffix(url, "/scripts/gcp/init.sh") || url == DefaultGCPRunnerInitScript
 }
