@@ -19,15 +19,12 @@ const mockWorkflows = [
 
 export const Default = () => (
   <div className="max-w-2xl p-4">
-    <ActiveWorkflows
-      orgId="org-1"
-      workflows={mockWorkflows}
-    />
+    <ActiveWorkflows workflows={mockWorkflows} />
   </div>
 )
 
 export const Empty = () => (
   <div className="max-w-2xl p-4">
-    <ActiveWorkflows orgId="org-1" workflows={[]} />
+    <ActiveWorkflows workflows={[]} />
   </div>
 )
