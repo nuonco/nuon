@@ -185,7 +185,7 @@ const CustomAppTab = ({
           Select all that apply
         </Text>
       </div>
-      <div className="grid grid-cols-3 gap-x-6 gap-y-2">
+      <div className="grid grid-cols-3 gap-3">
         {APP_ATTRIBUTES.map((attr) => {
           const selected = appAttributes.includes(attr.id)
           return (
