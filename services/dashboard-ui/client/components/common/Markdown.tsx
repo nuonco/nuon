@@ -7,9 +7,13 @@ import { CodeBlock } from './CodeBlock'
 import { JSONViewer } from './JSONViewer'
 import { Link } from './Link'
 import { Tabs } from './Tabs'
-import { buildNuonComponents, extractTabs, nuonTagNames, type ExtractedTabs, type MarkdownMode } from './markdown-components'
+import { Button } from './Button'
+import { ModalBase } from '@/components/surfaces/Modal'
+import { PanelBase } from '@/components/surfaces/Panel'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { buildNuonComponents, extractTabs, extractSurfaces, nuonTagNames, type ExtractedTabs, type ExtractedSurface, type MarkdownMode } from './markdown-components'
 
-const BLOCK_TAG_NAMES = new Set(nuonTagNames)
+const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered'])
 
 // Mermaid component that handles its own rendering
 const MermaidDiagram = ({ code }: { code: string }) => {
@@ -334,8 +338,49 @@ function TabsPlaceholder({
   return <Tabs tabs={tabs} />
 }
 
+function SurfacePlaceholder({
+  surfaceMap,
+  mode,
+  dataId,
+}: {
+  surfaceMap: Map<string, ExtractedSurface>
+  mode: MarkdownMode
+  dataId: string
+}) {
+  const { addModal, addPanel } = useSurfaces()
+  const surface = surfaceMap.get(dataId)
+  if (!surface) return null
+
+  const handleClick = () => {
+    const content = <Markdown content={surface.content} mode={mode} />
+    if (surface.type === 'modal') {
+      addModal(
+        <ModalBase heading={surface.heading} size={surface.size as any} showFooter={false}>
+          {content}
+        </ModalBase>
+      )
+    } else {
+      addPanel(
+        <PanelBase heading={surface.heading} size={surface.size as any}>
+          {content}
+        </PanelBase>
+      )
+    }
+  }
+
+  return (
+    <Button variant="secondary" onClick={handleClick}>
+      {surface.trigger}
+    </Button>
+  )
+}
+
 export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: string; mode?: MarkdownMode }) => {
-  const { content: processedContent, tabsMap } = useMemo(() => extractTabs(content), [content])
+  const { content: processedContent, tabsMap, surfaceMap } = useMemo(() => {
+    const { content: afterTabs, tabsMap } = extractTabs(content)
+    const { content: afterSurfaces, surfaceMap } = extractSurfaces(afterTabs)
+    return { content: afterSurfaces, tabsMap, surfaceMap }
+  }, [content])
   const processed = preprocessContent(processedContent)
 
   const components = useMemo(() => {
@@ -345,8 +390,13 @@ export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: 
         <TabsPlaceholder tabsMap={tabsMap} mode={mode} dataId={attrs['data-id']} />
       )
     }
+    if (surfaceMap.size > 0) {
+      base['nuon-surface-rendered'] = ({ node, ...attrs }: any) => (
+        <SurfacePlaceholder surfaceMap={surfaceMap} mode={mode} dataId={attrs['data-id']} />
+      )
+    }
     return base
-  }, [mode, tabsMap])
+  }, [mode, tabsMap, surfaceMap])
 
   return (
     <>

@@ -50,7 +50,6 @@ export const Overview = () => {
         <div className="flex items-center gap-2">
           <ArchitectureDiagramButton variant="secondary" />
           <Button
-            variant="primary"
             onClick={() => {
               addModal(<ViewCurrentInputsModal />)
             }}

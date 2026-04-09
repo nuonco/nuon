@@ -936,6 +936,101 @@ Current environment status:
         />
       </div>
     </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Modal</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`Click below for full details:
+
+<nuon-modal heading="Deployment details" size="lg" trigger="View details">
+
+### Step 1: prepare
+
+Make sure your environment is ready.
+
+| Check | Status |
+|-------|--------|
+| VPC | <nuon-badge theme="success">Ready</nuon-badge> |
+| IAM | <nuon-badge theme="warn">Pending</nuon-badge> |
+
+### Step 2: deploy
+
+\`\`\`bash
+nuon installs deploy --install-id inst_123
+\`\`\`
+
+<nuon-banner theme="info">This typically takes 5-10 minutes.</nuon-banner>
+
+</nuon-modal>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Panel</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`<nuon-panel heading="Configuration reference" size="half" trigger="Open reference">
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| \`API_URL\` | Yes | Base API URL |
+| \`LOG_LEVEL\` | No | Defaults to \`info\` |
+
+### Example config
+
+\`\`\`json
+{
+  "api_url": "https://api.example.com",
+  "log_level": "debug",
+  "features": {
+    "analytics": true
+  }
+}
+\`\`\`
+
+</nuon-panel>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Multiple surfaces inline</h4>
+      <div className="p-4 border rounded-lg">
+        <SurfacesProvider>
+          <Markdown
+            content={`Quick links: <nuon-modal heading="Runbook" trigger="Runbook">
+
+### Restart procedure
+
+1. Pause traffic
+2. Restart pods
+3. Verify health
+
+<nuon-banner theme="warn">Only during maintenance windows.</nuon-banner>
+
+</nuon-modal> <nuon-panel heading="Logs" size="3/4" trigger="View logs">
+
+### Recent logs
+
+\`\`\`
+2024-01-15 10:30:00 INFO  Deploy started
+2024-01-15 10:31:00 INFO  Health check passed
+2024-01-15 10:31:05 INFO  Deploy complete
+\`\`\`
+
+</nuon-panel>`}
+          />
+        </SurfacesProvider>
+      </div>
+    </div>
   </div>
 )
 
@@ -1134,3 +1229,4 @@ Regular markdown continues to work perfectly alongside the HTML elements.
     </div>
   </div>
 )
+
