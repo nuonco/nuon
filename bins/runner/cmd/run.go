@@ -62,8 +62,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		providers,
 		[]fx.Option{
 			// provide process for the heartbeater
-			// NOTE(fd): this process uses the empty string
-			fx.Supply(fx.Annotate("", fx.ResultTags(`name:"process"`))),
+			fx.Supply(fx.Annotate("build", fx.ResultTags(`name:"process"`))),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),

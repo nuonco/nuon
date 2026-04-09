@@ -58,10 +58,6 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return signalErr
 	}
 
-	// track this finished handler and sleep old ones
-	q.state.QueueRefs = append(q.state.QueueRefs, queueRef)
-	q.sleepOldHandlers(ctx)
-
 	return nil
 }
 
@@ -93,37 +89,4 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 	}
 
 	return nil
-}
-
-// defaultSleepAfterN is the number of signals that must complete after a handler
-// before the handler is put to sleep.
-const defaultSleepAfterN = 5
-
-// sleepOldHandlers puts handler workflows to sleep once enough newer signals
-// have completed after them. This frees Temporal resources for finished handlers.
-func (q *queue) sleepOldHandlers(ctx workflow.Context) {
-	l, _ := log.WorkflowLogger(ctx)
-
-	total := len(q.state.QueueRefs)
-	if total <= defaultSleepAfterN {
-		return
-	}
-
-	// Sleep all handlers except the most recent defaultSleepAfterN
-	toSleep := q.state.QueueRefs[:total-defaultSleepAfterN]
-	q.state.QueueRefs = q.state.QueueRefs[total-defaultSleepAfterN:]
-
-	for _, ref := range toSleep {
-		if _, err := handleractivities.AwaitUpdateWorkflowSleep(ctx, handleractivities.UpdateWorkflowSleepRequest{
-			UpdateID:   ref.ID,
-			WorkflowID: ref.WorkflowID,
-		}); err != nil {
-			// Log but don't fail - the handler may have already been stopped
-			if l != nil {
-				l.Warn("failed to sleep handler workflow",
-					zap.String("workflow-id", ref.WorkflowID),
-					zap.Error(err))
-			}
-		}
-	}
 }

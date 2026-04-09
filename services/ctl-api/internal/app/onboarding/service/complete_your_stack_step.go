@@ -99,11 +99,10 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 		}
 	}
 
-	// Advance step immediately so the frontend can proceed; signal will
-	// set the same value on completion (idempotent) plus clear StepStatus.
-	onboarding.CurrentStep = app.OnboardingStepInstall
-	onboarding.StepStatus = app.OnboardingStepStatusProcessing
-	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusProcessing))
+	// Mark step as in-progress; the signal will advance to the next step
+	// after the app is created and config is synced.
+	onboarding.StepStatus = app.OnboardingStepStatusInProgress
+	onboarding.SetCompositeStatus(ctx, app.StatusInProgress)
 
 	if err := s.db.WithContext(ctx).Save(onboarding).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update onboarding: %w", err))

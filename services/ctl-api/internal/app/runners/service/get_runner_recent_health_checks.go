@@ -72,8 +72,7 @@ func (s *service) getRunnerRecentHealthChecks(ctx *gin.Context, runnerID, proces
 
 	query := s.chDB.WithContext(ctx).
 		Scopes(
-			scopes.WithOverrideTable("runner_health_checks_view_v1"),
-			scopes.WithOffsetPagination,
+			scopes.WithOverrideTable("runner_health_checks_view_v2"),
 		).
 		Where(app.RunnerHealthCheck{
 			RunnerID: runnerID,

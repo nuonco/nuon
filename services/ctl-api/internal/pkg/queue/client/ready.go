@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
-	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
@@ -17,25 +17,25 @@ func (c *Client) QueueReady(ctx context.Context, queueID string) error {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
-	rawResp, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
-		UpdateOptions: tclient.UpdateWorkflowOptions{
-			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.ReadyHandlerName,
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{
-				queue.ReadyRequest{},
-			},
-		},
-		StartWorkflowOperation: c.queueStartOperation(q),
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to call query handler")
-	}
+	for {
+		resp, err := c.tClient.QueryWorkflowInNamespace(ctx, q.Workflow.Namespace, q.Workflow.ID, "", queue.ReadyHandlerName)
+		if err != nil {
+			return errors.Wrap(err, "unable to query ready handler")
+		}
 
-	var resp queue.ReadyResponse
-	if err := rawResp.Get(ctx, &resp); err != nil {
-		return errors.Wrap(err, "unable get response")
-	}
+		var readyResp queue.ReadyResponse
+		if err := resp.Get(&readyResp); err != nil {
+			return errors.Wrap(err, "unable to decode ready response")
+		}
 
-	return nil
+		if readyResp.Ready {
+			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(500 * time.Millisecond):
+		}
+	}
 }

@@ -25,7 +25,7 @@ export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
 
-const PanelBase = ({
+export const PanelBase = ({
   className,
   children,
   childrenClassName,

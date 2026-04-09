@@ -91,6 +91,14 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     header: 'Components',
     cell: (info) => {
       const components = info.getValue() as string[]
+      const isSandbox = info.row.original.type === 'sandbox'
+      if (isSandbox) {
+        return (
+          <Text variant="subtext" className="italic">
+            Sandbox
+          </Text>
+        )
+      }
       const isAllComponents =
         !components ||
         components.length === 0 ||
