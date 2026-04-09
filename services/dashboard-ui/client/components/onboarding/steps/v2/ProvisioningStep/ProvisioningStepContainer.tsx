@@ -6,7 +6,7 @@ import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
-import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getRunnerLatestHeartbeat, getWorkflow, getWorkflowSteps } from '@/lib'
+import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getInstallStack, getRunnerLatestHeartbeat, getWorkflow, getWorkflowSteps } from '@/lib'
 import { isLessThan30SecondsOld } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
@@ -403,9 +403,23 @@ function ProgressRing({
   )
 }
 
+// --- Install stack quick link ---
+
+function useInstallStackQuickLink(orgId?: string, installId?: string) {
+  const { data: stack } = useQuery({
+    queryKey: ['onboarding-install-stack', installId],
+    queryFn: () => getInstallStack({ installId: installId!, orgId: orgId! }),
+    enabled: !!installId && !!orgId,
+    refetchInterval: (query) =>
+      query.state.data?.versions?.[0]?.quick_link_url ? false : 3000,
+  })
+
+  return stack?.versions?.[0]?.quick_link_url ?? undefined
+}
+
 // --- Row component ---
 
-function ProvisioningRow({ row, isLast, runnerMeta }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta }) {
+function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta; quickLinkUrl?: string }) {
   const isActive = row.status === 'active'
   const isRunnerDone = row.id === 'runner' && row.status === 'done' && runnerMeta
 
@@ -452,6 +466,17 @@ function ProvisioningRow({ row, isLast, runnerMeta }: { row: IRow; isLast: boole
           </Text>
         )}
       </div>
+      {quickLinkUrl && row.status !== 'done' && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => window.open(quickLinkUrl, '_blank', 'noopener,noreferrer')}
+        >
+          Launch in AWS <Icon variant="ArrowSquareOut" size={14} />
+        </Button>
+      )}
       <ProgressRing completed={row.completed} total={row.total} status={row.status} size={ROW_RING_SIZE} />
     </div>
   )
@@ -488,6 +513,11 @@ export const ProvisioningStepContainer = ({
 
   const runnerRow = rows.find((r) => r.id === 'runner')
   const runnerMeta = useRunnerMeta(orgId, onboarding?.install_id, runnerRow?.status === 'done')
+  const isCloudInstall = onboarding?.install_mode === 'cloud'
+  const quickLinkUrl = useInstallStackQuickLink(
+    isCloudInstall ? orgId : undefined,
+    isCloudInstall ? onboarding?.install_id : undefined,
+  )
 
   const activeRow = rows.find((r) => r.status === 'active')
   const nextPendingRow = rows.find((r) => r.status === 'pending')
@@ -573,7 +603,13 @@ export const ProvisioningStepContainer = ({
               {rows.map((row, i) => {
                 const hasMore = allRowsDone && !isFinished
                 return (
-                  <ProvisioningRow key={row.id} row={row} isLast={!hasMore && i === rows.length - 1} runnerMeta={row.id === 'runner' ? runnerMeta : undefined} />
+                  <ProvisioningRow
+                    key={row.id}
+                    row={row}
+                    isLast={!hasMore && i === rows.length - 1}
+                    runnerMeta={row.id === 'runner' ? runnerMeta : undefined}
+                    quickLinkUrl={row.id === 'stack' ? quickLinkUrl : undefined}
+                  />
                 )
               })}
               {allRowsDone && !isFinished && (

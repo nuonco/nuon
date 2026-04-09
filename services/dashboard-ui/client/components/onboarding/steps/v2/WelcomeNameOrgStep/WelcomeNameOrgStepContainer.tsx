@@ -18,11 +18,12 @@ export const WelcomeNameOrgStepContainer = ({
   setSharedData,
   nextStepTitle,
 }: IWizardStepComponentProps) => {
-  const [orgName, setOrgName] = useState('')
-  const [waiting, setWaiting] = useState(false)
-
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
+  const isStillProvisioning = onboarding?.status_v2?.status === 'in-progress' && !!orgId
+
+  const [orgName, setOrgName] = useState('')
+  const [waiting, setWaiting] = useState(isStillProvisioning)
 
   const { data: org } = useQuery({
     queryKey: ['org', orgId],
