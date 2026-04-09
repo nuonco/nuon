@@ -45,6 +45,14 @@ templ InstallDetail(
 									View Dashboard
 								}
 							</a>
+							<a href={ templ.URL("/queues?owner_id=" + install.ID + "&owner_type=installs") }>
+								@button.Button(button.Props{
+									Variant: button.VariantOutline,
+									Size:    button.SizeSm,
+								}) {
+									View queues
+								}
+							</a>
 							if install.DeletedAt > 0 {
 								@badge.Badge(badge.Props{
 									Variant: badge.VariantDestructive,
