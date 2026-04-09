@@ -5,12 +5,12 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
@@ -59,7 +59,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var3 templ.SafeURL
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/queues/" + q.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 21, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 21, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -72,7 +72,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(q.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 21, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 21, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +85,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(emitter.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 31, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 31, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -110,7 +110,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(string(emitter.Mode))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 33, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 33, Col: 30}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -134,7 +134,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 				var templ_7745c5c3_Var8 templ.SafeURL
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(temporalUIURL + "/namespaces/" + emitter.Workflow.Namespace + "/workflows/" + emitter.Workflow.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 37, Col: 126}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 37, Col: 126}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(emitter.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 49, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 49, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -202,7 +202,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var11 templ.SafeURL
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/queues/" + q.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 54, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 54, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -215,7 +215,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(q.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 54, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 54, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -576,7 +576,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 					var templ_7745c5c3_Var26 string
 					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(formatEmitterSignalTemplate(emitter))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 127, Col: 162}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 127, Col: 162}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 					if templ_7745c5c3_Err != nil {
@@ -645,7 +645,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 						var templ_7745c5c3_Var30 string
 						templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(signals)))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 136, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 136, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 						if templ_7745c5c3_Err != nil {
@@ -937,7 +937,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var44 templ.SafeURL
 											templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/queues/" + q.ID + "/signals/" + sig.ID))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 160, Col: 73}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 160, Col: 73}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 											if templ_7745c5c3_Err != nil {
@@ -950,7 +950,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var45 string
 											templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(sig.ID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 161, Col: 21}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 161, Col: 21}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 											if templ_7745c5c3_Err != nil {
@@ -985,7 +985,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var47 string
 											templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(string(sig.Type))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 165, Col: 30}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 165, Col: 30}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 											if templ_7745c5c3_Err != nil {
@@ -1046,7 +1046,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var50 string
 											templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(sig.OwnerType)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 172, Col: 82}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 172, Col: 82}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 											if templ_7745c5c3_Err != nil {
@@ -1059,7 +1059,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var51 string
 											templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(sig.OwnerID)
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 173, Col: 80}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 173, Col: 80}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 											if templ_7745c5c3_Err != nil {
@@ -1094,7 +1094,7 @@ func QueueEmitterDetail(emitter *app.QueueEmitter, q *app.Queue, signals []app.Q
 											var templ_7745c5c3_Var53 string
 											templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(sig.CreatedAt.Format("2006-01-02 15:04:05"))
 											if templ_7745c5c3_Err != nil {
-												return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_emitter_detail.templ`, Line: 177, Col: 57}
+												return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_emitter_detail.templ`, Line: 177, Col: 57}
 											}
 											_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 											if templ_7745c5c3_Err != nil {
