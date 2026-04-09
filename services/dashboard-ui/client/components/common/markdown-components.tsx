@@ -53,6 +53,24 @@ const registry: Record<string, NuonComponent> = {
 
 export type ExtractedTabs = { name: string; content: string }[]
 
+export type ExtractedSurface = {
+  type: 'modal' | 'panel'
+  heading: string
+  size: string
+  trigger: string
+  content: string
+}
+
+function parseTagAttrs(tag: string): Record<string, string> {
+  const attrs: Record<string, string> = {}
+  const attrRegex = /(\w+)="([^"]*)"/g
+  let m: RegExpExecArray | null
+  while ((m = attrRegex.exec(tag)) !== null) {
+    attrs[m[1]] = m[2]
+  }
+  return attrs
+}
+
 export function extractTabs(content: string): {
   content: string
   tabsMap: Map<string, ExtractedTabs>
@@ -77,6 +95,32 @@ export function extractTabs(content: string): {
   )
 
   return { content: replaced, tabsMap }
+}
+
+export function extractSurfaces(content: string): {
+  content: string
+  surfaceMap: Map<string, ExtractedSurface>
+} {
+  const surfaceMap = new Map<string, ExtractedSurface>()
+  let idx = 0
+
+  const replaced = content.replace(
+    /<nuon-(modal|panel)\s([^>]*)>([\s\S]*?)<\/nuon-\1>/g,
+    (_match, type: string, attrStr: string, inner: string) => {
+      const attrs = parseTagAttrs(attrStr)
+      const id = `nuon-surface-${idx++}`
+      surfaceMap.set(id, {
+        type: type as 'modal' | 'panel',
+        heading: attrs.heading || '',
+        size: attrs.size || 'default',
+        trigger: attrs.trigger || 'View',
+        content: inner.trim(),
+      })
+      return `<nuon-surface-rendered data-id="${id}"></nuon-surface-rendered>`
+    }
+  )
+
+  return { content: replaced, surfaceMap }
 }
 
 function hasUnresolvedTemplates(attrs: Record<string, string>): boolean {
