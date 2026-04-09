@@ -67,7 +67,7 @@ func (*RunnerHealthCheck) UseView() bool {
 }
 
 func (*RunnerHealthCheck) ViewVersion() string {
-	return "v1"
+	return "v2"
 }
 
 func (i *RunnerHealthCheck) Views(db *gorm.DB) []migrations.View {
@@ -75,6 +75,10 @@ func (i *RunnerHealthCheck) Views(db *gorm.DB) []migrations.View {
 		{
 			Name: views.DefaultViewName(db, &RunnerHealthCheck{}, 1),
 			SQL:  viewsql.RunnerHealthCheckViewV1,
+		},
+		{
+			Name: views.DefaultViewName(db, &RunnerHealthCheck{}, 2),
+			SQL:  viewsql.RunnerHealthCheckViewV2,
 		},
 	}
 }
