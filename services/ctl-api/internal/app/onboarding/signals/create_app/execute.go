@@ -111,6 +111,20 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 		}
 
 		logger.Info("triggered app branch run", "run_id", runResp.RunID, "workflow_id", runResp.WorkflowID)
+
+		// Advance to install step now that the branch run is triggered
+		nextStep := string(app.OnboardingStepInstall)
+		stepStatus := string(app.OnboardingStepStatusActive)
+		_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
+			Req: &activities.UpdateOnboardingInput{
+				OnboardingID: s.OnboardingID,
+				CurrentStep:  &nextStep,
+				StepStatus:   &stepStatus,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("unable to advance onboarding step: %w", err)
+		}
 	} else if onboarding.CloudProvider != nil && *onboarding.CloudProvider != "" {
 		// For custom apps, build config programmatically and sync to create DB records
 		_, err := activities.AwaitBuildCustomAppConfig(ctx, activities.BuildCustomAppConfigRequest{
@@ -128,6 +142,20 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 		}
 
 		logger.Info("synced custom app config", "app_config_id", syncResp.AppConfigID, "component_ids", syncResp.ComponentIDs)
+
+		// Advance to install step now that the app and config are synced
+		nextStep := string(app.OnboardingStepInstall)
+		stepStatus := string(app.OnboardingStepStatusActive)
+		_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
+			Req: &activities.UpdateOnboardingInput{
+				OnboardingID: s.OnboardingID,
+				CurrentStep:  &nextStep,
+				StepStatus:   &stepStatus,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("unable to advance onboarding step: %w", err)
+		}
 
 		// Trigger builds for each component (fire-and-forget, same as example app path)
 		for _, componentID := range syncResp.ComponentIDs {
@@ -150,20 +178,6 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 			logger.Info("enqueued component build", "component_id", componentID)
 		}
-	}
-
-	// Advance step (app references already saved above)
-	nextStep := string(app.OnboardingStepInstall)
-	stepStatus := string(app.OnboardingStepStatusActive)
-	_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
-		Req: &activities.UpdateOnboardingInput{
-			OnboardingID: s.OnboardingID,
-			CurrentStep:  &nextStep,
-			StepStatus:   &stepStatus,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("unable to advance onboarding step: %w", err)
 	}
 
 	return nil
