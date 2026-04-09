@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -31,6 +32,11 @@ type Signal struct {
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SleepAfter = (*Signal)(nil)
+
+func (s *Signal) SleepAfter() time.Duration {
+	return 0
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -56,7 +62,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Only run health checks for active or offline processes; noop for any other status
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
-		return nil
+		return dbgenerics.TemporalGormError(err, "runner process not found")
 	}
 
 	switch process.ProcessStatus() {

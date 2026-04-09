@@ -57,7 +57,7 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 		WorkflowID:            childWorkflowID,
 		TaskQueue:             parentInfo.TaskQueueName,
 		CronSchedule:          emitter.CronSchedule,
-		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},
@@ -72,6 +72,10 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 
 	var childExec workflow.Execution
 	if err := childFuture.GetChildWorkflowExecution().Get(ctx, &childExec); err != nil {
+		l.Error("cron ticker child workflow already running or failed to start",
+			zap.String("child-workflow-id", childWorkflowID),
+			zap.Error(err),
+		)
 		return errors.Wrap(err, "failed to start cron ticker child workflow")
 	}
 
