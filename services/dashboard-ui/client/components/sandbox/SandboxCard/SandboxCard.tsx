@@ -1,36 +1,28 @@
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { ComponentType } from '@/components/components/ComponentType'
-import type { TComponentType } from '@/types'
 
-export interface IComponentCard {
-  name?: string
-  type?: TComponentType
+export interface ISandboxCard {
   status?: string
   href?: string
   isLoading?: boolean
   error?: string
 }
 
-export const ComponentCard = ({
-  name,
-  type,
+const Skeleton = () => (
+  <div className="flex w-fit items-center gap-3 rounded-lg border border-cool-grey-200 dark:border-cool-grey-800 px-3 py-2.5 animate-pulse">
+    <div className="h-4 w-16 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
+    <div className="h-4 w-14 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
+  </div>
+)
+
+export const SandboxCard = ({
   status,
   href,
   isLoading,
   error,
-}: IComponentCard) => {
-  if (isLoading) {
-    return (
-      <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
-        <Skeleton width="6rem" />
-        <Skeleton width="4rem" />
-        <Skeleton width="3.5rem" />
-      </div>
-    )
-  }
+}: ISandboxCard) => {
+  if (isLoading) return <Skeleton />
 
   if (error) {
     return (
@@ -45,12 +37,9 @@ export const ComponentCard = ({
   const content = (
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
 
-      {name && (
-        <Text variant="body" className="font-strong">
-          {name}
-        </Text>
-      )}
-      {type && <ComponentType type={type} variant="subtext" colorVariant="color" />}
+      <Text variant="body" className="font-strong">
+        Sandbox
+      </Text>
       {status && <Status status={status} variant="badge" />}
     </div>
   )
