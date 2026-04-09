@@ -8,9 +8,10 @@ import (
 )
 
 type UpdateQueueSignalStatusRequest struct {
-	QueueSignalID     string     `json:"queue_signal_id" validate:"required"`
-	Status            app.Status `json:"status" validate:"required"`
-	StatusDescription string     `json:"status_description,omitempty"`
+	QueueSignalID     string         `json:"queue_signal_id" validate:"required"`
+	Status            app.Status     `json:"status" validate:"required"`
+	StatusDescription string         `json:"status_description,omitempty"`
+	Metadata          map[string]any `json:"metadata,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -19,6 +20,9 @@ func (a *Activities) UpdateQueueSignalStatus(ctx context.Context, req *UpdateQue
 	cs := app.NewCompositeStatus(ctx, req.Status)
 	if req.StatusDescription != "" {
 		cs.StatusHumanDescription = req.StatusDescription
+	}
+	for k, v := range req.Metadata {
+		cs.Metadata[k] = v
 	}
 
 	res := a.db.WithContext(ctx).

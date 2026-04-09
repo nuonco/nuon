@@ -3,6 +3,7 @@ import { AdminActionGroup } from '../../shared/AdminActionGroup'
 import { AdminActionCard } from '../../shared/AdminActionCard'
 import { AdminMetadataPanel } from '../../shared/AdminMetadata'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { adminReprovisionApp, adminRestartApp } from '@/lib'
 
 interface IAdminAppSection {
@@ -16,6 +17,10 @@ export const AdminAppSection = ({ appId, adminEmail }: IAdminAppSection) => {
     <AdminMetadataPanel>
       <div className="space-y-1">
         <TemporalLink namespace="apps" eventLoopId={appId} />
+        <AdminDashboardLink
+          path={`/queues?owner_id=${appId}&owner_type=apps`}
+          label="View queues"
+        />
       </div>
     </AdminMetadataPanel>
   )
