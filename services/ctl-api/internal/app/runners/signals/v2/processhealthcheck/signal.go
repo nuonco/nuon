@@ -31,7 +31,7 @@ type Signal struct {
 	ProcessID string `json:"process_id"`
 }
 
-var _ signal.Signal    = (*Signal)(nil)
+var _ signal.Signal = (*Signal)(nil)
 var _ signal.SleepAfter = (*Signal)(nil)
 
 func (s *Signal) SleepAfter() time.Duration {
