@@ -317,6 +317,28 @@ func (p *Planner) getSandboxModeOutputs(install app.Install, stack app.InstallSt
 			},
 			"location": stack.InstallStackOutputs.AzureStackOutputs.ResourceGroupLocation,
 		}
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		return map[string]any{
+			"namespaces": []string{
+				"default",
+				install.ID,
+			},
+			"region":     stack.InstallStackOutputs.GCPStackOutputs.Region,
+			"project_id": stack.InstallStackOutputs.GCPStackOutputs.ProjectID,
+			"network": map[string]any{
+				"name": stack.InstallStackOutputs.GCPStackOutputs.NetworkName,
+				"id":   stack.InstallStackOutputs.GCPStackOutputs.NetworkID,
+			},
+			"cluster": map[string]any{
+				"name":                       fmt.Sprintf("gke-%s", install.ID),
+				"endpoint":                   "https://10.0.0.1",
+				"certificate_authority_data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREF2TVMwd0t3WURWUVFERXlRME4yVTEK",
+			},
+			"gar": map[string]any{
+				"repository_url": fmt.Sprintf("%s-docker.pkg.dev/%s/nuon-app", stack.InstallStackOutputs.GCPStackOutputs.Region, stack.InstallStackOutputs.GCPStackOutputs.ProjectID),
+				"registry_url":   fmt.Sprintf("%s-docker.pkg.dev", stack.InstallStackOutputs.GCPStackOutputs.Region),
+			},
+		}
 	default:
 		return map[string]any{
 			"namespaces": []string{
