@@ -4,6 +4,7 @@ import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
 import { ComponentCard } from '@/components/install-components/ComponentCard'
 import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
+import { SandboxCard } from '@/components/sandbox/SandboxCard'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -56,6 +57,11 @@ const registry: Record<string, NuonComponent> = {
       id: attrs.id,
       name: attrs.name,
     }),
+    requiresInstall: true,
+  },
+  'nuon-sandbox-card': {
+    component: SandboxCard,
+    mapProps: noProps,
     requiresInstall: true,
   },
 }
