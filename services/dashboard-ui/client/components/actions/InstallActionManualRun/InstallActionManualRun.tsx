@@ -82,7 +82,7 @@ export const InstallActionManualRunModal = ({
   return (
     <Modal
       heading={`Run action ${action?.name}?`}
-      size="sm"
+      size="default"
       primaryActionTrigger={{
         children: isLoading ? (
           <>
