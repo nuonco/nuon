@@ -57,19 +57,47 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 				</div>
 			</div>
 
-			<!-- Timing Card -->
-			if hasTimingMetadata(signal) {
-				<div class="grid grid-cols-3 gap-4 mb-6">
-					@timingCard("Enqueued", signal.CreatedAt.Format("2006-01-02 15:04:05 MST"), "When the signal was created")
-					@timingCard("Dequeued", getMetadataString(signal.Status, "dequeued_at"), "When the queue started processing")
-					@timingCard("Execute started", getMetadataString(signal.Status, "execute_started_at"), "When signal execution began")
-				</div>
-				<div class="grid grid-cols-3 gap-4 mb-6">
-					@timingCard("Execute finished", getMetadataString(signal.Status, "execute_finished_at"), "When signal execution completed")
-					@timingCard("Duration", computeDuration(signal), "Total execution time")
-					@timingCard("Queue wait", computeQueueWait(signal), "Time spent waiting in queue")
-				</div>
-			}
+			<!-- Timeline -->
+			{{ enqueuedAt := signal.CreatedAt.Format("2006-01-02 15:04:05 MST") }}
+			{{ dequeuedAt := getMetadataString(signal.Status, "dequeued_at") }}
+			{{ executeStartedAt := getMetadataString(signal.Status, "execute_started_at") }}
+			{{ executeFinishedAt := getMetadataString(signal.Status, "execute_finished_at") }}
+			<div class="mb-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Timeline
+						}
+					}
+					@card.Content() {
+						<div class="relative pl-6">
+							<!-- Vertical line -->
+							<div class="absolute left-[9px] top-2 bottom-2 w-px bg-border"></div>
+
+							<!-- Enqueued -->
+							@timelineStep("Enqueued", enqueuedAt, true)
+
+							<!-- Duration: Queue wait -->
+							@timelineDuration(computeQueueWait(signal))
+
+							<!-- Dequeued -->
+							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
+
+							<!-- Duration: Dequeue → Execute -->
+							@timelineDuration(computeDequeuedToExecute(signal))
+
+							<!-- Execute Started -->
+							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
+
+							<!-- Duration: Execution time -->
+							@timelineDuration(computeDuration(signal))
+
+							<!-- Execute Finished -->
+							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
+						</div>
+					}
+				}
+			</div>
 
 			<!-- Info Grid -->
 			<div class="grid grid-cols-2 gap-6 mb-6">
@@ -191,19 +219,30 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 	}
 }
 
-templ timingCard(label, value, description string) {
-	@card.Card() {
-		@card.Content() {
-			<div class="text-xs text-muted-foreground uppercase">{ label }</div>
-			<div class="text-sm font-mono mt-1">
-				if value != "" {
-					{ value }
-				} else {
-					<span class="text-muted-foreground">—</span>
-				}
-			</div>
-			<div class="text-xs text-muted-foreground mt-1">{ description }</div>
+templ timelineStep(label, value string, active bool) {
+	<div class="relative flex items-start gap-3 py-2">
+		<!-- Dot -->
+		if active {
+			<div class="absolute left-[-18px] top-3 w-2.5 h-2.5 rounded-full bg-cyan border-2 border-background"></div>
+		} else {
+			<div class="absolute left-[-18px] top-3 w-2.5 h-2.5 rounded-full bg-muted-foreground/30 border-2 border-background"></div>
 		}
+		<div>
+			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
+			if value != "" {
+				<div class="text-sm font-mono mt-0.5">{ value }</div>
+			} else {
+				<div class="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
+			}
+		</div>
+	</div>
+}
+
+templ timelineDuration(duration string) {
+	if duration != "" {
+		<div class="relative py-1 pl-4">
+			<div class="text-xs font-mono text-cyan/70">{ duration }</div>
+		</div>
 	}
 }
 
@@ -238,6 +277,19 @@ func getMetadataString(status app.CompositeStatus, key string) string {
 	return ""
 }
 
+func formatDuration(d time.Duration) string {
+	if d < 0 {
+		return "0s"
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	if d < time.Minute {
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	}
+	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+}
+
 func computeDuration(signal *app.QueueSignal) string {
 	startStr := getMetadataString(signal.Status, "execute_started_at")
 	endStr := getMetadataString(signal.Status, "execute_finished_at")
@@ -252,14 +304,24 @@ func computeDuration(signal *app.QueueSignal) string {
 	if err != nil {
 		return ""
 	}
-	d := end.Sub(start)
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+	return formatDuration(end.Sub(start))
+}
+
+func computeDequeuedToExecute(signal *app.QueueSignal) string {
+	dequeuedStr := getMetadataString(signal.Status, "dequeued_at")
+	startStr := getMetadataString(signal.Status, "execute_started_at")
+	if dequeuedStr == "" || startStr == "" {
+		return ""
 	}
-	if d < time.Minute {
-		return fmt.Sprintf("%.1fs", d.Seconds())
+	dequeued, err := time.Parse(time.RFC3339, dequeuedStr)
+	if err != nil {
+		return ""
 	}
-	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	start, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return ""
+	}
+	return formatDuration(start.Sub(dequeued))
 }
 
 func computeQueueWait(signal *app.QueueSignal) string {
@@ -271,15 +333,5 @@ func computeQueueWait(signal *app.QueueSignal) string {
 	if err != nil {
 		return ""
 	}
-	d := dequeued.Sub(signal.CreatedAt)
-	if d < 0 {
-		return "0s"
-	}
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
-	}
-	if d < time.Minute {
-		return fmt.Sprintf("%.1fs", d.Seconds())
-	}
-	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	return formatDuration(dequeued.Sub(signal.CreatedAt))
 }

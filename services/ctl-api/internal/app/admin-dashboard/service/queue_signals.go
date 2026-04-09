@@ -1,0 +1,161 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"math"
+	"net/http"
+	"sort"
+
+	"github.com/a-h/templ"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
+)
+
+const queueSignalsPerPage = 100
+
+func (s *service) QueueSignals(c *gin.Context) {
+	ctx := c.Request.Context()
+	page := getPageFromQuery(c)
+	search := c.Query("search")
+	ownerID := c.Query("owner_id")
+	signalType := c.Query("signal_type")
+	status := c.Query("status")
+	namespace := c.Query("namespace")
+
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	if err != nil {
+		s.l.Error("failed to get queue signals", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
+		return
+	}
+
+	namespaces, err := s.getDistinctNamespaces(ctx)
+	if err != nil {
+		s.l.Error("failed to get namespaces", zap.Error(err))
+	}
+
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	if err != nil {
+		s.l.Error("failed to get signal types", zap.Error(err))
+	}
+
+	component := views.QueueSignals(signals, search, ownerID, signalType, status, namespace, namespaces, signalTypes, page, totalPages)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
+	ctx := c.Request.Context()
+	page := getPageFromQuery(c)
+	search := c.Query("search")
+	ownerID := c.Query("owner_id")
+	signalType := c.Query("signal_type")
+	status := c.Query("status")
+	namespace := c.Query("namespace")
+
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	if err != nil {
+		s.l.Error("failed to get queue signals", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
+		return
+	}
+
+	component := views.QueueSignalsGlobalTable(signals, search, ownerID, signalType, status, namespace, page, totalPages)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+// QueueSignalTypeOptions returns the signal type selectbox options filtered by namespace.
+// Used by HTMX to update the signal type dropdown when namespace changes.
+func (s *service) QueueSignalTypeOptions(c *gin.Context) {
+	ctx := c.Request.Context()
+	namespace := c.Query("namespace")
+	signalType := c.Query("signal_type")
+
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	if err != nil {
+		s.l.Error("failed to get signal types", zap.Error(err))
+	}
+
+	component := views.SignalTypeOptions(signalTypes, signalType)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace string, page int) ([]app.QueueSignal, int, error) {
+	var signals []app.QueueSignal
+	var totalCount int64
+
+	query := s.db.WithContext(ctx).Model(&app.QueueSignal{})
+
+	if search != "" {
+		query = query.Where("id = ? OR owner_id = ? OR queue_id = ?", search, search, search)
+	}
+	if ownerID != "" {
+		query = query.Where("owner_id = ?", ownerID)
+	}
+	if signalType != "" {
+		query = query.Where("type = ?", signalType)
+	}
+	if status != "" {
+		query = query.Where("status->>'status' = ?", status)
+	}
+	if namespace != "" {
+		query = query.Where("workflow->>'namespace' = ?", namespace)
+	}
+
+	if err := query.Count(&totalCount).Error; err != nil {
+		return nil, 0, fmt.Errorf("unable to count queue signals: %w", err)
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(queueSignalsPerPage)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	offset := (page - 1) * queueSignalsPerPage
+
+	res := query.
+		Order("created_at desc").
+		Limit(queueSignalsPerPage).
+		Offset(offset).
+		Find(&signals)
+
+	if res.Error != nil {
+		return nil, 0, fmt.Errorf("unable to get queue signals: %w", res.Error)
+	}
+
+	return signals, totalPages, nil
+}
+
+func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
+	var namespaces []string
+	res := s.db.WithContext(ctx).
+		Model(&app.QueueSignal{}).
+		Select("DISTINCT workflow->>'namespace'").
+		Where("workflow->>'namespace' != ''").
+		Pluck("workflow->>'namespace'", &namespaces)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get distinct namespaces: %w", res.Error)
+	}
+	sort.Strings(namespaces)
+	return namespaces, nil
+}
+
+func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string) ([]string, error) {
+	var types []string
+	query := s.db.WithContext(ctx).Model(&app.QueueSignal{})
+	if namespace != "" {
+		query = query.Where("workflow->>'namespace' = ?", namespace)
+	}
+	res := query.
+		Select("DISTINCT type").
+		Where("type != ''").
+		Pluck("type", &types)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get distinct signal types: %w", res.Error)
+	}
+	sort.Strings(types)
+	return types, nil
+}

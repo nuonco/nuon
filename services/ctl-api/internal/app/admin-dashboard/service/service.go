@@ -108,6 +108,11 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
 
+	// Queue signals (global view)
+	api.GET("/queue-signals", s.QueueSignals)
+	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
+	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }
