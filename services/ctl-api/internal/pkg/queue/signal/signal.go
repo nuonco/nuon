@@ -18,8 +18,10 @@ type Signal interface {
 }
 
 // SleepAfter is an optional interface that signals can implement to control
-// how long the handler sleeps after execution. Defaults to 1 minute if not implemented.
-// Return 0 or any duration < 1 second to skip the sleep entirely.
+// how long the handler workflow stays alive after execution. This grace period
+// allows subsequent signals to reuse the running workflow via update-with-start
+// instead of starting a new one. Defaults to 1 minute if not implemented.
+// Return 0 to terminate the handler workflow immediately after execution.
 type SleepAfter interface {
 	SleepAfter() time.Duration
 }

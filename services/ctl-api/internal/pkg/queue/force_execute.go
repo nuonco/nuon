@@ -70,9 +70,7 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 		return nil, errors.Wrap(signalErr, "force execute failed")
 	}
 
-	// track this finished handler and sleep old ones
 	q.state.QueueRefs = append(q.state.QueueRefs, queueRef)
-	q.sleepOldHandlers(ctx)
 
 	return &ForceExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
 }
