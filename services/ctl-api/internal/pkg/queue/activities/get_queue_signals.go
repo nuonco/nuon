@@ -3,8 +3,6 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -27,7 +25,7 @@ func (a *Activities) getQueueSignals(ctx context.Context, queueID string) ([]*ap
 		QueueID: queueID,
 	}).Order("created_at asc").
 		Find(&queueSignals); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue signals")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue signals")
 	}
 
 	return queueSignals, nil

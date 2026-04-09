@@ -10,6 +10,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
@@ -81,7 +82,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 func (c *Client) getQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {
 	var q app.QueueSignal
 	if res := c.db.WithContext(ctx).First(&q, "id = ?", id); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue signal")
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get queue signal")
 	}
 
 	return &q, nil

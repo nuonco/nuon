@@ -5,11 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/pkg/errors"
-
 	"go.temporal.io/sdk/activity"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
@@ -47,7 +46,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 	}
 
 	if res := a.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create queue")
+		return nil, generics.TemporalGormError(res.Error, "unable to create queue signal")
 	}
 
 	return &queueSignal, nil
