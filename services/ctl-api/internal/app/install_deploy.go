@@ -64,6 +64,8 @@ type InstallDeploy struct {
 
 	PolicyReports []PolicyReport `json:"policy_reports,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_deploys" temporaljson:"policy_reports,omitzero,omitempty"`
 
+	QueueSignals []QueueSignal `json:"queue_signals,omitzero" gorm:"polymorphic:Owner;polymorphicValue:install_deploys" temporaljson:"queue_signals,omitzero,omitempty"`
+
 	ComponentBuildID string         `json:"build_id,omitzero" gorm:"notnull" temporaljson:"component_build_id,omitzero,omitempty"`
 	ComponentBuild   ComponentBuild `faker:"-" json:"component_build,omitzero" temporaljson:"component_build,omitzero,omitempty"`
 

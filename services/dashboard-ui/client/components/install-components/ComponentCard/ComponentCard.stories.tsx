@@ -32,11 +32,7 @@ export const DockerBuild = () => (
 )
 
 export const NoLink = () => (
-  <ComponentCard
-    name="database"
-    type="terraform_module"
-    status="active"
-  />
+  <ComponentCard name="database" type="terraform_module" status="active" />
 )
 
 export const Loading = () => <ComponentCard isLoading />

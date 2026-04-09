@@ -3,15 +3,15 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateQueueSignalStatusRequest struct {
-	QueueSignalID     string     `json:"queue_signal_id" validate:"required"`
-	Status            app.Status `json:"status" validate:"required"`
-	StatusDescription string     `json:"status_description,omitempty"`
+	QueueSignalID     string         `json:"queue_signal_id" validate:"required"`
+	Status            app.Status     `json:"status" validate:"required"`
+	StatusDescription string         `json:"status_description,omitempty"`
+	Metadata          map[string]any `json:"metadata,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -21,13 +21,16 @@ func (a *Activities) UpdateQueueSignalStatus(ctx context.Context, req *UpdateQue
 	if req.StatusDescription != "" {
 		cs.StatusHumanDescription = req.StatusDescription
 	}
+	for k, v := range req.Metadata {
+		cs.Metadata[k] = v
+	}
 
 	res := a.db.WithContext(ctx).
 		Model(&app.QueueSignal{}).
 		Where("id = ?", req.QueueSignalID).
 		Update("status", cs)
 	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update queue signal status")
+		return generics.TemporalGormError(res.Error, "unable to update queue signal status")
 	}
 
 	return nil
