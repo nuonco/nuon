@@ -10,6 +10,7 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TOrg, TInstall } from '@/types'
 import { ComponentCardComponent } from '@/components/install-components/ComponentCard'
 import { SandboxCardComponent } from '@/components/sandbox/SandboxCard'
+import { StackCardComponent } from '@/components/stacks/StackCard'
 import { Markdown } from './Markdown'
 
 const mockOrg = { id: 'org-mock', name: 'Mock Org' } as TOrg
@@ -910,6 +911,31 @@ Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Stack card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they render the stack status.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
+          <StackCardComponent
+            status="active"
+            runCount={5}
+            createdAt="2025-01-15T10:30:00Z"
+            href="/org-mock/installs/install-mock/stacks"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Stack status: <nuon-stack-card></nuon-stack-card>`}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Combined example</h4>
       <div className="p-4 border rounded-lg">
         <Markdown
@@ -1130,6 +1156,8 @@ Component card: <nuon-component-card name="networking"></nuon-component-card>
 
 Sandbox card: <nuon-sandbox-card></nuon-sandbox-card>
 
+Stack card: <nuon-stack-card></nuon-stack-card>
+
 Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
         />
       </div>
@@ -1171,6 +1199,10 @@ View a specific component:
 <nuon-component-card name="networking"></nuon-component-card>
 
 <nuon-component-card id="comp_abc123"></nuon-component-card>
+
+Stack overview:
+
+<nuon-stack-card></nuon-stack-card>
 
 Display components also render: <nuon-badge theme="success">Healthy</nuon-badge>`}
           />
