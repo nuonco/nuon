@@ -77,7 +77,7 @@ export const DeployComponentModal = ({
           </Text>
         </div>
       }
-      size="sm"
+      size="lg"
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}
