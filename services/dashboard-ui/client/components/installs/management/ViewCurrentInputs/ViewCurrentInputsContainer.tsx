@@ -64,8 +64,9 @@ export const ViewCurrentInputsButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
+      {props?.isMenuButton ? null : <Icon variant="ListChecks" />}
       Current inputs
-      <Icon variant="ListChecks" />
+      {props?.isMenuButton ? <Icon variant="ListChecks" /> : null}
     </Button>
   )
 }
