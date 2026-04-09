@@ -3,9 +3,8 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateQueueSignalStatusRequest struct {
@@ -27,7 +26,7 @@ func (a *Activities) UpdateQueueSignalStatus(ctx context.Context, req *UpdateQue
 		Where("id = ?", req.QueueSignalID).
 		Update("status", cs)
 	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update queue signal status")
+		return generics.TemporalGormError(res.Error, "unable to update queue signal status")
 	}
 
 	return nil

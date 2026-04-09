@@ -3,9 +3,8 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @temporal-gen-v2 activity
@@ -21,7 +20,7 @@ func (a *Activities) getQueue(ctx context.Context, queueID string) (*app.Queue, 
 			ID: queueID,
 		}).
 		First(&queue); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue")
 	}
 
 	return &queue, nil

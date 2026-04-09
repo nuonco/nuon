@@ -3,8 +3,6 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -37,7 +35,7 @@ func (a *Activities) getQueueSignal(ctx context.Context, queueSignalID string) (
 			ID: queueSignalID,
 		}).
 		First(&qs); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue signal")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue signal")
 	}
 
 	return &qs, nil
