@@ -1,0 +1,72 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+templ QueueEmittersTable(emitters []app.QueueEmitter, queueID string) {
+	<div id="emitters-table">
+		if len(emitters) == 0 {
+			<div class="text-sm text-muted-foreground py-4 text-center">No emitters configured.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Emitter }
+						@table.Head() { Mode }
+						@table.Head() { Schedule }
+						@table.Head() { Status }
+						@table.Head() { Signal type }
+						@table.Head() { Emit count }
+						@table.Head() { Last emitted }
+					}
+				}
+				@table.Body() {
+					for _, e := range emitters {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-0.5">
+									<a href={ templ.URL("/queues/" + queueID + "/emitters/" + e.ID) } class="text-sm font-medium text-cyan hover:underline">{ e.Name }</a>
+									<span class="font-mono text-xs text-muted-foreground">{ e.ID }</span>
+								</div>
+							}
+							@table.Cell() {
+								@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+									{ string(e.Mode) }
+								}
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								if e.CronSchedule != "" {
+									{ e.CronSchedule }
+								} else if e.ScheduledAt != nil {
+									{ e.ScheduledAt.Format("2006-01-02 15:04:05") }
+								} else {
+									<span class="text-muted-foreground">—</span>
+								}
+							}
+							@table.Cell() {
+								@signalStatusBadge(e.Status)
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ string(e.SignalType) }
+							}
+							@table.Cell(table.CellProps{Class: "text-center font-mono text-sm"}) {
+								{ fmt.Sprintf("%d", e.EmitCount) }
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								if e.LastEmittedAt != nil {
+									{ e.LastEmittedAt.Format("2006-01-02 15:04:05") }
+								} else {
+									<span class="text-muted-foreground">never</span>
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
+}
