@@ -23,6 +23,12 @@ type ForceExecuteResponse struct {
 // @temporal-gen-v2 update
 // @id force-execute
 func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteRequest) (*ForceExecuteResponse, error) {
+	if err := workflow.Await(ctx, func() bool {
+		return q.ready
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to await for ready")
+	}
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
