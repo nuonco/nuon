@@ -1,17 +1,14 @@
 package rerunflow
 
 import (
-	pkgerrors "github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
@@ -33,49 +30,6 @@ func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator
 	}
 }
 
-func getExecuteFlowExecFn(installID string) func(workflow.Context, *signaldb.SignalData, app.WorkflowStep) error {
-	return func(ctx workflow.Context, queueSignal *signaldb.SignalData, step app.WorkflowStep) error {
-		logger := workflow.GetLogger(ctx)
-
-		sig := queueSignal.Signal
-		if sig == nil {
-			return nil
-		}
-
-		logger.Info("enqueuing signal to install queue",
-			"step_name", step.Name,
-			"owner_id", installID,
-			"owner_type", "installs",
-		)
-
-		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:         installID,
-			OwnerType:       "installs",
-			QueueName:       "install-signals",
-			Signal:          sig,
-			SignalOwnerID:   step.ID,
-			SignalOwnerType: "install_workflow_steps",
-		})
-		if err != nil {
-			return pkgerrors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
-		}
-
-		logger.Info("waiting for queue signal to complete",
-			"step_name", step.Name,
-			"queue_signal_id", enqueueResp.QueueSignalID,
-		)
-
-		_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
-		if err != nil {
-			return pkgerrors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
-		}
-
-		logger.Info("queue signal completed successfully", "step_name", step.Name)
-
-		return nil
-	}
-}
-
 // rerunFlow runs the workflow conductor's Rerun with v2 generators and queue-based execution.
 // Handles ContinueAsNewErr by looping internally (same rationale as executeFlow).
 func (s *Signal) rerunFlow(ctx workflow.Context) error {
@@ -83,10 +37,16 @@ func (s *Signal) rerunFlow(ctx workflow.Context) error {
 		ID: s.InstallID,
 	}
 
+	// Check if steps-workflows feature is enabled
+	stepsWorkflows, _ := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStepsWorkflows))
+
 	fc := &flow.WorkflowConductor[*signals.Signal]{
-		Generators:        getWorkflowStepGenerators(),
-		ExecFn:            getExecuteFlowExecFn(s.InstallID),
-		StepChildWorkflow: false,
+		Generators:          getWorkflowStepGenerators(),
+		StepChildWorkflow:   stepsWorkflows,
+		StepQueueName:       "install-workflow-steps",
+		StepTargetQueueName: "install-signals",
+		StepOwnerID:         s.InstallID,
+		StepOwnerType:       "installs",
 	}
 
 	continueFromIdx := 0

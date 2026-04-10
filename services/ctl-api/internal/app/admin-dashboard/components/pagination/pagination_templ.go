@@ -105,7 +105,7 @@ func Pagination(props ...Props) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(p.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 63, Col: 12}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 63, Col: 12}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -123,7 +123,7 @@ func Pagination(props ...Props) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var2).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func Content(props ...ContentProps) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 81, Col: 12}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 81, Col: 12}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -262,7 +262,7 @@ func Item(props ...ItemProps) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 97, Col: 12}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 97, Col: 12}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -436,7 +436,7 @@ func Previous(props ...PreviousProps) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(p.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 150, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 150, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -509,7 +509,7 @@ func Next(props ...NextProps) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(p.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/pagination/pagination.templ`, Line: 169, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/pagination/pagination.templ`, Line: 169, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {

@@ -21,6 +21,10 @@ const (
 
 	// InstallSignalsQueueName is the queue that handles individual install signal execution.
 	InstallSignalsQueueName = "install-signals"
+
+	// InstallWorkflowStepsQueueName is the queue that executes individual workflow steps
+	// as their own signals (when steps-workflows feature is enabled).
+	InstallWorkflowStepsQueueName = "install-workflow-steps"
 )
 
 type Params struct {

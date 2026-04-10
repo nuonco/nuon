@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 
 	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
@@ -22,15 +23,22 @@ func (s *service) Queues(c *gin.Context) {
 	ownerID := c.Query("owner_id")
 	ownerType := c.Query("owner_type")
 	search := c.Query("search")
+	queueName := c.Query("queue_name")
+	namespace := c.Query("namespace")
 
-	queues, totalPages, err := s.getQueues(ctx, ownerID, ownerType, search, page)
+	queues, totalPages, err := s.getQueues(ctx, ownerID, ownerType, search, queueName, namespace, page)
 	if err != nil {
 		s.l.Error("failed to get queues", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queues"})
 		return
 	}
 
-	component := views.Queues(queues, ownerID, ownerType, search, page, totalPages)
+	namespaces, err := s.getDistinctQueueNamespaces(ctx)
+	if err != nil {
+		s.l.Error("failed to get queue namespaces", zap.Error(err))
+	}
+
+	component := views.Queues(queues, ownerID, ownerType, search, queueName, namespace, namespaces, page, totalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -40,19 +48,21 @@ func (s *service) QueuesTable(c *gin.Context) {
 	ownerID := c.Query("owner_id")
 	ownerType := c.Query("owner_type")
 	search := c.Query("search")
+	queueName := c.Query("queue_name")
+	namespace := c.Query("namespace")
 
-	queues, totalPages, err := s.getQueues(ctx, ownerID, ownerType, search, page)
+	queues, totalPages, err := s.getQueues(ctx, ownerID, ownerType, search, queueName, namespace, page)
 	if err != nil {
 		s.l.Error("failed to get queues", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queues"})
 		return
 	}
 
-	component := views.QueuesTable(queues, ownerID, ownerType, search, page, totalPages)
+	component := views.QueuesTable(queues, ownerID, ownerType, search, queueName, namespace, page, totalPages)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search string, page int) ([]app.Queue, int, error) {
+func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search, queueName, namespace string, page int) ([]app.Queue, int, error) {
 	var queues []app.Queue
 	var totalCount int64
 
@@ -66,6 +76,12 @@ func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search stri
 	}
 	if search != "" {
 		query = query.Where("id = ? OR owner_id = ? OR name ILIKE ?", search, search, "%"+search+"%")
+	}
+	if queueName != "" {
+		query = query.Where("name = ?", queueName)
+	}
+	if namespace != "" {
+		query = query.Where("workflow->>'namespace' = ?", namespace)
 	}
 
 	if err := query.Count(&totalCount).Error; err != nil {
@@ -91,4 +107,18 @@ func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search stri
 	}
 
 	return queues, totalPages, nil
+}
+
+func (s *service) getDistinctQueueNamespaces(ctx context.Context) ([]string, error) {
+	var namespaces []string
+	res := s.db.WithContext(ctx).
+		Model(&app.Queue{}).
+		Select("DISTINCT workflow->>'namespace'").
+		Where("workflow->>'namespace' != ''").
+		Pluck("workflow->>'namespace'", &namespaces)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get distinct queue namespaces: %w", res.Error)
+	}
+	sort.Strings(namespaces)
+	return namespaces, nil
 }

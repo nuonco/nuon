@@ -32,17 +32,36 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 	for i := startingStepNumber; i < len(steps); i++ {
 		step := &steps[i]
 
-		reFetchSteps, err := c.executeFlowStep(ctx, req, step.Idx, step, flw)
+		var err error
+		if c.StepChildWorkflow {
+			// Dispatch the full step lifecycle as a signal to the step queue.
+			// The signal handles status updates, inner signal dispatch, approval,
+			// policy checks, etc. Always re-fetch steps afterward since the signal
+			// may have created clone steps or modified sibling steps.
+			err = c.dispatchFlowStepSignal(ctx, step, flw)
 
-		if reFetchSteps {
-			// outer steps loop should continue to retry the step since the result here is ordered by idx asc
-			steps, err = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
+			var refetchErr error
+			steps, refetchErr = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
 				FlowID: flw.ID,
-			}) // this will re-query the steps from the database
-			if err != nil {
-				return errors.Wrap(err, "unable to get steps for retry")
+			})
+			if refetchErr != nil {
+				return errors.Wrap(refetchErr, "unable to get steps after signal execution")
+			}
+		} else {
+			var reFetchSteps bool
+			reFetchSteps, err = c.executeFlowStep(ctx, req, step.Idx, step, flw)
+
+			if reFetchSteps {
+				// outer steps loop should continue to retry the step since the result here is ordered by idx asc
+				steps, err = activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
+					FlowID: flw.ID,
+				}) // this will re-query the steps from the database
+				if err != nil {
+					return errors.Wrap(err, "unable to get steps for retry")
+				}
 			}
 		}
+
 		if err == nil {
 			nextIdx := i + 1
 			if nextIdx < len(steps) && nextIdx-startingStepNumber == workflowStepBatchSize {

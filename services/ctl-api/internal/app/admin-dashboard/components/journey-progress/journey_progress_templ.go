@@ -52,7 +52,7 @@ func JourneyProgressSummary(journey app.UserJourney) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(journey.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 21, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 21, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -65,7 +65,7 @@ func JourneyProgressSummary(journey app.UserJourney) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d/%d steps (%d%%)", completed, total, percentage))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 23, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 23, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func JourneyStep(step app.UserJourneyStep) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(step.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 81, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 81, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -219,7 +219,7 @@ func JourneyStep(step app.UserJourneyStep) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatCompletedAt(step.CompletedAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 86, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 86, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -305,7 +305,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 				var templ_7745c5c3_Var9 templ.SafeURL
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/apps/" + appID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 125, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 125, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -334,7 +334,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(appID[:8])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 129, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 129, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -369,7 +369,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 				var templ_7745c5c3_Var12 templ.SafeURL
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/installs/" + installID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 135, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 135, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -398,7 +398,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(installID[:8])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 139, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 139, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -433,7 +433,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 				var templ_7745c5c3_Var15 templ.SafeURL
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + orgID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 145, Col: 40}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 145, Col: 40}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -462,7 +462,7 @@ func buildMetadataBadges(metadata map[string]interface{}) templ.Component {
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(orgID[:8])
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/journey-progress/journey_progress.templ`, Line: 149, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/components/journey-progress/journey_progress.templ`, Line: 149, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {

@@ -94,7 +94,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 	}
 
 	if step.ExecutionType != app.WorkflowStepExecutionTypeApproval {
-		l.Debug("step type non approval, step successfull",
+		l.Debug("step type non approval, step successful",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
