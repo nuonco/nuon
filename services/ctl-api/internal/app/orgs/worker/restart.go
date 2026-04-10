@@ -10,7 +10,6 @@ import (
 	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	installssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orgssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	runnerssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -43,9 +42,6 @@ func (w *Workflows) restartEventLoop(ctx workflow.Context, namespace, id string)
 	switch namespace {
 	case "orgs":
 		return nil
-		w.ev.Send(ctx, id, &orgssignals.Signal{
-			Type: orgssignals.OperationRestart,
-		})
 	case "apps":
 		w.ev.Send(ctx, id, &appssignals.Signal{
 			Type: appssignals.OperationRestart,
