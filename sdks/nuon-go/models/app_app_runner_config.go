@@ -28,9 +28,6 @@ type AppAppRunnerConfig struct {
 	// app runner type
 	AppRunnerType AppAppRunnerType `json:"app_runner_type,omitempty"`
 
-	// auth method
-	AuthMethod string `json:"auth_method,omitempty"`
-
 	// cloud platform
 	CloudPlatform AppCloudPlatform `json:"cloud_platform,omitempty"`
 

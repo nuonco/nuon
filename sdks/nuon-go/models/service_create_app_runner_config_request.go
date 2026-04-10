@@ -23,9 +23,6 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
-	// auth method
-	AuthMethod string `json:"auth_method,omitempty"`
-
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 

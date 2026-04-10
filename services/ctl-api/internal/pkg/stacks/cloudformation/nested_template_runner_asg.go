@@ -44,10 +44,6 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 			Key:   "nuon_runner_api_url",
 			Value: a.cfg.RunnerAPIURL,
 		},
-		{
-			Key:   "nuon_runner_auth_method",
-			Value: inp.AppCfg.RunnerConfig.AuthMethod,
-		},
 	}
 
 	params := map[string]string{
