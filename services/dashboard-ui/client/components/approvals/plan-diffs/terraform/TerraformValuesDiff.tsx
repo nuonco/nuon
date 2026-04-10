@@ -1,13 +1,42 @@
-import { Badge } from '@/components/common/Badge'
 import { Text } from '@/components/common/Text'
 import type { TTerraformOutputChange } from '@/types'
 import { cn } from '@/utils/classnames'
-import { TerraformValueModal } from './TerraformValueModal'
+import { deepEqual, isComplex, isStringJson } from '@/utils/terraform-utils'
+import { TreeDiffValue } from './TreeDiffValue'
 
 type TTerraformValues = Pick<
   TTerraformOutputChange,
   'before' | 'after' | 'action'
 >
+
+const DIFF_STYLES = {
+  added: 'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
+  removed: 'bg-red-500/15 dark:bg-red-500/5 text-red-800 dark:text-red-400',
+  changed: 'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
+  unchanged: '',
+}
+
+function getDiffPrefix(action: string, changed: boolean) {
+  if (!changed) return { char: ' ', style: DIFF_STYLES.unchanged }
+
+  switch (action) {
+    case 'create':
+      return { char: '+', style: DIFF_STYLES.added }
+    case 'delete':
+    case 'destroy':
+      return { char: '-', style: DIFF_STYLES.removed }
+    case 'replace':
+      return { char: '~', style: DIFF_STYLES.changed }
+    case 'update':
+      return { char: '~', style: DIFF_STYLES.changed }
+    default:
+      return { char: ' ', style: DIFF_STYLES.unchanged }
+  }
+}
+
+function isKnownAfterApply(val: string) {
+  return val === 'Known after apply' || val === 'Value known after apply'
+}
 
 export const TerraformValuesDiff = ({
   values,
@@ -16,136 +45,96 @@ export const TerraformValuesDiff = ({
 }) => {
   const valuesDiff = mapBeforeAfterToKeyValues(values)
 
-  // Helper for displaying arrays/objects
   const formatValue = (val: any) => {
     if (val === null || typeof val === 'undefined') return 'null'
-    if (val === '') return '""' // Add this line for empty strings
+    if (val === '') return '""'
     if (typeof val === 'object') return JSON.stringify(val, null, 2)
     return String(val)
   }
 
-  // Get diff symbol
-  const getDiffSymbol = (action: string, hasChanged: boolean) => {
-    const blank = <Text theme="neutral">&nbsp;&nbsp;</Text>
-    if (!hasChanged) return blank
-
-    switch (action) {
-      case 'replace':
-        return <Text theme="brand">-/+</Text>
-      case 'create':
-        return <Text theme="success">+</Text>
-      case 'destroy':
-        return <Text theme="error">-</Text>
-      case 'update':
-        return <Text theme="warn">~</Text>
-      default:
-        return null
-    }
-  }
-
   return (
-    <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto">
+    <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
       {valuesDiff.length ? (
         valuesDiff.map((value, idx) => {
+          const prefix = getDiffPrefix(values.action, value.changed)
+
+          const hasComplexValue =
+            isComplex(value.before) ||
+            isComplex(value.after) ||
+            (typeof value.before === 'string' && isStringJson(value.before)) ||
+            (typeof value.after === 'string' && isStringJson(value.after))
+
+          if (hasComplexValue) {
+            return (
+              <div key={value.key + idx}>
+                <div className={cn('flex whitespace-pre', prefix.style)}>
+                  <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                    {prefix.char}
+                  </span>
+                  <span className="font-semibold">{value.key}:</span>
+                </div>
+                <TreeDiffValue
+                  before={value.before}
+                  after={value.after}
+                />
+              </div>
+            )
+          }
+
           const formattedBefore = formatValue(value.before)
           const formattedAfter = formatValue(value.after)
 
           return (
             <div
-              className="flex items-center flex-nowrap w-max"
+              className={cn('flex whitespace-pre', prefix.style)}
               key={value.key + idx}
             >
-              <Text family="mono" weight="strong">
-                {getDiffSymbol(values.action, value?.changed)} {value.key}
-              </Text>
-              :{'  '}
-              {value?.changed ? (
-                <>
-                  <Badge
-                    className="ml-2 line-through !border-none !text-sm"
-                    variant="code"
-                    size="sm"
-                    theme="error"
-                  >
-                    {formattedBefore.length >= 50 ? (
-                      <span className="flex items-center gap-2">
-                        <span className="max-w-[200px] !inline-block truncate">
-                          {formattedBefore}{' '}
-                        </span>
-                        <TerraformValueModal
-                          isBefore
-                          valueKey={value.key}
-                          value={formattedBefore}
-                        />
-                      </span>
-                    ) : (
-                      formattedBefore
-                    )}
-                  </Badge>
-                  <Text
-                    nowrap
-                    className="mx-2"
-                    family="mono"
-                    theme="neutral"
-                  >{`->`}</Text>
-                  <Badge
-                    className={cn('!border-none !text-sm', {
-                      'italic opacity-60 bg-black/5 dark:bg-white/5':
-                        formattedAfter === 'Known after apply' ||
-                        formattedAfter === 'Value known after apply',
-                    })}
-                    variant="code"
-                    size="sm"
-                    theme={
-                      formatValue(value.after) === 'Known after apply' ||
-                      formatValue(value.after) === 'Value known after apply'
-                        ? 'neutral'
-                        : values.action === 'create'
-                          ? 'success'
-                          : values.action === 'replace'
-                            ? 'brand'
-                            : values.action === 'delete'
-                              ? 'error'
-                              : 'warn'
-                    }
-                  >
-                    {formattedAfter.length >= 50 ? (
-                      <span className="flex items-center gap-2">
-                        <span className="max-w-[200px] !inline-block truncate">
-                          {formattedAfter}{' '}
-                        </span>
-                        <TerraformValueModal
-                          valueKey={value.key}
-                          value={formattedAfter}
-                        />
-                      </span>
-                    ) : (
-                      formattedAfter
-                    )}
-                  </Badge>
-                </>
-              ) : (
-                <Badge
-                  className="ml-2 !border-none !text-sm"
-                  theme="neutral"
-                  variant="code"
-                  size="sm"
-                >
-                  {formattedAfter.length >= 50 ? (
-                    <span className="flex items-center gap-2">
-                      <span className="max-w-[400px] !inline-block truncate">
-                        {formattedAfter}{' '}
-                      </span>
-                      <TerraformValueModal
-                        valueKey={value.key}
-                        value={formattedAfter}
-                      />
+              <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                {prefix.char}
+              </span>
+              <span>
+                <span className="font-semibold">{value.key}:</span>
+                {value.changed ? (
+                  <>
+                    {'  '}
+                    <span
+                      className="text-red-800 dark:text-red-400 line-through opacity-70 inline-block max-w-[300px] truncate align-bottom"
+                      title={formattedBefore}
+                    >
+                      {formattedBefore}
                     </span>
-                  ) : (
-                    formattedAfter
-                  )}
-                </Badge>
-              )}
+                    <span className="opacity-50">{' -> '}</span>
+                    <span
+                      className={cn(
+                        'inline-block max-w-[300px] truncate align-bottom',
+                        {
+                          'italic opacity-60':
+                            isKnownAfterApply(formattedAfter),
+                        }
+                      )}
+                      title={formattedAfter}
+                    >
+                      {formattedAfter}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {'  '}
+                    <span
+                      className={cn(
+                        'inline-block max-w-[500px] truncate align-bottom',
+                        {
+                          'italic opacity-60':
+                            isKnownAfterApply(formattedAfter),
+                        }
+                      )}
+                      title={formattedAfter}
+                    >
+                      {formattedAfter}
+                    </span>
+                  </>
+                )}
+              </span>
             </div>
           )
         })
@@ -186,13 +175,14 @@ function mapBeforeAfterToKeyValues(obj: BeforeAfterObject): KeyValuePair[] {
     const afterValue =
       obj.after && typeof obj.after === 'object' ? obj.after[key] : undefined
 
-    // Check if values actually changed
-    const hasChanged = !deepEqual(beforeValue, afterValue)
+    const normalizedBefore = beforeValue ?? null
+    const normalizedAfter = afterValue ?? null
+    const hasChanged = !deepEqual(normalizedBefore, normalizedAfter)
 
     result.push({
       key,
-      before: beforeValue ?? null,
-      after: afterValue ?? null,
+      before: normalizedBefore,
+      after: normalizedAfter,
       changed: hasChanged,
     })
   })
@@ -200,29 +190,3 @@ function mapBeforeAfterToKeyValues(obj: BeforeAfterObject): KeyValuePair[] {
   return result
 }
 
-// Deep equality check function
-function deepEqual(a: any, b: any): boolean {
-  if (a === b) return true
-
-  if (a == null || b == null) return a === b
-
-  if (typeof a !== typeof b) return false
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  }
-
-  if (typeof a === 'object') {
-    const keysA = Object.keys(a)
-    const keysB = Object.keys(b)
-
-    if (keysA.length !== keysB.length) return false
-
-    return keysA.every(
-      (key) => keysB.includes(key) && deepEqual(a[key], b[key])
-    )
-  }
-
-  return false
-}
