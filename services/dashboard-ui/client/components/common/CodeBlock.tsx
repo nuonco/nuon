@@ -3,6 +3,7 @@ import {
   oneDark,
   oneLight,
 } from 'react-syntax-highlighter/dist/cjs/styles/prism'
+import createElement from 'react-syntax-highlighter/dist/cjs/create-element'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 
@@ -34,6 +35,31 @@ interface ICodeBlock
   showLineNumbers?: boolean
 }
 
+function renderChangedLine(line: string) {
+  const arrowIdx = line.indexOf(' -> ')
+  if (arrowIdx === -1) return line
+
+  const beforeArrow = line.substring(0, arrowIdx)
+  const newVal = line.substring(arrowIdx + 4)
+
+  const colonIdx = beforeArrow.indexOf(':')
+  if (colonIdx === -1) return line
+
+  const key = beforeArrow.substring(0, colonIdx + 1)
+  const oldVal = beforeArrow.substring(colonIdx + 1).trimStart()
+
+  return (
+    <>
+      {key}{' '}
+      <span className="line-through opacity-70 text-red-800 dark:text-red-400">
+        {oldVal}
+      </span>
+      <span className="opacity-50">{' -> '}</span>
+      {newVal}
+    </>
+  )
+}
+
 export function CodeBlock({
   className,
   children,
@@ -43,6 +69,7 @@ export function CodeBlock({
 }: ICodeBlock) {
   const colorScheme = useSystemTheme()
   const theme = colorScheme === 'dark' ? oneDark : oneLight
+  const lines = isDiff ? children.split('\n') : []
 
   return (
     <Prism
@@ -56,8 +83,7 @@ export function CodeBlock({
       showLineNumbers={showLineNumbers || isDiff}
       lineProps={(lineNumber: number) => {
         if (typeof lineNumber !== 'number') return {}
-        const lines = children.split('\n')
-        const line = lines[lineNumber - 1] || ''
+        const line = isDiff ? (lines[lineNumber - 1] || '') : ''
         let className = ''
 
         if (isDiff) {
@@ -78,6 +104,31 @@ export function CodeBlock({
 
         return className ? { className } : {}
       }}
+      renderer={
+        isDiff
+          ? ({ rows, stylesheet, useInlineStyles }) => {
+              return rows.map((row, i) => {
+                const line = lines[i] || ''
+                const defaultEl = createElement({
+                  node: row,
+                  stylesheet,
+                  useInlineStyles,
+                  key: `line-${i}`,
+                })
+
+                if (!line.startsWith('~') || !line.includes(' -> ')) {
+                  return defaultEl
+                }
+
+                const props = {
+                  ...(defaultEl as any).props,
+                  children: renderChangedLine(line),
+                }
+                return { ...defaultEl, props, key: `line-${i}` } as any
+              })
+            }
+          : undefined
+      }
       codeTagProps={{
         className: 'bg-code font-mono w-full',
       }}
