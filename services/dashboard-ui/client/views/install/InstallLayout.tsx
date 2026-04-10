@@ -77,7 +77,7 @@ const navLinks = [
   {
     path: `/policies`,
     iconVariant: 'ShieldCheck' as const,
-    text: 'Policy Evaluations',
+    text: 'Policy reports',
   },
   {
     path: `/workflows`,

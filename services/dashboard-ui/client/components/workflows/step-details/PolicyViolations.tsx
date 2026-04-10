@@ -29,7 +29,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
           <Text weight="strong" variant="body">
-            Policy Evaluation
+            Policy report
           </Text>
           <div className="flex items-center gap-2">
             {denyCount > 0 ? (
