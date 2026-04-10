@@ -175,13 +175,14 @@ function mapBeforeAfterToKeyValues(obj: BeforeAfterObject): KeyValuePair[] {
     const afterValue =
       obj.after && typeof obj.after === 'object' ? obj.after[key] : undefined
 
-    // Check if values actually changed
-    const hasChanged = !deepEqual(beforeValue, afterValue)
+    const normalizedBefore = beforeValue ?? null
+    const normalizedAfter = afterValue ?? null
+    const hasChanged = !deepEqual(normalizedBefore, normalizedAfter)
 
     result.push({
       key,
-      before: beforeValue ?? null,
-      after: afterValue ?? null,
+      before: normalizedBefore,
+      after: normalizedAfter,
       changed: hasChanged,
     })
   })

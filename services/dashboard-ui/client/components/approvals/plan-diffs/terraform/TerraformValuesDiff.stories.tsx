@@ -116,6 +116,26 @@ export const CreateWithNestedValues = () => (
   />
 )
 
+export const CreateWithNullValues = () => (
+  <TerraformValuesDiff
+    values={{
+      action: 'create',
+      before: null,
+      after: {
+        name: 'my-registry',
+        cleanup_policy_dry_run: null,
+        description: null,
+        docker_config: {
+          immutable_tags: false,
+        },
+        format: 'DOCKER',
+        labels: null,
+        location: 'us-central1',
+      },
+    }}
+  />
+)
+
 export const UpdateWithMixedValues = () => (
   <TerraformValuesDiff
     values={{
