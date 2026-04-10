@@ -334,7 +334,7 @@ describe('terraform-utils', () => {
             type: 'aws_instance',
             name: 'example',
             change: {
-              actions: ['replace'],
+              actions: ['delete', 'create'],
               before: { instance_type: 't2.micro' },
               after: { instance_type: 't3.micro' },
             },
@@ -345,8 +345,7 @@ describe('terraform-utils', () => {
       const result = parseTerraformPlan(mockPlan)
 
       expect(result.resources.summary.replace).toBe(1)
-      expect(result.resources.summary.delete).toBe(1) // Replace counts as delete + create
-      expect(result.resources.summary.create).toBe(1)
+      expect(result.resources.changes).toHaveLength(1)
       expect(result.resources.changes[0].action).toBe('replace')
     })
 
@@ -407,7 +406,7 @@ describe('terraform-utils', () => {
       })
     })
 
-    test('should handle multiple actions on single resource', () => {
+    test('should handle create-before-destroy replace', () => {
       const mockPlan: TTerraformPlan = {
         resource_changes: [
           {
@@ -415,7 +414,7 @@ describe('terraform-utils', () => {
             type: 'aws_instance',
             name: 'example',
             change: {
-              actions: ['delete', 'create'], // Replace scenario with multiple actions
+              actions: ['create', 'delete'],
               before: { instance_type: 't2.micro' },
               after: { instance_type: 't3.micro' },
             },
@@ -425,9 +424,9 @@ describe('terraform-utils', () => {
 
       const result = parseTerraformPlan(mockPlan)
 
-      expect(result.resources.changes).toHaveLength(2) // One for each action
-      expect(result.resources.summary.delete).toBe(1)
-      expect(result.resources.summary.create).toBe(1)
+      expect(result.resources.changes).toHaveLength(1)
+      expect(result.resources.changes[0].action).toBe('replace')
+      expect(result.resources.summary.replace).toBe(1)
     })
 
     test('should handle missing output_changes', () => {
