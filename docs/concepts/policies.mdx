@@ -2,7 +2,7 @@
 title: "Policies"
 icon: "shield"
 description: "Enforce compliance, security, and operational standards across your infrastructure deployments."
-keywords: ["policies", "what are policies", "OPA Rego", "Kyverno", "compliance enforcement", "security policies", "deny rules", "warn rules", "policy evaluation", "build-time validation", "deploy-time validation"]
+keywords: ["policies", "what are policies", "OPA Rego", "Kyverno", "compliance enforcement", "security policies", "deny rules", "warn rules", "policy reports", "build-time validation", "deploy-time validation"]
 ---
 
 Policies allow you to enforce compliance, security, and operational standards across your infrastructure deployments. Policies are evaluated during builds and deploys, blocking or warning when violations are detected.
@@ -136,7 +136,7 @@ Please go through the [Configuring Policies guide](/guides/configuring-policies)
 
 Note that unlike components, policies do not need to be built, they are evaluated directly during build and deploy workflows.
 
-## Policy Evaluation
+## Policy Reports
 
 ### Build-Time Evaluation
 
@@ -165,7 +165,7 @@ Sandbox policies (`type = "sandbox"`) are evaluated during sandbox infrastructur
 
 ### Dashboard
 
-Policy violations are displayed in the workflow step details. The Policy Evaluation card shows:
+Policy violations are displayed in the workflow step details. The Policy Report card shows:
 
 - **Passed**: All policy checks passed successfully
 - **Denies**: Policy violations that blocked the workflow (red)
@@ -175,9 +175,9 @@ Each violation includes the policy name and the specific message from your `deny
 
 ![Workflow policy violations](../images/concepts/policies/workflow-policy-violations.png)
 
-You can also view a list of all policy evaluations for an install, or filter by their status, type etc.
+You can also view a list of all policy reports for an install, or filter by their status, type etc.
 
-![Policy evaluations list](../images/concepts/policies/policy-evaluations-list.png)
+![Policy reports list](../images/concepts/policies/policy-evaluations-list.png)
 
 
 ### CLI
