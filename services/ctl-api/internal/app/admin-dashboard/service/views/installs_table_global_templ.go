@@ -5,11 +5,11 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
 	"fmt"
-
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -350,7 +350,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var16 templ.SafeURL
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/installs/" + install.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 44, Col: 56}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 44, Col: 56}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -363,7 +363,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var17 string
 								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(install.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 45, Col: 25}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 45, Col: 25}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var19 string
 								templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("install-id-" + install.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 56, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 56, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 								if templ_7745c5c3_Err != nil {
@@ -419,7 +419,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var20 string
 								templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(install.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 56, Col: 110}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 56, Col: 110}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 								if templ_7745c5c3_Err != nil {
@@ -468,7 +468,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var22 templ.SafeURL
 								templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/orgs/" + install.OrgID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 64, Col: 53}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 64, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 								if templ_7745c5c3_Err != nil {
@@ -481,7 +481,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var23 string
 								templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(install.Org.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 65, Col: 27}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 65, Col: 27}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 								if templ_7745c5c3_Err != nil {
@@ -516,7 +516,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(install.App.Name)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 69, Col: 26}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 69, Col: 26}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {
@@ -625,7 +625,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var30 string
 								templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(install.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 81, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 81, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 								if templ_7745c5c3_Err != nil {
@@ -656,7 +656,7 @@ func InstallsTableGlobal(installs []*app.Install, currentPage, totalPages int, s
 								var templ_7745c5c3_Var32 string
 								templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(install.UpdatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 84, Col: 54}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 84, Col: 54}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 								if templ_7745c5c3_Err != nil {
@@ -816,7 +816,7 @@ func renderPagination(currentPage, totalPages int, searchQuery string, sort stri
 							var templ_7745c5c3_Var39 string
 							templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/installs_table_global.templ`, Line: 128, Col: 34}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/installs_table_global.templ`, Line: 128, Col: 34}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 							if templ_7745c5c3_Err != nil {
