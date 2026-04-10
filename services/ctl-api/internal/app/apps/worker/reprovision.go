@@ -38,7 +38,7 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 		l.Info("skipping reprovision ecr",
 			zap.String("app_id", currentApp.ID),
 			zap.Any("org_type", currentApp.Org.OrgType))
-	case w.cfg.CloudProvider == "gcp":
+	case w.cfg.IsGCP():
 		garURL := w.cfg.ManagementGARRepositoryURL
 		repoResp = &ecrrepository.ProvisionECRRepositoryResponse{
 			RepositoryName: fmt.Sprintf("%s/%s", currentApp.OrgID, sreq.ID),
@@ -46,6 +46,11 @@ func (w *Workflows) Reprovision(ctx workflow.Context, sreq signals.RequestSignal
 			Region:         w.cfg.AppRegion,
 		}
 		l.Info("using GAR repository",
+			zap.String("app_id", currentApp.ID),
+			zap.String("repository_uri", repoResp.RepositoryURI))
+	case w.cfg.IsAzure():
+		repoResp = w.acrRepositoryResponse(currentApp.OrgID, sreq.ID)
+		l.Info("using ACR repository",
 			zap.String("app_id", currentApp.ID),
 			zap.String("repository_uri", repoResp.RepositoryURI))
 	default:

@@ -36,10 +36,20 @@ type WorkflowConductor[DomainSignal eventloop.Signal] struct {
 	// QueueSignal stored on the workflow step.
 	ExecFn func(workflow.Context, *signaldb.SignalData, app.WorkflowStep) error
 
-	// StepChildWorkflow controls whether QueueSignal-based steps are executed as child workflows.
-	// When true, each step is run in its own child workflow (ExecuteStep). Only applies to
-	// steps where QueueSignal != nil.
+	// StepChildWorkflow controls whether QueueSignal-based steps are executed via the
+	// execute-workflow-step signal. When true, each step is dispatched through its own
+	// signal execution. Only applies to steps where QueueSignal != nil.
 	StepChildWorkflow bool
+
+	// StepQueueName is the queue where the execute-workflow-step signal itself runs
+	// (e.g. "install-workflow-steps"). When StepChildWorkflow is true, each step's
+	// full lifecycle is dispatched to this queue.
+	StepQueueName string
+	// StepTargetQueueName is the queue where the inner signal (the actual step signal)
+	// gets enqueued for execution (e.g. "install-signals").
+	StepTargetQueueName string
+	StepOwnerID         string
+	StepOwnerType       string
 
 	// NOTE(sdboyer) these will be used after ExecFnLegacy is removed
 	// NewRequestSignal is used by the conductor to create new request signals as needed

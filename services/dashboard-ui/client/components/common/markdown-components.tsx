@@ -2,7 +2,11 @@ import type { ComponentType } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
+import { ComponentCard } from '@/components/install-components/ComponentCard'
 import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
+import { SandboxCard } from '@/components/sandbox/SandboxCard'
+import { RunnerCard } from '@/components/runners/RunnerCard'
+import { StackCard } from '@/components/stacks/StackCard'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -46,6 +50,29 @@ const registry: Record<string, NuonComponent> = {
   },
   'nuon-config-graph': {
     component: InstallConfigGraph,
+    mapProps: noProps,
+    requiresInstall: true,
+  },
+  'nuon-component-card': {
+    component: ComponentCard,
+    mapProps: (attrs) => ({
+      id: attrs.id,
+      name: attrs.name,
+    }),
+    requiresInstall: true,
+  },
+  'nuon-sandbox-card': {
+    component: SandboxCard,
+    mapProps: noProps,
+    requiresInstall: true,
+  },
+  'nuon-runner-card': {
+    component: RunnerCard,
+    mapProps: noProps,
+    requiresInstall: true,
+  },
+  'nuon-stack-card': {
+    component: StackCard,
     mapProps: noProps,
     requiresInstall: true,
   },

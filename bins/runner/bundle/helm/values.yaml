@@ -15,6 +15,8 @@ serviceAccount:
   name: runner
   annotations: {}
 
+podLabels: {}
+
 autoscaling:
   minReplicas: 1
   maxReplicas: 1
@@ -35,6 +37,10 @@ node_pool:
   # if we want the deployment to create and run on its own NodePool, we must enable this
   # if this is false, we fall back to the default NodePool
   enabled: false
+  node_class_ref:
+    group: karpenter.k8s.aws
+    kind: EC2NodeClass
+    name: default
   capacity_types:
     - on-demand
   # docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium

@@ -1,0 +1,337 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+)
+
+const ActivePageQueueSignals ActivePage = "queue-signals"
+
+templ QueueSignals(signals []app.QueueSignal, searchQuery, ownerID, signalType, status, namespace string, namespaces, signalTypes []string, currentPage, totalPages int) {
+	@Layout("Queue Signals", ActivePageQueueSignals) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Queue Signals
+					}
+					@card.Description() {
+						if ownerID != "" {
+							Signals for owner { ownerID }
+						} else {
+							Recent queue signals across all queues
+						}
+					}
+				}
+				@card.Content() {
+					<div class="flex gap-4 mb-4">
+						<div class="flex-1">
+							<label class="text-sm font-medium mb-2 block">Search</label>
+							@search.SearchInput(search.Props{
+								Placeholder: "Search by signal ID, owner ID, or queue ID...",
+								TargetURL:   "queue-signals/table",
+								TargetID:    "queue-signals-table",
+								Value:       searchQuery,
+							})
+						</div>
+						<div
+							class="w-48"
+							hx-get="queue-signals/table"
+							hx-trigger="change from:[name='namespace']"
+							hx-target="#queue-signals-table"
+							hx-swap="outerHTML"
+							hx-include="[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']"
+							hx-indicator="#signals-loading"
+						>
+							<label class="text-sm font-medium mb-2 block">Namespace</label>
+							<!-- When namespace changes, also refresh the signal type dropdown -->
+							<div
+								hx-get="queue-signals/signal-type-options"
+								hx-trigger="change from:[name='namespace']"
+								hx-target="#signal-type-select"
+								hx-swap="innerHTML"
+								hx-include="[name='namespace'],[name='signal_type']"
+							>
+								@selectbox.SelectBox(selectbox.Props{
+									Multiple: false,
+								}) {
+									@selectbox.Trigger(selectbox.TriggerProps{
+										Name:     "namespace",
+										Multiple: false,
+									}) {
+										@selectbox.Value(selectbox.ValueProps{
+											Placeholder: "All namespaces",
+											Multiple:    false,
+										})
+									}
+									@selectbox.Content(selectbox.ContentProps{
+										NoSearch: true,
+									}) {
+										@selectbox.Group() {
+											@selectbox.Item(selectbox.ItemProps{
+												Value:    "",
+												Selected: namespace == "",
+												Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+											}) {
+												All namespaces
+											}
+											for _, ns := range namespaces {
+												@selectbox.Item(selectbox.ItemProps{
+													Value:    ns,
+													Selected: namespace == ns,
+													Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+												}) {
+													{ ns }
+												}
+											}
+										}
+									}
+								}
+							</div>
+						</div>
+						<div
+							class="w-56"
+							hx-get="queue-signals/table"
+							hx-trigger="change from:[name='signal_type']"
+							hx-target="#queue-signals-table"
+							hx-swap="outerHTML"
+							hx-include="[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']"
+							hx-indicator="#signals-loading"
+						>
+							<label class="text-sm font-medium mb-2 block">Signal Type</label>
+							<div id="signal-type-select">
+								@SignalTypeOptions(signalTypes, signalType)
+							</div>
+						</div>
+						<input type="hidden" name="owner_id" value={ ownerID }/>
+						<input type="hidden" name="status" value={ status }/>
+					</div>
+					<div id="signals-loading" class="htmx-indicator py-8 text-center">
+						<div class="inline-flex items-center gap-2 text-sm text-muted-foreground">
+							<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							</svg>
+							Loading signals...
+						</div>
+					</div>
+					@QueueSignalsGlobalTable(signals, searchQuery, ownerID, signalType, status, namespace, currentPage, totalPages)
+				}
+			}
+		</div>
+		@popover.Script()
+		@selectbox.Script()
+		@copybutton.Script()
+	}
+}
+
+// SignalTypeOptions renders the signal type selectbox, used both on initial load and for HTMX replacement.
+templ SignalTypeOptions(signalTypes []string, signalType string) {
+	@selectbox.SelectBox(selectbox.Props{
+		Multiple: false,
+	}) {
+		@selectbox.Trigger(selectbox.TriggerProps{
+			Name:     "signal_type",
+			Multiple: false,
+		}) {
+			@selectbox.Value(selectbox.ValueProps{
+				Placeholder: "All types",
+				Multiple:    false,
+			})
+		}
+		@selectbox.Content(selectbox.ContentProps{
+			NoSearch: len(signalTypes) <= 10,
+		}) {
+			@selectbox.Group() {
+				@selectbox.Item(selectbox.ItemProps{
+					Value:    "",
+					Selected: signalType == "",
+					Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+				}) {
+					All types
+				}
+				for _, st := range signalTypes {
+					@selectbox.Item(selectbox.ItemProps{
+						Value:    st,
+						Selected: signalType == st,
+						Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+					}) {
+						{ st }
+					}
+				}
+			}
+		}
+	}
+}
+
+templ QueueSignalsGlobalTable(signals []app.QueueSignal, searchQuery, ownerID, signalType, status, namespace string, currentPage, totalPages int) {
+	<div
+		id="queue-signals-table"
+		hx-get="/queue-signals/table"
+		hx-trigger="every 10s"
+		hx-swap="outerHTML"
+		hx-include="[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']"
+		hx-indicator="#signals-loading"
+	>
+		if len(signals) == 0 {
+			<div class="text-sm text-muted-foreground py-8 text-center">No signals found.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Signal }
+						@table.Head() { Type }
+						@table.Head() { Status }
+						@table.Head() { Owner }
+						@table.Head() { Queue }
+						@table.Head() { Created }
+					}
+				}
+				@table.Body() {
+					for _, sig := range signals {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<a href={ templ.URL("/queues/" + sig.QueueID + "/signals/" + sig.ID) } class="text-cyan hover:underline font-mono text-xs">
+										{ sig.ID }
+									</a>
+									<div class="flex items-center gap-1">
+										<span id={ "sig-id-" + sig.ID } class="font-mono text-xs text-muted-foreground">{ sig.ID }</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "sig-id-" + sig.ID,
+										})
+									</div>
+								</div>
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ string(sig.Type) }
+							}
+							@table.Cell() {
+								@signalStatusBadge(sig.Status)
+							}
+							@table.Cell() {
+								<div class="flex flex-col gap-0.5">
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										{ sig.OwnerType }
+									}
+									<span class="font-mono text-xs text-muted-foreground">{ sig.OwnerID }</span>
+								</div>
+							}
+							@table.Cell() {
+								<a href={ templ.URL("/queues/" + sig.QueueID) } class="text-cyan hover:underline font-mono text-xs">
+									{ sig.QueueID }
+								</a>
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								{ sig.CreatedAt.Format("2006-01-02 15:04:05") }
+							}
+						}
+					}
+				}
+			}
+			if totalPages > 1 {
+				<div class="mt-4">
+					@renderGlobalSignalsPagination(currentPage, totalPages, searchQuery, ownerID, signalType, status, namespace)
+				</div>
+			}
+		}
+	</div>
+}
+
+func buildQueueSignalsPageURL(page int, searchQuery, ownerID, signalType, status, namespace string) string {
+	url := fmt.Sprintf("queue-signals/table?page=%d", page)
+	if searchQuery != "" {
+		url += fmt.Sprintf("&search=%s", searchQuery)
+	}
+	if ownerID != "" {
+		url += fmt.Sprintf("&owner_id=%s", ownerID)
+	}
+	if signalType != "" {
+		url += fmt.Sprintf("&signal_type=%s", signalType)
+	}
+	if status != "" {
+		url += fmt.Sprintf("&status=%s", status)
+	}
+	if namespace != "" {
+		url += fmt.Sprintf("&namespace=%s", namespace)
+	}
+	return url
+}
+
+func buildQueueSignalsBrowserURL(page int, searchQuery, ownerID, signalType, status, namespace string) string {
+	url := fmt.Sprintf("/queue-signals?page=%d", page)
+	if searchQuery != "" {
+		url += fmt.Sprintf("&search=%s", searchQuery)
+	}
+	if ownerID != "" {
+		url += fmt.Sprintf("&owner_id=%s", ownerID)
+	}
+	if signalType != "" {
+		url += fmt.Sprintf("&signal_type=%s", signalType)
+	}
+	if status != "" {
+		url += fmt.Sprintf("&status=%s", status)
+	}
+	if namespace != "" {
+		url += fmt.Sprintf("&namespace=%s", namespace)
+	}
+	return url
+}
+
+templ renderGlobalSignalsPagination(currentPage, totalPages int, searchQuery, ownerID, signalType, status, namespace string) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Href:     buildQueueSignalsBrowserURL(currentPage-1, searchQuery, ownerID, signalType, status, namespace),
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":     buildQueueSignalsPageURL(currentPage-1, searchQuery, ownerID, signalType, status, namespace),
+						"hx-target":  "#queue-signals-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						Href:     buildQueueSignalsBrowserURL(pageNum, searchQuery, ownerID, signalType, status, namespace),
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":     buildQueueSignalsPageURL(pageNum, searchQuery, ownerID, signalType, status, namespace),
+							"hx-target":  "#queue-signals-table",
+							"hx-swap":    "outerHTML",
+							"hx-include": "[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Href:     buildQueueSignalsBrowserURL(currentPage+1, searchQuery, ownerID, signalType, status, namespace),
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":     buildQueueSignalsPageURL(currentPage+1, searchQuery, ownerID, signalType, status, namespace),
+						"hx-target":  "#queue-signals-table",
+						"hx-swap":    "outerHTML",
+						"hx-include": "[name='search'],[name='owner_id'],[name='signal_type'],[name='status'],[name='namespace']",
+					},
+				})
+			}
+		}
+	}
+}

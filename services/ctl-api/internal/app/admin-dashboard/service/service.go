@@ -3,11 +3,13 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/converter"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
@@ -18,27 +20,34 @@ import (
 
 type Params struct {
 	fx.In
-	V           *validator.Validate
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
-	MW          metrics.Writer
-	L           *zap.Logger
-	AppsHelpers *appshelpers.Helpers
-	AcctClient  *account.Client
-	AuthzClient *authz.Client
-	OrgsHelpers *orgshelpers.Helpers
+	V              *validator.Validate
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
+	MW             metrics.Writer
+	L              *zap.Logger
+	AppsHelpers    *appshelpers.Helpers
+	AcctClient     *account.Client
+	AuthzClient    *authz.Client
+	OrgsHelpers    *orgshelpers.Helpers
+	TemporalClient temporalclient.Client
+
+	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
+	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
+	TemporalCodecS3Payload    converter.PayloadCodec `name:"s3payload"`
 }
 
 type Service struct {
-	v           *validator.Validate
-	l           *zap.Logger
-	db          *gorm.DB
-	mw          metrics.Writer
-	cfg         *internal.Config
-	appsHelpers *appshelpers.Helpers
-	acctClient  *account.Client
-	authzClient *authz.Client
-	orgsHelpers *orgshelpers.Helpers
+	v              *validator.Validate
+	l              *zap.Logger
+	db             *gorm.DB
+	mw             metrics.Writer
+	cfg            *internal.Config
+	appsHelpers    *appshelpers.Helpers
+	acctClient     *account.Client
+	authzClient    *authz.Client
+	orgsHelpers    *orgshelpers.Helpers
+	temporalClient temporalclient.Client
+	codecs         []converter.PayloadCodec
 }
 
 type service = Service
@@ -96,21 +105,41 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/activity/table", s.InstallActivityTable)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
 
+	// Queue routes
+	api.GET("/queues", s.Queues)
+	api.GET("/queues/table", s.QueuesTable)
+	api.GET("/queues/:id", s.QueueDetail)
+	api.GET("/queues/:id/emitters/table", s.QueueEmittersTable)
+	api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
+	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
+	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
+
+	// Queue signals (global view)
+	api.GET("/queue-signals", s.QueueSignals)
+	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
+	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg:         params.Cfg,
-		l:           params.L,
-		v:           params.V,
-		db:          params.DB,
-		mw:          params.MW,
-		appsHelpers: params.AppsHelpers,
-		acctClient:  params.AcctClient,
-		authzClient: params.AuthzClient,
-		orgsHelpers: params.OrgsHelpers,
+		cfg:            params.Cfg,
+		l:              params.L,
+		v:              params.V,
+		db:             params.DB,
+		mw:             params.MW,
+		appsHelpers:    params.AppsHelpers,
+		acctClient:     params.AcctClient,
+		authzClient:    params.AuthzClient,
+		orgsHelpers:    params.OrgsHelpers,
+		temporalClient: params.TemporalClient,
+		codecs: []converter.PayloadCodec{
+			params.TemporalCodecGzip,
+			params.TemporalCodecLargePayload,
+			params.TemporalCodecS3Payload,
+		},
 	}
 
 	s.l.Info("admin-dashboard service initialized")

@@ -87,10 +87,14 @@ func (d *devver) initCreds(ctx context.Context) error {
 		return nil
 	}
 
-	// For non-AWS installs (Azure/GCP), the runner still needs AWS
-	// credentials to pull artifacts from the management ECR. Verify
-	// that the developer has AWS credentials available via profile or
-	// environment variables.
+	// For GCP installs, the runner still needs AWS credentials to pull
+	// artifacts from the management ECR. Azure installs use ACR natively
+	// when the management registry is ACR.
+	if isAzure {
+		fmt.Println("Azure platform detected, management registry access uses Azure credentials")
+		return nil
+	}
+
 	if os.Getenv("AWS_ACCESS_KEY_ID") != "" || os.Getenv("AWS_PROFILE") != "" {
 		fmt.Println("AWS credentials available via environment for management ECR access")
 		return nil

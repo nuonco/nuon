@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
 import { Markdown } from '@/components/common/Markdown'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
@@ -9,17 +7,14 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ArchitectureDiagramButton } from '@/components/installs/ArchitectureDiagram'
-import { ViewCurrentInputsModal } from '@/components/installs/management/ViewCurrentInputs'
+import { ViewCurrentInputsButton } from '@/components/installs/management/ViewCurrentInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallReadme } from '@/lib'
 
 export const Overview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const { addModal } = useSurfaces()
-
   const { data: readme } = useQuery({
     queryKey: ['install-readme', org?.id, install?.id],
     queryFn: () =>
@@ -49,14 +44,7 @@ export const Overview = () => {
         </HeadingGroup>
         <div className="flex items-center gap-2">
           <ArchitectureDiagramButton variant="secondary" />
-          <Button
-            onClick={() => {
-              addModal(<ViewCurrentInputsModal />)
-            }}
-          >
-            <Icon variant="ListChecks" />
-            Current inputs
-          </Button>
+          <ViewCurrentInputsButton variant="secondary" />
         </div>
       </div>
 

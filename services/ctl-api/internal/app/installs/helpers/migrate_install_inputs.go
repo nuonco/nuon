@@ -78,7 +78,9 @@ func (h *Helpers) migrateInstallInputs(
 			InstallID:        installID,
 			AppInputConfigID: oldAppConfig.InputConfig.ID,
 		}).
-		First(&existingInputs)
+		Order("created_at DESC").
+		Limit(1).
+		Find(&existingInputs)
 
 	if res.Error != nil && res.Error == gorm.ErrRecordNotFound {
 		// for backward compatibility for older installs where older installs dont have install in puts set

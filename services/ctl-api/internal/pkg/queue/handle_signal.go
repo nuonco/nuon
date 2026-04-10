@@ -44,6 +44,15 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return nil
 	}
 
+	// Mark the signal as dequeued with timestamp
+	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		QueueSignalID: queueSignal.ID,
+		Status:        app.StatusInProgress,
+		Metadata: map[string]any{
+			"dequeued_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+		},
+	})
+
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		// Persist error status so AwaitSignal callers don't block forever

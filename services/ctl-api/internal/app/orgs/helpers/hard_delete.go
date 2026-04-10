@@ -28,6 +28,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.ComponentBuild{},
 		&app.AWSECRImageConfig{},
 		&app.GCPGARImageConfig{},
+		&app.AzureACRImageConfig{},
 		&app.PublicGitVCSConfig{},
 		&app.ConnectedGithubVCSConfig{},
 		&app.ActionWorkflowTriggerConfig{},

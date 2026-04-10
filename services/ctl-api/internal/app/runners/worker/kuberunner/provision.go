@@ -26,10 +26,10 @@ type ProvisionRunnerRequest struct {
 	RunnerServiceAccountName string                      `validate:"required"`
 
 	// CloudProvider determines how the runner authenticates to cloud resources.
-	// "gcp" uses GKE Workload Identity, anything else uses AWS IRSA.
+	// "gcp" uses GKE Workload Identity, "azure" uses AKS Workload Identity, anything else uses AWS IRSA.
 	CloudProvider string
 
-	// RunnerIAMRole is the AWS IAM role ARN (for AWS/IRSA) or GCP service account email (for GCP/Workload Identity).
+	// RunnerIAMRole is the AWS IAM role ARN (for AWS/IRSA), GCP service account email (for GCP/Workload Identity), or Azure managed identity client ID (for Azure/Workload Identity).
 	RunnerIAMRole string
 }
 

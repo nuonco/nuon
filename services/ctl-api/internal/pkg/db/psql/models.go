@@ -100,6 +100,7 @@ func AllModels() []any {
 		&app.PublicGitVCSConfig{},
 		&app.AWSECRImageConfig{},
 		&app.GCPGARImageConfig{},
+		&app.AzureACRImageConfig{},
 
 		// component management
 		&app.ComponentBuild{},

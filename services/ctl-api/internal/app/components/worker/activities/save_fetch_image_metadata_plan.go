@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
@@ -86,7 +87,7 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig) 
 					RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
 					SessionName:            "fetch-image-metadata",
 					SessionDurationSeconds: 30 * 60,
-					UseGCPOIDC:             a.cfg.CloudProvider == "gcp",
+					UseGCPOIDC:             a.cfg.IsGCP(),
 				},
 			},
 		}, nil
@@ -101,6 +102,17 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig) 
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+		}, nil
+	}
+
+	if cfg.AzureACRImageConfig != nil {
+		return &configs.OCIRegistryRepository{
+			RegistryType: configs.OCIRegistryTypeACR,
+			Repository:   cfg.ImageURL,
+			LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			ACRAuth: &azurecredentials.Config{
+				UseDefault: true,
+			},
 		}, nil
 	}
 
