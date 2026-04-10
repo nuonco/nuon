@@ -20,7 +20,6 @@ import (
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
 // @heartbeat-timeout 10s
-// @max-retries 1
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
