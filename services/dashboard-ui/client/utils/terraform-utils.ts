@@ -494,6 +494,14 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     OPERATION_TYPES.map((op) => [op, 0])
   )
 
+  function isReplaceActions(actions: string[]): boolean {
+    if (actions.length !== 2) return false
+    return (
+      (actions[0] === 'delete' && actions[1] === 'create') ||
+      (actions[0] === 'create' && actions[1] === 'delete')
+    )
+  }
+
   // Resource Drift (new section)
   if (Array.isArray(plan.resource_drift)) {
     for (const rd of plan.resource_drift) {
@@ -502,12 +510,22 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
         rd.change.after_unknown
       )
 
+      if (isReplaceActions(rd.change.actions)) {
+        incrementSummary(driftSummary, 'replace')
+        driftChanges.push({
+          address: rd.address,
+          module: rd.module_address ?? null,
+          resource: rd.type,
+          name: rd.name,
+          action: 'replace',
+          before: rd.change.before,
+          after: mergedAfter,
+        })
+        continue
+      }
+
       for (const action of rd.change.actions) {
         incrementSummary(driftSummary, action)
-        if (action === 'replace') {
-          incrementSummary(driftSummary, 'delete')
-          incrementSummary(driftSummary, 'create')
-        }
         driftChanges.push({
           address: rd.address,
           module: rd.module_address ?? null,
@@ -521,7 +539,7 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
-  // Resource Changes (existing logic)
+  // Resource Changes
   for (const rc of plan.resource_changes ?? []) {
     const mergedAfter = mergeAfterUnknown(
       rc.change.after,
@@ -542,12 +560,22 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
       continue
     }
 
+    if (isReplaceActions(rc.change.actions)) {
+      incrementSummary(resourceSummary, 'replace')
+      resourceChanges.push({
+        address: rc.address,
+        module: rc.module_address ?? null,
+        resource: rc.type,
+        name: rc.name,
+        action: 'replace',
+        before: rc.change.before,
+        after: mergedAfter,
+      })
+      continue
+    }
+
     for (const action of rc.change.actions) {
       incrementSummary(resourceSummary, action)
-      if (action === 'replace') {
-        incrementSummary(resourceSummary, 'delete')
-        incrementSummary(resourceSummary, 'create')
-      }
       resourceChanges.push({
         address: rc.address,
         module: rc.module_address ?? null,
@@ -579,12 +607,22 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
         continue
       }
 
+      if (isReplaceActions(oc.actions)) {
+        incrementSummary(outputSummary, 'replace')
+        outputChanges.push({
+          output,
+          action: 'replace',
+          before: oc.before,
+          after: mergedAfter,
+          afterUnknown: oc.after_unknown,
+          afterSensitive: oc.after_sensitive,
+          beforeSensitive: oc.before_sensitive,
+        })
+        continue
+      }
+
       for (const action of oc.actions) {
         incrementSummary(outputSummary, action)
-        if (action === 'replace') {
-          incrementSummary(outputSummary, 'delete')
-          incrementSummary(outputSummary, 'create')
-        }
         outputChanges.push({
           output,
           action,

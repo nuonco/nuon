@@ -517,6 +517,371 @@ export const RDSReplace = () => (
   />
 )
 
+export const NoOpAndReadResources = () => (
+  <TerraformDiff
+    plan={{
+      resource_changes: [
+        {
+          address: 'data.aws_caller_identity.current',
+          type: 'aws_caller_identity',
+          name: 'current',
+          change: {
+            actions: ['read'],
+            before: null,
+            after: {
+              account_id: 'Known after apply',
+              arn: 'Known after apply',
+              user_id: 'Known after apply',
+            },
+            after_unknown: {
+              account_id: true,
+              arn: true,
+              user_id: true,
+            },
+          },
+        },
+        {
+          address: 'data.aws_region.current',
+          type: 'aws_region',
+          name: 'current',
+          change: {
+            actions: ['read'],
+            before: null,
+            after: {
+              name: 'Known after apply',
+              endpoint: 'Known after apply',
+              description: 'Known after apply',
+            },
+            after_unknown: {
+              name: true,
+              endpoint: true,
+              description: true,
+            },
+          },
+        },
+        {
+          address: 'data.aws_vpc.selected',
+          type: 'aws_vpc',
+          name: 'selected',
+          change: {
+            actions: ['read'],
+            before: null,
+            after: {
+              id: 'Known after apply',
+              cidr_block: 'Known after apply',
+              enable_dns_support: true,
+              enable_dns_hostnames: true,
+              tags: { environment: 'production' },
+            },
+            after_unknown: {
+              id: true,
+              cidr_block: true,
+            },
+          },
+        },
+        {
+          address: 'aws_s3_bucket.logs',
+          type: 'aws_s3_bucket',
+          name: 'logs',
+          change: {
+            actions: ['no-op'],
+            before: {
+              bucket: 'myapp-logs-production',
+              acl: 'private',
+              versioning: { enabled: true },
+              server_side_encryption_configuration: {
+                rule: {
+                  apply_server_side_encryption_by_default: {
+                    sse_algorithm: 'aws:kms',
+                  },
+                },
+              },
+              tags: { environment: 'production', team: 'platform' },
+            },
+            after: {
+              bucket: 'myapp-logs-production',
+              acl: 'private',
+              versioning: { enabled: true },
+              server_side_encryption_configuration: {
+                rule: {
+                  apply_server_side_encryption_by_default: {
+                    sse_algorithm: 'aws:kms',
+                  },
+                },
+              },
+              tags: { environment: 'production', team: 'platform' },
+            },
+          },
+        },
+        {
+          address: 'aws_iam_role.lambda_exec',
+          type: 'aws_iam_role',
+          name: 'lambda_exec',
+          change: {
+            actions: ['no-op'],
+            before: {
+              name: 'lambda-exec-role',
+              path: '/',
+              assume_role_policy: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                  {
+                    Effect: 'Allow',
+                    Principal: { Service: 'lambda.amazonaws.com' },
+                    Action: 'sts:AssumeRole',
+                  },
+                ],
+              }),
+              tags: { managed_by: 'terraform' },
+            },
+            after: {
+              name: 'lambda-exec-role',
+              path: '/',
+              assume_role_policy: JSON.stringify({
+                Version: '2012-10-17',
+                Statement: [
+                  {
+                    Effect: 'Allow',
+                    Principal: { Service: 'lambda.amazonaws.com' },
+                    Action: 'sts:AssumeRole',
+                  },
+                ],
+              }),
+              tags: { managed_by: 'terraform' },
+            },
+          },
+        },
+      ],
+      output_changes: {
+        account_id: {
+          actions: ['read'],
+          before: null,
+          after: 'Known after apply',
+          after_unknown: true,
+        },
+      },
+    } as any}
+  />
+)
+
+export const ReplaceResources = () => (
+  <TerraformDiff
+    plan={{
+      resource_changes: [
+        {
+          address: 'aws_instance.web',
+          type: 'aws_instance',
+          name: 'web',
+          module_address: 'module.compute',
+          change: {
+            actions: ['delete', 'create'],
+            before: {
+              ami: 'ami-0a1b2c3d4e5f60001',
+              instance_type: 't3.medium',
+              subnet_id: 'subnet-old001',
+              vpc_security_group_ids: ['sg-old001'],
+              root_block_device: {
+                volume_size: 20,
+                volume_type: 'gp2',
+                encrypted: false,
+              },
+              tags: { Name: 'web-server', environment: 'production' },
+            },
+            after: {
+              ami: 'ami-0f9b8c7d6e5a40002',
+              instance_type: 't3.medium',
+              subnet_id: 'subnet-new001',
+              vpc_security_group_ids: ['sg-new001'],
+              root_block_device: {
+                volume_size: 50,
+                volume_type: 'gp3',
+                encrypted: true,
+              },
+              tags: { Name: 'web-server', environment: 'production' },
+            },
+          },
+        },
+        {
+          address: 'aws_eip.web',
+          type: 'aws_eip',
+          name: 'web',
+          module_address: 'module.compute',
+          change: {
+            actions: ['create', 'delete'],
+            before: {
+              instance: 'i-old12345',
+              public_ip: '54.200.100.50',
+              domain: 'vpc',
+              tags: { Name: 'web-eip' },
+            },
+            after: {
+              instance: 'Known after apply',
+              public_ip: 'Known after apply',
+              domain: 'vpc',
+              tags: { Name: 'web-eip' },
+            },
+            after_unknown: {
+              instance: true,
+              public_ip: true,
+            },
+          },
+        },
+        {
+          address: 'aws_lb_target_group.web',
+          type: 'aws_lb_target_group',
+          name: 'web',
+          module_address: 'module.compute',
+          change: {
+            actions: ['update'],
+            before: {
+              name: 'web-tg',
+              port: 80,
+              protocol: 'HTTP',
+              vpc_id: 'vpc-abc123',
+              health_check: {
+                path: '/health',
+                interval: 30,
+                timeout: 5,
+                healthy_threshold: 2,
+                unhealthy_threshold: 3,
+              },
+            },
+            after: {
+              name: 'web-tg',
+              port: 8080,
+              protocol: 'HTTP',
+              vpc_id: 'vpc-abc123',
+              health_check: {
+                path: '/healthz',
+                interval: 15,
+                timeout: 3,
+                healthy_threshold: 2,
+                unhealthy_threshold: 2,
+              },
+            },
+          },
+        },
+      ],
+      output_changes: {
+        web_public_ip: {
+          actions: ['update'],
+          before: '54.200.100.50',
+          after: 'Known after apply',
+          after_unknown: true,
+        },
+      },
+    } as any}
+  />
+)
+
+export const MixedWithNoOp = () => (
+  <TerraformDiff
+    plan={{
+      resource_changes: [
+        {
+          address: 'aws_vpc.main',
+          type: 'aws_vpc',
+          name: 'main',
+          change: {
+            actions: ['no-op'],
+            before: {
+              cidr_block: '10.0.0.0/16',
+              enable_dns_support: true,
+              enable_dns_hostnames: true,
+              tags: { Name: 'main-vpc', environment: 'production' },
+            },
+            after: {
+              cidr_block: '10.0.0.0/16',
+              enable_dns_support: true,
+              enable_dns_hostnames: true,
+              tags: { Name: 'main-vpc', environment: 'production' },
+            },
+          },
+        },
+        {
+          address: 'aws_subnet.public',
+          type: 'aws_subnet',
+          name: 'public',
+          change: {
+            actions: ['update'],
+            before: {
+              cidr_block: '10.0.1.0/24',
+              availability_zone: 'us-west-2a',
+              map_public_ip_on_launch: false,
+              tags: { Name: 'public-subnet-a' },
+            },
+            after: {
+              cidr_block: '10.0.1.0/24',
+              availability_zone: 'us-west-2a',
+              map_public_ip_on_launch: true,
+              tags: { Name: 'public-subnet-a', tier: 'public' },
+            },
+          },
+        },
+        {
+          address: 'aws_nat_gateway.main',
+          type: 'aws_nat_gateway',
+          name: 'main',
+          change: {
+            actions: ['no-op'],
+            before: {
+              allocation_id: 'eipalloc-abc123',
+              subnet_id: 'subnet-pub001',
+              tags: { Name: 'main-nat' },
+            },
+            after: {
+              allocation_id: 'eipalloc-abc123',
+              subnet_id: 'subnet-pub001',
+              tags: { Name: 'main-nat' },
+            },
+          },
+        },
+        {
+          address: 'aws_route_table.private',
+          type: 'aws_route_table',
+          name: 'private',
+          change: {
+            actions: ['create'],
+            before: null,
+            after: {
+              vpc_id: 'vpc-abc123',
+              route: [
+                {
+                  cidr_block: '0.0.0.0/0',
+                  nat_gateway_id: 'Known after apply',
+                },
+              ],
+              tags: { Name: 'private-rt', environment: 'production' },
+            },
+            after_unknown: {
+              id: true,
+            },
+          },
+        },
+        {
+          address: 'aws_security_group_rule.old_ssh',
+          type: 'aws_security_group_rule',
+          name: 'old_ssh',
+          change: {
+            actions: ['delete'],
+            before: {
+              type: 'ingress',
+              from_port: 22,
+              to_port: 22,
+              protocol: 'tcp',
+              cidr_blocks: ['0.0.0.0/0'],
+              security_group_id: 'sg-web001',
+              description: 'SSH from anywhere',
+            },
+            after: null,
+          },
+        },
+      ],
+      output_changes: {},
+    } as any}
+  />
+)
+
 export const DriftDetected = () => (
   <TerraformDiff
     plan={{
