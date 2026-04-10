@@ -10,10 +10,12 @@ import (
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	ecr "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
+	"github.com/nuonco/nuon/pkg/azure/acr"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	"golang.org/x/oauth2/google"
 )
 
 type FetchImageMetadataRequest struct {
@@ -68,6 +70,26 @@ func (a *Activities) FetchImageMetadata(ctx context.Context, req *FetchImageMeta
 		fetchOpts.Auth = auth
 	}
 
+	if extImgCfg.GCPGARImageConfig != nil {
+		l.Debug("fetching GAR credentials for private registry")
+		auth, err := a.getGARAuth(ctx, extImgCfg.GCPGARImageConfig)
+		if err != nil {
+			l.Error("unable to get GAR authorization", zap.Error(err))
+			return nil, errors.Wrap(err, "unable to get GAR authorization")
+		}
+		fetchOpts.Auth = auth
+	}
+
+	if extImgCfg.AzureACRImageConfig != nil {
+		l.Debug("fetching ACR credentials for private registry")
+		auth, err := a.getACRAuth(ctx, extImgCfg.AzureACRImageConfig)
+		if err != nil {
+			l.Error("unable to get ACR authorization", zap.Error(err))
+			return nil, errors.Wrap(err, "unable to get ACR authorization")
+		}
+		fetchOpts.Auth = auth
+	}
+
 	l.Info("fetching image referrers for metadata")
 	imgMetadata, err := metadata.FetchImageMetadata(ctx, fetchOpts)
 	if err != nil {
@@ -100,6 +122,38 @@ func (a *Activities) getComponentBuildWithExternalImageConfig(ctx context.Contex
 	return &bld, nil
 }
 
+func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageConfig) (*metadata.RegistryAuth, error) {
+	token, err := acr.GetRepositoryToken(ctx, acrCfg.CredentialsConfig(), acrCfg.RegistryURL, zap.L())
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get ACR repository token")
+	}
+
+	return &metadata.RegistryAuth{
+		ServerAddress: "https://" + acrCfg.RegistryURL,
+		Username:      acr.DefaultACRUsername,
+		Password:      token,
+	}, nil
+}
+
+func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
+	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get GCP token source for GAR")
+	}
+
+	token, err := ts.Token()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get GCP access token for GAR")
+	}
+
+	host := garCfg.GCPRegion + "-docker.pkg.dev"
+	return &metadata.RegistryAuth{
+		ServerAddress: "https://" + host,
+		Username:      "oauth2accesstoken",
+		Password:      token.AccessToken,
+	}, nil
+}
+
 func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConfig) (*metadata.RegistryAuth, error) {
 	v := validator.New()
 
@@ -108,7 +162,7 @@ func (a *Activities) getECRAuth(ctx context.Context, ecrCfg *app.AWSECRImageConf
 		AssumeRole: &credentials.AssumeRoleConfig{
 			RoleARN:     ecrCfg.IAMRoleARN,
 			SessionName: "ctl-api-image-metadata-fetch",
-			UseGCPOIDC:  a.cfg.CloudProvider == "gcp",
+			UseGCPOIDC:  a.cfg.IsGCP(),
 		},
 	}
 

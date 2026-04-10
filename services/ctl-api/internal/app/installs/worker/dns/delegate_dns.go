@@ -32,7 +32,7 @@ type DelegateDNSResponse struct{}
 // @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) DelegateDNS(ctx context.Context, req DelegateDNSRequest) (DelegateDNSResponse, error) {
-	if a.cfg.CloudProvider == "gcp" {
+	if a.cfg.IsGCP() {
 		if err := a.upsertCloudDNSRecords(ctx, req); err != nil {
 			return DelegateDNSResponse{}, fmt.Errorf("unable to upsert cloud dns records: %w", err)
 		}
