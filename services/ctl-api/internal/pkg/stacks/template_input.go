@@ -33,21 +33,37 @@ type TemplateInput struct {
 }
 
 // FormatRunnerEnvVars converts an AppRunnerConfig's EnvVars hstore into a
-// newline-delimited string of "export key=value" statements.
-func FormatRunnerEnvVars(cfg *app.AppRunnerConfig) string {
-	if cfg == nil || len(cfg.EnvVars) == 0 {
+// newline-delimited string of "export key=value" statements. Default values
+// are injected only when not already defined in cfg.EnvVars.
+func FormatRunnerEnvVars(cfg *app.AppRunnerConfig, runnerBinaryVersion string) string {
+	if cfg == nil {
+		cfg = &app.AppRunnerConfig{}
+	}
+
+	// Shallow-copy so we don't mutate the caller's map.
+	merged := make(map[string]*string, len(cfg.EnvVars)+1)
+	for k, v := range cfg.EnvVars {
+		merged[k] = v
+	}
+
+	// Inject defaults only when not already present.
+	if _, ok := merged["RUNNER_BINARY_VERSION"]; !ok {
+		merged["RUNNER_BINARY_VERSION"] = &runnerBinaryVersion
+	}
+
+	if len(merged) == 0 {
 		return ""
 	}
 
-	keys := make([]string, 0, len(cfg.EnvVars))
-	for k := range cfg.EnvVars {
+	keys := make([]string, 0, len(merged))
+	for k := range merged {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
 	lines := make([]string, 0, len(keys))
 	for _, k := range keys {
-		v := cfg.EnvVars[k]
+		v := merged[k]
 		if v != nil {
 			lines = append(lines, fmt.Sprintf("export %s=%s", k, *v))
 		}

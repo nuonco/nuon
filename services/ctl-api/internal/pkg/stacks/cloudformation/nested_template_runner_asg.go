@@ -11,6 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+// TODO: there are some runner env vars we want to provide defaults for IFF
+// the user provides a value for them in `env_vars` block in the `runner.toml`.
+func (a *Templates) getRunnerEnvVars(inp *stacks.TemplateInput) (string, error) {
+	return inp.RunnerEnvVars, nil
+}
+
 // getRunnerASGNestedStack returns a nested stack template for runner ASG resources.
 // It fetches the runner template to discover its parameters, conditionally including
 // RunnerApiToken only if the template defines it.

@@ -140,7 +140,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
 			RunnerInitScriptURL:        initScriptURL,
-			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
+			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 		}
 
 		// Legacy init.sh needs a pre-provisioned bootstrap token.
@@ -189,7 +189,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		Runner:                     runner,
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
-		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
+		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 	}
 
 	switch cfg.RunnerConfig.Type {
