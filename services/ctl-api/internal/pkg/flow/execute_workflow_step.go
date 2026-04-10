@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -76,9 +77,9 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			Status: app.CompositeStatus{
 				Status: app.StatusError,
 				Metadata: map[string]any{
-					"reason": "Step failed, review the error in logs and try again.",
+					"reason": stepErr.Error(),
 				},
-				StatusHumanDescription: "Step failed",
+				StatusHumanDescription: flowutil.StepHumanDescription(stepErr),
 			},
 		}); err != nil {
 			return refetchStepsInfo, errors.Wrap(err, "unable to mark step as error")
