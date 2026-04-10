@@ -16,7 +16,7 @@ import (
 )
 
 type CompleteOrganizationStepRequest struct {
-	Name  string `json:"name"`
+	Name  string `json:"name" validate:"omitempty,entity_name"`
 	OrgID string `json:"org_id"`
 }
 
@@ -54,6 +54,11 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 	var req CompleteOrganizationStepRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+
+	if err := s.v.Struct(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
