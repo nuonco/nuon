@@ -11,6 +11,8 @@ const DIFF_CLASSES = {
     'bg-[#F4FBF7] text-green-800 !border-green-400 dark:bg-[#0C1B14] dark:!border-green-500/40 dark:text-green-500 block w-full',
   removed:
     'bg-[#FEF2F2] text-red-800 !border-red-300 dark:bg-[#290C0D] dark:!border-red-500/40 dark:text-red-500 block w-full',
+  changed:
+    'bg-[#FFF8F0] text-orange-800 !border-orange-300 dark:bg-[#1A1408] dark:!border-orange-500/40 dark:text-orange-400 block w-full',
   afterApply: '!italic opacity-70',
 }
 
@@ -63,6 +65,8 @@ export function CodeBlock({
             className = DIFF_CLASSES.added
           } else if (line.startsWith('-')) {
             className = DIFF_CLASSES.removed
+          } else if (line.startsWith('~')) {
+            className = DIFF_CLASSES.changed
           }
         }
 
