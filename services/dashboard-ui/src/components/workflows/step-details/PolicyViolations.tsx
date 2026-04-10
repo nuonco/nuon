@@ -29,7 +29,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
       <div className="flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
           <Text weight="strong" variant="body">
-            Policy Evaluation
+            Policy report
           </Text>
           <div className="flex items-center gap-2">
             {denyCount > 0 ? (
@@ -67,7 +67,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                     />
                     <Text variant="subtext" weight="strong">
                       {denyCount} Policy{' '}
-                      {denyCount === 1 ? 'Violation' : 'Violations'}
+                      {denyCount === 1 ? 'violation' : 'violations'}
                     </Text>
                   </div>
                 }
@@ -106,7 +106,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                     />
                     <Text variant="subtext" weight="strong">
                       {warnCount} Policy{' '}
-                      {warnCount === 1 ? 'Warning' : 'Warnings'}
+                      {warnCount === 1 ? 'warning' : 'warnings'}
                     </Text>
                   </div>
                 }
