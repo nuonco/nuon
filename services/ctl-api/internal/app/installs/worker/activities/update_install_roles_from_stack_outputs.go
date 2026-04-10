@@ -50,9 +50,6 @@ func (a *Activities) UpdateInstallRolesFromStackOutputs(ctx context.Context, req
 		}
 
 		provisioned := roleID != ""
-		if ir.Provisioned == provisioned && ir.RoleID == roleID {
-			continue
-		}
 
 		res := a.db.WithContext(ctx).
 			Model(&app.InstallRoles{}).

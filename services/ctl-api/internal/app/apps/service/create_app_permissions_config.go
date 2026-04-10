@@ -253,9 +253,12 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 		return nil, errors.Wrap(res.Error, "unable to create app permissions config")
 	}
 
-	// sync install roles for all existing installs
-	if err := s.installsHelpers.SyncInstallRoles(ctx, appID, obj); err != nil {
-		s.l.Warn("failed to sync install roles", zap.Error(err))
+	tx := s.db.WithContext(ctx).Begin()
+	if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, obj); err != nil {
+		tx.Rollback()
+		s.l.Warn("failed to migrate install roles", zap.Error(err))
+	} else {
+		tx.Commit()
 	}
 
 	return &obj, nil
