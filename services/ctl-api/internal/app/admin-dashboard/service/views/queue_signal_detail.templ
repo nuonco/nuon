@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 )
 
-templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string) {
+templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo) {
 	@Layout("Signal: " + signal.ID, ActivePageQueues) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -57,17 +57,111 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 				</div>
 			</div>
 
-			<!-- Timing Card -->
-			if hasTimingMetadata(signal) {
-				<div class="grid grid-cols-3 gap-4 mb-6">
-					@timingCard("Enqueued", signal.CreatedAt.Format("2006-01-02 15:04:05 MST"), "When the signal was created")
-					@timingCard("Dequeued", getMetadataString(signal.Status, "dequeued_at"), "When the queue started processing")
-					@timingCard("Execute started", getMetadataString(signal.Status, "execute_started_at"), "When signal execution began")
-				</div>
-				<div class="grid grid-cols-3 gap-4 mb-6">
-					@timingCard("Execute finished", getMetadataString(signal.Status, "execute_finished_at"), "When signal execution completed")
-					@timingCard("Duration", computeDuration(signal), "Total execution time")
-					@timingCard("Queue wait", computeQueueWait(signal), "Time spent waiting in queue")
+			<!-- Timeline -->
+			{{ enqueuedAt := signal.CreatedAt.Format("2006-01-02 15:04:05 MST") }}
+			{{ dequeuedAt := getMetadataString(signal.Status, "dequeued_at") }}
+			{{ executeStartedAt := getMetadataString(signal.Status, "execute_started_at") }}
+			{{ executeFinishedAt := getMetadataString(signal.Status, "execute_finished_at") }}
+			<div class="mb-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Timeline
+						}
+					}
+					@card.Content() {
+						<div class="space-y-0">
+							@timelineStep("Enqueued", enqueuedAt, true)
+							@timelineDuration(computeQueueWait(signal))
+							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
+							@timelineDuration(computeDequeuedToExecute(signal))
+							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
+							@timelineDuration(computeDuration(signal))
+							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
+						</div>
+					}
+				}
+			</div>
+
+			<!-- Workflow Info -->
+			if wfInfo != nil {
+				<div class="mb-6">
+					@card.Card() {
+						@card.Header() {
+							<div class="flex items-center justify-between">
+								@card.Title() {
+									Workflow execution
+								}
+								@workflowStatusBadge(wfInfo.Status)
+							</div>
+						}
+						@card.Content() {
+							if len(wfInfo.Activities) > 0 {
+								<div class="space-y-2">
+									for i, act := range wfInfo.Activities {
+										<details class="group rounded border border-border">
+											<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
+												<div class="flex items-center gap-2 w-64 shrink-0">
+													@activityStatusDot(act.Status)
+													<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
+												</div>
+												<div class="w-20 shrink-0">
+													@activityStatusText(act.Status)
+												</div>
+												if !act.StartedAt.IsZero() {
+													<div class="text-muted-foreground w-36 shrink-0">
+														{ act.StartedAt.Format("15:04:05.000") }
+														if !act.FinishedAt.IsZero() {
+															<span class="text-foreground/40"> → </span>
+															{ act.FinishedAt.Format("15:04:05.000") }
+														}
+													</div>
+												}
+												if act.Duration > 0 {
+													<div class="font-mono text-cyan">
+														{ formatDuration(act.Duration) }
+													</div>
+												}
+												if act.Attempt > 1 {
+													<div class="text-amber-500">
+														attempt { fmt.Sprintf("%d", act.Attempt) }
+													</div>
+												}
+												if act.Failure != "" {
+													<div class="text-red-400 truncate flex-1" title={ act.Failure }>
+														{ act.Failure }
+													</div>
+												}
+												<div class="ml-auto text-muted-foreground shrink-0">
+													<span class="group-open:hidden">▸</span>
+													<span class="hidden group-open:inline">▾</span>
+												</div>
+											</summary>
+											<div class="border-t border-border px-3 py-2 space-y-2">
+												if act.Input != "" {
+													<div>
+														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Request</div>
+														<pre id={ fmt.Sprintf("act-input-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Input }</pre>
+													</div>
+												}
+												if act.Result != "" {
+													<div>
+														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Response</div>
+														<pre id={ fmt.Sprintf("act-result-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Result }</pre>
+													</div>
+												}
+												if act.Input == "" && act.Result == "" {
+													<div class="text-xs text-muted-foreground">No input/output data available.</div>
+												}
+											</div>
+										</details>
+									}
+								</div>
+							} else {
+								<div class="text-sm text-muted-foreground">No activities recorded yet.</div>
+							}
+						}
+					}
 				</div>
 			}
 
@@ -191,19 +285,35 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 	}
 }
 
-templ timingCard(label, value, description string) {
-	@card.Card() {
-		@card.Content() {
-			<div class="text-xs text-muted-foreground uppercase">{ label }</div>
-			<div class="text-sm font-mono mt-1">
-				if value != "" {
-					{ value }
-				} else {
-					<span class="text-muted-foreground">—</span>
-				}
+templ timelineStep(label, value string, active bool) {
+	<div class="flex items-start gap-3 py-2">
+		<div class="flex flex-col items-center pt-1 shrink-0">
+			if active {
+				<div class="w-2.5 h-2.5 rounded-full bg-cyan"></div>
+			} else {
+				<div class="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"></div>
+			}
+			<div class="w-px flex-1 bg-border mt-1"></div>
+		</div>
+		<div class="min-w-0">
+			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
+			if value != "" {
+				<div class="text-sm font-mono mt-0.5">{ value }</div>
+			} else {
+				<div class="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
+			}
+		</div>
+	</div>
+}
+
+templ timelineDuration(duration string) {
+	if duration != "" {
+		<div class="flex items-start gap-3 py-0.5">
+			<div class="flex flex-col items-center shrink-0">
+				<div class="w-px flex-1 bg-border" style="min-height: 16px;"></div>
 			</div>
-			<div class="text-xs text-muted-foreground mt-1">{ description }</div>
-		}
+			<div class="text-xs font-mono text-cyan/70 pl-0.5">{ duration }</div>
+		</div>
 	}
 }
 
@@ -238,6 +348,19 @@ func getMetadataString(status app.CompositeStatus, key string) string {
 	return ""
 }
 
+func formatDuration(d time.Duration) string {
+	if d < 0 {
+		return "0s"
+	}
+	if d < time.Second {
+		return fmt.Sprintf("%dms", d.Milliseconds())
+	}
+	if d < time.Minute {
+		return fmt.Sprintf("%.1fs", d.Seconds())
+	}
+	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+}
+
 func computeDuration(signal *app.QueueSignal) string {
 	startStr := getMetadataString(signal.Status, "execute_started_at")
 	endStr := getMetadataString(signal.Status, "execute_finished_at")
@@ -252,14 +375,24 @@ func computeDuration(signal *app.QueueSignal) string {
 	if err != nil {
 		return ""
 	}
-	d := end.Sub(start)
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+	return formatDuration(end.Sub(start))
+}
+
+func computeDequeuedToExecute(signal *app.QueueSignal) string {
+	dequeuedStr := getMetadataString(signal.Status, "dequeued_at")
+	startStr := getMetadataString(signal.Status, "execute_started_at")
+	if dequeuedStr == "" || startStr == "" {
+		return ""
 	}
-	if d < time.Minute {
-		return fmt.Sprintf("%.1fs", d.Seconds())
+	dequeued, err := time.Parse(time.RFC3339, dequeuedStr)
+	if err != nil {
+		return ""
 	}
-	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	start, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return ""
+	}
+	return formatDuration(start.Sub(dequeued))
 }
 
 func computeQueueWait(signal *app.QueueSignal) string {
@@ -271,15 +404,62 @@ func computeQueueWait(signal *app.QueueSignal) string {
 	if err != nil {
 		return ""
 	}
-	d := dequeued.Sub(signal.CreatedAt)
-	if d < 0 {
-		return "0s"
+	return formatDuration(dequeued.Sub(signal.CreatedAt))
+}
+
+templ workflowStatusBadge(status string) {
+	switch status {
+		case "Running":
+			@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
+				{ status }
+			}
+		case "Completed":
+			@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+				{ status }
+			}
+		case "Failed", "Timed Out":
+			@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) {
+				{ status }
+			}
+		case "Canceled", "Terminated":
+			@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+				{ status }
+			}
+		default:
+			@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+				{ status }
+			}
 	}
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+}
+
+templ activityStatusDot(status string) {
+	switch status {
+		case "Completed":
+			<div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
+		case "Running":
+			<div class="w-2 h-2 rounded-full bg-cyan animate-pulse shrink-0"></div>
+		case "Failed", "Timed Out":
+			<div class="w-2 h-2 rounded-full bg-red-500 shrink-0"></div>
+		case "Canceled":
+			<div class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
+		case "Scheduled":
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
+		default:
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
 	}
-	if d < time.Minute {
-		return fmt.Sprintf("%.1fs", d.Seconds())
+}
+
+templ activityStatusText(status string) {
+	switch status {
+		case "Completed":
+			<span class="text-green-500">{ status }</span>
+		case "Running":
+			<span class="text-cyan">{ status }</span>
+		case "Failed", "Timed Out":
+			<span class="text-red-400">{ status }</span>
+		case "Canceled":
+			<span class="text-amber-500">{ status }</span>
+		default:
+			<span class="text-muted-foreground">{ status }</span>
 	}
-	return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
 }

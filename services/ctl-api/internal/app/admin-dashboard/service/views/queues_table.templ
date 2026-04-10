@@ -9,13 +9,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 )
 
-templ QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, currentPage, totalPages int) {
+templ QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, namespace string, currentPage, totalPages int) {
 	<div
 		id="queues-table"
 		hx-get="/queues/table"
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		hx-include="[name='search'],[name='owner_id'],[name='owner_type']"
+		hx-include="[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']"
 	>
 		if len(queues) == 0 {
 			<div class="text-sm text-muted-foreground py-8 text-center">No queues found.</div>
@@ -80,40 +80,40 @@ templ QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cu
 			}
 			if totalPages > 1 {
 				<div class="mt-4">
-					@renderQueuesPagination(currentPage, totalPages, ownerID, ownerType, searchQuery)
+					@renderQueuesPagination(currentPage, totalPages, ownerID, ownerType, searchQuery, queueName, namespace)
 				</div>
 			}
 		}
 	</div>
 }
 
-templ renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, searchQuery string) {
+templ renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, searchQuery, queueName, namespace string) {
 	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
 	@pagination.Pagination() {
 		@pagination.Content() {
 			@pagination.Item() {
 				@pagination.Previous(pagination.PreviousProps{
-					Href:     buildQueuesBrowserURL(currentPage-1, ownerID, ownerType, searchQuery),
+					Href:     buildQueuesBrowserURL(currentPage-1, ownerID, ownerType, searchQuery, queueName, namespace),
 					Disabled: !paginationData.HasPrevious,
 					Label:    "Previous",
 					Attributes: templ.Attributes{
-						"hx-get":     buildQueuesPageURL(currentPage-1, ownerID, ownerType, searchQuery),
+						"hx-get":     buildQueuesPageURL(currentPage-1, ownerID, ownerType, searchQuery, queueName, namespace),
 						"hx-target":  "#queues-table",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+						"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 					},
 				})
 			}
 			for _, pageNum := range paginationData.Pages {
 				@pagination.Item() {
 					@pagination.Link(pagination.LinkProps{
-						Href:     buildQueuesBrowserURL(pageNum, ownerID, ownerType, searchQuery),
+						Href:     buildQueuesBrowserURL(pageNum, ownerID, ownerType, searchQuery, queueName, namespace),
 						IsActive: pageNum == currentPage,
 						Attributes: templ.Attributes{
-							"hx-get":     buildQueuesPageURL(pageNum, ownerID, ownerType, searchQuery),
+							"hx-get":     buildQueuesPageURL(pageNum, ownerID, ownerType, searchQuery, queueName, namespace),
 							"hx-target":  "#queues-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 						},
 					}) {
 						{ fmt.Sprintf("%d", pageNum) }
@@ -122,14 +122,14 @@ templ renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, se
 			}
 			@pagination.Item() {
 				@pagination.Next(pagination.NextProps{
-					Href:     buildQueuesBrowserURL(currentPage+1, ownerID, ownerType, searchQuery),
+					Href:     buildQueuesBrowserURL(currentPage+1, ownerID, ownerType, searchQuery, queueName, namespace),
 					Disabled: !paginationData.HasNext,
 					Label:    "Next",
 					Attributes: templ.Attributes{
-						"hx-get":     buildQueuesPageURL(currentPage+1, ownerID, ownerType, searchQuery),
+						"hx-get":     buildQueuesPageURL(currentPage+1, ownerID, ownerType, searchQuery, queueName, namespace),
 						"hx-target":  "#queues-table",
 						"hx-swap":    "outerHTML",
-						"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+						"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 					},
 				})
 			}

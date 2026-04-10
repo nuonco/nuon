@@ -61,12 +61,7 @@ func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req 
 	}
 
 	if step.QueueSignal != nil {
-		if c.StepChildWorkflow {
-			err := c.executeStepAsChildWorkflow(ctx, step)
-			if err != nil {
-				return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s as child workflow", step.Name))
-			}
-		} else if c.ExecFn != nil {
+		if c.ExecFn != nil {
 			err := c.ExecFn(ctx, step.QueueSignal, *step)
 			if err != nil {
 				return c.handleStepErr(ctx, step.ID, errors.Wrapf(err, "error executing step %s", step.Name))

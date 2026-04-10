@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/converter"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -29,6 +30,10 @@ type Params struct {
 	AuthzClient    *authz.Client
 	OrgsHelpers    *orgshelpers.Helpers
 	TemporalClient temporalclient.Client
+
+	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
+	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
+	TemporalCodecS3Payload    converter.PayloadCodec `name:"s3payload"`
 }
 
 type Service struct {
@@ -42,6 +47,7 @@ type Service struct {
 	authzClient    *authz.Client
 	orgsHelpers    *orgshelpers.Helpers
 	temporalClient temporalclient.Client
+	codecs         []converter.PayloadCodec
 }
 
 type service = Service
@@ -108,6 +114,11 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
 
+	// Queue signals (global view)
+	api.GET("/queue-signals", s.QueueSignals)
+	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
+	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }
@@ -124,6 +135,11 @@ func New(params Params) (*service, error) {
 		authzClient:    params.AuthzClient,
 		orgsHelpers:    params.OrgsHelpers,
 		temporalClient: params.TemporalClient,
+		codecs: []converter.PayloadCodec{
+			params.TemporalCodecGzip,
+			params.TemporalCodecLargePayload,
+			params.TemporalCodecS3Payload,
+		},
 	}
 
 	s.l.Info("admin-dashboard service initialized")
