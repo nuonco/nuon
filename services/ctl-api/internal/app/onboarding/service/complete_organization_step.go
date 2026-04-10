@@ -72,6 +72,20 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		return
 	}
 
+	// Validate org name is unique (including soft-deleted orgs, which share the unique index)
+	var count int64
+	if err := s.db.WithContext(ctx).Model(&app.Org{}).Unscoped().Where("name = ?", req.Name).Count(&count).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to check org name uniqueness: %w", err))
+		return
+	}
+	if count > 0 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("org name %q is already taken", req.Name),
+			Description: "an organization with this name already exists, please choose a different name",
+		})
+		return
+	}
+
 	s.createNewOrg(ctx, account, onboarding, req.Name)
 }
 

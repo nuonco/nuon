@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Tabs } from '@/components/common/Tabs'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
@@ -10,7 +10,7 @@ import { CloudPlatform as CloudPlatformDisplay } from '@/components/common/Cloud
 import { ComponentType } from '@/components/components/ComponentType'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
-import { getExampleApps, completeYourStackStep } from '@/lib'
+import { getExampleApps, getApp, completeYourStackStep } from '@/lib'
 import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
 import type { TAPIError, TExampleApp, TOnboarding, TCloudPlatform as TCloudPlatformType } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
@@ -389,6 +389,7 @@ export const AppProfileStepContainer = ({
   setSharedData,
   nextStepTitle,
 }: IWizardStepComponentProps) => {
+  const queryClient = useQueryClient()
   const [cloudPlatform, setCloudPlatform] = useState<CloudPlatform | null>(null)
   const [appAttributes, setAppAttributes] = useState<AppAttribute[]>([])
   const [selectedSampleApp, setSelectedSampleApp] = useState<string | null>(
@@ -399,6 +400,15 @@ export const AppProfileStepContainer = ({
 
   const onboarding = sharedData.onboarding as TOnboarding | undefined
   const orgId = onboarding?.org_id
+
+  const prefetchApp = (ob: TOnboarding) => {
+    if (ob.app_id && ob.org_id) {
+      queryClient.prefetchQuery({
+        queryKey: ['app', ob.app_id],
+        queryFn: () => getApp({ appId: ob.app_id!, orgId: ob.org_id! }),
+      })
+    }
+  }
 
   const { data: exampleApps = [], isLoading: appsLoading } = useQuery({
     queryKey: ['onboarding-example-apps'],
@@ -431,6 +441,7 @@ export const AppProfileStepContainer = ({
     },
     onSuccess: (ob) => {
       setSharedData('onboarding', ob)
+      prefetchApp(ob)
       if (ob.status_v2?.status === 'in-progress') {
         setWaiting(true)
       } else {
@@ -444,6 +455,7 @@ export const AppProfileStepContainer = ({
     onResolved: (ob) => {
       setWaiting(false)
       setSharedData('onboarding', ob)
+      prefetchApp(ob)
       if (ob.status_v2?.status === 'error') return
       onAdvance()
     },
