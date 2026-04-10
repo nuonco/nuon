@@ -10,6 +10,7 @@ type ProvisionIAMRequest struct {
 
 type ProvisionIAMResponse struct {
 	RunnerRoleArn string
+	AzureClientID string
 }
 
 type DeprovisionIAMRequest struct {

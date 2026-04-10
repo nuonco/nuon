@@ -32,9 +32,9 @@ spec:
           effect: NoSchedule
           value: {{ include "common.fullname" . }}
       nodeClassRef:
-        group: karpenter.k8s.aws
-        kind: EC2NodeClass
-        name: default
+        group: {{ .Values.node_pool.node_class_ref.group }}
+        kind: {{ .Values.node_pool.node_class_ref.kind }}
+        name: {{ .Values.node_pool.node_class_ref.name }}
       requirements:
       - key: karpenter.sh/capacity-type
         operator: In

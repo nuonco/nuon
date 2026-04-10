@@ -66,10 +66,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			RunnerID:   org.RunnerGroup.Runners[0].ID,
 			WorkflowID: fmt.Sprintf("%s-provision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		}
-		_, err = orgiam.AwaitProvisionIAM(ctx, orgIAMReq)
+		iamResp, err := orgiam.AwaitProvisionIAM(ctx, orgIAMReq)
 		if err != nil {
 			s.updateStatus(ctx, app.OrgStatusError, "unable to provision IAM")
 			return fmt.Errorf("unable to provision IAM: %w", err)
+		}
+
+		// Persist per-org Azure client ID to runner group settings so that
+		// runner provisioning and reprovision signals can read it back.
+		if iamResp.AzureClientID != "" {
+			if err := activities.AwaitUpdateRunnerGroupAzureClientID(ctx, activities.UpdateRunnerGroupAzureClientIDRequest{
+				OrgID:         s.OrgID,
+				AzureClientID: iamResp.AzureClientID,
+			}); err != nil {
+				s.updateStatus(ctx, app.OrgStatusError, "unable to update runner group azure client ID")
+				return fmt.Errorf("unable to update runner group azure client ID: %w", err)
+			}
 		}
 	} else {
 		l.Info("skipping await provision iam",

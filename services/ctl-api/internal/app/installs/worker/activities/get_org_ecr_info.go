@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	ecrauthorization "github.com/nuonco/nuon/pkg/aws/ecr-authorization"
+	"github.com/nuonco/nuon/pkg/azure/acr"
 )
 
 type OrgECRAccessInfo struct {
@@ -21,8 +23,11 @@ type OrgECRAccessInfo struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetOrgECRAccessInfo(ctx context.Context, orgID string) (*OrgECRAccessInfo, error) {
-	if a.cfg.CloudProvider == "gcp" {
+	if a.cfg.IsGCP() {
 		return a.getOrgGARAccessInfo(ctx)
+	}
+	if a.cfg.IsAzure() {
+		return a.getOrgACRAccessInfo(ctx)
 	}
 
 	ecr, err := ecrauthorization.New(a.v,
@@ -77,5 +82,23 @@ func (a *Activities) getOrgGARAccessInfo(ctx context.Context) (*OrgECRAccessInfo
 		Username:      "oauth2accesstoken",
 		RegistryToken: token.AccessToken,
 		ServerAddress: "https://" + host,
+	}, nil
+}
+
+// getOrgACRAccessInfo returns credentials for Azure Container Registry.
+// It exchanges the pod's Azure credentials for an ACR refresh token.
+func (a *Activities) getOrgACRAccessInfo(ctx context.Context) (*OrgECRAccessInfo, error) {
+	acrService := a.cfg.ManagementACRRegistryURL
+
+	token, err := acr.GetRepositoryToken(ctx, nil, acrService, zap.L())
+	if err != nil {
+		return nil, fmt.Errorf("unable to get ACR repository token: %w", err)
+	}
+
+	return &OrgECRAccessInfo{
+		RegistryID:    acrService,
+		Username:      acr.DefaultACRUsername,
+		RegistryToken: token,
+		ServerAddress: "https://" + acrService,
 	}, nil
 }

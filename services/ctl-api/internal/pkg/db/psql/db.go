@@ -101,7 +101,7 @@ func New(v *validator.Validate,
 	switch {
 	case cfg.DBPassword != "":
 		database.Password = cfg.DBPassword
-	case cfg.DBUseIAM && cfg.CloudProvider == "gcp":
+	case cfg.DBUseIAM && cfg.IsGCP():
 		database.PasswordFn = FetchGcpCloudSqlPassword
 	case cfg.DBUseIAM:
 		database.PasswordFn = FetchIamTokenPassword

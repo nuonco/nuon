@@ -56,9 +56,28 @@ func (g *gcpGARImageConfigRequest) getGCPGARImageConfig() *app.GCPGARImageConfig
 	}
 }
 
+type azureACRImageConfigRequest struct {
+	RegistryURL string `json:"registry_url"`
+	TenantID    string `json:"tenant_id,omitempty"`
+	ClientID    string `json:"client_id,omitempty"`
+}
+
+func (a *azureACRImageConfigRequest) getAzureACRImageConfig() *app.AzureACRImageConfig {
+	if a == nil {
+		return nil
+	}
+
+	return &app.AzureACRImageConfig{
+		RegistryURL: a.RegistryURL,
+		TenantID:    a.TenantID,
+		ClientID:    a.ClientID,
+	}
+}
+
 type CreateExternalImageComponentConfigRequest struct {
-	AWSECRImageConfig *awsECRImageConfigRequest `json:"aws_ecr_image_config"`
-	GCPGARImageConfig *gcpGARImageConfigRequest `json:"gcp_gar_image_config"`
+	AWSECRImageConfig   *awsECRImageConfigRequest   `json:"aws_ecr_image_config"`
+	GCPGARImageConfig   *gcpGARImageConfigRequest   `json:"gcp_gar_image_config"`
+	AzureACRImageConfig *azureACRImageConfigRequest `json:"azure_acr_image_config"`
 
 	ImageURL      string `json:"image_url" validate:"required"`
 	Tag           string `json:"tag" validate:"required"`
@@ -191,10 +210,11 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	}
 
 	cfg := app.ExternalImageComponentConfig{
-		ImageURL:          req.ImageURL,
-		Tag:               req.Tag,
-		AWSECRImageConfig: req.AWSECRImageConfig.getAWSECRImageConfig(),
-		GCPGARImageConfig: req.GCPGARImageConfig.getGCPGARImageConfig(),
+		ImageURL:            req.ImageURL,
+		Tag:                 req.Tag,
+		AWSECRImageConfig:   req.AWSECRImageConfig.getAWSECRImageConfig(),
+		GCPGARImageConfig:   req.GCPGARImageConfig.getGCPGARImageConfig(),
+		AzureACRImageConfig: req.AzureACRImageConfig.getAzureACRImageConfig(),
 	}
 
 	operationRoles := make(pgtype.Hstore)

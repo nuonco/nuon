@@ -31,8 +31,10 @@ require (
 	charm.land/lipgloss/v2 v2.0.0
 	cloud.google.com/go/secretmanager v1.14.5
 	github.com/AlecAivazis/survey/v2 v2.3.7
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2 v2.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v1.3.0
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
@@ -144,7 +146,7 @@ require (
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 	golang.design/x/clipboard v0.7.1
-	golang.org/x/net v0.47.0
+	golang.org/x/net v0.49.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.74.2
@@ -288,11 +290,11 @@ require (
 	cloud.google.com/go v0.118.3 // indirect
 	cloud.google.com/go/auth v0.15.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
-	cloud.google.com/go/compute/metadata v0.7.0 // indirect
+	cloud.google.com/go/compute/metadata v0.7.0
 	cloud.google.com/go/iam v1.4.1 // indirect
 	cloud.google.com/go/storage v1.61.3
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/ClickHouse/ch-go v0.67.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
@@ -625,13 +627,13 @@ require (
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
+	golang.org/x/term v0.39.0
+	golang.org/x/text v0.33.0
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.38.0
+	golang.org/x/tools v0.40.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect

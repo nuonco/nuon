@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -85,6 +86,17 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*c
 			LoginServer:              garLoginServer,
 			ServiceAccountEmail:      cfg.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: cfg.GCPGARImageConfig.WorkloadIdentityProvider,
+		}, nil
+	}
+
+	if cfg.AzureACRImageConfig != nil {
+		return &configs.OCIRegistryRepository{
+			RegistryType: configs.OCIRegistryTypeACR,
+			Repository:   cfg.ImageURL,
+			LoginServer:  cfg.AzureACRImageConfig.RegistryURL,
+			ACRAuth: &azurecredentials.Config{
+				UseDefault: true,
+			},
 		}, nil
 	}
 
