@@ -47,7 +47,6 @@ RUN go mod download
 FROM deps AS pkg-base
 COPY --link sdks ./sdks/
 COPY --link pkg ./pkg/
-RUN cd pkg && go generate ./...
 
 # Test target for pkg directory
 FROM pkg-base AS pkg-test

@@ -77,6 +77,9 @@ type AppInstallDeploy struct {
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
 
+	// queue signals
+	QueueSignals []*AppQueueSignal `json:"queue_signals"`
+
 	// release id
 	ReleaseID string `json:"release_id,omitempty"`
 
@@ -134,6 +137,10 @@ func (m *AppInstallDeploy) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePolicyReports(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueueSignals(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -328,6 +335,36 @@ func (m *AppInstallDeploy) validatePolicyReports(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *AppInstallDeploy) validateQueueSignals(formats strfmt.Registry) error {
+	if swag.IsZero(m.QueueSignals) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.QueueSignals); i++ {
+		if swag.IsZero(m.QueueSignals[i]) { // not required
+			continue
+		}
+
+		if m.QueueSignals[i] != nil {
+			if err := m.QueueSignals[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queue_signals" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queue_signals" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstallDeploy) validateRunnerJobs(formats strfmt.Registry) error {
 	if swag.IsZero(m.RunnerJobs) { // not required
 		return nil
@@ -433,6 +470,10 @@ func (m *AppInstallDeploy) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidatePolicyReports(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueueSignals(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -623,6 +664,35 @@ func (m *AppInstallDeploy) contextValidatePolicyReports(ctx context.Context, for
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("policy_reports" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstallDeploy) contextValidateQueueSignals(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.QueueSignals); i++ {
+
+		if m.QueueSignals[i] != nil {
+
+			if swag.IsZero(m.QueueSignals[i]) { // not required
+				return nil
+			}
+
+			if err := m.QueueSignals[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queue_signals" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queue_signals" + "." + strconv.Itoa(i))
 				}
 
 				return err

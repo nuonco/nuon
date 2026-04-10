@@ -18,26 +18,11 @@ COPY --link pkg /src/pkg/
 # Copy service-specific files (most frequently changed, last for cache efficiency)
 COPY --link cmd  ./cmd/
 COPY --link internal ./internal/
-RUN mkdir -p ./docs/admin/descriptions ./docs/public/descriptions ./docs/runner/descriptions
-COPY --link docs/admin/descriptions ./docs/admin/descriptions/
-COPY --link docs/public/descriptions ./docs/public/descriptions/
-COPY --link docs/runner/descriptions ./docs/runner/descriptions/
+COPY --link docs ./docs/
 COPY --link tests ./tests/
 COPY --link main.go admin.go public.go runner.go ./
 
-FROM code AS generated
-
-# Generate all code artifacts required for compile/test (swagger + temporal + mocks).
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go generate ./... && \
-    cd /src/pkg/temporal/client && go generate ./...
-
 FROM code AS build
-
-COPY --from=generated /src/services/${SERVICE}/internal ./internal/
-COPY --from=generated /src/services/${SERVICE}/docs ./docs/
-COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
@@ -45,19 +30,11 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 
 FROM code AS unit-test
 
-COPY --from=generated /src/services/${SERVICE}/internal ./internal/
-COPY --from=generated /src/services/${SERVICE}/docs ./docs/
-COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
-
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go test -v ./...
 
 FROM code AS lint
-
-COPY --from=generated /src/services/${SERVICE}/internal ./internal/
-COPY --from=generated /src/services/${SERVICE}/docs ./docs/
-COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 COPY .golangci.yml .
 

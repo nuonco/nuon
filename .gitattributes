@@ -1,0 +1,9 @@
+# Mark generated code so GitHub collapses diffs and excludes from language stats.
+sdks/nuon-go/**        linguist-generated=true
+sdks/nuon-runner-go/** linguist-generated=true
+docs/api-ref/**        linguist-generated=true
+*_gen.go               linguist-generated=true
+*mock*.go              linguist-generated=true
+services/ctl-api/docs/public/** linguist-generated=true
+services/ctl-api/docs/admin/**  linguist-generated=true
+services/ctl-api/docs/runner/** linguist-generated=true

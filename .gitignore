@@ -32,17 +32,6 @@ bin/
 pkg/config/generator/test-app-config/
 pkg/config/generator/test-config-init/
 
-# Go files
-# update reset-generated-code when modifying this section
-# generated protobufs
-pkg/types/**/**pb.go
-pkg/types/**/**pb.validate.go
-pkg/types/**/**connect.go
-# generated mocks
-*mock*.go
-*_gen.go
-.gen
-
 go.work
 
 Brewfile.lock.json
@@ -52,15 +41,6 @@ __debug_bin
 # Ignore secret files
 .secret
 
-pkg/types/build/
-services/ctl-api/docs/public/docs.go
-services/ctl-api/docs/public/swagger*
-services/ctl-api/docs/admin/admin_docs.go
-services/ctl-api/docs/admin/admin_swagger*
-services/ctl-api/docs/runner/runner_docs.go
-services/ctl-api/docs/runner/runner_swagger*
-pkg/api/client/client/
-pkg/api/client/models/
 services/ctl-api/ctl-api/.restart
 sdks/nuon-go/.swagger.stamp
 sdks/nuon-runner-go/.swagger.stamp

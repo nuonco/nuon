@@ -12,11 +12,6 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 # Copy pkg source
 COPY --from=nuon pkg ./pkg/
 
-# Generate code
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
-    --mount=type=cache,target=/root/.cache/go-build,id=gobuild \
-    go generate ./pkg/...
-
 FROM base AS test
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/root/.cache/go-build,id=gobuild \
