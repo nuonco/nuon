@@ -159,6 +159,9 @@ func (s *Signal) handleOrgRunner(ctx workflow.Context, l log.Logger, runner *app
 	case app.AppRunnerTypeGCPGKE:
 		cloudProvider = "gcp"
 		runnerIAMRole = runner.RunnerGroup.Settings.OrgGCPServiceAccount
+	case app.AppRunnerTypeAzureAKS:
+		cloudProvider = "azure"
+		runnerIAMRole = runner.RunnerGroup.Settings.OrgAzureClientID
 	default:
 		cloudProvider = "aws"
 		runnerIAMRole = runner.RunnerGroup.Settings.OrgAWSIAMRoleARN

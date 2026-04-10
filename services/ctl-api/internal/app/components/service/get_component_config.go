@@ -101,6 +101,7 @@ func (s *service) getComponentConfig(ctx *gin.Context, cmpID, cfgID string) (*ap
 		Preload("ExternalImageComponentConfig").
 		Preload("ExternalImageComponentConfig.AWSECRImageConfig").
 		Preload("ExternalImageComponentConfig.GCPGARImageConfig").
+		Preload("ExternalImageComponentConfig.AzureACRImageConfig").
 
 		// preload all job configs
 		Preload("JobComponentConfig").

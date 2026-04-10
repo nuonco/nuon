@@ -27,10 +27,11 @@ type ExternalImageComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id,omitzero" gorm:"notnull" temporaljson:"component_config_connection_id,omitzero,omitempty"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-" temporaljson:"component_config_connection,omitzero,omitempty"`
 
-	ImageURL          string             `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
-	Tag               string             `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
-	AWSECRImageConfig *AWSECRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
-	GCPGARImageConfig *GCPGARImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
+	ImageURL            string               `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
+	Tag                 string               `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
+	AWSECRImageConfig   *AWSECRImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
+	GCPGARImageConfig   *GCPGARImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
+	AzureACRImageConfig *AzureACRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"azure_acr_image_config,omitzero,omitempty" temporaljson:"azure_acr_image_config,omitzero,omitempty"`
 }
 
 func (e *ExternalImageComponentConfig) Indexes(db *gorm.DB) []migrations.Index {

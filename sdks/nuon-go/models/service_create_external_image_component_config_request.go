@@ -26,6 +26,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// aws ecr image config
 	AwsEcrImageConfig *ServiceAwsECRImageConfigRequest `json:"aws_ecr_image_config,omitempty"`
 
+	// azure acr image config
+	AzureAcrImageConfig *ServiceAzureACRImageConfigRequest `json:"azure_acr_image_config,omitempty"`
+
 	// Duration string for build operations (e.g., "30m", "1h")
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -64,6 +67,10 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) Validate(formats strf
 		res = append(res, err)
 	}
 
+	if err := m.validateAzureAcrImageConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateGcpGarImageConfig(formats); err != nil {
 		res = append(res, err)
 	}
@@ -96,6 +103,29 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) validateAwsEcrImageCo
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_ecr_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateExternalImageComponentConfigRequest) validateAzureAcrImageConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AzureAcrImageConfig) { // not required
+		return nil
+	}
+
+	if m.AzureAcrImageConfig != nil {
+		if err := m.AzureAcrImageConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_acr_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_acr_image_config")
 			}
 
 			return err
@@ -154,6 +184,10 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) ContextValidate(ctx c
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAzureAcrImageConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateGcpGarImageConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -180,6 +214,31 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) contextValidateAwsEcr
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("aws_ecr_image_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateExternalImageComponentConfigRequest) contextValidateAzureAcrImageConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AzureAcrImageConfig != nil {
+
+		if swag.IsZero(m.AzureAcrImageConfig) { // not required
+			return nil
+		}
+
+		if err := m.AzureAcrImageConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("azure_acr_image_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("azure_acr_image_config")
 			}
 
 			return err

@@ -40,7 +40,7 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 		l.Info("skipping provision ecr",
 			zap.String("app_id", currentApp.ID),
 			zap.Any("org_type", currentApp.Org.OrgType))
-	case w.cfg.CloudProvider == "gcp":
+	case w.cfg.IsGCP():
 		// GCP uses GAR — the management repository is shared, apps use org/app path prefix.
 		garURL := w.cfg.ManagementGARRepositoryURL
 		repoResp = &ecrrepository.ProvisionECRRepositoryResponse{
@@ -49,6 +49,11 @@ func (w *Workflows) Provision(ctx workflow.Context, sreq signals.RequestSignal) 
 			Region:         w.cfg.AppRegion,
 		}
 		l.Info("using GAR repository",
+			zap.String("app_id", currentApp.ID),
+			zap.String("repository_uri", repoResp.RepositoryURI))
+	case w.cfg.IsAzure():
+		repoResp = w.acrRepositoryResponse(currentApp.OrgID, sreq.ID)
+		l.Info("using ACR repository",
 			zap.String("app_id", currentApp.ID),
 			zap.String("repository_uri", repoResp.RepositoryURI))
 	default:
