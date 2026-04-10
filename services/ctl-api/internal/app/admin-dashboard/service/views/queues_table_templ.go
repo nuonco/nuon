@@ -5,11 +5,11 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import templruntime "github.com/a-h/templ/runtime"
-
 import (
 	"fmt"
+
+	"github.com/a-h/templ"
+	templruntime "github.com/a-h/templ/runtime"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
 )
 
-func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, currentPage, totalPages int) templ.Component {
+func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, namespace string, currentPage, totalPages int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -38,7 +38,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"queues-table\" hx-get=\"/queues/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='owner_id'],[name='owner_type']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"queues-table\" hx-get=\"/queues/table\" hx-trigger=\"every 20s\" hx-swap=\"outerHTML\" hx-include=\"[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -296,7 +296,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var14 templ.SafeURL
 								templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/queues/" + q.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 39, Col: 47}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 39, Col: 47}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 								if templ_7745c5c3_Err != nil {
@@ -309,7 +309,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var15 string
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(q.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 40, Col: 16}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 40, Col: 16}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -322,7 +322,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs("queue-id-" + q.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 43, Col: 39}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 43, Col: 39}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -335,7 +335,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var17 string
 								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(q.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 43, Col: 96}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 43, Col: 96}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -396,7 +396,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 									var templ_7745c5c3_Var20 string
 									templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(q.OwnerType)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 53, Col: 23}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 53, Col: 23}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 									if templ_7745c5c3_Err != nil {
@@ -415,7 +415,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var21 string
 								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(q.OwnerID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 55, Col: 74}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 55, Col: 74}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {
@@ -455,7 +455,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 									var templ_7745c5c3_Var23 string
 									templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(q.Name)
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 60, Col: 39}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 60, Col: 39}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 									if templ_7745c5c3_Err != nil {
@@ -496,7 +496,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(q.Emitters)))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 66, Col: 44}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 66, Col: 44}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {
@@ -531,7 +531,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var27 string
 								templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", q.MaxDepth))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 70, Col: 53}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 70, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 								if templ_7745c5c3_Err != nil {
@@ -544,7 +544,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var28 string
 								templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", q.MaxInFlight))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 71, Col: 57}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 71, Col: 57}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 								if templ_7745c5c3_Err != nil {
@@ -579,7 +579,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 								var templ_7745c5c3_Var30 string
 								templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(q.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 75, Col: 48}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 75, Col: 48}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 								if templ_7745c5c3_Err != nil {
@@ -619,7 +619,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = renderQueuesPagination(currentPage, totalPages, ownerID, ownerType, searchQuery).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = renderQueuesPagination(currentPage, totalPages, ownerID, ownerType, searchQuery, queueName, namespace).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -637,7 +637,7 @@ func QueuesTable(queues []app.Queue, ownerID, ownerType, searchQuery string, cur
 	})
 }
 
-func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, searchQuery string) templ.Component {
+func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, searchQuery, queueName, namespace string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -696,14 +696,14 @@ func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, sea
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Previous(pagination.PreviousProps{
-						Href:     buildQueuesBrowserURL(currentPage-1, ownerID, ownerType, searchQuery),
+						Href:     buildQueuesBrowserURL(currentPage-1, ownerID, ownerType, searchQuery, queueName, namespace),
 						Disabled: !paginationData.HasPrevious,
 						Label:    "Previous",
 						Attributes: templ.Attributes{
-							"hx-get":     buildQueuesPageURL(currentPage-1, ownerID, ownerType, searchQuery),
+							"hx-get":     buildQueuesPageURL(currentPage-1, ownerID, ownerType, searchQuery, queueName, namespace),
 							"hx-target":  "#queues-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
@@ -743,7 +743,7 @@ func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, sea
 							var templ_7745c5c3_Var37 string
 							templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues_table.templ`, Line: 119, Col: 34}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues_table.templ`, Line: 119, Col: 34}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 							if templ_7745c5c3_Err != nil {
@@ -752,13 +752,13 @@ func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, sea
 							return nil
 						})
 						templ_7745c5c3_Err = pagination.Link(pagination.LinkProps{
-							Href:     buildQueuesBrowserURL(pageNum, ownerID, ownerType, searchQuery),
+							Href:     buildQueuesBrowserURL(pageNum, ownerID, ownerType, searchQuery, queueName, namespace),
 							IsActive: pageNum == currentPage,
 							Attributes: templ.Attributes{
-								"hx-get":     buildQueuesPageURL(pageNum, ownerID, ownerType, searchQuery),
+								"hx-get":     buildQueuesPageURL(pageNum, ownerID, ownerType, searchQuery, queueName, namespace),
 								"hx-target":  "#queues-table",
 								"hx-swap":    "outerHTML",
-								"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+								"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 							},
 						}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var36), templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
@@ -788,14 +788,14 @@ func renderQueuesPagination(currentPage, totalPages int, ownerID, ownerType, sea
 					}
 					ctx = templ.InitializeContext(ctx)
 					templ_7745c5c3_Err = pagination.Next(pagination.NextProps{
-						Href:     buildQueuesBrowserURL(currentPage+1, ownerID, ownerType, searchQuery),
+						Href:     buildQueuesBrowserURL(currentPage+1, ownerID, ownerType, searchQuery, queueName, namespace),
 						Disabled: !paginationData.HasNext,
 						Label:    "Next",
 						Attributes: templ.Attributes{
-							"hx-get":     buildQueuesPageURL(currentPage+1, ownerID, ownerType, searchQuery),
+							"hx-get":     buildQueuesPageURL(currentPage+1, ownerID, ownerType, searchQuery, queueName, namespace),
 							"hx-target":  "#queues-table",
 							"hx-swap":    "outerHTML",
-							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type']",
+							"hx-include": "[name='search'],[name='owner_id'],[name='owner_type'],[name='queue_name'],[name='namespace']",
 						},
 					}).Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {

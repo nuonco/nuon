@@ -60,6 +60,7 @@ const (
 	OrgFeatureQueues                  OrgFeature = "queues"
 	OrgFeatureSupportRole             OrgFeature = "support-role"
 	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
+	OrgFeatureStepsWorkflows          OrgFeature = "steps-workflows"
 )
 
 type Org struct {
