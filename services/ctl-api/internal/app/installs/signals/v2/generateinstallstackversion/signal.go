@@ -234,6 +234,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Runner:                     runner,
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
+		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 	}
 
 	switch cfg.RunnerConfig.Type {
