@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -12,12 +13,32 @@ import (
 )
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 2h
+// @start-to-close-timeout 5m
+// @schedule-to-close-timeout 2h
+// @heartbeat-timeout 10s
 // @max-retries 1
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
 func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ValidateResponse, error) {
+	// Heartbeat so Temporal knows this activity is alive during the blocking update call.
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				activity.RecordHeartbeat(ctx, nil)
+			}
+		}
+	}()
+
 	info := activity.GetInfo(ctx)
 
 	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,

@@ -18,7 +18,9 @@ import (
 // (validate, execute) which block until the signal finishes. These can run for
 // extended periods and must not be retried by Temporal.
 var noRetryLongTimeout = &workflow.ActivityOptions{
-	StartToCloseTimeout: 2 * time.Hour,
+	StartToCloseTimeout:    5 * time.Minute,
+	ScheduleToCloseTimeout: 2 * time.Hour,
+	HeartbeatTimeout:       10 * time.Second,
 	RetryPolicy: &temporal.RetryPolicy{
 		MaximumAttempts: 1,
 	},
