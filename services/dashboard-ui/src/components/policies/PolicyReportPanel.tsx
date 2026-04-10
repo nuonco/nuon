@@ -119,7 +119,7 @@ export const PolicyReportPanel = ({
         <div className="flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
             <Text weight="strong" variant="body">
-              Report Details
+              Report details
             </Text>
             {getOverallStatusBadge(report)}
           </div>
@@ -168,7 +168,7 @@ export const PolicyReportPanel = ({
                   {deniedPolicies.length}
                 </Text>
                 <Text variant="subtext" theme="neutral">
-                  {deniedPolicies.length === 1 ? 'Policy' : 'Policies'} Denied
+                  {deniedPolicies.length === 1 ? 'Policy' : 'Policies'} denied
                 </Text>
               </div>
               <div className="flex flex-col gap-1 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20">
@@ -180,7 +180,7 @@ export const PolicyReportPanel = ({
                   {warnedPolicies.length}
                 </Text>
                 <Text variant="subtext" theme="neutral">
-                  {warnedPolicies.length === 1 ? 'Policy' : 'Policies'} Warning
+                  {warnedPolicies.length === 1 ? 'Policy' : 'Policies'} warning
                 </Text>
               </div>
               <div className="flex flex-col gap-1 p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
@@ -192,7 +192,7 @@ export const PolicyReportPanel = ({
                   {passedPolicies.length}
                 </Text>
                 <Text variant="subtext" theme="neutral">
-                  {passedPolicies.length === 1 ? 'Policy' : 'Policies'} Passed
+                  {passedPolicies.length === 1 ? 'Policy' : 'Policies'} passed
                 </Text>
               </div>
             </div>
@@ -205,7 +205,7 @@ export const PolicyReportPanel = ({
           <div className="flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
               <Text weight="strong" variant="body">
-                Policies Evaluated
+                Policies evaluated
               </Text>
               <Text variant="subtext" theme="neutral">
                 {report.policies.length}{' '}
