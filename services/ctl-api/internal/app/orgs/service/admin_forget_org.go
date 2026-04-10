@@ -2,10 +2,14 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -37,8 +41,20 @@ func (s *service) AdminForgetOrg(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.helpers.HardDelete(ctx, org.ID); err != nil {
-		ctx.Error(err)
+	// Soft delete roles (and their join-table entries) so the Account AfterQuery
+	// hook no longer tries to dereference the now-deleted org.
+	if err := s.db.WithContext(ctx).Where("org_id = ?", org.ID).Delete(&app.Role{}).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to forget org roles: %w", err))
+		return
+	}
+
+	res := s.db.WithContext(ctx).Delete(&app.Org{ID: org.ID})
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to forget org: %w", res.Error))
+		return
+	}
+	if res.RowsAffected < 1 {
+		ctx.Error(fmt.Errorf("org not found %w", gorm.ErrRecordNotFound))
 		return
 	}
 
