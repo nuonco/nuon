@@ -46,7 +46,6 @@ func (a *Activities) UpdateInstallRolesFromStackOutputs(ctx context.Context, req
 	for _, ir := range install.InstallRoles {
 		roleID, err := resolveRoleID(stackOutputs, ir.AppRoleConfig)
 		if err != nil {
-			// role not found in stack outputs — mark as not provisioned
 			roleID = ""
 		}
 

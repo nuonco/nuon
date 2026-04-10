@@ -32,7 +32,7 @@ type InstallRoles struct {
 	Provisioned bool `json:"provisioned,omitzero" gorm:"default:false" temporaljson:"provisioned,omitzero,omitempty"`
 
 	// cloud specific role identifier
-	RoleID string
+	RoleID string `json:"role_id,omitzero" temporaljson:"role_id,omitzero,omitempty"`
 }
 
 func (i *InstallRoles) Indexes(db *gorm.DB) []migrations.Index {
@@ -45,14 +45,6 @@ func (i *InstallRoles) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 	}
-}
-
-func (i *InstallRoles) UseView() bool {
-	return true
-}
-
-func (i *InstallRoles) ViewVersion() string {
-	return "v1"
 }
 
 func (a *InstallRoles) BeforeCreate(tx *gorm.DB) error {
