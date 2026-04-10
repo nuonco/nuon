@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	runneraws "github.com/nuonco/nuon/pkg/runner/auth/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -28,16 +29,16 @@ type service struct {
 	db         *gorm.DB
 	cfg        *internal.Config
 	acctClient *account.Client
-	certStore  *AWSCertStore
+	certStore  *runneraws.IIDCertStore
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
-	var certStore *AWSCertStore
+	var certStore *runneraws.IIDCertStore
 	if params.L != nil {
 		var err error
-		certStore, err = NewAWSCertStore(params.L)
+		certStore, err = runneraws.NewIIDCertStore(params.L)
 		if err != nil {
 			params.L.Warn("failed to initialize AWS IID cert store, IID auth will be unavailable", zap.Error(err))
 		}
