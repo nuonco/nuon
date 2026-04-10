@@ -39,6 +39,20 @@ const (
 	RunnerProcessTypeUnknown RunnerProcessType = ""
 )
 
+// InstallProcessForRunnerGroupType maps a RunnerGroupType to the RunnerProcessType
+// used for install-level health checking. Install runner groups use the "install"
+// process type, org runner groups use the "org" process type.
+func InstallProcessForRunnerGroupType(gt RunnerGroupType) RunnerProcessType {
+	switch gt {
+	case RunnerGroupTypeInstall:
+		return RunnerProcessTypeInstall
+	case RunnerGroupTypeOrg:
+		return RunnerProcessTypeOrg
+	default:
+		return RunnerProcessTypeUnknown
+	}
+}
+
 // HeartBeatProcessForRunnerGroupType maps a RunnerGroupType to the RunnerProcessType
 // used for heartbeat lookups. Install runner groups use the "mng" process type,
 // org runner groups use the "org" process type.
