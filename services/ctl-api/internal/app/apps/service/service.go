@@ -135,6 +135,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			policiesConfigs.GET("/:config_id", s.GetAppPoliciesConfig)
 		}
 
+		// individual policy config lookup
+		app.GET("/policy-config/:policy_config_id", s.GetAppPolicyConfig)
+
 		// app break glass
 		breakGlassConfigs := app.Group("/break-glass-configs")
 		{
