@@ -114,17 +114,29 @@ export function CodeBlock({
                   stylesheet,
                   useInlineStyles,
                   key: `line-${i}`,
-                })
+                }) as any
 
                 if (!line.startsWith('~') || !line.includes(' -> ')) {
                   return defaultEl
                 }
 
-                const props = {
-                  ...(defaultEl as any).props,
-                  children: renderChangedLine(line),
+                const children = Array.isArray(defaultEl.props.children)
+                  ? defaultEl.props.children
+                  : [defaultEl.props.children]
+
+                const isLineNumber = (child: any) =>
+                  child?.props?.className?.includes('linenumber')
+
+                const lineNumberChild = children.find(isLineNumber)
+                const newChildren = lineNumberChild
+                  ? [lineNumberChild, renderChangedLine(line)]
+                  : [renderChangedLine(line)]
+
+                return {
+                  ...defaultEl,
+                  props: { ...defaultEl.props, children: newChildren },
+                  key: `line-${i}`,
                 }
-                return { ...defaultEl, props, key: `line-${i}` } as any
               })
             }
           : undefined
