@@ -361,14 +361,14 @@ ARM_USE_MSI=true
 HOST_IP=$(curl -s https://checkip.amazonaws.com)
 EOF
 
-# Install the runner binary on the host for mng mode
-RUNNER_BINARY_URL="{{.Settings.RunnerBinaryURL}}"
-if [ -z "$RUNNER_BINARY_URL" ]; then
-  RUNNER_BINARY_URL="https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/$CONTAINER_IMAGE_TAG/runner_linux_amd64"
-fi
-curl -sSL "$RUNNER_BINARY_URL" -o /usr/local/bin/runner \
-  || curl -sSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/latest/runner_linux_amd64 -o /usr/local/bin/runner
-chmod +x /usr/local/bin/runner
+# Install the runner binary on the host for mng mode using install.sh
+# Uses CONTAINER_IMAGE_TAG (semver) as the version, with automatic latest.txt fallback
+RUNNER_BINARY_VERSION="${CONTAINER_IMAGE_TAG:-latest}"
+mkdir -p /opt/nuon/runner/bin
+curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/install.sh > /tmp/install-runner.sh
+chmod +x /tmp/install-runner.sh
+yes | /tmp/install-runner.sh $RUNNER_BINARY_VERSION /opt/nuon/runner/bin
+rm /tmp/install-runner.sh
 
 # Write initial image config for the mng monitor
 cat << EOF > /opt/nuon/runner/image
@@ -390,7 +390,7 @@ Requires=docker.service
 TimeoutStartSec=0
 User=root
 EnvironmentFile=/opt/nuon/runner/env
-ExecStart=/usr/local/bin/runner mng
+ExecStart=/opt/nuon/runner/bin/runner mng
 Restart=always
 RestartSec=5
 

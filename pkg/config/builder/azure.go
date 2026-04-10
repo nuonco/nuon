@@ -31,6 +31,7 @@ func (b *azureBuilder) Build(appAttributes []string) (*config.AppConfig, error) 
 		},
 		Runner: &config.AppRunnerConfig{
 			RunnerType: "azure",
+			HelmDriver: "configmap",
 		},
 		Stack: &config.StackConfig{
 			Type:        "azure-bicep",
