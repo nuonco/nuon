@@ -57,7 +57,12 @@ func (a *Activities) InstallOrUpgrade(ctx context.Context, req *InstallOrUpgrade
 	}
 
 	// determine the instance types, aka node size, for the org runner's nodepool
-	req.InstanceTypeName = a.config.OrgRunnerInstanceType
+	switch req.CloudProvider {
+	case "azure":
+		req.InstanceTypeName = "Standard_D2s_v3"
+	default:
+		req.InstanceTypeName = a.config.OrgRunnerInstanceType
+	}
 
 	var (
 		rel *release.Release

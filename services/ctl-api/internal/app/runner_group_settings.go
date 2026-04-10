@@ -71,6 +71,7 @@ type RunnerGroupSettings struct {
 	// org runner specifics
 	OrgAWSIAMRoleARN         string `json:"org_aws_iam_role_arn,omitzero" temporaljson:"org_awsiam_role_arn,omitzero,omitempty"`
 	OrgGCPServiceAccount     string `json:"org_gcp_service_account,omitzero" temporaljson:"org_gcp_service_account,omitzero,omitempty"`
+	OrgAzureClientID         string `json:"org_azure_client_id,omitzero" temporaljson:"org_azure_client_id,omitzero,omitempty"`
 	OrgK8sServiceAccountName string `json:"org_k8s_service_account_name,omitzero" temporaljson:"org_k_8_s_service_account_name,omitzero,omitempty"`
 
 	// aws runner specifics runner-v2
@@ -139,6 +140,9 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 	}
 	if r.OrgGCPServiceAccount != "" {
 		r.Platform = CloudPlatformGCP
+	}
+	if r.OrgAzureClientID != "" {
+		r.Platform = CloudPlatformAzure
 	}
 	return nil
 }

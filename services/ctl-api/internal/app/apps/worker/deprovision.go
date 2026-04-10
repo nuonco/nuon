@@ -73,7 +73,7 @@ func (w *Workflows) Deprovision(ctx workflow.Context, sreq signals.RequestSignal
 		return fmt.Errorf("unable to get app from database: %w", err)
 	}
 
-	if currentApp.Org.OrgType == app.OrgTypeDefault && w.cfg.CloudProvider != "gcp" {
+	if currentApp.Org.OrgType == app.OrgTypeDefault && w.cfg.IsAWS() {
 		repoDeprovisionReq := &ecrrepository.DeprovisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: sreq.ID,

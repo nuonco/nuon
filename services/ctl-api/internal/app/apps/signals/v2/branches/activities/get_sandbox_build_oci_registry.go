@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -30,10 +31,16 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 	}
 
 	switch a.cfg.CloudProvider {
-	case "gcp":
+	case string(app.CloudPlatformGCP):
 		cfg.RegistryType = configs.OCIRegistryTypeGAR
 		if idx := strings.Index(currentApp.Repository.RepositoryURI, "/"); idx != -1 {
 			cfg.LoginServer = currentApp.Repository.RepositoryURI[:idx]
+		}
+	case string(app.CloudPlatformAzure):
+		cfg.RegistryType = configs.OCIRegistryTypeACR
+		cfg.LoginServer = a.cfg.ManagementACRRegistryURL
+		cfg.ACRAuth = &azurecredentials.Config{
+			UseDefault: true,
 		}
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
