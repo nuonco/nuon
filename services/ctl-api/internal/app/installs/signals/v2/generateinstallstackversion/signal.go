@@ -181,7 +181,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Runner:                     runner,
 			Settings:                   &runner.RunnerGroup.Settings,
 			RunnerInitScriptURL:        initScriptURL,
-			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig),
+			RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		}
 
 		// Legacy init.sh needs a pre-provisioned bootstrap token.
