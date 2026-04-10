@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"slices"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
@@ -18,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -61,8 +64,14 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 	providers = append(
 		providers,
 		[]fx.Option{
-			// provide process for the heartbeater
-			fx.Supply(fx.Annotate("build", fx.ResultTags(`name:"process"`))),
+			// derive process type from settings groups:
+			// org runners have "build" in groups, install runners have "deploys"
+			fx.Provide(fx.Annotate(func(s *settings.Settings) string {
+				if slices.Contains(s.Groups, "deploys") {
+					return "install"
+				}
+				return "build"
+			}, fx.ResultTags(`name:"process"`))),
 			// start all job loops
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
