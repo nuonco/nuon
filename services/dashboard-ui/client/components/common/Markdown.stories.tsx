@@ -10,6 +10,7 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TOrg, TInstall } from '@/types'
 import { ComponentCardComponent } from '@/components/install-components/ComponentCard'
 import { SandboxCardComponent } from '@/components/sandbox/SandboxCard'
+import { RunnerCardComponent } from '@/components/runners/RunnerCard'
 import { StackCardComponent } from '@/components/stacks/StackCard'
 import { Markdown } from './Markdown'
 
@@ -911,6 +912,29 @@ Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Runner card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they render the runner status.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
+          <RunnerCardComponent
+            status="active"
+            href="/org-mock/installs/install-mock/runner"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Runner status: <nuon-runner-card></nuon-runner-card>`}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Stack card (requires install context)</h4>
       <p className="text-xs text-gray-500 dark:text-gray-500">
         In app mode these degrade to inline code. In install mode they render the stack status.
@@ -1156,6 +1180,8 @@ Component card: <nuon-component-card name="networking"></nuon-component-card>
 
 Sandbox card: <nuon-sandbox-card></nuon-sandbox-card>
 
+Runner card: <nuon-runner-card></nuon-runner-card>
+
 Stack card: <nuon-stack-card></nuon-stack-card>
 
 Display components still render: <nuon-badge theme="success">Healthy</nuon-badge>`}
@@ -1199,6 +1225,10 @@ View a specific component:
 <nuon-component-card name="networking"></nuon-component-card>
 
 <nuon-component-card id="comp_abc123"></nuon-component-card>
+
+Runner status:
+
+<nuon-runner-card></nuon-runner-card>
 
 Stack overview:
 
