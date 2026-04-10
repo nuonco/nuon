@@ -6,6 +6,253 @@ import type {
   TTerraformPlan,
 } from '@/types'
 
+export type DiffLine = {
+  indent: number
+  prefix: '+' | '-' | '~' | ' '
+  text: string
+  type: 'added' | 'removed' | 'changed' | 'unchanged'
+}
+
+export function isComplex(val: any): boolean {
+  return val !== null && typeof val === 'object'
+}
+
+export function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true
+  if (a == null || b == null) return a === b
+  if (typeof a !== typeof b) return false
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false
+    return a.every((item, index) => deepEqual(item, b[index]))
+  }
+
+  if (typeof a === 'object') {
+    const keysA = Object.keys(a)
+    const keysB = Object.keys(b)
+    if (keysA.length !== keysB.length) return false
+    return keysA.every(
+      (key) => keysB.includes(key) && deepEqual(a[key], b[key])
+    )
+  }
+
+  return false
+}
+
+const PREFIX_MAP = {
+  '+': 'added',
+  '-': 'removed',
+  '~': 'changed',
+  ' ': 'unchanged',
+} as const
+
+function renderScalar(val: any): string {
+  if (val === null || val === undefined) return 'null'
+  if (typeof val === 'string') return JSON.stringify(val)
+  return String(val)
+}
+
+function renderFullValue(
+  val: any,
+  prefix: '+' | '-',
+  indent: number,
+  key?: string
+): DiffLine[] {
+  const type = PREFIX_MAP[prefix]
+  const keyPrefix = key !== undefined ? `${JSON.stringify(key)}: ` : ''
+
+  if (!isComplex(val)) {
+    return [{ indent, prefix, type, text: `${keyPrefix}${renderScalar(val)}` }]
+  }
+
+  if (Array.isArray(val)) {
+    if (val.length === 0) {
+      return [{ indent, prefix, type, text: `${keyPrefix}[]` }]
+    }
+    const lines: DiffLine[] = [{ indent, prefix, type, text: `${keyPrefix}[` }]
+    val.forEach((item) => {
+      lines.push(...renderFullValue(item, prefix, indent + 1))
+    })
+    lines.push({ indent, prefix, type, text: ']' })
+    return lines
+  }
+
+  const keys = Object.keys(val)
+  if (keys.length === 0) {
+    return [{ indent, prefix, type, text: `${keyPrefix}{}` }]
+  }
+  const lines: DiffLine[] = [{ indent, prefix, type, text: `${keyPrefix}{` }]
+  keys.forEach((k) => {
+    lines.push(...renderFullValue(val[k], prefix, indent + 1, k))
+  })
+  lines.push({ indent, prefix, type, text: '}' })
+  return lines
+}
+
+function maybeParseJsonString(val: any): any {
+  if (typeof val === 'string' && isStringJson(val)) {
+    return JSON.parse(val)
+  }
+  return val
+}
+
+export function generateDiffLines(
+  before: any,
+  after: any,
+  indent = 0,
+  maxDepth = 10
+): DiffLine[] {
+  if (indent > maxDepth) {
+    const text =
+      before !== undefined && after !== undefined
+        ? `${JSON.stringify(before).slice(0, 60)} -> ${JSON.stringify(after).slice(0, 60)}`
+        : JSON.stringify(before ?? after).slice(0, 120)
+    return [{ indent, prefix: '~', type: 'changed', text }]
+  }
+
+  before = maybeParseJsonString(before)
+  after = maybeParseJsonString(after)
+
+  if (
+    (before === null || before === undefined) &&
+    (after === null || after === undefined)
+  ) {
+    return []
+  }
+
+  if (before === null || before === undefined) {
+    return renderFullValue(after, '+', indent)
+  }
+
+  if (after === null || after === undefined) {
+    const lines = renderFullValue(before, '-', indent)
+    lines.push({ indent, prefix: '+', type: 'added', text: 'null' })
+    return lines
+  }
+
+  if (!isComplex(before) && !isComplex(after)) {
+    if (deepEqual(before, after)) {
+      return [
+        {
+          indent,
+          prefix: ' ',
+          type: 'unchanged',
+          text: renderScalar(after),
+        },
+      ]
+    }
+    return [
+      { indent, prefix: '-', type: 'removed', text: renderScalar(before) },
+      { indent, prefix: '+', type: 'added', text: renderScalar(after) },
+    ]
+  }
+
+  if (Array.isArray(before) && Array.isArray(after)) {
+    if (deepEqual(before, after)) {
+      return renderFullValue(after, ' ' as any, indent).map((l) => ({
+        ...l,
+        prefix: ' ' as const,
+        type: 'unchanged' as const,
+      }))
+    }
+    const lines: DiffLine[] = [
+      { indent, prefix: '~', type: 'changed', text: '[' },
+    ]
+    before.forEach((item) => {
+      lines.push(...renderFullValue(item, '-', indent + 1))
+    })
+    after.forEach((item) => {
+      lines.push(...renderFullValue(item, '+', indent + 1))
+    })
+    lines.push({ indent, prefix: '~', type: 'changed', text: ']' })
+    return lines
+  }
+
+  if (
+    isComplex(before) &&
+    !Array.isArray(before) &&
+    isComplex(after) &&
+    !Array.isArray(after)
+  ) {
+    const allKeys = [
+      ...new Set([...Object.keys(before), ...Object.keys(after)]),
+    ]
+    let anyChanged = false
+    const innerLines: DiffLine[] = []
+
+    allKeys.forEach((key) => {
+      const bVal = before[key]
+      const aVal = after[key]
+
+      if (bVal === undefined) {
+        anyChanged = true
+        renderFullValue(aVal, '+', indent + 1, key).forEach((l) =>
+          innerLines.push(l)
+        )
+      } else if (aVal === undefined) {
+        anyChanged = true
+        renderFullValue(bVal, '-', indent + 1, key).forEach((l) =>
+          innerLines.push(l)
+        )
+      } else if (deepEqual(bVal, aVal)) {
+        const scalar = !isComplex(aVal)
+        if (scalar) {
+          innerLines.push({
+            indent: indent + 1,
+            prefix: ' ',
+            type: 'unchanged',
+            text: `${JSON.stringify(key)}: ${renderScalar(aVal)}`,
+          })
+        } else {
+          const sub = renderFullValue(aVal, ' ' as any, indent + 1, key).map(
+            (l) => ({
+              ...l,
+              prefix: ' ' as const,
+              type: 'unchanged' as const,
+            })
+          )
+          innerLines.push(...sub)
+        }
+      } else {
+        anyChanged = true
+        const childLines = generateDiffLines(bVal, aVal, indent + 1, maxDepth)
+        if (childLines.length > 0) {
+          const firstLine = childLines[0]
+          childLines[0] = {
+            ...firstLine,
+            text: `${JSON.stringify(key)}: ${firstLine.text}`,
+          }
+        }
+        innerLines.push(...childLines)
+      }
+    })
+
+    const bracePrefix = anyChanged ? '~' : ' '
+    const braceType = anyChanged ? 'changed' : 'unchanged'
+    return [
+      {
+        indent,
+        prefix: bracePrefix as DiffLine['prefix'],
+        type: braceType as DiffLine['type'],
+        text: '{',
+      },
+      ...innerLines,
+      {
+        indent,
+        prefix: bracePrefix as DiffLine['prefix'],
+        type: braceType as DiffLine['type'],
+        text: '}',
+      },
+    ]
+  }
+
+  // Type mismatch
+  return [
+    ...renderFullValue(before, '-', indent),
+    ...renderFullValue(after, '+', indent),
+  ]
+}
+
 export function cleanString(str: string): string {
   let s = str ?? ''
   if (s.startsWith('"') && s.endsWith('"')) {
