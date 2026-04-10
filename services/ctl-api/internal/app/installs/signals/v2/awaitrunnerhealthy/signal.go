@@ -67,6 +67,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
+	// Determine the process type to poll based on runner group type
+	processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
+	if processType == app.RunnerProcessTypeUnknown {
+		return errors.Errorf("unsupported runner group type %s for health checking", runner.RunnerGroup.Type)
+	}
+
 	// Update the workflow step target if step ID is available
 	if s.WorkflowStepID != "" {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
@@ -78,20 +84,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Poll for runner health
+	// Poll for runner process health
+	processReq := activities.GetCurrentRunnerProcessRequest{
+		RunnerID:    runner.ID,
+		ProcessType: processType,
+	}
 	if err := poll.Poll(ctx, s.v, poll.PollOpts{
 		MaxTS:           workflow.Now(ctx).Add(time.Hour),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 1,
 		BackoffFactor:   1.1,
 		Fn: func(ctx workflow.Context) error {
-			runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
+			process, err := activities.AwaitGetCurrentRunnerProcess(ctx, processReq)
 			if err != nil {
 				return err
 			}
 
-			if runner.Status != app.RunnerStatusActive {
-				return errors.New("runner is not healthy")
+			if process.ProcessStatus() != app.RunnerProcessStatusActive {
+				return errors.Errorf("runner process is not healthy (status: %s)", process.ProcessStatus())
 			}
 			return nil
 		},
@@ -101,11 +111,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				return errors.Wrap(err, "unable to get workflow logger")
 			}
 
-			l.Debug("checking runner status again", zap.Duration("next_check_in", dur))
+			l.Debug("checking runner process status again", zap.Duration("next_check_in", dur))
 			return nil
 		},
 	}); err != nil {
-		return errors.Wrap(err, "runner did not become healthy")
+		return errors.Wrap(err, "runner process did not become healthy")
 	}
 
 	return nil
