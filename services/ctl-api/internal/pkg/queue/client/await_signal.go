@@ -3,9 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 
+	"go.temporal.io/sdk/activity"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
@@ -15,7 +17,9 @@ import (
 )
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 2h
+// @start-to-close-timeout 5m
+// @schedule-to-close-timeout 2h
+// @heartbeat-timeout 10s
 // @max-retries 1
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
@@ -32,6 +36,24 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		}
 		return &handler.FinishedResponse{}, nil
 	}
+
+	// Heartbeat so Temporal knows this activity is alive during the blocking update call.
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				activity.RecordHeartbeat(ctx, nil)
+			}
+		}
+	}()
 
 	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   q.Workflow.ID,
