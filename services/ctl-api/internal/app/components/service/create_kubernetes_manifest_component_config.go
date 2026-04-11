@@ -14,7 +14,6 @@ import (
 	"github.com/robfig/cron"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -180,14 +179,11 @@ func (s *service) CreateKubernetesManifestComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	// sk: this triggers queue build
-	s.evClient.Send(ctx, cmpID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-	})
-	s.evClient.Send(ctx, cmpID, &signals.Signal{
-		Type:          signals.OperationUpdateComponentType,
-		ComponentType: app.ComponentTypeKubernetesManifest,
-	})
+	if err := s.onConfigCreated(ctx, cmpID, app.ComponentTypeKubernetesManifest); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
