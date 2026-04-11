@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -14,14 +13,14 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 )
 
-// noRetryLongTimeout is used for activities that call workflow update handlers
+// longRunningActivityOptions is used for activities that call workflow update handlers
 // (validate, execute) which block until the signal finishes. These can run for
-// extended periods and must not be retried by Temporal.
-var noRetryLongTimeout = &workflow.ActivityOptions{
-	StartToCloseTimeout: 2 * time.Hour,
-	RetryPolicy: &temporal.RetryPolicy{
-		MaximumAttempts: 1,
-	},
+// extended periods. Heartbeating ensures Temporal can detect dead workers and retry.
+// Idempotent update IDs ensure retried update calls are deduplicated by Temporal.
+var longRunningActivityOptions = &workflow.ActivityOptions{
+	StartToCloseTimeout:    5 * time.Minute,
+	ScheduleToCloseTimeout: 2 * time.Hour,
+	HeartbeatTimeout:       10 * time.Second,
 }
 
 func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error {
@@ -85,7 +84,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
-	}, noRetryLongTimeout); err != nil {
+	}, longRunningActivityOptions); err != nil {
 		return errors.Wrap(err, "unable to validate")
 	}
 
@@ -93,7 +92,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
-	}, noRetryLongTimeout); err != nil {
+	}, longRunningActivityOptions); err != nil {
 		return errors.Wrap(err, "unable to execute")
 	}
 
