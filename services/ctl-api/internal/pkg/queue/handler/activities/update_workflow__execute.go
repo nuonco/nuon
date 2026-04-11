@@ -9,6 +9,7 @@ import (
 	"go.temporal.io/sdk/activity"
 	tclient "go.temporal.io/sdk/client"
 
+	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
@@ -16,49 +17,33 @@ import (
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
 // @heartbeat-timeout 10s
-// @max-retries 1
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
 func (a *Activities) updateWorkflowExecute(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ExecuteResponse, error) {
-	// Heartbeat so Temporal knows this activity is alive during the blocking update call.
-	done := make(chan struct{})
-	defer close(done)
-	go func() {
-		ticker := time.NewTicker(3 * time.Second)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-done:
-				return
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				activity.RecordHeartbeat(ctx, nil)
-			}
+	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*handler.ExecuteResponse, error) {
+		info := activity.GetInfo(ctx)
+
+		rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
+			info.WorkflowNamespace,
+			tclient.UpdateWithStartWorkflowOptions{
+				UpdateOptions: tclient.UpdateWorkflowOptions{
+					UpdateID:     updateID + "-execute",
+					WorkflowID:   workflowID,
+					UpdateName:   handler.ExecuteUpdateName,
+					WaitForStage: tclient.WorkflowUpdateStageCompleted,
+				},
+				StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
+			})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to call query handler")
 		}
-	}()
 
-	info := activity.GetInfo(ctx)
+		var resp handler.ExecuteResponse
+		if err := rawResp.Get(ctx, &resp); err != nil {
+			return nil, errors.Wrap(err, "unable get response")
+		}
 
-	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
-		info.WorkflowNamespace,
-		tclient.UpdateWithStartWorkflowOptions{
-			UpdateOptions: tclient.UpdateWorkflowOptions{
-				WorkflowID:   workflowID,
-				UpdateName:   handler.ExecuteUpdateName,
-				WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			},
-			StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
-		})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to call query handler")
-	}
-
-	var resp handler.ExecuteResponse
-	if err := rawResp.Get(ctx, &resp); err != nil {
-		return nil, errors.Wrap(err, "unable get response")
-	}
-
-	return &resp, nil
+		return &resp, nil
+	})
 }
