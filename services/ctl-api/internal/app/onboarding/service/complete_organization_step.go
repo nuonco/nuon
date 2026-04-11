@@ -16,7 +16,7 @@ import (
 )
 
 type CompleteOrganizationStepRequest struct {
-	Name  string `json:"name"`
+	Name  string `json:"name" validate:"omitempty,entity_name"`
 	OrgID string `json:"org_id"`
 }
 
@@ -57,6 +57,11 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.v.Struct(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
 	// Attach existing org (synchronous path)
 	if req.OrgID != "" {
 		s.attachExistingOrg(ctx, account, onboarding, req.OrgID)
@@ -68,6 +73,20 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("name is required when org_id is not provided"),
 			Description: "either name or org_id must be provided",
+		})
+		return
+	}
+
+	// Validate org name is unique (including soft-deleted orgs, which share the unique index)
+	var count int64
+	if err := s.db.WithContext(ctx).Model(&app.Org{}).Unscoped().Where("name = ?", req.Name).Count(&count).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to check org name uniqueness: %w", err))
+		return
+	}
+	if count > 0 {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("org name %q is already taken", req.Name),
+			Description: "an organization with this name already exists, please choose a different name",
 		})
 		return
 	}
