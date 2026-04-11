@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type QueueComponentBuildRequest struct {
+type CreateComponentBuildRecordRequest struct {
 	ComponentID string `validate:"required"`
 	OrgID       string `validate:"required"`
 	CreatedByID string `validate:"required"`
@@ -20,9 +19,11 @@ type QueueComponentBuildRequest struct {
 	VCSConnectionCommitID *string
 }
 
+// CreateComponentBuildRecord creates a component build record without dispatching to the
+// event loop. Used by queue signals that handle build execution themselves.
+//
 // @temporal-gen-v2 activity
-func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponentBuildRequest) (*app.ComponentBuild, error) {
-	// set the orgID on the context, for all writes
+func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateComponentBuildRecordRequest) (*app.ComponentBuild, error) {
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, req.CreatedByID)
 
@@ -39,22 +40,6 @@ func (a *Activities) QueueComponentBuild(ctx context.Context, req QueueComponent
 		}
 		build.VCSConnectionCommitID = req.VCSConnectionCommitID
 	}
-
-	// Ensure the component event loop is running before sending the build signal.
-	// In the normal flow, the event loop is started by OperationCreated when the component
-	// is created via the HTTP API. But in the onboarding flow (and other paths that create
-	// components through SyncAppConfig), the event loop may not exist yet.
-	// OperationRestart has Restart()=true, so evClient.Send checks the workflow status
-	// and starts the event loop if it's not running. The Restarted handler is a no-op
-	// (just sets component status to active).
-	a.evClient.Send(ctx, req.ComponentID, &signals.Signal{
-		Type: signals.OperationRestart,
-	})
-
-	a.evClient.Send(ctx, req.ComponentID, &signals.Signal{
-		Type:    signals.OperationBuild,
-		BuildID: build.ID,
-	})
 
 	return build, nil
 }
