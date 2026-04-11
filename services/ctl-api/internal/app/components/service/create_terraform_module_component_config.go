@@ -15,7 +15,6 @@ import (
 	"github.com/robfig/cron"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -178,14 +177,11 @@ func (s *service) CreateTerraformModuleComponentConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, cmpID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-	})
+	if err := s.onConfigCreated(ctx, cmpID, app.ComponentTypeTerraformModule); err != nil {
+		ctx.Error(err)
+		return
+	}
 
-	s.evClient.Send(ctx, cmpID, &signals.Signal{
-		Type:          signals.OperationUpdateComponentType,
-		ComponentType: app.ComponentTypeTerraformModule,
-	})
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
