@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -18,7 +19,7 @@ import (
 )
 
 type CompleteInstallStepRequest struct {
-	Name        string                    `json:"name" validate:"required"`
+	Name        string                    `json:"name" validate:"required,entity_name"`
 	InstallMode app.OnboardingInstallMode `json:"install_mode,omitempty" validate:"omitempty,oneof=cloud sandbox" swaggertype:"string" enums:"cloud,sandbox"`
 
 	AWSAccount *struct {
@@ -130,9 +131,17 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	}
 	sandboxMode := s.cfg.ForceOnboardingSandboxMode || org.SandboxMode || onboarding.InstallMode == app.OnboardingInstallModeSandbox
 
+	// Append a shortcode to make the install name unique
+	shortcode, err := gonanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", 6)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to generate shortcode: %w", err))
+		return
+	}
+	installName := fmt.Sprintf("%s-%s", req.Name, shortcode)
+
 	// Build install params
 	installParams := &helpers.CreateInstallParams{
-		Name:        req.Name,
+		Name:        installName,
 		Inputs:      req.Inputs,
 		SandboxMode: sandboxMode,
 		InstallConfig: &helpers.CreateInstallConfigParams{
