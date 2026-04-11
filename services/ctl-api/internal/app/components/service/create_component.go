@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -73,15 +72,11 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, component.ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
-	s.evClient.Send(ctx, component.ID, &signals.Signal{
-		Type: signals.OperationProvision,
-	})
-	s.evClient.Send(ctx, component.ID, &signals.Signal{
-		Type: signals.OperationPollDependencies,
-	})
+	if err := s.onComponentCreated(ctx, component.ID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, component)
 }
 
