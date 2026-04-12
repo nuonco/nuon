@@ -12,8 +12,9 @@ import (
 )
 
 type TriggerOnboardingAppBranchRunResponse struct {
-	RunID      string `json:"run_id"`
-	WorkflowID string `json:"workflow_id"`
+	RunID         string `json:"run_id"`
+	WorkflowID    string `json:"workflow_id"`
+	QueueSignalID string `json:"queue_signal_id"`
 }
 
 // @temporal-gen-v2 activity
@@ -70,7 +71,7 @@ func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranc
 	}
 
 	// Enqueue run signal on the branch queue
-	_, err = a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: branch.Queue.ID,
 		Signal: &runsignal.Signal{
 			RunID: run.ID,
@@ -81,7 +82,8 @@ func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranc
 	}
 
 	return &TriggerOnboardingAppBranchRunResponse{
-		RunID:      run.ID,
-		WorkflowID: wf.ID,
+		RunID:         run.ID,
+		WorkflowID:    wf.ID,
+		QueueSignalID: enqueueResp.ID,
 	}, nil
 }

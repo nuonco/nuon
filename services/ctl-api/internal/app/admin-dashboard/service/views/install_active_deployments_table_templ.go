@@ -5,9 +5,10 @@ package views
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
 import (
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
@@ -42,7 +43,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("install-active-deployments-" + installID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 12, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 12, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -55,7 +56,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/installs/" + installID + "/active-deployments/table")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 13, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 13, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -319,7 +320,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(deploy.ComponentName)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 36, Col: 64}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 36, Col: 64}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -332,7 +333,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var17 string
 								templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs("deploy-id-" + deploy.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 38, Col: 45}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 38, Col: 45}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 								if templ_7745c5c3_Err != nil {
@@ -345,7 +346,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var18 string
 								templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(deploy.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 39, Col: 22}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 39, Col: 22}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 								if templ_7745c5c3_Err != nil {
@@ -416,7 +417,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var21 string
 								templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(string(deploy.Type))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 51, Col: 29}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 51, Col: 29}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 								if templ_7745c5c3_Err != nil {
@@ -451,7 +452,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var23 string
 								templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs("build-id-" + deploy.ComponentBuildID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 55, Col: 57}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 55, Col: 57}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 								if templ_7745c5c3_Err != nil {
@@ -464,7 +465,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var24 string
 								templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(deploy.ComponentBuildID[:8])
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 56, Col: 39}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 56, Col: 39}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 								if templ_7745c5c3_Err != nil {
@@ -509,7 +510,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var26 string
 								templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(deploy.CreatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 64, Col: 53}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 64, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 								if templ_7745c5c3_Err != nil {
@@ -540,7 +541,7 @@ func InstallActiveDeploymentsTable(installID string, deployments []app.InstallDe
 								var templ_7745c5c3_Var28 string
 								templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(deploy.UpdatedAt.Format("2006-01-02 15:04"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/install_active_deployments_table.templ`, Line: 67, Col: 53}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/install_active_deployments_table.templ`, Line: 67, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 								if templ_7745c5c3_Err != nil {

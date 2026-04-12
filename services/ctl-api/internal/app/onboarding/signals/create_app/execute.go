@@ -9,6 +9,7 @@ import (
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -112,7 +113,16 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 		logger.Info("triggered app branch run", "run_id", runResp.RunID, "workflow_id", runResp.WorkflowID)
 
-		// Advance to install step now that the branch run is triggered
+		// Wait for the branch run to complete so app config (input_config) is ready
+		// before advancing. Without this, the install step loads before inputs exist.
+		_, err = queueclient.AwaitAwaitSignal(ctx, runResp.QueueSignalID)
+		if err != nil {
+			return fmt.Errorf("app branch run failed: %w", err)
+		}
+
+		logger.Info("app branch run completed", "run_id", runResp.RunID)
+
+		// Advance to install step now that the branch run is complete
 		nextStep := string(app.OnboardingStepInstall)
 		stepStatus := string(app.OnboardingStepStatusActive)
 		_, err = activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{

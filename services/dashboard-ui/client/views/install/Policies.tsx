@@ -73,7 +73,7 @@ export const Policies = () => {
       />
       <HeadingGroup>
         <Text variant="base" weight="strong">
-          Policy Evaluations
+          Policy reports
         </Text>
       </HeadingGroup>
 

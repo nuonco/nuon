@@ -48,7 +48,8 @@ func (a *Templates) getRunnerLaunchTemplateData(inp *stacks.TemplateInput, t tag
 		// NOTE(fd): this script is loaded from the RunnerConfig.InitScript field.
 		// this field is a url or a bash script. it is retrieved in the activity that generates the stack.
 		UserData: cloudformation.Base64Ptr(fmt.Sprintf(`#!/bin/bash
+%s
 curl %s | bash
-`, inp.RunnerInitScriptURL)),
+`, inp.RunnerEnvVars, inp.RunnerInitScriptURL)),
 	}
 }
