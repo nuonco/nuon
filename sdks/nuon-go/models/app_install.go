@@ -101,6 +101,9 @@ type AppInstall struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// queues
+	Queues []*AppQueue `json:"queues"`
+
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 
@@ -195,6 +198,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallStates(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateQueues(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -587,6 +594,36 @@ func (m *AppInstall) validateInstallStates(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validateQueues(formats strfmt.Registry) error {
+	if swag.IsZero(m.Queues) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Queues); i++ {
+		if swag.IsZero(m.Queues[i]) { // not required
+			continue
+		}
+
+		if m.Queues[i] != nil {
+			if err := m.Queues[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validateSandbox(formats strfmt.Registry) error {
 	if swag.IsZero(m.Sandbox) { // not required
 		return nil
@@ -720,6 +757,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateInstallStates(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateQueues(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1108,6 +1149,35 @@ func (m *AppInstall) contextValidateInstallStates(ctx context.Context, formats s
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("install_states" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateQueues(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Queues); i++ {
+
+		if m.Queues[i] != nil {
+
+			if swag.IsZero(m.Queues[i]) { // not required
+				return nil
+			}
+
+			if err := m.Queues[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("queues" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("queues" + "." + strconv.Itoa(i))
 				}
 
 				return err
