@@ -95,6 +95,9 @@ export const ApprovePlanButton = ({
   ...props
 }: IApprovePlan & IButtonAsButton) => {
   const { addModal } = useSurfaces()
+
+  if (!step.approval) return null
+
   const modal = <ApprovePlanModalContainer step={step} />
 
   return (
