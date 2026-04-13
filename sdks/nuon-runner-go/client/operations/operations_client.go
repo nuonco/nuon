@@ -176,6 +176,8 @@ type ClientService interface {
 
 	RunnerAuthAWS(params *RunnerAuthAWSParams, opts ...ClientOption) (*RunnerAuthAWSOK, error)
 
+	RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...ClientOption) (*RunnerAuthAWSIIDOK, error)
+
 	RunnerAuthAzure(params *RunnerAuthAzureParams, opts ...ClientOption) (*RunnerAuthAzureOK, error)
 
 	RunnerAuthGCP(params *RunnerAuthGCPParams, opts ...ClientOption) (*RunnerAuthGCPOK, error)
@@ -1947,6 +1949,51 @@ func (a *Client) RunnerAuthAWS(params *RunnerAuthAWSParams, opts ...ClientOption
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RunnerAuthAWS: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RunnerAuthAWSIID authenticates a runner using a w s instance identity document
+
+Validates runner identity by verifying an AWS-signed instance identity document
+*/
+func (a *Client) RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...ClientOption) (*RunnerAuthAWSIIDOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRunnerAuthAWSIIDParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RunnerAuthAWSIID",
+		Method:             "POST",
+		PathPattern:        "/v1/runner-auth/aws-iid",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RunnerAuthAWSIIDReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RunnerAuthAWSIIDOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RunnerAuthAWSIID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

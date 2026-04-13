@@ -25,13 +25,20 @@ type FetchTokenResult struct {
 
 // FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
 // It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
-func FetchToken(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
+// For AWS, authMethod selects the authentication strategy: "iid" for Instance Identity Document
+// (requires runnerID), or "" / "sts" (default) for presigned STS requests.
+func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
 	provider := detectCloudProvider(ctx)
 	switch provider {
 	case "gcp":
 		return fetchTokenGCP(ctx, apiClient)
 	case "aws":
-		return fetchTokenAWS(ctx, apiClient)
+		switch authMethod {
+		case "iid":
+			return fetchTokenAWSIID(ctx, apiClient, runnerID)
+		default:
+			return fetchTokenAWSSTS(ctx, apiClient)
+		}
 	default:
 		return nil, fmt.Errorf("unsupported or undetected cloud provider: %s", provider)
 	}
@@ -53,8 +60,8 @@ func FetchTokenAzure(ctx context.Context, apiClient nuonrunner.Client, runnerID 
 }
 
 // FetchAndStoreToken authenticates using cloud instance credentials and writes the token to disk.
-func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
-	result, err := FetchToken(ctx, apiClient)
+func FetchAndStoreToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
+	result, err := FetchToken(ctx, apiClient, authMethod, runnerID)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +102,7 @@ func detectCloudProvider(ctx context.Context) string {
 	return "aws"
 }
 
-func fetchTokenAWS(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
+func fetchTokenAWSSTS(ctx context.Context, apiClient nuonrunner.Client) (*FetchTokenResult, error) {
 	stsRequest, err := pkgaws.GetPresignedSTSRequest(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get presigned STS request: %w", err)
@@ -111,6 +118,35 @@ func fetchTokenAWS(ctx context.Context, apiClient nuonrunner.Client) (*FetchToke
 	resp, err := apiClient.RunnerAuthAWS(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to authenticate with AWS: %w", err)
+	}
+
+	if !resp.Authenticated {
+		return nil, fmt.Errorf("authentication failed: runner was not authenticated")
+	}
+
+	return &FetchTokenResult{
+		RunnerID:   resp.RunnerID,
+		InstanceID: resp.InstanceID,
+		AccountID:  resp.AccountID,
+		Token:      resp.Token,
+	}, nil
+}
+
+func fetchTokenAWSIID(ctx context.Context, apiClient nuonrunner.Client, runnerID string) (*FetchTokenResult, error) {
+	if runnerID == "" {
+		return nil, fmt.Errorf("runner ID is required for IID auth")
+	}
+
+	iid, err := pkgaws.GetInstanceIdentityDocument(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get instance identity document: %w", err)
+	}
+
+	req := pkgaws.BuildIIDAuthRequest(iid, runnerID)
+
+	resp, err := apiClient.RunnerAuthAWSIID(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with IID: %w", err)
 	}
 
 	if !resp.Authenticated {

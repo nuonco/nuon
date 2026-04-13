@@ -24,10 +24,11 @@ func init() {
 type Config struct {
 	GitRef string `config:"git_ref" validate:"required"`
 
-	RunnerAPIURL   string `config:"runner_api_url" validate:"required"`
-	RunnerAPIToken string `config:"runner_api_token"`
-	RunnerID       string `config:"runner_id" validate:"required"`
-	RunnerPlatform string `config:"runner_platform"`
+	RunnerAPIURL     string `config:"runner_api_url" validate:"required"`
+	RunnerAPIToken   string `config:"runner_api_token"`
+	RunnerID         string `config:"runner_id" validate:"required"`
+	RunnerPlatform   string `config:"runner_platform"`
+	RunnerAuthMethod string `config:"runner_auth_method"` // default if "" or "iid" for aws
 
 	// observability configuration
 	HostIP   string `config:"host_ip" validate:"required"`
