@@ -27,9 +27,9 @@ type TemplateInput struct {
 	RunnerInitScriptURL string `validate:"required"`
 	PhonehomeScript     string `validate:"required"`
 
-	// AWS Embeds
-	VPCNestedStackTemplateURL    string `validate:"required"`
-	RunnerNestedStackTemplateURL string `validate:"required"`
+	// Custom template URLs for VPC/VNet and runner nested/linked deployments (AWS CloudFormation, Azure ARM)
+	VPCNestedStackTemplateURL    string
+	RunnerNestedStackTemplateURL string
 }
 
 // FormatRunnerEnvVars converts an AppRunnerConfig's EnvVars hstore into a

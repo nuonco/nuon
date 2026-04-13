@@ -92,6 +92,23 @@ func ValidateTemplateURL(templateURL string, fieldName string) error {
 	return nil
 }
 
+func ValidateHTTPSURL(templateURL string, fieldName string) error {
+	u, err := url.Parse(templateURL)
+	if err != nil {
+		return ErrConfig{
+			Description: fmt.Sprintf("%s is not a valid URL: %s", fieldName, err),
+			Err:         fmt.Errorf("%s: %w", fieldName, err),
+		}
+	}
+	if u.Scheme != "https" || u.Host == "" {
+		return ErrConfig{
+			Description: fmt.Sprintf("%s must be a valid HTTPS URL (e.g. https://example.com/template.json), got %q", fieldName, templateURL),
+			Err:         fmt.Errorf("%s: must be an HTTPS URL", fieldName),
+		}
+	}
+	return nil
+}
+
 var installInputTemplatePattern = regexp.MustCompile(`^\{\{\s*\.nuon\.install\.inputs\.([a-zA-Z0-9_]+)\s*\}\}$`)
 
 func ParseInstallInputReference(value string) (string, error) {
@@ -115,13 +132,25 @@ func isS3URL(u *url.URL) bool {
 
 func (a *StackConfig) parse() error {
 	if a.VPCNestedTemplateURL != "" {
-		if err := ValidateTemplateURL(a.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
-			return err
+		if a.Type == "azure-bicep" {
+			if err := ValidateHTTPSURL(a.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+				return err
+			}
+		} else {
+			if err := ValidateTemplateURL(a.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+				return err
+			}
 		}
 	}
 	if a.RunnerNestedTemplateURL != "" {
-		if err := ValidateTemplateURL(a.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
-			return err
+		if a.Type == "azure-bicep" {
+			if err := ValidateHTTPSURL(a.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+				return err
+			}
+		} else {
+			if err := ValidateTemplateURL(a.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+				return err
+			}
 		}
 	}
 	for i, stack := range a.CustomNestedStacks {
