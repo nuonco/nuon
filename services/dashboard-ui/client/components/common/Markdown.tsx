@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, type ReactNode } from 'react'
+import React, { useEffect, useId, useMemo, useState, lazy, Suspense, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -13,13 +13,20 @@ import { PanelBase } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { buildNuonComponents, extractTabs, extractSurfaces, nuonTagNames, type ExtractedTabs, type ExtractedSurface, type MarkdownMode } from './markdown-components'
 
+const MermaidFlowGraph = lazy(() => import('./MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
+
 const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered'])
 
-// Mermaid component that handles its own rendering
-const MermaidDiagram = ({ code }: { code: string }) => {
+const REMARK_PLUGINS = [remarkGfm] as const
+const REHYPE_PLUGINS = [rehypeRaw] as const
+
+const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
+
+const MermaidSvgDiagram = ({ code }: { code: string }) => {
   const [svg, setSvg] = useState<string>('')
   const [error, setError] = useState<string>('')
-  const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`
+  const reactId = useId()
+  const id = `mermaid-${reactId.replace(/:/g, '')}`
 
   useEffect(() => {
     const renderMermaid = async () => {
@@ -27,19 +34,22 @@ const MermaidDiagram = ({ code }: { code: string }) => {
         const mermaid = await import('mermaid')
         mermaid.default.initialize({
           startOnLoad: false,
-          theme: 'default',
+          theme: 'neutral',
           securityLevel: 'loose',
           fontFamily: 'inherit',
         })
-        
+
         const { svg: renderedSvg } = await mermaid.default.render(`${id}-render`, code)
-        setSvg(renderedSvg)
+        const cleaned = renderedSvg
+          .replace(/\s+height="[\d.]+"/, '')
+          .replace(/\s+style="[^"]*max-width:[^"]*"/, ' style="width: 100%"')
+        setSvg(cleaned)
       } catch (err) {
         console.error('Mermaid error:', err)
         setError(`Mermaid Error: ${err}`)
       }
     }
-    
+
     renderMermaid()
   }, [code, id])
 
@@ -48,8 +58,8 @@ const MermaidDiagram = ({ code }: { code: string }) => {
   }
 
   return (
-    <div 
-      className="mermaid-diagram text-center my-4 min-h-[100px] border rounded border-color p-4 bg-neutral"
+    <div
+      className="mermaid-diagram text-center my-4 min-h-[100px] border rounded-lg border-color p-4 bg-white dark:invert dark:hue-rotate-180"
       dangerouslySetInnerHTML={{ __html: svg || 'Loading diagram...' }}
     />
   )
@@ -57,7 +67,14 @@ const MermaidDiagram = ({ code }: { code: string }) => {
 
 function renderCodeBlock(language: string, codeString: string) {
   if (language === 'mermaid') {
-    return <MermaidDiagram code={codeString} />
+    if (isFlowchart(codeString)) {
+      return (
+        <Suspense fallback={<div className="w-full h-[44rem] my-4 border rounded-lg border-color animate-pulse" />}>
+          <MermaidFlowGraph code={codeString} />
+        </Suspense>
+      )
+    }
+    return <MermaidSvgDiagram code={codeString} />
   }
 
   if (language === 'json' || language === 'jsonc') {
@@ -261,7 +278,7 @@ const markdownStyles = `
   }
   .mermaid-diagram svg {
     max-width: 100%;
-    height: 300px;
+    height: auto;
   }
   details[open] > summary {
     border-bottom: 1px solid var(--border-color);
@@ -403,8 +420,8 @@ export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: 
       <style>{markdownStyles}</style>
       <div className={proseClassName}>
         <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
+          remarkPlugins={REMARK_PLUGINS}
+          rehypePlugins={REHYPE_PLUGINS}
           components={components}
         >
           {processed}
