@@ -60,6 +60,7 @@ const AWSFields = ({
           options={options}
           placeholder="Choose AWS region"
           required
+          searchable
           defaultValue={draftValues?.region || ''}
         />
       </FieldWrapper>
@@ -94,6 +95,7 @@ const AzureFields = ({
           options={options}
           placeholder="Choose Azure location"
           required
+          searchable
           defaultValue={draftValues?.location || ''}
         />
       </FieldWrapper>
