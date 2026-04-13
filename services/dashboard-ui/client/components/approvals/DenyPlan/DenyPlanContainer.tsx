@@ -103,6 +103,8 @@ export const DenyPlanButton = ({
 }: IDenyPlan & Omit<ISplitButton, 'buttonProps' | 'dropdownProps'>) => {
   const { addModal } = useSurfaces()
 
+  if (!step.approval) return null
+
   const openModal = (denyType: TDenyType) => {
     addModal(<DenyPlanModalContainer step={step} denyType={denyType} />)
   }
