@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
@@ -78,6 +80,14 @@ type queue struct {
 	restarted bool
 	paused    bool
 	maxDepth  int
+
+	// idleTimeout is how long the queue can be idle before terminating.
+	// Loaded from the queue's DB record, falling back to config default.
+	idleTimeout time.Duration
+
+	// lastActivityTime tracks when any worker last received a signal or when the queue started.
+	// Used to detect idle queues that should terminate to free resources.
+	lastActivityTime time.Time
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState

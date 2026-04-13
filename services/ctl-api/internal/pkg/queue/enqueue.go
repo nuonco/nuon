@@ -45,6 +45,8 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
+	w.lastActivityTime = workflow.Now(ctx)
+
 	if len(w.state.QueueRefs) > w.maxDepth {
 		return nil, errors.Errorf("unable to queue item, depth of %d reached", w.maxDepth)
 	}

@@ -12,8 +12,26 @@ import (
 )
 
 const (
-	queueReceiveTimeout time.Duration = time.Minute * 1
+	queueReceiveTimeout     time.Duration = time.Minute * 1
+	defaultQueueIdleTimeout time.Duration = time.Minute * 10
 )
+
+func (q *queue) getIdleTimeout() time.Duration {
+	if q.idleTimeout > 0 {
+		return q.idleTimeout
+	}
+	if q.cfg != nil && q.cfg.QueueIdleTimeout > 0 {
+		return q.cfg.QueueIdleTimeout
+	}
+	return defaultQueueIdleTimeout
+}
+
+func (q *queue) isIdle(ctx workflow.Context) bool {
+	if q.lastActivityTime.IsZero() || q.paused {
+		return false
+	}
+	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
+}
 
 func (q *queue) startWorkers(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
@@ -25,6 +43,8 @@ func (q *queue) startWorkers(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
 	}
+
+	q.idleTimeout = queue.IdleTimeout
 
 	for i := 0; i < queue.MaxInFlight; i++ {
 		workflow.Go(ctx, func(gCtx workflow.Context) {
@@ -89,6 +109,8 @@ func (q *queue) worker(ctx workflow.Context) error {
 			l.Debug("workflow is starved, waiting for more signals")
 			continue
 		}
+
+		q.lastActivityTime = workflow.Now(ctx)
 
 		if err := q.handleQueueSignal(ctx, obj); err != nil {
 			l.Error("error handling workflow signal", zap.Error(err))

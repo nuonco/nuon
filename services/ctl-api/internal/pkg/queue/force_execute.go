@@ -29,6 +29,8 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
+	q.lastActivityTime = workflow.Now(ctx)
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
