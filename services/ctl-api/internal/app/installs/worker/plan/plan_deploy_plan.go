@@ -147,6 +147,8 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			}
 
 			plan.SandboxMode.Terraform = sandboxPlan
+		case app.ComponentTypePulumi:
+			plan.SandboxMode.Pulumi = p.createPulumiDeploySandboxMode()
 		}
 	}
 

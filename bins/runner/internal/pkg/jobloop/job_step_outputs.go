@@ -151,6 +151,19 @@ func (j *jobLoop) writeKubernetesManifestSandboxMode(ctx context.Context, job *m
 	return nil
 }
 
+func (j *jobLoop) writePulumiSandboxMode(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution, plan *plantypes.PulumiSandboxMode) error {
+	if len(plan.PlanContents) > 0 {
+		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+		}); err != nil {
+			return errors.Wrap(err, "unable to create job execution result")
+		}
+	}
+
+	return nil
+}
+
 func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
@@ -199,6 +212,11 @@ func (j *jobLoop) executeOutputsJobStep(ctx context.Context, handler jobs.JobHan
 		if plan.SandboxMode != nil && plan.SandboxMode.KubernetesManifest != nil {
 			if err := j.writeKubernetesManifestSandboxMode(ctx, job, jobExecution, plan.SandboxMode.KubernetesManifest); err != nil {
 				return errors.Wrap(err, "unable to write sandbox mode kubernetes_manifest")
+			}
+		}
+		if plan.SandboxMode != nil && plan.SandboxMode.Pulumi != nil {
+			if err := j.writePulumiSandboxMode(ctx, job, jobExecution, plan.SandboxMode.Pulumi); err != nil {
+				return errors.Wrap(err, "unable to write sandbox mode pulumi")
 			}
 		}
 	}

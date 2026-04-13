@@ -36,8 +36,9 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypePulumiDeploy:             time.Minute * 60,
 		app.RunnerJobTypeJobDeploy:                time.Minute * 15,
 
-		// terraform timeouts
+		// sandbox timeouts
 		app.RunnerJobTypeSandboxTerraform: time.Minute * 60,
+		app.RunnerJobTypeSandboxPulumi:    time.Minute * 60,
 		app.RunnerJobTypeRunnerTerraform:  time.Minute * 15,
 		app.RunnerJobTypeRunnerHelm:       time.Minute * 5,
 	}
