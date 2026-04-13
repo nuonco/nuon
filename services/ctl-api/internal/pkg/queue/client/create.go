@@ -64,10 +64,13 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		ID:        q.Workflow.ID,
 		TaskQueue: workflows.APITaskQueue,
 		Memo: map[string]any{
-			"id":         q.ID,
-			"name":       q.Name,
-			"owner-id":   q.OwnerID,
-			"owner-type": q.OwnerType,
+			"type":          "queue",
+			"id":            q.ID,
+			"name":          q.Name,
+			"owner-id":      q.OwnerID,
+			"owner-type":    q.OwnerType,
+			"max-in-flight": q.MaxInFlight,
+			"max-depth":     q.MaxDepth,
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{

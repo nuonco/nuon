@@ -41,6 +41,8 @@ type QueueSignal struct {
 	Signal signaldb.SignalData `json:"signal" temporaljson:"-"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
+
+	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {

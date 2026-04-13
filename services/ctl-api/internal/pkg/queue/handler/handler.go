@@ -33,6 +33,7 @@ type HandlerRequest struct {
 // @temporal-gen-v2 workflow
 // @task-queue "handler"
 // @id-template queue-{{.QueueID}}-handler-{{.QueueSignalID}}
+// @memo type queue-handler
 func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
 	h := &handler{
 		cfg:           w.cfg,

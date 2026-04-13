@@ -37,6 +37,7 @@ type WorkflowOptions struct {
 	WaitForCancellation bool
 	TaskQueue           string
 	OptionsCallback     string
+	Memo                map[string]string
 }
 
 type QueryOptions struct{}
@@ -385,6 +386,20 @@ func Parse(comments []string) (*Annotation, error) {
 				return nil, fmt.Errorf("missing value for @workflow-task-queue")
 			}
 			annotation.WorkflowOpts.TaskQueue = strings.Trim(parts[1], "\"")
+
+		case "@memo":
+			if annotation.Type != "workflow" {
+				continue
+			}
+			if len(parts) < 3 {
+				return nil, fmt.Errorf("missing key and value for @memo (usage: @memo key value)")
+			}
+			key := parts[1]
+			value := strings.Trim(strings.Join(parts[2:], " "), "\"")
+			if annotation.WorkflowOpts.Memo == nil {
+				annotation.WorkflowOpts.Memo = make(map[string]string)
+			}
+			annotation.WorkflowOpts.Memo[key] = value
 
 		default:
 			// If it starts with @, assumes it's a directive. If we don't recognize it, error out.

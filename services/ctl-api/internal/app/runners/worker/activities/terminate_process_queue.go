@@ -2,6 +2,8 @@ package activities
 
 import (
 	"context"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type TerminateProcessQueueRequest struct {
@@ -12,5 +14,8 @@ type TerminateProcessQueueRequest struct {
 // @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) TerminateProcessQueue(ctx context.Context, req TerminateProcessQueueRequest) error {
-	return a.helpers.TerminateProcessQueue(ctx, req.RunnerID, req.ProcessID)
+	if err := a.helpers.TerminateProcessQueue(ctx, req.RunnerID, req.ProcessID); err != nil {
+		return generics.TemporalGormError(err, "unable to terminate process queue")
+	}
+	return nil
 }
