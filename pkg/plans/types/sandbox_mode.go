@@ -24,6 +24,11 @@ type KubernetesSandboxMode struct {
 	PlanDisplayContents string `json:"plan_display_contents"`
 }
 
+type PulumiSandboxMode struct {
+	PlanContents        string `json:"plan_contents"`
+	PlanDisplayContents string `json:"plan_display_contents"`
+}
+
 type SandboxMode struct {
 	Enabled bool `json:"enabled"`
 
@@ -32,4 +37,5 @@ type SandboxMode struct {
 	Terraform          *TerraformSandboxMode  `json:"terraform,omitzero,omitempty"`
 	Helm               *HelmSandboxMode       `json:"helm,omitzero,omitempty"`
 	KubernetesManifest *KubernetesSandboxMode `json:"kubernetes_manifest,omitzero,omitempty"`
+	Pulumi             *PulumiSandboxMode     `json:"pulumi,omitzero,omitempty"`
 }

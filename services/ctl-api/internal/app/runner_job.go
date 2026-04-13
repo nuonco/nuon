@@ -116,6 +116,7 @@ const (
 	// sandbox job types
 	RunnerJobTypeSandboxTerraform     RunnerJobType = "sandbox-terraform"
 	RunnerJobTypeSandboxTerraformPlan RunnerJobType = "sandbox-terraform-plan"
+	RunnerJobTypeSandboxPulumi        RunnerJobType = "sandbox-pulumi"
 	RunnerJobTypeSandboxSyncSecrets   RunnerJobType = "sandbox-sync-secrets"
 
 	// runner job types
@@ -166,6 +167,7 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		// sandboxes
 	case RunnerJobTypeSandboxTerraform,
 		RunnerJobTypeSandboxTerraformPlan,
+		RunnerJobTypeSandboxPulumi,
 		RunnerJobTypeSandboxSyncSecrets:
 		return RunnerJobGroupSandbox
 
