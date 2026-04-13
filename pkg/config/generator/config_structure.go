@@ -139,6 +139,8 @@ func (c *ConfigStructure) AddComponent(cfd ConfigFileDefinition) error {
 				cfd.Header = "container-image"
 			case config.KubernetesManifestComponentType:
 				cfd.Header = "kubernetes-manifest"
+			case config.PulumiComponentType:
+				cfd.Header = "pulumi"
 			case config.JobComponentType:
 				cfd.Header = "job"
 			}
