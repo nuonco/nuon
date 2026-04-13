@@ -6,35 +6,37 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id            string
-		workflowID    string
-		stepID        string
-		note          string
-		name          string
-		region        string
-		appID         string
-		deployID      string
-		runID         string
-		installCompID string
-		componentID   string
-		roleName      string
-		inputs        []string
-		noSelect      bool
-		deployDeps    bool
-		offset        int
-		limit         int
-		planOnly      bool
-		fileOrDir     string
-		confirm       bool
-		wait          bool
-		enable        bool
-		disable       bool
-		dryRun        bool
-		skipConfirm   bool
+		id               string
+		workflowID       string
+		actionWorkflowID string
+		stepID           string
+		note             string
+		name             string
+		region           string
+		appID            string
+		deployID         string
+		runID            string
+		installCompID    string
+		componentID      string
+		roleName         string
+		inputs           []string
+		noSelect         bool
+		deployDeps       bool
+		offset           int
+		limit            int
+		planOnly         bool
+		fileOrDir        string
+		confirm          bool
+		wait             bool
+		enable           bool
+		disable          bool
+		dryRun           bool
+		skipConfirm      bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -74,11 +76,12 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(getCmd)
 
 	currentCmd := &cobra.Command{
-		Use:        "current",
-		Deprecated: "Use `nuon installs get` instead",
-		Short:      "Get current install (deprecated)",
-		Hidden:     true,
+		Use:    "current",
+		Short:  "Get current install (deprecated)",
+		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			printDeprecatedCommandWarning(cmd, "Use `nuon installs get` instead")
+
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Get(cmd.Context(), c.cfg.GetString("install_id"), PrintJSON)
 		}),
@@ -201,6 +204,34 @@ func (c *cli) installsCmd() *cobra.Command {
 	componentsCmd.MarkFlagRequired("install-id")
 	componentsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	componentsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum components to return")
+
+	componentsOutputsCmd := &cobra.Command{
+		Use:         "outputs",
+		Short:       "Get component outputs",
+		Long:        "Fetch the latest outputs for an install component",
+		Args:        cobra.NoArgs,
+		Annotations: previewAnnotation(),
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			if !c.cfg.Preview {
+				return fmt.Errorf("[NUON_PREVIEW=false] installs components outputs is a preview feature, set NUON_PREVIEW=true to enable")
+			}
+			return nil
+		},
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if componentID == "" {
+				ui.PrintWarning("missing --component-id; pass a component ID to fetch outputs")
+				return nil
+			}
+
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ComponentOutputs(cmd.Context(), id, componentID, PrintJSON)
+		}),
+	}
+	componentsOutputsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	componentsOutputsCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID on the install")
+	componentsOutputsCmd.MarkFlagRequired("install-id")
+	componentsCmd.AddCommand(componentsOutputsCmd)
+
 	installsCmds.AddCommand(componentsCmd)
 
 	getDeployCmd := &cobra.Command{
@@ -909,19 +940,65 @@ Available service names: api, runner (or any service name present in the logs)`,
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{
-		Use:         "actions",
-		Short:       "View actions",
-		Long:        "View actions by install ID",
-		Annotations: tuiAnnotation(TUIAltScreen),
+		Use:   "actions",
+		Short: "Manage install actions [preview]",
+		Long: `Manage and view install actions.
+
+By default, launches an interactive TUI to browse and execute actions.`,
+		Args:        cobra.NoArgs,
+		Annotations: annotations(tuiAnnotation(TUIAltScreen), previewAnnotation()),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := c.persistentPreRunE(cmd, args); err != nil {
+				return err
+			}
+			if !c.cfg.Preview {
+				return fmt.Errorf("[NUON_PREVIEW=false] installs actions is a preview feature, set NUON_PREVIEW=true to enable")
+			}
+			return nil
+		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Actions(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
-	actionsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
-	actionsCmd.MarkFlagRequired("install-id")
-	actionsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	actionsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum actions to return")
+	actionsCmd.PersistentFlags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	actionsCmd.MarkPersistentFlagRequired("install-id")
+	actionsCmd.PersistentFlags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	actionsCmd.PersistentFlags().IntVarP(&limit, "limit", "l", 20, "Maximum actions to return")
+	actionsCmd.PersistentFlags().StringVar(&actionWorkflowID, "action-workflow-id", "", "The action workflow ID or slug")
+
+	actionsListCmd := &cobra.Command{
+		Use:         "list",
+		Aliases:     []string{"ls"},
+		Short:       "List install actions",
+		Long:        "List action workflows available for an install",
+		Args:        cobra.NoArgs,
+		Annotations: previewAnnotation(),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ActionsList(cmd.Context(), id, offset, limit, PrintJSON)
+		}),
+	}
+	actionsCmd.AddCommand(actionsListCmd)
+
+	actionsOutputsCmd := &cobra.Command{
+		Use:         "outputs",
+		Short:       "Get action outputs",
+		Long:        "Fetch the latest outputs for an install action workflow",
+		Args:        cobra.NoArgs,
+		Annotations: previewAnnotation(),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if actionWorkflowID == "" {
+				ui.PrintWarning("missing --action-workflow-id; pass an action workflow ID or slug to fetch outputs")
+				return nil
+			}
+
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ActionOutputs(cmd.Context(), id, actionWorkflowID, PrintJSON)
+		}),
+	}
+	actionsCmd.AddCommand(actionsOutputsCmd)
+
 	installsCmds.AddCommand(actionsCmd)
 
 	return installsCmds

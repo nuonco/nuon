@@ -146,6 +146,7 @@ type Client interface {
 	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) error
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
 	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
+	GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error)
 
 	// install sandbox
 	DeprovisionInstallSandbox(ctx context.Context, installID string) error
@@ -229,9 +230,11 @@ type Client interface {
 	GetActionWorkflowConfigs(ctx context.Context, actionWorkflowID string) ([]*models.AppActionWorkflowConfig, error)
 	GetActionWorkflowConfig(ctx context.Context, actionWorkflowConfigID string) (*models.AppActionWorkflowConfig, error)
 	CreateActionWorkflowConfig(ctx context.Context, actionWorkflowID string, req *models.ServiceCreateActionWorkflowConfigRequest) (*models.AppActionWorkflowConfig, error)
+	GetInstallActionWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallActionWorkflow, bool, error)
 	GetInstallActionWorkflowRecentRuns(ctx context.Context, installID, actionWorkflowID string, query *models.GetPaginatedQuery) (*models.AppInstallActionWorkflow, bool, error)
 	CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
+	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
 }
 
