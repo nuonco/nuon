@@ -174,38 +174,38 @@ function getConfigItems(
         {
           id: `config-pulumi-runtime`,
           title: 'Runtime',
-          subtitle: config?.pulumi_component_config?.runtime,
+          subtitle: config?.pulumi?.runtime,
         },
         {
           id: `config-pulumi-version`,
           title: 'Pulumi version',
-          subtitle: config?.pulumi_component_config?.version,
+          subtitle: config?.pulumi?.version,
         },
         ...[
-          config?.pulumi_component_config?.variables &&
-            Object.keys(config.pulumi_component_config.variables).length > 0 && {
+          config?.pulumi?.config &&
+            Object.keys(config.pulumi.config).length > 0 && {
               id: `config-pulumi-config-`,
               title: 'Config',
               leftContent: <Icon variant="List" />,
               onClick: () => {
                 const modal = (
                   <PulumiConfigModal
-                    config={config.pulumi_component_config!.variables!}
+                    config={config.pulumi!.config!}
                   />
                 )
                 addModal(modal)
               },
               subtitle: 'View list',
             },
-          config?.pulumi_component_config?.env_vars &&
-            Object.keys(config.pulumi_component_config.env_vars).length > 0 && {
+          config?.pulumi?.env_vars &&
+            Object.keys(config.pulumi.env_vars).length > 0 && {
               id: `config-pulumi-env-vars-`,
               title: 'Env vars',
               leftContent: <Icon variant="List" />,
               onClick: () => {
                 const modal = (
                   <PulumiEnvVarsModal
-                    envVars={config.pulumi_component_config!.env_vars!}
+                    envVars={config.pulumi!.env_vars!}
                   />
                 )
                 addModal(modal)
@@ -214,8 +214,8 @@ function getConfigItems(
             },
         ].filter(Boolean),
         ...getConfigVCSItems(
-          config?.pulumi_component_config?.connected_github_vcs_config ||
-            config?.pulumi_component_config?.public_git_vcs_config
+          config?.pulumi?.connected_github_vcs_config ||
+            config?.pulumi?.public_git_vcs_config
         )
       )
       break

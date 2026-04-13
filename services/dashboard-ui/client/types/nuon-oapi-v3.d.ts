@@ -4,14 +4,23327 @@
  */
 
 
-export type paths = Record<string, never>;
+export interface paths {
+  "/v1/account": {
+    /**
+     * Get current account
+     * @description Get the current account with user journeys and other data
+     */
+    get: operations["GetCurrentAccount"];
+  };
+  "/v1/account/user-journeys": {
+    /**
+     * Get user journeys
+     * @description Get all user journeys for the current user account
+     */
+    get: operations["GetUserJourneys"];
+    /**
+     * Create a new user journey for account
+     * @description Add a new user journey with steps to track user progress
+     */
+    post: operations["CreateUserJourney"];
+  };
+  "/v1/account/user-journeys/{journey_name}/complete": {
+    /**
+     * Complete all steps in a specific user journey
+     * @description Mark all remaining steps in the specified user journey as complete
+     */
+    post: operations["CompleteUserJourney"];
+  };
+  "/v1/account/user-journeys/{journey_name}/reset": {
+    /**
+     * Reset user journey steps
+     * @description Reset all steps in a specified user journey by setting their completion status to false
+     */
+    post: operations["ResetUserJourney"];
+  };
+  "/v1/account/user-journeys/{journey_name}/steps/{step_name}": {
+    /**
+     * Update user journey step completion status
+     * @description Mark a user journey step as complete or incomplete
+     */
+    patch: operations["UpdateUserJourneyStep"];
+  };
+  "/v1/action-workflows/configs/{action_workflow_config_id}": {
+    /**
+     * get an app action workflow config
+     * @deprecated
+     * @description Return an action workflow configuration by id.
+     */
+    get: operations["GetActionWorkflowConfig"];
+  };
+  "/v1/action-workflows/{action_workflow_id}": {
+    /**
+     * get an app action workflow by action workflow id
+     * @deprecated
+     * @description Return an app action workflow by id.
+     */
+    get: operations["GetActionWorkflow"];
+    /**
+     * delete an action workflow
+     * @deprecated
+     * @description Delete an action workflow.
+     */
+    delete: operations["DeleteActionWorkflow"];
+    /**
+     * patch an app
+     * @deprecated
+     * @description Update an app action workflow configuration.
+     */
+    patch: operations["UpdateAppActionWorkflow"];
+  };
+  "/v1/action-workflows/{action_workflow_id}/configs": {
+    /**
+     * get action workflow for an app
+     * @deprecated
+     * @description Returns all action workflow configurations.
+     */
+    get: operations["GetActionWorkflowConfigs"];
+    /**
+     * create action workflow config
+     * @deprecated
+     * @description Create an action workflow configuration.
+     */
+    post: operations["CreateActionWorkflowConfig"];
+  };
+  "/v1/action-workflows/{action_workflow_id}/latest-config": {
+    /**
+     * get an app action workflow's latest config
+     * @deprecated
+     * @description Return the latest config for an action workflow.
+     */
+    get: operations["GetActionWorkflowLatestConfig"];
+  };
+  "/v1/apps": {
+    /**
+     * get all apps for the current org
+     * @description Returns all apps for the authenticated user.
+     */
+    get: operations["GetApps"];
+    /**
+     * create an app
+     * @description Create a new app.
+     */
+    post: operations["CreateApp"];
+  };
+  "/v1/apps/{app_id}": {
+    /**
+     * get an app
+     * @description Return an app.
+     */
+    get: operations["GetApp"];
+    /**
+     * delete an app
+     * @description Delete an app.
+     */
+    delete: operations["DeleteApp"];
+    /**
+     * update an app
+     * @description Update an app's configuration.
+     */
+    patch: operations["UpdateApp"];
+  };
+  "/v1/apps/{app_id}/action-workflows": {
+    /**
+     * get action workflows for an app
+     * @deprecated
+     * @description Returns all action workflows for the provided app.
+     */
+    get: operations["GetActionWorkflows"];
+    /**
+     * create an app action workflow
+     * @deprecated
+     * @description Create an action workflow for an app.
+     */
+    post: operations["CreateAppActionWorkflow"];
+  };
+  "/v1/apps/{app_id}/action-workflows/{action_workflow_id}": {
+    /**
+     * get an app action workflow
+     * @deprecated
+     * @description Return an app action workflow by id.
+     */
+    get: operations["GetAppActionWorkflow"];
+  };
+  "/v1/apps/{app_id}/actions": {
+    /**
+     * get action workflows for an app
+     * @description Returns all action workflows for the provided app.
+     */
+    get: operations["GetAppActions"];
+    /**
+     * create an app action
+     * @deprecated
+     * @description Create an action workflow for an app.
+     */
+    post: operations["CreateAppAction"];
+  };
+  "/v1/apps/{app_id}/actions/configs/{action_config_id}": {
+    /**
+     * get an app action config
+     * @description Return an action workflow configuration by id.
+     */
+    get: operations["GetAppActionConfig"];
+  };
+  "/v1/apps/{app_id}/actions/{action_id}": {
+    /**
+     * get an app action workflow by action workflow id
+     * @description Return an app action workflow by id.
+     */
+    get: operations["GetAppAction"];
+    /**
+     * delete an action
+     * @description Delete an action workflow.
+     */
+    delete: operations["DeleteAction"];
+    /**
+     * patch an app action
+     * @deprecated
+     * @description Update an app action workflow configuration.
+     */
+    patch: operations["UpdateAppAction"];
+  };
+  "/v1/apps/{app_id}/actions/{action_id}/configs": {
+    /**
+     * get action workflow for an app
+     * @description Returns all action workflow configurations.
+     */
+    get: operations["GetAppActionConfigs"];
+    /**
+     * create action config
+     * @description Create an action workflow configuration.
+     */
+    post: operations["CreateActionConfig"];
+  };
+  "/v1/apps/{app_id}/actions/{action_id}/latest-config": {
+    /**
+     * get an app action workflow's latest config
+     * @description Return the latest config for an action workflow.
+     */
+    get: operations["GetActionLatestConfig"];
+  };
+  "/v1/apps/{app_id}/branches": {
+    /**
+     * get app branches
+     * @description Returns all branches for the provided app.
+     */
+    get: operations["GetAppBranches"];
+    /** @description Cancel a runner job. */
+    post: operations["CreateAppBranch"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}": {
+    /**
+     * get an app branch
+     * @description Get an app branch by ID. Use `latest_config=true` query parameter to include only the most recent config with its VCS settings and install groups.
+     */
+    get: operations["GetAppBranch"];
+    /**
+     * update app branch metadata
+     * @description Updates app branch metadata (name only). To update configuration, create a new AppBranchConfig via POST /branches/:id/configs
+     */
+    patch: operations["UpdateAppBranch"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/configs": {
+    /**
+     * get app branch app configs
+     * @description Returns all branch configurations for the provided app.
+     */
+    get: operations["GetAppBranchAppConfigs"];
+    /**
+     * create an app branch config
+     * @description Create a branch configuration for an app.
+     */
+    post: operations["CreateAppBranchConfig"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/latest-config": {
+    /**
+     * get latest app branch config
+     * @description Returns the latest AppBranchConfig ordered by config_number (descending)
+     */
+    get: operations["GetAppBranchLatestConfig"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs": {
+    /**
+     * get app branch workflow runs
+     * @description Returns workflow runs for an app branch ordered by creation time (descending)
+     */
+    get: operations["GetAppBranchRuns"];
+    /**
+     * trigger app branch workflow run
+     * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
+     */
+    post: operations["TriggerAppBranchRun"];
+  };
+  "/v1/apps/{app_id}/break-glass-configs": {
+    /** @description Create a break glass config for an app. */
+    post: operations["CreateAppBreakGlassConfig"];
+  };
+  "/v1/apps/{app_id}/break-glass-configs/{config_id}": {
+    /**
+     * get app break_glass config
+     * @description Return an app break glass config by id.
+     */
+    get: operations["GetAppBreakGlassConfig"];
+  };
+  "/v1/apps/{app_id}/component/{component_name_or_id}": {
+    /**
+     * get a components for a specific app
+     * @description Return an app component by id or name.
+     */
+    get: operations["GetAppComponent"];
+  };
+  "/v1/apps/{app_id}/components": {
+    /**
+     * get all components for an app
+     * @description Returns all components for the provided app.
+     */
+    get: operations["GetAppComponents"];
+    /**
+     * create a component
+     * @description Create a new component for an app.
+     */
+    post: operations["CreateComponent"];
+  };
+  "/v1/apps/{app_id}/components/build-all": {
+    /**
+     * create component build
+     * @description Build all components for an app.
+     */
+    post: operations["BuildAllComponents"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}": {
+    /**
+     * delete a component
+     * @description Delete a component.
+     */
+    delete: operations["DeleteAppComponent"];
+    /**
+     * update a component
+     * @description Update a component's configuration.
+     */
+    patch: operations["UpdateAppComponent"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/builds": {
+    /**
+     * get builds for components
+     * @description Returns all builds for the provided component.
+     */
+    get: operations["GetAppComponentBuilds"];
+    /**
+     * create component build
+     * @description Create a build for a component.
+     */
+    post: operations["CreateAppComponentBuild"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/builds/latest": {
+    /**
+     * get latest build for a component
+     * @description Returns the most recent build for the provided component.
+     */
+    get: operations["GetAppComponentLatestBuild"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}": {
+    /**
+     * get a build for a component
+     * @description Returns builds for one or all components in an app.
+     */
+    get: operations["GetAppComponentBuild"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs": {
+    /**
+     * get all configs for a component
+     * @description Returns all configurations for the provided component.
+     */
+    get: operations["GetAppComponentConfigs"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/docker-build": {
+    /**
+     * create a docker build component config
+     * @description Create a Docker build component config.
+     */
+    post: operations["CreateAppDockerBuildComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/external-image": {
+    /**
+     * create an external image component config
+     * @description Create an external image component config.
+     */
+    post: operations["CreateAppExternalImageComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/helm": {
+    /**
+     * create a helm component config
+     * @description Create a helm component config.
+     */
+    post: operations["CreateAppHelmComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/job": {
+    /**
+     * create a job component config
+     * @description Create a job component config.
+     */
+    post: operations["CreateAppJobComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/kubernetes-manifest": {
+    /**
+     * create a kubernetes manifest component config
+     * @description Create a Kubernetes manifest component config.
+     */
+    post: operations["CreateAppKubernetesManifestComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/latest": {
+    /**
+     * get latest config for a component
+     * @description Returns the most recent config for the provided component.
+     */
+    get: operations["GetAppComponentLatestConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/pulumi": {
+    /** create a pulumi component config */
+    post: operations["CreateAppPulumiComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/terraform-module": {
+    /**
+     * create a terraform component config
+     * @description Create a terraform component config.
+     */
+    post: operations["CreateAppTerraformModuleComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/configs/{config_id}": {
+    /**
+     * get a config for a component
+     * @description Return a component configuration by id.
+     */
+    get: operations["GetAppComponentConfig"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/dependencies": {
+    /**
+     * get a component's dependencies
+     * @deprecated
+     * @description Returns all dependencies for the provided component.
+     */
+    get: operations["GetAppComponentDependencies"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/dependents": {
+    /**
+     * get a component's children
+     * @description Returns all components that depend on the provided component.
+     */
+    get: operations["GetAppComponentDependents"];
+  };
+  "/v1/apps/{app_id}/config": {
+    /**
+     * @deprecated
+     * @description Create an app config, by pushing the contents of a config file.
+     *
+     * The API will automatically configure the app according to the config file in the background.
+     */
+    post: operations["CreateAppConfig"];
+  };
+  "/v1/apps/{app_id}/config/{app_config_id}": {
+    /**
+     * get an app config
+     * @deprecated
+     * @description Fetch an app config by id.
+     */
+    get: operations["GetAppConfig"];
+    /**
+     * @deprecated
+     * @description Update an app config, setting status and state.
+     */
+    patch: operations["UpdateAppConfig"];
+  };
+  "/v1/apps/{app_id}/config/{app_config_id}/graph": {
+    /**
+     * get an app config graph
+     * @deprecated
+     * @description Return raw graphviz data as a string that can be used to visualize a graph for an app.
+     *
+     * Note, for more complex viewing recommend to copy this output directly into [Graphviz
+     * viewer](https://dreampuf.github.io/GraphvizOnline).
+     */
+    get: operations["GetAppConfigGraph"];
+  };
+  "/v1/apps/{app_id}/config/{app_config_id}/update-installs": {
+    /**
+     * @deprecated
+     * @description Update app configuration across multiple installs.
+     */
+    post: operations["UpdateAppConfigInstalls"];
+  };
+  "/v1/apps/{app_id}/configs": {
+    /**
+     * get app configs
+     * @description Returns all configs for the app.
+     */
+    get: operations["GetAppConfigs"];
+    /**
+     * @description Create an app config, by pushing the contents of a config file.
+     *
+     * The API will automatically configure the app according to the config file in the background.
+     */
+    post: operations["CreateAppConfigV2"];
+  };
+  "/v1/apps/{app_id}/configs/{config_id}": {
+    /**
+     * get an app config
+     * @description Fetch an app config by id.
+     */
+    get: operations["GetAppConflgV2"];
+    /** @description Update an app config, setting status and state. */
+    patch: operations["UpdateAppConflgV2"];
+  };
+  "/v1/apps/{app_id}/configs/{config_id}/graph": {
+    /**
+     * get an app config graph
+     * @description Return raw graphviz data as a string that can be used to visualize a graph for an app.
+     *
+     * Note, for more complex viewing recommend to copy this output directly into [Graphviz
+     * viewer](https://dreampuf.github.io/GraphvizOnline).
+     */
+    get: operations["GetAppConfigGraphV2"];
+  };
+  "/v1/apps/{app_id}/configs/{config_id}/update-installs": {
+    /** @description Update app configuration across multiple installs. */
+    post: operations["UpdateAppConfigInstallsV2"];
+  };
+  "/v1/apps/{app_id}/input-config": {
+    /**
+     * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
+     * expose configuration knobs in your application.
+     */
+    post: operations["CreateAppInputConfig"];
+  };
+  "/v1/apps/{app_id}/input-configs": {
+    /**
+     * get app input configs
+     * @description Returns all input configurations for the provided app.
+     */
+    get: operations["GetAppInputConfigs"];
+  };
+  "/v1/apps/{app_id}/input-configs/{input_config_id}": {
+    /**
+     * get app input config
+     * @description Return an input config by id.
+     */
+    get: operations["GetAppInputConfig"];
+  };
+  "/v1/apps/{app_id}/input-latest-config": {
+    /**
+     * get latest app input config
+     * @description Returns the most recent input config for the provided app.
+     */
+    get: operations["GetAppInputLatestConfig"];
+  };
+  "/v1/apps/{app_id}/installs": {
+    /**
+     * get all installs for an app
+     * @description Returns all installs for the provided app.
+     */
+    get: operations["GetAppInstalls"];
+    /**
+     * create an app install
+     * @deprecated
+     * @description Create a new install for an app.
+     */
+    post: operations["CreateInstall"];
+  };
+  "/v1/apps/{app_id}/latest-break-glass-config": {
+    /**
+     * get latest app break glass config
+     * @description Get the latest break glass config for an app.
+     */
+    get: operations["GetLatestAppBreakGlassConfig"];
+  };
+  "/v1/apps/{app_id}/latest-config": {
+    /**
+     * get latest app config
+     * @description Returns the most recent config for the provided app.
+     */
+    get: operations["GetAppLatestConfig"];
+  };
+  "/v1/apps/{app_id}/latest-permissions-config": {
+    /**
+     * get latest app permissions config
+     * @description Get the latest app permissions config.
+     */
+    get: operations["GetLatestAppPermissionsConfig"];
+  };
+  "/v1/apps/{app_id}/latest-policies-config": {
+    /**
+     * get latest app policies config
+     * @description Get latest app policies config.
+     */
+    get: operations["GetLatestAppPoliciesConfig"];
+  };
+  "/v1/apps/{app_id}/latest-secrets-config": {
+    /**
+     * get latest app secrets config
+     * @description Get the latest app secrets config.
+     */
+    get: operations["GetLatestAppSecretsConfig"];
+  };
+  "/v1/apps/{app_id}/operation-role-configs": {
+    /**
+     * create operation role config
+     * @description Create operation role rules for an app config
+     */
+    post: operations["CreateAppOperationRoleConfig"];
+  };
+  "/v1/apps/{app_id}/operation-role-configs/{operation_role_config_id}": {
+    /**
+     * get operation role configs
+     * @description Get all operation role configs for an app
+     */
+    get: operations["GetAppOperationRoleConfigs"];
+  };
+  "/v1/apps/{app_id}/permissions-configs": {
+    /** @description Create app permissions config. */
+    post: operations["CreateAppPermissionsConfig"];
+  };
+  "/v1/apps/{app_id}/permissions-configs/{config_id}": {
+    /**
+     * get app permissions config
+     * @description Return an app permissions config by id.
+     */
+    get: operations["GetAppPermissionsConfig"];
+  };
+  "/v1/apps/{app_id}/policies-configs": {
+    /**
+     * get app policies configs
+     * @description Get all policies configs for an app.
+     */
+    get: operations["GetAppPoliciesConfigs"];
+    /** @description Create app policies config. */
+    post: operations["CreateAppPoliciesConfig"];
+  };
+  "/v1/apps/{app_id}/policies-configs/{config_id}": {
+    /**
+     * get app policies config
+     * @description Return an app policy config by id.
+     */
+    get: operations["GetAppPoliciesConfig"];
+  };
+  "/v1/apps/{app_id}/policy-config/{policy_config_id}": {
+    /**
+     * get app policy config
+     * @description get a single app policy config by ID
+     */
+    get: operations["GetAppPolicyConfig"];
+  };
+  "/v1/apps/{app_id}/runner-configs": {
+    /**
+     * get app runner configs
+     * @description Returns all runner configurations for the provided app.
+     */
+    get: operations["GetAppRunnerConfigs"];
+    /**
+     * create an app runner config
+     * @description Create a runner configuration for an app.
+     */
+    post: operations["CreateAppRunnerConfig"];
+  };
+  "/v1/apps/{app_id}/runner-latest-config": {
+    /**
+     * get latest app runner config
+     * @description Returns the most recent runner config for the provided app.
+     */
+    get: operations["GetAppRunnerLatestConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox-config": {
+    /**
+     * create an app sandbox config
+     * @deprecated
+     * @description Create a sandbox configuration for an app.
+     */
+    post: operations["CreateAppSandboxConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox-configs": {
+    /**
+     * get app sandbox configs
+     * @description Returns all sandbox configurations for the provided app.
+     */
+    get: operations["GetAppSandboxConfigs"];
+    /**
+     * create an app sandbox config
+     * @description Create a sandbox configuration for an app.
+     */
+    post: operations["CreateAppSandboxConfigV2"];
+  };
+  "/v1/apps/{app_id}/sandbox-latest-config": {
+    /**
+     * get latest app sandbox config
+     * @description Returns the most recent sandbox config for the provided app.
+     */
+    get: operations["GetAppSandboxLatestConfig"];
+  };
+  "/v1/apps/{app_id}/sandbox/builds": {
+    /** get app sandbox builds */
+    get: operations["GetAppSandboxBuilds"];
+    /** create app sandbox build */
+    post: operations["CreateAppSandboxBuild"];
+  };
+  "/v1/apps/{app_id}/sandbox/builds/{build_id}": {
+    /** get app sandbox build */
+    get: operations["GetAppSandboxBuild"];
+  };
+  "/v1/apps/{app_id}/secret": {
+    /**
+     * create an app secret
+     * @deprecated
+     * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+     *
+     * **NOTE** secrets can only be written, or deleted, not read.
+     */
+    post: operations["CreateAppSecret"];
+  };
+  "/v1/apps/{app_id}/secret/{secret_id}": {
+    /**
+     * delete an app secret
+     * @deprecated
+     * @description Delete an app secret.
+     */
+    delete: operations["DeleteAppSecret"];
+  };
+  "/v1/apps/{app_id}/secrets": {
+    /**
+     * get app secrets
+     * @description List all secrets for an app.
+     *
+     * **NOTE** this does not return any sensitive values, as secrets are write only.
+     */
+    get: operations["GetAppSecrets"];
+    /**
+     * create an app secret
+     * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+     *
+     * **NOTE** secrets can only be written, or deleted, not read.
+     */
+    post: operations["CreateAppSecretV2"];
+  };
+  "/v1/apps/{app_id}/secrets-configs": {
+    /** @description Create an app secrets config. */
+    post: operations["CreateAppSecretsConfig"];
+  };
+  "/v1/apps/{app_id}/secrets-configs/{config_id}": {
+    /**
+     * get app secrets config
+     * @description Return an app secrets config by id.
+     */
+    get: operations["GetAppSecretsConfig"];
+  };
+  "/v1/apps/{app_id}/secrets/{secret_id}": {
+    /**
+     * delete an app secret
+     * @description Delete an app secret.
+     */
+    delete: operations["DeleteAppSecretV2"];
+  };
+  "/v1/apps/{app_id}/stack-configs": {
+    /**
+     * create an app stack config
+     * @description Create a cloudformation stack config
+     */
+    post: operations["CreateAppStackConfig"];
+  };
+  "/v1/apps/{app_id}/stack-configs/{config_id}": {
+    /**
+     * get app stack config
+     * @description Return a cloudformation stack config
+     */
+    get: operations["GetAppStackConfig"];
+  };
+  "/v1/apps/{app_id}/template-config": {
+    /**
+     * get an app config template
+     * @description Create an application template which provides a fully rendered config that can be modified and used to kickstart any application.
+     */
+    get: operations["GetAppConfigTemplate"];
+  };
+  "/v1/auth/me": {
+    /**
+     * Get current account with identity information
+     * @description Returns the authenticated account with identity profile information (provider_type, name, picture)
+     */
+    get: operations["GetAuthMe"];
+  };
+  "/v1/builds": {
+    /**
+     * get builds for components
+     * @deprecated
+     * @description Returns all builds for the provided component.
+     */
+    get: operations["GetComponentBuilds"];
+  };
+  "/v1/components": {
+    /**
+     * get all components for an org
+     * @description Returns all components for the provided organization.
+     */
+    get: operations["GetOrgComponents"];
+  };
+  "/v1/components/builds/{build_id}": {
+    /**
+     * get a build
+     * @deprecated
+     * @description Returns builds for one or all components in an app.
+     */
+    get: operations["GetBuild"];
+  };
+  "/v1/components/{component_id}": {
+    /**
+     * get a component
+     * @deprecated
+     * @description Return a component by id.
+     */
+    get: operations["GetComponent"];
+    /**
+     * delete a component
+     * @deprecated
+     * @description Delete a component.
+     */
+    delete: operations["DeleteComponent"];
+    /**
+     * update a component
+     * @deprecated
+     * @description Update a component's configuration.
+     */
+    patch: operations["UpdateComponent"];
+  };
+  "/v1/components/{component_id}/builds": {
+    /**
+     * create component build
+     * @deprecated
+     * @description Create a build for a component.
+     */
+    post: operations["CreateComponentBuild"];
+  };
+  "/v1/components/{component_id}/builds/latest": {
+    /**
+     * get latest build for a component
+     * @deprecated
+     * @description Returns the most recent build for the provided component.
+     */
+    get: operations["GetComponentLatestBuild"];
+  };
+  "/v1/components/{component_id}/builds/{build_id}": {
+    /**
+     * get a build for a component
+     * @deprecated
+     * @description Returns builds for one or all components in an app.
+     */
+    get: operations["GetComponentBuild"];
+  };
+  "/v1/components/{component_id}/configs": {
+    /**
+     * get all configs for a component
+     * @deprecated
+     * @description Returns all configurations for the provided component.
+     */
+    get: operations["GetComponentConfigs"];
+  };
+  "/v1/components/{component_id}/configs/docker-build": {
+    /**
+     * create a docker build component config
+     * @deprecated
+     * @description Create a Docker build component config.
+     */
+    post: operations["CreateDockerBuildComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/external-image": {
+    /**
+     * create an external image component config
+     * @deprecated
+     * @description Create an external image component config.
+     */
+    post: operations["CreateExternalImageComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/helm": {
+    /**
+     * create a helm component config
+     * @deprecated
+     * @description Create a helm component config.
+     */
+    post: operations["CreateHelmComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/job": {
+    /**
+     * create a job component config
+     * @deprecated
+     * @description Create a job component config.
+     */
+    post: operations["CreateJobComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/kubernetes-manifest": {
+    /**
+     * create a kubernetes manifest component config
+     * @deprecated
+     * @description Create a Kubernetes manifest component config.
+     */
+    post: operations["CreateKubernetesManifestComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/latest": {
+    /**
+     * get latest config for a component
+     * @deprecated
+     * @description Returns the most recent config for the provided component.
+     */
+    get: operations["GetComponentLatestConfig"];
+  };
+  "/v1/components/{component_id}/configs/pulumi": {
+    /**
+     * create a pulumi component config
+     * @deprecated
+     */
+    post: operations["CreatePulumiComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/terraform-module": {
+    /**
+     * create a terraform component config
+     * @deprecated
+     * @description Create a terraform component config.
+     */
+    post: operations["CreateTerraformModuleComponentConfig"];
+  };
+  "/v1/components/{component_id}/configs/{config_id}": {
+    /**
+     * get a config for a component
+     * @deprecated
+     * @description Return a component configuration by id.
+     */
+    get: operations["GetComponentConfig"];
+  };
+  "/v1/components/{component_id}/dependencies": {
+    /**
+     * get a component's dependencies
+     * @deprecated
+     * @description Returns all dependencies for the provided component.
+     */
+    get: operations["GetComponentDependencies"];
+  };
+  "/v1/components/{component_id}/dependents": {
+    /**
+     * get a component's children
+     * @description Returns all components that depend on the provided component.
+     */
+    get: operations["GetComponentDependents"];
+  };
+  "/v1/general/cli-config": {
+    /**
+     * Get config for cli
+     * @description Returns CLI configuration and settings.
+     */
+    get: operations["GetCLIConfig"];
+  };
+  "/v1/general/cloud-platform/{cloud_platform}/regions": {
+    /**
+     * Get regions for a cloud platform
+     * @description Return region metadata for the Nuon supported cloud platforms.
+     */
+    get: operations["GetCloudPlatformRegions"];
+  };
+  "/v1/general/config-schema": {
+    /**
+     * Get jsonschema for config file
+     * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
+     * [Taplo](https://taplo.tamasfe.dev/) configured.
+     *
+     * ```toml
+     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     *
+     * description = "description"
+     * ```
+     *
+     * You can pass in a valid source argument to render within a specific config file:
+     *
+     * - input
+     * - input-group
+     * - installer
+     * - sandbox
+     * - runner
+     * - docker_build
+     * - container_image
+     * - helm
+     * - terraform
+     * - job
+     */
+    get: operations["GetConfigSchema"];
+  };
+  "/v1/general/current-user": {
+    /**
+     * Get current user
+     * @description Returns the current authenticated user account.
+     */
+    get: operations["GetCurrentUser"];
+  };
+  "/v1/general/waitlist": {
+    /**
+     * Allow user to be added to an org waitlist.
+     * @description Add an entry to the waitlist.
+     */
+    post: operations["CreateWaitlist"];
+  };
+  "/v1/install-workflows/{install_workflow_id}": {
+    /**
+     * get an install workflow
+     * @deprecated
+     * @description Return a workflow.
+     */
+    get: operations["GetInstallWorkflow"];
+    /**
+     * update an install workflow
+     * @deprecated
+     * @description Update a workflow configuration.
+     */
+    patch: operations["UpdateInstallWorkflow"];
+  };
+  "/v1/install-workflows/{install_workflow_id}/cancel": {
+    /**
+     * cancel an ongoing install workflow
+     * @deprecated
+     * @description Cancel a running workflow execution.
+     */
+    post: operations["CancelInstallWorkflow"];
+  };
+  "/v1/install-workflows/{install_workflow_id}/steps": {
+    /**
+     * get all of the steps for a given install workflow
+     * @deprecated
+     * @description Return all steps for a workflow.
+     */
+    get: operations["GetInstallWorkflowSteps"];
+  };
+  "/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}": {
+    /**
+     * get an install workflow step
+     * @deprecated
+     * @description Return a single workflow step.
+     */
+    get: operations["GetInstallWorkflowStep"];
+  };
+  "/v1/install-workflows/{install_workflow_id}/steps/{install_workflow_step_id}/approvals/{approval_id}": {
+    /**
+     * get an install workflow step approval
+     * @deprecated
+     * @description Return a workflow step approval by id.
+     */
+    get: operations["GetInstallWorkflowStepApproval"];
+  };
+  "/v1/installs": {
+    /**
+     * get all installs for an org
+     * @description Returns all installs for the provided organization.
+     */
+    get: operations["GetOrgInstalls"];
+    /**
+     * create an app install
+     * @description Create a new install for an app.
+     */
+    post: operations["CreateInstallV2"];
+  };
+  "/v1/installs/sandbox-runs/{run_id}": {
+    /**
+     * get an install sandbox run
+     * @deprecated
+     * @description Return a sandbox run for an install by id.
+     */
+    get: operations["GetInstallSandboxRun"];
+  };
+  "/v1/installs/stacks/{stack_id}": {
+    /**
+     * get an install stack by stack ID
+     * @description Returns the deployment stack for an install.
+     */
+    get: operations["GetInstallStack"];
+  };
+  "/v1/installs/{install_id}": {
+    /**
+     * get an install
+     * @description Return an install by id.
+     */
+    get: operations["GetInstall"];
+    /**
+     * delete an install
+     * @description Delete an install.
+     */
+    delete: operations["DeleteInstall"];
+    /**
+     * update an install
+     * @description Update an install's settings.
+     */
+    patch: operations["UpdateInstall"];
+  };
+  "/v1/installs/{install_id}/action-workflows": {
+    /**
+     * get an installs action workflows
+     * @deprecated
+     * @description Get install action workflows.
+     */
+    get: operations["GetInstallActionWorkflows"];
+  };
+  "/v1/installs/{install_id}/action-workflows/latest-runs": {
+    /**
+     * get latest runs for all action workflows by install id
+     * @deprecated
+     * @description Returns the most recent workflow run for each install action workflow.
+     */
+    get: operations["GetInstallActionWorkflowsLatestRuns"];
+  };
+  "/v1/installs/{install_id}/action-workflows/runs": {
+    /**
+     * get action workflow runs by install id
+     * @deprecated
+     * @description Returns all action workflow runs for an install.
+     */
+    get: operations["GetInstallActionWorkflowRuns"];
+    /**
+     * create an action workflow run for an install
+     * @deprecated
+     * @description AppWorkflowConfigId param has been deprecated and is no longer being consumed, the api uses currently install id to lookup related appworkflowconfigId
+     */
+    post: operations["CreateInstallActionWorkflowRun"];
+  };
+  "/v1/installs/{install_id}/action-workflows/runs/{run_id}": {
+    /**
+     * get action workflow runs by install id and run id
+     * @deprecated
+     * @description Return an install action workflow run by id.
+     */
+    get: operations["GetInstallActionWorkflowRun"];
+  };
+  "/v1/installs/{install_id}/action-workflows/runs/{run_id}/steps/{step_id}": {
+    /**
+     * get action workflow run step by install id and step id
+     * @deprecated
+     * @description Get an install action workflow run step.
+     */
+    get: operations["GetInstallActionWorkflowRunStep"];
+  };
+  "/v1/installs/{install_id}/action-workflows/{action_workflow_id}": {
+    /**
+     * get an install action workflow
+     * @deprecated
+     * @description Get an install action workflow.
+     */
+    get: operations["GetInstallActionWorkflow"];
+  };
+  "/v1/installs/{install_id}/action-workflows/{action_workflow_id}/recent-runs": {
+    /**
+     * get recent runs for an action workflow by install id
+     * @deprecated
+     * @description Returns recent workflow runs for an install action workflow.
+     */
+    get: operations["GetInstallActionWorkflowRecentRuns"];
+  };
+  "/v1/installs/{install_id}/actions": {
+    /**
+     * get an installs action workflows
+     * @description Get install action workflows.
+     */
+    get: operations["GetInstallActions"];
+  };
+  "/v1/installs/{install_id}/actions/adhoc-run": {
+    /**
+     * create an adhoc action run for an install
+     * @description # Create AdHoc Action
+     *
+     * Creates and executes a one-time action on an install without creating a permanent action workflow definition.
+     *
+     * ## Use Cases
+     *
+     * - Running ad-hoc debugging scripts
+     * - Executing maintenance commands
+     * - Testing bash snippets before creating permanent actions
+     * - Quick data exports or transformations
+     *
+     * ## Request Body
+     *
+     * Provide **either** `inline_contents` (for multi-line bash scripts) **or** `command` (for single-line commands), but not both.
+     *
+     * ### Fields
+     *
+     * - `inline_contents` (string, optional): Multi-line bash script to execute
+     * - `command` (string, optional): Single-line shell command to execute
+     * - `env_vars` (object, optional): Environment variables as key-value pairs
+     * - `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
+     * - `name` (string, optional): Display name for the action (max 255 chars)
+     *
+     * ## Response
+     *
+     * Returns the created adhoc action run with status information.
+     *
+     * ## Example
+     *
+     * ```bash
+     * curl -X POST https://api.nuon.co/v1/installs/{install_id}/actions/adhoc \
+     *   -H "Authorization: Bearer $API_KEY" \
+     *   -H "X-Nuon-Org-ID: $ORG_ID" \
+     *   -H "Content-Type: application/json" \
+     *   -d '{
+     *     "inline_contents": "#!/bin/bash\necho \"Hello from adhoc action\"\nenv | grep NUON",
+     *     "env_vars": {
+     *       "DEBUG": "true",
+     *       "LOG_LEVEL": "info"
+     *     },
+     *     "timeout": 300,
+     *     "name": "Debug Script"
+     *   }'
+     * ```
+     *
+     * ## Notes
+     *
+     * - AdHoc actions are marked with `trigger_type: "adhoc"`
+     * - They appear in action run history and can be filtered via trigger_type
+     * - Execution happens on the install's runner using the same infrastructure as permanent actions
+     * - Logs are preserved and can be viewed via the action runs API
+     * - AdHoc runs are kept indefinitely (same retention as regular action runs)
+     */
+    post: operations["CreateAdHocAction"];
+  };
+  "/v1/installs/{install_id}/actions/latest-runs": {
+    /**
+     * get latest runs for all action workflows by install id
+     * @description Returns the most recent workflow run for each install action workflow.
+     */
+    get: operations["GetInstallActionsLatestRuns"];
+  };
+  "/v1/installs/{install_id}/actions/runs": {
+    /**
+     * get action workflow runs by install id
+     * @description Returns all action workflow runs for an install.
+     */
+    get: operations["GetInstallActionRuns"];
+    /**
+     * create an action run for an install
+     * @description
+     */
+    post: operations["CreateInstallActionRun"];
+  };
+  "/v1/installs/{install_id}/actions/runs/{run_id}": {
+    /**
+     * get action workflow runs by install id and run id
+     * @description Return an install action workflow run by id.
+     */
+    get: operations["GetInstallActionRun"];
+  };
+  "/v1/installs/{install_id}/actions/runs/{run_id}/steps/{step_id}": {
+    /**
+     * get action workflow run step by install id and step id
+     * @description Get an install action workflow run step.
+     */
+    get: operations["GetInstallActionRunStep"];
+  };
+  "/v1/installs/{install_id}/actions/{action_id}": {
+    /**
+     * get an install action
+     * @description Get an install action workflow.
+     */
+    get: operations["GetInstallAction"];
+  };
+  "/v1/installs/{install_id}/actions/{action_id}/outputs": {
+    /**
+     * get an install action workflow outputs
+     * @description Return the latest outputs for an action workflow.
+     *
+     * The action_id parameter accepts either an action workflow ID or name.
+     *
+     * **NOTE** requires a valid install.
+     */
+    get: operations["GetInstallActionWorkflowOutputs"];
+  };
+  "/v1/installs/{install_id}/actions/{action_id}/recent-runs": {
+    /**
+     * get recent runs for an action workflow by install id
+     * @description Returns recent workflow runs for an install action workflow.
+     */
+    get: operations["GetInstallActionRecentRuns"];
+  };
+  "/v1/installs/{install_id}/app-permissions-config": {
+    /** get app permissions config for an install with provisioning status */
+    get: operations["GetInstallAppPermissionsConfig"];
+  };
+  "/v1/installs/{install_id}/audit_logs": {
+    /**
+     * get install audit logs
+     * @description Returns audit logs for an install.
+     */
+    get: operations["GetInstallAuditLogs"];
+  };
+  "/v1/installs/{install_id}/available-roles": {
+    /**
+     * get available IAM roles for a specific operation
+     * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+     *
+     * The endpoint filters roles based on the operation type:
+     * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
+     * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
+     * - **deploy**: Custom roles, break glass roles, maintenance IAM role
+     * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+     *
+     * Roles are sourced from the install's stack outputs.
+     */
+    get: operations["GetAvailableRoles"];
+  };
+  "/v1/installs/{install_id}/components": {
+    /**
+     * get an installs components
+     * @description Returns all components for an install.
+     */
+    get: operations["GetInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/deploy-all": {
+    /**
+     * deploy all components on an install
+     * @description Deploy all components to an install.
+     *
+     * This walks the graph order of the install's app, and will trigger a deploy for each on the specified install.
+     */
+    post: operations["DeployInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/deploys": {
+    /**
+     * get all deploys to an install
+     * @deprecated
+     * @description Returns all deployments for an install.
+     */
+    get: operations["GetInstallComponentsDeploys"];
+  };
+  "/v1/installs/{install_id}/components/teardown-all": {
+    /**
+     * teardown an install's components
+     * @description Teardown all components on an install.
+     */
+    post: operations["TeardownInstallComponents"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}": {
+    /**
+     * get an install component
+     * @description Return an install component by id.
+     */
+    get: operations["GetInstallComponent"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/deploys": {
+    /**
+     * get an install components deploys
+     * @description Returns all deployments for an install component.
+     */
+    get: operations["GetInstallComponentDeploys"];
+    /**
+     * deploy a build to an install
+     * @description Create a new deployment for an install.
+     */
+    post: operations["CreateInstallComponentDeploy"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/deploys/latest": {
+    /**
+     * get the latest deploy for an install component
+     * @description Returns the most recent deployment for an install component.
+     */
+    get: operations["GetInstallComponentLatestDeploy"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/deploys/{deploy_id}": {
+    /**
+     * get an install deploy
+     * @deprecated
+     * @description Return a deployment for an install by id.
+     */
+    get: operations["GetInstallComponentDeploy"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/forget": {
+    /**
+     * forget an install component
+     * @description # Forget Install Component
+     *
+     * Permanently forget (soft delete) an install component from the system. This operation marks the install component as deleted while preserving the record for audit purposes.
+     *
+     * ## Use Cases
+     *
+     * - Remove a component that is no longer needed from an install
+     * - Clean up failed or orphaned install components
+     * - Prepare for reinstalling a component from scratch
+     *
+     * ## Important Notes
+     *
+     * - This is a **soft delete** operation - the record is marked as deleted but remains in the database
+     * - The component will no longer appear in API responses or dashboard views
+     * - Associated resources (terraform state, deploys, etc.) are preserved via soft delete
+     * - This operation is **irreversible** via the API
+     * - To restore, database-level operations would be required
+     *
+     * ## Prerequisites
+     *
+     * - Install must exist and belong to the authenticated organization
+     * - Component must exist for the specified install
+     * - User must have appropriate permissions for the install's organization
+     * - Component must be removed from the app configuration (sync required)
+     *
+     * ## Behavior
+     *
+     * 1. Validates install exists and belongs to org
+     * 2. Validates install component exists
+     * 3. Validates component is not in the app configuration
+     * 4. Soft deletes the install component record
+     * 5. Cascades soft delete to associated resources (via GORM associations)
+     * 6. Sends event loop signal for any cleanup workflows
+     * 7. Returns success response
+     *
+     * ## Validation
+     *
+     * Before forgetting an install component, the system validates that the component no longer exists in the app configuration. If the component is still in the app config, the request will fail with a user-friendly error message.
+     *
+     * **To resolve this error:**
+     *
+     * 1. Remove the component from your `nuon.yaml` file
+     * 2. Run `nuon apps sync` to update the app configuration
+     * 3. Retry the forget operation
+     *
+     * ## Related Endpoints
+     *
+     * - `DELETE /v1/installs/{install_id}` - Delete entire install
+     * - `POST /v1/installs/{install_id}/forget` - Forget entire install
+     * - `POST /v1/installs/{install_id}/components/{component_id}/teardown` - Teardown component infrastructure
+     */
+    post: operations["ForgetInstallComponent"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/outputs": {
+    /**
+     * get an install component outputs
+     * @description Return the latest outputs for a component.
+     *
+     * **NOTE** requires a valid install.
+     */
+    get: operations["GetInstallComponentOutputs"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/teardown": {
+    /**
+     * teardown an install component
+     * @description Teardown and remove an install component's resources.
+     */
+    post: operations["TeardownInstallComponent"];
+  };
+  "/v1/installs/{install_id}/configs": {
+    /**
+     * create an install config
+     * @description Create a configuration for an install.
+     */
+    post: operations["CreateInstallConfig"];
+  };
+  "/v1/installs/{install_id}/configs/{config_id}": {
+    /**
+     * update an install config
+     * @description Update an install's configuration.
+     */
+    patch: operations["UpdateInstallConfig"];
+  };
+  "/v1/installs/{install_id}/deploys": {
+    /**
+     * get all deploys to an install
+     * @deprecated
+     * @description Returns all deployments for an install.
+     */
+    get: operations["GetInstallDeploys"];
+    /**
+     * deploy a build to an install
+     * @deprecated
+     * @description Create a new deployment for an install.
+     */
+    post: operations["CreateInstallDeploy"];
+  };
+  "/v1/installs/{install_id}/deploys/latest": {
+    /**
+     * get an install's latest deploy
+     * @deprecated
+     * @description Returns the most recent deployment for an install.
+     */
+    get: operations["GetInstallLatestDeploy"];
+  };
+  "/v1/installs/{install_id}/deploys/{deploy_id}": {
+    /**
+     * get an install deploy
+     * @description Return a deployment for an install by id.
+     */
+    get: operations["GetInstallDeploy"];
+  };
+  "/v1/installs/{install_id}/deprovision": {
+    /**
+     * deprovision an install
+     * @description Deprovision an install sandbox.
+     */
+    post: operations["DeprovisionInstall"];
+  };
+  "/v1/installs/{install_id}/deprovision-sandbox": {
+    /**
+     * deprovision an install
+     * @description Deprovision a sandbox environment for an install.
+     */
+    post: operations["DeprovisionInstallSandbox"];
+  };
+  "/v1/installs/{install_id}/drifted-objects": {
+    /**
+     * get drifted objects for an install
+     * @description Returns all drifted objects for an install.
+     */
+    get: operations["GetDriftedObjects"];
+  };
+  "/v1/installs/{install_id}/events": {
+    /**
+     * get events for an install
+     * @description # Get Install Events
+     *
+     * Return an event stream for an install.
+     */
+    get: operations["GetInstallEvents"];
+  };
+  "/v1/installs/{install_id}/events/{event_id}": {
+    /**
+     * get an install event
+     * @description Get a single install event.
+     */
+    get: operations["GetInstallEvent"];
+  };
+  "/v1/installs/{install_id}/forget": {
+    /**
+     * forget an install
+     * @description Forget an install that has been deleted outside of nuon.
+     *
+     * This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
+     */
+    post: operations["ForgetInstall"];
+  };
+  "/v1/installs/{install_id}/generate-cli-install-config": {
+    /**
+     * generate an install config to be used with CLI
+     * @description Generate CLI configuration for an install.
+     */
+    get: operations["GenerateCLIInstallConfig"];
+  };
+  "/v1/installs/{install_id}/generate-terraform-installer-config": {
+    /**
+     * generate a Terraform installer config
+     * @description Generate terraform configuration for an installer.
+     */
+    get: operations["GenerateTerraformInstallerConfig"];
+  };
+  "/v1/installs/{install_id}/inputs": {
+    /**
+     * get an installs inputs
+     * @description Returns input values for an install.
+     */
+    get: operations["GetInstallInputs"];
+    /**
+     * create install inputs
+     * @description Create input values for an install.
+     */
+    post: operations["CreateInstallInputs"];
+    /**
+     * Updates install input config for app
+     * @description Update input values for an install.
+     */
+    patch: operations["UpdateInstallInputs"];
+  };
+  "/v1/installs/{install_id}/inputs/current": {
+    /**
+     * get an installs current inputs
+     * @description Returns input values for an install.
+     */
+    get: operations["GetCurrentInstallInputs"];
+  };
+  "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
+    /**
+     * phone home for an install
+     * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+     */
+    post: operations["PhoneHome"];
+  };
+  "/v1/installs/{install_id}/readme": {
+    /**
+     * get install readme rendered with
+     * @description Returns the `app.readme` markdown with the values interpolated from the install
+     * inputs and component outputs.
+     */
+    get: operations["GetInstallReadme"];
+  };
+  "/v1/installs/{install_id}/reprovision": {
+    /**
+     * reprovision an install
+     * @description Reprovision an install sandbox.
+     */
+    post: operations["ReprovisionInstall"];
+  };
+  "/v1/installs/{install_id}/reprovision-sandbox": {
+    /**
+     * reprovision an install sandbox
+     * @description Reprovision an install sandbox and redeploy all components on top.
+     */
+    post: operations["ReprovisionInstallSandbox"];
+  };
+  "/v1/installs/{install_id}/retry-workflow": {
+    /**
+     * rerun the workflow steps starting from input step id, can be used to retry a failed step
+     * @deprecated
+     * @description Retry a failed workflow execution.
+     */
+    post: operations["RetryWorkflow"];
+  };
+  "/v1/installs/{install_id}/runner-bootstrap-token": {
+    /** create a bootstrap token for an install's runner */
+    post: operations["CreateRunnerBootstrapToken"];
+  };
+  "/v1/installs/{install_id}/runner-group": {
+    /**
+     * Get an install's runner group
+     * @description Return the runner group, including runners and settings for the provided install.
+     */
+    get: operations["GetInstallRunnerGroup"];
+  };
+  "/v1/installs/{install_id}/sandbox-runs": {
+    /**
+     * get an installs sandbox runs
+     * @description Returns all sandbox runs for an install.
+     */
+    get: operations["GetInstallSandboxRuns"];
+  };
+  "/v1/installs/{install_id}/sandbox-runs/{run_id}": {
+    /**
+     * get an install sandbox run
+     * @description Return a sandbox run for an install by id.
+     */
+    get: operations["GetInstallSandboxRunV2"];
+  };
+  "/v1/installs/{install_id}/stack": {
+    /**
+     * get an install stack by install ID
+     * @description Returns the deployment stack for an install.
+     */
+    get: operations["GetInstallStackByInstallID"];
+  };
+  "/v1/installs/{install_id}/stack-runs": {
+    /**
+     * get an install's stack runs
+     * @description get install stack runs
+     */
+    get: operations["GetInstallStackRuns"];
+  };
+  "/v1/installs/{install_id}/state": {
+    /**
+     * Get the current state of an install.
+     * @description Returns the current state for an install.
+     */
+    get: operations["GetInstallState"];
+  };
+  "/v1/installs/{install_id}/state-history": {
+    /**
+     * Get install state history.
+     * @description Returns the state history for an install.
+     */
+    get: operations["GetInstallStateHistory"];
+  };
+  "/v1/installs/{install_id}/sync-secrets": {
+    /**
+     * sync secrets install
+     * @description Execute the sync secrets workflow.
+     */
+    post: operations["SyncSecrets"];
+  };
+  "/v1/installs/{install_id}/workflows": {
+    /**
+     * get workflows
+     * @description Return workflows for an install.
+     */
+    get: operations["GetWorkflows"];
+  };
+  "/v1/log-streams/{log_stream_id}": {
+    /**
+     * get a log stream
+     * @description Return a log stream.
+     */
+    get: operations["GetLogStream"];
+  };
+  "/v1/log-streams/{log_stream_id}/logs": {
+    /**
+     * read a log stream's logs
+     * @description Read OTEL formatted logs for a log stream.
+     */
+    get: operations["LogStreamReadLogs"];
+  };
+  "/v1/onboarding": {
+    /**
+     * Start a new onboarding session
+     * @description Creates a new active onboarding session for the current account
+     */
+    post: operations["CreateOnboarding"];
+  };
+  "/v1/onboarding/current": {
+    /**
+     * Get current onboarding session
+     * @description Returns the active onboarding session for the current account
+     */
+    get: operations["GetCurrentOnboarding"];
+    /**
+     * Abandon onboarding session
+     * @description Marks the current active onboarding session as abandoned
+     */
+    delete: operations["AbandonOnboarding"];
+  };
+  "/v1/onboarding/current/steps/deploy": {
+    /**
+     * Complete the deploy step
+     * @description Advances the onboarding past the deploy monitoring to get started
+     */
+    post: operations["CompleteOnboardingDeployStep"];
+  };
+  "/v1/onboarding/current/steps/get-started": {
+    /**
+     * Complete onboarding
+     * @description Marks the onboarding session as completed
+     */
+    post: operations["CompleteOnboardingGetStartedStep"];
+  };
+  "/v1/onboarding/current/steps/install": {
+    /**
+     * Complete the install step
+     * @description Creates an install and advances the onboarding to the install status step
+     */
+    post: operations["CompleteOnboardingInstallStep"];
+  };
+  "/v1/onboarding/current/steps/organization": {
+    /**
+     * Complete the organization step
+     * @description Creates a sandbox organization or attaches an existing one, then advances the onboarding to the app profile step
+     */
+    post: operations["CompleteOnboardingOrganizationStep"];
+  };
+  "/v1/onboarding/current/steps/your-stack": {
+    /**
+     * Complete the your stack step
+     * @description Configures the application profile and advances the onboarding to the install step
+     */
+    post: operations["CompleteOnboardingYourStackStep"];
+  };
+  "/v1/onboarding/example-apps": {
+    /**
+     * Get example apps catalog
+     * @description Returns the list of available example applications for onboarding
+     */
+    get: operations["GetOnboardingExampleApps"];
+  };
+  "/v1/orgs": {
+    /**
+     * Return current user's orgs
+     * @description Returns all organizations for the authenticated user.
+     */
+    get: operations["GetOrgs"];
+    /**
+     * create a new org
+     * @description Create a new organization.
+     */
+    post: operations["CreateOrg"];
+  };
+  "/v1/orgs/current": {
+    /**
+     * Get an org
+     * @description Return an organization by id.
+     */
+    get: operations["GetOrg"];
+    /**
+     * Delete an org
+     * @description Delete an organization.
+     */
+    delete: operations["DeleteOrg"];
+    /**
+     * Update current org
+     * @description Update an organization's settings.
+     */
+    patch: operations["UpdateOrg"];
+  };
+  "/v1/orgs/current/accounts": {
+    /**
+     * Get user accounts for current org
+     * @description Return an organization by id.
+     */
+    get: operations["GetOrgAcounts"];
+  };
+  "/v1/orgs/current/features": {
+    /**
+     * get current org's feature flags
+     * @description Get the current organization's feature flag values.
+     *
+     * Returns a map of feature flag names to their enabled/disabled status for the authenticated organization.
+     *
+     * This endpoint shows which features are currently enabled or disabled for your organization, unlike `/v1/orgs/features` which returns all available features with their descriptions.
+     *
+     * Example response:
+     * ```json
+     * {
+     *   "api-pagination": true,
+     *   "org-dashboard": false,
+     *   "org-runner": true,
+     *   "stratus-layout": true,
+     *   "user-managed-features": false
+     * }
+     * ```
+     */
+    get: operations["GetCurrentOrgFeatures"];
+    /**
+     * update org features (requires user-managed-features flag)
+     * @description Update feature flags for your current organization.
+     *
+     * This endpoint allows organization users to manage feature flags, but requires the `user-managed-features` flag to be enabled for the organization. The `user-managed-features` flag itself cannot be modified through this endpoint and can only be enabled/disabled by administrators.
+     *
+     * **Requirements:**
+     * - The `user-managed-features` flag must be enabled for your organization
+     * - You cannot toggle the `user-managed-features` flag through this endpoint (admin-only)
+     *
+     * **Example Request:**
+     * ```json
+     * {
+     *   "features": {
+     *     "api-pagination": true,
+     *     "install-delete": false
+     *   }
+     * }
+     * ```
+     *
+     * The request will update only the specified feature flags. Features not included in the request will retain their current values.
+     */
+    patch: operations["UpdateOrgFeatures"];
+  };
+  "/v1/orgs/current/invites": {
+    /**
+     * Return org invites
+     * @description Returns a list of all invites to the org.
+     */
+    get: operations["GetOrgInvites"];
+    /**
+     * Invite a user to the current org
+     * @description Invite a user (by email) to an org.
+     *
+     * This user will receive an email, and when they next log into the application will be added to the org.
+     */
+    post: operations["CreateOrgInvite"];
+  };
+  "/v1/orgs/current/invites/{invite_id}/resend": {
+    /**
+     * Resend an org invite
+     * @description Resend the invite email for an existing pending org invite.
+     *
+     * The invite must be in "pending" status. Accepted invites cannot be resent.
+     */
+    post: operations["ResendOrgInvite"];
+  };
+  "/v1/orgs/current/remove-user": {
+    /**
+     * Remove a user from the current org
+     * @description Remove a user from an org.
+     */
+    post: operations["RemoveUser"];
+  };
+  "/v1/orgs/current/runner-group": {
+    /**
+     * Get an org's runner group
+     * @description Get the current org's runner group, which includes the runners and their settings.
+     */
+    get: operations["GetOrgRunnerGroup"];
+  };
+  "/v1/orgs/current/stats": {
+    /**
+     * Get an org
+     * @description Returns statistics for the provided organization.
+     */
+    get: operations["GetOrgStats"];
+  };
+  "/v1/orgs/current/user": {
+    /**
+     * Add a user to the current org
+     * @description Add a user to an organization.
+     */
+    post: operations["AddUser"];
+  };
+  "/v1/orgs/current/webhooks": {
+    /** list webhooks for the current org */
+    get: operations["GetCurrentOrgWebhooks"];
+    /** create a webhook for the current org */
+    post: operations["CreateCurrentOrgWebhook"];
+  };
+  "/v1/orgs/current/webhooks/{webhook_id}": {
+    /** delete a webhook for the current org */
+    delete: operations["DeleteCurrentOrgWebhook"];
+  };
+  "/v1/orgs/features": {
+    /**
+     * get available org features
+     * @description Get all available organization feature flags with their descriptions.
+     *
+     * This endpoint returns a list of all feature flags that can be enabled or disabled for organizations, along with detailed descriptions of what each feature provides.
+     *
+     * Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
+     */
+    get: operations["GetOrgFeatures"];
+  };
+  "/v1/queues": {
+    /**
+     * List queues
+     * @description List queues with optional filtering by owner
+     */
+    get: operations["ListQueues"];
+  };
+  "/v1/queues/{queue_id}": {
+    /**
+     * Get queue by ID
+     * @description Retrieve a single queue by its ID
+     */
+    get: operations["GetQueue"];
+  };
+  "/v1/queues/{queue_id}/signals": {
+    /**
+     * List queue signals
+     * @description Get a list of signals for a specific queue with optional filtering
+     */
+    get: operations["GetQueueSignals"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}": {
+    /**
+     * Get queue signal details
+     * @description Get detailed information about a specific queue signal
+     */
+    get: operations["GetQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}/await": {
+    /**
+     * Long-poll for queue signal completion
+     * @description Blocks until the queue signal finishes or the timeout is reached
+     */
+    get: operations["AwaitQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/status": {
+    /**
+     * Get live queue status
+     * @description Get real-time status of a queue including depth and in-flight signals
+     */
+    get: operations["GetQueueStatus"];
+  };
+  "/v1/runner-jobs/{runner_job_id}": {
+    /**
+     * get runner job
+     * @deprecated
+     * @description Return a runner job.
+     */
+    get: operations["GetRunnerJob"];
+  };
+  "/v1/runner-jobs/{runner_job_id}/cancel": {
+    /**
+     * cancel runner job
+     * @description Cancel a runner job.
+     */
+    post: operations["CancelRunnerJob"];
+  };
+  "/v1/runner-jobs/{runner_job_id}/composite-plan": {
+    /**
+     * get runner job composite plan
+     * @description Return a plan for a runner job.
+     */
+    get: operations["GetRunnerJobCompositePlan"];
+  };
+  "/v1/runner-jobs/{runner_job_id}/plan": {
+    /**
+     * get runner job plan
+     * @deprecated
+     * @description Return a plan for a runner job.
+     */
+    get: operations["GetRunnerJobPlan"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/state-json": {
+    /**
+     * get terraform states json
+     * @deprecated
+     * @description Returns terraform states in JSON format.
+     */
+    get: operations["GetTerraformWorkspaceStatesJSON"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/state-json/{state_id}": {
+    /**
+     * get terraform state json by id. This output is same as "terraform show --json"
+     * @deprecated
+     * @description Return a terraform state in JSON format by id.
+     */
+    get: operations["GetTerraformWorkspaceStatesJSONByID"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/state-json/{state_id}/resources": {
+    /**
+     * get terraform state resources. This output is similar to "terraform state list"
+     * @deprecated
+     * @description Returns terraform state resources in JSON format.
+     */
+    get: operations["GetTerraformWorkspaceStateJSONResources"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/states": {
+    /**
+     * get terraform states
+     * @deprecated
+     * @description Returns terraform states for an install.
+     */
+    get: operations["GetTerraformStates"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/states/{state_id}": {
+    /**
+     * get terraform state by ID
+     * @deprecated
+     * @description Return a terraform state by id.
+     */
+    get: operations["GetTerraformWorkspaceStateByID"];
+  };
+  "/v1/runners/terraform-workspace/{workspace_id}/states/{state_id}/resources": {
+    /**
+     * get terraform state resources
+     * @description Returns resources within a terraform state.
+     */
+    get: operations["GetTerraformWorkspaceStateResources"];
+  };
+  "/v1/runners/{runner_id}/card-details": {
+    /**
+     * get runner card details
+     * @description Returns runner card details for monitoring and status.
+     */
+    get: operations["GetRunnerCardDetails"];
+  };
+  "/v1/runners/{runner_id}/connected": {
+    /**
+     * get a runner connection satus based on heartbeat
+     * @description # get runner connect status
+     *
+     * The connected status is based on runner heartbeat:
+     *
+     * if no heart beat found — false
+     * if heart beat > 15 seconds ago — false, hb timestamp
+     * if the heart beat < 15 seconds ago — true
+     */
+    get: operations["GetRunnerConnectStatus"];
+  };
+  "/v1/runners/{runner_id}/force-shutdown": {
+    /**
+     * force shut down a runner
+     * @description Force shutdown a runner.
+     *
+     * This will result in jobs being lost/cancelled if they are in-flight.
+     */
+    post: operations["ForceShutDownRunner"];
+  };
+  "/v1/runners/{runner_id}/graceful-shutdown": {
+    /**
+     * shut down a runner
+     * @description Gracefully shut down a runner.
+     *
+     * _NOTE_ when a runner is unhealthy, the runner will not be able to pick up this job, so use force shut down instead.
+     */
+    post: operations["GracefulShutDownRunner"];
+  };
+  "/v1/runners/{runner_id}/heart-beats/latest": {
+    /**
+     * get a runner
+     * @description
+     */
+    get: operations["GetLatestRunnerHeartBeat"];
+  };
+  "/v1/runners/{runner_id}/jobs": {
+    /**
+     * get runner jobs
+     * @description Return runner jobs.
+     */
+    get: operations["GetRunnerJobs"];
+  };
+  "/v1/runners/{runner_id}/latest-heart-beat": {
+    /**
+     * get the latest heartbeats for a runner
+     * @description
+     */
+    get: operations["GetRunnerLatestHeartBeat"];
+  };
+  "/v1/runners/{runner_id}/mng/fetch-token": {
+    /** fetch authentication token for an install runner via the mng process */
+    post: operations["FetchRunnerTokenMng"];
+  };
+  "/v1/runners/{runner_id}/mng/restart": {
+    /** restart the runner install process via the mng process */
+    post: operations["RestartRunnerInstall"];
+  };
+  "/v1/runners/{runner_id}/mng/shutdown": {
+    /** shut down an install runner's mng process. does not shut down the install runner process. */
+    post: operations["ShutDownRunnerMng"];
+  };
+  "/v1/runners/{runner_id}/mng/shutdown-vm": {
+    /** shut down an install runner VM */
+    post: operations["MngVMShutDown"];
+  };
+  "/v1/runners/{runner_id}/mng/update": {
+    /** update an install runner via the mng process. this is practically a restart. */
+    post: operations["UpdateRunnerMng"];
+  };
+  "/v1/runners/{runner_id}/processes": {
+    /** list runner processes */
+    get: operations["ListRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/current": {
+    /** get current active runner processes */
+    get: operations["GetCurrentRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}": {
+    /** get a runner process */
+    get: operations["GetRunnerProcessPublic"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest": {
+    /**
+     * get the latest heartbeat for a runner process
+     * @description
+     */
+    get: operations["GetProcessLatestHeartBeat"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/shutdown": {
+    /** request shutdown of a runner process */
+    post: operations["ShutdownRunnerProcess"];
+  };
+  "/v1/runners/{runner_id}/prune-tokens": {
+    /**
+     * Prune old tokens for a runner
+     * @description Prune old tokens for a specific runner by invalidating all tokens except the most recent one.
+     *
+     * This is useful for cleaning up old tokens without disrupting the currently running runner.
+     * The latest token (by creation time) is preserved, ensuring the active runner continues to function.
+     *
+     * Returns the count of invalidated tokens for the specified runner.
+     */
+    post: operations["PruneTokens"];
+  };
+  "/v1/runners/{runner_id}/recent-health-checks": {
+    /**
+     * get recent health checks
+     * @description
+     */
+    get: operations["GetRunnerRecentHealthChecks"];
+  };
+  "/v1/runners/{runner_id}/settings": {
+    /**
+     * get runner settings
+     * @description Return runner settings for the provided runner.
+     */
+    get: operations["GetRunnerSettings"];
+    /**
+     * update a runner's settings via its runner settings group
+     * @description Update runner settings and configuration.
+     */
+    patch: operations["UpdateRunnerSettings"];
+  };
+  "/v1/terraform-backend": {
+    /**
+     * get current terraform
+     * @description Returns the current terraform state.
+     */
+    get: operations["GetTerraformCurrentStateData"];
+    /**
+     * update terraform state
+     * @description Update a terraform state.
+     */
+    post: operations["UpdateTerraformState"];
+  };
+  "/v1/terraform-workspace": {
+    /**
+     * create terraform workspace
+     * @deprecated
+     * @description Create a terraform workspace.
+     */
+    post: operations["CreateTerraformWorkspace"];
+  };
+  "/v1/terraform-workspaces": {
+    /**
+     * get  terraform workspaces
+     * @description Returns all terraform workspaces.
+     */
+    get: operations["GetTerraformWorkspaces"];
+    /**
+     * create terraform workspace
+     * @description Create a terraform workspace.
+     */
+    post: operations["CreateTerraformWorkspaceV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}": {
+    /**
+     * get  terraform workspace
+     * @description Return a terraform workspace by id.
+     */
+    get: operations["GetTerraformWorkspace"];
+    /**
+     * delete terraform workspace
+     * @description Delete a terraform workspace.
+     */
+    delete: operations["DeleteTerraformWorkspace"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/lock": {
+    /**
+     * get terraform workspace lock
+     * @description Returns the lock status for a terraform workspace.
+     */
+    get: operations["GetTerraformWorkspaceLock"];
+    /**
+     * lock terraform state
+     * @description Lock a terraform workspace to prevent concurrent modifications.
+     */
+    post: operations["LockTerraformWorkspace"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/state-json": {
+    /**
+     * get terraform states json
+     * @description Returns terraform states in JSON format.
+     */
+    get: operations["GetTerraformWorkspaceStatesJSONV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}": {
+    /**
+     * get terraform state json by id. This output is same as "terraform show --json"
+     * @description Return a terraform state in JSON format by id.
+     */
+    get: operations["GetTerraformWorkspaceStatesJSONByIDV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/raw": {
+    /**
+     * get raw workspace state json by id
+     * @description Returns the raw state contents without format-specific parsing. Works for both terraform and pulumi state.
+     */
+    get: operations["GetWorkspaceStateJSONRawByID"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/resources": {
+    /**
+     * get terraform state resources. This output is similar to "terraform state list"
+     * @description Returns terraform state resources in JSON format.
+     */
+    get: operations["GetTerraformWorkspaceStateJSONResourcesV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/states": {
+    /**
+     * get terraform states
+     * @description Returns terraform states for an install.
+     */
+    get: operations["GetTerraformStatesV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/states/{state_id}": {
+    /**
+     * get terraform state by ID
+     * @description Return a terraform state by id.
+     */
+    get: operations["GetTerraformWorkspaceStateByIDV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/unlock": {
+    /**
+     * unlock terraform workspace
+     * @description Unlock a terraform workspace.
+     */
+    post: operations["UnlockTerraformWorkspace"];
+  };
+  "/v1/vcs/connection-callback": {
+    /**
+     * public connection to create a vcs connection via a callback
+     * @description Handle VCS connection callback for OAuth flow.
+     */
+    post: operations["CreateVCSConnectionCallback"];
+  };
+  "/v1/vcs/connections": {
+    /**
+     * get vcs connection for an org
+     * @description Returns all VCS connections for the provided organization.
+     */
+    get: operations["GetOrgVCSConnections"];
+    /**
+     * create a vcs connection for Github
+     * @description Create a VCS connection for version control integration.
+     */
+    post: operations["CreateVCSConnection"];
+  };
+  "/v1/vcs/connections/{connection_id}": {
+    /**
+     * returns a vcs connection for an org
+     * @description Return a VCS connection by id.
+     */
+    get: operations["GetVCSConnection"];
+    /**
+     * Deletes a VCS connection
+     * @description Delete a VCS connection.
+     */
+    delete: operations["DeleteVCSConnection"];
+  };
+  "/v1/vcs/connections/{connection_id}/branches": {
+    /**
+     * List branches for a repository
+     * @description Returns list of branches for the specified repository
+     */
+    get: operations["GetVCSConnectionRepoBranches"];
+  };
+  "/v1/vcs/connections/{connection_id}/check-status": {
+    /**
+     * check the real-time status of a VCS connection
+     * @description Check the real-time status of a VCS (GitHub App) connection.
+     *
+     * This endpoint queries GitHub's API directly to fetch the current installation status, including:
+     * - Active/Suspended state
+     * - Account information
+     * - Permissions
+     * - Suspension details (if applicable)
+     *
+     * **Important**: This endpoint always fetches fresh data from GitHub (no caching) to ensure accurate status information.
+     *
+     * ## Response Status Values
+     *
+     * - `active`: The GitHub App installation is active and functioning
+     * - `suspended`: The installation has been suspended (see `suspended_at` and `suspended_by` for details)
+     * - `unknown`: Unable to determine status (GitHub API error - see `error` field)
+     *
+     * ## Use Cases
+     *
+     * - Troubleshooting connection issues
+     * - Monitoring installation health
+     * - Detecting suspended or revoked installations
+     * - Validating permissions before operations
+     */
+    get: operations["CheckVCSConnectionStatus"];
+  };
+  "/v1/vcs/connections/{connection_id}/repos": {
+    /**
+     * List VCS connection repositories
+     * @description Lists all repositories accessible by a GitHub App installation (VCS connection)
+     */
+    get: {
+      parameters: {
+        path: {
+          /** @description VCS Connection ID */
+          connection_id: string;
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          content: {
+            "application/json": components["schemas"]["service.VCSConnectionReposResponse"];
+          };
+        };
+        /** @description Bad Request */
+        400: {
+          content: {
+            "application/json": components["schemas"]["stderr.ErrResponse"];
+          };
+        };
+        /** @description Unauthorized */
+        401: {
+          content: {
+            "application/json": components["schemas"]["stderr.ErrResponse"];
+          };
+        };
+        /** @description Forbidden */
+        403: {
+          content: {
+            "application/json": components["schemas"]["stderr.ErrResponse"];
+          };
+        };
+        /** @description Not Found */
+        404: {
+          content: {
+            "application/json": components["schemas"]["stderr.ErrResponse"];
+          };
+        };
+        /** @description Internal Server Error */
+        500: {
+          content: {
+            "application/json": components["schemas"]["stderr.ErrResponse"];
+          };
+        };
+      };
+    };
+  };
+  "/v1/vcs/{vcs_connection_id}/events": {
+    /**
+     * Write a VCS webhook event
+     * @description Writes incoming webhook events for a VCS connection
+     */
+    post: operations["WriteVCSEvent"];
+  };
+  "/v1/workflows": {
+    /** get all workflows for the org */
+    get: operations["GetOrgWorkflows"];
+  };
+  "/v1/workflows/pending-approvals": {
+    /** get all pending workflow step approvals for the org */
+    get: operations["GetOrgPendingApprovals"];
+  };
+  "/v1/workflows/{workflow_id}": {
+    /**
+     * get a workflow
+     * @description Return a workflow.
+     */
+    get: operations["GetWorkflow"];
+    /**
+     * update a workflow
+     * @description Update a workflow configuration.
+     */
+    patch: operations["UpdateWorkflow"];
+  };
+  "/v1/workflows/{workflow_id}/cancel": {
+    /**
+     * cancel an ongoing workflow
+     * @description Cancel a running workflow execution.
+     */
+    post: operations["CancelWorkflow"];
+  };
+  "/v1/workflows/{workflow_id}/retry": {
+    /**
+     * rerun the workflow steps starting from input step id, can be used to retry a failed step
+     * @deprecated
+     * @description Retry a workflow execution by id.
+     */
+    post: operations["RetryOwnerWorkflowByID"];
+  };
+  "/v1/workflows/{workflow_id}/steps": {
+    /**
+     * get all of the steps for a given workflow
+     * @description Return all steps for a workflow.
+     */
+    get: operations["GetWorkflowSteps"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}": {
+    /**
+     * get a workflow step
+     * @description Return a single workflow step.
+     */
+    get: operations["GetWorkflowStep"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}": {
+    /**
+     * get an workflow step approval
+     * @description Return a workflow step approval by id.
+     */
+    get: operations["GetWorkflowStepApproval"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/contents": {
+    /**
+     * get a workflow step approval contents
+     * @description Return the contents of a json plan for an approval (compressed).
+     */
+    get: operations["GetWorkflowStepApprovalContents"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response": {
+    /**
+     * Create an approval response for a workflow step.
+     * @description Create a response for an approval for an action workflow step.
+     */
+    post: operations["CreateWorkflowStepApprovalResponse"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/retry": {
+    /**
+     * rerun the workflow steps starting from input step id, can be used to retry a failed step
+     * @description Retry a workflow execution by id.
+     */
+    post: operations["RetryWorkflowStep"];
+  };
+}
 
 export type webhooks = Record<string, never>;
 
-export type components = Record<string, never>;
+export interface components {
+  schemas: {
+    "app.AWSAccount": {
+      created_at?: string;
+      created_by_id?: string;
+      iam_role_arn?: string;
+      id?: string;
+      region?: string;
+      updated_at?: string;
+    };
+    "app.AWSECRImageConfig": {
+      aws_region?: string;
+      /** @description connection to parent model */
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description actual configuration */
+      iam_role_arn?: string;
+      id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.AWSIAMRoleType": "runner_provision" | "runner_deprovision" | "runner_maintenance" | "breakglass" | "custom" | "runner_breakglass";
+    "app.AWSStackOutputs": {
+      account_id?: string;
+      break_glass_role_arns?: {
+        [key: string]: string;
+      };
+      custom_role_arns?: {
+        [key: string]: string;
+      };
+      deprovision_iam_role_arn?: string;
+      install_inputs?: {
+        [key: string]: string;
+      };
+      maintenance_iam_role_arn?: string;
+      private_subnets?: string[];
+      provision_iam_role_arn?: string;
+      public_subnets?: string[];
+      region?: string;
+      runner_iam_role_arn?: string;
+      runner_subnet?: string;
+      vpc_id?: string;
+    };
+    "app.Account": {
+      account_type?: components["schemas"]["app.AccountType"];
+      created_at?: string;
+      email?: string;
+      id?: string;
+      /** @description ReadOnly Fields */
+      org_ids?: string[];
+      permissions?: components["schemas"]["permissions.Set"];
+      roles?: components["schemas"]["app.Role"][];
+      subject?: string;
+      updated_at?: string;
+      user_journeys?: components["schemas"]["app.UserJourney"][];
+    };
+    /** @enum {string} */
+    "app.AccountType": "auth" | "auth0" | "service" | "canary" | "integration";
+    "app.ActionWorkflow": {
+      app_id?: string;
+      config_count?: number;
+      configs?: components["schemas"]["app.ActionWorkflowConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description metadata */
+      name?: string;
+      /** @description TODO: change to default null after migration & after initial pr */
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    "app.ActionWorkflowConfig": {
+      action_workflow_id?: string;
+      app_config_id?: string;
+      app_id?: string;
+      break_glass_role_arn?: string;
+      component_dependency_ids?: string[];
+      created_at?: string;
+      created_by_id?: string;
+      enable_kube_config?: components["schemas"]["sql.NullBool"];
+      id?: string;
+      references?: string[];
+      refs?: components["schemas"]["refs.Ref"][];
+      role?: string;
+      steps?: components["schemas"]["app.ActionWorkflowStepConfig"][];
+      timeout?: number;
+      /** @description INFO: if adding new associations here, ensure they are added to the batch delete activity */
+      triggers?: components["schemas"]["app.ActionWorkflowTriggerConfig"][];
+      updated_at?: string;
+    };
+    "app.ActionWorkflowStepConfig": {
+      action_workflow_config_id?: string;
+      /** @description this belongs to an app config id */
+      app_config_id?: string;
+      app_id?: string;
+      command?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      idx?: number;
+      inline_contents?: string;
+      /** @description metadata */
+      name?: string;
+      previous_step_id?: string;
+      /** @description all the details needed for a step */
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      references?: string[];
+      updated_at?: string;
+    };
+    "app.ActionWorkflowTriggerConfig": {
+      action_workflow_config_id?: string;
+      /** @description this belongs to an app config id */
+      app_config_id?: string;
+      app_id?: string;
+      component?: components["schemas"]["app.Component"];
+      component_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      cron_schedule?: string;
+      id?: string;
+      index?: number;
+      type?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs";
+    "app.AdHocStepConfig": {
+      action_workflow_config_id?: string;
+      /** @description this belongs to an app config id */
+      app_config_id?: string;
+      app_id?: string;
+      command?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      idx?: number;
+      inline_contents?: string;
+      /** @description metadata */
+      name?: string;
+      previous_step_id?: string;
+      /** @description all the details needed for a step */
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      references?: string[];
+      updated_at?: string;
+    };
+    "app.App": {
+      app_configs?: components["schemas"]["app.AppConfig"][];
+      cloud_platform?: string;
+      /** @description Transient field for config count (not persisted to database) */
+      config_count?: number;
+      config_directory?: string;
+      config_repo?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      /** @description fields set via after query */
+      input_config?: components["schemas"]["app.AppInputConfig"];
+      links?: {
+        [key: string]: unknown;
+      };
+      name?: string;
+      notifications_config?: components["schemas"]["app.NotificationsConfig"];
+      org_id?: string;
+      queue_id?: string;
+      runner_config?: components["schemas"]["app.AppRunnerConfig"];
+      runner_type?: string;
+      sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    "app.AppAWSIAMPolicyConfig": {
+      app_aws_iam_role_config_id?: string;
+      app_config_id?: string;
+      cloudformation_stack_name?: string;
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      gcp_permissions?: string[];
+      gcp_predefined_role?: string;
+      id?: string;
+      managed_policy_name?: string;
+      name?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.AppAWSIAMRoleConfig": {
+      app_config_id?: string;
+      cloud_platform?: string;
+      cloudformation_param_name?: string;
+      cloudformation_stack_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      enabled_in_stack?: components["schemas"]["sql.NullBool"];
+      id?: string;
+      name?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      permissions_boundary?: string;
+      policies?: components["schemas"]["app.AppAWSIAMPolicyConfig"][];
+      type?: components["schemas"]["app.AWSIAMRoleType"];
+      updated_at?: string;
+    };
+    "app.AppBranch": {
+      app_id?: string;
+      configs?: components["schemas"]["app.AppBranchConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      name?: string;
+      org_id?: string;
+      queue?: components["schemas"]["app.Queue"];
+      updated_at?: string;
+      workflows?: components["schemas"]["app.Workflow"][];
+    };
+    "app.AppBranchConfig": {
+      action_ids?: string[];
+      app_branch_id?: string;
+      component_ids?: string[];
+      /** @description generated view field */
+      config_number?: number;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
+      org_id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      workflows?: components["schemas"]["app.Workflow"][];
+    };
+    "app.AppBranchInstallGroup": {
+      app_branch_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_ids?: string[];
+      max_parallel?: number;
+      name?: string;
+      order?: number;
+      org_id?: string;
+      requires_approval?: boolean;
+      rollback_on_failure?: boolean;
+      updated_at?: string;
+    };
+    "app.AppBranchRun": {
+      app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_config?: components["schemas"]["app.AppBranchConfig"];
+      /** @description AppConfigID is the app config that was created/synced during this run */
+      app_config_id?: string;
+      /**
+       * @description CommitSHA is the VCS commit that triggered or is associated with this run
+       * DEPRECATED: Use VCSConnectionCommit relationship instead
+       */
+      commit_sha?: string;
+      /** @description CompletedAt tracks when execution finished */
+      completed_at?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      /** @description ErrorMessage stores any error that occurred during execution */
+      error_message?: string;
+      /** @description Force indicates if this run was forced (bypassing change detection) */
+      force?: boolean;
+      id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      /** @description LogStreamID is the log stream created during this run for event tracking */
+      log_stream_id?: string;
+      /** @description QueueSignal is the signal that was enqueued to trigger this run */
+      queue_signal?: components["schemas"]["app.QueueSignal"];
+      /** @description StartedAt tracks when execution actually began */
+      started_at?: string;
+      /**
+       * @description Status tracks the current state of the run
+       * Values: pending, running, success, failed, cancelled
+       */
+      status?: string;
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      workflow?: components["schemas"]["app.Workflow"];
+    };
+    "app.AppBreakGlassConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      aws_iam_roles?: components["schemas"]["app.AppAWSIAMRoleConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.AppConfig": {
+      action_ids?: string[];
+      action_workflow_configs?: components["schemas"]["app.ActionWorkflowConfig"][];
+      app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_id?: string;
+      app_id?: string;
+      break_glass?: components["schemas"]["app.AppBreakGlassConfig"];
+      checksum?: string;
+      cli_version?: string;
+      component_config_connections?: components["schemas"]["app.ComponentConfigConnection"][];
+      component_ids?: string[];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      input?: components["schemas"]["app.AppInputConfig"];
+      intermediate_config?: components["schemas"]["blobstore.Blob"];
+      operation_role_config?: components["schemas"]["app.AppOperationRoleConfig"];
+      org_id?: string;
+      permissions?: components["schemas"]["app.AppPermissionsConfig"];
+      policies?: components["schemas"]["app.AppPoliciesConfig"];
+      readme?: string;
+      runner?: components["schemas"]["app.AppRunnerConfig"];
+      sandbox?: components["schemas"]["app.AppSandboxConfig"];
+      secrets?: components["schemas"]["app.AppSecretsConfig"];
+      stack?: components["schemas"]["app.AppStackConfig"];
+      state?: string;
+      status?: components["schemas"]["app.AppConfigStatus"];
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      /** @description fields that are filled in via after query or views */
+      version?: number;
+    };
+    /** @enum {string} */
+    "app.AppConfigStatus": "active" | "pending" | "syncing" | "error" | "outdated";
+    /** @enum {string} */
+    "app.AppConfigVersion": "" | "v2";
+    "app.AppInput": {
+      app_input_id?: string;
+      /** @description CloudFormation configuration (computed fields, not stored in DB) */
+      cloudformation_stack_name?: string;
+      cloudformation_stack_parameter_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      default?: string;
+      description?: string;
+      display_name?: string;
+      group?: components["schemas"]["app.AppInputGroup"];
+      group_id?: string;
+      id?: string;
+      index?: number;
+      /** @description Deprecated: this field was never enforced and has no effect. */
+      internal?: boolean;
+      name?: string;
+      org_id?: string;
+      required?: boolean;
+      sensitive?: boolean;
+      source?: string;
+      type?: string;
+      updated_at?: string;
+    };
+    "app.AppInputConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      input_groups?: components["schemas"]["app.AppInputGroup"][];
+      inputs?: components["schemas"]["app.AppInput"][];
+      install_inputs?: components["schemas"]["app.InstallInputs"][];
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.AppInputGroup": {
+      app_input_id?: string;
+      app_inputs?: components["schemas"]["app.AppInput"][];
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      index?: number;
+      name?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.AppInputSource": "vendor" | "customer";
+    "app.AppOperationRoleConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      rules?: components["schemas"]["app.AppOperationRoleRule"][];
+      updated_at?: string;
+    };
+    "app.AppOperationRoleRule": {
+      app_operation_role_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      operation?: string;
+      org?: components["schemas"]["app.Org"];
+      org_id?: string;
+      principal_name?: string;
+      principal_type?: string;
+      role?: string;
+      updated_at?: string;
+    };
+    "app.AppPermissionsConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      aws_iam_roles?: components["schemas"]["app.AppAWSIAMRoleConfig"][];
+      break_glass_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      custom_aws_iam_roles?: components["schemas"]["app.AppAWSIAMRoleConfig"][];
+      deprovision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      id?: string;
+      maintenance_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      org_id?: string;
+      /** @description loaded via an after query */
+      provision_aws_iam_role?: components["schemas"]["app.AppAWSIAMRoleConfig"];
+      updated_at?: string;
+    };
+    "app.AppPoliciesConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      policies?: components["schemas"]["app.AppPolicyConfig"][];
+      updated_at?: string;
+    };
+    "app.AppPolicyConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      app_policies_config?: string;
+      components?: string[];
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      engine?: components["schemas"]["config.AppPolicyEngine"];
+      id?: string;
+      name?: string;
+      org_id?: string;
+      type?: components["schemas"]["config.AppPolicyType"];
+      updated_at?: string;
+    };
+    "app.AppRunnerConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      app_runner_type?: components["schemas"]["app.AppRunnerType"];
+      cloud_platform?: components["schemas"]["app.CloudPlatform"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      helm_driver?: string;
+      id?: string;
+      /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
+      init_script?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.AppRunnerConfigHelmDriverType": "secret" | "configmap" | "";
+    /** @enum {string} */
+    "app.AppRunnerType": "unknown" | "aws-ecs" | "aws-eks" | "azure-aks" | "azure-acs" | "gcp-gke" | "local" | "aws" | "azure" | "gcp";
+    "app.AppSandboxBuild": {
+      app_config_id?: string;
+      app_id?: string;
+      app_sandbox_config_id?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      vcs_connection_commit_id?: string;
+    };
+    "app.AppSandboxConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      /** @description cloud specific fields */
+      aws_region_type?: string;
+      /** @description fields set via after query */
+      cloud_platform?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      drift_schedule?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      /** @description Operation roles map: operation type -> role name */
+      operation_roles?: {
+        [key: string]: string;
+      };
+      org_id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      references?: string[];
+      refs?: components["schemas"]["refs.Ref"][];
+      terraform_version?: string;
+      updated_at?: string;
+      variables?: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
+    };
+    "app.AppSecret": {
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description after query fields */
+      length?: number;
+      name?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.AppSecretConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      app_secrets_config_id?: string;
+      auto_generate?: boolean;
+      cloudformation_param_name?: string;
+      cloudformation_stack_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      default?: string;
+      description?: string;
+      display_name?: string;
+      format?: string;
+      id?: string;
+      kubernetes_secret_name?: string;
+      kubernetes_secret_namespace?: string;
+      /** @description for syncing into kubernetes */
+      kubernetes_sync?: boolean;
+      name?: string;
+      org_id?: string;
+      required?: boolean;
+      updated_at?: string;
+    };
+    "app.AppSecretsConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      secrets?: components["schemas"]["app.AppSecretConfig"][];
+      updated_at?: string;
+    };
+    "app.AppStackConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      description?: string;
+      id?: string;
+      name?: string;
+      org_id?: string;
+      runner_nested_template_url?: string;
+      type?: components["schemas"]["app.StackType"];
+      updated_at?: string;
+      vpc_nested_template_url?: string;
+    };
+    "app.AzureACRImageConfig": {
+      client_id?: string;
+      /** @description connection to parent model */
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description actual configuration */
+      registry_url?: string;
+      tenant_id?: string;
+      updated_at?: string;
+    };
+    "app.AzureAccount": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      location?: string;
+      service_principal_app_id?: string;
+      service_principal_password?: string;
+      subscription_id?: string;
+      subscription_tenant_id?: string;
+      updated_at?: string;
+    };
+    "app.AzureStackOutputs": {
+      key_vault_id?: string;
+      key_vault_name?: string;
+      network_id?: string;
+      network_name?: string;
+      private_subnet_ids?: string[];
+      private_subnet_names?: string[];
+      public_subnet_ids?: string[];
+      public_subnet_names?: string[];
+      resource_group_id?: string;
+      resource_group_location?: string;
+      resource_group_name?: string;
+      subscription_id?: string;
+      subscription_tenant_id?: string;
+    };
+    /** @enum {string} */
+    "app.CloudPlatform": "aws" | "azure" | "gcp" | "unknown";
+    "app.CloudPlatformRegion": {
+      display_name?: string;
+      icon?: string;
+      name?: string;
+      value?: string;
+    };
+    "app.Component": {
+      app_id?: string;
+      config_versions?: number;
+      created_at?: string;
+      created_by_id?: string;
+      dependencies?: string[];
+      id?: string;
+      latest_build?: components["schemas"]["app.ComponentBuild"];
+      links?: {
+        [key: string]: unknown;
+      };
+      name?: string;
+      resolved_var_name?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      type?: components["schemas"]["app.ComponentType"];
+      updated_at?: string;
+      var_name?: string;
+    };
+    "app.ComponentBuild": {
+      /** @description checksum of our intermediate component config */
+      checksum?: string;
+      component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
+      /** @description DEPRECATED: will retain the field to connect against the last component config connection that set this build */
+      component_config_connection_id?: string;
+      component_config_version?: number;
+      /** @description Read-only fields set on the object to de-nest data */
+      component_id?: string;
+      component_name?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      git_ref?: string;
+      id?: string;
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      log_stream?: components["schemas"]["app.LogStream"];
+      policy_reports?: components["schemas"]["app.PolicyReport"][];
+      /** @description QueueSignal is the signal enqueued when this build was created via the queue path */
+      queue_signal?: components["schemas"]["app.QueueSignal"];
+      releases?: components["schemas"]["app.ComponentRelease"][];
+      /** @description runner details */
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+    };
+    "app.ComponentConfigConnection": {
+      app_config_id?: string;
+      app_config_version?: number;
+      /** @description Duration string for build operations (e.g., "30m", "1h"). Max 1h. */
+      build_timeout?: string;
+      checksum?: string;
+      component_dependency_ids?: string[];
+      component_id?: string;
+      component_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description Duration string for deploy operations (e.g., "30m", "1h"). Max 1h. */
+      deploy_timeout?: string;
+      docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
+      drift_schedule?: string;
+      external_image?: components["schemas"]["app.ExternalImageComponentConfig"];
+      helm?: components["schemas"]["app.HelmComponentConfig"];
+      id?: string;
+      job?: components["schemas"]["app.JobComponentConfig"];
+      kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
+      /** @description Operation roles map: operation type -> role name */
+      operation_roles?: {
+        [key: string]: string;
+      };
+      pulumi?: components["schemas"]["app.PulumiComponentConfig"];
+      references?: string[];
+      refs?: components["schemas"]["refs.Ref"][];
+      terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
+      type?: components["schemas"]["app.ComponentType"];
+      updated_at?: string;
+      version?: number;
+    };
+    "app.ComponentRelease": {
+      build_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      release_steps?: components["schemas"]["app.ComponentReleaseStep"][];
+      status?: string;
+      status_description?: string;
+      total_release_steps?: number;
+      updated_at?: string;
+    };
+    "app.ComponentReleaseStep": {
+      /** @description parent release ID */
+      component_release_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description fields to control the delay of the individual step, as this is set based on the parent strategy */
+      delay?: string;
+      id?: string;
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /**
+       * @description When a step is created, a set of installs are targeted. However, by the time the release step goes out, the
+       * install might have been setup in any order of ways.
+       */
+      requested_install_ids?: string[];
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
+    "app.CompositeStatus": {
+      created_at_ts?: number;
+      created_by_id?: string;
+      history?: components["schemas"]["app.CompositeStatus"][];
+      metadata?: {
+        [key: string]: unknown;
+      };
+      status?: components["schemas"]["app.Status"];
+      status_human_description?: string;
+    };
+    "app.ConnectedGithubVCSConfig": {
+      branch?: string;
+      /** @description parent component */
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      directory?: string;
+      id?: string;
+      path_filter?: string;
+      repo?: string;
+      repo_name?: string;
+      repo_owner?: string;
+      updated_at?: string;
+      vcs_connection?: components["schemas"]["app.VCSConnection"];
+      vcs_connection_id?: string;
+    };
+    "app.DockerBuildComponentConfig": {
+      build_args?: string[];
+      /** @description value */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      dockerfile?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      target?: string;
+      updated_at?: string;
+    };
+    "app.DriftedObject": {
+      app_sandbox_config_id?: string;
+      component_build_id?: string;
+      component_name?: string;
+      install_component_id?: string;
+      install_id?: string;
+      install_sandbox_id?: string;
+      install_workflow_id?: string;
+      org_id?: string;
+      target_id?: string;
+      /** @description These fields will be populated from the drifts_view */
+      target_type?: string;
+    };
+    "app.ExternalImageComponentConfig": {
+      aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
+      azure_acr_image_config?: components["schemas"]["app.AzureACRImageConfig"];
+      /** @description value */
+      component_config_connection_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      gcp_gar_image_config?: components["schemas"]["app.GCPGARImageConfig"];
+      id?: string;
+      image_url?: string;
+      tag?: string;
+      updated_at?: string;
+    };
+    "app.GCPAccount": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      project_id?: string;
+      region?: string;
+      updated_at?: string;
+    };
+    "app.GCPGARImageConfig": {
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      gcp_project_id?: string;
+      gcp_region?: string;
+      id?: string;
+      service_account_email?: string;
+      updated_at?: string;
+      workload_identity_provider?: string;
+    };
+    "app.GCPStackOutputs": {
+      break_glass_sa_emails?: {
+        [key: string]: string;
+      };
+      custom_sa_emails?: {
+        [key: string]: string;
+      };
+      deprovision_sa_email?: string;
+      install_inputs?: {
+        [key: string]: string;
+      };
+      maintenance_sa_email?: string;
+      network_id?: string;
+      network_name?: string;
+      private_subnet_name?: string;
+      project_id?: string;
+      provision_sa_email?: string;
+      public_subnet_name?: string;
+      region?: string;
+      runner_service_account_email?: string;
+      runner_subnet_name?: string;
+    };
+    "app.HelmChart": {
+      created_at?: string;
+      created_by_id?: string;
+      helmReleases?: components["schemas"]["app.HelmRelease"][];
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      updated_at?: string;
+    };
+    "app.HelmComponentConfig": {
+      /** @description Helm specific configurations */
+      chart_name?: string;
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      helm_config_json?: components["schemas"]["app.HelmConfig"];
+      id?: string;
+      namespace?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      storage_driver?: string;
+      /** @description Newer config fields that we don't need a column for */
+      take_ownership?: boolean;
+      updated_at?: string;
+      values?: {
+        [key: string]: string;
+      };
+      values_files?: string[];
+    };
+    "app.HelmConfig": {
+      chart_name?: string;
+      helm_repo_config?: components["schemas"]["app.HelmRepoConfig"];
+      namespace?: string;
+      storage_driver?: string;
+      /** @description Newer fields that we don't need to store as columns in the database */
+      take_ownership?: boolean;
+      values?: {
+        [key: string]: string;
+      };
+      values_files?: string[];
+    };
+    "app.HelmRelease": {
+      /** @description The rspb.Release body, as a base64-encoded string */
+      body?: string;
+      created_at?: string;
+      created_by_id?: string;
+      helmChart?: components["schemas"]["app.HelmChart"];
+      helmChartID?: string;
+      key?: string;
+      labels?: components["schemas"]["app.JSONMap"];
+      /**
+       * @description Release "labels" that can be used as filters in the storage.Query(labels map[string]string)
+       * we implemented. Note that allowing Helm users to filter against new dimensions will require a
+       * new migration to be added, and the Create and/or update functions to be updated accordingly.
+       */
+      name?: string;
+      namespace?: string;
+      org_id?: string;
+      owner?: string;
+      status?: string;
+      /** @description See https://github.com/helm/helm/blob/c9fe3d118caec699eb2565df9838673af379ce12/pkg/storage/driver/secrets.go#L231 */
+      type?: string;
+      updated_at?: string;
+      version?: number;
+    };
+    "app.HelmRepoConfig": {
+      chart?: string;
+      repo_url?: string;
+      version?: string;
+    };
+    "app.Install": {
+      app_config_id?: string;
+      app_id?: string;
+      app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
+      app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
+      aws_account?: components["schemas"]["app.AWSAccount"];
+      azure_account?: components["schemas"]["app.AzureAccount"];
+      cloud_platform?: string;
+      component_statuses?: {
+        [key: string]: string;
+      };
+      composite_component_status?: string;
+      composite_component_status_description?: string;
+      created_at?: string;
+      created_by_id?: string;
+      drifted_objects?: components["schemas"]["app.DriftedObject"][];
+      gcp_account?: components["schemas"]["app.GCPAccount"];
+      id?: string;
+      install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
+      install_components?: components["schemas"]["app.InstallComponent"][];
+      install_config?: components["schemas"]["app.InstallConfig"];
+      install_events?: components["schemas"]["app.InstallEvent"][];
+      install_inputs?: components["schemas"]["app.InstallInputs"][];
+      install_number?: number;
+      install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
+      install_stack?: components["schemas"]["app.InstallStack"];
+      install_states?: components["schemas"]["app.InstallState"][];
+      links?: {
+        [key: string]: unknown;
+      };
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      runner_id?: string;
+      runner_status?: string;
+      runner_status_description?: string;
+      runner_type?: string;
+      sandbox?: components["schemas"]["app.InstallSandbox"];
+      sandbox_mode?: components["schemas"]["sql.NullBool"];
+      sandbox_status?: string;
+      sandbox_status_description?: string;
+      /** @description TODO(jm): deprecate these fields once the terraform provider has been updated */
+      status?: string;
+      status_description?: string;
+      updated_at?: string;
+      workflows?: components["schemas"]["app.Workflow"][];
+    };
+    "app.InstallActionWorkflow": {
+      action_workflow?: components["schemas"]["app.ActionWorkflow"];
+      action_workflow_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      /** @description after query fields filled in after querying */
+      status?: string;
+      updated_at?: string;
+    };
+    "app.InstallActionWorkflowRun": {
+      action_workflow_config_id?: string;
+      config?: components["schemas"]["app.ActionWorkflowConfig"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      enable_kube_config?: components["schemas"]["sql.NullBool"];
+      /** @description after query */
+      execution_time?: number;
+      id?: string;
+      install_action_workflow?: components["schemas"]["app.InstallActionWorkflow"];
+      install_action_workflow_id?: string;
+      install_id?: string;
+      install_workflow_id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      outputs?: {
+        [key: string]: unknown;
+      };
+      /** @description Role to be used when running this action */
+      role?: string;
+      run_env_vars?: {
+        [key: string]: string;
+      };
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      steps?: components["schemas"]["app.InstallActionWorkflowRunStep"][];
+      trigger_type?: components["schemas"]["app.ActionWorkflowTriggerType"];
+      triggered_by_id?: string;
+      triggered_by_type?: string;
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.InstallActionWorkflowRunStatus": "finished" | "queued" | "in-progress" | "error" | "timed-out" | "cancelled" | "unknown";
+    "app.InstallActionWorkflowRunStep": {
+      adhoc_config?: components["schemas"]["app.AdHocStepConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      execution_duration?: number;
+      id?: string;
+      install_action_workflow_run_id?: string;
+      status?: components["schemas"]["app.InstallActionWorkflowRunStepStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      step_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.InstallActionWorkflowRunStepStatus": "finished" | "pending" | "in-progress" | "timed-out" | "error";
+    /** @enum {string} */
+    "app.InstallApprovalOption": "approve-all" | "prompt";
+    "app.InstallAuditLog": {
+      install_id?: string;
+      log_line?: string;
+      time_stamp?: string;
+      type?: string;
+    };
+    "app.InstallComponent": {
+      component?: components["schemas"]["app.Component"];
+      component_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      drifted_object?: components["schemas"]["app.DriftedObject"];
+      helm_chart?: components["schemas"]["app.HelmChart"];
+      id?: string;
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      install_id?: string;
+      links?: {
+        [key: string]: unknown;
+      };
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      terraform_workspace?: components["schemas"]["app.TerraformWorkspace"];
+      updated_at?: string;
+    };
+    "app.InstallConfig": {
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      created_at?: string;
+      created_by_id?: string;
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      id?: string;
+      install_id?: string;
+      org_id?: string;
+      runner_nested_template_url?: string;
+      updated_at?: string;
+      /** @description Per-install stack template overrides (nil = use app config default) */
+      vpc_nested_template_url?: string;
+    };
+    "app.InstallDeploy": {
+      action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      build_id?: string;
+      component_build?: components["schemas"]["app.ComponentBuild"];
+      component_config_version?: number;
+      component_id?: string;
+      component_name?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      install_component_id?: string;
+      install_deploy_type?: components["schemas"]["app.InstallDeployType"];
+      /** @description Fields that are de-nested at read time using AfterQuery */
+      install_id?: string;
+      /** @description DEPRECATED: use WorkflowID */
+      install_workflow_id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      oci_artifact?: components["schemas"]["app.OCIArtifact"];
+      outputs?: {
+        [key: string]: unknown;
+      };
+      plan_only?: boolean;
+      policy_reports?: components["schemas"]["app.PolicyReport"][];
+      queue_signals?: components["schemas"]["app.QueueSignal"][];
+      release_id?: string;
+      /** @description Role to be used when running this component */
+      role?: string;
+      /** @description runner details */
+      runner_jobs?: components["schemas"]["app.RunnerJob"][];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.InstallDeployType": "sync-image" | "apply" | "teardown";
+    "app.InstallEvent": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      operation?: string;
+      operation_name?: string;
+      operation_status?: components["schemas"]["app.OperationStatus"];
+      org_id?: string;
+      payload?: {
+        [key: string]: string;
+      };
+      updated_at?: string;
+    };
+    "app.InstallInputs": {
+      app_input_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      org_id?: string;
+      redacted_values?: {
+        [key: string]: string;
+      };
+      updated_at?: string;
+      values?: {
+        [key: string]: string;
+      };
+    };
+    "app.InstallSandbox": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      terraform_workspace?: components["schemas"]["app.TerraformWorkspace"];
+      updated_at?: string;
+    };
+    "app.InstallSandboxRun": {
+      action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      /** @description TODO: once we run a backfill we can make this non pointer */
+      install_sandbox_id?: string;
+      install_workflow_id?: string;
+      log_stream?: components["schemas"]["app.LogStream"];
+      outputs?: {
+        [key: string]: unknown;
+      };
+      policy_reports?: components["schemas"]["app.PolicyReport"][];
+      /** @description Role to be used when planning and applying sandbox runs */
+      role?: string;
+      run_type?: components["schemas"]["app.SandboxRunType"];
+      /** @description runner details */
+      runner_jobs?: components["schemas"]["app.RunnerJob"][];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      /** @description Fields that are de-nested at read time using AfterQuery */
+      workflow_id?: string;
+    };
+    "app.InstallStack": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      install_stack_outputs?: components["schemas"]["app.InstallStackOutputs"];
+      org_id?: string;
+      updated_at?: string;
+      versions?: components["schemas"]["app.InstallStackVersion"][];
+    };
+    "app.InstallStackOutputs": {
+      aws?: components["schemas"]["app.AWSStackOutputs"];
+      azure?: components["schemas"]["app.AzureStackOutputs"];
+      created_at?: string;
+      created_by_id?: string;
+      data?: {
+        [key: string]: string;
+      };
+      data_contents?: {
+        [key: string]: unknown;
+      };
+      gcp?: components["schemas"]["app.GCPStackOutputs"];
+      id?: string;
+      install_stack_id?: string;
+      install_version_run_id?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
+    "app.InstallStackVersion": {
+      app_config_id?: string;
+      aws_bucket_key?: string;
+      /** @description aws configuration parameters */
+      aws_bucket_name?: string;
+      checksum?: string;
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      install_stack_id?: string;
+      org_id?: string;
+      phone_home_id?: string;
+      phone_home_url?: string;
+      quick_link_url?: string;
+      runs?: components["schemas"]["app.InstallStackVersionRun"][];
+      template_url?: string;
+      updated_at?: string;
+    };
+    "app.InstallStackVersionRun": {
+      created_at?: string;
+      created_by_id?: string;
+      data?: {
+        [key: string]: string;
+      };
+      data_contents?: {
+        [key: string]: unknown;
+      };
+      id?: string;
+      updated_at?: string;
+    };
+    "app.InstallState": {
+      archived?: boolean;
+      contents?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      stale_at?: components["schemas"]["generics.NullTime"];
+      triggered_by_id?: string;
+      triggered_by_type?: string;
+      updated_at?: string;
+      version?: number;
+    };
+    "app.JSONMap": {
+      [key: string]: string;
+    };
+    "app.JobComponentConfig": {
+      args?: string[];
+      cmd?: string[];
+      /** @description value */
+      component_config_connection_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      /** @description Image attributes, copied from a docker_buid or external_image component. */
+      image_url?: string;
+      tag?: string;
+      updated_at?: string;
+    };
+    "app.KubernetesManifestComponentConfig": {
+      /** @description value */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description Kustomize configuration (mutually exclusive with Manifest) */
+      kustomize?: components["schemas"]["app.KustomizeConfig"];
+      /** @description Primary fields - used for inline manifests (fully supported) */
+      manifest?: string;
+      namespace?: string;
+      /** @description VCS configuration for kustomize sources (similar to HelmComponentConfig) */
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+    };
+    "app.KustomizeConfig": {
+      /** @description Enable Helm chart inflation during kustomize build */
+      enable_helm?: boolean;
+      /** @description Load restrictor: "none" or "rootOnly" (default: "rootOnly") */
+      load_restrictor?: string;
+      /** @description Additional patch files to apply after kustomize build */
+      patches?: string[];
+      /** @description Path to kustomization directory (relative to source root) */
+      path?: string;
+    };
+    "app.LatestRunnerHeartBeat": {
+      alive_time?: number;
+      created_at?: string;
+      process?: string;
+      process_id?: string;
+      runner_id?: string;
+      started_at?: string;
+      version?: string;
+    };
+    "app.LogStream": {
+      attrs?: {
+        [key: string]: string;
+      };
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      open?: boolean;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      runner_api_url?: string;
+      updated_at?: string;
+      write_token?: string;
+    };
+    "app.NotificationsConfig": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      slack_webhook_url?: string;
+      updated_at?: string;
+    };
+    "app.OCIArtifact": {
+      annotations?: {
+        [key: string]: string;
+      };
+      architecture?: string;
+      artifact_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      digest?: string;
+      id?: string;
+      media_type?: string;
+      org_id?: string;
+      /** @description Platform fields */
+      os?: string;
+      os_features?: string[];
+      os_version?: string;
+      owner_id?: string;
+      owner_type?: string;
+      repository?: string;
+      size?: number;
+      tag?: string;
+      updated_at?: string;
+      urls?: string[];
+      variant?: string;
+    };
+    "app.Onboarding": {
+      account_id?: string;
+      app_attributes?: string[];
+      app_branch_id?: string;
+      app_config?: Record<string, never>;
+      app_id?: string;
+      /** @description Step 2: Your Stack */
+      app_type?: string;
+      cloud_provider?: string;
+      created_at?: string;
+      created_by_id?: string;
+      current_step?: string;
+      example_app_slug?: string;
+      id?: string;
+      install_id?: string;
+      /** @description Step 3: Install */
+      install_mode?: string;
+      /** @description Step 1: Organization */
+      org_id?: string;
+      status?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      step_error?: string;
+      /** @description Async step status (for queue-based signal processing) */
+      step_status?: string;
+      updated_at?: string;
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.OperationStatus": "started" | "finished" | "noop" | "failed";
+    /** @enum {string} */
+    "app.OperationType": "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
+    "app.Org": {
+      /** @description Transient fields for counts (not persisted to database) */
+      app_count?: number;
+      created_at?: string;
+      created_by_id?: string;
+      features?: components["schemas"]["types.StringBoolMap"];
+      id?: string;
+      install_count?: number;
+      links?: {
+        [key: string]: unknown;
+      };
+      logo_url?: string;
+      name?: string;
+      notifications_config?: components["schemas"]["app.NotificationsConfig"];
+      runner_group?: components["schemas"]["app.RunnerGroup"];
+      sandbox_mode?: boolean;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      tags?: string[];
+      updated_at?: string;
+      vcs_connections?: components["schemas"]["app.VCSConnection"][];
+    };
+    "app.OrgFeatureInfo": {
+      description?: string;
+      name?: string;
+    };
+    "app.OrgInvite": {
+      created_at?: string;
+      created_by_id?: string;
+      email?: string;
+      id?: string;
+      /** @description parent relationship */
+      org_id?: string;
+      role_type?: components["schemas"]["app.RoleType"];
+      status?: components["schemas"]["app.OrgInviteStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.OrgInviteStatus": "pending" | "accepted";
+    "app.OtelLogRecord": {
+      body?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      log_attributes?: {
+        [key: string]: string;
+      };
+      log_stream_id?: string;
+      /** @description internal attributes */
+      org_id?: string;
+      resource_attributes?: {
+        [key: string]: string;
+      };
+      resource_schema_url?: string;
+      runner_group_id?: string;
+      runner_id?: string;
+      runner_job_execution_id?: string;
+      runner_job_execution_step?: string;
+      runner_job_id?: string;
+      scope_attributes?: {
+        [key: string]: string;
+      };
+      scope_name?: string;
+      scope_schema_url?: string;
+      scope_version?: string;
+      service_name?: string;
+      severity_number?: number;
+      severity_text?: string;
+      span_id?: string;
+      /** @description OTEL log message attributes */
+      timestamp?: string;
+      timestamp_date?: string;
+      timestamp_time?: string;
+      trace_flags?: number;
+      trace_id?: string;
+      updated_at?: string;
+    };
+    "app.Policy": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      name?: components["schemas"]["app.PolicyName"];
+      /** @description Permissions are used to track granular permissions for each domain */
+      permissions?: {
+        [key: string]: string;
+      };
+      role_id?: string;
+      updated_at?: string;
+    };
+    "app.PolicyInputRef": {
+      id?: string;
+      name?: string;
+      type?: string;
+    };
+    /** @enum {string} */
+    "app.PolicyName": "org_admin" | "org_support" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyReport": {
+      /** @description Denormalized context for filtering */
+      app_id?: string;
+      app_name?: string;
+      component_id?: string;
+      component_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description Summary counts for list views */
+      deny_count?: number;
+      /** @description Canonical policy evaluation data */
+      evaluated_at?: string;
+      id?: string;
+      inputs?: components["schemas"]["app.PolicyInputRef"][];
+      install_id?: string;
+      install_name?: string;
+      /** @description Denormalized display names for human-readable reports */
+      org_name?: string;
+      /** @description Polymorphic relationship to the impacted Nuon resource (indexes defined in Indexes()) */
+      owner_id?: string;
+      owner_type?: components["schemas"]["app.PolicyReportOwnerType"];
+      pass_count?: number;
+      policies?: components["schemas"]["app.PolicyResult"][];
+      policy_ids?: string[];
+      runner_job_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      violations?: components["schemas"]["app.PolicyViolation"][];
+      warn_count?: number;
+      /** @description Optional context references (indexes defined in Indexes()) */
+      workflow_step_policy_validation_id?: string;
+    };
+    /** @enum {string} */
+    "app.PolicyReportOwnerType": "install_deploys" | "install_sandbox_runs" | "component_builds";
+    "app.PolicyResult": {
+      deny_count?: number;
+      input_count?: number;
+      pass_count?: number;
+      policy_id?: string;
+      policy_name?: string;
+      /** @description "deny", "warn", or "pass" */
+      status?: string;
+      warn_count?: number;
+    };
+    "app.PolicyViolation": {
+      /** @description Human-readable input reference (e.g., "Deployment/default/nginx") */
+      input_identity?: string;
+      input_index?: number;
+      message?: string;
+      policy_id?: string;
+      policy_name?: string;
+      /** @description "deny" or "warn" */
+      severity?: string;
+    };
+    /** @enum {string} */
+    "app.ProviderType": "oidc" | "google" | "github";
+    "app.PublicGitVCSConfig": {
+      branch?: string;
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      directory?: string;
+      id?: string;
+      path_filter?: string;
+      /** @description actual configuration */
+      repo?: string;
+      updated_at?: string;
+    };
+    "app.PulumiComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      config?: {
+        [key: string]: string;
+      };
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      /** @description pulumi configuration values */
+      runtime?: string;
+      updated_at?: string;
+      version?: string;
+    };
+    "app.Queue": {
+      created_at?: string;
+      created_by_id?: string;
+      emitters?: components["schemas"]["app.QueueEmitter"][];
+      id?: string;
+      max_depth?: number;
+      max_in_flight?: number;
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      queue_signal?: components["schemas"]["app.QueueSignal"][];
+      updated_at?: string;
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    "app.QueueEmitter": {
+      created_at?: string;
+      created_by_id?: string;
+      /**
+       * @description Schedule configuration
+       * For cron mode: cron expression (e.g., "0 * * * *")
+       */
+      cron_schedule?: string;
+      description?: string;
+      emit_count?: number;
+      /** @description For scheduled mode: whether the signal has been fired */
+      fired?: boolean;
+      id?: string;
+      last_emitted_at?: string;
+      /** @description Emitter mode: "cron" for recurring, "scheduled" for one-shot */
+      mode?: components["schemas"]["app.QueueEmitterMode"];
+      /** @description Emitter identity */
+      name?: string;
+      next_emit_at?: string;
+      org_id?: string;
+      /** @description Many-to-one: each emitter belongs to exactly one queue */
+      queue_id?: string;
+      /** @description For scheduled mode: the time to fire the signal */
+      scheduled_at?: string;
+      signal_template?: components["schemas"]["signaldb.SignalData"];
+      /** @description Signal template - the signal to emit on each tick */
+      signal_type?: string;
+      /** @description Runtime state using shared CompositeStatus */
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      /** @description Workflow reference for the emitter's cron workflow */
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    /** @enum {string} */
+    "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
+    "app.QueueSignal": {
+      created_at?: string;
+      created_by_id?: string;
+      /** @description Optional: if this signal was emitted by an emitter */
+      emitter_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      queue?: components["schemas"]["app.Queue"];
+      queue_id?: string;
+      signal?: components["schemas"]["signaldb.SignalData"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      type?: string;
+      updated_at?: string;
+      workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    "app.Role": {
+      createdBy?: components["schemas"]["app.Account"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      policies?: components["schemas"]["app.Policy"][];
+      role_type?: components["schemas"]["app.RoleType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RoleType": "org_admin" | "org_support" | "installer" | "runner" | "hosted-installer";
+    "app.Runner": {
+      created_at?: string;
+      created_by_id?: string;
+      display_name?: string;
+      id?: string;
+      jobs?: components["schemas"]["app.RunnerJob"][];
+      name?: string;
+      operations?: components["schemas"]["app.RunnerOperation"][];
+      org_id?: string;
+      /** @description Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled. */
+      queues?: components["schemas"]["app.Queue"][];
+      runner_group?: components["schemas"]["app.RunnerGroup"];
+      runner_group_id?: string;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      warnings?: string[];
+    };
+    "app.RunnerGroup": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      /** @description parent can org, install or in the future, builtin runner group */
+      owner_id?: string;
+      owner_type?: string;
+      platform?: components["schemas"]["app.AppRunnerType"];
+      runners?: components["schemas"]["app.Runner"][];
+      settings?: components["schemas"]["app.RunnerGroupSettings"];
+      type?: components["schemas"]["app.RunnerGroupType"];
+      updated_at?: string;
+    };
+    "app.RunnerGroupSettings": {
+      aws_cloudformation_stack_type?: string;
+      /** @description aws runner specifics runner-v2 */
+      aws_instance_type?: string;
+      /** @description Deprecated: instance refresh is now handled by a backend cron, not ASG MaxInstanceLifetime. */
+      aws_max_instance_lifetime?: number;
+      aws_tags?: {
+        [key: string]: string;
+      };
+      container_image_tag?: string;
+      /** @description configuration for deploying the runner */
+      container_image_url?: string;
+      created_at?: string;
+      created_by_id?: string;
+      enable_logging?: boolean;
+      enable_metrics?: boolean;
+      enable_sentry?: boolean;
+      /** @description the job loop groups the runner should poll for */
+      groups?: string[];
+      /** @description Various settings for the runner to handle internally */
+      heart_beat_timeout?: number;
+      id?: string;
+      /**
+       * @description JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+       * e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+       */
+      job_group_parallelism?: {
+        [key: string]: string;
+      };
+      local_aws_iam_role_arn?: string;
+      logging_level?: string;
+      /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
+      metadata?: {
+        [key: string]: string;
+      };
+      /** @description org runner specifics */
+      org_aws_iam_role_arn?: string;
+      org_azure_client_id?: string;
+      org_gcp_service_account?: string;
+      org_id?: string;
+      org_k8s_service_account_name?: string;
+      otel_collector_config?: string;
+      /** @description platform variable for use in the runner */
+      platform?: string;
+      runner_api_url?: string;
+      /**
+       * @description RunnerBinaryURL overrides the URL used to download the runner binary onto the
+       * host for mng mode. When empty, defaults to the S3 artifacts URL.
+       */
+      runner_binary_url?: string;
+      runner_group_id?: string;
+      /** @description configuration for managing the runner server side */
+      sandbox_mode?: boolean;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerGroupType": "install" | "org";
+    "app.RunnerHealthCheck": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      minute_bucket?: string;
+      process?: string;
+      process_id?: string;
+      runner_id?: string;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      status?: components["schemas"]["app.RunnerStatus"];
+      status_code?: number;
+      updated_at?: string;
+    };
+    "app.RunnerHeartBeat": {
+      alive_time?: number;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      process?: string;
+      process_id?: string;
+      runner_id?: string;
+      started_at?: string;
+      updated_at?: string;
+      version?: string;
+    };
+    "app.RunnerJob": {
+      /** @description available timeout is how long a job can be marked as "available" before being requeued */
+      available_timeout?: number;
+      created_at?: string;
+      created_by_id?: string;
+      execution_count?: number;
+      execution_time?: number;
+      /** @description execution timeout is how long a job can be marked as "exeucuting" before being requeued */
+      execution_timeout?: number;
+      executions?: components["schemas"]["app.RunnerJobExecution"][];
+      final_runner_job_execution_id?: string;
+      finished_at?: string;
+      group?: components["schemas"]["app.RunnerJobGroup"];
+      id?: string;
+      json?: components["schemas"]["app.RunnerJobPlan"];
+      log_stream_id?: string;
+      max_executions?: number;
+      metadata?: {
+        [key: string]: string;
+      };
+      operation?: components["schemas"]["app.RunnerJobOperationType"];
+      org_id?: string;
+      outputs?: {
+        [key: string]: unknown;
+      };
+      outputs_json?: string;
+      /** @description overall timeout is how long a job can be attempted, before being cancelled */
+      overall_timeout?: number;
+      owner_id?: string;
+      owner_type?: string;
+      /** @description queue timeout is how long a job can be queued, before being made available */
+      queue_timeout?: number;
+      runner_id?: string;
+      runner_process_id?: string;
+      started_at?: string;
+      status?: components["schemas"]["app.RunnerJobStatus"];
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      type?: components["schemas"]["app.RunnerJobType"];
+      updated_at?: string;
+    };
+    "app.RunnerJobExecution": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description Metadata is used to store additional information about the execution {e.g., client version.} */
+      metadata?: {
+        [key: string]: string;
+      };
+      org_id?: string;
+      outputs?: components["schemas"]["app.RunnerJobExecutionOutputs"];
+      result?: components["schemas"]["app.RunnerJobExecutionResult"];
+      runner_job_id?: string;
+      status?: components["schemas"]["app.RunnerJobExecutionStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    "app.RunnerJobExecutionOutputs": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      outputs?: {
+        [key: string]: Record<string, never>;
+      };
+      outputs_json?: string;
+      runner_job_execution_id?: string;
+      updated_at?: string;
+    };
+    "app.RunnerJobExecutionResult": {
+      contents?: string;
+      contents_display?: string;
+      contents_display_gzip?: string;
+      /** @description columns for storage of gzipped contents and plans */
+      contents_gzip?: string;
+      created_at?: string;
+      created_by_id?: string;
+      error_code?: number;
+      error_metadata?: {
+        [key: string]: string;
+      };
+      id?: string;
+      org_id?: string;
+      runner_job_execution_id?: string;
+      success?: boolean;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerJobExecutionStatus": "pending" | "initializing" | "in-progress" | "cleaning-up" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
+    /** @enum {string} */
+    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
+    /** @enum {string} */
+    "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
+    "app.RunnerJobPermissionInfo": {
+      role?: string;
+      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
+      role_source?: string;
+    };
+    "app.RunnerJobPermissionTraceRecord": {
+      available?: boolean;
+      role_id?: string;
+      role_name?: string;
+      role_source?: string;
+      selected?: boolean;
+    };
+    "app.RunnerJobPlan": {
+      composite_plan?: components["schemas"]["plantypes.CompositePlan"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      permission_info?: components["schemas"]["app.RunnerJobPermissionInfo"];
+      plan_json?: string;
+      runner_job_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
+    /** @enum {string} */
+    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
+    "app.RunnerOperation": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description job details */
+      log_stream?: components["schemas"]["app.LogStream"];
+      operation_type?: components["schemas"]["app.RunnerOperationType"];
+      runner_id?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerOperationType": "provision" | "provision_service_account" | "reprovision" | "deprovision";
+    "app.RunnerProcess": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      initial_health_check?: boolean;
+      /** @description Labels are computed server-side and not persisted. */
+      labels?: string[];
+      log_stream_id?: string;
+      org_id?: string;
+      runner_id?: string;
+      shutdowns?: components["schemas"]["app.RunnerProcessShutdown"][];
+      started_at?: string;
+      type?: components["schemas"]["app.RunnerProcessType"];
+      updated_at?: string;
+      uptime?: number;
+      version?: string;
+      /** @description Warnings are computed server-side and not persisted. */
+      warnings?: string[];
+    };
+    "app.RunnerProcessShutdown": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      metadata?: components["schemas"]["pgtype.Hstore"];
+      org_id?: string;
+      runner_process_id?: string;
+      /** @description Status and StatusDescription are computed from CompositeStatus via AfterQuery. */
+      status?: string;
+      status_description?: string;
+      type?: components["schemas"]["app.RunnerProcessShutdownType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerProcessShutdownType": "graceful" | "force" | "restart";
+    /** @enum {string} */
+    "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
+    /** @enum {string} */
+    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
+    /** @enum {string} */
+    "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
+    /** @enum {string} */
+    "app.StackType": "aws-cloudformation" | "gcp-terraform";
+    /** @enum {string} */
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.TerraformLock": {
+      created?: string;
+      id?: string;
+      info?: string;
+      operation?: string;
+      path?: string;
+      version?: unknown;
+      who?: string;
+    };
+    "app.TerraformModuleComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      updated_at?: string;
+      variables?: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
+      /** @description terraform configuration values */
+      version?: string;
+    };
+    "app.TerraformStateInstance": {
+      attributes?: {
+        [key: string]: unknown;
+      };
+      schema_version?: number;
+      sensitive_attributes?: unknown[];
+    };
+    "app.TerraformStateResource": {
+      instances?: components["schemas"]["app.TerraformStateInstance"][];
+      mode?: string;
+      name?: string;
+      provider?: string;
+      type?: string;
+    };
+    "app.TerraformWorkspace": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      updated_at?: string;
+    };
+    "app.TerraformWorkspaceLock": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      lock?: components["schemas"]["app.TerraformLock"];
+      org_id?: string;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      runner_job_id?: string;
+      updated_at?: string;
+      /** @description Foreign key to TerraformWorkspace with unique constraint to prevent multiple active locks */
+      workspace_id?: string;
+    };
+    "app.TerraformWorkspaceState": {
+      contents?: number[];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      revision?: number;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      runner_job_id?: string;
+      terraform_workspace?: components["schemas"]["app.TerraformWorkspace"];
+      terraform_workspace_id?: string;
+      updated_at?: string;
+    };
+    "app.TerraformWorkspaceStateJSON": {
+      contents?: number[];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      runner_job_id?: string;
+      updated_at?: string;
+      /** @description Foreign key to TerraformWorkspace with unique constraint to prevent conflicting states for a workspace */
+      workspace_id?: string;
+    };
+    "app.UserJourney": {
+      name?: string;
+      steps?: components["schemas"]["app.UserJourneyStep"][];
+      title?: string;
+    };
+    "app.UserJourneyStep": {
+      complete?: boolean;
+      /** @description Top-level completion tracking fields */
+      completed_at?: string;
+      completion_method?: string;
+      completion_source?: string;
+      /** @description Flexible metadata for business data */
+      metadata?: {
+        [key: string]: unknown;
+      };
+      name?: string;
+      title?: string;
+    };
+    "app.VCSConnection": {
+      created_at?: string;
+      created_by_id?: string;
+      github_account_id?: string;
+      github_account_name?: string;
+      github_install_id?: string;
+      id?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"][];
+    };
+    "app.VCSConnectionCommit": {
+      author_email?: string;
+      author_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      message?: string;
+      /** @description Polymorphic ownership - references VCS config that owns this commit */
+      owner_id?: string;
+      owner_type?: string;
+      sha?: string;
+      updated_at?: string;
+      vcs_connection_id?: string;
+    };
+    "app.VCSEvent": {
+      created_at?: string;
+      created_by_id?: string;
+      event_type?: string;
+      id?: string;
+      payload?: components["schemas"]["app.VCSEventPayload"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_id?: string;
+    };
+    "app.VCSEventPayload": {
+      [key: string]: unknown;
+    };
+    "app.Waitlist": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_name?: string;
+      updated_at?: string;
+    };
+    "app.Workflow": {
+      app_branch_runs?: components["schemas"]["app.AppBranchRun"][];
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      execution_time?: number;
+      finished?: boolean;
+      finished_at?: string;
+      id?: string;
+      install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
+      links?: {
+        [key: string]: unknown;
+      };
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
+      owner_id?: string;
+      owner_type?: string;
+      plan_only?: boolean;
+      role?: string;
+      started_at?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      /** @description DEPRECATED: for now we always abort on step errors */
+      step_error_behavior?: string;
+      /** @description steps represent each piece of the workflow */
+      steps?: components["schemas"]["app.WorkflowStep"][];
+      type?: components["schemas"]["app.WorkflowType"];
+      updated_at?: string;
+    };
+    "app.WorkflowStep": {
+      approval?: components["schemas"]["app.WorkflowStepApproval"];
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      execution_time?: number;
+      execution_type?: components["schemas"]["app.WorkflowStepExecutionType"];
+      finished?: boolean;
+      finished_at?: string;
+      /** @description to group steps which belong to same logical group, eg, plan/apply */
+      group_idx?: number;
+      /** @description counter for every retry attempted on a group */
+      group_retry_idx?: number;
+      id?: string;
+      idx?: number;
+      /** @description DEPRECATED: this is the install workflow ID, which is now the workflow ID. */
+      install_workflow_id?: string;
+      links?: {
+        [key: string]: unknown;
+      };
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
+      owner_id?: string;
+      owner_type?: string;
+      policy_validation?: components["schemas"]["app.WorkflowStepPolicyValidation"];
+      retried?: boolean;
+      retryable?: boolean;
+      skippable?: boolean;
+      started_at?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      /**
+       * @description the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.
+       *
+       * this is a polymorphic gorm relationship to one of the following objects:
+       *
+       * install_cloudformation_stack
+       * install_sandbox_run
+       * install_runner_update
+       * install_deploy
+       * install_action_workflow_run (can be many of these)
+       */
+      step_target_id?: string;
+      step_target_type?: string;
+      updated_at?: string;
+      /** @description Fields that are de-nested at read time using AfterQuery */
+      workflow_id?: string;
+    };
+    "app.WorkflowStepApproval": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      installWorkflowStep?: components["schemas"]["app.WorkflowStep"];
+      /** @description the step that this approval belongs too */
+      installWorkflowStepID?: string;
+      owner_id?: string;
+      owner_type?: string;
+      response?: {
+        [key: string]: string;
+      };
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      /** @description the runner job where this approval was created */
+      runner_job_id?: string;
+      type?: components["schemas"]["app.WorkflowStepApprovalType"];
+      updated_at?: string;
+      workflow_step?: components["schemas"]["app.WorkflowStep"];
+      /** @description afterquery */
+      workflow_step_id?: string;
+    };
+    /** @enum {string} */
+    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan";
+    /** @enum {string} */
+    "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
+    "app.WorkflowStepPolicyValidation": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description install workflow step is the install step that this was performed within */
+      install_workflow_step_id?: string;
+      /** @description response is the kyverno response (deprecated: use Reports for detailed results) */
+      response?: string;
+      /** @description runnerJobID is the runner job that this was performed within */
+      runner_job_id?: string;
+      /** @description status denotes whether this passed, or whether it failed the job. */
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
+    /** @enum {string} */
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision";
+    "blobstore.Blob": Record<string, never>;
+    /** @enum {string} */
+    "config.AppPolicyEngine": "kyverno" | "opa";
+    /** @enum {string} */
+    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "docker_build" | "container_image" | "pulumi" | "sandbox";
+    "config.CustomNestedStack": {
+      contents?: string;
+      contents_hash?: string;
+      index?: number;
+      name?: string;
+      parameters?: {
+        [key: string]: string;
+      };
+      template_url?: string;
+    };
+    "config.HelmRepoConfig": {
+      chart?: string;
+      repoURL?: string;
+      version?: string;
+    };
+    "configs.OCIRegistryAuth": {
+      password?: string;
+      username?: string;
+    };
+    "configs.OCIRegistryRepository": {
+      acrauth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      ecrauth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      loginServer?: string;
+      ociauth?: components["schemas"]["configs.OCIRegistryAuth"];
+      plugin?: string;
+      region?: string;
+      registryType?: components["schemas"]["configs.OCIRegistryType"];
+      /** @description based on the type of access, either the repository (ecr) or login server (acr) will be provided. */
+      repository?: string;
+      serviceAccountEmail?: string;
+      workloadIdentityProvider?: string;
+    };
+    /** @enum {string} */
+    "configs.OCIRegistryType": "ecr" | "acr" | "gar" | "private_oci" | "public_oci";
+    "credentials.AssumeRoleConfig": {
+      role_arn: string;
+      session_duration_seconds?: number;
+      session_name: string;
+      /** @description configuration for two stepping before assuming this role */
+      two_step_config?: components["schemas"]["iam.TwoStepConfig"];
+      use_gcp_oidc?: boolean;
+      use_github_oidc?: boolean;
+    };
+    "credentials.ServicePrincipalCredentials": {
+      subscription_id?: string;
+      subscription_tenant_id?: string;
+    };
+    "credentials.StaticCredentials": {
+      access_key_id: string;
+      secret_access_key: string;
+      session_token: string;
+    };
+    "generics.NullTime": {
+      time?: string;
+      /** @description Valid is true if Time is not NULL */
+      valid?: boolean;
+    };
+    "github.Match": {
+      indices?: number[];
+      text?: string;
+    };
+    "github.Plan": {
+      collaborators?: number;
+      filled_seats?: number;
+      name?: string;
+      private_repos?: number;
+      seats?: number;
+      space?: number;
+    };
+    "github.TextMatch": {
+      fragment?: string;
+      matches?: components["schemas"]["github.Match"][];
+      object_type?: string;
+      object_url?: string;
+      property?: string;
+    };
+    "github.Timestamp": {
+      "time.Time"?: string;
+    };
+    "github.User": {
+      avatar_url?: string;
+      bio?: string;
+      blog?: string;
+      collaborators?: number;
+      company?: string;
+      created_at?: components["schemas"]["github.Timestamp"];
+      disk_usage?: number;
+      email?: string;
+      events_url?: string;
+      followers?: number;
+      followers_url?: string;
+      following?: number;
+      following_url?: string;
+      gists_url?: string;
+      gravatar_id?: string;
+      hireable?: boolean;
+      html_url?: string;
+      id?: number;
+      ldap_dn?: string;
+      location?: string;
+      login?: string;
+      name?: string;
+      node_id?: string;
+      organizations_url?: string;
+      owned_private_repos?: number;
+      /**
+       * @description Permissions and RoleName identify the permissions and role that a user has on a given
+       * repository. These are only populated when calling Repositories.ListCollaborators.
+       */
+      permissions?: {
+        [key: string]: boolean;
+      };
+      plan?: components["schemas"]["github.Plan"];
+      private_gists?: number;
+      public_gists?: number;
+      public_repos?: number;
+      received_events_url?: string;
+      repos_url?: string;
+      role_name?: string;
+      site_admin?: boolean;
+      starred_url?: string;
+      subscriptions_url?: string;
+      suspended_at?: components["schemas"]["github.Timestamp"];
+      /**
+       * @description TextMatches is only populated from search results that request text matches
+       * See: search.go and https://docs.github.com/en/rest/search/#text-match-metadata
+       */
+      text_matches?: components["schemas"]["github.TextMatch"][];
+      total_private_repos?: number;
+      twitter_username?: string;
+      two_factor_authentication?: boolean;
+      type?: string;
+      updated_at?: components["schemas"]["github.Timestamp"];
+      /** @description API URLs */
+      url?: string;
+    };
+    "github_com_nuonco_nuon_pkg_aws_credentials.Config": {
+      assume_role?: components["schemas"]["credentials.AssumeRoleConfig"];
+      /** @description when cache ID is set, these credentials will be reused, up to the duration of the sessionTimeout (or default) */
+      cache_id?: string;
+      /** @description If profile is provided, we'll use that profile over the default credentials */
+      profile?: string;
+      region?: string;
+      static?: components["schemas"]["credentials.StaticCredentials"];
+      use_default?: boolean;
+    };
+    "github_com_nuonco_nuon_pkg_azure_credentials.Config": {
+      service_principal?: components["schemas"]["credentials.ServicePrincipalCredentials"];
+      use_default?: boolean;
+    };
+    "github_com_nuonco_nuon_pkg_gcp_credentials.Config": {
+      impersonate_service_account?: string;
+      project_id?: string;
+      region?: string;
+    };
+    "github_com_nuonco_nuon_pkg_types_state.State": {
+      actions?: components["schemas"]["state.ActionsState"];
+      app?: components["schemas"]["state.AppState"];
+      cloud_account?: components["schemas"]["state.CloudAccount"];
+      components?: {
+        [key: string]: unknown;
+      };
+      domain?: components["schemas"]["state.DomainState"];
+      id?: string;
+      inputs?: components["schemas"]["state.InputsState"];
+      /** @description NOTE: for backwards compatibility, these are remaining in place. */
+      install?: components["schemas"]["state.InstallState"];
+      install_stack?: components["schemas"]["state.InstallStackState"];
+      name?: string;
+      org?: components["schemas"]["state.OrgState"];
+      runner?: components["schemas"]["state.RunnerState"];
+      sandbox?: components["schemas"]["state.SandboxState"];
+      secrets?: components["schemas"]["state.SecretsState"];
+      /** @description loaded from the database but not part of the state itself */
+      stale_at?: string;
+    };
+    "helpers.ConnectedGithubVCSConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      pathFilter?: string;
+      repo: string;
+    };
+    "helpers.CreateInstallConfigParams": {
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
+    };
+    "helpers.InstallMetadata": {
+      managed_by?: string;
+    };
+    "helpers.PublicGitVCSConfigRequest": {
+      branch: string;
+      directory: string;
+      pathFilter?: string;
+      repo: string;
+    };
+    "iam.StaticCredentials": {
+      access_key_id?: string;
+      secret_access_key?: string;
+      session_token?: string;
+    };
+    "iam.TwoStepConfig": {
+      iam_role_arn?: string;
+      src_iam_role_arn?: string;
+      /** @description Root Credentials */
+      src_static_credentials?: components["schemas"]["iam.StaticCredentials"];
+    };
+    "kube.ClusterInfo": {
+      /**
+       * @description If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
+       * them in the environment.
+       */
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      /** @description CAData is the base64 encoded public certificate */
+      ca_data?: string;
+      /** @description Endpoint is the URL of the k8s api server */
+      endpoint?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      /** @description ID is the ID of the EKS cluster */
+      id?: string;
+      /** @description If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token */
+      inline?: boolean;
+      /** @description KubeConfig will override the kube config, and be parsed instead of generating a new one */
+      kube_config?: string;
+      /**
+       * @description TrustedRoleARN is the arn of the role that should be assumed to interact with the cluster
+       * NOTE(JM): we are deprecating this
+       */
+      trusted_role_arn?: string;
+    };
+    "outputs.SecretSyncOutput": {
+      arn?: string;
+      exists?: boolean;
+      gcp_secret_name?: string;
+      kubernetes_key?: string;
+      kubernetes_name?: string;
+      kubernetes_namespace?: string;
+      length?: number;
+      name?: string;
+      timestamp?: string;
+    };
+    /** @enum {string} */
+    "permissions.Permission": "unknown" | "all" | "create" | "read" | "update" | "delete";
+    "permissions.Set": {
+      [key: string]: components["schemas"]["permissions.Permission"];
+    };
+    "pgtype.Hstore": {
+      [key: string]: string;
+    };
+    "plantypes.ActionWorkflowRunPlan": {
+      attrs?: {
+        [key: string]: string;
+      };
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      builtin_env_vars?: {
+        [key: string]: string;
+      };
+      /** @description optional fields based on the configuration */
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      id?: string;
+      install_id?: string;
+      override_env_vars?: {
+        [key: string]: string;
+      };
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
+    };
+    "plantypes.ActionWorkflowRunStepPlan": {
+      attrs?: {
+        [key: string]: string;
+      };
+      git_source?: components["schemas"]["plantypes.GitSource"];
+      interpolated_command?: string;
+      interpolated_env_vars?: {
+        [key: string]: string;
+      };
+      interpolated_inline_contents?: string;
+      run_id?: string;
+    };
+    "plantypes.BuildPlan": {
+      component_build_id?: string;
+      component_id?: string;
+      container_image_pull_plan?: components["schemas"]["plantypes.ContainerImagePullPlan"];
+      docker_build_plan?: components["schemas"]["plantypes.DockerBuildPlan"];
+      dst_registry: components["schemas"]["configs.OCIRegistryRepository"];
+      dst_tag: string;
+      git_source?: components["schemas"]["plantypes.GitSource"];
+      helm_build_plan?: components["schemas"]["plantypes.HelmBuildPlan"];
+      kubernetes_manifest_build_plan?: components["schemas"]["plantypes.KubernetesManifestBuildPlan"];
+      pulumi_build_plan?: components["schemas"]["plantypes.PulumiBuildPlan"];
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      terraform_build_plan?: components["schemas"]["plantypes.TerraformBuildPlan"];
+    };
+    "plantypes.CompositePlan": {
+      action_workflow_run_plan?: components["schemas"]["plantypes.ActionWorkflowRunPlan"];
+      build_plan?: components["schemas"]["plantypes.BuildPlan"];
+      deploy_plan?: components["schemas"]["plantypes.DeployPlan"];
+      fetch_image_metadata_plan?: components["schemas"]["plantypes.FetchImageMetadataPlan"];
+      sandbox_run_plan?: components["schemas"]["plantypes.SandboxRunPlan"];
+      sync_oci_plan?: components["schemas"]["plantypes.SyncOCIPlan"];
+      sync_secrets_plan?: components["schemas"]["plantypes.SyncSecretsPlan"];
+    };
+    "plantypes.ContainerImagePullPlan": {
+      image?: string;
+      repo_config?: components["schemas"]["configs.OCIRegistryRepository"];
+      tag?: string;
+    };
+    "plantypes.DeployPlan": {
+      app_config_id?: string;
+      app_id?: string;
+      /** @description The following field is for applying a plan that is already save */
+      apply_plan_contents?: string;
+      /** @description This field is for storing a human legible plan or corollary representation */
+      apply_plan_display?: string;
+      component_id?: string;
+      component_name?: string;
+      helm?: components["schemas"]["plantypes.HelmDeployPlan"];
+      install_id?: string;
+      kubernetes_manifest?: components["schemas"]["plantypes.KubernetesManifestDeployPlan"];
+      noop?: components["schemas"]["plantypes.NoopDeployPlan"];
+      pulumi?: components["schemas"]["plantypes.PulumiDeployPlan"];
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      src_registry: components["schemas"]["configs.OCIRegistryRepository"];
+      src_tag: string;
+      terraform?: components["schemas"]["plantypes.TerraformDeployPlan"];
+    };
+    "plantypes.DockerBuildPlan": {
+      build_args?: {
+        [key: string]: string;
+      };
+      context?: string;
+      dockerfile?: string;
+      target?: string;
+    };
+    "plantypes.FetchImageMetadataPlan": {
+      include_attestation_layers?: boolean;
+      include_attestation_manifests?: boolean;
+      /** @description Options for metadata fetching */
+      include_index?: boolean;
+      /** @description Registry configuration for the source image */
+      registry: components["schemas"]["configs.OCIRegistryRepository"];
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      /** @description Tag is the image tag to fetch metadata for */
+      tag: string;
+    };
+    "plantypes.GitSource": {
+      path: string;
+      recurse_submodules?: boolean;
+      ref: string;
+      url: string;
+    };
+    "plantypes.HelmBuildPlan": {
+      helmRepoConfig?: components["schemas"]["config.HelmRepoConfig"];
+      labels?: {
+        [key: string]: string;
+      };
+      values?: components["schemas"]["plantypes.HelmValue"][];
+      valuesFiles?: string[];
+    };
+    "plantypes.HelmDeployPlan": {
+      /** @description Auth for cloud providers */
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      create_namespace?: boolean;
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      helm_chart_id?: string;
+      /**
+       * @description NOTE(jm): these fields should probably just come from the app config, however we keep them around for
+       * debuggability
+       */
+      name?: string;
+      namespace?: string;
+      storage_driver?: string;
+      take_ownership?: boolean;
+      values?: components["schemas"]["plantypes.HelmValue"][];
+      values_files?: string[];
+    };
+    "plantypes.HelmSandboxMode": {
+      plan_contents?: string;
+      plan_display_contents?: string;
+    };
+    "plantypes.HelmValue": {
+      name?: string;
+      type?: string;
+      value?: string;
+    };
+    "plantypes.KubernetesManifestBuildPlan": {
+      /** @description InlineManifest contains the raw manifest YAML (for inline source type) */
+      inline_manifest?: string;
+      /** @description KustomizeConfig contains additional kustomize build options */
+      kustomize_config?: components["schemas"]["plantypes.KustomizeBuildConfig"];
+      /**
+       * @description KustomizePath is the path to the kustomization directory (for kustomize source type)
+       * Relative to the repository root
+       */
+      kustomize_path?: string;
+      /** @description Labels for the OCI artifact */
+      labels?: {
+        [key: string]: string;
+      };
+      /** @description SourceType indicates how manifests are sourced: "inline" or "kustomize" */
+      source_type?: string;
+    };
+    "plantypes.KubernetesManifestDeployPlan": {
+      /** @description Auth for cloud providers */
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      /**
+       * @description Manifest is populated at runtime from the OCI artifact.
+       * This field is no longer set during plan creation - it's populated by the runner
+       * after pulling the OCI artifact during Initialize().
+       */
+      manifest?: string;
+      namespace?: string;
+      /** @description OCIArtifact reference (set during plan creation, used by runner to pull manifest) */
+      oci_artifact?: components["schemas"]["plantypes.OCIArtifactReference"];
+    };
+    "plantypes.KubernetesSandboxMode": {
+      plan_contents?: string;
+      plan_display_contents?: string;
+    };
+    "plantypes.KubernetesSecretSync": {
+      /**
+       * @description NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
+       * updating the runner job and save time.
+       */
+      format?: string;
+      /** @description projects/{project}/secrets/{id}/versions/latest */
+      gcp_secret_name?: string;
+      key_name?: string;
+      name?: string;
+      namespace?: string;
+      secret_arn?: string;
+      /** @description the name of the secret from the config */
+      secret_name?: string;
+    };
+    "plantypes.KustomizeBuildConfig": {
+      /** @description EnableHelm enables Helm chart inflation during kustomize build */
+      enable_helm?: boolean;
+      /** @description LoadRestrictor controls file loading: "none" or "rootOnly" (default) */
+      load_restrictor?: string;
+      /** @description Patches are additional patch files to apply after kustomize build */
+      patches?: string[];
+    };
+    "plantypes.NoopDeployPlan": Record<string, never>;
+    "plantypes.OCIArtifactReference": {
+      /** @description Digest is the immutable artifact digest (e.g., sha256:abc123...) */
+      digest?: string;
+      /** @description Tag is the artifact tag (typically the build ID) */
+      tag?: string;
+      /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
+      url?: string;
+    };
+    "plantypes.PulumiBuildPlan": {
+      labels?: {
+        [key: string]: string;
+      };
+    };
+    "plantypes.PulumiDeployPlan": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      config?: {
+        [key: string]: string;
+      };
+      /** @description Destroy indicates this is a teardown operation (pulumi destroy instead of up) */
+      destroy?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      plan_json?: number[];
+      pulumi_version?: string;
+      runtime?: string;
+      stack_name?: string;
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      /** @description Reuse workspace concept for state storage */
+      workspace_id?: string;
+    };
+    "plantypes.PulumiSandboxMode": {
+      plan_contents?: string;
+      plan_display_contents?: string;
+    };
+    "plantypes.SandboxMode": {
+      enabled?: boolean;
+      helm?: components["schemas"]["plantypes.HelmSandboxMode"];
+      kubernetes_manifest?: components["schemas"]["plantypes.KubernetesSandboxMode"];
+      outputs?: {
+        [key: string]: unknown;
+      };
+      pulumi?: components["schemas"]["plantypes.PulumiSandboxMode"];
+      terraform?: components["schemas"]["plantypes.TerraformSandboxMode"];
+    };
+    "plantypes.SandboxRunPlan": {
+      app_config_id?: string;
+      app_id?: string;
+      /** @description The following field is for applying a plan that is already saved */
+      apply_plan_contents?: string;
+      /** @description This field is for storing a human legible plan or corollary representation */
+      apply_plan_display?: number[];
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      git_source?: components["schemas"]["plantypes.GitSource"];
+      hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
+      install_id?: string;
+      local_archive?: components["schemas"]["plantypes.TerraformLocalArchive"];
+      policies?: {
+        [key: string]: string;
+      };
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      terraform_backend?: components["schemas"]["plantypes.TerraformBackend"];
+      vars?: {
+        [key: string]: unknown;
+      };
+      vars_files?: string[];
+    };
+    "plantypes.SyncOCIPlan": {
+      dst_registry: components["schemas"]["configs.OCIRegistryRepository"];
+      dst_tag: string;
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      src_registry: components["schemas"]["configs.OCIRegistryRepository"];
+      src_tag: string;
+    };
+    "plantypes.SyncSecretsPlan": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      kubernetes_secrets?: components["schemas"]["plantypes.KubernetesSecretSync"][];
+      sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+    };
+    "plantypes.TerraformBackend": {
+      workspaceID: string;
+    };
+    "plantypes.TerraformBuildPlan": {
+      labels?: {
+        [key: string]: string;
+      };
+    };
+    "plantypes.TerraformDeployHooks": {
+      enabled?: boolean;
+      envVars?: {
+        [key: string]: string;
+      };
+      runAuth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+    };
+    "plantypes.TerraformDeployPlan": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
+      plan_json?: number[];
+      policies?: {
+        [key: string]: string;
+      };
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      terraform_backend?: components["schemas"]["plantypes.TerraformBackend"];
+      vars?: {
+        [key: string]: unknown;
+      };
+      vars_files?: string[];
+    };
+    "plantypes.TerraformLocalArchive": {
+      local_archive?: string;
+    };
+    "plantypes.TerraformSandboxMode": {
+      /** @description create the plan output */
+      plan_contents?: string;
+      plan_display_contents?: string;
+      /** @description needs to be the outputs of `terraform show -json` */
+      state_json?: number[];
+      workspace_id?: string;
+    };
+    "queue.StatusResponse": {
+      inFlight?: string[];
+      inFlightCount?: number;
+      paused?: boolean;
+      queueDepthCount?: number;
+      ready?: boolean;
+      stopped?: boolean;
+    };
+    "refs.Ref": {
+      input?: string;
+      name?: string;
+      type?: components["schemas"]["refs.RefType"];
+      value?: string;
+    };
+    /** @enum {string} */
+    "refs.RefType": "sandbox" | "install_stack" | "component" | "inputs" | "install_inputs" | "secrets" | "actions";
+    "service.AppAWSIAMPolicyConfig": {
+      contents?: string;
+      gcp_permissions?: string[];
+      gcp_predefined_role?: string;
+      managed_policy_name?: string;
+      name?: string;
+    };
+    "service.AppAWSIAMRoleConfig": {
+      /** @enum {string} */
+      cloud_platform?: "aws" | "gcp" | "azure";
+      description: string;
+      display_name: string;
+      enabled_in_stack?: boolean | null;
+      name: string;
+      permissions_boundary?: string;
+      policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
+    };
+    "service.AppConfigTemplate": {
+      content?: string;
+      filename?: string;
+      format?: components["schemas"]["app.AppConfigVersion"];
+      type?: components["schemas"]["service.AppConfigTemplateType"];
+    };
+    /** @enum {string} */
+    "service.AppConfigTemplateType": "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "docker-build" | "job" | "container-image" | "ecr-container-image";
+    "service.AppGroupRequest": {
+      description: string;
+      display_name: string;
+      index: number;
+    };
+    "service.AppInputRequest": {
+      default?: string;
+      description: string;
+      display_name: string;
+      group: string;
+      index: number;
+      required?: boolean;
+      sensitive?: boolean;
+      source?: components["schemas"]["app.AppInputSource"];
+      /** @description New, optional fields */
+      type?: string;
+    };
+    "service.AppPolicyConfig": {
+      components?: string[];
+      contents: string;
+      description?: string;
+      engine?: components["schemas"]["config.AppPolicyEngine"];
+      name?: string;
+      type: components["schemas"]["config.AppPolicyType"];
+    };
+    "service.AppSecretConfig": {
+      auto_generate?: boolean;
+      default?: string;
+      description: string;
+      display_name: string;
+      format?: string;
+      kubernetes_secret_name?: string;
+      kubernetes_secret_namespace?: string;
+      kubernetes_sync?: boolean;
+      name: string;
+      required?: boolean;
+    };
+    "service.AuthMeIdentity": {
+      name?: string;
+      picture?: string;
+      provider_type?: components["schemas"]["app.ProviderType"];
+    };
+    "service.AuthMeResponse": {
+      account_type?: components["schemas"]["app.AccountType"];
+      created_at?: string;
+      email?: string;
+      id?: string;
+      identities?: components["schemas"]["service.AuthMeIdentity"][];
+      /** @description ReadOnly Fields */
+      org_ids?: string[];
+      permissions?: components["schemas"]["permissions.Set"];
+      roles?: components["schemas"]["app.Role"][];
+      subject?: string;
+      updated_at?: string;
+      user_journeys?: components["schemas"]["app.UserJourney"][];
+    };
+    "service.AvailableRole": {
+      arn?: string;
+      default?: boolean;
+      name?: string;
+      role_type?: string;
+    };
+    "service.AvailableRolesResponse": {
+      roles?: components["schemas"]["service.AvailableRole"][];
+    };
+    "service.Branch": {
+      name?: string;
+    };
+    "service.BuildAllComponentsRequest": Record<string, never>;
+    "service.CLIConfig": {
+      dashboard_url?: string;
+      nuon_auth_enabled?: boolean;
+      root_domain?: string;
+    };
+    "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CompleteInstallStepRequest": {
+      aws_account?: {
+        region?: string;
+      };
+      azure_account?: {
+        location?: string;
+      };
+      inputs?: {
+        [key: string]: string;
+      };
+      /** @enum {string} */
+      install_mode?: "cloud" | "sandbox";
+      metadata?: {
+        managed_by?: string;
+      };
+      name: string;
+    };
+    "service.CompleteOrganizationStepRequest": {
+      name?: string;
+      org_id?: string;
+    };
+    "service.CompleteYourStackStepRequest": {
+      app_attributes?: string[];
+      /** @enum {string} */
+      app_type: "custom" | "example";
+      cloud_provider?: string;
+      example_app_slug?: string;
+    };
+    "service.ComponentChildren": {
+      children?: components["schemas"]["app.Component"][];
+    };
+    "service.ConnectedGithubVCSActionWorkflowConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      repo: string;
+    };
+    "service.ConnectedGithubVCSConfigRequest": {
+      branch?: string;
+      directory: string;
+      gitRef?: string;
+      repo: string;
+    };
+    "service.CreateActionWorkflowConfigRequest": {
+      app_config_id: string;
+      break_glass_role_arn?: string;
+      dependencies?: string[];
+      enable_kube_config?: boolean | null;
+      references?: string[];
+      role?: string;
+      steps: components["schemas"]["service.CreateActionWorkflowConfigStepRequest"][];
+      timeout?: number;
+      triggers: components["schemas"]["service.CreateActionWorkflowConfigTriggerRequest"][];
+    };
+    "service.CreateActionWorkflowConfigStepRequest": {
+      command?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSActionWorkflowConfigRequest"];
+      env_vars?: {
+        [key: string]: string;
+      };
+      inline_contents?: string;
+      name: string;
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSActionWorkflowConfigRequest"];
+      references?: string[];
+    };
+    "service.CreateActionWorkflowConfigTriggerRequest": {
+      component_name?: string;
+      cron_schedule?: string;
+      index?: number;
+      type: components["schemas"]["app.ActionWorkflowTriggerType"];
+    };
+    "service.CreateAdHocActionRequest": {
+      command?: string;
+      enable_kube_config?: boolean | null;
+      env_vars?: {
+        [key: string]: string;
+      };
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      timeout?: number;
+    };
+    "service.CreateAdHocActionResponse": {
+      created_at?: string;
+      id?: string;
+      install_id?: string;
+      status?: components["schemas"]["app.InstallActionWorkflowRunStatus"];
+      status_description?: string;
+      trigger_type?: components["schemas"]["app.ActionWorkflowTriggerType"];
+      workflow_id?: string;
+    };
+    "service.CreateAppActionRequest": {
+      name?: string;
+    };
+    "service.CreateAppActionWorkflowRequest": {
+      name?: string;
+    };
+    "service.CreateAppBranchConfigRequest": {
+      connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
+      install_groups?: components["schemas"]["service.InstallGroupRequest"][];
+      public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+    };
+    "service.CreateAppBranchRequest": {
+      name: string;
+    };
+    "service.CreateAppBreakGlassConfigRequest": {
+      app_config_id: string;
+      roles: components["schemas"]["service.AppAWSIAMRoleConfig"][];
+    };
+    "service.CreateAppConfigRequest": {
+      cli_version?: string;
+      /** @description not required Readme */
+      readme?: string;
+    };
+    "service.CreateAppInputConfigRequest": {
+      app_config_id?: string;
+      groups: {
+        [key: string]: components["schemas"]["service.AppGroupRequest"];
+      };
+      inputs: {
+        [key: string]: components["schemas"]["service.AppInputRequest"];
+      };
+    };
+    "service.CreateAppOperationRoleConfigRequest": {
+      app_config_id: string;
+      rules: components["schemas"]["service.OperationRoleRuleRequest"][];
+    };
+    "service.CreateAppPermissionsConfigRequest": {
+      app_config_id: string;
+      break_glass_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
+      custom_roles?: components["schemas"]["service.AppAWSIAMRoleConfig"][];
+      deprovision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
+      maintenance_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
+      provision_role: components["schemas"]["service.AppAWSIAMRoleConfig"];
+    };
+    "service.CreateAppPoliciesConfigRequest": {
+      app_config_id: string;
+      policies?: components["schemas"]["service.AppPolicyConfig"][];
+    };
+    "service.CreateAppRequest": {
+      description?: string;
+      display_name?: string;
+      name: string;
+      slack_webhook_url?: string;
+    };
+    "service.CreateAppRunnerConfigRequest": {
+      app_config_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
+      init_script_url?: string;
+      type: components["schemas"]["app.AppRunnerType"];
+    };
+    "service.CreateAppSandboxConfigRequest": {
+      app_config_id?: string;
+      connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
+      drift_schedule?: string;
+      env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      references?: string[];
+      terraform_version: string;
+      variables: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
+    };
+    "service.CreateAppSecretRequest": {
+      name: string;
+      value: string;
+    };
+    "service.CreateAppSecretsConfigRequest": {
+      app_config_id: string;
+      secrets?: components["schemas"]["service.AppSecretConfig"][];
+    };
+    "service.CreateAppStackConfigRequest": {
+      app_config_id: string;
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      description: string;
+      name: string;
+      runner_nested_template_url?: string;
+      type: components["schemas"]["app.StackType"];
+      vpc_nested_template_url?: string;
+    };
+    "service.CreateComponentBuildRequest": {
+      git_ref?: string;
+      use_latest?: boolean;
+    };
+    "service.CreateComponentRequest": {
+      dependencies?: string[];
+      name: string;
+      var_name?: string;
+    };
+    "service.CreateConnectionCallbackRequest": {
+      github_install_id: string;
+      org_id: string;
+    };
+    "service.CreateConnectionRequest": {
+      github_install_id: string;
+    };
+    "service.CreateCurrentOrgWebhookRequest": {
+      webhook_secret?: string;
+      webhook_url: string;
+    };
+    "service.CreateDockerBuildComponentConfigRequest": {
+      app_config_id?: string;
+      build_args?: string[];
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      checksum?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      dockerfile: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      target?: string;
+    };
+    "service.CreateExternalImageComponentConfigRequest": {
+      app_config_id?: string;
+      aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
+      azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      checksum?: string;
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      gcp_gar_image_config?: components["schemas"]["service.gcpGARImageConfigRequest"];
+      image_url: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
+      references?: string[];
+      tag: string;
+    };
+    "service.CreateHelmComponentConfigRequest": {
+      app_config_id?: string;
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      chart_name: string;
+      checksum?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
+      namespace?: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      storage_driver?: string;
+      take_ownership?: boolean;
+      values: {
+        [key: string]: string;
+      };
+      values_files?: string[];
+    };
+    "service.CreateInstallActionWorkflowRunRequest": {
+      action_workflow_config_id: string;
+      role?: string;
+      run_env_vars?: {
+        [key: string]: string;
+      };
+    };
+    "service.CreateInstallComponentDeployRequest": {
+      build_id?: string;
+      deploy_dependents?: boolean;
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.CreateInstallConfigRequest": {
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
+    };
+    "service.CreateInstallDeployRequest": {
+      build_id?: string;
+      deploy_dependents?: boolean;
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.CreateInstallInputsRequest": {
+      inputs: {
+        [key: string]: string;
+      };
+    };
+    "service.CreateInstallRequest": {
+      aws_account?: {
+        region?: string;
+      };
+      azure_account?: {
+        location?: string;
+      };
+      gcp_account?: {
+        project_id?: string;
+        region?: string;
+      };
+      inputs?: {
+        [key: string]: string;
+      };
+      install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      metadata?: components["schemas"]["helpers.InstallMetadata"];
+      name: string;
+    };
+    "service.CreateInstallV2Request": {
+      app_id: string;
+      aws_account?: {
+        region?: string;
+      };
+      azure_account?: {
+        location?: string;
+      };
+      gcp_account?: {
+        project_id?: string;
+        region?: string;
+      };
+      inputs?: {
+        [key: string]: string;
+      };
+      install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      metadata?: components["schemas"]["helpers.InstallMetadata"];
+      name: string;
+    };
+    "service.CreateJobComponentConfigRequest": {
+      app_config_id?: string;
+      args?: string[];
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      checksum?: string;
+      cmd?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      image_url: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
+      references?: string[];
+      tag: string;
+    };
+    "service.CreateKubernetesManifestComponentConfigRequest": {
+      app_config_id?: string;
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      checksum?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      /** @description Kustomize configuration (mutually exclusive with Manifest) */
+      kustomize?: components["schemas"]["service.KustomizeConfigRequest"];
+      /** @description Inline manifest (mutually exclusive with Kustomize) */
+      manifest?: string;
+      namespace?: string;
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+    };
+    "service.CreateOrgInviteRequest": {
+      email: string;
+      role_type?: components["schemas"]["app.RoleType"];
+    };
+    "service.CreateOrgRequest": {
+      name: string;
+      tags?: string[];
+      use_sandbox_mode?: boolean;
+    };
+    "service.CreateOrgUserRequest": {
+      user_id?: string;
+    };
+    "service.CreatePulumiComponentConfigRequest": {
+      app_config_id?: string;
+      build_timeout?: string;
+      checksum?: string;
+      config: {
+        [key: string]: string;
+      };
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      runtime: string;
+      version?: string;
+    };
+    "service.CreateRunnerBootstrapTokenResponse": {
+      expires_at?: string;
+      token?: string;
+    };
+    "service.CreateTerraformModuleComponentConfigRequest": {
+      app_config_id?: string;
+      /** @description Duration string for build operations (e.g., "30m", "1h") */
+      build_timeout?: string;
+      checksum?: string;
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      /** @description Duration string for deploy operations (e.g., "30m", "1h") */
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      variables: {
+        [key: string]: string;
+      };
+      variables_files?: string[];
+      version?: string;
+    };
+    "service.CreateTerraformWorkspaceRequest": {
+      owner_id: string;
+      owner_type: string;
+    };
+    "service.CreateUserJourneyRequest": {
+      name: string;
+      steps: components["schemas"]["service.CreateUserJourneyStepReq"][];
+      title: string;
+    };
+    "service.CreateUserJourneyStepReq": {
+      name: string;
+      title: string;
+    };
+    "service.CreateWorkflowStepApprovalResponseRequest": {
+      note?: string;
+      response_type?: components["schemas"]["app.WorkflowStepResponseType"];
+    };
+    "service.CreateWorkflowStepApprovalResponseResponse": {
+      id?: string;
+      note?: string;
+      type?: string;
+    };
+    "service.CurrentOrgWebhookResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      has_secret?: boolean;
+      id?: string;
+      org_id?: string;
+      updated_at?: string;
+      webhook_url?: string;
+    };
+    "service.DeployInstallComponentsRequest": {
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.DeprovisionInstallRequest": {
+      plan_only?: boolean;
+    };
+    "service.DeprovisionInstallSandboxRequest": {
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.ExampleApp": {
+      branch?: string;
+      category?: string;
+      cloud_provider?: string;
+      description?: string;
+      difficulty?: string;
+      directory?: string;
+      display_name?: string;
+      repo?: string;
+      slug?: string;
+      tags?: string[];
+    };
+    "service.ForceShutdownRequest": Record<string, never>;
+    "service.ForgetInstallComponentRequest": Record<string, never>;
+    "service.ForgetInstallRequest": Record<string, never>;
+    "service.GracefulShutdownRequest": Record<string, never>;
+    "service.HelmRepoConfigRequest": {
+      chart: string;
+      repo_url: string;
+      version?: string;
+    };
+    "service.InstallAppPermissionsConfigResponse": {
+      break_glass_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
+      custom_roles?: components["schemas"]["service.InstallPermissionsRoleStatus"][];
+      deprovision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+      maintenance_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+      provision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
+    };
+    "service.InstallGroupRequest": {
+      install_ids?: string[];
+      max_parallel?: number;
+      name: string;
+      order?: number;
+      requires_approval?: boolean;
+      rollback_on_failure?: boolean;
+    };
+    "service.InstallPermissionsRoleStatus": {
+      app_config_id?: string;
+      arn?: string;
+      cloud_platform?: string;
+      cloudformation_param_name?: string;
+      cloudformation_stack_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      display_name?: string;
+      enabled?: boolean;
+      enabled_in_stack?: components["schemas"]["sql.NullBool"];
+      id?: string;
+      name?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      permissions_boundary?: string;
+      policies?: components["schemas"]["app.AppAWSIAMPolicyConfig"][];
+      type?: components["schemas"]["app.AWSIAMRoleType"];
+      updated_at?: string;
+    };
+    "service.InstallPhoneHomeRequest": {
+      [key: string]: unknown;
+    };
+    "service.KustomizeConfigRequest": {
+      enable_helm?: boolean;
+      load_restrictor?: string;
+      patches?: string[];
+      path?: string;
+    };
+    "service.LatestRunnerHeartBeats": {
+      [key: string]: components["schemas"]["app.LatestRunnerHeartBeat"];
+    };
+    "service.MngFetchTokenRequest": Record<string, never>;
+    "service.MngRestartRequest": Record<string, never>;
+    "service.MngShutDownRequest": Record<string, never>;
+    "service.MngUpdateRequest": Record<string, never>;
+    "service.MngVMShutDownRequest": Record<string, never>;
+    "service.OperationRoleRuleRequest": {
+      operation: components["schemas"]["app.OperationType"];
+      principal: string;
+      role: string;
+    };
+    "service.PatchInstallConfigParams": {
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+    };
+    "service.PruneTokensResponse": {
+      invalidated_count?: number;
+    };
+    "service.PublicGitVCSActionWorkflowConfigRequest": {
+      branch: string;
+      directory: string;
+      repo: string;
+    };
+    "service.PublicGitVCSConfigRequest": {
+      branch: string;
+      directory: string;
+      repo: string;
+    };
+    "service.Readme": {
+      original?: string;
+      readme?: string;
+      warnings?: string[];
+    };
+    "service.RemoveOrgUserRequest": {
+      user_id?: string;
+    };
+    "service.ReprovisionInstallRequest": {
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.ReprovisionInstallSandboxRequest": {
+      plan_only?: boolean;
+      role?: string;
+      skip_components?: boolean;
+    };
+    "service.RetryWorkflowByIDRequest": {
+      /** @description Retry indicates whether to retry the current step or not */
+      operation?: string;
+      /** @description StepID is the ID of the step to start the retry from */
+      step_id?: string;
+    };
+    "service.RetryWorkflowByIDResponse": {
+      workflow_id?: string;
+    };
+    "service.RetryWorkflowRequest": {
+      /** @description Retry indicates whether to retry the current step or not */
+      operation?: string;
+      /** @description StepID is the ID of the step to start the retry from */
+      step_id?: string;
+      workflow_id?: string;
+    };
+    "service.RetryWorkflowResponse": {
+      workflow_id?: string;
+    };
+    "service.RetryWorkflowStepRequest": {
+      /** @description Retry indicates whether to retry the current step or not */
+      operation?: string;
+    };
+    "service.RunnerCardDetailsResponse": {
+      latest_heart_beat?: components["schemas"]["app.RunnerHeartBeat"];
+      runner?: components["schemas"]["app.Runner"];
+    };
+    "service.RunnerConnectionStatus": {
+      connected?: boolean;
+      latest_heartbeat_timestamp?: number;
+    };
+    "service.ShutdownRunnerProcessRequest": {
+      shutdown_type: string;
+    };
+    "service.SyncSecretsRequest": {
+      plan_only?: boolean;
+    };
+    "service.TeardownInstallComponentRequest": {
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.TeardownInstallComponentsRequest": {
+      plan_only?: boolean;
+      role?: string;
+    };
+    "service.TriggerAppBranchRunRequest": {
+      /** @description optional - use latest if not provided */
+      config_id?: string;
+      /** @description force run even if no changes detected */
+      force?: boolean;
+    };
+    "service.UpdateActionWorkflowRequest": {
+      name?: string;
+    };
+    "service.UpdateAppBranchRequest": {
+      name: string;
+    };
+    "service.UpdateAppConfigInstallsRequest": {
+      installIDs?: string[];
+      updateAll?: boolean;
+    };
+    "service.UpdateAppConfigRequest": {
+      component_ids?: string[];
+      state?: string;
+      status?: components["schemas"]["app.AppConfigStatus"];
+      status_description?: string;
+    };
+    "service.UpdateAppRequest": {
+      config_directory?: string;
+      config_repo?: string;
+      description?: string;
+      display_name?: string;
+      name?: string;
+      slack_webhook_url?: string;
+    };
+    "service.UpdateComponentRequest": {
+      dependencies?: string[];
+      name: string;
+      var_name?: string;
+    };
+    "service.UpdateInstallConfigRequest": {
+      approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
+    };
+    "service.UpdateInstallInputsRequest": {
+      deploy_dependents?: boolean;
+      inputs: {
+        [key: string]: string;
+      };
+      role?: string;
+    };
+    "service.UpdateInstallRequest": {
+      install_config?: components["schemas"]["service.PatchInstallConfigParams"];
+      metadata?: components["schemas"]["helpers.InstallMetadata"];
+      name?: string;
+    };
+    "service.UpdateOrgFeaturesRequest": {
+      features: {
+        [key: string]: boolean;
+      };
+    };
+    "service.UpdateOrgRequest": {
+      name: string;
+    };
+    "service.UpdateRunnerSettingsRequest": {
+      /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
+      aws_max_instance_lifetime?: number;
+      container_image_tag?: string;
+      container_image_url?: string;
+      /**
+       * @description JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
+       * e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
+       */
+      job_group_parallelism?: {
+        [key: string]: number;
+      };
+      org_awsiam_role_arn?: string;
+      org_k8s_service_account_name?: string;
+      runner_api_url?: string;
+    };
+    "service.UpdateUserJourneyStepRequest": {
+      complete?: boolean;
+      metadata?: {
+        [key: string]: unknown;
+      };
+    };
+    "service.UpdateWorkflowRequest": {
+      approval_option: components["schemas"]["app.InstallApprovalOption"];
+    };
+    "service.VCSConnectionAccount": {
+      id?: number;
+      login?: string;
+      type?: string;
+    };
+    "service.VCSConnectionRepo": {
+      default_branch?: string;
+      description?: string;
+      fork?: boolean;
+      full_name?: string;
+      html_url?: string;
+      id?: number;
+      name?: string;
+      private?: boolean;
+      updated_at?: string;
+    };
+    "service.VCSConnectionReposResponse": {
+      repositories?: components["schemas"]["service.VCSConnectionRepo"][];
+      total_count?: number;
+    };
+    "service.VCSConnectionStatusResponse": {
+      account?: components["schemas"]["service.VCSConnectionAccount"];
+      checked_at?: string;
+      error?: string;
+      github_install_id?: string;
+      permissions?: {
+        [key: string]: string;
+      };
+      repository_selection?: string;
+      status?: string;
+      suspended_at?: string;
+      suspended_by?: components["schemas"]["github.User"];
+    };
+    "service.WaitlistRequest": {
+      org_name: string;
+    };
+    "service.awsECRImageConfigRequest": {
+      aws_region?: string;
+      iam_role_arn?: string;
+    };
+    "service.azureACRImageConfigRequest": {
+      client_id?: string;
+      registry_url?: string;
+      tenant_id?: string;
+    };
+    "service.gcpGARImageConfigRequest": {
+      gcp_project_id?: string;
+      gcp_region?: string;
+      image_url?: string;
+      service_account_email?: string;
+      tag?: string;
+      workload_identity_provider?: string;
+    };
+    "signaldb.SignalData": {
+      signal?: unknown;
+    };
+    "signaldb.WorkflowRef": {
+      id?: string;
+      namespace?: string;
+    };
+    "sql.NullBool": {
+      bool?: boolean;
+      /** @description Valid is true if Bool is not NULL */
+      valid?: boolean;
+    };
+    "state.AWSCloudAccount": {
+      region?: string;
+    };
+    "state.ActionWorkflowState": {
+      id?: string;
+      outputs?: {
+        [key: string]: unknown;
+      };
+      populated?: boolean;
+      status?: string;
+    };
+    "state.ActionsState": {
+      populated?: boolean;
+      workflows?: {
+        [key: string]: components["schemas"]["state.ActionWorkflowState"];
+      };
+    };
+    "state.AppState": {
+      id?: string;
+      name?: string;
+      populated?: boolean;
+      status?: string;
+      variables?: {
+        [key: string]: string;
+      };
+    };
+    "state.AzureCloudAccount": {
+      location?: string;
+    };
+    "state.CloudAccount": {
+      aws?: components["schemas"]["state.AWSCloudAccount"];
+      azure?: components["schemas"]["state.AzureCloudAccount"];
+      gcp?: components["schemas"]["state.GCPCloudAccount"];
+    };
+    "state.DomainState": {
+      internal_domain?: string;
+      populated?: boolean;
+      public_domain?: string;
+    };
+    "state.GCPCloudAccount": {
+      project_id?: string;
+      region?: string;
+    };
+    "state.InputsState": {
+      inputs?: {
+        [key: string]: string;
+      };
+      populated?: boolean;
+    };
+    "state.InstallStackState": {
+      checksum?: string;
+      outputs?: {
+        [key: string]: unknown;
+      };
+      populated?: boolean;
+      quick_link_url?: string;
+      status?: string;
+      template_json?: string;
+      template_url?: string;
+    };
+    "state.InstallState": {
+      id?: string;
+      inputs?: {
+        [key: string]: string;
+      };
+      internal_domain?: string;
+      name?: string;
+      populated?: boolean;
+      public_domain?: string;
+      sandbox?: components["schemas"]["state.SandboxState"];
+    };
+    "state.OrgState": {
+      id?: string;
+      name?: string;
+      populated?: boolean;
+      status?: string;
+    };
+    "state.RunnerState": {
+      id?: string;
+      populated?: boolean;
+      runner_group_id?: string;
+      status?: string;
+    };
+    "state.SandboxState": {
+      outputs?: {
+        [key: string]: unknown;
+      };
+      populated?: boolean;
+      recent_runs?: components["schemas"]["state.SandboxState"][];
+      status?: string;
+      type?: string;
+      version?: string;
+    };
+    "state.SecretsState": {
+      [key: string]: components["schemas"]["outputs.SecretSyncOutput"];
+    };
+    "stderr.ErrResponse": {
+      description?: string;
+      error?: string;
+      user_error?: boolean;
+    };
+    "types.StringBoolMap": {
+      [key: string]: boolean;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
+}
 
 export type $defs = Record<string, never>;
 
 export type external = Record<string, never>;
 
-export type operations = Record<string, never>;
+export interface operations {
+
+  /**
+   * Get current account
+   * @description Get the current account with user journeys and other data
+   */
+  GetCurrentAccount: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get user journeys
+   * @description Get all user journeys for the current user account
+   */
+  GetUserJourneys: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.UserJourney"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create a new user journey for account
+   * @description Add a new user journey with steps to track user progress
+   */
+  CreateUserJourney: {
+    /** @description Create journey request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateUserJourneyRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete all steps in a specific user journey
+   * @description Mark all remaining steps in the specified user journey as complete
+   */
+  CompleteUserJourney: {
+    parameters: {
+      path: {
+        /** @description Journey name to complete */
+        journey_name: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Reset user journey steps
+   * @description Reset all steps in a specified user journey by setting their completion status to false
+   */
+  ResetUserJourney: {
+    parameters: {
+      path: {
+        /** @description Journey name */
+        journey_name: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update user journey step completion status
+   * @description Mark a user journey step as complete or incomplete
+   */
+  UpdateUserJourneyStep: {
+    parameters: {
+      path: {
+        /** @description Journey name */
+        journey_name: string;
+        /** @description Step name */
+        step_name: string;
+      };
+    };
+    /** @description Update step request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateUserJourneyStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow config
+   * @deprecated
+   * @description Return an action workflow configuration by id.
+   */
+  GetActionWorkflowConfig: {
+    parameters: {
+      path: {
+        /** @description action workflow config ID */
+        action_workflow_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow by action workflow id
+   * @deprecated
+   * @description Return an app action workflow by id.
+   */
+  GetActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description action workflow ID or name */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an action workflow
+   * @deprecated
+   * @description Delete an action workflow.
+   */
+  DeleteActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * patch an app
+   * @deprecated
+   * @description Update an app action workflow configuration.
+   */
+  UpdateAppActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateActionWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow for an app
+   * @deprecated
+   * @description Returns all action workflow configurations.
+   */
+  GetActionWorkflowConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create action workflow config
+   * @deprecated
+   * @description Create an action workflow configuration.
+   */
+  CreateActionWorkflowConfig: {
+    parameters: {
+      path: {
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateActionWorkflowConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow's latest config
+   * @deprecated
+   * @description Return the latest config for an action workflow.
+   */
+  GetActionWorkflowLatestConfig: {
+    parameters: {
+      path: {
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all apps for the current org
+   * @description Returns all apps for the authenticated user.
+   */
+  GetApps: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description search query to filter apps by name */
+        q?: string;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.App"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app
+   * @description Create a new app.
+   */
+  CreateApp: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.App"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app
+   * @description Return an app.
+   */
+  GetApp: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.App"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an app
+   * @description Delete an app.
+   */
+  DeleteApp: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update an app
+   * @description Update an app's configuration.
+   */
+  UpdateApp: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.App"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflows for an app
+   * @deprecated
+   * @description Returns all action workflows for the provided app.
+   */
+  GetActionWorkflows: {
+    parameters: {
+      query?: {
+        /** @description search query to filter action workflows by name */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app action workflow
+   * @deprecated
+   * @description Create an action workflow for an app.
+   */
+  CreateAppActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppActionWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow
+   * @deprecated
+   * @description Return an app action workflow by id.
+   */
+  GetAppActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description app ID or name */
+        app_id: string;
+        /** @description action workflow ID or name */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflows for an app
+   * @description Returns all action workflows for the provided app.
+   */
+  GetAppActions: {
+    parameters: {
+      query?: {
+        /** @description search query to filter action workflows by name */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app action
+   * @deprecated
+   * @description Create an action workflow for an app.
+   */
+  CreateAppAction: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppActionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action config
+   * @description Return an action workflow configuration by id.
+   */
+  GetAppActionConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action config ID */
+        action_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow by action workflow id
+   * @description Return an app action workflow by id.
+   */
+  GetAppAction: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID or name */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an action
+   * @description Delete an action workflow.
+   */
+  DeleteAction: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * patch an app action
+   * @deprecated
+   * @description Update an app action workflow configuration.
+   */
+  UpdateAppAction: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateActionWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow for an app
+   * @description Returns all action workflow configurations.
+   */
+  GetAppActionConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action workflow ID */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create action config
+   * @description Create an action workflow configuration.
+   */
+  CreateActionConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateActionWorkflowConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app action workflow's latest config
+   * @description Return the latest config for an action workflow.
+   */
+  GetActionLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action workflow ID */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app branches
+   * @description Returns all branches for the provided app.
+   */
+  GetAppBranches: {
+    parameters: {
+      query?: {
+        /** @description offset of branches to return */
+        offset?: number;
+        /** @description limit of branches to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Cancel a runner job. */
+  CreateAppBranch: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppBranchRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app branch
+   * @description Get an app branch by ID. Use `latest_config=true` query parameter to include only the most recent config with its VCS settings and install groups.
+   */
+  GetAppBranch: {
+    parameters: {
+      query?: {
+        /** @description include only the latest config */
+        latest_config?: boolean;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update app branch metadata
+   * @description Updates app branch metadata (name only). To update configuration, create a new AppBranchConfig via POST /branches/:id/configs
+   */
+  UpdateAppBranch: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppBranchRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app branch app configs
+   * @description Returns all branch configurations for the provided app.
+   */
+  GetAppBranchAppConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of branches to return */
+        offset?: number;
+        /** @description limit of branches to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app branch config
+   * @description Create a branch configuration for an app.
+   */
+  CreateAppBranchConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppBranchConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app branch config
+   * @description Returns the latest AppBranchConfig ordered by config_number (descending)
+   */
+  GetAppBranchLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app branch workflow runs
+   * @description Returns workflow runs for an app branch ordered by creation time (descending)
+   */
+  GetAppBranchRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * trigger app branch workflow run
+   * @description Creates and triggers a workflow run for an app branch. If config_id is not provided, uses the latest config.
+   */
+  TriggerAppBranchRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.TriggerAppBranchRunRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Create a break glass config for an app. */
+  CreateAppBreakGlassConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppBreakGlassConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppBreakGlassConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app break_glass config
+   * @description Return an app break glass config by id.
+   */
+  GetAppBreakGlassConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app break glass config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBreakGlassConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a components for a specific app
+   * @description Return an app component by id or name.
+   */
+  GetAppComponent: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description name or ID */
+        component_name_or_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all components for an app
+   * @description Returns all components for the provided app.
+   */
+  GetAppComponents: {
+    parameters: {
+      query?: {
+        /** @description search query to filter components by name */
+        q?: string;
+        /** @description comma-separated list of component types to filter by (e.g., terraform_module, helm_chart) */
+        types?: string;
+        /** @description comma-separated list of component IDs to filter by */
+        component_ids?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a component
+   * @description Create a new component for an app.
+   */
+  CreateComponent: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create component build
+   * @description Build all components for an app.
+   */
+  BuildAllComponents: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.BuildAllComponentsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete a component
+   * @description Delete a component.
+   */
+  DeleteAppComponent: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a component
+   * @description Update a component's configuration.
+   */
+  UpdateAppComponent: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get builds for components
+   * @description Returns all builds for the provided component.
+   */
+  GetAppComponentBuilds: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app id to filter by */
+        app_id: string;
+        /** @description component id to filter by */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create component build
+   * @description Create a build for a component.
+   */
+  CreateAppComponentBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentBuildRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest build for a component
+   * @description Returns the most recent build for the provided component.
+   */
+  GetAppComponentLatestBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a build for a component
+   * @description Returns builds for one or all components in an app.
+   */
+  GetAppComponentBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all configs for a component
+   * @description Returns all configurations for the provided component.
+   */
+  GetAppComponentConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a docker build component config
+   * @description Create a Docker build component config.
+   */
+  CreateAppDockerBuildComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateDockerBuildComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.DockerBuildComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an external image component config
+   * @description Create an external image component config.
+   */
+  CreateAppExternalImageComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateExternalImageComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ExternalImageComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a helm component config
+   * @description Create a helm component config.
+   */
+  CreateAppHelmComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateHelmComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.HelmComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a job component config
+   * @description Create a job component config.
+   */
+  CreateAppJobComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateJobComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.JobComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a kubernetes manifest component config
+   * @description Create a Kubernetes manifest component config.
+   */
+  CreateAppKubernetesManifestComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateKubernetesManifestComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.KubernetesManifestComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest config for a component
+   * @description Returns the most recent config for the provided component.
+   */
+  GetAppComponentLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a pulumi component config */
+  CreateAppPulumiComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreatePulumiComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.PulumiComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a terraform component config
+   * @description Create a terraform component config.
+   */
+  CreateAppTerraformModuleComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTerraformModuleComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformModuleComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a config for a component
+   * @description Return a component configuration by id.
+   */
+  GetAppComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a component's dependencies
+   * @deprecated
+   * @description Returns all dependencies for the provided component.
+   */
+  GetAppComponentDependencies: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a component's children
+   * @description Returns all components that depend on the provided component.
+   */
+  GetAppComponentDependents: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ComponentChildren"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @deprecated
+   * @description Create an app config, by pushing the contents of a config file.
+   *
+   * The API will automatically configure the app according to the config file in the background.
+   */
+  CreateAppConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config
+   * @deprecated
+   * @description Fetch an app config by id.
+   */
+  GetAppConfig: {
+    parameters: {
+      query?: {
+        /** @description load all children configs */
+        recurse?: boolean;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        app_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @deprecated
+   * @description Update an app config, setting status and state.
+   */
+  UpdateAppConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        app_config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config graph
+   * @deprecated
+   * @description Return raw graphviz data as a string that can be used to visualize a graph for an app.
+   *
+   * Note, for more complex viewing recommend to copy this output directly into [Graphviz
+   * viewer](https://dreampuf.github.io/GraphvizOnline).
+   */
+  GetAppConfigGraph: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        app_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @deprecated
+   * @description Update app configuration across multiple installs.
+   */
+  UpdateAppConfigInstalls: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        app_config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppConfigInstallsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app configs
+   * @description Returns all configs for the app.
+   */
+  GetAppConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @description Create an app config, by pushing the contents of a config file.
+   *
+   * The API will automatically configure the app according to the config file in the background.
+   */
+  CreateAppConfigV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config
+   * @description Fetch an app config by id.
+   */
+  GetAppConflgV2: {
+    parameters: {
+      query?: {
+        /** @description load all children configs */
+        recurse?: boolean;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Update an app config, setting status and state. */
+  UpdateAppConflgV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config graph
+   * @description Return raw graphviz data as a string that can be used to visualize a graph for an app.
+   *
+   * Note, for more complex viewing recommend to copy this output directly into [Graphviz
+   * viewer](https://dreampuf.github.io/GraphvizOnline).
+   */
+  GetAppConfigGraphV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Update app configuration across multiple installs. */
+  UpdateAppConfigInstallsV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppConfigInstallsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
+   * expose configuration knobs in your application.
+   */
+  CreateAppInputConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppInputConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app input configs
+   * @description Returns all input configurations for the provided app.
+   */
+  GetAppInputConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app input config
+   * @description Return an input config by id.
+   */
+  GetAppInputConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description input config ID */
+        input_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app input config
+   * @description Returns the most recent input config for the provided app.
+   */
+  GetAppInputLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInputConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all installs for an app
+   * @description Returns all installs for the provided app.
+   */
+  GetAppInstalls: {
+    parameters: {
+      query?: {
+        /** @description search query */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app install
+   * @deprecated
+   * @description Create a new install for an app.
+   */
+  CreateInstall: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app break glass config
+   * @description Get the latest break glass config for an app.
+   */
+  GetLatestAppBreakGlassConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBreakGlassConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app config
+   * @description Returns the most recent config for the provided app.
+   */
+  GetAppLatestConfig: {
+    parameters: {
+      query?: {
+        /** @description load all children configs */
+        recurse?: boolean;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app permissions config
+   * @description Get the latest app permissions config.
+   */
+  GetLatestAppPermissionsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPermissionsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app policies config
+   * @description Get latest app policies config.
+   */
+  GetLatestAppPoliciesConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPoliciesConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app secrets config
+   * @description Get the latest app secrets config.
+   */
+  GetLatestAppSecretsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecretsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create operation role config
+   * @description Create operation role rules for an app config
+   */
+  CreateAppOperationRoleConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppOperationRoleConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppOperationRoleConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get operation role configs
+   * @description Get all operation role configs for an app
+   */
+  GetAppOperationRoleConfigs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description operation role config ID */
+        operation_role_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppOperationRoleConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Create app permissions config. */
+  CreateAppPermissionsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppPermissionsConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppPermissionsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app permissions config
+   * @description Return an app permissions config by id.
+   */
+  GetAppPermissionsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app permissions config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPermissionsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app policies configs
+   * @description Get all policies configs for an app.
+   */
+  GetAppPoliciesConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPoliciesConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Create app policies config. */
+  CreateAppPoliciesConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppPoliciesConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppPoliciesConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app policies config
+   * @description Return an app policy config by id.
+   */
+  GetAppPoliciesConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app policies config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPoliciesConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app policy config
+   * @description get a single app policy config by ID
+   */
+  GetAppPolicyConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app policy config ID */
+        policy_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPolicyConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app runner configs
+   * @description Returns all runner configurations for the provided app.
+   */
+  GetAppRunnerConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app runner config
+   * @description Create a runner configuration for an app.
+   */
+  CreateAppRunnerConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppRunnerConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app runner config
+   * @description Returns the most recent runner config for the provided app.
+   */
+  GetAppRunnerLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppRunnerConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app sandbox config
+   * @deprecated
+   * @description Create a sandbox configuration for an app.
+   */
+  CreateAppSandboxConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSandboxConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app sandbox configs
+   * @description Returns all sandbox configurations for the provided app.
+   */
+  GetAppSandboxConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app sandbox config
+   * @description Create a sandbox configuration for an app.
+   */
+  CreateAppSandboxConfigV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSandboxConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest app sandbox config
+   * @description Returns the most recent sandbox config for the provided app.
+   */
+  GetAppSandboxLatestConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app sandbox builds */
+  GetAppSandboxBuilds: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create app sandbox build */
+  CreateAppSandboxBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app sandbox build */
+  GetAppSandboxBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description sandbox build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSandboxBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app secret
+   * @deprecated
+   * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+   *
+   * **NOTE** secrets can only be written, or deleted, not read.
+   */
+  CreateAppSecret: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSecretRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecret"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an app secret
+   * @deprecated
+   * @description Delete an app secret.
+   */
+  DeleteAppSecret: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description secret ID */
+        secret_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app secrets
+   * @description List all secrets for an app.
+   *
+   * **NOTE** this does not return any sensitive values, as secrets are write only.
+   */
+  GetAppSecrets: {
+    parameters: {
+      query?: {
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecret"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app secret
+   * @description Create an app secret that can be used to configure components. To reference an app secret, use `.nuon.secrets.<secret_name>`.
+   *
+   * **NOTE** secrets can only be written, or deleted, not read.
+   */
+  CreateAppSecretV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSecretRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecret"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** @description Create an app secrets config. */
+  CreateAppSecretsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppSecretsConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecretsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app secrets config
+   * @description Return an app secrets config by id.
+   */
+  GetAppSecretsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app secrets config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppSecretsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an app secret
+   * @description Delete an app secret.
+   */
+  DeleteAppSecretV2: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description secret ID */
+        secret_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app stack config
+   * @description Create a cloudformation stack config
+   */
+  CreateAppStackConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppStackConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppStackConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app stack config
+   * @description Return a cloudformation stack config
+   */
+  GetAppStackConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app stack config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppStackConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an app config template
+   * @description Create an application template which provides a fully rendered config that can be modified and used to kickstart any application.
+   */
+  GetAppConfigTemplate: {
+    parameters: {
+      query: {
+        /** @description app template type */
+        type: "aws-ecs" | "aws-ecs-byovpc" | "aws-eks" | "aws-eks-byovpc" | "azure-aks" | "flat" | "top-level" | "installer" | "runner" | "sandbox" | "inputs" | "terraform" | "terraformInfra" | "helm" | "docker-build" | "job" | "container-image" | "ecr-container-image";
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.AppConfigTemplate"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current account with identity information
+   * @description Returns the authenticated account with identity profile information (provider_type, name, picture)
+   */
+  GetAuthMe: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AuthMeResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get builds for components
+   * @deprecated
+   * @description Returns all builds for the provided component.
+   */
+  GetComponentBuilds: {
+    parameters: {
+      query?: {
+        /** @description component id to filter by */
+        component_id?: string;
+        /** @description app id to filter by */
+        app_id?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all components for an org
+   * @description Returns all components for the provided organization.
+   */
+  GetOrgComponents: {
+    parameters: {
+      query?: {
+        /** @description comma-separated list of component IDs to filter by */
+        component_ids?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a build
+   * @deprecated
+   * @description Returns builds for one or all components in an app.
+   */
+  GetBuild: {
+    parameters: {
+      path: {
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a component
+   * @deprecated
+   * @description Return a component by id.
+   */
+  GetComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete a component
+   * @deprecated
+   * @description Delete a component.
+   */
+  DeleteComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a component
+   * @deprecated
+   * @description Update a component's configuration.
+   */
+  UpdateComponent: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create component build
+   * @deprecated
+   * @description Create a build for a component.
+   */
+  CreateComponentBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateComponentBuildRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest build for a component
+   * @deprecated
+   * @description Returns the most recent build for the provided component.
+   */
+  GetComponentLatestBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a build for a component
+   * @deprecated
+   * @description Returns builds for one or all components in an app.
+   */
+  GetComponentBuild: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all configs for a component
+   * @deprecated
+   * @description Returns all configurations for the provided component.
+   */
+  GetComponentConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a docker build component config
+   * @deprecated
+   * @description Create a Docker build component config.
+   */
+  CreateDockerBuildComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateDockerBuildComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.DockerBuildComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an external image component config
+   * @deprecated
+   * @description Create an external image component config.
+   */
+  CreateExternalImageComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateExternalImageComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ExternalImageComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a helm component config
+   * @deprecated
+   * @description Create a helm component config.
+   */
+  CreateHelmComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateHelmComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.HelmComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a job component config
+   * @deprecated
+   * @description Create a job component config.
+   */
+  CreateJobComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateJobComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.JobComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a kubernetes manifest component config
+   * @deprecated
+   * @description Create a Kubernetes manifest component config.
+   */
+  CreateKubernetesManifestComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateKubernetesManifestComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.KubernetesManifestComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest config for a component
+   * @deprecated
+   * @description Returns the most recent config for the provided component.
+   */
+  GetComponentLatestConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a pulumi component config
+   * @deprecated
+   */
+  CreatePulumiComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreatePulumiComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.PulumiComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a terraform component config
+   * @deprecated
+   * @description Create a terraform component config.
+   */
+  CreateTerraformModuleComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTerraformModuleComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformModuleComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a config for a component
+   * @deprecated
+   * @description Return a component configuration by id.
+   */
+  GetComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+        /** @description config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a component's dependencies
+   * @deprecated
+   * @description Returns all dependencies for the provided component.
+   */
+  GetComponentDependencies: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a component's children
+   * @description Returns all components that depend on the provided component.
+   */
+  GetComponentDependents: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ComponentChildren"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get config for cli
+   * @description Returns CLI configuration and settings.
+   */
+  GetCLIConfig: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CLIConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get regions for a cloud platform
+   * @description Return region metadata for the Nuon supported cloud platforms.
+   */
+  GetCloudPlatformRegions: {
+    parameters: {
+      path: {
+        /** @description cloud platform */
+        cloud_platform: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.CloudPlatformRegion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get jsonschema for config file
+   * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
+   * [Taplo](https://taplo.tamasfe.dev/) configured.
+   *
+   * ```toml
+   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   *
+   * description = "description"
+   * ```
+   *
+   * You can pass in a valid source argument to render within a specific config file:
+   *
+   * - input
+   * - input-group
+   * - installer
+   * - sandbox
+   * - runner
+   * - docker_build
+   * - container_image
+   * - helm
+   * - terraform
+   * - job
+   */
+  GetConfigSchema: {
+    parameters: {
+      query?: {
+        /** @description return a schema for a source file */
+        type?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current user
+   * @description Returns the current authenticated user account.
+   */
+  GetCurrentUser: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Allow user to be added to an org waitlist.
+   * @description Add an entry to the waitlist.
+   */
+  CreateWaitlist: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.WaitlistRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Waitlist"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install workflow
+   * @deprecated
+   * @description Return a workflow.
+   */
+  GetInstallWorkflow: {
+    parameters: {
+      path: {
+        /** @description install workflow ID */
+        install_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update an install workflow
+   * @deprecated
+   * @description Update a workflow configuration.
+   */
+  UpdateInstallWorkflow: {
+    parameters: {
+      path: {
+        /** @description install workflow ID */
+        install_workflow_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel an ongoing install workflow
+   * @deprecated
+   * @description Cancel a running workflow execution.
+   */
+  CancelInstallWorkflow: {
+    parameters: {
+      path: {
+        /** @description install workflow ID */
+        install_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all of the steps for a given install workflow
+   * @deprecated
+   * @description Return all steps for a workflow.
+   */
+  GetInstallWorkflowSteps: {
+    parameters: {
+      path: {
+        /** @description install workflow ID */
+        install_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install workflow step
+   * @deprecated
+   * @description Return a single workflow step.
+   */
+  GetInstallWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        install_workflow_id: string;
+        /** @description step id */
+        install_workflow_step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install workflow step approval
+   * @deprecated
+   * @description Return a workflow step approval by id.
+   */
+  GetInstallWorkflowStepApproval: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        install_workflow_id: string;
+        /** @description step id */
+        install_workflow_step_id: string;
+        /** @description approval id */
+        approval_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepApproval"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all installs for an org
+   * @description Returns all installs for the provided organization.
+   */
+  GetOrgInstalls: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description search query to filter installs by name */
+        q?: string;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an app install
+   * @description Create a new install for an app.
+   */
+  CreateInstallV2: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallV2Request"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install sandbox run
+   * @deprecated
+   * @description Return a sandbox run for an install by id.
+   */
+  GetInstallSandboxRun: {
+    parameters: {
+      path: {
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallSandboxRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install stack by stack ID
+   * @description Returns the deployment stack for an install.
+   */
+  GetInstallStack: {
+    parameters: {
+      path: {
+        /** @description stack ID */
+        stack_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallStack"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install
+   * @description Return an install by id.
+   */
+  GetInstall: {
+    parameters: {
+      query?: {
+        /** @description whether to include drifted objects */
+        include_drifted_objects?: boolean;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an install
+   * @description Delete an install.
+   */
+  DeleteInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update an install
+   * @description Update an install's settings.
+   */
+  UpdateInstall: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs action workflows
+   * @deprecated
+   * @description Get install action workflows.
+   */
+  GetInstallActionWorkflows: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest runs for all action workflows by install id
+   * @deprecated
+   * @description Returns the most recent workflow run for each install action workflow.
+   */
+  GetInstallActionWorkflowsLatestRuns: {
+    parameters: {
+      query?: {
+        /** @description filter by action workflow trigger by types */
+        trigger_types?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search query for action workflow name */
+        q?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow runs by install id
+   * @deprecated
+   * @description Returns all action workflow runs for an install.
+   */
+  GetInstallActionWorkflowRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an action workflow run for an install
+   * @deprecated
+   * @description AppWorkflowConfigId param has been deprecated and is no longer being consumed, the api uses currently install id to lookup related appworkflowconfigId
+   */
+  CreateInstallActionWorkflowRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallActionWorkflowRunRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow runs by install id and run id
+   * @deprecated
+   * @description Return an install action workflow run by id.
+   */
+  GetInstallActionWorkflowRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow run step by install id and step id
+   * @deprecated
+   * @description Get an install action workflow run step.
+   */
+  GetInstallActionWorkflowRunStep: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description workflow run ID */
+        run_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRunStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install action workflow
+   * @deprecated
+   * @description Get an install action workflow.
+   */
+  GetInstallActionWorkflow: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get recent runs for an action workflow by install id
+   * @deprecated
+   * @description Returns recent workflow runs for an install action workflow.
+   */
+  GetInstallActionWorkflowRecentRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description action workflow ID */
+        action_workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs action workflows
+   * @description Get install action workflows.
+   */
+  GetInstallActions: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an adhoc action run for an install
+   * @description # Create AdHoc Action
+   *
+   * Creates and executes a one-time action on an install without creating a permanent action workflow definition.
+   *
+   * ## Use Cases
+   *
+   * - Running ad-hoc debugging scripts
+   * - Executing maintenance commands
+   * - Testing bash snippets before creating permanent actions
+   * - Quick data exports or transformations
+   *
+   * ## Request Body
+   *
+   * Provide **either** `inline_contents` (for multi-line bash scripts) **or** `command` (for single-line commands), but not both.
+   *
+   * ### Fields
+   *
+   * - `inline_contents` (string, optional): Multi-line bash script to execute
+   * - `command` (string, optional): Single-line shell command to execute
+   * - `env_vars` (object, optional): Environment variables as key-value pairs
+   * - `timeout` (integer, optional): Execution timeout in seconds (1-3600, default: 300)
+   * - `name` (string, optional): Display name for the action (max 255 chars)
+   *
+   * ## Response
+   *
+   * Returns the created adhoc action run with status information.
+   *
+   * ## Example
+   *
+   * ```bash
+   * curl -X POST https://api.nuon.co/v1/installs/{install_id}/actions/adhoc \
+   *   -H "Authorization: Bearer $API_KEY" \
+   *   -H "X-Nuon-Org-ID: $ORG_ID" \
+   *   -H "Content-Type: application/json" \
+   *   -d '{
+   *     "inline_contents": "#!/bin/bash\necho \"Hello from adhoc action\"\nenv | grep NUON",
+   *     "env_vars": {
+   *       "DEBUG": "true",
+   *       "LOG_LEVEL": "info"
+   *     },
+   *     "timeout": 300,
+   *     "name": "Debug Script"
+   *   }'
+   * ```
+   *
+   * ## Notes
+   *
+   * - AdHoc actions are marked with `trigger_type: "adhoc"`
+   * - They appear in action run history and can be filtered via trigger_type
+   * - Execution happens on the install's runner using the same infrastructure as permanent actions
+   * - Logs are preserved and can be viewed via the action runs API
+   * - AdHoc runs are kept indefinitely (same retention as regular action runs)
+   */
+  CreateAdHocAction: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAdHocActionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CreateAdHocActionResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest runs for all action workflows by install id
+   * @description Returns the most recent workflow run for each install action workflow.
+   */
+  GetInstallActionsLatestRuns: {
+    parameters: {
+      query?: {
+        /** @description filter by action workflow trigger by types */
+        trigger_types?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search query for action workflow name */
+        q?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow runs by install id
+   * @description Returns all action workflow runs for an install.
+   */
+  GetInstallActionRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an action run for an install
+   * @description
+   */
+  CreateInstallActionRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallActionWorkflowRunRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow runs by install id and run id
+   * @description Return an install action workflow run by id.
+   */
+  GetInstallActionRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get action workflow run step by install id and step id
+   * @description Get an install action workflow run step.
+   */
+  GetInstallActionRunStep: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description workflow run ID */
+        run_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflowRunStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install action
+   * @description Get an install action workflow.
+   */
+  GetInstallAction: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install action workflow outputs
+   * @description Return the latest outputs for an action workflow.
+   *
+   * The action_id parameter accepts either an action workflow ID or name.
+   *
+   * **NOTE** requires a valid install.
+   */
+  GetInstallActionWorkflowOutputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description action workflow ID or name */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get recent runs for an action workflow by install id
+   * @description Returns recent workflow runs for an install action workflow.
+   */
+  GetInstallActionRecentRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description action workflow ID */
+        action_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get app permissions config for an install with provisioning status */
+  GetInstallAppPermissionsConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallAppPermissionsConfigResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get install audit logs
+   * @description Returns audit logs for an install.
+   */
+  GetInstallAuditLogs: {
+    parameters: {
+      query: {
+        /** @description start timestamp for audit log range */
+        start: string;
+        /** @description end timestamp for audit log range */
+        end: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "text/csv": components["schemas"]["app.InstallAuditLog"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "text/csv": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get available IAM roles for a specific operation
+   * @description Returns a list of available IAM roles that can be used for a specific operation on an install.
+   *
+   * The endpoint filters roles based on the operation type:
+   * - **provision/reprovision**: Custom roles, break glass roles, provision IAM role
+   * - **deprovision/teardown**: Custom roles, break glass roles, deprovision IAM role
+   * - **deploy**: Custom roles, break glass roles, maintenance IAM role
+   * - **trigger** (actions): Custom roles, break glass roles, provision + maintenance IAM roles
+   *
+   * Roles are sourced from the install's stack outputs.
+   */
+  GetAvailableRoles: {
+    parameters: {
+      query?: {
+        /** @description principal type: component, sandbox, action */
+        principal_type?: "component" | "sandbox" | "action";
+        /** @description operation type: provision, reprovision, deprovision, deploy, teardown, trigger */
+        operation_type?: "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
+        /** @description principal ID: component ID or action workflow ID (required for component and action) */
+        principal_id?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AvailableRolesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs components
+   * @description Returns all components for an install.
+   */
+  GetInstallComponents: {
+    parameters: {
+      query?: {
+        /** @description component types to filter by */
+        types?: string;
+        /** @description search query for component name */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponent"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deploy all components on an install
+   * @description Deploy all components to an install.
+   *
+   * This walks the graph order of the install's app, and will trigger a deploy for each on the specified install.
+   */
+  DeployInstallComponents: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.DeployInstallComponentsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all deploys to an install
+   * @deprecated
+   * @description Returns all deployments for an install.
+   */
+  GetInstallComponentsDeploys: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * teardown an install's components
+   * @description Teardown all components on an install.
+   */
+  TeardownInstallComponents: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.TeardownInstallComponentsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install component
+   * @description Return an install component by id.
+   */
+  GetInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install components deploys
+   * @description Returns all deployments for an install component.
+   */
+  GetInstallComponentDeploys: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deploy a build to an install
+   * @description Create a new deployment for an install.
+   */
+  CreateInstallComponentDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallComponentDeployRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the latest deploy for an install component
+   * @description Returns the most recent deployment for an install component.
+   */
+  GetInstallComponentLatestDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install deploy
+   * @deprecated
+   * @description Return a deployment for an install by id.
+   */
+  GetInstallComponentDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description deploy ID */
+        deploy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * forget an install component
+   * @description # Forget Install Component
+   *
+   * Permanently forget (soft delete) an install component from the system. This operation marks the install component as deleted while preserving the record for audit purposes.
+   *
+   * ## Use Cases
+   *
+   * - Remove a component that is no longer needed from an install
+   * - Clean up failed or orphaned install components
+   * - Prepare for reinstalling a component from scratch
+   *
+   * ## Important Notes
+   *
+   * - This is a **soft delete** operation - the record is marked as deleted but remains in the database
+   * - The component will no longer appear in API responses or dashboard views
+   * - Associated resources (terraform state, deploys, etc.) are preserved via soft delete
+   * - This operation is **irreversible** via the API
+   * - To restore, database-level operations would be required
+   *
+   * ## Prerequisites
+   *
+   * - Install must exist and belong to the authenticated organization
+   * - Component must exist for the specified install
+   * - User must have appropriate permissions for the install's organization
+   * - Component must be removed from the app configuration (sync required)
+   *
+   * ## Behavior
+   *
+   * 1. Validates install exists and belongs to org
+   * 2. Validates install component exists
+   * 3. Validates component is not in the app configuration
+   * 4. Soft deletes the install component record
+   * 5. Cascades soft delete to associated resources (via GORM associations)
+   * 6. Sends event loop signal for any cleanup workflows
+   * 7. Returns success response
+   *
+   * ## Validation
+   *
+   * Before forgetting an install component, the system validates that the component no longer exists in the app configuration. If the component is still in the app config, the request will fail with a user-friendly error message.
+   *
+   * **To resolve this error:**
+   *
+   * 1. Remove the component from your `nuon.yaml` file
+   * 2. Run `nuon apps sync` to update the app configuration
+   * 3. Retry the forget operation
+   *
+   * ## Related Endpoints
+   *
+   * - `DELETE /v1/installs/{install_id}` - Delete entire install
+   * - `POST /v1/installs/{install_id}/forget` - Forget entire install
+   * - `POST /v1/installs/{install_id}/components/{component_id}/teardown` - Teardown component infrastructure
+   */
+  ForgetInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ForgetInstallComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install component outputs
+   * @description Return the latest outputs for a component.
+   *
+   * **NOTE** requires a valid install.
+   */
+  GetInstallComponentOutputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * teardown an install component
+   * @description Teardown and remove an install component's resources.
+   */
+  TeardownInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.TeardownInstallComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an install config
+   * @description Create a configuration for an install.
+   */
+  CreateInstallConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update an install config
+   * @description Update an install's configuration.
+   */
+  UpdateInstallConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description config ID */
+        config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all deploys to an install
+   * @deprecated
+   * @description Returns all deployments for an install.
+   */
+  GetInstallDeploys: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deploy a build to an install
+   * @deprecated
+   * @description Create a new deployment for an install.
+   */
+  CreateInstallDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallDeployRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install's latest deploy
+   * @deprecated
+   * @description Returns the most recent deployment for an install.
+   */
+  GetInstallLatestDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install deploy
+   * @description Return a deployment for an install by id.
+   */
+  GetInstallDeploy: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description deploy ID */
+        deploy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallDeploy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deprovision an install
+   * @description Deprovision an install sandbox.
+   */
+  DeprovisionInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.DeprovisionInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * deprovision an install
+   * @description Deprovision a sandbox environment for an install.
+   */
+  DeprovisionInstallSandbox: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.DeprovisionInstallSandboxRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get drifted objects for an install
+   * @description Returns all drifted objects for an install.
+   */
+  GetDriftedObjects: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.DriftedObject"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get events for an install
+   * @description # Get Install Events
+   *
+   * Return an event stream for an install.
+   */
+  GetInstallEvents: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallEvent"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install event
+   * @description Get a single install event.
+   */
+  GetInstallEvent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description event ID */
+        event_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallEvent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * forget an install
+   * @description Forget an install that has been deleted outside of nuon.
+   *
+   * This should only be used in cases where an install was broken in an unordinary way and needs to be manually deleted so the parent resources can be deleted.
+   */
+  ForgetInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ForgetInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * generate an install config to be used with CLI
+   * @description Generate CLI configuration for an install.
+   */
+  GenerateCLIInstallConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * generate a Terraform installer config
+   * @description Generate terraform configuration for an installer.
+   */
+  GenerateTerraformInstallerConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/octet-stream": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs inputs
+   * @description Returns input values for an install.
+   */
+  GetInstallInputs: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create install inputs
+   * @description Create input values for an install.
+   */
+  CreateInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallInputsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Updates install input config for app
+   * @description Update input values for an install.
+   */
+  UpdateInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallInputsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs current inputs
+   * @description Returns input values for an install.
+   */
+  GetCurrentInstallInputs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * phone home for an install
+   * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
+   */
+  PhoneHome: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description phone home ID */
+        phone_home_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.InstallPhoneHomeRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get install readme rendered with
+   * @description Returns the `app.readme` markdown with the values interpolated from the install
+   * inputs and component outputs.
+   */
+  GetInstallReadme: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.Readme"];
+        };
+      };
+      /** @description Partial Content */
+      206: {
+        content: {
+          "application/json": components["schemas"]["service.Readme"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reprovision an install
+   * @description Reprovision an install sandbox.
+   */
+  ReprovisionInstall: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.ReprovisionInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reprovision an install sandbox
+   * @description Reprovision an install sandbox and redeploy all components on top.
+   */
+  ReprovisionInstallSandbox: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ReprovisionInstallSandboxRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * rerun the workflow steps starting from input step id, can be used to retry a failed step
+   * @deprecated
+   * @description Retry a failed workflow execution.
+   */
+  RetryWorkflow: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RetryWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryWorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a bootstrap token for an install's runner */
+  CreateRunnerBootstrapToken: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CreateRunnerBootstrapTokenResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an install's runner group
+   * @description Return the runner group, including runners and settings for the provided install.
+   */
+  GetInstallRunnerGroup: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerGroup"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an installs sandbox runs
+   * @description Returns all sandbox runs for an install.
+   */
+  GetInstallSandboxRuns: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallSandboxRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install sandbox run
+   * @description Return a sandbox run for an install by id.
+   */
+  GetInstallSandboxRunV2: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallSandboxRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install stack by install ID
+   * @description Returns the deployment stack for an install.
+   */
+  GetInstallStackByInstallID: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallStack"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install's stack runs
+   * @description get install stack runs
+   */
+  GetInstallStackRuns: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallStackVersionRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the current state of an install.
+   * @description Returns the current state for an install.
+   */
+  GetInstallState: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get install state history.
+   * @description Returns the state history for an install.
+   */
+  GetInstallStateHistory: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * sync secrets install
+   * @description Execute the sync secrets workflow.
+   */
+  SyncSecrets: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.SyncSecretsRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get workflows
+   * @description Return workflows for an install.
+   */
+  GetWorkflows: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description exclude plan only workflows when set to false */
+        planonly?: boolean;
+        /** @description filter by workflow type */
+        type?: string;
+        /** @description filter by finished state */
+        finished?: boolean;
+        /** @description filter workflows created after timestamp (RFC3339 format) */
+        created_at_gte?: string;
+        /** @description filter workflows created before timestamp (RFC3339 format) */
+        created_at_lte?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a log stream
+   * @description Return a log stream.
+   */
+  GetLogStream: {
+    parameters: {
+      path: {
+        /** @description log stream ID */
+        log_stream_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.LogStream"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * read a log stream's logs
+   * @description Read OTEL formatted logs for a log stream.
+   */
+  LogStreamReadLogs: {
+    parameters: {
+      query?: {
+        /** @description resource attribute filters */
+        order?: string;
+      };
+      header?: {
+        /** @description log stream offset */
+        "X-Nuon-API-Offset"?: string;
+      };
+      path: {
+        /** @description log stream ID */
+        log_stream_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OtelLogRecord"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Start a new onboarding session
+   * @description Creates a new active onboarding session for the current account
+   */
+  CreateOnboarding: {
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get current onboarding session
+   * @description Returns the active onboarding session for the current account
+   */
+  GetCurrentOnboarding: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Abandon onboarding session
+   * @description Marks the current active onboarding session as abandoned
+   */
+  AbandonOnboarding: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the deploy step
+   * @description Advances the onboarding past the deploy monitoring to get started
+   */
+  CompleteOnboardingDeployStep: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete onboarding
+   * @description Marks the onboarding session as completed
+   */
+  CompleteOnboardingGetStartedStep: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the install step
+   * @description Creates an install and advances the onboarding to the install status step
+   */
+  CompleteOnboardingInstallStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteInstallStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the organization step
+   * @description Creates a sandbox organization or attaches an existing one, then advances the onboarding to the app profile step
+   */
+  CompleteOnboardingOrganizationStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteOrganizationStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Complete the your stack step
+   * @description Configures the application profile and advances the onboarding to the install step
+   */
+  CompleteOnboardingYourStackStep: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CompleteYourStackStepRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Onboarding"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get example apps catalog
+   * @description Returns the list of available example applications for onboarding
+   */
+  GetOnboardingExampleApps: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ExampleApp"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Return current user's orgs
+   * @description Returns all organizations for the authenticated user.
+   */
+  GetOrgs: {
+    parameters: {
+      query?: {
+        /** @description search query */
+        q?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a new org
+   * @description Create a new organization.
+   */
+  CreateOrg: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an org
+   * @description Return an organization by id.
+   */
+  GetOrg: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Delete an org
+   * @description Delete an organization.
+   */
+  DeleteOrg: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update current org
+   * @description Update an organization's settings.
+   */
+  UpdateOrg: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get user accounts for current org
+   * @description Return an organization by id.
+   */
+  GetOrgAcounts: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get current org's feature flags
+   * @description Get the current organization's feature flag values.
+   *
+   * Returns a map of feature flag names to their enabled/disabled status for the authenticated organization.
+   *
+   * This endpoint shows which features are currently enabled or disabled for your organization, unlike `/v1/orgs/features` which returns all available features with their descriptions.
+   *
+   * Example response:
+   * ```json
+   * {
+   *   "api-pagination": true,
+   *   "org-dashboard": false,
+   *   "org-runner": true,
+   *   "stratus-layout": true,
+   *   "user-managed-features": false
+   * }
+   * ```
+   */
+  GetCurrentOrgFeatures: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: boolean;
+          };
+        };
+      };
+    };
+  };
+  /**
+   * update org features (requires user-managed-features flag)
+   * @description Update feature flags for your current organization.
+   *
+   * This endpoint allows organization users to manage feature flags, but requires the `user-managed-features` flag to be enabled for the organization. The `user-managed-features` flag itself cannot be modified through this endpoint and can only be enabled/disabled by administrators.
+   *
+   * **Requirements:**
+   * - The `user-managed-features` flag must be enabled for your organization
+   * - You cannot toggle the `user-managed-features` flag through this endpoint (admin-only)
+   *
+   * **Example Request:**
+   * ```json
+   * {
+   *   "features": {
+   *     "api-pagination": true,
+   *     "install-delete": false
+   *   }
+   * }
+   * ```
+   *
+   * The request will update only the specified feature flags. Features not included in the request will retain their current values.
+   */
+  UpdateOrgFeatures: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgFeaturesRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Return org invites
+   * @description Returns a list of all invites to the org.
+   */
+  GetOrgInvites: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Invite a user to the current org
+   * @description Invite a user (by email) to an org.
+   *
+   * This user will receive an email, and when they next log into the application will be added to the org.
+   */
+  CreateOrgInvite: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgInviteRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Resend an org invite
+   * @description Resend the invite email for an existing pending org invite.
+   *
+   * The invite must be in "pending" status. Accepted invites cannot be resent.
+   */
+  ResendOrgInvite: {
+    parameters: {
+      path: {
+        /** @description invite ID */
+        invite_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Remove a user from the current org
+   * @description Remove a user from an org.
+   */
+  RemoveUser: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RemoveOrgUserRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an org's runner group
+   * @description Get the current org's runner group, which includes the runners and their settings.
+   */
+  GetOrgRunnerGroup: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerGroup"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get an org
+   * @description Returns statistics for the provided organization.
+   */
+  GetOrgStats: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Org"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Add a user to the current org
+   * @description Add a user to an organization.
+   */
+  AddUser: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgUserRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list webhooks for the current org */
+  GetCurrentOrgWebhooks: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a webhook for the current org */
+  CreateCurrentOrgWebhook: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateCurrentOrgWebhookRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** delete a webhook for the current org */
+  DeleteCurrentOrgWebhook: {
+    parameters: {
+      path: {
+        /** @description webhook ID */
+        webhook_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get available org features
+   * @description Get all available organization feature flags with their descriptions.
+   *
+   * This endpoint returns a list of all feature flags that can be enabled or disabled for organizations, along with detailed descriptions of what each feature provides.
+   *
+   * Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
+   */
+  GetOrgFeatures: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgFeatureInfo"][];
+        };
+      };
+    };
+  };
+  /**
+   * List queues
+   * @description List queues with optional filtering by owner
+   */
+  ListQueues: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., 'app_branches') */
+        owner_type?: string;
+        /** @description Limit results */
+        limit?: number;
+        /** @description Offset results */
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue by ID
+   * @description Retrieve a single queue by its ID
+   */
+  GetQueue: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List queue signals
+   * @description Get a list of signals for a specific queue with optional filtering
+   */
+  GetQueueSignals: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., app_branches) */
+        owner_type?: string;
+        /** @description Filter by status */
+        status?: string;
+        /** @description Filter by signal type */
+        type?: string;
+        /** @description Limit results (default: 50) */
+        limit?: number;
+        /** @description Offset for pagination (default: 0) */
+        offset?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue signal details
+   * @description Get detailed information about a specific queue signal
+   */
+  GetQueueSignal: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Long-poll for queue signal completion
+   * @description Blocks until the queue signal finishes or the timeout is reached
+   */
+  AwaitQueueSignal: {
+    parameters: {
+      query?: {
+        /** @description Timeout in seconds (default 30, max 120) */
+        timeout?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get live queue status
+   * @description Get real-time status of a queue including depth and in-flight signals
+   */
+  GetQueueStatus: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["queue.StatusResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner job
+   * @deprecated
+   * @description Return a runner job.
+   */
+  GetRunnerJob: {
+    parameters: {
+      path: {
+        /** @description runner job ID */
+        runner_job_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerJob"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel runner job
+   * @description Cancel a runner job.
+   */
+  CancelRunnerJob: {
+    parameters: {
+      path: {
+        /** @description runner job ID */
+        runner_job_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CancelRunnerJobRequest"];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerJob"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner job composite plan
+   * @description Return a plan for a runner job.
+   */
+  GetRunnerJobCompositePlan: {
+    parameters: {
+      path: {
+        /** @description runner job ID */
+        runner_job_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["plantypes.CompositePlan"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner job plan
+   * @deprecated
+   * @description Return a plan for a runner job.
+   */
+  GetRunnerJobPlan: {
+    parameters: {
+      path: {
+        /** @description runner job ID */
+        runner_job_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform states json
+   * @deprecated
+   * @description Returns terraform states in JSON format.
+   */
+  GetTerraformWorkspaceStatesJSON: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceStateJSON"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state json by id. This output is same as "terraform show --json"
+   * @deprecated
+   * @description Return a terraform state in JSON format by id.
+   */
+  GetTerraformWorkspaceStatesJSONByID: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description terraform state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state resources. This output is similar to "terraform state list"
+   * @deprecated
+   * @description Returns terraform state resources in JSON format.
+   */
+  GetTerraformWorkspaceStateJSONResources: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform states
+   * @deprecated
+   * @description Returns terraform states for an install.
+   */
+  GetTerraformStates: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state by ID
+   * @deprecated
+   * @description Return a terraform state by id.
+   */
+  GetTerraformWorkspaceStateByID: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state resources
+   * @description Returns resources within a terraform state.
+   */
+  GetTerraformWorkspaceStateResources: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformStateResource"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner card details
+   * @description Returns runner card details for monitoring and status.
+   */
+  GetRunnerCardDetails: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RunnerCardDetailsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a runner connection satus based on heartbeat
+   * @description # get runner connect status
+   *
+   * The connected status is based on runner heartbeat:
+   *
+   * if no heart beat found — false
+   * if heart beat > 15 seconds ago — false, hb timestamp
+   * if the heart beat < 15 seconds ago — true
+   */
+  GetRunnerConnectStatus: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RunnerConnectionStatus"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * force shut down a runner
+   * @description Force shutdown a runner.
+   *
+   * This will result in jobs being lost/cancelled if they are in-flight.
+   */
+  ForceShutDownRunner: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ForceShutdownRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * shut down a runner
+   * @description Gracefully shut down a runner.
+   *
+   * _NOTE_ when a runner is unhealthy, the runner will not be able to pick up this job, so use force shut down instead.
+   */
+  GracefulShutDownRunner: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.GracefulShutdownRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a runner
+   * @description
+   */
+  GetLatestRunnerHeartBeat: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.LatestRunnerHeartBeats"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner jobs
+   * @description Return runner jobs.
+   */
+  GetRunnerJobs: {
+    parameters: {
+      query?: {
+        /** @description job group */
+        group?: string;
+        /** @description job groups */
+        groups?: string;
+        /** @description job status */
+        status?: string;
+        /** @description job statuses */
+        statuses?: string;
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerJob"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the latest heartbeats for a runner
+   * @description
+   */
+  GetRunnerLatestHeartBeat: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerHeartBeat"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** fetch authentication token for an install runner via the mng process */
+  FetchRunnerTokenMng: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngFetchTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** restart the runner install process via the mng process */
+  RestartRunnerInstall: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngRestartRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** shut down an install runner's mng process. does not shut down the install runner process. */
+  ShutDownRunnerMng: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngShutDownRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** shut down an install runner VM */
+  MngVMShutDown: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngVMShutDownRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** update an install runner via the mng process. this is practically a restart. */
+  UpdateRunnerMng: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.MngUpdateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list runner processes */
+  ListRunnerProcesses: {
+    parameters: {
+      query?: {
+        /** @description filter by process type */
+        type?: string;
+        /** @description filter by status */
+        status?: string;
+        /** @description limit */
+        limit?: number;
+        /** @description offset */
+        offset?: number;
+      };
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get current active runner processes */
+  GetCurrentRunnerProcesses: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a runner process */
+  GetRunnerProcessPublic: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the latest heartbeat for a runner process
+   * @description
+   */
+  GetProcessLatestHeartBeat: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerHeartBeat"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** request shutdown of a runner process */
+  ShutdownRunnerProcess: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ShutdownRunnerProcessRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcessShutdown"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Prune old tokens for a runner
+   * @description Prune old tokens for a specific runner by invalidating all tokens except the most recent one.
+   *
+   * This is useful for cleaning up old tokens without disrupting the currently running runner.
+   * The latest token (by creation time) is preserved, ensuring the active runner continues to function.
+   *
+   * Returns the count of invalidated tokens for the specified runner.
+   */
+  PruneTokens: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PruneTokensResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get recent health checks
+   * @description
+   */
+  GetRunnerRecentHealthChecks: {
+    parameters: {
+      query?: {
+        /** @description window of health checks to return */
+        window?: string;
+        /** @description filter by process ID */
+        process_id?: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+      };
+      header?: {
+        /** @description Enable pagination */
+        "x-nuon-pagination-enabled"?: boolean;
+      };
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerHealthCheck"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get runner settings
+   * @description Return runner settings for the provided runner.
+   */
+  GetRunnerSettings: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerGroupSettings"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a runner's settings via its runner settings group
+   * @description Update runner settings and configuration.
+   */
+  UpdateRunnerSettings: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateRunnerSettingsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerJobExecution"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get current terraform
+   * @description Returns the current terraform state.
+   */
+  GetTerraformCurrentStateData: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update terraform state
+   * @description Update a terraform state.
+   */
+  UpdateTerraformState: {
+    /** @description Terraform state data */
+    requestBody: {
+      content: {
+        "application/json": unknown;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create terraform workspace
+   * @deprecated
+   * @description Create a terraform workspace.
+   */
+  CreateTerraformWorkspace: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTerraformWorkspaceRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspace"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get  terraform workspaces
+   * @description Returns all terraform workspaces.
+   */
+  GetTerraformWorkspaces: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspace"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create terraform workspace
+   * @description Create a terraform workspace.
+   */
+  CreateTerraformWorkspaceV2: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateTerraformWorkspaceRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspace"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get  terraform workspace
+   * @description Return a terraform workspace by id.
+   */
+  GetTerraformWorkspace: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspace"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete terraform workspace
+   * @description Delete a terraform workspace.
+   */
+  DeleteTerraformWorkspace: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspace"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform workspace lock
+   * @description Returns the lock status for a terraform workspace.
+   */
+  GetTerraformWorkspaceLock: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceLock"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * lock terraform state
+   * @description Lock a terraform workspace to prevent concurrent modifications.
+   */
+  LockTerraformWorkspace: {
+    parameters: {
+      query?: {
+        /** @description job ID */
+        job_id?: string;
+      };
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    /** @description terraform workspace lock */
+    requestBody: {
+      content: {
+        "application/json": unknown;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform states json
+   * @description Returns terraform states in JSON format.
+   */
+  GetTerraformWorkspaceStatesJSONV2: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceStateJSON"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state json by id. This output is same as "terraform show --json"
+   * @description Return a terraform state in JSON format by id.
+   */
+  GetTerraformWorkspaceStatesJSONByIDV2: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description terraform state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get raw workspace state json by id
+   * @description Returns the raw state contents without format-specific parsing. Works for both terraform and pulumi state.
+   */
+  GetWorkspaceStateJSONRawByID: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state resources. This output is similar to "terraform state list"
+   * @description Returns terraform state resources in JSON format.
+   */
+  GetTerraformWorkspaceStateJSONResourcesV2: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform states
+   * @description Returns terraform states for an install.
+   */
+  GetTerraformStatesV2: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get terraform state by ID
+   * @description Return a terraform state by id.
+   */
+  GetTerraformWorkspaceStateByIDV2: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * unlock terraform workspace
+   * @description Unlock a terraform workspace.
+   */
+  UnlockTerraformWorkspace: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+      };
+    };
+    /** @description terraform workspace unlock */
+    requestBody: {
+      content: {
+        "application/json": unknown;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.TerraformWorkspaceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * public connection to create a vcs connection via a callback
+   * @description Handle VCS connection callback for OAuth flow.
+   */
+  CreateVCSConnectionCallback: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateConnectionCallbackRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get vcs connection for an org
+   * @description Returns all VCS connections for the provided organization.
+   */
+  GetOrgVCSConnections: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a vcs connection for Github
+   * @description Create a VCS connection for version control integration.
+   */
+  CreateVCSConnection: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateConnectionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * returns a vcs connection for an org
+   * @description Return a VCS connection by id.
+   */
+  GetVCSConnection: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Deletes a VCS connection
+   * @description Delete a VCS connection.
+   */
+  DeleteVCSConnection: {
+    parameters: {
+      path: {
+        /** @description Connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List branches for a repository
+   * @description Returns list of branches for the specified repository
+   */
+  GetVCSConnectionRepoBranches: {
+    parameters: {
+      query: {
+        /** @description repository owner */
+        owner: string;
+        /** @description repository name */
+        repo: string;
+      };
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.Branch"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * check the real-time status of a VCS connection
+   * @description Check the real-time status of a VCS (GitHub App) connection.
+   *
+   * This endpoint queries GitHub's API directly to fetch the current installation status, including:
+   * - Active/Suspended state
+   * - Account information
+   * - Permissions
+   * - Suspension details (if applicable)
+   *
+   * **Important**: This endpoint always fetches fresh data from GitHub (no caching) to ensure accurate status information.
+   *
+   * ## Response Status Values
+   *
+   * - `active`: The GitHub App installation is active and functioning
+   * - `suspended`: The installation has been suspended (see `suspended_at` and `suspended_by` for details)
+   * - `unknown`: Unable to determine status (GitHub API error - see `error` field)
+   *
+   * ## Use Cases
+   *
+   * - Troubleshooting connection issues
+   * - Monitoring installation health
+   * - Detecting suspended or revoked installations
+   * - Validating permissions before operations
+   */
+  CheckVCSConnectionStatus: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.VCSConnectionStatusResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Write a VCS webhook event
+   * @description Writes incoming webhook events for a VCS connection
+   */
+  WriteVCSEvent: {
+    parameters: {
+      path: {
+        /** @description VCS Connection ID */
+        vcs_connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSEvent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all workflows for the org */
+  GetOrgWorkflows: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description exclude plan only workflows when set to false */
+        planonly?: boolean;
+        /** @description filter by workflow type */
+        type?: string;
+        /** @description filter by finished state */
+        finished?: boolean;
+        /** @description filter workflows created after timestamp (RFC3339 format) */
+        created_at_gte?: string;
+        /** @description filter workflows created before timestamp (RFC3339 format) */
+        created_at_lte?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get all pending workflow step approvals for the org */
+  GetOrgPendingApprovals: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepApproval"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a workflow
+   * @description Return a workflow.
+   */
+  GetWorkflow: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a workflow
+   * @description Update a workflow configuration.
+   */
+  UpdateWorkflow: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateWorkflowRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel an ongoing workflow
+   * @description Cancel a running workflow execution.
+   */
+  CancelWorkflow: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * rerun the workflow steps starting from input step id, can be used to retry a failed step
+   * @deprecated
+   * @description Retry a workflow execution by id.
+   */
+  RetryOwnerWorkflowByID: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RetryWorkflowByIDRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all of the steps for a given workflow
+   * @description Return all steps for a workflow.
+   */
+  GetWorkflowSteps: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a workflow step
+   * @description Return a single workflow step.
+   */
+  GetWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an workflow step approval
+   * @description Return a workflow step approval by id.
+   */
+  GetWorkflowStepApproval: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+        /** @description approval id */
+        approval_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepApproval"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a workflow step approval contents
+   * @description Return the contents of a json plan for an approval (compressed).
+   */
+  GetWorkflowStepApprovalContents: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+        /** @description approval id */
+        approval_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          /** @description gzip */
+          "Content-Encoding"?: string;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create an approval response for a workflow step.
+   * @description Create a response for an approval for an action workflow step.
+   */
+  CreateWorkflowStepApprovalResponse: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+        /** @description approval id */
+        approval_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateWorkflowStepApprovalResponseRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CreateWorkflowStepApprovalResponseResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * rerun the workflow steps starting from input step id, can be used to retry a failed step
+   * @description Retry a workflow execution by id.
+   */
+  RetryWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RetryWorkflowStepRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+}

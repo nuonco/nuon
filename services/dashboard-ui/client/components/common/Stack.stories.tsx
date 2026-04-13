@@ -8,7 +8,7 @@ import { Text } from './Text'
 
 export const Default = () => (
   <Stack>
-    <Text variant="heading-3">Section title</Text>
+    <Text variant="h3">Section title</Text>
     <Text>First paragraph of content.</Text>
     <Text>Second paragraph of content.</Text>
   </Stack>

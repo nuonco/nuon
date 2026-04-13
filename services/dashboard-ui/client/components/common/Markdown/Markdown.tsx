@@ -2,6 +2,7 @@ import React, { useMemo, type ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
+import type { PluggableList } from 'unified'
 import { Tabs } from '../Tabs'
 import { Button } from '../Button'
 import { ModalBase } from '@/components/surfaces/Modal'
@@ -12,8 +13,8 @@ import { getMarkdownComponents } from './markdown-renderers'
 import { preprocessContent } from './markdown-preprocessing'
 import { markdownStyles, proseClassName } from './markdown-styles'
 
-const REMARK_PLUGINS = [remarkGfm] as const
-const REHYPE_PLUGINS = [rehypeRaw] as const
+const REMARK_PLUGINS: PluggableList = [remarkGfm]
+const REHYPE_PLUGINS: PluggableList = [rehypeRaw]
 
 function TabsPlaceholder({
   tabsMap,
