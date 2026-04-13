@@ -115,6 +115,7 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 					huh.NewOption("Terraform Module", "terraform-module"),
 					huh.NewOption("Helm Chart", "helm-chart"),
 					huh.NewOption("Kubernetes Manifest", "kubernetes-manifest"),
+					huh.NewOption("Pulumi", "pulumi"),
 				).
 				Value(&componentTypes),
 		),
@@ -206,6 +207,7 @@ func (c *ConfigInit) RunComponentsMenu(params *apps.SampleComponentParams) error
 					huh.NewOption("Terraform Module", "terraform-module"),
 					huh.NewOption("Helm Chart", "helm-chart"),
 					huh.NewOption("Kubernetes Manifest", "kubernetes-manifest"),
+					huh.NewOption("Pulumi", "pulumi"),
 				).
 				Value(&componentTypes),
 		),

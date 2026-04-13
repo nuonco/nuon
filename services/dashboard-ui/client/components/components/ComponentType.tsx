@@ -62,6 +62,12 @@ const COMPONENT_TYPE_CONFIG: Record<
     icon: 'Kubernetes',
     name: 'Kubernetes manifest',
   },
+  pulumi: {
+    abbr: 'Pulumi',
+    brandColorClass: 'text-[#8A3391] dark:text-[#B06AB8]',
+    icon: 'Pulumi',
+    name: 'Pulumi',
+  },
   unknown: {
     abbr: 'Unknown',
     brandColorClass: '',

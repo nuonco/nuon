@@ -22,6 +22,7 @@ const TAG_TO_COMPONENT_TYPE: Record<string, TComponentType> = {
   kubernetes: 'kubernetes_manifest',
   docker: 'docker_build',
   lambda: 'job',
+  pulumi: 'pulumi',
 }
 
 type CloudPlatform = 'aws' | 'gcp' | 'azure'
@@ -32,6 +33,7 @@ type AppAttribute =
   | 'lambda'
   | 'docker'
   | 'scripts'
+  | 'pulumi'
 
 const CLOUD_PLATFORMS: {
   id: CloudPlatform
@@ -106,6 +108,19 @@ const APP_ATTRIBUTES: {
     label: 'Custom scripts',
     description: 'Bash/Python',
     icon: <Icon variant="TerminalWindowIcon" size={24} theme="success" />,
+  },
+  {
+    id: 'pulumi',
+    label: 'Pulumi',
+    description: 'IaC with code',
+    icon: (
+      <ComponentType
+        type="pulumi"
+        colorVariant="color"
+        displayVariant="icon-only"
+        iconSize="24"
+      />
+    ),
   },
 ]
 

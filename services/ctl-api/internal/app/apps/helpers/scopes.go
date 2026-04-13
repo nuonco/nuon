@@ -99,7 +99,12 @@ func PreloadAppConfigComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnections.JobComponentConfig").
 
 		// preload all kubernetes manifest configs
-		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig")
+		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigConnections.PulumiComponentConfig").
+		Preload("ComponentConfigConnections.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnections.PulumiComponentConfig.ConnectedGithubVCSConfig")
 }
 
 // component config connections
@@ -127,5 +132,10 @@ func PreloadComponentConfigConnections(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigs.JobComponentConfig").
 
 		// preload all kubernetes manifest configs
-		Preload("ComponentConfigs.KubernetesManifestComponentConfig")
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigs.PulumiComponentConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig")
 }

@@ -96,6 +96,8 @@ const (
 	AppPolicyTypeDockerBuild AppPolicyType = "docker_build"
 	// AppPolicyTypeContainerImage applies to container image components
 	AppPolicyTypeContainerImage AppPolicyType = "container_image"
+	// AppPolicyTypePulumi applies to pulumi components
+	AppPolicyTypePulumi AppPolicyType = "pulumi"
 	// AppPolicyTypeSandbox applies to sandbox infrastructure
 	AppPolicyTypeSandbox AppPolicyType = "sandbox"
 )
@@ -108,6 +110,7 @@ var AllAppPolicyTypes = []AppPolicyType{
 	AppPolicyTypeKubernetesManifest,
 	AppPolicyTypeDockerBuild,
 	AppPolicyTypeContainerImage,
+	AppPolicyTypePulumi,
 	AppPolicyTypeSandbox,
 }
 
@@ -201,6 +204,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 			string(AppPolicyTypeHelmChart),
 			string(AppPolicyTypeKubernetesManifest),
 			string(AppPolicyTypeContainerImage),
+			string(AppPolicyTypePulumi),
 			string(AppPolicyTypeSandbox),
 		).
 		Example("kubernetes_cluster").

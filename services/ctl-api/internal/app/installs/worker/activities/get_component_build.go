@@ -30,6 +30,12 @@ func (a *Activities) GetComponentBuild(ctx context.Context, req GetComponentBuil
 		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
 		Preload("ComponentConfigConnection.JobComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
+
+		// load pulumi config
+		Preload("ComponentConfigConnection.PulumiComponentConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		First(&build)
 
 	if res.Error != nil {

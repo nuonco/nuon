@@ -5,6 +5,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"go.uber.org/fx"
 
+	pulumisandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/pulumi"
 	syncsecrets "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/sync_secrets"
 	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/sandbox/terraform"
 )
@@ -14,6 +15,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobloop.AsJobLoop(NewJobLoop)),
 		fx.Provide(jobs.AsJobHandler("sandbox", terraform.New)),
 		fx.Provide(jobs.AsJobHandler("sandbox", syncsecrets.New)),
+		fx.Provide(jobs.AsJobHandler("sandbox", pulumisandbox.New)),
 	}
 	return providers
 }

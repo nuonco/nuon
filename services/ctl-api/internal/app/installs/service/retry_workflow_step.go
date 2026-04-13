@@ -106,8 +106,7 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 				return
 			}
 
-			// in in future we support pulumi, add it here
-			if runnerJob.Type == app.RunnerJobTypeTerraformDeploy {
+			if runnerJob.Type == app.RunnerJobTypeTerraformDeploy || runnerJob.Type == app.RunnerJobTypePulumiDeploy {
 				switch step.Signal.Type {
 				case string(signals.OperationExecuteDeployComponentApplyPlan):
 					planStepSignal = []eventloop.SignalType{

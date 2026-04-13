@@ -11,12 +11,13 @@ title: 'Kubernetes Manifest'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"` |
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"`, `"pulumi"` |
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`namespace`**<br/>string | Kubernetes namespace Kubernetes namespace where the manifest will be deployed. Supports template variables | **✅ Required** | `"default"`, `"clickhouse"`, `"{{.nuon.install.id}}"` |
 | **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`pulumi`**<br/>[PulumiComponentConfig](#pulumi) | pulumi component configuration Configuration for Pulumi deployments. Required when type is 'pulumi' | **Optional** | - |
 | **`manifest`**<br/>string | Kubernetes manifest Path to a YAML manifest file or inline manifest content for Kubernetes resources. Supports templating with variables like \{\{.nuon.install.id\}\}. Mutually exclusive with kusto... | **Optional** | `"./manifests/deployment.yaml"` |
 | **`kustomize`**<br/>[KustomizeConfig](#kustomize) | Kustomize configuration Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. Requires either public_repo or connected_repo | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository with kustomize source Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |
@@ -31,6 +32,20 @@ title: 'Kubernetes Manifest'
 |----------|----------|----------|----------|
 | **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
 | **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
+
+### `pulumi`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`runtime`**<br/>string | Pulumi runtime The Pulumi runtime to use for the program (go, nodejs, python) | **✅ Required** | `"go"`, `"nodejs"`, `"python"` |
+| **`pulumi_version`**<br/>string | Pulumi version Version of the Pulumi CLI to use for deployments. If not specified, uses the latest version | **Optional** | `"3.100.0"` |
+| **`config`**<br/>object | Pulumi stack config Map of Pulumi stack configuration values as key-value pairs. Supports templating. Keys use the format 'namespace:key' (e.g., 'aws:region') | **Optional** | - |
+| **`env_vars`**<br/>object | environment variables Map of environment variables passed to Pulumi as key-value pairs | **Optional** | - |
+| **`public_repo`**<br/>PublicRepoConfig | public repository configuration Configuration for a public repository accessible without authentication | **Optional** | - |
+| **`connected_repo`**<br/>ConnectedRepoConfig | connected repository configuration Configuration for a private repository connected to the Nuon platform | **Optional** | - |
+| **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating | **Optional** | `"0 2 * * *"` |
+| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | - |
+| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | - |
 
 ### `kustomize`
 

@@ -49,6 +49,9 @@ type PlantypesBuildPlan struct {
 	// kubernetes manifest build plan
 	KubernetesManifestBuildPlan *PlantypesKubernetesManifestBuildPlan `json:"kubernetes_manifest_build_plan,omitempty"`
 
+	// pulumi build plan
+	PulumiBuildPlan *PlantypesPulumiBuildPlan `json:"pulumi_build_plan,omitempty"`
+
 	// sandbox mode
 	SandboxMode *PlantypesSandboxMode `json:"sandbox_mode,omitempty"`
 
@@ -85,6 +88,10 @@ func (m *PlantypesBuildPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesManifestBuildPlan(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePulumiBuildPlan(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -250,6 +257,29 @@ func (m *PlantypesBuildPlan) validateKubernetesManifestBuildPlan(formats strfmt.
 	return nil
 }
 
+func (m *PlantypesBuildPlan) validatePulumiBuildPlan(formats strfmt.Registry) error {
+	if swag.IsZero(m.PulumiBuildPlan) { // not required
+		return nil
+	}
+
+	if m.PulumiBuildPlan != nil {
+		if err := m.PulumiBuildPlan.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesBuildPlan) validateSandboxMode(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxMode) { // not required
 		return nil
@@ -321,6 +351,10 @@ func (m *PlantypesBuildPlan) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateKubernetesManifestBuildPlan(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePulumiBuildPlan(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -475,6 +509,31 @@ func (m *PlantypesBuildPlan) contextValidateKubernetesManifestBuildPlan(ctx cont
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest_build_plan")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesBuildPlan) contextValidatePulumiBuildPlan(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PulumiBuildPlan != nil {
+
+		if swag.IsZero(m.PulumiBuildPlan) { // not required
+			return nil
+		}
+
+		if err := m.PulumiBuildPlan.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_build_plan")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_build_plan")
 			}
 
 			return err

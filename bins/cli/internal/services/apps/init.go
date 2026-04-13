@@ -176,6 +176,16 @@ func (s *Service) InitSampleComponents(ctx context.Context, genParams ConfigGenP
 						},
 					},
 				)
+			case "pulumi":
+				c.AddComponent(
+					generator.ConfigFileDefinition{
+						Name: "example_pulumi.toml",
+						Schemas: []generator.ConfigFileSchema{
+							{Instance: &config.Component{Type: config.PulumiComponentType}},
+							{Instance: &config.PulumiComponentConfig{}},
+						},
+					},
+				)
 			}
 		}
 	}
@@ -841,6 +851,16 @@ func BuildConfigStructureFromParams(path string, params *InitParams) *generator.
 						Schemas: []generator.ConfigFileSchema{
 							{Instance: &config.Component{Type: config.KubernetesManifestComponentType}},
 							{Instance: &config.KubernetesManifestComponentConfig{}},
+						},
+					},
+				)
+			case "pulumi":
+				structure.AddComponent(
+					generator.ConfigFileDefinition{
+						Name: "example_pulumi.toml",
+						Schemas: []generator.ConfigFileSchema{
+							{Instance: &config.Component{Type: config.PulumiComponentType}},
+							{Instance: &config.PulumiComponentConfig{}},
 						},
 					},
 				)
