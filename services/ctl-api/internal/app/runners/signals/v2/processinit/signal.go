@@ -87,5 +87,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	l.Info("process initialized", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 
+	// Clean up stale process queues (best-effort).
+	// Find processes older than the 2 most recent for this runner+type and terminate their queues.
+	staleProcesses, err := activities.AwaitGetStaleRunnerProcesses(ctx, activities.GetStaleRunnerProcessesRequest{
+		RunnerID:    s.RunnerID,
+		ProcessType: string(process.Type),
+	})
+	if err != nil {
+		l.Warn("failed to get stale processes for cleanup", "error", err)
+	} else {
+		for _, stale := range staleProcesses {
+			if err := activities.AwaitTerminateProcessQueue(ctx, activities.TerminateProcessQueueRequest{
+				RunnerID:  s.RunnerID,
+				ProcessID: stale.ID,
+			}); err != nil {
+				l.Warn("failed to terminate stale process queue", "process_id", stale.ID, "error", err)
+			}
+		}
+	}
+
 	return nil
 }

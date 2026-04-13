@@ -8,6 +8,7 @@ import (
 	otellog "go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/fx"
 
+	"github.com/nuonco/nuon/pkg/retry"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
@@ -59,14 +60,20 @@ func New(params Params) (Result, error) {
 		shutdowner:  params.Shutdowner,
 	}
 
-	ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFn()
 
-	process, err := r.apiClient.CreateProcess(ctx, &models.ServiceCreateRunnerProcessRequest{
-		Type:    &r.processType,
-		Version: version.Version,
-	})
-	if err != nil {
+	var process *models.AppRunnerProcess
+	createFn := func(ctx context.Context) error {
+		var err error
+		process, err = r.apiClient.CreateProcess(ctx, &models.ServiceCreateRunnerProcessRequest{
+			Type:    &r.processType,
+			Version: version.Version,
+		})
+		return err
+	}
+
+	if err := retry.Retry(ctx, createFn, retry.WithMaxAttempts(3), retry.WithSleep(time.Second)); err != nil {
 		return Result{}, fmt.Errorf("unable to create runner process: %w", err)
 	}
 
