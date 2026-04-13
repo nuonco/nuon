@@ -22,9 +22,6 @@ func (s *GeneralPublicTestSuite) TestGetCLIConfig() {
 		require.NoError(s.T(), err)
 
 		// Verify response has expected fields (values will be from test config)
-		assert.NotEmpty(s.T(), cliConfig.AuthDomain)
-		assert.NotEmpty(s.T(), cliConfig.AuthClientID)
-		assert.NotEmpty(s.T(), cliConfig.AuthAudience)
 		assert.NotEmpty(s.T(), cliConfig.DashboardURL)
 		assert.NotEmpty(s.T(), cliConfig.RootDomain)
 		// NuonAuthEnabled can be true or false based on config

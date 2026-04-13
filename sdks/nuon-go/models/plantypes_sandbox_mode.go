@@ -31,6 +31,9 @@ type PlantypesSandboxMode struct {
 	// outputs
 	Outputs map[string]any `json:"outputs,omitempty"`
 
+	// pulumi
+	Pulumi *PlantypesPulumiSandboxMode `json:"pulumi,omitempty"`
+
 	// terraform
 	Terraform *PlantypesTerraformSandboxMode `json:"terraform,omitempty"`
 }
@@ -44,6 +47,10 @@ func (m *PlantypesSandboxMode) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesManifest(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePulumi(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -103,6 +110,29 @@ func (m *PlantypesSandboxMode) validateKubernetesManifest(formats strfmt.Registr
 	return nil
 }
 
+func (m *PlantypesSandboxMode) validatePulumi(formats strfmt.Registry) error {
+	if swag.IsZero(m.Pulumi) { // not required
+		return nil
+	}
+
+	if m.Pulumi != nil {
+		if err := m.Pulumi.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesSandboxMode) validateTerraform(formats strfmt.Registry) error {
 	if swag.IsZero(m.Terraform) { // not required
 		return nil
@@ -135,6 +165,10 @@ func (m *PlantypesSandboxMode) ContextValidate(ctx context.Context, formats strf
 	}
 
 	if err := m.contextValidateKubernetesManifest(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePulumi(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -189,6 +223,31 @@ func (m *PlantypesSandboxMode) contextValidateKubernetesManifest(ctx context.Con
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_manifest")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesSandboxMode) contextValidatePulumi(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Pulumi != nil {
+
+		if swag.IsZero(m.Pulumi) { // not required
+			return nil
+		}
+
+		if err := m.Pulumi.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi")
 			}
 
 			return err
