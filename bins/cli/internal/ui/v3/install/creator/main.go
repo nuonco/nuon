@@ -62,6 +62,9 @@ type model struct {
 	help     help.Model
 	status   common.StatusBarRequest
 
+	// field position tracking for scroll-into-view
+	fieldEndLines map[int]int
+
 	// state
 	loading    bool
 	submitting bool
@@ -191,10 +194,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keys.Tab):
 			m.nextInput()
+			m.ensureFocusVisible()
 			return m, nil
 
 		case key.Matches(msg, m.keys.ShiftTab):
 			m.prevInput()
+			m.ensureFocusVisible()
 			return m, nil
 
 		case key.Matches(msg, m.keys.Up), key.Matches(msg, m.keys.Down):
