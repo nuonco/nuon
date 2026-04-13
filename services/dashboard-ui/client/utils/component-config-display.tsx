@@ -95,6 +95,23 @@ export function getComponentConfigDisplayData(
       )
       break
 
+    case 'pulumi':
+      typeSpecificFields = [
+        {
+          label: 'Runtime',
+          value: config.pulumi_component_config?.runtime,
+        },
+        {
+          label: 'Pulumi version',
+          value: config.pulumi_component_config?.version,
+        },
+      ]
+      vcsInfo = getVCSInfo(
+        config.pulumi_component_config?.connected_github_vcs_config ||
+          config.pulumi_component_config?.public_git_vcs_config
+      )
+      break
+
     case 'kubernetes_manifest':
       typeSpecificFields = [
         {

@@ -27,6 +27,8 @@ const (
 	JobComponentType ComponentType = "job"
 	// KubernetesManifestComponentType is a type for kubernetes manifest compnent
 	KubernetesManifestComponentType ComponentType = "kubernetes_manifest"
+	// PulumiComponentType is the type for a pulumi component
+	PulumiComponentType ComponentType = "pulumi"
 
 	ComponentTypeUnknown ComponentType = ""
 )
@@ -45,6 +47,8 @@ func (c ComponentType) APIType() models.AppComponentType {
 		return models.AppComponentTypeJob
 	case KubernetesManifestComponentType:
 		return models.AppComponentTypeKubernetesManifest
+	case PulumiComponentType:
+		return models.AppComponentTypePulumi
 	}
 
 	return models.AppComponentTypeUnknown
@@ -70,6 +74,7 @@ type Component struct {
 	Job                *JobComponentConfig                `mapstructure:"job,omitempty" toml:"job,omitempty" jsonschema:"oneof_required=job" nuonhash:"omitempty"`
 	ExternalImage      *ExternalImageComponentConfig      `mapstructure:"external_image,omitempty" toml:"external_image,omitempty" jsonschema:"oneof_required=external_image" nuonhash:"omitempty"`
 	KubernetesManifest *KubernetesManifestComponentConfig `mapstructure:"kubernetes_manifest,omitempty" toml:"kubernetes_manifest,omitempty" jsonschema:"oneof_required=kubernetes_manifest" nuonhash:"omitempty"`
+	Pulumi             *PulumiComponentConfig             `mapstructure:"pulumi,omitempty" toml:"pulumi,omitempty" jsonschema:"oneof_required=pulumi" nuonhash:"omitempty"`
 
 	// created during parsing
 	// WARNING: properties below should not be hashed with nuonhash
@@ -108,6 +113,12 @@ func (c *Component) parse() error {
 
 	if c.KubernetesManifest != nil {
 		if err := c.KubernetesManifest.Parse(); err != nil {
+			return err
+		}
+	}
+
+	if c.Pulumi != nil {
+		if err := c.Pulumi.Parse(); err != nil {
 			return err
 		}
 	}
@@ -153,6 +164,10 @@ func (a *Component) Validate() error {
 		return a.KubernetesManifest.Validate()
 	}
 
+	if a.Pulumi != nil {
+		return a.Pulumi.Validate()
+	}
+
 	return nil
 }
 
@@ -165,6 +180,7 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("docker_build").
 		Example("container_image").
 		Example("kubernetes_manifest").
+		Example("pulumi").
 		Field("name").Short("component name").Required().
 		Long("Unique identifier for the component within the app. Used for referencing in dependencies and templates").
 		Example("database").
@@ -193,7 +209,9 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("kubernetes_manifest").
 		Long("Configuration for Kubernetes manifest deployments. Required when type is 'kubernetes_manifest'").
 		Field("job").Short("job component configuration").OneOfRequired("job").Deprecated("").
-		Long("Configuration for job/batch components. Required when type is 'job'")
+		Long("Configuration for job/batch components. Required when type is 'job'").
+		Field("pulumi").Short("pulumi component configuration").OneOfRequired("pulumi").
+		Long("Configuration for Pulumi deployments. Required when type is 'pulumi'")
 }
 
 func (c *Component) AddDependency(val string) {
@@ -221,6 +239,14 @@ func (c *Component) AllVars() []string {
 		}
 
 		for _, v := range c.TerraformModule.EnvVarMap {
+			vars = append(vars, v)
+		}
+	}
+	if c.Pulumi != nil {
+		for _, v := range c.Pulumi.ConfigMap {
+			vars = append(vars, v)
+		}
+		for _, v := range c.Pulumi.EnvVarMap {
 			vars = append(vars, v)
 		}
 	}

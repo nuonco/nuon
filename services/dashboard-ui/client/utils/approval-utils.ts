@@ -8,6 +8,7 @@ const APPROVAL_TYPE: Record<TWorkflowStepApprovalType, string> = {
   terraform_plan: 'terraform',
   kubernetes_manifest_approval: 'kubernetes',
   helm_approval: 'helm',
+  pulumi_plan: 'pulumi',
   noop: 'no-op',
 }
 
@@ -53,6 +54,12 @@ export const APPROVAL_MODAL_COPY: Record<
     message:
       'Approving the manifest will immediately apply the changes to your cluster.',
   },
+  pulumi_plan: {
+    title: 'Approve Pulumi plan?',
+    heading: 'Are you sure you want to approve these infrastructure changes?',
+    message:
+      'Approving the plan will immediately apply the proposed Pulumi changes to your environment.',
+  },
 }
 
 export const DENY_MODAL_COPY: Record<
@@ -77,6 +84,12 @@ export const DENY_MODAL_COPY: Record<
     message:
       'Denying the manifest will discard the changes and prevent them from being applied to your cluster.',
   },
+  pulumi_plan: {
+    title: 'Deny Pulumi plan?',
+    heading: 'Are you sure you want to deny these infrastructure changes?',
+    message:
+      'Denying the plan will discard the proposed Pulumi changes and prevent them from being applied.',
+  },
 }
 
 export const RETRY_MODAL_COPY: Record<
@@ -100,5 +113,11 @@ export const RETRY_MODAL_COPY: Record<
     heading: 'Are you sure you want to retry this Kubernetes manifest?',
     message:
       'Retrying will generate a new manifest, replacing the current proposed configuration changes for your cluster.',
+  },
+  pulumi_plan: {
+    title: 'Retry Pulumi plan?',
+    heading: 'Are you sure you want to retry this Pulumi plan?',
+    message:
+      'Retrying will generate a new plan, replacing the current proposed Pulumi infrastructure changes.',
   },
 }

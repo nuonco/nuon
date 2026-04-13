@@ -278,6 +278,8 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 		return config.AppPolicyTypeDockerBuild
 	case app.ComponentTypeExternalImage:
 		return config.AppPolicyTypeContainerImage
+	case app.ComponentTypePulumi:
+		return config.AppPolicyTypePulumi
 	default:
 		return ""
 	}
@@ -285,7 +287,7 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 
 func (a *Activities) preparePolicyInputs(planContentsJSON []byte, pctx *policyContext) ([][]byte, []string, error) {
 	switch {
-	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule:
+	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule, pctx.ComponentType == app.ComponentTypePulumi:
 		return a.prepareTerraformPolicyInputs(planContentsJSON, pctx)
 	case pctx.ComponentType == app.ComponentTypeHelmChart:
 		return a.prepareHelmPolicyInputs(planContentsJSON)

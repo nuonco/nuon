@@ -112,6 +112,14 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 			return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
 		}
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
+	case app.ComponentTypePulumi:
+		l.Info("generating pulumi plan")
+		pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+		if err != nil {
+			l.Error("error generating pulumi plan", zap.Error(err))
+			return nil, nil, errors.Wrap(err, "unable to create pulumi deploy plan")
+		}
+		plan.PulumiDeployPlan = pulumiPlan
 	}
 
 	if install.SandboxMode.Bool {

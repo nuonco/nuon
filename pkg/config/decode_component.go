@@ -94,6 +94,14 @@ func DecodeComponent(fromType reflect.Type, toType reflect.Type, from interface{
 			}
 		}
 		comp.TerraformModule = &cmpCfg
+	case PulumiComponentType:
+		var cmpCfg PulumiComponentConfig
+		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {
+			return from, ErrConfig{
+				Description: fmt.Sprintf("unable to parse pulumi component: %s", err.Error()),
+			}
+		}
+		comp.Pulumi = &cmpCfg
 	case JobComponentType:
 		var cmpCfg JobComponentConfig
 		if err := mapstructure.Decode(obj, &cmpCfg); err != nil {
