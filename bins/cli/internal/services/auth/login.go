@@ -48,13 +48,9 @@ func (a *Service) Login(ctx context.Context) error {
 		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
-	// Determine which auth flow to use based on NuonAuthEnabled
-	var result *LoginResult
-	if cfg.NuonAuthEnabled {
-		result, err = a.loginWithNuonAuth(ctx, cfg)
-	} else {
-		result, err = a.loginWithAuth0(ctx, cfg)
-	}
+	// Log in with Nuon Auth
+	// NOTE: we used to branch on a config here but we only support Nuon Auth now
+	result, err := a.loginWithNuonAuth(ctx, cfg)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -106,33 +102,6 @@ func (a *Service) Login(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// loginWithAuth0 performs the Auth0 device code flow
-func (a *Service) loginWithAuth0(ctx context.Context, cfg *models.ServiceCLIConfig) (*LoginResult, error) {
-	AuthAudience = cfg.AuthAudience
-	AuthClientID = cfg.AuthClientID
-	AuthDomain = cfg.AuthDomain
-
-	// Get device code
-	deviceCode, err := a.getAuth0DeviceCode()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get device code: %w", err)
-	}
-
-	// Poll for tokens
-	tokens, err := a.getOAuthTokens(deviceCode)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get OAuth tokens: %w", err)
-	}
-
-	// Get user info from ID token
-	user := a.getUserInfo(tokens.IDToken)
-
-	return &LoginResult{
-		AccessToken: tokens.AccessToken,
-		DisplayName: user.Name,
-	}, nil
 }
 
 // selectAPIURL checks for a configured API URL and either confirms it or prompts for selection.
