@@ -82,6 +82,7 @@ const (
 	RunnerJobTypeTerraformModuleBuild    RunnerJobType = "terraform-module-build"
 	RunnerJobTypeHelmChartBuild          RunnerJobType = "helm-chart-build"
 	RunnerJobTypeKubernetesManifestBuild RunnerJobType = "kubernetes-manifest-build"
+	RunnerJobTypePulumiBuild             RunnerJobType = "pulumi-build"
 	RunnerJobTypeNOOPBuild               RunnerJobType = "noop-build"
 	RunnerJobTypeSandboxBuild            RunnerJobType = "sandbox-build"
 
@@ -95,6 +96,7 @@ const (
 	RunnerJobTypeHelmChartDeploy          RunnerJobType = "helm-chart-deploy"
 	RunnerJobTypeJobDeploy                RunnerJobType = "job-deploy"
 	RunnerJobTypeKubrenetesManifestDeploy RunnerJobType = "kubernetes-manifest-deploy"
+	RunnerJobTypePulumiDeploy             RunnerJobType = "pulumi-deploy"
 	RunnerJobTypeJobNOOPDeploy            RunnerJobType = "noop-deploy"
 
 	// operations job types
@@ -138,7 +140,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeTerraformModuleBuild,
 		RunnerJobTypeHelmChartBuild,
 		RunnerJobTypeKubernetesManifestBuild,
-		RunnerJobTypeSandboxBuild:
+		RunnerJobTypeSandboxBuild,
+		RunnerJobTypePulumiBuild:
 		return RunnerJobGroupBuild
 
 		// syncing
@@ -152,7 +155,8 @@ func (r RunnerJobType) Group() RunnerJobGroup {
 		RunnerJobTypeTerraformDeploy,
 		RunnerJobTypeJobDeploy,
 		RunnerJobTypeKubrenetesManifestDeploy,
-		RunnerJobTypeJobNOOPDeploy:
+		RunnerJobTypeJobNOOPDeploy,
+		RunnerJobTypePulumiDeploy:
 		return RunnerJobGroupDeploy
 
 		// runners

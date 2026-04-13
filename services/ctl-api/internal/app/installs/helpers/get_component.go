@@ -54,6 +54,12 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 
 		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigs.PulumiComponentConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
 		First(&cmp, "id = ?", cmpID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)

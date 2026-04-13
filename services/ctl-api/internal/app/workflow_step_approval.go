@@ -22,6 +22,7 @@ const (
 	TerraformPlanApprovalType      WorkflowStepApprovalType = "terraform_plan"
 	KubernetesManifestApprovalType WorkflowStepApprovalType = "kubernetes_manifest_approval"
 	HelmApprovalApprovalType       WorkflowStepApprovalType = "helm_approval"
+	PulumiApprovalType             WorkflowStepApprovalType = "pulumi_plan"
 )
 
 type WorkflowStepApproval struct {

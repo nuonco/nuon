@@ -4,6 +4,7 @@ ARG AWS_IAM_AUTHENTICATOR_VERSION=0.6.2
 ARG KUBELOGIN_VERSION=0.2.9
 ARG GCLOUD_VERSION=516.0.0
 ARG AZURE_CLI_VERSION=2.73.0
+ARG PULUMI_VERSION=3.155.0
 
 FROM ${BUILD_IMAGE} AS code
 
@@ -107,6 +108,14 @@ ARG AZURE_CLI_VERSION
 
 RUN apk add --update --no-cache gcc musl-dev libffi-dev
 RUN pip install --no-cache-dir --prefix=/azure-cli azure-cli==${AZURE_CLI_VERSION}
+
+FROM golang:1.25-alpine AS pulumi
+
+ARG PULUMI_VERSION
+
+RUN apk add --update --no-cache curl ca-certificates
+WORKDIR /opt
+RUN curl -sSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz" | tar xz
 
 FROM golang:1.25-alpine AS certs
 
@@ -223,9 +232,10 @@ COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-
 COPY --from=kubelogin /bin/kubelogin /usr/local/bin/kubelogin
 COPY --from=gcloud /opt/google-cloud-sdk /opt/google-cloud-sdk
 COPY --from=azure-cli /azure-cli /usr/local
+COPY --from=pulumi /opt/pulumi /opt/pulumi
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
-ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
+ENV PATH="/opt/pulumi:/opt/google-cloud-sdk/bin:${PATH}"
 
 # udpate the ca certs so python's urllib cert verification passes
 RUN update-ca-certificates

@@ -34,6 +34,11 @@ const APPROVAL_BANNER_COPY: Record<
     message:
       'This Kubernetes manifest contains pending configuration changes. Please review these updates before applying them to your cluster.',
   },
+  pulumi_plan: {
+    title: 'Pulumi plan requires review',
+    message:
+      'This Pulumi plan is ready for your review. Please inspect the proposed infrastructure changes before applying them.',
+  },
 }
 
 interface IApprovalBanner {

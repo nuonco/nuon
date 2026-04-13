@@ -41,7 +41,12 @@ func PreloadLatestConfig(db *gorm.DB) *gorm.DB {
 		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig.PublicGitVCSConfig").
-		Preload("ComponentConfigs.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig")
+		Preload("ComponentConfigs.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigs.PulumiComponentConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig")
 }
 
 // component config connections
@@ -75,5 +80,11 @@ func PreloadComponentBuildConfig(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.PublicGitVCSConfig").
 		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig").
-		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig.VCSConnection")
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig.VCSConnection").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigConnection.PulumiComponentConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.ConnectedGithubVCSConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig.ConnectedGithubVCSConfig.VCSConnection")
 }

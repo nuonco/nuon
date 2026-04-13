@@ -141,6 +141,19 @@ func (c *client) CreateTerraformModuleComponentConfig(ctx context.Context, compo
 	return resp.Payload, nil
 }
 
+func (c *client) CreatePulumiComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreatePulumiComponentConfigRequest) (*models.AppPulumiComponentConfig, error) {
+	resp, err := c.genClient.Operations.CreatePulumiComponentConfig(&operations.CreatePulumiComponentConfigParams{
+		ComponentID: componentID,
+		Req:         req,
+		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) CreateKubernetesComponentConfig(ctx context.Context, componentID string, req *models.ServiceCreateKubernetesManifestComponentConfigRequest) (*models.AppKubernetesManifestComponentConfig, error) {
 	resp, err := c.genClient.Operations.CreateKubernetesManifestComponentConfig(&operations.CreateKubernetesManifestComponentConfigParams{
 		ComponentID: componentID,
