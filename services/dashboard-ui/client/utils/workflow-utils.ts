@@ -49,7 +49,10 @@ export function getStepBadge(
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
     if (step?.status?.status === 'approved') {
       return WORKFLOW_BADGE_MAP['approved']
-    } else if (step?.status?.status === 'pending') {
+    } else if (
+      step?.status?.status === 'pending' ||
+      step?.status?.status === 'approval-awaiting'
+    ) {
       return WORKFLOW_BADGE_MAP['auto-approved']
     } else if (
       step?.approval?.type === 'approve-all' ||

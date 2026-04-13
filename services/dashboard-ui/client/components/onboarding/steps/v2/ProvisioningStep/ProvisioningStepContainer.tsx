@@ -10,6 +10,7 @@ import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getInstal
 import { isLessThan30SecondsOld } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
+import { toSentenceCase } from '@/utils/string-utils'
 import type { TOnboarding, TWorkflow, TWorkflowStep } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
@@ -60,6 +61,8 @@ interface IRow {
   id: string
   label: string
   description: string
+  errorDescription?: string
+  errorStepId?: string
   status: 'pending' | 'active' | 'done' | 'error'
   completed: number
   total: number
@@ -117,6 +120,16 @@ function getStepDescription(steps: TWorkflowStep[]): string | undefined {
   return undefined
 }
 
+function getErrorInfo(steps: TWorkflowStep[]): { description?: string; stepId?: string } {
+  const errorStep = steps.find((s) => getStatusTheme(s.status?.status || 'pending') === 'error')
+  if (!errorStep) return {}
+  const desc = errorStep.status?.status_human_description
+  return {
+    description: desc && isHumanReadable(desc) ? desc : undefined,
+    stepId: errorStep.id,
+  }
+}
+
 const FALLBACK_COPY: Record<string, Record<IRow['status'], string>> = {
   stack: { pending: 'Waiting to provision...', active: 'Provisioning stack...', done: 'Stack provisioned', error: 'Stack failed' },
   runner: { pending: 'Waiting to start...', active: 'Awaiting health check...', done: 'Healthy', error: 'Runner failed' },
@@ -152,12 +165,15 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
 
     const addInfraRow = (id: string, label: string, bucket: TWorkflowStep[]) => {
       const status = resolveStatus(bucket)
-      const apiDesc = getStepDescription(bucket)
       const fallback = FALLBACK_COPY[id]?.[status] ?? ''
+      const apiDesc = status === 'error' ? undefined : getStepDescription(bucket)
+      const errorInfo = status === 'error' ? getErrorInfo(bucket) : {}
       rows.push({
         id,
         label,
         description: apiDesc || fallback,
+        errorDescription: errorInfo.description,
+        errorStepId: errorInfo.stepId,
         status,
         completed: countDone(bucket),
         total: bucket.length,
@@ -170,17 +186,20 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
 
     for (const [compName, compSteps] of componentMap) {
       const status = resolveStatus(compSteps)
-      const apiDesc = getStepDescription(compSteps)
       const fallback: Record<IRow['status'], string> = {
         pending: 'Waiting to deploy...',
         active: `Deploying ${compName}...`,
         done: 'Deployed',
         error: 'Failed',
       }
+      const apiDesc = status === 'error' ? undefined : getStepDescription(compSteps)
+      const errorInfo = status === 'error' ? getErrorInfo(compSteps) : {}
       rows.push({
         id: `component-${compName}`,
         label: toTitleCase(compName),
         description: apiDesc || fallback[status],
+        errorDescription: errorInfo.description,
+        errorStepId: errorInfo.stepId,
         status,
         completed: countDone(compSteps),
         total: compSteps.length,
@@ -419,7 +438,7 @@ function useInstallStackQuickLink(orgId?: string, installId?: string) {
 
 // --- Row component ---
 
-function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta; quickLinkUrl?: string }) {
+function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta; quickLinkUrl?: string; workflowUrl?: string }) {
   const isActive = row.status === 'active'
   const isRunnerDone = row.id === 'runner' && row.status === 'done' && runnerMeta
 
@@ -456,13 +475,15 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl }: { row: IRow;
         ) : (
           <Text
             variant="body"
-            className={row.status === 'done'
-              ? 'text-green-700 dark:text-green-500'
-              : row.status === 'active'
-                ? 'text-blue-700 dark:text-blue-500'
-                : 'text-cool-grey-600 dark:text-cool-grey-400'}
+            theme={row.status === 'error' && row.errorDescription
+              ? 'error'
+              : row.status === 'done' || row.status === 'active'
+                ? 'success'
+                : 'neutral'}
           >
-            {row.description}
+            {row.status === 'error' && row.errorDescription
+              ? row.errorDescription
+              : row.description}
           </Text>
         )}
       </div>
@@ -475,6 +496,16 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl }: { row: IRow;
           onClick={() => window.open(quickLinkUrl, '_blank', 'noopener,noreferrer')}
         >
           Launch in AWS <Icon variant="ArrowSquareOut" size={14} />
+        </Button>
+      )}
+      {row.status === 'error' && workflowUrl && (
+        <Button
+          href={workflowUrl}
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+        >
+          View details
         </Button>
       )}
       <ProgressRing completed={row.completed} total={row.total} status={row.status} size={ROW_RING_SIZE} />
@@ -544,7 +575,7 @@ export const ProvisioningStepContainer = ({
   return (
     <div className="flex flex-col gap-8">
       {isError && workflow?.status?.status_human_description && (
-        <Banner theme="error">{workflow.status.status_human_description}</Banner>
+        <Banner theme="error">{toSentenceCase(workflow.status.status_human_description)}</Banner>
       )}
 
       {/* App card */}
@@ -609,6 +640,9 @@ export const ProvisioningStepContainer = ({
                     isLast={!hasMore && i === rows.length - 1}
                     runnerMeta={row.id === 'runner' ? runnerMeta : undefined}
                     quickLinkUrl={row.id === 'stack' ? quickLinkUrl : undefined}
+                    workflowUrl={row.status === 'error' && row.errorStepId && orgId && onboarding?.install_id && workflowId
+                      ? `/${orgId}/installs/${onboarding.install_id}/workflows/${workflowId}?panel=${row.errorStepId}`
+                      : undefined}
                   />
                 )
               })}
