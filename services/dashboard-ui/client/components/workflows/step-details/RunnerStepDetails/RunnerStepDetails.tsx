@@ -1,31 +1,28 @@
+import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import { RunnerDetailsCard, RunnerDetailsCardSkeleton } from '@/components/runners/RunnerDetailsCard'
-import { RunnerHealthCard, RunnerHealthCardSkeleton } from '@/components/runners/RunnerHealthCard'
-import { RunnerProvider } from '@/providers/runner-provider'
-import type { TRunner, TRunnerMngHeartbeat, TRunnerHealthCheck, TWorkflowStep } from '@/types'
+import {
+  ProcessCard,
+  ProcessCardSkeleton,
+} from '@/components/runners/ProcessCard'
+import type { TRunnerProcess, TRunnerSettings, TWorkflowStep } from '@/types'
 
 export interface IRunnerStepDetails {
   step?: TWorkflowStep
   orgId: string
-  runner?: TRunner
-  runnerHeartbeat?: TRunnerMngHeartbeat
-  runnerHealthCheck?: TRunnerHealthCheck[]
-  isRunnerLoading: boolean
-  isHeartbeatLoading: boolean
-  isHealthCheckLoading: boolean
+  processes: TRunnerProcess[]
+  processesLoading: boolean
+  settings?: TRunnerSettings
 }
 
 export const RunnerStepDetails = ({
   step,
   orgId,
-  runner,
-  runnerHeartbeat,
-  runnerHealthCheck,
-  isRunnerLoading,
-  isHeartbeatLoading,
-  isHealthCheckLoading,
+  processes,
+  processesLoading,
+  settings,
 }: IRunnerStepDetails) => {
   return (
     <div className="flex flex-col gap-4">
@@ -40,30 +37,42 @@ export const RunnerStepDetails = ({
           </Link>
         </Text>
       </div>
-      <div className="flex flex-col @min-4xl:flex-row gap-6">
-        {(isRunnerLoading || isHeartbeatLoading) && !runner ? (
-          <RunnerDetailsCardSkeleton />
-        ) : (
-          <RunnerProvider runnerId={runner?.id}>
-            <RunnerDetailsCard
-              initHeartbeat={runnerHeartbeat}
-              runnerGroup={{ platform: 'local' }}
-              shouldPoll
-            />
-          </RunnerProvider>
-        )}
 
-        {(isHealthCheckLoading || !runnerHealthCheck) && !runner ? (
-          <RunnerHealthCardSkeleton />
-        ) : (
-          <RunnerProvider runnerId={runner.id}>
-            <RunnerHealthCard
-              initHealthchecks={runnerHealthCheck}
-              shouldPoll
-            />
-          </RunnerProvider>
-        )}
-      </div>
+      {processesLoading ? (
+        <div className="@container">
+          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+            <ProcessCardSkeleton />
+            <ProcessCardSkeleton />
+          </div>
+        </div>
+      ) : processes.length === 0 ? (
+        <Card>
+          <EmptyState
+            emptyTitle="No active processes"
+            emptyMessage="No runner processes are currently active or offline."
+            variant="table"
+          />
+        </Card>
+      ) : processes.length === 1 ? (
+        <ProcessCard
+          process={processes[0]}
+          settings={settings}
+          shouldPoll
+        />
+      ) : (
+        <div className="@container">
+          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+            {processes.map((process) => (
+              <ProcessCard
+                key={process.id}
+                process={process}
+                settings={settings}
+                shouldPoll
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
