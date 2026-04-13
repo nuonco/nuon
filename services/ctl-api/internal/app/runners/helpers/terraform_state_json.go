@@ -11,7 +11,9 @@ func (s *Helpers) GetTerraformStateJSON(ctx context.Context, workspaceID string)
 	tfs := &app.TerraformWorkspaceStateJSON{}
 
 	res := s.db.WithContext(ctx).
-		First(tfs, "workspace_id = ?", workspaceID)
+		Where("workspace_id = ?", workspaceID).
+		Order("created_at DESC").
+		First(tfs)
 	if res.Error != nil {
 		// if no lock is found, return nil as the lock does not exist
 		if res.Error == gorm.ErrRecordNotFound {

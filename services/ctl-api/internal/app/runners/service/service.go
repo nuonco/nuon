@@ -94,6 +94,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	api.GET(tfWorkspacePath+"/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSONV2)
 	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByIDV2)
+	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id/raw", s.GetWorkspaceStateJSONRawByID)
 	api.GET(tfWorkspacePath+"/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
 
 	s.POST(api, "/v1/terraform-workspace", s.CreateTerraformWorkspace, apiPkg.APIContextTypePublic, true)
@@ -103,6 +104,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 
 	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json", s.GetTerraformWorkspaceStatesJSON, apiPkg.APIContextTypePublic, true)
 	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByID, apiPkg.APIContextTypePublic, true)
+	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/raw", s.GetWorkspaceStateJSONRawByID, apiPkg.APIContextTypePublic, true)
 	s.GET(api, "/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResources, apiPkg.APIContextTypePublic, true)
 
 	tfBackendPath := "/v1/terraform-backend"
@@ -237,6 +239,11 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	tfBackend.GET("", s.GetTerraformCurrentStateData)
 	tfBackend.POST("", s.UpdateTerraformState)
 	tfBackend.DELETE("", s.DeleteTerraformState)
+
+	// pulumi state
+	pulumiState := api.Group("/v1/runners/pulumi-state")
+	pulumiState.GET("/:workspace_id", s.GetPulumiState)
+	pulumiState.POST("/:workspace_id", s.UpdatePulumiState)
 
 	// terraform workspaces
 	tfWorkspaces := api.Group("/v1/terraform-workspaces")

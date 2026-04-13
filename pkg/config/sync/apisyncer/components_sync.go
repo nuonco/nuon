@@ -45,6 +45,7 @@ func (s *syncer) syncComponentConfig(ctx context.Context, comp *config.Component
 		models.AppComponentTypeExternalImage:      s.createContainerImageComponentConfig,
 		models.AppComponentTypeJob:                s.createJobComponentConfig,
 		models.AppComponentTypeKubernetesManifest: s.createKubernetesManifestComponentConfig,
+		models.AppComponentTypePulumi:             s.createPulumiComponentConfig,
 	}
 	method, ok := methods[comp.Type.APIType()]
 	if !ok {

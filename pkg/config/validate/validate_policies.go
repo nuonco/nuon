@@ -84,6 +84,7 @@ func validatePolicyType(policyType config.AppPolicyType) error {
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage,
+		config.AppPolicyTypePulumi,
 		config.AppPolicyTypeSandbox:
 		return nil
 	default:
@@ -122,6 +123,7 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 		config.AppPolicyTypeKubernetesManifest,
 		config.AppPolicyTypeDockerBuild,
 		config.AppPolicyTypeContainerImage,
+		config.AppPolicyTypePulumi,
 		config.AppPolicyTypeSandbox:
 		// component-based and sandbox policy types only support OPA engine
 		if engine != config.AppPolicyEngineOPA {

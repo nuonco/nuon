@@ -141,9 +141,10 @@ export const InstallComponentDetail = () => {
             />
           )}
 
-          {component?.type === 'terraform_module' ? (
+          {component?.type === 'terraform_module' || component?.type === 'pulumi' ? (
             <TerraformWorkspaceCard
               workspaceId={installComponent?.terraform_workspace?.id}
+              componentType={component?.type}
             />
           ) : null}
         </div>
