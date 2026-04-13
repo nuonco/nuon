@@ -8,29 +8,96 @@ import { OrgContext } from '@/providers/org-provider'
 import { InstallContext } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TOrg, TInstall } from '@/types'
-import { ComponentCardComponent } from '@/components/install-components/ComponentCard'
-import { SandboxCardComponent } from '@/components/sandbox/SandboxCard'
-import { RunnerCardComponent } from '@/components/runners/RunnerCard'
-import { StackCardComponent } from '@/components/stacks/StackCard'
 import { Markdown } from './Markdown'
 
 const mockOrg = { id: 'org-mock', name: 'Mock Org' } as TOrg
-const mockInstall = { id: 'install-mock', name: 'Mock Install' } as TInstall
-const storyQueryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-})
+const mockInstall = {
+  id: 'install-mock',
+  name: 'Mock Install',
+  sandbox: { id: 'sandbox-mock' },
+  sandbox_status: 'active',
+  runner_id: 'runner-mock',
+  runner_status: 'active',
+  install_components: [
+    { component_id: 'comp-1', component: { name: 'networking', type: 'terraform_module' } },
+    { component_id: 'comp-2', component: { name: 'ingress-nginx', type: 'helm_chart' } },
+    { component_id: 'comp-3', component: { name: 'api-server', type: 'docker_build' } },
+  ],
+} as TInstall
 
-const MockInstallProviders = ({ children }: { children: ReactNode }) => (
-  <QueryClientProvider client={storyQueryClient}>
-    <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
-      <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
-        <SurfacesProvider>
-          {children}
-        </SurfacesProvider>
-      </InstallContext.Provider>
-    </OrgContext.Provider>
-  </QueryClientProvider>
-)
+function createSeededQueryClient() {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  })
+
+  qc.setQueryData(['install-component', 'comp-1'], {
+    component_id: 'comp-1',
+    component: { name: 'networking', type: 'terraform_module' },
+    status: 'active',
+  })
+  qc.setQueryData(['install-component', 'comp-2'], {
+    component_id: 'comp-2',
+    component: { name: 'ingress-nginx', type: 'helm_chart' },
+    status: 'provisioning',
+  })
+  qc.setQueryData(['install-component', 'comp-3'], {
+    component_id: 'comp-3',
+    component: { name: 'api-server', type: 'docker_build' },
+    status: 'active',
+  })
+
+  const mockActions = [
+    {
+      action_workflow_id: 'action-1',
+      action_workflow: { name: 'deploy-canary' },
+      runs: [{ triggered_by_type: 'manual', status_v2: { status: 'success' } }],
+    },
+    {
+      action_workflow_id: 'action-2',
+      action_workflow: { name: 'rollback' },
+      runs: [{ triggered_by_type: 'manual', status_v2: { status: 'error' } }],
+    },
+  ]
+  qc.setQueryData(
+    ['install-actions-card', 'org-mock', 'install-mock', 'deploy-canary', undefined],
+    { data: mockActions, pagination: { hasNext: false } }
+  )
+  qc.setQueryData(
+    ['install-actions-card', 'org-mock', 'install-mock', 'rollback', undefined],
+    { data: mockActions, pagination: { hasNext: false } }
+  )
+  qc.setQueryData(
+    ['install-actions-card', 'org-mock', 'install-mock', undefined, 'action-1'],
+    { data: mockActions, pagination: { hasNext: false } }
+  )
+
+  qc.setQueryData(['install-stack', 'org-mock', 'install-mock'], {
+    versions: [
+      {
+        composite_status: { status: 'active' },
+        runs: [{}, {}, {}],
+        created_at: '2025-01-15T10:30:00Z',
+      },
+    ],
+  })
+
+  return qc
+}
+
+const MockInstallProviders = ({ children }: { children: ReactNode }) => {
+  const qc = createSeededQueryClient()
+  return (
+    <QueryClientProvider client={qc}>
+      <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
+        <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
+          <SurfacesProvider>
+            {children}
+          </SurfacesProvider>
+        </InstallContext.Provider>
+      </OrgContext.Provider>
+    </QueryClientProvider>
+  )
+}
 
 export const BasicUsage = () => (
   <div className="space-y-6">
@@ -920,36 +987,68 @@ Follow these steps:
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
-          <div className="space-y-2">
-            <ComponentCardComponent
-              name="networking"
-              type="terraform_module"
-              status="active"
-              href="/org-mock/installs/install-mock/components/comp-123"
-            />
-            <ComponentCardComponent
-              name="ingress-nginx"
-              type="helm_chart"
-              status="provisioning"
-              href="/org-mock/installs/install-mock/components/comp-456"
-            />
-            <ComponentCardComponent
-              name="api-server"
-              type="docker_build"
-              status="error"
-              href="/org-mock/installs/install-mock/components/comp-789"
-            />
-          </div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`By name: <nuon-component-card name="networking"></nuon-component-card>
+
+By ID: <nuon-component-card id="comp-1"></nuon-component-card>`}
+          />
         </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live cards):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`By name: <nuon-component-card name="networking"></nuon-component-card>
+
+By ID: <nuon-component-card id="comp-1"></nuon-component-card>
+
+In a group:
+
+<nuon-group gap="3">
+  <nuon-component-card name="networking"></nuon-component-card>
+  <nuon-component-card name="ingress-nginx"></nuon-component-card>
+  <nuon-component-card name="api-server"></nuon-component-card>
+</nuon-group>`}
+            />
+          </MockInstallProviders>
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Action card (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they fetch the action and latest run.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
         <div>
           <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
           <Markdown
             mode="app"
-            content={`Reference a component by name: <nuon-component-card name="networking"></nuon-component-card>
+            content={`Reference an action by name: <nuon-action-card name="deploy-canary"></nuon-action-card>
 
-Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
+Or by ID: <nuon-action-card id="action-1"></nuon-action-card>`}
           />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live cards):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`Action by name: <nuon-action-card name="deploy-canary"></nuon-action-card>
+
+Action by ID: <nuon-action-card id="action-1"></nuon-action-card>
+
+In a group:
+
+<nuon-group gap="3">
+  <nuon-action-card name="deploy-canary"></nuon-action-card>
+  <nuon-action-card name="rollback"></nuon-action-card>
+</nuon-group>`}
+            />
+          </MockInstallProviders>
         </div>
       </div>
     </div>
@@ -961,18 +1060,20 @@ Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
-          <SandboxCardComponent
-            status="active"
-            href="/org-mock/installs/install-mock/sandbox"
-          />
-        </div>
-        <div>
           <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
           <Markdown
             mode="app"
             content={`Sandbox status: <nuon-sandbox-card></nuon-sandbox-card>`}
           />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`Sandbox status: <nuon-sandbox-card></nuon-sandbox-card>`}
+            />
+          </MockInstallProviders>
         </div>
       </div>
     </div>
@@ -984,18 +1085,20 @@ Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
-          <RunnerCardComponent
-            status="active"
-            href="/org-mock/installs/install-mock/runner"
-          />
-        </div>
-        <div>
           <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
           <Markdown
             mode="app"
             content={`Runner status: <nuon-runner-card></nuon-runner-card>`}
           />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`Runner status: <nuon-runner-card></nuon-runner-card>`}
+            />
+          </MockInstallProviders>
         </div>
       </div>
     </div>
@@ -1007,20 +1110,20 @@ Or by ID: <nuon-component-card id="comp_abc123"></nuon-component-card>`}
       </p>
       <div className="p-4 border rounded-lg space-y-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Rendered card (mock data):</p>
-          <StackCardComponent
-            status="active"
-            runCount={5}
-            createdAt="2025-01-15T10:30:00Z"
-            href="/org-mock/installs/install-mock/stacks"
-          />
-        </div>
-        <div>
           <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
           <Markdown
             mode="app"
             content={`Stack status: <nuon-stack-card></nuon-stack-card>`}
           />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`Stack status: <nuon-stack-card></nuon-stack-card>`}
+            />
+          </MockInstallProviders>
         </div>
       </div>
     </div>
@@ -1244,6 +1347,8 @@ View the dependency graph:
 
 Component card: <nuon-component-card name="networking"></nuon-component-card>
 
+Action card: <nuon-action-card name="deploy-canary"></nuon-action-card>
+
 Sandbox card: <nuon-sandbox-card></nuon-sandbox-card>
 
 Runner card: <nuon-runner-card></nuon-runner-card>
@@ -1290,7 +1395,13 @@ View a specific component:
 
 <nuon-component-card name="networking"></nuon-component-card>
 
-<nuon-component-card id="comp_abc123"></nuon-component-card>
+<nuon-component-card id="comp-1"></nuon-component-card>
+
+Action status:
+
+<nuon-action-card name="deploy-canary"></nuon-action-card>
+
+<nuon-action-card id="action-1"></nuon-action-card>
 
 Runner status:
 
