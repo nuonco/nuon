@@ -629,6 +629,72 @@ This shows the component dependency graph with custom styling.`}
   </div>
 )
 
+export const MermaidFlowchartComplex = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Complex flowchart with nested subgraphs</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        A real-world architecture diagram rendered with ReactFlow instead of mermaid SVG.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`\`\`\`mermaid
+graph TD
+
+    subgraph Nuon["Nuon Control Plane"]
+        NuonAPI["Nuon API"]
+    end
+
+    subgraph Clients["Clients"]
+        IDE["IDE with SSH"]
+        Dashboard["Coder & Grafana Dashboards & Web IDE"]
+    end
+
+    subgraph VPC["Customer Cloud VPC (AWS)"]
+        Runner["Nuon Runner"]
+        RDS[("PostgreSQL RDS")]
+        ACM["ACM Certificate"]
+        ALB["Application Load Balancer"]
+        Stack["CloudFormation Stack"]
+
+        subgraph EKS["EKS Cluster"]
+            Coder["Coder"]
+            Logstream["Kubelogstream"]
+            Observability["Grafana & Prometheus Observability"]
+            DevEnv["Development Environment"]
+        end
+    end
+
+    NuonAPI -->|generates| Stack
+    Stack -->|provisions| Runner
+    Runner -->|provisions| EKS
+    Runner -->|provisions| RDS
+    Runner -->|provisions| ACM
+    Runner -->|provisions| ALB
+    Runner -->|provisions| Coder
+    Runner -->|provisions| Logstream
+    Runner -->|provisions| Observability
+
+    ACM -->|TLS| ALB
+    ALB --> Coder
+    RDS -->|DB| Coder
+    Coder --> Observability
+    ALB --> Observability
+    Dashboard -->|HTTPS| ALB
+    Coder --> DevEnv
+    IDE -->|HTTPS| DevEnv
+    IDE -->|HTTPS| ALB
+    Logstream --> DevEnv
+\`\`\``}
+        />
+      </div>
+    </div>
+  </div>
+)
+
 export const ComprehensiveExample = () => (
   <div className="space-y-6">
     <div className="space-y-3">
