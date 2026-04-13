@@ -106,6 +106,17 @@ func (m model) viewContent() string {
 // This should be called whenever the form content changes (not in View()).
 func (m *model) updateViewportContent() {
 	width := min(m.width, maxWidth) - 4
+
+	// fieldLines tracks the ending line (exclusive) for each focusIndex.
+	fieldLines := map[int]int{}
+	lineCount := 0
+
+	// appendSection adds a rendered section and returns how many lines it added.
+	appendSection := func(sections []string, s string) []string {
+		lineCount += strings.Count(s, "\n") + 1
+		return append(sections, s)
+	}
+
 	sections := []string{}
 
 	// Title
@@ -113,33 +124,34 @@ func (m *model) updateViewportContent() {
 	if m.app != nil {
 		title = titleStyle.Render(fmt.Sprintf("Create Install for %s", m.app.Name))
 	}
-	sections = append(sections, title)
+	sections = appendSection(sections, title)
 
-	// Name field
+	// Name field (focusIndex 0)
 	if len(m.inputMappings) > 0 {
 		mapping := m.inputMappings[0]
 		label := labelStyle.Render(mapping.displayName)
 		if mapping.required {
 			label += styles.TextError.Render(" *")
 		}
-		sections = append(sections, label)
+		sections = appendSection(sections, label)
 
 		if mapping.description != "" {
-			sections = append(sections, descStyle.Render(mapping.description))
+			sections = appendSection(sections, descStyle.Render(mapping.description))
 		}
 
 		fieldContent := m.inputs[0].View()
 		if m.focusIndex == 0 {
-			sections = append(sections, focusedInputStyle.Render(fieldContent))
+			sections = appendSection(sections, focusedInputStyle.Render(fieldContent))
 		} else {
-			sections = append(sections, blurredInputStyle.Render(fieldContent))
+			sections = appendSection(sections, blurredInputStyle.Render(fieldContent))
 		}
+		fieldLines[0] = lineCount
 	}
 
 	// Region field (focusIndex 1)
-	sections = append(sections, labelStyle.Render("AWS Region"))
-	sections = append(sections, styles.TextError.Render(" *"))
-	sections = append(sections, descStyle.Render("AWS region for the installation (use left/right arrows to change)"))
+	sections = appendSection(sections, labelStyle.Render("AWS Region"))
+	sections = appendSection(sections, styles.TextError.Render(" *"))
+	sections = appendSection(sections, descStyle.Render("AWS region for the installation (use left/right arrows to change)"))
 
 	regionDisplay := fmt.Sprintf("  %s  ", awsRegions[m.regionIndex])
 	if m.focusIndex == 1 {
@@ -147,8 +159,9 @@ func (m *model) updateViewportContent() {
 	} else {
 		regionDisplay = blurredInputStyle.Render(regionDisplay)
 	}
-	sections = append(sections, regionDisplay)
-	sections = append(sections, "\n")
+	sections = appendSection(sections, regionDisplay)
+	fieldLines[1] = lineCount
+	sections = appendSection(sections, "\n")
 
 	// Dynamic input fields (focusIndex 2+), grouped
 	ghStyle := groupHeaderStyle(width)
@@ -159,14 +172,14 @@ func (m *model) updateViewportContent() {
 
 		if mapping.groupID != "" && mapping.groupID != lastGroupID {
 			if lastGroupID != "" {
-				sections = append(sections, "\n")
+				sections = appendSection(sections, "\n")
 			}
 			groupTitle := lipgloss.JoinVertical(
 				lipgloss.Top,
 				groupTitleStyle.Render(mapping.groupName),
 				styles.TextDim.Render(mapping.groupDescription),
 			)
-			sections = append(sections, ghStyle.Render(groupTitle))
+			sections = appendSection(sections, ghStyle.Render(groupTitle))
 			lastGroupID = mapping.groupID
 		}
 
@@ -188,15 +201,48 @@ func (m *model) updateViewportContent() {
 		} else {
 			inputSections = append(inputSections, blurredInputStyle.Render(fieldContent))
 		}
-		sections = append(sections,
-			giStyle.Render(
-				lipgloss.JoinVertical(
-					lipgloss.Top,
-					inputSections...,
-				),
+		rendered := giStyle.Render(
+			lipgloss.JoinVertical(
+				lipgloss.Top,
+				inputSections...,
 			),
 		)
+		sections = appendSection(sections, rendered)
+		fieldLines[i+1] = lineCount
 	}
 
 	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
+	m.fieldEndLines = fieldLines
+}
+
+// ensureFocusVisible scrolls the viewport so the focused field is visible.
+// If the field's bottom is below the viewport, it scrolls down so the field
+// ends at the bottom. If the field's top is above the viewport, it scrolls up.
+func (m *model) ensureFocusVisible() {
+	endLine, ok := m.fieldEndLines[m.focusIndex]
+	if !ok {
+		return
+	}
+
+	vpHeight := m.viewport.Height()
+	yOffset := m.viewport.YOffset()
+
+	// If the field ends below the visible area, scroll so it's at the bottom.
+	if endLine > yOffset+vpHeight {
+		m.viewport.SetYOffset(endLine - vpHeight)
+		return
+	}
+
+	// Find the start line: it's the end of the previous field (or 0).
+	startLine := 0
+	if m.focusIndex > 0 {
+		if prev, ok := m.fieldEndLines[m.focusIndex-1]; ok {
+			startLine = prev
+		}
+	}
+
+	// If the field starts above the visible area, scroll so it's at the top.
+	if startLine < yOffset {
+		m.viewport.SetYOffset(startLine)
+	}
 }
