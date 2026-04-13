@@ -38,7 +38,7 @@ func New(params Params) *service {
 	var certStore *runneraws.IIDCertStore
 	if params.L != nil {
 		var err error
-		certStore, err = runneraws.NewIIDCertStore(params.L)
+		certStore, err = runneraws.NewIIDCertStore(params.L, params.Cfg.AWSIIDCertsDir)
 		if err != nil {
 			params.L.Warn("failed to initialize AWS IID cert store, IID auth will be unavailable", zap.Error(err))
 		}
