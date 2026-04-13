@@ -17,6 +17,10 @@ import {
   TerraformVariablesFilesModal,
   TerraformVariablesModal,
 } from '@/components/components/configs/TerraformConfig'
+import {
+  PulumiConfigModal,
+  PulumiEnvVarsModal,
+} from '@/components/components/configs/PulumiConfig'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import type { TComponentConfig } from '@/types'
 import { getComponentConfigDisplayData } from '@/utils/component-config-display'
@@ -115,6 +119,41 @@ export const ComponentConfigCard = ({
               const modal = (
                 <KubernetesManifestModal
                   manifest={config.kubernetes_manifest!.manifest!}
+                />
+              )
+              addModal(modal)
+            },
+          })
+        }
+        break
+
+      case 'pulumi':
+        if (
+          config.pulumi_component_config?.variables &&
+          Object.keys(config.pulumi_component_config.variables).length > 0
+        ) {
+          buttons.push({
+            label: 'View config',
+            onClick: () => {
+              const modal = (
+                <PulumiConfigModal
+                  config={config.pulumi_component_config!.variables!}
+                />
+              )
+              addModal(modal)
+            },
+          })
+        }
+        if (
+          config.pulumi_component_config?.env_vars &&
+          Object.keys(config.pulumi_component_config.env_vars).length > 0
+        ) {
+          buttons.push({
+            label: 'View env vars',
+            onClick: () => {
+              const modal = (
+                <PulumiEnvVarsModal
+                  envVars={config.pulumi_component_config!.env_vars!}
                 />
               )
               addModal(modal)

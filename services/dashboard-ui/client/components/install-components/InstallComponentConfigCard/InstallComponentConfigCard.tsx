@@ -91,6 +91,25 @@ function getConfigItems(config: TComponentConfig): TContextTooltipItem[] {
       )
       break
 
+    case 'pulumi':
+      items.push(
+        {
+          id: `config-pulumi-runtime`,
+          title: 'Runtime',
+          subtitle: config?.pulumi_component_config?.runtime,
+        },
+        {
+          id: `config-pulumi-version`,
+          title: 'Pulumi version',
+          subtitle: config?.pulumi_component_config?.version,
+        },
+        ...getConfigVCSItems(
+          config?.pulumi_component_config?.connected_github_vcs_config ||
+            config?.pulumi_component_config?.public_git_vcs_config
+        )
+      )
+      break
+
     case 'external_image':
       items.push(
         {

@@ -10,6 +10,7 @@ import { Text } from '@/components/common/Text'
 import { KubernetesManifestModal } from '@/components/components/configs/KubernetesConfig'
 import { HelmValuesFilesModal, HelmValuesModal } from '@/components/components/configs/HelmConfig'
 import { TerraformVariablesFilesModal, TerraformVariablesModal } from '@/components/components/configs/TerraformConfig'
+import { PulumiConfigModal, PulumiEnvVarsModal } from '@/components/components/configs/PulumiConfig'
 import type { TComponentConfig, TVCSGit, TVCSGitHub } from '@/types'
 
 function getConfigVCSItems(
@@ -164,6 +165,57 @@ function getConfigItems(
         ...getConfigVCSItems(
           config?.terraform_module?.connected_github_vcs_config ||
             config?.terraform_module?.public_git_vcs_config
+        )
+      )
+      break
+
+    case 'pulumi':
+      items.push(
+        {
+          id: `config-pulumi-runtime`,
+          title: 'Runtime',
+          subtitle: config?.pulumi_component_config?.runtime,
+        },
+        {
+          id: `config-pulumi-version`,
+          title: 'Pulumi version',
+          subtitle: config?.pulumi_component_config?.version,
+        },
+        ...[
+          config?.pulumi_component_config?.variables &&
+            Object.keys(config.pulumi_component_config.variables).length > 0 && {
+              id: `config-pulumi-config-`,
+              title: 'Config',
+              leftContent: <Icon variant="List" />,
+              onClick: () => {
+                const modal = (
+                  <PulumiConfigModal
+                    config={config.pulumi_component_config!.variables!}
+                  />
+                )
+                addModal(modal)
+              },
+              subtitle: 'View list',
+            },
+          config?.pulumi_component_config?.env_vars &&
+            Object.keys(config.pulumi_component_config.env_vars).length > 0 && {
+              id: `config-pulumi-env-vars-`,
+              title: 'Env vars',
+              leftContent: <Icon variant="List" />,
+              onClick: () => {
+                const modal = (
+                  <PulumiEnvVarsModal
+                    envVars={config.pulumi_component_config!.env_vars!}
+                  />
+                )
+                addModal(modal)
+              },
+              subtitle: 'View list',
+            },
+        ].filter(Boolean),
+        ...getConfigVCSItems(
+          config?.pulumi_component_config?.connected_github_vcs_config ||
+            config?.pulumi_component_config?.public_git_vcs_config
         )
       )
       break

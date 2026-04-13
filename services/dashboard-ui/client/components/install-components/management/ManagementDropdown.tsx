@@ -46,7 +46,7 @@ export const ManagementDropdown = ({
           currentDeployStatus={currentDeployStatus}
           isMenuButton
         />
-        {component?.type === 'terraform_module' && workspaceId ? (
+        {(component?.type === 'terraform_module' || component?.type === 'pulumi') && workspaceId ? (
           <UnlockTerraformWorkspaceButton
             workspaceId={workspaceId}
             description={component.name}

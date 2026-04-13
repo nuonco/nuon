@@ -90,6 +90,7 @@ const COMPONENT_TYPE_LABELS: Record<string, string> = {
   docker_build: 'Docker build',
   external_image: 'External image',
   job: 'Job',
+  pulumi: 'Pulumi',
 }
 
 export const ComponentCardNode = memo(({ data }: NodeProps) => {
