@@ -31,6 +31,7 @@ type QueueState struct {
 // @temporal-gen-v2 workflow
 // @task-queue "queue"
 // @id-template queue-{{.QueueID}}
+// @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
 	q := &queue{
 		cfg:           w.cfg,

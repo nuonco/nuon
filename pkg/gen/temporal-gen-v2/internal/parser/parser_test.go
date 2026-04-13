@@ -276,6 +276,63 @@ func TestParse(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		"Workflow with single memo": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @memo type queue",
+			},
+			expected: &Annotation{
+				Type: "workflow",
+				WorkflowOpts: &WorkflowOptions{
+					Memo: map[string]string{"type": "queue"},
+				},
+			},
+		},
+		"Workflow with multiple memo entries": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @memo type queue",
+				"// @memo owner test-owner",
+			},
+			expected: &Annotation{
+				Type: "workflow",
+				WorkflowOpts: &WorkflowOptions{
+					Memo: map[string]string{
+						"type":  "queue",
+						"owner": "test-owner",
+					},
+				},
+			},
+		},
+		"Workflow with quoted memo value": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @memo name \"my queue\"",
+			},
+			expected: &Annotation{
+				Type: "workflow",
+				WorkflowOpts: &WorkflowOptions{
+					Memo: map[string]string{"name": "my queue"},
+				},
+			},
+		},
+		"Memo on activity (ignored)": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @memo type queue",
+			},
+			expected: &Annotation{
+				Type:         "activity",
+				ActivityOpts: &ActivityOptions{},
+			},
+		},
+		"Memo missing value": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @memo key",
+			},
+			wantErr: true,
+		},
 		"Unknown argument": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " activity",

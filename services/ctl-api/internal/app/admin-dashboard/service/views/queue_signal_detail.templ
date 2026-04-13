@@ -178,6 +178,7 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						<div class="space-y-3">
 							@infoRow("Type", string(signal.Type))
 							@infoRow("Status", string(signal.Status.Status))
+							@executionCountRow(signal.ExecutionCount)
 							if signal.Status.StatusHumanDescription != "" {
 								@infoRow("Description", signal.Status.StatusHumanDescription)
 							}
@@ -462,4 +463,15 @@ templ activityStatusText(status string) {
 		default:
 			<span class="text-muted-foreground">{ status }</span>
 	}
+}
+
+templ executionCountRow(count int) {
+	<div class="flex items-start gap-3">
+		<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Exec count</span>
+		if count > 1 {
+			<span class="font-mono text-xs text-amber-500 font-bold">{ fmt.Sprintf("%d", count) }</span>
+		} else {
+			<span class="font-mono text-xs text-foreground">{ fmt.Sprintf("%d", count) }</span>
+		}
+	</div>
 }
