@@ -23,6 +23,9 @@ export function getJobHref(job: TRunnerJob): string {
   const { group, metadata, org_id } = job ?? {}
   switch (group) {
     case 'build':
+      if (job.type === 'sandbox-build') {
+        return `/${org_id}/apps/${metadata?.app_id}/sandbox/builds/${metadata?.app_sandbox_build_id}`
+      }
       return `/${org_id}/apps/${metadata?.app_id}/components/${metadata?.component_id}/builds/${metadata?.component_build_id}`
     case 'sandbox':
       return `/${org_id}/installs/${metadata?.install_id}/sandbox/runs/${metadata?.sandbox_run_id}`
@@ -41,6 +44,8 @@ export function getJobName(job: TRunnerJob): string {
 
   switch (group) {
     case 'build':
+      if (type === 'sandbox-build') return 'Sandbox build'
+      return metadata?.component_name ?? 'Unknown'
     case 'sync':
     case 'deploy':
       return metadata?.component_name ?? 'Unknown'
