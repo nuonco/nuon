@@ -69,6 +69,9 @@ func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 	case app.RunnerJobTypeSandboxTerraform, app.RunnerJobTypeSandboxTerraformPlan:
 		plan := approvalplan.NewSandboxRunApprovalPlan(p.PlanContents)
 		return plan.IsNoop()
+	case app.RunnerJobTypeSandboxPulumi:
+		plan := approvalplan.NewPulumiApprovalPlan(p.PlanContents)
+		return plan.IsNoop()
 	case app.RunnerJobTypeTerraformDeploy:
 		plan := approvalplan.NewTerraformApprovalPlan(p.PlanContents)
 		return plan.IsNoop()
