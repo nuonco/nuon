@@ -87,16 +87,24 @@ func (s *service) GetTerraformWorkspaceStatesJSON(ctx *gin.Context) {
 
 func (s *service) GetTerraformStatesJSON(ctx *gin.Context, workspaceID string) ([]app.TerraformWorkspaceStateJSON, error) {
 	states := []app.TerraformWorkspaceStateJSON{}
-	res := s.db.WithContext(ctx).Model(&app.TerraformWorkspaceStateJSON{}).
-		Scopes(scopes.WithOffsetPagination).Where("workspace_id = ?", workspaceID).
-		Select(
+	query := s.db.WithContext(ctx).Model(&app.TerraformWorkspaceStateJSON{}).
+		Scopes(scopes.WithOffsetPagination).Where("workspace_id = ?", workspaceID)
+
+	// include_contents=true returns raw state bytes (used by pulumi state download)
+	if ctx.Query("include_contents") == "true" {
+		query = query.Select("*")
+	} else {
+		query = query.Select(
 			"ID",
 			"CreatedByID",
 			"CreatedAt",
 			"UpdatedAt",
 			"WorkspaceID",
 			"RunnerJobID",
-		).
+		)
+	}
+
+	res := query.
 		Scopes(runnerJobPreload).
 		Order("created_at DESC").
 		Find(&states)

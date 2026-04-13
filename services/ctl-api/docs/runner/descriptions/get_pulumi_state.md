@@ -1,0 +1,1 @@
+Get the current pulumi state for a workspace. Returns raw state bytes or 204 if no state exists.
