@@ -99,16 +99,16 @@ export function getComponentConfigDisplayData(
       typeSpecificFields = [
         {
           label: 'Runtime',
-          value: config.pulumi_component_config?.runtime,
+          value: config.pulumi?.runtime,
         },
         {
           label: 'Pulumi version',
-          value: config.pulumi_component_config?.version,
+          value: config.pulumi?.version,
         },
       ]
       vcsInfo = getVCSInfo(
-        config.pulumi_component_config?.connected_github_vcs_config ||
-          config.pulumi_component_config?.public_git_vcs_config
+        config.pulumi?.connected_github_vcs_config ||
+          config.pulumi?.public_git_vcs_config
       )
       break
 

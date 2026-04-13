@@ -3499,10 +3499,14 @@ export interface components {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       created_at?: string;
       created_by_id?: string;
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       id?: string;
       install_id?: string;
       org_id?: string;
+      runner_nested_template_url?: string;
       updated_at?: string;
+      /** @description Per-install stack template overrides (nil = use app config default) */
+      vpc_nested_template_url?: string;
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -4853,6 +4857,9 @@ export interface components {
     };
     "helpers.CreateInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "helpers.InstallMetadata": {
       managed_by?: string;
@@ -5369,9 +5376,6 @@ export interface components {
     };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
-      auth_audience?: string;
-      auth_client_id?: string;
-      auth_domain?: string;
       dashboard_url?: string;
       nuon_auth_enabled?: boolean;
       root_domain?: string;
@@ -5665,6 +5669,9 @@ export interface components {
     };
     "service.CreateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "service.CreateInstallDeployRequest": {
       build_id?: string;
@@ -6053,6 +6060,9 @@ export interface components {
     };
     "service.UpdateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
       deploy_dependents?: boolean;
