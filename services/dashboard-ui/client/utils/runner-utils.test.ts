@@ -21,6 +21,21 @@ describe('runner-utils', () => {
       )
     })
 
+    test('should generate correct href for sandbox-build jobs', () => {
+      const mockJob: TRunnerJob = {
+        group: 'build',
+        type: 'sandbox-build',
+        org_id: 'org123',
+        metadata: {
+          app_id: 'app123',
+          app_sandbox_build_id: 'bld456',
+        },
+      } as TRunnerJob
+
+      const href = getJobHref(mockJob)
+      expect(href).toBe('/org123/apps/app123/sandbox/builds/bld456')
+    })
+
     test('should generate correct href for sandbox jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'sandbox',
@@ -32,7 +47,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       const href = getJobHref(mockJob)
-      expect(href).toBe('/org123/installs/install123/sandbox/sandbox456')
+      expect(href).toBe('/org123/installs/install123/sandbox/runs/sandbox456')
     })
 
     test('should generate correct href for sync jobs', () => {
@@ -82,7 +97,7 @@ describe('runner-utils', () => {
 
       const href = getJobHref(mockJob)
       expect(href).toBe(
-        '/org123/installs/install123/actions/workflow456/run789'
+        '/org123/installs/install123/actions/workflow456/runs/run789'
       )
     })
 
@@ -121,6 +136,17 @@ describe('runner-utils', () => {
 
       const name = getJobName(mockJob)
       expect(name).toBe('api-service')
+    })
+
+    test('should return "Sandbox build" for sandbox-build jobs', () => {
+      const mockJob: TRunnerJob = {
+        group: 'build',
+        type: 'sandbox-build',
+        metadata: {},
+      } as TRunnerJob
+
+      const name = getJobName(mockJob)
+      expect(name).toBe('Sandbox build')
     })
 
     test('should return component name for sync jobs', () => {
@@ -171,14 +197,24 @@ describe('runner-utils', () => {
       expect(name).toBe('Deploy to Production')
     })
 
-    test('should return type for operations jobs', () => {
+    test('should return restart name for operations shut-down jobs', () => {
+      const mockJob: TRunnerJob = {
+        group: 'operations',
+        type: 'shut-down',
+      } as TRunnerJob
+
+      const name = getJobName(mockJob)
+      expect(name).toBe('Runner process restart')
+    })
+
+    test('should return Unknown for other operations jobs', () => {
       const mockJob: TRunnerJob = {
         group: 'operations',
         type: 'noop',
       } as TRunnerJob
 
       const name = getJobName(mockJob)
-      expect(name).toBe('noop')
+      expect(name).toBe('Unknown')
     })
 
     test('should return Unknown for missing metadata', () => {
