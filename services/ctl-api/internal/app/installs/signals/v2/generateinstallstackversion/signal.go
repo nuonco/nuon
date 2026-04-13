@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	stackoverrides "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
@@ -114,6 +115,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := render.RenderStruct(&cfg.SecretsConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render secrets config")
 	}
+
+	// Apply per-install stack template overrides before rendering so
+	// template variables in override URLs get expanded.
+	stackoverrides.ApplyInstallStackOverrides(install, &cfg.StackConfig)
 
 	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
 		return errors.Wrap(stackErr, "unable to render stack config")
