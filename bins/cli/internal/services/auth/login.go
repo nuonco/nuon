@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -28,12 +28,10 @@ type LoginResult struct {
 }
 
 func (a *Service) Login(ctx context.Context) error {
-	view := ui.NewGetView()
-
 	// Ask user about deployment type and hostname
 	apiURL, err := a.selectAPIURL()
 	if err != nil {
-		return view.Error(fmt.Errorf("couldn't select API URL: %w", err))
+		return ui.PrintError(fmt.Errorf("couldn't select API URL: %w", err))
 	}
 
 	// Set the API URL in the config
@@ -42,12 +40,12 @@ func (a *Service) Login(ctx context.Context) error {
 
 	// Recreate the API client with the selected URL
 	if err := a.updateAPIClient(apiURL, a.cfg); err != nil {
-		return view.Error(fmt.Errorf("couldn't update API client: %w", err))
+		return ui.PrintError(fmt.Errorf("couldn't update API client: %w", err))
 	}
 
 	cfg, err := a.api.GetCLIConfig(ctx)
 	if err != nil {
-		return view.Error(fmt.Errorf("couldn't get cli config: %w", err))
+		return ui.PrintError(fmt.Errorf("couldn't get cli config: %w", err))
 	}
 
 	// Determine which auth flow to use based on NuonAuthEnabled
@@ -58,16 +56,16 @@ func (a *Service) Login(ctx context.Context) error {
 		result, err = a.loginWithAuth0(ctx, cfg)
 	}
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
 	// Save access token to config
 	a.cfg.Set("api_token", result.AccessToken)
 	if err := a.cfg.WriteConfig(); err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	view.Print(fmt.Sprintf("Logged in as %s", result.DisplayName))
+	ui.PrintLn(fmt.Sprintf("Logged in as %s", result.DisplayName))
 
 	// Update apiClient with newly-fetched token so we can list orgs
 	api, err := nuon.New(
@@ -76,7 +74,7 @@ func (a *Service) Login(ctx context.Context) error {
 		nuon.WithURL(a.cfg.APIURL),
 	)
 	if err != nil {
-		return view.Error(fmt.Errorf("unable to init API client: %w", err))
+		return ui.PrintError(fmt.Errorf("unable to init API client: %w", err))
 	}
 	a.api = api
 
@@ -86,25 +84,25 @@ func (a *Service) Login(ctx context.Context) error {
 		Limit:  10,
 	})
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
 	switch len(orgs) {
 	case 0:
 		// prompt user to create an org
-		view.Print("You are not a member of any orgs. You must create an org, or request an invite to one to continue.")
+		ui.PrintLn("You are not a member of any orgs. You must create an org, or request an invite to one to continue.")
 
 	case 1:
 		org := orgs[0]
 		a.cfg.Set("org_id", org.ID)
 		err = a.cfg.WriteConfig()
 		if err != nil {
-			return view.Error(err)
+			return ui.PrintError(err)
 		}
-		view.Print(fmt.Sprintf("Using org %s", org.Name))
+		ui.PrintLn(fmt.Sprintf("Using org %s", org.Name))
 
 	default:
-		view.Print("You are a member of multiple orgs. Select one to continue.")
+		ui.PrintLn("You are a member of multiple orgs. Select one to continue.")
 	}
 
 	return nil
@@ -161,12 +159,12 @@ func (a *Service) selectAPIURL() (string, error) {
 	source := a.cfg.APIURLSource
 	fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %s (%s)", configuredURL, source)))
 
-	var confirmed bool
-	confirmPrompt := &survey.Confirm{
-		Message: fmt.Sprintf("Login to %s", displayName),
-		Default: true,
-	}
-	if err := survey.AskOne(confirmPrompt, &confirmed); err != nil {
+	confirmed, err := bubbles.InlineConfirm(
+		fmt.Sprintf("Login to %s", displayName),
+		true,
+		a.cfg.Interactive,
+	)
+	if err != nil {
 		return "", fmt.Errorf("failed to confirm API URL: %w", err)
 	}
 
@@ -179,13 +177,12 @@ func (a *Service) selectAPIURL() (string, error) {
 
 // promptDeploymentType shows the Nuon Cloud / Nuon BYOC selector.
 func (a *Service) promptDeploymentType(nuonCloudURL string) (string, error) {
-	var deploymentType string
-	prompt := &survey.Select{
-		Message: "Which Nuon deployment are you using?",
-		Options: []string{"Nuon Cloud", "Nuon BYOC"},
-		Default: "Nuon Cloud",
-	}
-	if err := survey.AskOne(prompt, &deploymentType); err != nil {
+	deploymentType, err := bubbles.SelectFromOptions(
+		"Which Nuon deployment are you using?",
+		[]string{"Nuon Cloud", "Nuon BYOC"},
+		a.cfg.Interactive,
+	)
+	if err != nil {
 		return "", fmt.Errorf("failed to get deployment type: %w", err)
 	}
 
@@ -198,12 +195,14 @@ func (a *Service) promptDeploymentType(nuonCloudURL string) (string, error) {
 
 // promptCustomURL asks for a URL and normalizes the scheme.
 func (a *Service) promptCustomURL() (string, error) {
-	var customHostname string
-	hostPrompt := &survey.Input{
-		Message: "Enter your Nuon API URL:",
-		Help:    "Example: https://api.your-domain.com or https://api.nuon.co",
-	}
-	if err := survey.AskOne(hostPrompt, &customHostname, survey.WithValidator(survey.Required)); err != nil {
+	customHostname, err := bubbles.PromptText(
+		"Enter your Nuon API URL:",
+		"https://api.your-domain.com",
+		"Example: https://api.your-domain.com or https://api.nuon.co",
+		true,
+		a.cfg.Interactive,
+	)
+	if err != nil {
 		return "", fmt.Errorf("failed to get API URL: %w", err)
 	}
 
