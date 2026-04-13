@@ -36,6 +36,11 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		}
 	}()
 
+	// Increment execution count to track how many times this signal has been executed.
+	_ = activities.AwaitIncrementQueueSignalExecutionCount(ctx, &activities.IncrementQueueSignalExecutionCountRequest{
+		QueueSignalID: h.queueSignalID,
+	})
+
 	if h.canceled {
 		return nil, errors.New("signal was canceled")
 	}

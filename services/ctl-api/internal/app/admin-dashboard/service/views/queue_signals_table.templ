@@ -23,6 +23,7 @@ templ QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, 
 						@table.Head() { Signal }
 						@table.Head() { Type }
 						@table.Head() { Status }
+						@table.Head() { Execs }
 						@table.Head() { Owner }
 						@table.Head() { Created }
 					}
@@ -40,6 +41,13 @@ templ QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, 
 							}
 							@table.Cell() {
 								@signalStatusBadge(sig.Status)
+							}
+							@table.Cell() {
+								if sig.ExecutionCount > 1 {
+									<span class="font-mono text-xs text-amber-500 font-bold">{ fmt.Sprintf("%d", sig.ExecutionCount) }</span>
+								} else {
+									<span class="font-mono text-xs text-muted-foreground">{ fmt.Sprintf("%d", sig.ExecutionCount) }</span>
+								}
 							}
 							@table.Cell() {
 								<div class="flex flex-col gap-0.5">
