@@ -638,6 +638,8 @@ type ClientService interface {
 
 	GetWorkflows(params *GetWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowsOK, error)
 
+	GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error)
+
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerCreated, error)
 
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
@@ -13581,6 +13583,52 @@ func (a *Client) GetWorkflows(params *GetWorkflowsParams, authInfo runtime.Clien
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflows: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkspaceStateJSONRawByID gets raw workspace state json by id
+
+Returns the raw state contents without format-specific parsing. Works for both terraform and pulumi state.
+*/
+func (a *Client) GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkspaceStateJSONRawByIDParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkspaceStateJSONRawByID",
+		Method:             "GET",
+		PathPattern:        "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/raw",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkspaceStateJSONRawByIDReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkspaceStateJSONRawByIDOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkspaceStateJSONRawByID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
