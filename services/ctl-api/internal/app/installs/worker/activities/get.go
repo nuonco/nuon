@@ -46,6 +46,7 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		// load app secrets for deploys
 		Preload("App.AppSecrets").
 		Preload("AppRunnerConfig").
+		Preload("InstallConfig").
 
 		// load connected github
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").

@@ -76,6 +76,10 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to render secrets config")
 	}
 
+	// Apply per-install stack template overrides before rendering so
+	// template variables in override URLs get expanded.
+	ApplyInstallStackOverrides(install, &cfg.StackConfig)
+
 	if stackErr := render.RenderStruct(&cfg.StackConfig, stateData); stackErr != nil {
 		return errors.Wrap(stackErr, "unable to render stack config")
 	}
