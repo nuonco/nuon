@@ -17,7 +17,7 @@ title: 'Policies'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | policy type Type of policy that determines where and how it is enforced | **Optional**<br/>`"kubernetes_cluster"`, `"terraform_module"`, `"helm_chart"`, `"kubernetes_manifest"`, `"container_image"`, `"sandbox"` | `"kubernetes_cluster"`, `"terraform_module"` |
+| **`type`**<br/>string | policy type Type of policy that determines where and how it is enforced | **Optional**<br/>`"kubernetes_cluster"`, `"terraform_module"`, `"helm_chart"`, `"kubernetes_manifest"`, `"container_image"`, `"pulumi"`, `"sandbox"` | `"kubernetes_cluster"`, `"terraform_module"` |
 | **`engine`**<br/>string | policy engine The policy engine used to evaluate the policy. Must be compatible with the policy type. | **Optional**<br/>`"kyverno"`, `"opa"` | `"kyverno"`, `"opa"` |
 | **`name`**<br/>string | policy name Human-readable name for the policy. If not specified, will be derived from the source filename when parsing from a policies/ directory. | **Optional** | `"disallow-ingress-nginx-custom-snippets"`, `"set-karpenter-non-cpu-limits"` |
 | **`contents`**<br/>string | policy document Policy content in the appropriate format for the policy type. Supports Nuon templating and external file sources: HTTP(S) URLs (https://example.com/policy.json), git repositories (g... | **Optional** | `"./disallow-ingress-nginx-custom-snippets.yaml"`, `"./block-mutable-tags.rego"` |

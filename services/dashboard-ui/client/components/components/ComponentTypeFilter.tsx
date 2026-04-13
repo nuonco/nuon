@@ -13,6 +13,7 @@ type TComponentConfigTypeText =
   | 'helm_chart'
   | 'terraform_module'
   | 'kubernetes_manifest'
+  | 'pulumi'
 
 const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
   'docker_build',
@@ -20,6 +21,7 @@ const FILTER_OPTIONS: Array<TComponentConfigTypeText> = [
   'helm_chart',
   'terraform_module',
   'kubernetes_manifest',
+  'pulumi',
 ]
 
 const groupClasses = {
@@ -42,6 +44,10 @@ const groupClasses = {
   kubernetes_manifest: [
     'group/error',
     'group-hover/error:block group-hover/error:opacity-100',
+  ],
+  pulumi: [
+    'group/pulumi',
+    'group-hover/pulumi:block group-hover/pulumi:opacity-100',
   ],
 }
 

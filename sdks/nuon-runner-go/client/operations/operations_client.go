@@ -54,6 +54,50 @@ type Client struct {
 // ClientOption may be used to customize the behavior of Client methods.
 type ClientOption func(*runtime.ClientOperation)
 
+// This client is generated with a few options you might find useful for your swagger spec.
+//
+// Feel free to add you own set of options.
+
+// WithContentType allows the client to force the Content-Type header
+// to negotiate a specific Consumer from the server.
+//
+// You may use this option to set arbitrary extensions to your MIME media type.
+func WithContentType(mime string) ClientOption {
+	return func(r *runtime.ClientOperation) {
+		r.ConsumesMediaTypes = []string{mime}
+	}
+}
+
+// WithContentTypeApplicationJSON sets the Content-Type header to "application/json".
+func WithContentTypeApplicationJSON(r *runtime.ClientOperation) {
+	r.ConsumesMediaTypes = []string{"application/json"}
+}
+
+// WithContentTypeApplicationOctetStream sets the Content-Type header to "application/octet-stream".
+func WithContentTypeApplicationOctetStream(r *runtime.ClientOperation) {
+	r.ConsumesMediaTypes = []string{"application/octet-stream"}
+}
+
+// WithAccept allows the client to force the Accept header
+// to negotiate a specific Producer from the server.
+//
+// You may use this option to set arbitrary extensions to your MIME media type.
+func WithAccept(mime string) ClientOption {
+	return func(r *runtime.ClientOperation) {
+		r.ProducesMediaTypes = []string{mime}
+	}
+}
+
+// WithAcceptApplicationJSON sets the Accept header to "application/json".
+func WithAcceptApplicationJSON(r *runtime.ClientOperation) {
+	r.ProducesMediaTypes = []string{"application/json"}
+}
+
+// WithAcceptApplicationOctetStream sets the Accept header to "application/octet-stream".
+func WithAcceptApplicationOctetStream(r *runtime.ClientOperation) {
+	r.ProducesMediaTypes = []string{"application/octet-stream"}
+}
+
 // ClientService is the interface for Client methods
 type ClientService interface {
 	CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShutdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteRunnerProcessShutdownOK, error)
@@ -91,6 +135,8 @@ type ClientService interface {
 	GetInstallActionWorkflowRun(params *GetInstallActionWorkflowRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionWorkflowRunOK, error)
 
 	GetInstallComponenetLastActivePlan(params *GetInstallComponenetLastActivePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponenetLastActivePlanOK, error)
+
+	GetPulumiState(params *GetPulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPulumiStateOK, *GetPulumiStateNoContent, error)
 
 	GetRunner(params *GetRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerOK, error)
 
@@ -141,6 +187,8 @@ type ClientService interface {
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
 	UpdateInstallActionWorkflowRunStep(params *UpdateInstallActionWorkflowRunStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallActionWorkflowRunStepOK, error)
+
+	UpdatePulumiState(params *UpdatePulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePulumiStateOK, error)
 
 	UpdateRunnerJob(params *UpdateRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerJobOK, error)
 
@@ -982,6 +1030,52 @@ func (a *Client) GetInstallComponenetLastActivePlan(params *GetInstallComponenet
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallComponenetLastActivePlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPulumiState gets current pulumi state
+
+Get the current pulumi state for a workspace. Returns raw state bytes or 204 if no state exists.
+*/
+func (a *Client) GetPulumiState(params *GetPulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPulumiStateOK, *GetPulumiStateNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPulumiStateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPulumiState",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/pulumi-state/{workspace_id}",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPulumiStateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *GetPulumiStateOK:
+		return value, nil, nil
+	case *GetPulumiStateNoContent:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -2131,6 +2225,52 @@ func (a *Client) UpdateInstallActionWorkflowRunStep(params *UpdateInstallActionW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallActionWorkflowRunStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdatePulumiState updates pulumi state
+
+Store pulumi state for a workspace. Accepts raw state bytes and stores them without parsing.
+*/
+func (a *Client) UpdatePulumiState(params *UpdatePulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePulumiStateOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdatePulumiStateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdatePulumiState",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/pulumi-state/{workspace_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/octet-stream"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdatePulumiStateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdatePulumiStateOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdatePulumiState: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

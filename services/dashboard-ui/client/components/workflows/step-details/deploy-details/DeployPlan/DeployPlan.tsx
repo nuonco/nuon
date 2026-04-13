@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { HelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
 import { KubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
+import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
 import { Skeleton } from '@/components/common/Skeleton'
 import type { TWorkflowStep, TWorkflowStepApprovalType } from '@/types'
@@ -14,6 +15,7 @@ function getApprovalPlanSkeleton(planType: TApprovalType): ReactNode {
     helm_approval: <HelmPlanSkeleton />,
     kubernetes_manifest_approval: <KubernetesPlanSkeleton />,
     terraform_plan: <TerraformPlanSkeleton />,
+    pulumi_plan: <Skeleton height="350px" width="100%" />,
   }
 
   return diffSkeletons[planType]
@@ -24,6 +26,7 @@ function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
     helm_approval: <HelmDiff plan={plan} />,
     kubernetes_manifest_approval: <KubernetesDiff plan={plan?.plan} />,
     terraform_plan: <TerraformDiff plan={plan} />,
+    pulumi_plan: <PulumiDiff plan={plan} />,
   }
 
   return diffs[step?.approval?.type]

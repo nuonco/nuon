@@ -91,6 +91,14 @@ func (p *Planner) createComponentBuildPlan(ctx workflow.Context, req *CreateComp
 			return nil, errors.Wrap(err, "unable to create kubernetes manifest build plan")
 		}
 		plan.KubernetesManifestBuildPlan = k8sManifestPlan
+
+	case app.ComponentTypePulumi:
+		l.Info("generating pulumi build plan")
+		pulumiPlan, err := p.createPulumiBuildPlan(ctx, build)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create pulumi build plan")
+		}
+		plan.PulumiBuildPlan = pulumiPlan
 	}
 
 	org, err := activities.AwaitGetOrgByID(ctx, build.OrgID)

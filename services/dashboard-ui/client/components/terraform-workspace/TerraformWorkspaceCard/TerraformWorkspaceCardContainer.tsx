@@ -3,19 +3,32 @@ import { TerraformBackendConfigButton } from '@/components/terraform-workspace/T
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getTerraformState, getTerraformStates } from '@/lib'
+import {
+  getTerraformState,
+  getTerraformStates,
+  getWorkspaceStateRaw,
+} from '@/lib'
+import type { TComponentType } from '@/types'
 import { TerraformWorkspaceCard } from './TerraformWorkspaceCard'
 
 export const TerraformWorkspaceCardContainer = ({
   workspaceId: workspaceIdProp,
   description,
-}: { workspaceId?: string; description?: string } = {}) => {
+  componentType,
+}: {
+  workspaceId?: string
+  description?: string
+  componentType?: TComponentType
+} = {}) => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const workspaceId = workspaceIdProp ?? install?.sandbox?.terraform_workspace?.id
+  const workspaceId =
+    workspaceIdProp ?? install?.sandbox?.terraform_workspace?.id
+
+  const isPulumi = componentType === 'pulumi'
 
   const { data: states } = useQuery({
-    queryKey: ['terraform-states', org?.id, workspaceId],
+    queryKey: ['workspace-states', org?.id, workspaceId],
     queryFn: () =>
       getTerraformStates({
         orgId: org.id,
@@ -26,14 +39,22 @@ export const TerraformWorkspaceCardContainer = ({
 
   const latestStateId = states?.[0]?.id
 
+  // For terraform, use the parsed state endpoint.
+  // For pulumi, use the raw endpoint (pulumi state isn't terraform JSON).
   const { data: currentRevision } = useQuery({
-    queryKey: ['terraform-state', org?.id, workspaceId, latestStateId],
+    queryKey: ['workspace-state', org?.id, workspaceId, latestStateId, isPulumi],
     queryFn: () =>
-      getTerraformState({
-        orgId: org.id,
-        workspaceId: workspaceId!,
-        stateId: latestStateId!,
-      }),
+      isPulumi
+        ? getWorkspaceStateRaw({
+            orgId: org.id,
+            workspaceId: workspaceId!,
+            stateId: latestStateId!,
+          })
+        : getTerraformState({
+            orgId: org.id,
+            workspaceId: workspaceId!,
+            stateId: latestStateId!,
+          }),
     enabled: !!org?.id && !!workspaceId && !!latestStateId,
   })
 
@@ -42,17 +63,24 @@ export const TerraformWorkspaceCardContainer = ({
   return (
     <TerraformWorkspaceCard
       currentRevision={currentRevision}
+      componentType={componentType}
       actions={
-        <>
-          <TerraformBackendConfigButton workspaceId={workspaceId} variant="secondary" size="sm">
-            Use Terraform CLI
-          </TerraformBackendConfigButton>
-          <UnlockTerraformWorkspaceButton
-            workspaceId={workspaceId}
-            description={description}
-            size="sm"
-          />
-        </>
+        isPulumi ? undefined : (
+          <>
+            <TerraformBackendConfigButton
+              workspaceId={workspaceId}
+              variant="secondary"
+              size="sm"
+            >
+              Use Terraform CLI
+            </TerraformBackendConfigButton>
+            <UnlockTerraformWorkspaceButton
+              workspaceId={workspaceId}
+              description={description}
+              size="sm"
+            />
+          </>
+        )
       }
     />
   )

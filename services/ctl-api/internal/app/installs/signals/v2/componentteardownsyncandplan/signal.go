@@ -427,6 +427,8 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		approvalTyp = app.TerraformPlanApprovalType
 	case app.ComponentTypeKubernetesManifest:
 		approvalTyp = app.KubernetesManifestApprovalType
+	case app.ComponentTypePulumi:
+		approvalTyp = app.PulumiApprovalType
 	default:
 		approvalTyp = app.NoopApprovalType
 	}
