@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/created"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -143,21 +145,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"component_count", len(syncResp.ComponentIDs),
 		"action_count", len(syncResp.ActionIDs))
 
-	// Ensure each component has a Temporal queue so buildcomponents can enqueue signals
+	// Ensure each component has a Temporal queue and enqueue a component-created
+	// signal on it. The created signal flips the component to active so that the
+	// later app-branch-builds step's build signal passes its active guard. Both
+	// steps run inside the same goroutine per component to keep them ordered,
+	// while fanning out in parallel across components.
 	if len(syncResp.ComponentIDs) > 0 {
-		queueErrCh := workflow.NewChannel(ctx)
+		errCh := workflow.NewChannel(ctx)
 		for _, componentID := range syncResp.ComponentIDs {
 			componentID := componentID
 			workflow.Go(ctx, func(gCtx workflow.Context) {
-				err := activities.AwaitEnsureComponentQueueByComponentID(gCtx, componentID)
-				queueErrCh.Send(gCtx, err)
+				if err := activities.AwaitEnsureComponentQueueByComponentID(gCtx, componentID); err != nil {
+					errCh.Send(gCtx, fmt.Errorf("ensure queue for %s: %w", componentID, err))
+					return
+				}
+				if _, err := sharedactivities.AwaitEnqueueSignalToOwner(gCtx, &sharedactivities.EnqueueSignalToOwnerRequest{
+					OwnerID:   componentID,
+					OwnerType: "components",
+					Signal: &createdsignal.Signal{
+						ComponentID: componentID,
+					},
+				}); err != nil {
+					errCh.Send(gCtx, fmt.Errorf("enqueue created signal for %s: %w", componentID, err))
+					return
+				}
+				errCh.Send(gCtx, nil)
 			})
 		}
 		for range syncResp.ComponentIDs {
-			var qErr error
-			queueErrCh.Receive(ctx, &qErr)
-			if qErr != nil {
-				l.Warn("unable to ensure component queue", "error", qErr)
+			var cErr error
+			errCh.Receive(ctx, &cErr)
+			if cErr != nil {
+				l.Warn("unable to initialise component", "error", cErr)
 			}
 		}
 	}
