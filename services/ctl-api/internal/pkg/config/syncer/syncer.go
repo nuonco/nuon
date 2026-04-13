@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/appconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
@@ -26,8 +28,10 @@ import (
 // This implementation is used by workflows within ctl-api to sync configs
 // without going through HTTP endpoints.
 type syncer struct {
-	db  *gorm.DB
-	cfg *config.AppConfig
+	db               *gorm.DB
+	cfg              *config.AppConfig
+	componentHelpers *componenthelpers.Helpers
+	actionsHelpers   *actionshelpers.Helpers
 
 	appID       string
 	appConfigID string
@@ -49,14 +53,16 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
-		db:          db,
-		cfg:         cfg,
-		appID:       appID,
-		appConfigID: appConfigID,
-		state:       nil, // will be populated by fetchState()
-		prevState:   nil,
+		db:               db,
+		cfg:              cfg,
+		componentHelpers: componentHelpers,
+		actionsHelpers:   actionsHelpers,
+		appID:            appID,
+		appConfigID:      appConfigID,
+		state:            nil, // will be populated by fetchState()
+		prevState:        nil,
 	}
 }
 
@@ -188,13 +194,13 @@ func (s *syncer) syncSteps() []syncStep {
 		},
 	}
 
-	// Ensure all components exist
+	// Ensure all components exist (with full initialization: queue, dependencies, install components)
 	for _, comp := range s.cfg.Components {
 		c := comp // Capture loop variable
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-ensure-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.EnsureComponent(ctx, s.db, c, s.appID)
+				return components.EnsureComponent(ctx, s.db, s.componentHelpers, c, s.appID)
 			},
 		})
 	}
@@ -206,6 +212,28 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
 				return components.SyncComponent(ctx, s.db, c, s.appID, s.appConfigID, s.state)
+			},
+		})
+	}
+
+	// Ensure all actions exist (with full initialization: install action workflows)
+	for _, action := range s.cfg.Actions {
+		a := action // Capture loop variable
+		steps = append(steps, syncStep{
+			Resource: fmt.Sprintf("action-ensure-%s", a.Name),
+			Method: func(ctx context.Context) error {
+				return s.ensureAction(ctx, a)
+			},
+		})
+	}
+
+	// Sync action configurations
+	for _, action := range s.cfg.Actions {
+		a := action // Capture loop variable
+		steps = append(steps, syncStep{
+			Resource: fmt.Sprintf("action-sync-%s", a.Name),
+			Method: func(ctx context.Context) error {
+				return s.syncAction(ctx, a)
 			},
 		})
 	}
