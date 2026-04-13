@@ -105,45 +105,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
-
-		// new token, so validate the token
-		claims, err := m.validateToken(ctx, token)
-		if err != nil {
-			ctx.Error(stderr.ErrAuthentication{
-				Err:         err,
-				Description: "Please make sure the token is valid, and not expired.",
-			})
-			ctx.Abort()
-			return
-		}
-
-		// Extract attribution from cookie (set by customer-dashboard during auth flow)
-		attribution := m.extractAttributionFromCookie(ctx)
-
-		// Determine completion source based on request User-Agent
-		completionSource := "dashboard"
-		if isCLIUserAgent(ctx.Request.UserAgent()) {
-			completionSource = "cli"
-		}
-
-		// store the token
-		acctToken, err = m.saveAccountToken(ctx, token, claims, attribution, completionSource)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to save account token: %w", err))
-			ctx.Abort()
-			return
-		}
-
-		acct, err := m.acctClient.FetchAccount(ctx, acctToken.AccountID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to fetch: %w", err))
-			ctx.Abort()
-			return
-		}
-
-		cctx.SetAccountGinContext(ctx, acct)
-		m.detectCLIUsage(ctx, acct)
-		ctx.Next()
 	}
 }
 
