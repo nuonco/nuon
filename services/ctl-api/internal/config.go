@@ -185,11 +185,6 @@ type Config struct {
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 
-	// auth 0 config
-	Auth0IssuerURL string `config:"auth0_issuer_url" validate:"required"`
-	Auth0Audience  string `config:"auth0_audience" validate:"required"`
-	Auth0ClientID  string `config:"auth0_client_id" validate:"required"`
-
 	// links
 	AppURL        string `config:"app_url" validate:"required"`
 	RunnerAPIURL  string `config:"runner_api_url" validate:"required"`

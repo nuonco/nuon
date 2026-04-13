@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -28,6 +29,9 @@ type AppInstallConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// custom nested stacks
+	CustomNestedStacks []*ConfigCustomNestedStack `json:"custom_nested_stacks"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -37,8 +41,14 @@ type AppInstallConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// runner nested template url
+	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// Per-install stack template overrides (nil = use app config default)
+	VpcNestedTemplateURL string `json:"vpc_nested_template_url,omitempty"`
 }
 
 // Validate validates this app install config
@@ -46,6 +56,10 @@ func (m *AppInstallConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateApprovalOption(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCustomNestedStacks(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,11 +90,45 @@ func (m *AppInstallConfig) validateApprovalOption(formats strfmt.Registry) error
 	return nil
 }
 
+func (m *AppInstallConfig) validateCustomNestedStacks(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomNestedStacks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.CustomNestedStacks); i++ {
+		if swag.IsZero(m.CustomNestedStacks[i]) { // not required
+			continue
+		}
+
+		if m.CustomNestedStacks[i] != nil {
+			if err := m.CustomNestedStacks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install config based on the context it is used
 func (m *AppInstallConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateApprovalOption(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCustomNestedStacks(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -107,6 +155,35 @@ func (m *AppInstallConfig) contextValidateApprovalOption(ctx context.Context, fo
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfig) contextValidateCustomNestedStacks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CustomNestedStacks); i++ {
+
+		if m.CustomNestedStacks[i] != nil {
+
+			if swag.IsZero(m.CustomNestedStacks[i]) { // not required
+				return nil
+			}
+
+			if err := m.CustomNestedStacks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("custom_nested_stacks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
