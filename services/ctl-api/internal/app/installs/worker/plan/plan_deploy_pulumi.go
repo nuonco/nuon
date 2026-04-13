@@ -112,3 +112,38 @@ func (p *Planner) createPulumiDeployPlan(
 		Destroy:       installDeploy.Type == app.InstallDeployTypeTeardown,
 	}, nil
 }
+
+func (p *Planner) createPulumiDeploySandboxMode() *plantypes.PulumiSandboxMode {
+	fakePlan := `{
+  "stdout": "Previewing update (sandbox):\n\n    + pulumi:pulumi:Stack sandbox-stack create\n    + cloud:storage:Bucket app-bucket create\n    + cloud:compute:Instance app-server create\n\nResources:\n    + 3 to create",
+  "stderr": "",
+  "change_summary": {"create": 3},
+  "resource_changes": [
+    {
+      "urn": "urn:pulumi:sandbox::app::cloud:storage:Bucket::app-bucket",
+      "type": "cloud:storage:Bucket",
+      "name": "app-bucket",
+      "action": "create",
+      "new_inputs": {"name": "app-bucket-sandbox", "location": "US", "forceDestroy": true}
+    },
+    {
+      "urn": "urn:pulumi:sandbox::app::cloud:compute:Instance::app-server",
+      "type": "cloud:compute:Instance",
+      "name": "app-server",
+      "action": "create",
+      "new_inputs": {"machineType": "e2-medium", "zone": "us-central1-a", "bootDisk": {"initializeParams": {"image": "debian-cloud/debian-11"}}}
+    },
+    {
+      "urn": "urn:pulumi:sandbox::app::cloud:dns:RecordSet::app-dns",
+      "type": "cloud:dns:RecordSet",
+      "name": "app-dns",
+      "action": "create",
+      "new_inputs": {"name": "app.sandbox.example.com", "type": "A", "ttl": 300}
+    }
+  ]
+}`
+	return &plantypes.PulumiSandboxMode{
+		PlanContents:        fakePlan,
+		PlanDisplayContents: fakePlan,
+	}
+}

@@ -176,6 +176,7 @@ func generateTempl(ctx context.Context) error {
 }
 
 func goimportsDir(dir string) error {
+	imports.LocalPrefix = "github.com/nuonco"
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
