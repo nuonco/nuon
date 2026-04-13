@@ -13,39 +13,47 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
-// syncAction creates or updates an action workflow and its config.
-// Duplicates logic from services/ctl-api/internal/app/actions/service/create_app_action_workflow.go
-// and services/ctl-api/internal/app/actions/service/create_action_workflow_config.go
+// ensureAction creates an action workflow if it doesn't exist, using the shared helpers
+// for full initialization (install action workflows).
+func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) error {
+	_, err := s.getAction(ctx, action.Name)
+	if err == nil {
+		return nil
+	}
+
+	if err != gorm.ErrRecordNotFound {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to check if action %s exists", action.Name),
+			Err:         err,
+		}
+	}
+
+	_, err = s.actionsHelpers.CreateAction(ctx, &actionshelpers.CreateActionParams{
+		AppID: s.appID,
+		OrgID: s.orgID,
+		Name:  action.Name,
+	})
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to create action %s", action.Name),
+			Err:         err,
+		}
+	}
+
+	return nil
+}
+
+// syncAction updates an action workflow and creates its config.
 func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) error {
-	// Find or create action workflow
-	var actionWorkflow app.ActionWorkflow
-	res := s.db.WithContext(ctx).
-		Where("app_id = ? AND name = ?", s.appID, action.Name).
-		First(&actionWorkflow)
-
-	if res.Error != nil {
-		if res.Error != gorm.ErrRecordNotFound {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to find action workflow %s", action.Name),
-				Err:         res.Error,
-			}
-		}
-
-		// Create new action workflow
-		actionWorkflow = app.ActionWorkflow{
-			AppID: s.appID,
-			Name:  action.Name,
-		}
-
-		res = s.db.WithContext(ctx).Create(&actionWorkflow)
-		if res.Error != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to create action workflow %s", action.Name),
-				Err:         res.Error,
-			}
+	actionWorkflow, err := s.getAction(ctx, action.Name)
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to get action %s", action.Name),
+			Err:         err,
 		}
 	}
 
@@ -64,7 +72,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 	// Get app for VCS config
 	var parentApp app.App
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Preload("Org").
 		Preload("Org.VCSConnections").
 		First(&parentApp, "id = ?", s.appID)
@@ -179,4 +187,18 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	})
 
 	return nil
+}
+
+// getAction finds an action workflow by name.
+func (s *syncer) getAction(ctx context.Context, name string) (*app.ActionWorkflow, error) {
+	var aw app.ActionWorkflow
+	res := s.db.WithContext(ctx).
+		Where("app_id = ? AND name = ?", s.appID, name).
+		First(&aw)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return &aw, nil
 }
