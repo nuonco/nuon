@@ -283,9 +283,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			inp.RunnerInitScriptURL = DefaultAzureRunnerInitScript
 		}
 
-		tmplByts, checksum, err = bicep.Render(inp)
-		if err != nil {
-			return errors.Wrap(err, "unable to create bicep template")
+		if cfg.StackConfig.HasAzureCustomization() {
+			inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
+			inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+
+			armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
+				Input: *inp,
+			})
+			if err != nil {
+				return errors.Wrap(err, "unable to create ARM template")
+			}
+			tmplByts = armResult.RAWJson
+			checksum = armResult.Checksum
+		} else {
+			tmplByts, checksum, err = bicep.Render(inp)
+			if err != nil {
+				return errors.Wrap(err, "unable to render bicep template")
+			}
 		}
 	}
 

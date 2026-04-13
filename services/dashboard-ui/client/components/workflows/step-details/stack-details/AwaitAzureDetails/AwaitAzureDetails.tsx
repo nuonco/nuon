@@ -51,6 +51,19 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation }: IAwaitAzu
       <div className="flex flex-col gap-4">
         <Card>
           <span className="flex justify-between items-center">
+            <Text>Preview changes (dry-run)</Text>
+            <ClickToCopyButton
+              className="w-fit self-end"
+              textToCopy={`az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}`}
+            />
+          </span>
+          <Code>{`
+            az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}
+          `}</Code>
+        </Card>
+
+        <Card>
+          <span className="flex justify-between items-center">
             <Text>Deploy the stack to the resource group</Text>
             <ClickToCopyButton
               className="w-fit self-end"
