@@ -40,11 +40,9 @@ Declining the confirmation prompts for a new URL.
 
 ### 2. Authentication
 
-The CLI fetches auth configuration from the API (`GetCLIConfig`), then uses one of two flows:
-
-- **Nuon Auth** (`NuonAuthEnabled: true`): Device code flow against the Nuon auth service. Generates a local device
-  code, opens a browser to `auth.<root_domain>/device/code`, and polls for a token.
-- **Auth0** (`NuonAuthEnabled: false`): Standard Auth0 device code flow with OAuth2 token exchange.
+The CLI fetches auth configuration from the API (`GetCLIConfig`) and gets a device code flow against the Nuon auth
+service. To do this, it generates a local device code, opens a browser to `auth.<root_domain>/device/code`, and polls
+for a token.
 
 ### 3. Org Selection
 
