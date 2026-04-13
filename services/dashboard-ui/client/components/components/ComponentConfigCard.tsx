@@ -129,15 +129,15 @@ export const ComponentConfigCard = ({
 
       case 'pulumi':
         if (
-          config.pulumi_component_config?.variables &&
-          Object.keys(config.pulumi_component_config.variables).length > 0
+          config.pulumi?.config &&
+          Object.keys(config.pulumi.config).length > 0
         ) {
           buttons.push({
             label: 'View config',
             onClick: () => {
               const modal = (
                 <PulumiConfigModal
-                  config={config.pulumi_component_config!.variables!}
+                  config={config.pulumi!.config!}
                 />
               )
               addModal(modal)
@@ -145,15 +145,15 @@ export const ComponentConfigCard = ({
           })
         }
         if (
-          config.pulumi_component_config?.env_vars &&
-          Object.keys(config.pulumi_component_config.env_vars).length > 0
+          config.pulumi?.env_vars &&
+          Object.keys(config.pulumi.env_vars).length > 0
         ) {
           buttons.push({
             label: 'View env vars',
             onClick: () => {
               const modal = (
                 <PulumiEnvVarsModal
-                  envVars={config.pulumi_component_config!.env_vars!}
+                  envVars={config.pulumi!.env_vars!}
                 />
               )
               addModal(modal)

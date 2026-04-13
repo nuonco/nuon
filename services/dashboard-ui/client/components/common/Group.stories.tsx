@@ -17,8 +17,8 @@ export const Default = () => (
 export const WithBadges = () => (
   <Group gap={2}>
     <Badge theme="success">Active</Badge>
-    <Badge theme="warning">Pending</Badge>
-    <Badge theme="danger">Failed</Badge>
+    <Badge theme="warn">Pending</Badge>
+    <Badge theme="error">Failed</Badge>
   </Group>
 )
 
@@ -39,7 +39,7 @@ export const GapSizes = () => (
 
 export const JustifyBetween = () => (
   <Group justify="between">
-    <Text variant="heading-3">Page title</Text>
+    <Text variant="h3">Page title</Text>
     <Group gap={2}>
       <Button variant="secondary">Cancel</Button>
       <Button>Save</Button>

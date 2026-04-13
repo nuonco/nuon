@@ -259,7 +259,7 @@ function buildLayout(
   subgraphs: ParsedSubgraph[],
   direction: string,
   theme: 'dark' | 'light',
-  colors: typeof THEME['dark'],
+  colors: (typeof THEME)[keyof typeof THEME],
 ): { nodes: Node[]; edges: Edge[] } {
   if (parsedNodes.length === 0) {
     return { nodes: [], edges: [] }
