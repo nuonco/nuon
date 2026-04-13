@@ -125,6 +125,34 @@ describe('workflow-utils', () => {
       })
     })
 
+    test('should return auto-approved badge for approval-awaiting step when not approval prompt', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: { status: 'approval-awaiting' },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, false)
+      expect(badge).toEqual({
+        children: 'Auto approved',
+        theme: 'neutral',
+      })
+    })
+
+    test('should return awaiting approval badge for approval-awaiting step when approval prompt', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: { status: 'approval-awaiting' },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, true)
+      expect(badge).toEqual({
+        children: 'Awaiting approval',
+        theme: 'warn',
+      })
+    })
+
     test('should return empty object for step without status', () => {
       const step: TWorkflowStep = {
         retried: false,
