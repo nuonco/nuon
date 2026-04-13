@@ -48,6 +48,9 @@ const (
 	// AppRunnerJobTypeKubernetesDashManifestDashBuild captures enum value "kubernetes-manifest-build"
 	AppRunnerJobTypeKubernetesDashManifestDashBuild AppRunnerJobType = "kubernetes-manifest-build"
 
+	// AppRunnerJobTypePulumiDashBuild captures enum value "pulumi-build"
+	AppRunnerJobTypePulumiDashBuild AppRunnerJobType = "pulumi-build"
+
 	// AppRunnerJobTypeNoopDashBuild captures enum value "noop-build"
 	AppRunnerJobTypeNoopDashBuild AppRunnerJobType = "noop-build"
 
@@ -74,6 +77,9 @@ const (
 
 	// AppRunnerJobTypeKubernetesDashManifestDashDeploy captures enum value "kubernetes-manifest-deploy"
 	AppRunnerJobTypeKubernetesDashManifestDashDeploy AppRunnerJobType = "kubernetes-manifest-deploy"
+
+	// AppRunnerJobTypePulumiDashDeploy captures enum value "pulumi-deploy"
+	AppRunnerJobTypePulumiDashDeploy AppRunnerJobType = "pulumi-deploy"
 
 	// AppRunnerJobTypeNoopDashDeploy captures enum value "noop-deploy"
 	AppRunnerJobTypeNoopDashDeploy AppRunnerJobType = "noop-deploy"
@@ -129,7 +135,7 @@ var appRunnerJobTypeEnum []any
 
 func init() {
 	var res []AppRunnerJobType
-	if err := json.Unmarshal([]byte(`["health-check","docker-build","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["health-check","docker-build","container-image-build","terraform-module-build","helm-chart-build","kubernetes-manifest-build","pulumi-build","noop-build","sandbox-build","oci-sync","noop-sync","fetch-image-metadata","terraform-deploy","helm-chart-deploy","job-deploy","kubernetes-manifest-deploy","pulumi-deploy","noop-deploy","shut-down","update-version","noop","mng-vm-shut-down","mng-shut-down","mng-runner-update-version","mng-runner-restart","mng-fetch-token","sandbox-terraform","sandbox-terraform-plan","sandbox-sync-secrets","runner-helm","runner-terraform","runner-local","actions-workflow"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

@@ -44,6 +44,9 @@ const (
 
 	// AppWorkflowStepApprovalTypeHelmApproval captures enum value "helm_approval"
 	AppWorkflowStepApprovalTypeHelmApproval AppWorkflowStepApprovalType = "helm_approval"
+
+	// AppWorkflowStepApprovalTypePulumiPlan captures enum value "pulumi_plan"
+	AppWorkflowStepApprovalTypePulumiPlan AppWorkflowStepApprovalType = "pulumi_plan"
 )
 
 // for schema
@@ -51,7 +54,7 @@ var appWorkflowStepApprovalTypeEnum []any
 
 func init() {
 	var res []AppWorkflowStepApprovalType
-	if err := json.Unmarshal([]byte(`["noop","approve-all","terraform_plan","kubernetes_manifest_approval","helm_approval"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["noop","approve-all","terraform_plan","kubernetes_manifest_approval","helm_approval","pulumi_plan"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
