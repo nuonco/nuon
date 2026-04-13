@@ -215,6 +215,9 @@ type Config struct {
 	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
 	UseLocalRunners         bool   `config:"use_local_runners"`
 
+	// AWS IID auth
+	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`
+
 	// cloudformation phone home
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`

@@ -98,7 +98,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			continue
 		}
 		if shutdown.Status == "requested" {
-			sp.l.Info("shutdown requested, completing shutdown with control plane",
+			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
 				zap.String("process_id", processID),
 				zap.String("shutdown_id", shutdown.ID),
 				zap.String("shutdown_type", string(shutdown.Type)),
