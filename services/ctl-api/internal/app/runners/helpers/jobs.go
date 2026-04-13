@@ -23,6 +23,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeContainerImageBuild:  time.Minute * 15,
 		app.RunnerJobTypeHelmChartBuild:       time.Minute * 5,
 		app.RunnerJobTypeTerraformModuleBuild: time.Minute * 5,
+		app.RunnerJobTypePulumiBuild:          time.Minute * 5,
 
 		// sync timeouts
 		app.RunnerJobTypeOCISync:            time.Minute * 15,
@@ -32,6 +33,7 @@ func (s *Helpers) getDefaultExecutionTimeout(typ app.RunnerJobType) time.Duratio
 		app.RunnerJobTypeTerraformDeploy:          time.Minute * 60,
 		app.RunnerJobTypeHelmChartDeploy:          time.Minute * 30,
 		app.RunnerJobTypeKubrenetesManifestDeploy: time.Minute * 15,
+		app.RunnerJobTypePulumiDeploy:             time.Minute * 60,
 		app.RunnerJobTypeJobDeploy:                time.Minute * 15,
 
 		// terraform timeouts

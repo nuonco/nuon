@@ -31,6 +31,7 @@ const (
 	ComponentTypeExternalImage      ComponentType = "external_image"
 	ComponentTypeJob                ComponentType = "job"
 	ComponentTypeKubernetesManifest ComponentType = "kubernetes_manifest"
+	ComponentTypePulumi             ComponentType = "pulumi"
 	ComponentTypeUnknown            ComponentType = "unknown"
 )
 
@@ -47,7 +48,8 @@ func (c ComponentType) SyncJobType() RunnerJobType {
 		ComponentTypeDockerBuild,
 		ComponentTypeExternalImage,
 		ComponentTypeHelmChart,
-		ComponentTypeKubernetesManifest:
+		ComponentTypeKubernetesManifest,
+		ComponentTypePulumi:
 		return RunnerJobTypeOCISync
 
 	case ComponentTypeJob:
@@ -68,6 +70,8 @@ func (c ComponentType) DeployJobType() RunnerJobType {
 		return RunnerJobTypeJobDeploy
 	case ComponentTypeKubernetesManifest:
 		return RunnerJobTypeKubrenetesManifestDeploy
+	case ComponentTypePulumi:
+		return RunnerJobTypePulumiDeploy
 
 		// the following do not require deploys
 	case ComponentTypeDockerBuild,
@@ -91,6 +95,8 @@ func (c ComponentType) DeployPlanJobType() RunnerJobType {
 		return RunnerJobTypeJobNOOPDeploy
 	case ComponentTypeKubernetesManifest:
 		return RunnerJobTypeKubrenetesManifestDeploy
+	case ComponentTypePulumi:
+		return RunnerJobTypePulumiDeploy
 	default:
 	}
 
@@ -111,6 +117,8 @@ func (c ComponentType) BuildJobType() RunnerJobType {
 		return RunnerJobTypeKubernetesManifestBuild
 	case ComponentTypeJob:
 		return RunnerJobTypeNOOPBuild
+	case ComponentTypePulumi:
+		return RunnerJobTypePulumiBuild
 	default:
 	}
 

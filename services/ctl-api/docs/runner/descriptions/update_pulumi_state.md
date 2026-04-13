@@ -1,0 +1,1 @@
+Store pulumi state for a workspace. Accepts raw state bytes and stores them without parsing.

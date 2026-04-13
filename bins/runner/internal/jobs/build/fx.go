@@ -9,6 +9,7 @@ import (
 	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/build/helm"
 	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/build/kubernetes_manifest"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/build/noop"
+	pulumibuild "github.com/nuonco/nuon/bins/runner/internal/jobs/build/pulumi"
 	sandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/build/sandbox"
 	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/build/terraform"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -22,6 +23,7 @@ func GetJobs() []fx.Option {
 		fx.Provide(jobs.AsJobHandler("builds", helm.New)),
 		fx.Provide(jobs.AsJobHandler("builds", kubernetesmanifest.New)),
 		fx.Provide(jobs.AsJobHandler("builds", terraform.New)),
+		fx.Provide(jobs.AsJobHandler("builds", pulumibuild.New)),
 		fx.Provide(jobs.AsJobHandler("builds", noop.New)),
 		fx.Provide(jobs.AsJobHandler("builds", sandbox.New)),
 	}

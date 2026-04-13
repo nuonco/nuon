@@ -16,6 +16,7 @@ type BuildPlan struct {
 	DockerBuildPlan             *DockerBuildPlan             `json:"docker_build_plan,omitempty"`
 	ContainerImagePullPlan      *ContainerImagePullPlan      `json:"container_image_pull_plan,omitempty"`
 	KubernetesManifestBuildPlan *KubernetesManifestBuildPlan `json:"kubernetes_manifest_build_plan,omitempty"`
+	PulumiBuildPlan             *PulumiBuildPlan             `json:"pulumi_build_plan,omitempty"`
 
 	MinSandboxMode
 }

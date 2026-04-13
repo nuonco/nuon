@@ -45,6 +45,11 @@ func (a *Activities) GetComponentsWithType(ctx context.Context, req GetComponent
 
 		// preload all kubernetes configs
 		Preload("ComponentConfigs.KubernetesManifestComponentConfig").
+
+		// preload all pulumi configs
+		Preload("ComponentConfigs.PulumiComponentConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.PublicGitVCSConfig").
+		Preload("ComponentConfigs.PulumiComponentConfig.ConnectedGithubVCSConfig").
 		Find(&comps)
 	if res.Error != nil {
 		return nil, res.Error

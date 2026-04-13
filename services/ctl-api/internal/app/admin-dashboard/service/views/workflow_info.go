@@ -1,6 +1,8 @@
 package views
 
-import "time"
+import (
+	"time"
+)
 
 // WorkflowInfo holds Temporal workflow execution info for display.
 type WorkflowInfo struct {

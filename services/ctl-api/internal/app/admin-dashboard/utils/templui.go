@@ -2,14 +2,12 @@
 package utils
 
 import (
+	"crypto/rand"
 	"fmt"
 	"time"
 
-	"crypto/rand"
-
-	"github.com/a-h/templ"
-
 	twmerge "github.com/Oudwins/tailwind-merge-go"
+	"github.com/a-h/templ"
 )
 
 // TwMerge combines Tailwind classes and resolves conflicts.

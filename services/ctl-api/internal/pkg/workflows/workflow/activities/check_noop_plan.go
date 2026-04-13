@@ -78,6 +78,9 @@ func (p *ApprovalPlan) IsNoopPlan() (bool, error) {
 	case app.RunnerJobTypeHelmChartDeploy:
 		plan := approvalplan.NewHelmApprovalPlen(p.PlanContents)
 		return plan.IsNoop()
+	case app.RunnerJobTypePulumiDeploy:
+		plan := approvalplan.NewPulumiApprovalPlan(p.PlanContents)
+		return plan.IsNoop()
 	default:
 		return false, fmt.Errorf("unsupported approval plan request, runner job type %s", p.RunnerJobType)
 	}

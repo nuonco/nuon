@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"go/format"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,6 +19,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/tools/imports"
 
 	"github.com/go-playground/validator/v10"
 
@@ -172,10 +172,10 @@ func generateTempl(ctx context.Context) error {
 	if err := generatecmd.Run(ctx, os.Stdout, os.Stderr, []string{"-path", "./internal/app/admin-dashboard"}); err != nil {
 		return err
 	}
-	return gofmtDir("./internal/app/admin-dashboard")
+	return goimportsDir("./internal/app/admin-dashboard")
 }
 
-func gofmtDir(dir string) error {
+func goimportsDir(dir string) error {
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -187,12 +187,83 @@ func gofmtDir(dir string) error {
 		if err != nil {
 			return fmt.Errorf("unable to read %s: %w", path, err)
 		}
-		formatted, err := format.Source(src)
+		// Collapse blank lines inside import blocks so goimports
+		// sees a single group and re-sorts into stdlib / third-party.
+		src = collapseImportGroups(src)
+		formatted, err := imports.Process(path, src, nil)
 		if err != nil {
 			return fmt.Errorf("unable to format %s: %w", path, err)
 		}
 		return os.WriteFile(path, formatted, info.Mode())
 	})
+}
+
+// collapseImportGroups merges standalone import lines and grouped import blocks
+// into a single import block with no blank lines, so goimports can re-sort
+// them into proper stdlib / third-party groups.
+func collapseImportGroups(src []byte) []byte {
+	lines := strings.Split(string(src), "\n")
+
+	// First pass: collect all import specs and find where to insert the merged block.
+	var (
+		importSpecs []string
+		out         []string
+		inBlock     bool
+		insertIdx   = -1
+	)
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Standalone: import "pkg" or import alias "pkg"
+		if !inBlock && strings.HasPrefix(trimmed, "import ") && !strings.HasPrefix(trimmed, "import (") {
+			spec := strings.TrimPrefix(trimmed, "import ")
+			importSpecs = append(importSpecs, spec)
+			if insertIdx == -1 {
+				insertIdx = len(out)
+				out = append(out, "") // placeholder
+			}
+			continue
+		}
+
+		// Start of grouped block
+		if !inBlock && (trimmed == "import (" || strings.HasPrefix(trimmed, "import (")) {
+			inBlock = true
+			if insertIdx == -1 {
+				insertIdx = len(out)
+				out = append(out, "") // placeholder
+			}
+			continue
+		}
+
+		if inBlock {
+			if trimmed == ")" {
+				inBlock = false
+				continue
+			}
+			if trimmed == "" {
+				continue
+			}
+			importSpecs = append(importSpecs, trimmed)
+			continue
+		}
+
+		out = append(out, line)
+	}
+
+	if len(importSpecs) == 0 {
+		return src
+	}
+
+	// Build merged import block.
+	var block strings.Builder
+	block.WriteString("import (\n")
+	for _, spec := range importSpecs {
+		block.WriteString("\t" + spec + "\n")
+	}
+	block.WriteString(")")
+	out[insertIdx] = block.String()
+
+	return []byte(strings.Join(out, "\n"))
 }
 
 func main() {

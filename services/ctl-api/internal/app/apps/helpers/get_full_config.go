@@ -110,6 +110,11 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 
 			// preload all kubernetes config
 			Preload("KubernetesManifestComponentConfig").
+
+			// preload all pulumi configs
+			Preload("PulumiComponentConfig").
+			Preload("PulumiComponentConfig.PublicGitVCSConfig").
+			Preload("PulumiComponentConfig.ConnectedGithubVCSConfig").
 			Where("component_id IN ?", missingComponentIds).
 			Find(&missingComponents)
 		if res.Error != nil {
