@@ -40,7 +40,7 @@ export const Duration = ({
         </Text>
       )
     }
-    const milliseconds = Math.round(nanoseconds / 1e6)
+    const milliseconds = Math.max(0, Math.round(nanoseconds / 1e6))
     duration = LuxonDuration.fromMillis(milliseconds)
   } else if (beginTime) {
     const bt = DateTime.fromISO(beginTime)

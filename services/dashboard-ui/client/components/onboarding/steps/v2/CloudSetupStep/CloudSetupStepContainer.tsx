@@ -272,6 +272,7 @@ export const CloudSetupStepContainer = ({
   })
 
   const isWorking = isPending || waiting
+  const configStillLoading = !!appId && !inputConfig
 
   const requiredInputsMissing = useMemo(() => {
     if (!hasInputs) return false
@@ -387,7 +388,7 @@ export const CloudSetupStepContainer = ({
         <Button
           type="button"
           variant="primary"
-          disabled={!selected || isWorking || requiredInputsMissing}
+          disabled={!selected || isWorking || requiredInputsMissing || configStillLoading}
           onClick={handleAdvance}
         >
           {waiting ? 'Setting up install...' : isPending ? 'Creating...' : 'Continue'}{' '}
