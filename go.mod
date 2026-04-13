@@ -30,7 +30,6 @@ require (
 	charm.land/bubbletea/v2 v2.0.0
 	charm.land/lipgloss/v2 v2.0.0
 	cloud.google.com/go/secretmanager v1.14.5
-	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2 v2.2.0
@@ -79,6 +78,7 @@ require (
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.27.0
+	github.com/go-swagger/go-swagger v0.33.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-github/v41 v41.0.0
@@ -115,7 +115,7 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.0
@@ -126,6 +126,7 @@ require (
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
 	github.com/uber-go/tally/v4 v4.1.1
+	go.opentelemetry.io/collector/cmd/builder v0.150.0
 	go.opentelemetry.io/collector/component v1.37.0
 	go.opentelemetry.io/collector/config/configcompression v1.37.0
 	go.opentelemetry.io/collector/config/confighttp v0.131.0
@@ -143,7 +144,7 @@ require (
 	go.temporal.io/api v1.51.0
 	go.temporal.io/sdk v1.36.0
 	go.uber.org/fx v1.23.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	golang.design/x/clipboard v0.7.1
 	golang.org/x/net v0.50.0
 	golang.org/x/oauth2 v0.30.0
@@ -208,6 +209,7 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/containerd/containerd v1.7.29 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/djherbis/times v1.5.0 // indirect
 	github.com/dylibso/observe-sdk/go v0.0.0-20240819160327-2d926c5d788a // indirect
@@ -227,7 +229,6 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.5 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.5 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.5 // indirect
-	github.com/go-swagger/go-swagger v0.33.0 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/golang/glog v1.2.1 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
@@ -236,6 +237,10 @@ require (
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20240805132620-81f5be970eca // indirect
 	github.com/iwdgo/sigintwindows v0.2.2 // indirect
+	github.com/knadh/koanf/parsers/yaml v1.1.0 // indirect
+	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
+	github.com/knadh/koanf/providers/file v1.2.1 // indirect
+	github.com/knadh/koanf/providers/fs v1.0.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
@@ -282,6 +287,7 @@ require (
 	github.com/tliron/go-kutil v0.4.0 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
@@ -367,9 +373,9 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
 	github.com/go-openapi/analysis v0.24.3 // indirect
-	github.com/go-openapi/errors v0.22.7 // indirect
-	github.com/go-openapi/runtime v0.29.3 // indirect
-	github.com/go-openapi/strfmt v0.26.1 // indirect
+	github.com/go-openapi/errors v0.22.7
+	github.com/go-openapi/runtime v0.29.3
+	github.com/go-openapi/strfmt v0.26.1
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.25.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
@@ -396,7 +402,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
-	github.com/knadh/koanf/v2 v2.2.2 // indirect
+	github.com/knadh/koanf/v2 v2.3.4 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
@@ -574,7 +580,6 @@ require (
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
@@ -648,12 +653,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0
 	golang.org/x/text v0.34.0
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.41.0
+	golang.org/x/tools v0.42.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
