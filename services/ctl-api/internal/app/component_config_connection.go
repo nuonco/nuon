@@ -52,6 +52,7 @@ type ComponentConfigConnection struct {
 	DockerBuildComponentConfig        *DockerBuildComponentConfig        `json:"docker_build,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"docker_build_component_config,omitzero,omitempty"`
 	JobComponentConfig                *JobComponentConfig                `json:"job,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"job_component_config,omitzero,omitempty"`
 	KubernetesManifestComponentConfig *KubernetesManifestComponentConfig `json:"kubernetes_manifest,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_manifest_component_config,omitzero,omitempty"`
+	PulumiComponentConfig             *PulumiComponentConfig             `json:"pulumi,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"pulumi_component_config,omitzero,omitempty"`
 	ComponentDependencyIDs            pq.StringArray                     `json:"component_dependency_ids" temporaljson:"component_dependency_ids" swaggertype:"array,string" gorm:"type:text[]"`
 	References                        pq.StringArray                     `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Checksum                          string                             `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
@@ -148,6 +149,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	if c.KubernetesManifestComponentConfig != nil {
 		c.Type = ComponentTypeKubernetesManifest
 	}
+	if c.PulumiComponentConfig != nil {
+		c.Type = ComponentTypePulumi
+	}
 
 	// set the vcs connection type, by parsing the subfields on the relationship
 	if c.TerraformModuleComponentConfig != nil {
@@ -162,6 +166,9 @@ func (c *ComponentConfigConnection) AfterQuery(tx *gorm.DB) error {
 	} else if c.KubernetesManifestComponentConfig != nil {
 		c.ConnectedGithubVCSConfig = c.KubernetesManifestComponentConfig.ConnectedGithubVCSConfig
 		c.PublicGitVCSConfig = c.KubernetesManifestComponentConfig.PublicGitVCSConfig
+	} else if c.PulumiComponentConfig != nil {
+		c.ConnectedGithubVCSConfig = c.PulumiComponentConfig.ConnectedGithubVCSConfig
+		c.PublicGitVCSConfig = c.PulumiComponentConfig.PublicGitVCSConfig
 	}
 
 	// set the vcs connection type correctly
