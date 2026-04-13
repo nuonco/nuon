@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getRunner, getRunnerLatestHeartbeat, getRunnerRecentHealthChecks } from '@/lib'
+import { getRunnerProcesses, getRunnerSettings } from '@/lib'
+import { RunnerProvider } from '@/providers/runner-provider'
 import type { IStepDetails } from '../types'
 import { RunnerStepDetails } from './RunnerStepDetails'
 
@@ -10,34 +11,36 @@ export const RunnerStepDetailsContainer = ({ step }: IRunnerStepDetailsContainer
   const { org } = useOrg()
   const runnerId = step.step_target_id
 
-  const { data: runner, isLoading: isRunnerLoading } = useQuery({
-    queryKey: ['runner', org?.id, runnerId],
-    queryFn: () => getRunner({ orgId: org.id, runnerId }),
+  const { data: settings } = useQuery({
+    queryKey: ['runner-settings', org?.id, runnerId],
+    queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
     enabled: !!org?.id && !!runnerId,
   })
 
-  const { data: runnerHeartbeat, isLoading: isHeartbeatLoading } = useQuery({
-    queryKey: ['runner-heartbeat', org?.id, runnerId],
-    queryFn: () => getRunnerLatestHeartbeat({ orgId: org.id, runnerId }),
+  const { data: processResult, isLoading: processesLoading } = useQuery({
+    queryKey: ['runner-processes-active', org?.id, runnerId],
+    queryFn: () =>
+      getRunnerProcesses({
+        orgId: org.id,
+        runnerId,
+        status: 'pending,active,offline,pending-shutdown',
+        limit: 2,
+      }),
+    refetchInterval: 10000,
     enabled: !!org?.id && !!runnerId,
   })
 
-  const { data: runnerHealthCheck, isLoading: isHealthCheckLoading } = useQuery({
-    queryKey: ['runner-health-checks', org?.id, runnerId],
-    queryFn: () => getRunnerRecentHealthChecks({ orgId: org.id, runnerId }),
-    enabled: !!org?.id && !!runnerId,
-  })
+  const processes = processResult?.data ?? []
 
   return (
-    <RunnerStepDetails
-      step={step}
-      orgId={org?.id}
-      runner={runner}
-      runnerHeartbeat={runnerHeartbeat}
-      runnerHealthCheck={runnerHealthCheck}
-      isRunnerLoading={isRunnerLoading}
-      isHeartbeatLoading={isHeartbeatLoading}
-      isHealthCheckLoading={isHealthCheckLoading}
-    />
+    <RunnerProvider runnerId={runnerId}>
+      <RunnerStepDetails
+        step={step}
+        orgId={org?.id}
+        processes={processes}
+        processesLoading={processesLoading}
+        settings={settings}
+      />
+    </RunnerProvider>
   )
 }
