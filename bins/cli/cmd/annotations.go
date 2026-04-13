@@ -8,6 +8,7 @@ import (
 
 const skipAuthAnnotationKey string = "skip_auth"
 const tuiAnnotationKey string = "tui"
+const previewAnnotationKey string = "preview"
 
 // TUI annotation values
 const (
@@ -24,6 +25,12 @@ func skipAuthAnnotation() map[string]string {
 func tuiAnnotation(tuiType string) map[string]string {
 	return map[string]string{
 		tuiAnnotationKey: tuiType,
+	}
+}
+
+func previewAnnotation() map[string]string {
+	return map[string]string{
+		previewAnnotationKey: strconv.FormatBool(true),
 	}
 }
 

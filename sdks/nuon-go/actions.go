@@ -136,6 +136,34 @@ func (c *client) CreateActionWorkflowConfig(ctx context.Context, actionWorkflowI
 	return resp.Payload, nil
 }
 
+func (c *client) GetInstallActionWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallActionWorkflow, bool, error) {
+	params := &operations.GetInstallActionWorkflowsParams{
+		InstallID: installID,
+		Context:   ctx,
+	}
+
+	query = handlePaginationQuery(query)
+
+	if query != nil {
+		offset := int64(query.Offset)
+		limit := int64(query.Limit)
+		params.Offset = &offset
+		params.Limit = &limit
+	}
+
+	resp, err := c.genClient.Operations.GetInstallActionWorkflows(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, false, err
+	}
+
+	if query != nil {
+		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
+		return items, hasMore, nil
+	}
+
+	return resp.Payload, false, nil
+}
+
 func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, installID, actionWorkflowID string, query *models.GetPaginatedQuery) (*models.AppInstallActionWorkflow, bool, error) {
 	params := &operations.GetInstallActionWorkflowRecentRunsParams{
 		InstallID:        installID,
@@ -187,6 +215,19 @@ func (c *client) GetInstallActionWorkflowRun(ctx context.Context, installID, run
 	resp, err := c.genClient.Operations.GetInstallActionWorkflowRun(&operations.GetInstallActionWorkflowRunParams{
 		InstallID: installID,
 		RunID:     runID,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error) {
+	resp, err := c.genClient.Operations.GetInstallActionWorkflowOutputs(&operations.GetInstallActionWorkflowOutputsParams{
+		InstallID: installID,
+		ActionID:  actionID,
 		Context:   ctx,
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
