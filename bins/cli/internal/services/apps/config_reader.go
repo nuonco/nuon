@@ -208,6 +208,9 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 		case config.ComponentType(config.JobComponentType):
 			componentConfig = component.Job
 			component.Job = nil
+		case config.ComponentType(config.PulumiComponentType):
+			componentConfig = component.Pulumi
+			component.Pulumi = nil
 		}
 
 		componentDef := generator.ConfigFileDefinition{
