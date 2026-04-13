@@ -1434,3 +1434,44 @@ Regular markdown continues to work perfectly alongside the HTML elements.
   </div>
 )
 
+export const NuonGroup = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">nuon-group</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Use {'<nuon-group>'} to lay out child elements horizontally with flexbox.
+        Supports gap, align, justify, and wrap attributes.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Badges in a row</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Status overview:
+
+<nuon-group gap="2" align="center">
+  <nuon-badge theme="green">Healthy</nuon-badge>
+  <nuon-badge theme="yellow">Deploying</nuon-badge>
+  <nuon-badge theme="red">Failed</nuon-badge>
+</nuon-group>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">With wrap and justify</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-group gap="3" wrap="true" justify="between">
+  <nuon-badge theme="blue" variant="outline">us-east-1</nuon-badge>
+  <nuon-badge theme="blue" variant="outline">us-west-2</nuon-badge>
+  <nuon-badge theme="blue" variant="outline">eu-west-1</nuon-badge>
+  <nuon-badge theme="blue" variant="outline">ap-southeast-1</nuon-badge>
+</nuon-group>`}
+        />
+      </div>
+    </div>
+  </div>
+)
+

@@ -7,6 +7,7 @@ import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
 import { SandboxCard } from '@/components/sandbox/SandboxCard'
 import { RunnerCard } from '@/components/runners/RunnerCard'
 import { StackCard } from '@/components/stacks/StackCard'
+import { Group } from '@/components/common/Group'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -75,6 +76,16 @@ const registry: Record<string, NuonComponent> = {
     component: StackCard,
     mapProps: noProps,
     requiresInstall: true,
+  },
+  'nuon-group': {
+    component: Group,
+    mapProps: (attrs) => ({
+      children: attrs.children,
+      gap: attrs.gap ? Number(attrs.gap) : undefined,
+      align: attrs.align,
+      justify: attrs.justify,
+      wrap: attrs.wrap === 'false' ? false : true,
+    }),
   },
 }
 
