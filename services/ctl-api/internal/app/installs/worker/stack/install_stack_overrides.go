@@ -10,7 +10,7 @@ import (
 // Install-level overrides take precedence over app-level defaults.
 // For CustomNestedStacks, entries with the same Name replace the app-level
 // entry; entries with new Names are appended. Original ordering is preserved.
-func applyInstallStackOverrides(install *app.Install, stackCfg *app.AppStackConfig) {
+func ApplyInstallStackOverrides(install *app.Install, stackCfg *app.AppStackConfig) {
 	if install.InstallConfig == nil {
 		return
 	}
