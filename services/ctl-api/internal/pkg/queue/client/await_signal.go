@@ -30,7 +30,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	if isTerminalStatus(q.Status.Status) {
 		if q.Status.Status == app.StatusError {
 			return nil, temporal.NewNonRetryableApplicationError(
-				fmt.Sprintf("signal execution failed with status: %s", q.Status.Status),
+				signalErrorMessage(q),
 				"SIGNAL_FAILED", nil)
 		}
 		return &handler.FinishedResponse{}, nil
@@ -56,7 +56,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 			if isTerminalStatus(fresh.Status.Status) {
 				if fresh.Status.Status == app.StatusError {
 					return nil, temporal.NewNonRetryableApplicationError(
-						fmt.Sprintf("signal execution failed with status: %s", fresh.Status.Status),
+						signalErrorMessage(fresh),
 						"SIGNAL_FAILED", nil)
 				}
 				return &handler.FinishedResponse{}, nil
@@ -77,12 +77,19 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		}
 		if fresh.Status.Status == app.StatusError {
 			return nil, temporal.NewNonRetryableApplicationError(
-				fmt.Sprintf("signal execution failed with status: %s", fresh.Status.Status),
+				signalErrorMessage(fresh),
 				"SIGNAL_FAILED", nil)
 		}
 
 		return &resp, nil
 	})
+}
+
+func signalErrorMessage(q *app.QueueSignal) string {
+	if q.Status.StatusHumanDescription != "" {
+		return q.Status.StatusHumanDescription
+	}
+	return fmt.Sprintf("signal execution failed with status: %s", q.Status.Status)
 }
 
 func (c *Client) getQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {

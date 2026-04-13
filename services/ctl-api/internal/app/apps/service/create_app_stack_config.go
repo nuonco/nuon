@@ -33,13 +33,25 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 	if c.VPCNestedTemplateURL != "" {
-		if err := config.ValidateTemplateURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
-			return err
+		if c.Type == app.StackTypeAzure {
+			if err := config.ValidateHTTPSURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+				return err
+			}
+		} else {
+			if err := config.ValidateTemplateURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
+				return err
+			}
 		}
 	}
 	if c.RunnerNestedTemplateURL != "" {
-		if err := config.ValidateTemplateURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
-			return err
+		if c.Type == app.StackTypeAzure {
+			if err := config.ValidateHTTPSURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+				return err
+			}
+		} else {
+			if err := config.ValidateTemplateURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
+				return err
+			}
 		}
 	}
 	for i, stack := range c.CustomNestedStacks {

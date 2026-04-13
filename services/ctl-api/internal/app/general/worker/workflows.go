@@ -35,7 +35,7 @@ func (w Workflows) All() []any {
 		w.RestartOrgRunners,
 		w.RestartOrgEventLoops,
 	}
-	return append(wkflows)
+	return wkflows
 }
 
 // ListWorkflowFns returns the list of workflow functions for registration
