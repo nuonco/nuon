@@ -15,11 +15,8 @@
     "prebuild": "npm run generate-api-types",
     "build": "mkdir -p dist/assets && run-p build:js build:css && node scripts/hash-assets.js",
     "generate-api-types": "node ./scripts/generate-api-types.js",
-    "generate-api-mocks": "node ./scripts/generate-mocks-with-clean-spec.js",
-    "start-mock-api": "tsx test/mock-express-api.ts",
     "lint": "eslint \"client/**/*.{ts,tsx}\"",
     "fmt": "prettier client",
-    "pretest": "npm run generate-api-mocks",
     "test": "vitest run --testTimeout 40000",
     "pretsc": "npm run generate-api-types",
     "tsc": "tsc --noEmit --project client/tsconfig.json"
@@ -64,7 +61,6 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@ladle/react": "^5.0.3",
-    "@mswjs/http-middleware": "^0.10.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^15.0.2",
     "@types/babel__generator": "^7.27.0",
@@ -94,7 +90,6 @@
     "express": "^4.21.1",
     "jsdom": "^24.0.0",
     "msw": "^2.3.1",
-    "msw-auto-mock": "^0.18.0",
     "npm-run-all": "^4.1.5",
     "openapi-typescript": "^6.7.6",
     "postcss": "^8.5.6",

@@ -1,11 +1,25 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi, beforeAll, afterEach, afterAll } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { server } from '@test/mock-api-server'
+import { setupServer } from 'msw/node'
 import type { TApp } from '../types'
 import { api } from './api'
 
 const orgId = 'org-id'
 const baseURL = 'http://localhost:8081'
+
+const server = setupServer(
+  http.get(`${baseURL}/v1/apps`, () => {
+    return HttpResponse.json([], { status: 200 })
+  })
+)
+
+Object.defineProperty(window, 'location', {
+  value: { ...window.location, reload: vi.fn() },
+})
+
+beforeAll(() => server.listen())
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 test('api should return a list of apps when provided apps path', async () => {
   const result = await api<TApp[]>({ path: 'apps', orgId })
