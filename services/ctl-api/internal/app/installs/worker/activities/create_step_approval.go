@@ -53,6 +53,14 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		sa.RunnerJobID = generics.ToPtr(req.RunnerJobID)
 	}
 
+	// Soft-delete any existing approval for this step so the unique index
+	// (install_workflow_step_id, deleted_at) allows the new row.
+	if res := a.db.WithContext(ctx).
+		Where("install_workflow_step_id = ? AND deleted_at = 0", req.StepID).
+		Delete(&app.WorkflowStepApproval{}); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to delete existing step approval")
+	}
+
 	res := a.db.WithContext(ctx).Create(&sa)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create step approval")

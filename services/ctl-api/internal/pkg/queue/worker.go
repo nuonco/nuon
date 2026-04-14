@@ -110,10 +110,14 @@ func (q *queue) worker(ctx workflow.Context) error {
 			continue
 		}
 
+		q.activeWorkers++
 		q.lastActivityTime = workflow.Now(ctx)
 
 		if err := q.handleQueueSignal(ctx, obj); err != nil {
 			l.Error("error handling workflow signal", zap.Error(err))
 		}
+
+		q.activeWorkers--
+		q.lastActivityTime = workflow.Now(ctx)
 	}
 }

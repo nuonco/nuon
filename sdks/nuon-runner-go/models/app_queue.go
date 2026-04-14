@@ -32,6 +32,9 @@ type AppQueue struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// idle timeout
+	IdleTimeout int64 `json:"idle_timeout,omitempty"`
+
 	// max depth
 	MaxDepth int64 `json:"max_depth,omitempty"`
 

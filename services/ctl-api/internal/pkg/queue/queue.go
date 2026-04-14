@@ -93,6 +93,10 @@ type queue struct {
 	// Used to detect idle queues that should terminate to free resources.
 	lastActivityTime time.Time
 
+	// activeWorkers tracks the number of workers currently processing a signal.
+	// Used to prevent continue-as-new while workers are mid-processing.
+	activeWorkers int
+
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
 	ch    workflow.Channel

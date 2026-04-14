@@ -40,7 +40,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	q.ready = true
 
 	if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
-		return generics.AnyTrue(q.stopped, q.restarted) || q.isIdle(ctx)
+		return generics.AnyTrue(q.stopped, q.restarted) || (q.isIdle(ctx) && q.activeWorkers == 0)
 	}); err != nil {
 		return false, err
 	}
@@ -51,7 +51,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	if q.stopped {
 		return true, nil
 	}
-	if q.isIdle(ctx) {
+	if q.isIdle(ctx) && q.activeWorkers == 0 {
 		l.Info("queue is idle, terminating workflow")
 		return true, nil
 	}
