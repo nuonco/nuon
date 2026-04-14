@@ -379,6 +379,10 @@ export interface paths {
      */
     get: operations["GetAppComponentLatestConfig"];
   };
+  "/v1/apps/{app_id}/components/{component_id}/configs/pulumi": {
+    /** create a pulumi component config */
+    post: operations["CreateAppPulumiComponentConfig"];
+  };
   "/v1/apps/{app_id}/components/{component_id}/configs/terraform-module": {
     /**
      * create a terraform component config
@@ -600,6 +604,13 @@ export interface paths {
      * @description Return an app policy config by id.
      */
     get: operations["GetAppPoliciesConfig"];
+  };
+  "/v1/apps/{app_id}/policy-config/{policy_config_id}": {
+    /**
+     * get app policy config
+     * @description get a single app policy config by ID
+     */
+    get: operations["GetAppPolicyConfig"];
   };
   "/v1/apps/{app_id}/runner-configs": {
     /**
@@ -859,6 +870,13 @@ export interface paths {
      * @description Returns the most recent config for the provided component.
      */
     get: operations["GetComponentLatestConfig"];
+  };
+  "/v1/components/{component_id}/configs/pulumi": {
+    /**
+     * create a pulumi component config
+     * @deprecated
+     */
+    post: operations["CreatePulumiComponentConfig"];
   };
   "/v1/components/{component_id}/configs/terraform-module": {
     /**
@@ -1822,6 +1840,16 @@ export interface paths {
      */
     post: operations["AddUser"];
   };
+  "/v1/orgs/current/webhooks": {
+    /** list webhooks for the current org */
+    get: operations["GetCurrentOrgWebhooks"];
+    /** create a webhook for the current org */
+    post: operations["CreateCurrentOrgWebhook"];
+  };
+  "/v1/orgs/current/webhooks/{webhook_id}": {
+    /** delete a webhook for the current org */
+    delete: operations["DeleteCurrentOrgWebhook"];
+  };
   "/v1/orgs/features": {
     /**
      * get available org features
@@ -1832,6 +1860,48 @@ export interface paths {
      * Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
      */
     get: operations["GetOrgFeatures"];
+  };
+  "/v1/queues": {
+    /**
+     * List queues
+     * @description List queues with optional filtering by owner
+     */
+    get: operations["ListQueues"];
+  };
+  "/v1/queues/{queue_id}": {
+    /**
+     * Get queue by ID
+     * @description Retrieve a single queue by its ID
+     */
+    get: operations["GetQueue"];
+  };
+  "/v1/queues/{queue_id}/signals": {
+    /**
+     * List queue signals
+     * @description Get a list of signals for a specific queue with optional filtering
+     */
+    get: operations["GetQueueSignals"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}": {
+    /**
+     * Get queue signal details
+     * @description Get detailed information about a specific queue signal
+     */
+    get: operations["GetQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/signals/{signal_id}/await": {
+    /**
+     * Long-poll for queue signal completion
+     * @description Blocks until the queue signal finishes or the timeout is reached
+     */
+    get: operations["AwaitQueueSignal"];
+  };
+  "/v1/queues/{queue_id}/status": {
+    /**
+     * Get live queue status
+     * @description Get real-time status of a queue including depth and in-flight signals
+     */
+    get: operations["GetQueueStatus"];
   };
   "/v1/runner-jobs/{runner_job_id}": {
     /**
@@ -1989,6 +2059,29 @@ export interface paths {
     /** update an install runner via the mng process. this is practically a restart. */
     post: operations["UpdateRunnerMng"];
   };
+  "/v1/runners/{runner_id}/processes": {
+    /** list runner processes */
+    get: operations["ListRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/current": {
+    /** get current active runner processes */
+    get: operations["GetCurrentRunnerProcesses"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}": {
+    /** get a runner process */
+    get: operations["GetRunnerProcessPublic"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest": {
+    /**
+     * get the latest heartbeat for a runner process
+     * @description
+     */
+    get: operations["GetProcessLatestHeartBeat"];
+  };
+  "/v1/runners/{runner_id}/processes/{process_id}/shutdown": {
+    /** request shutdown of a runner process */
+    post: operations["ShutdownRunnerProcess"];
+  };
   "/v1/runners/{runner_id}/prune-tokens": {
     /**
      * Prune old tokens for a runner
@@ -2089,6 +2182,13 @@ export interface paths {
      * @description Return a terraform state in JSON format by id.
      */
     get: operations["GetTerraformWorkspaceStatesJSONByIDV2"];
+  };
+  "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/raw": {
+    /**
+     * get raw workspace state json by id
+     * @description Returns the raw state contents without format-specific parsing. Works for both terraform and pulumi state.
+     */
+    get: operations["GetWorkspaceStateJSONRawByID"];
   };
   "/v1/terraform-workspaces/{workspace_id}/state-json/{state_id}/resources": {
     /**
@@ -2236,6 +2336,13 @@ export interface paths {
       };
     };
   };
+  "/v1/vcs/{vcs_connection_id}/events": {
+    /**
+     * Write a VCS webhook event
+     * @description Writes incoming webhook events for a VCS connection
+     */
+    post: operations["WriteVCSEvent"];
+  };
   "/v1/workflows": {
     /** get all workflows for the org */
     get: operations["GetOrgWorkflows"];
@@ -2305,6 +2412,13 @@ export interface paths {
      * @description Create a response for an approval for an action workflow step.
      */
     post: operations["CreateWorkflowStepApprovalResponse"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/await": {
+    /**
+     * long-poll for workflow step completion
+     * @description Long-poll for a workflow step to complete. Blocks until the step finishes or a 60-second timeout is reached.
+     */
+    get: operations["AwaitWorkflowStep"];
   };
   "/v1/workflows/{workflow_id}/steps/{step_id}/retry": {
     /**
@@ -2389,6 +2503,7 @@ export interface components {
       /** @description TODO: change to default null after migration & after initial pr */
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     "app.ActionWorkflowConfig": {
@@ -2499,6 +2614,7 @@ export interface components {
       sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     "app.AppAWSIAMPolicyConfig": {
@@ -2652,6 +2768,7 @@ export interface components {
       state?: string;
       status?: components["schemas"]["app.AppConfigStatus"];
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       /** @description fields that are filled in via after query or views */
@@ -2904,6 +3021,19 @@ export interface components {
       updated_at?: string;
       vpc_nested_template_url?: string;
     };
+    "app.AzureACRImageConfig": {
+      client_id?: string;
+      /** @description connection to parent model */
+      component_config_id?: string;
+      component_config_type?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description actual configuration */
+      registry_url?: string;
+      tenant_id?: string;
+      updated_at?: string;
+    };
     "app.AzureAccount": {
       created_at?: string;
       created_by_id?: string;
@@ -2953,6 +3083,7 @@ export interface components {
       resolved_var_name?: string;
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       type?: components["schemas"]["app.ComponentType"];
       updated_at?: string;
       var_name?: string;
@@ -3010,6 +3141,7 @@ export interface components {
       operation_roles?: {
         [key: string]: string;
       };
+      pulumi?: components["schemas"]["app.PulumiComponentConfig"];
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
@@ -3047,7 +3179,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "unknown";
+    "app.ComponentType": "terraform_module" | "helm_chart" | "docker_build" | "external_image" | "job" | "kubernetes_manifest" | "pulumi" | "unknown";
     "app.CompositeStatus": {
       created_at_ts?: number;
       created_by_id?: string;
@@ -3106,6 +3238,7 @@ export interface components {
     };
     "app.ExternalImageComponentConfig": {
       aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
+      azure_acr_image_config?: components["schemas"]["app.AzureACRImageConfig"];
       /** @description value */
       component_config_connection_id?: string;
       created_at?: string;
@@ -3264,11 +3397,13 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+      queues?: components["schemas"]["app.Queue"][];
       runner_id?: string;
       runner_status?: string;
       runner_status_description?: string;
       runner_type?: string;
       sandbox?: components["schemas"]["app.InstallSandbox"];
+      sandbox_mode?: components["schemas"]["sql.NullBool"];
       sandbox_status?: string;
       sandbox_status_description?: string;
       /** @description TODO(jm): deprecate these fields once the terraform provider has been updated */
@@ -3334,6 +3469,7 @@ export interface components {
       id?: string;
       install_action_workflow_run_id?: string;
       status?: components["schemas"]["app.InstallActionWorkflowRunStepStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       step_id?: string;
       updated_at?: string;
     };
@@ -3370,10 +3506,14 @@ export interface components {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       created_at?: string;
       created_by_id?: string;
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       id?: string;
       install_id?: string;
       org_id?: string;
+      runner_nested_template_url?: string;
       updated_at?: string;
+      /** @description Per-install stack template overrides (nil = use app config default) */
+      vpc_nested_template_url?: string;
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -3399,6 +3539,7 @@ export interface components {
       };
       plan_only?: boolean;
       policy_reports?: components["schemas"]["app.PolicyReport"][];
+      queue_signals?: components["schemas"]["app.QueueSignal"][];
       release_id?: string;
       /** @description Role to be used when running this component */
       role?: string;
@@ -3606,6 +3747,7 @@ export interface components {
       alive_time?: number;
       created_at?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       started_at?: string;
       version?: string;
@@ -3709,6 +3851,7 @@ export interface components {
       sandbox_mode?: boolean;
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       tags?: string[];
       updated_at?: string;
       vcs_connections?: components["schemas"]["app.VCSConnection"][];
@@ -3726,6 +3869,7 @@ export interface components {
       org_id?: string;
       role_type?: components["schemas"]["app.RoleType"];
       status?: components["schemas"]["app.OrgInviteStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     /** @enum {string} */
@@ -3856,13 +4000,37 @@ export interface components {
       repo?: string;
       updated_at?: string;
     };
+    "app.PulumiComponentConfig": {
+      /** @description parent reference */
+      component_config_connection_id?: string;
+      config?: {
+        [key: string]: string;
+      };
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      /** @description pulumi configuration values */
+      runtime?: string;
+      updated_at?: string;
+      version?: string;
+    };
     "app.Queue": {
       created_at?: string;
       created_by_id?: string;
       emitters?: components["schemas"]["app.QueueEmitter"][];
       id?: string;
+      idle_timeout?: number;
       max_depth?: number;
       max_in_flight?: number;
+      metadata?: {
+        [key: string]: string;
+      };
+      name?: string;
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -3904,12 +4072,13 @@ export interface components {
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
     /** @enum {string} */
-    "app.QueueEmitterMode": "cron" | "scheduled";
+    "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
       emitter_id?: string;
+      execution_count?: number;
       id?: string;
       org_id?: string;
       owner_id?: string;
@@ -3942,12 +4111,16 @@ export interface components {
       name?: string;
       operations?: components["schemas"]["app.RunnerOperation"][];
       org_id?: string;
+      /** @description Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled. */
+      queues?: components["schemas"]["app.Queue"][];
       runner_group?: components["schemas"]["app.RunnerGroup"];
       runner_group_id?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
+      warnings?: string[];
     };
     "app.RunnerGroup": {
       created_at?: string;
@@ -3985,6 +4158,13 @@ export interface components {
       /** @description Various settings for the runner to handle internally */
       heart_beat_timeout?: number;
       id?: string;
+      /**
+       * @description JobGroupParallelism maps RunnerJobGroup names to max-in-flight counts for queue-based job routing.
+       * e.g., {"build": "2", "deploy": "1"}. Only used when parallel-runner-jobs feature flag is on.
+       */
+      job_group_parallelism?: {
+        [key: string]: string;
+      };
       local_aws_iam_role_arn?: string;
       logging_level?: string;
       /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
@@ -3993,6 +4173,7 @@ export interface components {
       };
       /** @description org runner specifics */
       org_aws_iam_role_arn?: string;
+      org_azure_client_id?: string;
       org_gcp_service_account?: string;
       org_id?: string;
       org_k8s_service_account_name?: string;
@@ -4000,6 +4181,11 @@ export interface components {
       /** @description platform variable for use in the runner */
       platform?: string;
       runner_api_url?: string;
+      /**
+       * @description RunnerBinaryURL overrides the URL used to download the runner binary onto the
+       * host for mng mode. When empty, defaults to the S3 artifacts URL.
+       */
+      runner_binary_url?: string;
       runner_group_id?: string;
       /** @description configuration for managing the runner server side */
       sandbox_mode?: boolean;
@@ -4013,6 +4199,7 @@ export interface components {
       id?: string;
       minute_bucket?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
       status?: components["schemas"]["app.RunnerStatus"];
@@ -4025,6 +4212,7 @@ export interface components {
       created_by_id?: string;
       id?: string;
       process?: string;
+      process_id?: string;
       runner_id?: string;
       started_at?: string;
       updated_at?: string;
@@ -4063,9 +4251,11 @@ export interface components {
       /** @description queue timeout is how long a job can be queued, before being made available */
       queue_timeout?: number;
       runner_id?: string;
+      runner_process_id?: string;
       started_at?: string;
       status?: components["schemas"]["app.RunnerJobStatus"];
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       type?: components["schemas"]["app.RunnerJobType"];
       updated_at?: string;
     };
@@ -4082,6 +4272,7 @@ export interface components {
       result?: components["schemas"]["app.RunnerJobExecutionResult"];
       runner_job_id?: string;
       status?: components["schemas"]["app.RunnerJobExecutionStatus"];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     "app.RunnerJobExecutionOutputs": {
@@ -4120,12 +4311,25 @@ export interface components {
     "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
+    "app.RunnerJobPermissionInfo": {
+      role?: string;
+      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
+      role_source?: string;
+    };
+    "app.RunnerJobPermissionTraceRecord": {
+      available?: boolean;
+      role_id?: string;
+      role_name?: string;
+      role_source?: string;
+      selected?: boolean;
+    };
     "app.RunnerJobPlan": {
       composite_plan?: components["schemas"]["plantypes.CompositePlan"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
       org_id?: string;
+      permission_info?: components["schemas"]["app.RunnerJobPermissionInfo"];
       plan_json?: string;
       runner_job_id?: string;
       updated_at?: string;
@@ -4133,7 +4337,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobStatus": "queued" | "available" | "in-progress" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
+    "app.RunnerJobType": "health-check" | "docker-build" | "container-image-build" | "terraform-module-build" | "helm-chart-build" | "kubernetes-manifest-build" | "pulumi-build" | "noop-build" | "sandbox-build" | "oci-sync" | "noop-sync" | "fetch-image-metadata" | "terraform-deploy" | "helm-chart-deploy" | "job-deploy" | "kubernetes-manifest-deploy" | "pulumi-deploy" | "noop-deploy" | "shut-down" | "update-version" | "noop" | "mng-vm-shut-down" | "mng-shut-down" | "mng-runner-update-version" | "mng-runner-restart" | "mng-fetch-token" | "sandbox-terraform" | "sandbox-terraform-plan" | "sandbox-pulumi" | "sandbox-sync-secrets" | "runner-helm" | "runner-terraform" | "runner-local" | "actions-workflow";
     "app.RunnerOperation": {
       created_at?: string;
       created_by_id?: string;
@@ -4144,16 +4348,55 @@ export interface components {
       runner_id?: string;
       status?: string;
       status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     /** @enum {string} */
     "app.RunnerOperationType": "provision" | "provision_service_account" | "reprovision" | "deprovision";
+    "app.RunnerProcess": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      initial_health_check?: boolean;
+      /** @description Labels are computed server-side and not persisted. */
+      labels?: string[];
+      log_stream_id?: string;
+      org_id?: string;
+      runner_id?: string;
+      shutdowns?: components["schemas"]["app.RunnerProcessShutdown"][];
+      started_at?: string;
+      type?: components["schemas"]["app.RunnerProcessType"];
+      updated_at?: string;
+      uptime?: number;
+      version?: string;
+      /** @description Warnings are computed server-side and not persisted. */
+      warnings?: string[];
+    };
+    "app.RunnerProcessShutdown": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      metadata?: components["schemas"]["pgtype.Hstore"];
+      org_id?: string;
+      runner_process_id?: string;
+      /** @description Status and StatusDescription are computed from CompositeStatus via AfterQuery. */
+      status?: string;
+      status_description?: string;
+      type?: components["schemas"]["app.RunnerProcessShutdownType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.RunnerProcessShutdownType": "graceful" | "force" | "restart";
+    /** @enum {string} */
+    "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
     "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     /** @enum {string} */
-    "app.StackType": "aws-cloudformation" | "gcp-terraform";
+    "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
@@ -4269,6 +4512,8 @@ export interface components {
       github_account_name?: string;
       github_install_id?: string;
       id?: string;
+      queues?: components["schemas"]["app.Queue"][];
+      status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"][];
     };
@@ -4285,6 +4530,19 @@ export interface components {
       sha?: string;
       updated_at?: string;
       vcs_connection_id?: string;
+    };
+    "app.VCSEvent": {
+      created_at?: string;
+      created_by_id?: string;
+      event_type?: string;
+      id?: string;
+      payload?: components["schemas"]["app.VCSEventPayload"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_id?: string;
+    };
+    "app.VCSEventPayload": {
+      [key: string]: unknown;
     };
     "app.Waitlist": {
       created_at?: string;
@@ -4397,7 +4655,7 @@ export interface components {
       workflow_step_id?: string;
     };
     /** @enum {string} */
-    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval";
+    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan";
     /** @enum {string} */
     "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
     "app.WorkflowStepPolicyValidation": {
@@ -4422,7 +4680,7 @@ export interface components {
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
-    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "docker_build" | "container_image" | "sandbox";
+    "config.AppPolicyType": "kubernetes_cluster" | "terraform_module" | "helm_chart" | "kubernetes_manifest" | "docker_build" | "container_image" | "pulumi" | "sandbox";
     "config.CustomNestedStack": {
       contents?: string;
       contents_hash?: string;
@@ -4608,6 +4866,9 @@ export interface components {
     };
     "helpers.CreateInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "helpers.InstallMetadata": {
       managed_by?: string;
@@ -4672,6 +4933,9 @@ export interface components {
     "permissions.Set": {
       [key: string]: components["schemas"]["permissions.Permission"];
     };
+    "pgtype.Hstore": {
+      [key: string]: string;
+    };
     "plantypes.ActionWorkflowRunPlan": {
       attrs?: {
         [key: string]: string;
@@ -4714,6 +4978,7 @@ export interface components {
       git_source?: components["schemas"]["plantypes.GitSource"];
       helm_build_plan?: components["schemas"]["plantypes.HelmBuildPlan"];
       kubernetes_manifest_build_plan?: components["schemas"]["plantypes.KubernetesManifestBuildPlan"];
+      pulumi_build_plan?: components["schemas"]["plantypes.PulumiBuildPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       terraform_build_plan?: components["schemas"]["plantypes.TerraformBuildPlan"];
     };
@@ -4744,6 +5009,7 @@ export interface components {
       install_id?: string;
       kubernetes_manifest?: components["schemas"]["plantypes.KubernetesManifestDeployPlan"];
       noop?: components["schemas"]["plantypes.NoopDeployPlan"];
+      pulumi?: components["schemas"]["plantypes.PulumiDeployPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       src_registry: components["schemas"]["configs.OCIRegistryRepository"];
       src_tag: string;
@@ -4879,6 +5145,36 @@ export interface components {
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
     };
+    "plantypes.PulumiBuildPlan": {
+      labels?: {
+        [key: string]: string;
+      };
+    };
+    "plantypes.PulumiDeployPlan": {
+      aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
+      azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
+      cluster_info?: components["schemas"]["kube.ClusterInfo"];
+      config?: {
+        [key: string]: string;
+      };
+      /** @description Destroy indicates this is a teardown operation (pulumi destroy instead of up) */
+      destroy?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
+      plan_json?: number[];
+      pulumi_version?: string;
+      runtime?: string;
+      stack_name?: string;
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      /** @description Reuse workspace concept for state storage */
+      workspace_id?: string;
+    };
+    "plantypes.PulumiSandboxMode": {
+      plan_contents?: string;
+      plan_display_contents?: string;
+    };
     "plantypes.SandboxMode": {
       enabled?: boolean;
       helm?: components["schemas"]["plantypes.HelmSandboxMode"];
@@ -4886,6 +5182,7 @@ export interface components {
       outputs?: {
         [key: string]: unknown;
       };
+      pulumi?: components["schemas"]["plantypes.PulumiSandboxMode"];
       terraform?: components["schemas"]["plantypes.TerraformSandboxMode"];
     };
     "plantypes.SandboxRunPlan": {
@@ -4977,6 +5274,14 @@ export interface components {
       state_json?: number[];
       workspace_id?: string;
     };
+    "queue.StatusResponse": {
+      inFlight?: string[];
+      inFlightCount?: number;
+      paused?: boolean;
+      queueDepthCount?: number;
+      ready?: boolean;
+      stopped?: boolean;
+    };
     "refs.Ref": {
       input?: string;
       name?: string;
@@ -4994,7 +5299,7 @@ export interface components {
     };
     "service.AppAWSIAMRoleConfig": {
       /** @enum {string} */
-      cloud_platform?: "aws" | "gcp";
+      cloud_platform?: "aws" | "gcp" | "azure";
       description: string;
       display_name: string;
       enabled_in_stack?: boolean | null;
@@ -5068,6 +5373,7 @@ export interface components {
     };
     "service.AvailableRole": {
       arn?: string;
+      default?: boolean;
       name?: string;
       role_type?: string;
     };
@@ -5079,9 +5385,6 @@ export interface components {
     };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
-      auth_audience?: string;
-      auth_client_id?: string;
-      auth_domain?: string;
       dashboard_url?: string;
       nuon_auth_enabled?: boolean;
       root_domain?: string;
@@ -5292,6 +5595,10 @@ export interface components {
     "service.CreateConnectionRequest": {
       github_install_id: string;
     };
+    "service.CreateCurrentOrgWebhookRequest": {
+      webhook_secret?: string;
+      webhook_url: string;
+    };
     "service.CreateDockerBuildComponentConfigRequest": {
       app_config_id?: string;
       build_args?: string[];
@@ -5316,6 +5623,7 @@ export interface components {
     "service.CreateExternalImageComponentConfigRequest": {
       app_config_id?: string;
       aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
+      azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -5370,6 +5678,9 @@ export interface components {
     };
     "service.CreateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "service.CreateInstallDeployRequest": {
       build_id?: string;
@@ -5471,6 +5782,28 @@ export interface components {
     "service.CreateOrgUserRequest": {
       user_id?: string;
     };
+    "service.CreatePulumiComponentConfigRequest": {
+      app_config_id?: string;
+      build_timeout?: string;
+      checksum?: string;
+      config: {
+        [key: string]: string;
+      };
+      connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      dependencies?: string[];
+      deploy_timeout?: string;
+      drift_schedule?: string;
+      env_vars: {
+        [key: string]: string;
+      };
+      operation_roles?: {
+        [key: string]: string;
+      };
+      public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
+      references?: string[];
+      runtime: string;
+      version?: string;
+    };
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
       token?: string;
@@ -5520,6 +5853,15 @@ export interface components {
       id?: string;
       note?: string;
       type?: string;
+    };
+    "service.CurrentOrgWebhookResponse": {
+      created_at?: string;
+      created_by_id?: string;
+      has_secret?: boolean;
+      id?: string;
+      org_id?: string;
+      updated_at?: string;
+      webhook_url?: string;
     };
     "service.DeployInstallComponentsRequest": {
       plan_only?: boolean;
@@ -5643,6 +5985,7 @@ export interface components {
     "service.ReprovisionInstallSandboxRequest": {
       plan_only?: boolean;
       role?: string;
+      skip_components?: boolean;
     };
     "service.RetryWorkflowByIDRequest": {
       /** @description Retry indicates whether to retry the current step or not */
@@ -5674,6 +6017,9 @@ export interface components {
     "service.RunnerConnectionStatus": {
       connected?: boolean;
       latest_heartbeat_timestamp?: number;
+    };
+    "service.ShutdownRunnerProcessRequest": {
+      shutdown_type: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -5723,6 +6069,9 @@ export interface components {
     };
     "service.UpdateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      runner_nested_template_url?: string;
+      vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
       deploy_dependents?: boolean;
@@ -5749,6 +6098,13 @@ export interface components {
       aws_max_instance_lifetime?: number;
       container_image_tag?: string;
       container_image_url?: string;
+      /**
+       * @description JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
+       * e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
+       */
+      job_group_parallelism?: {
+        [key: string]: number;
+      };
       org_awsiam_role_arn?: string;
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
@@ -5801,6 +6157,11 @@ export interface components {
     "service.awsECRImageConfigRequest": {
       aws_region?: string;
       iam_role_arn?: string;
+    };
+    "service.azureACRImageConfigRequest": {
+      client_id?: string;
+      registry_url?: string;
+      tenant_id?: string;
     };
     "service.gcpGARImageConfigRequest": {
       gcp_project_id?: string;
@@ -9124,6 +9485,61 @@ export interface operations {
       };
     };
   };
+  /** create a pulumi component config */
+  CreateAppPulumiComponentConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreatePulumiComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.PulumiComponentConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * create a terraform component config
    * @description Create a terraform component config.
@@ -10893,6 +11309,58 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.AppPoliciesConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app policy config
+   * @description get a single app policy config by ID
+   */
+  GetAppPolicyConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app policy config ID */
+        policy_config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppPolicyConfig"];
         };
       };
       /** @description Bad Request */
@@ -12865,6 +13333,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.ComponentConfigConnection"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a pulumi component config
+   * @deprecated
+   */
+  CreatePulumiComponentConfig: {
+    parameters: {
+      path: {
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreatePulumiComponentConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.PulumiComponentConfig"];
         };
       };
       /** @description Bad Request */
@@ -15217,11 +15741,13 @@ export interface operations {
    */
   GetAvailableRoles: {
     parameters: {
-      query: {
+      query?: {
         /** @description principal type: component, sandbox, action */
-        principal_type: "component" | "sandbox" | "action";
+        principal_type?: "component" | "sandbox" | "action";
         /** @description operation type: provision, reprovision, deprovision, deploy, teardown, trigger */
-        "app.operationType": string;
+        operation_type?: "provision" | "deprovision" | "deploy" | "teardown" | "reprovision" | "trigger";
+        /** @description principal ID: component ID or action workflow ID (required for component and action) */
+        principal_id?: string;
       };
       path: {
         /** @description install ID */
@@ -18909,6 +19435,133 @@ export interface operations {
       };
     };
   };
+  /** list webhooks for the current org */
+  GetCurrentOrgWebhooks: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a webhook for the current org */
+  CreateCurrentOrgWebhook: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateCurrentOrgWebhookRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** delete a webhook for the current org */
+  DeleteCurrentOrgWebhook: {
+    parameters: {
+      path: {
+        /** @description webhook ID */
+        webhook_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * get available org features
    * @description Get all available organization feature flags with their descriptions.
@@ -18923,6 +19576,196 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OrgFeatureInfo"][];
+        };
+      };
+    };
+  };
+  /**
+   * List queues
+   * @description List queues with optional filtering by owner
+   */
+  ListQueues: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., 'app_branches') */
+        owner_type?: string;
+        /** @description Limit results */
+        limit?: number;
+        /** @description Offset results */
+        offset?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue by ID
+   * @description Retrieve a single queue by its ID
+   */
+  GetQueue: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Queue"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List queue signals
+   * @description Get a list of signals for a specific queue with optional filtering
+   */
+  GetQueueSignals: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner ID */
+        owner_id?: string;
+        /** @description Filter by owner type (e.g., app_branches) */
+        owner_type?: string;
+        /** @description Filter by status */
+        status?: string;
+        /** @description Filter by signal type */
+        type?: string;
+        /** @description Limit results (default: 50) */
+        limit?: number;
+        /** @description Offset for pagination (default: 0) */
+        offset?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get queue signal details
+   * @description Get detailed information about a specific queue signal
+   */
+  GetQueueSignal: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Long-poll for queue signal completion
+   * @description Blocks until the queue signal finishes or the timeout is reached
+   */
+  AwaitQueueSignal: {
+    parameters: {
+      query?: {
+        /** @description Timeout in seconds (default 30, max 120) */
+        timeout?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.QueueSignal"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get live queue status
+   * @description Get real-time status of a queue including depth and in-flight signals
+   */
+  GetQueueStatus: {
+    parameters: {
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["queue.StatusResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20117,6 +20960,266 @@ export interface operations {
       };
     };
   };
+  /** list runner processes */
+  ListRunnerProcesses: {
+    parameters: {
+      query?: {
+        /** @description filter by process type */
+        type?: string;
+        /** @description filter by status */
+        status?: string;
+        /** @description limit */
+        limit?: number;
+        /** @description offset */
+        offset?: number;
+      };
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get current active runner processes */
+  GetCurrentRunnerProcesses: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a runner process */
+  GetRunnerProcessPublic: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcess"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the latest heartbeat for a runner process
+   * @description
+   */
+  GetProcessLatestHeartBeat: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerHeartBeat"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** request shutdown of a runner process */
+  ShutdownRunnerProcess: {
+    parameters: {
+      path: {
+        /** @description runner ID */
+        runner_id: string;
+        /** @description process ID */
+        process_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ShutdownRunnerProcessRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerProcessShutdown"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * Prune old tokens for a runner
    * @description Prune old tokens for a specific runner by invalidating all tokens except the most recent one.
@@ -20181,6 +21284,8 @@ export interface operations {
       query?: {
         /** @description window of health checks to return */
         window?: string;
+        /** @description filter by process ID */
+        process_id?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -20900,6 +22005,58 @@ export interface operations {
     };
   };
   /**
+   * get raw workspace state json by id
+   * @description Returns the raw state contents without format-specific parsing. Works for both terraform and pulumi state.
+   */
+  GetWorkspaceStateJSONRawByID: {
+    parameters: {
+      path: {
+        /** @description workspace ID */
+        workspace_id: string;
+        /** @description state ID */
+        state_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get terraform state resources. This output is similar to "terraform state list"
    * @description Returns terraform state resources in JSON format.
    */
@@ -21496,6 +22653,44 @@ export interface operations {
       };
     };
   };
+  /**
+   * Write a VCS webhook event
+   * @description Writes incoming webhook events for a VCS connection
+   */
+  WriteVCSEvent: {
+    parameters: {
+      path: {
+        /** @description VCS Connection ID */
+        vcs_connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSEvent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /** get all workflows for the org */
   GetOrgWorkflows: {
     parameters: {
@@ -22071,6 +23266,58 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * long-poll for workflow step completion
+   * @description Long-poll for a workflow step to complete. Blocks until the step finishes or a 60-second timeout is reached.
+   */
+  AwaitWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
