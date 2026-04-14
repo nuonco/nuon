@@ -131,6 +131,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
 	api.POST("/queues/:id/restart", s.RestartQueue)
 
+	// Temporal workflow viewer
+	api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
+
 	// Queue signals (global view)
 	api.GET("/queue-signals", s.QueueSignals)
 	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)

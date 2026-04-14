@@ -85,84 +85,17 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 
 			<!-- Workflow Info -->
 			if wfInfo != nil {
-				<div class="mb-6">
-					@card.Card() {
-						@card.Header() {
-							<div class="flex items-center justify-between">
-								@card.Title() {
-									Workflow execution
-								}
-								@workflowStatusBadge(wfInfo.Status)
-							</div>
-						}
-						@card.Content() {
-							if len(wfInfo.Activities) > 0 {
-								<div class="space-y-2">
-									for i, act := range wfInfo.Activities {
-										<details class="group rounded border border-border">
-											<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
-												<div class="flex items-center gap-2 w-64 shrink-0">
-													@activityStatusDot(act.Status)
-													<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
-												</div>
-												<div class="w-20 shrink-0">
-													@activityStatusText(act.Status)
-												</div>
-												if !act.StartedAt.IsZero() {
-													<div class="text-muted-foreground w-36 shrink-0">
-														{ act.StartedAt.Format("15:04:05.000") }
-														if !act.FinishedAt.IsZero() {
-															<span class="text-foreground/40"> → </span>
-															{ act.FinishedAt.Format("15:04:05.000") }
-														}
-													</div>
-												}
-												if act.Duration > 0 {
-													<div class="font-mono text-cyan">
-														{ formatDuration(act.Duration) }
-													</div>
-												}
-												if act.Attempt > 1 {
-													<div class="text-amber-500">
-														attempt { fmt.Sprintf("%d", act.Attempt) }
-													</div>
-												}
-												if act.Failure != "" {
-													<div class="text-red-400 truncate flex-1" title={ act.Failure }>
-														{ act.Failure }
-													</div>
-												}
-												<div class="ml-auto text-muted-foreground shrink-0">
-													<span class="group-open:hidden">▸</span>
-													<span class="hidden group-open:inline">▾</span>
-												</div>
-											</summary>
-											<div class="border-t border-border px-3 py-2 space-y-2">
-												if act.Input != "" {
-													<div>
-														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Request</div>
-														<pre id={ fmt.Sprintf("act-input-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Input }</pre>
-													</div>
-												}
-												if act.Result != "" {
-													<div>
-														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Response</div>
-														<pre id={ fmt.Sprintf("act-result-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Result }</pre>
-													</div>
-												}
-												if act.Input == "" && act.Result == "" {
-													<div class="text-xs text-muted-foreground">No input/output data available.</div>
-												}
-											</div>
-										</details>
-									}
-								</div>
-							} else {
-								<div class="text-sm text-muted-foreground">No activities recorded yet.</div>
-							}
-						}
-					}
-				</div>
+				@workflowActivitiesCard(wfInfo)
+			}
+
+			<!-- Child Workflows -->
+			if wfInfo != nil {
+				@workflowChildWorkflowsCard(wfInfo, temporalUIURL, signal.Workflow.Namespace)
+			}
+
+			<!-- Awaited Signals -->
+			if wfInfo != nil {
+				@workflowAwaitedSignalsCard(wfInfo, temporalUIURL)
 			}
 
 			<!-- Update Handlers -->
@@ -356,10 +289,6 @@ func formatSignalData(signal *app.QueueSignal) string {
 		return "{}"
 	}
 	return string(data)
-}
-
-func hasTimingMetadata(signal *app.QueueSignal) bool {
-	return true
 }
 
 func getMetadataString(status app.CompositeStatus, key string) string {

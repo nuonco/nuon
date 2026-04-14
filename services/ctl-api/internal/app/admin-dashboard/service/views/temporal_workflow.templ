@@ -1,0 +1,525 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+)
+
+const ActivePageTemporalWorkflows ActivePage = "temporal-workflows"
+
+templ TemporalWorkflowSearch(namespace, workflowID string) {
+	@Layout("Temporal Workflows", ActivePageTemporalWorkflows) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Temporal workflow viewer
+					}
+					@card.Description() {
+						Enter a Temporal namespace and workflow ID to inspect
+					}
+				}
+				@card.Content() {
+					<form class="flex gap-4 items-end" method="GET" action="/temporal-workflows">
+						<div class="flex-1">
+							<label class="text-xs text-muted-foreground uppercase font-medium mb-1 block">Namespace</label>
+							<input
+								type="text"
+								name="namespace"
+								value={ namespace }
+								placeholder="e.g. components, runners"
+								class="w-full bg-background border border-border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-cyan"
+							/>
+						</div>
+						<div class="flex-1">
+							<label class="text-xs text-muted-foreground uppercase font-medium mb-1 block">Workflow ID</label>
+							<input
+								type="text"
+								name="workflow_id"
+								value={ workflowID }
+								placeholder="e.g. queue-que...-handler-qsi..."
+								class="w-full bg-background border border-border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-cyan"
+							/>
+						</div>
+						<button
+							type="submit"
+							class="bg-cyan text-background px-4 py-2 rounded text-sm font-medium hover:bg-cyan/90"
+						>
+							View
+						</button>
+					</form>
+				}
+			}
+		</div>
+	}
+}
+
+templ TemporalWorkflowDetail(namespace, workflowID, temporalUIURL string, wfInfo *WorkflowInfo) {
+	@Layout("Workflow: " + workflowID, ActivePageTemporalWorkflows) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb -->
+			<div class="mb-6 flex gap-2 text-sm">
+				<a href="/temporal-workflows" class="text-cyan hover:underline">Temporal Workflows</a>
+				<span class="text-muted-foreground">→</span>
+				<span class="text-muted-foreground font-mono text-xs">{ workflowID }</span>
+			</div>
+
+			<!-- Header -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-center gap-3 mb-2">
+					<h1 class="text-2xl font-bold">Temporal Workflow</h1>
+					@workflowStatusBadge(wfInfo.Status)
+					if temporalUIURL != "" {
+						<a href={ templ.URL(temporalUIURL + "/namespaces/" + namespace + "/workflows/" + workflowID) } target="_blank" rel="noopener noreferrer" class="text-xs text-cyan hover:underline ml-auto">
+							View in Temporal UI →
+						</a>
+					}
+				</div>
+				<div class="space-y-1">
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-muted-foreground uppercase">Workflow ID:</span>
+						<span id="tw-wf-id" class="font-mono text-xs text-foreground">{ workflowID }</span>
+						@copybutton.CopyButton(copybutton.Props{TargetID: "tw-wf-id"})
+					</div>
+					<div class="flex items-center gap-2">
+						<span class="text-xs text-muted-foreground uppercase">Namespace:</span>
+						<span class="font-mono text-xs text-foreground">{ namespace }</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Activities -->
+			@workflowActivitiesCard(wfInfo)
+
+			<!-- Child Workflows -->
+			@workflowChildWorkflowsCard(wfInfo, temporalUIURL, namespace)
+
+			<!-- Awaited Signals -->
+			@workflowAwaitedSignalsCard(wfInfo, temporalUIURL)
+
+			<!-- Update Handlers -->
+			if len(wfInfo.UpdateHandlers) > 0 {
+				<div class="mb-6">
+					@card.Card() {
+						@card.Header() {
+							@card.Title() {
+								Update handlers
+							}
+						}
+						@card.Content() {
+							<div class="flex flex-wrap gap-2">
+								for _, handler := range wfInfo.UpdateHandlers {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										{ handler }
+									}
+								}
+							</div>
+						}
+					}
+				</div>
+			}
+		</div>
+		@copybutton.Script()
+	}
+}
+
+// Reusable card components for workflow info (used both on this page and inline in signal detail)
+
+templ workflowActivitiesCard(wfInfo *WorkflowInfo) {
+	if len(wfInfo.UpdateExecutions) > 0 {
+		// Show activities grouped by update execution
+		<div class="mb-6">
+			@card.Card() {
+				@card.Header() {
+					<div class="flex items-center justify-between">
+						@card.Title() {
+							Workflow execution ({ fmt.Sprintf("%d updates, %d activities", len(wfInfo.UpdateExecutions), len(wfInfo.Activities)) })
+						}
+						@workflowStatusBadge(wfInfo.Status)
+					</div>
+				}
+				@card.Content() {
+					<div class="space-y-3">
+						// Show orphan activities first (main workflow body, before any updates)
+						if len(wfInfo.OrphanActivities) > 0 {
+							<div class="space-y-2">
+								<div class="text-[10px] text-muted-foreground uppercase font-medium">Main workflow</div>
+								@activitiesList(wfInfo.OrphanActivities)
+							</div>
+						}
+						// Show each update with its activities
+						for _, ue := range wfInfo.UpdateExecutions {
+							@updateExecutionRow(ue)
+						}
+					</div>
+				}
+			}
+		</div>
+	} else if len(wfInfo.Activities) > 0 {
+		// No updates — show flat activities list
+		<div class="mb-6">
+			@card.Card() {
+				@card.Header() {
+					<div class="flex items-center justify-between">
+						@card.Title() {
+							Activities ({ fmt.Sprintf("%d", len(wfInfo.Activities)) })
+						}
+						@workflowStatusBadge(wfInfo.Status)
+					</div>
+				}
+				@card.Content() {
+					@activitiesList(wfInfo.Activities)
+				}
+			}
+		</div>
+	}
+}
+
+templ updateExecutionRow(ue UpdateExecution) {
+	<details class="group/update rounded border border-border bg-muted/10">
+		<summary class="flex items-center gap-4 py-3 px-4 text-sm cursor-pointer list-none select-none hover:bg-muted/30">
+			<div class="flex items-center gap-2 shrink-0">
+				@activityStatusDot(ue.Status)
+			</div>
+			<div class="flex items-center gap-2 shrink-0">
+				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+					update
+				}
+				<span class="font-mono font-medium">{ ue.Name }</span>
+			</div>
+			<div class="w-20 shrink-0">
+				@activityStatusText(ue.Status)
+			</div>
+			if !ue.StartedAt.IsZero() {
+				<div class="text-muted-foreground w-36 shrink-0">
+					{ ue.StartedAt.Format("15:04:05.000") }
+					if !ue.FinishedAt.IsZero() {
+						<span class="text-foreground/40"> → </span>
+						{ ue.FinishedAt.Format("15:04:05.000") }
+					}
+				</div>
+			}
+			if ue.Duration > 0 {
+				<div class="font-mono text-cyan">
+					{ formatDuration(ue.Duration) }
+				</div>
+			}
+			if len(ue.Activities) > 0 {
+				<div class="text-muted-foreground">
+					{ fmt.Sprintf("%d activities", len(ue.Activities)) }
+				</div>
+			}
+			if ue.Failure != "" {
+				<div class="text-red-400 truncate flex-1" title={ ue.Failure }>
+					{ ue.Failure }
+				</div>
+			}
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open/update:hidden">▸</span>
+				<span class="hidden group-open/update:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-3 space-y-3">
+			if len(ue.Activities) > 0 {
+				@activitiesList(ue.Activities)
+			} else {
+				<div class="text-xs text-muted-foreground">No activities in this update.</div>
+			}
+			if ue.Input != "" {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Update input</div>
+					<pre class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-32 overflow-y-auto whitespace-pre-wrap break-all">{ ue.Input }</pre>
+				</div>
+			}
+			if ue.Result != "" {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Update result</div>
+					<pre class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-32 overflow-y-auto whitespace-pre-wrap break-all">{ ue.Result }</pre>
+				</div>
+			}
+		</div>
+	</details>
+}
+
+templ activitiesList(activities []ActivityInfo) {
+	<div class="space-y-2">
+		for i, act := range activities {
+			@activityRow(i, act)
+		}
+	</div>
+}
+
+templ activityRow(idx int, act ActivityInfo) {
+	<details class="group rounded border border-border/50">
+		<summary class="flex items-center gap-3 py-1.5 px-2.5 text-[11px] cursor-pointer list-none select-none hover:bg-muted/20">
+			<div class="flex items-center gap-1.5 w-56 shrink-0">
+				@activityStatusDot(act.Status)
+				<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
+			</div>
+			<div class="w-16 shrink-0">
+				@activityStatusText(act.Status)
+			</div>
+			if !act.StartedAt.IsZero() {
+				<div class="text-muted-foreground w-36 shrink-0">
+					{ act.StartedAt.Format("15:04:05.000") }
+					if !act.FinishedAt.IsZero() {
+						<span class="text-foreground/40"> → </span>
+						{ act.FinishedAt.Format("15:04:05.000") }
+					}
+				</div>
+			}
+			if act.Duration > 0 {
+				<div class="font-mono text-cyan">
+					{ formatDuration(act.Duration) }
+				</div>
+			}
+			if act.Attempt > 1 {
+				<div class="text-amber-500">
+					attempt { fmt.Sprintf("%d", act.Attempt) }
+				</div>
+			}
+			if act.Failure != "" {
+				<div class="text-red-400 truncate flex-1" title={ act.Failure }>
+					{ act.Failure }
+				</div>
+			}
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-2 space-y-2">
+			if act.Input != "" {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Request</div>
+					<pre id={ fmt.Sprintf("act-input-%d", idx) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Input }</pre>
+				</div>
+			}
+			if act.Result != "" {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Response</div>
+					<pre id={ fmt.Sprintf("act-result-%d", idx) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Result }</pre>
+				</div>
+			}
+			if act.Input == "" && act.Result == "" {
+				<div class="text-xs text-muted-foreground">No input/output data available.</div>
+			}
+		</div>
+	</details>
+}
+
+templ workflowChildWorkflowsCard(wfInfo *WorkflowInfo, temporalUIURL string, parentNamespace string) {
+	if len(wfInfo.ChildWorkflows) > 0 {
+		<div class="mb-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Child workflows ({ fmt.Sprintf("%d", len(wfInfo.ChildWorkflows)) })
+					}
+				}
+				@card.Content() {
+					<div class="space-y-2">
+						for _, cw := range wfInfo.ChildWorkflows {
+							@childWorkflowRow(cw, temporalUIURL, parentNamespace)
+						}
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+templ childWorkflowRow(cw ChildWorkflowInfo, temporalUIURL string, parentNamespace string) {
+	{{ ns := cw.Namespace }}
+	if ns == "" {
+		{{ ns = parentNamespace }}
+	}
+	<details class="group rounded border border-border">
+		<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
+			<div class="flex items-center gap-2 shrink-0">
+				@activityStatusDot(cw.Status)
+			</div>
+			<div class="flex items-center gap-2 w-48 shrink-0">
+				<span class="font-mono truncate font-medium" title={ cw.WorkflowType }>{ cw.WorkflowType }</span>
+			</div>
+			<div class="w-20 shrink-0">
+				@activityStatusText(cw.Status)
+			</div>
+			if !cw.StartedAt.IsZero() {
+				<div class="text-muted-foreground w-36 shrink-0">
+					{ cw.StartedAt.Format("15:04:05.000") }
+					if !cw.FinishedAt.IsZero() {
+						<span class="text-foreground/40"> → </span>
+						{ cw.FinishedAt.Format("15:04:05.000") }
+					}
+				</div>
+			}
+			if cw.Duration > 0 {
+				<div class="font-mono text-cyan">
+					{ formatDuration(cw.Duration) }
+				</div>
+			}
+			if cw.Failure != "" {
+				<div class="text-red-400 truncate flex-1" title={ cw.Failure }>
+					{ cw.Failure }
+				</div>
+			}
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-3 space-y-2">
+			<div class="space-y-1">
+				@infoRow("Workflow ID", cw.WorkflowID)
+				if cw.RunID != "" {
+					@infoRow("Run ID", cw.RunID)
+				}
+				if ns != "" {
+					@infoRow("Namespace", ns)
+				}
+			</div>
+			<div class="mt-2 flex gap-3">
+				if cw.WorkflowID != "" && ns != "" {
+					<a href={ templ.URL("/temporal-workflows?namespace=" + ns + "&workflow_id=" + cw.WorkflowID) } class="text-xs text-cyan hover:underline">
+						View workflow detail →
+					</a>
+				}
+				if temporalUIURL != "" && cw.WorkflowID != "" && ns != "" {
+					<a href={ templ.URL(temporalUIURL + "/namespaces/" + ns + "/workflows/" + cw.WorkflowID) } target="_blank" rel="noopener noreferrer" class="text-xs text-cyan hover:underline">
+						View in Temporal UI →
+					</a>
+				}
+			</div>
+		</div>
+	</details>
+}
+
+templ workflowAwaitedSignalsCard(wfInfo *WorkflowInfo, temporalUIURL string) {
+	if len(wfInfo.AwaitedSignals) > 0 {
+		<div class="mb-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Awaited signals ({ fmt.Sprintf("%d", len(wfInfo.AwaitedSignals)) })
+					}
+					@card.Description() {
+						Queue signals awaited by this workflow via AwaitSignal
+					}
+				}
+				@card.Content() {
+					<div class="space-y-2">
+						for _, as := range wfInfo.AwaitedSignals {
+							@awaitedSignalRow(as, temporalUIURL)
+						}
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+templ awaitedSignalRow(as AwaitedSignalInfo, temporalUIURL string) {
+	<details class="group rounded border border-border">
+		<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
+			<div class="flex items-center gap-2 shrink-0">
+				if as.Signal != nil {
+					@signalStatusBadge(as.Signal.Status)
+				} else {
+					@activityStatusDot(as.Status)
+				}
+			</div>
+			<div class="flex items-center gap-2 shrink-0">
+				if as.Signal != nil {
+					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+						{ string(as.Signal.Type) }
+					}
+				}
+			</div>
+			<div class="font-mono truncate w-64 shrink-0" title={ as.QueueSignalID }>
+				{ as.QueueSignalID }
+			</div>
+			if as.Signal != nil {
+				<div class="text-muted-foreground shrink-0">
+					{ as.Signal.OwnerType }: { as.Signal.OwnerID }
+				</div>
+			}
+			if as.Duration > 0 {
+				<div class="font-mono text-cyan">
+					{ formatDuration(as.Duration) }
+				</div>
+			}
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-3 space-y-3">
+			if as.Signal != nil {
+				<!-- Signal info -->
+				<div class="space-y-1">
+					@infoRow("Signal ID", as.Signal.ID)
+					@infoRow("Type", string(as.Signal.Type))
+					@infoRow("Status", string(as.Signal.Status.Status))
+					@infoRow("Owner type", as.Signal.OwnerType)
+					@infoRow("Owner ID", as.Signal.OwnerID)
+					if as.Signal.Status.StatusHumanDescription != "" {
+						@infoRow("Description", as.Signal.Status.StatusHumanDescription)
+					}
+					if as.Signal.Workflow.ID != "" {
+						@infoRow("Handler workflow", as.Signal.Workflow.ID)
+					}
+				</div>
+
+				<!-- Status history inline -->
+				if len(as.Signal.Status.History) > 0 {
+					<div>
+						<div class="text-[10px] text-muted-foreground uppercase font-medium mb-2">Status history</div>
+						@awaitedSignalStatusHistory(as.Signal.Status)
+					</div>
+				}
+
+				<!-- Links -->
+				<div class="flex gap-3">
+					if as.Signal.QueueID != "" {
+						<a href={ templ.URL("/queues/" + as.Signal.QueueID + "/signals/" + as.Signal.ID) } class="text-xs text-cyan hover:underline font-medium">
+							View signal detail →
+						</a>
+					}
+					if as.Signal.Workflow.ID != "" && as.Signal.Workflow.Namespace != "" {
+						<a href={ templ.URL("/temporal-workflows?namespace=" + as.Signal.Workflow.Namespace + "&workflow_id=" + as.Signal.Workflow.ID) } class="text-xs text-cyan hover:underline">
+							View handler workflow →
+						</a>
+					}
+					if temporalUIURL != "" && as.Signal.Workflow.ID != "" {
+						<a href={ templ.URL(temporalUIURL + "/namespaces/" + as.Signal.Workflow.Namespace + "/workflows/" + as.Signal.Workflow.ID) } target="_blank" rel="noopener noreferrer" class="text-xs text-cyan hover:underline">
+							View in Temporal UI →
+						</a>
+					}
+				</div>
+			} else {
+				<div class="space-y-1">
+					@infoRow("Signal ID", as.QueueSignalID)
+					<div class="text-xs text-muted-foreground">Signal not found in database.</div>
+				</div>
+			}
+		</div>
+	</details>
+}
+
+templ awaitedSignalStatusHistory(cs app.CompositeStatus) {
+	<div class="space-y-1 pl-2 border-l-2 border-border">
+		for _, h := range cs.History {
+			<div class="flex items-center gap-3 text-xs py-1">
+				@signalStatusBadge(h)
+				<span class="text-muted-foreground">{ string(h.Status) }</span>
+				if h.StatusHumanDescription != "" {
+					<span class="text-muted-foreground/70 truncate" title={ h.StatusHumanDescription }>— { h.StatusHumanDescription }</span>
+				}
+			</div>
+		}
+	</div>
+}
