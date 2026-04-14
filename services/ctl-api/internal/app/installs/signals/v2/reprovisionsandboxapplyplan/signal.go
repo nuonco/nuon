@@ -28,12 +28,13 @@ type Signal struct {
 	FlowID           string
 	FlowStepID       string
 	SandboxMode      bool
-
-	cfg *internal.Config
+	cfg              *internal.Config
+	logStreamID      string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -48,6 +49,8 @@ func (s *Signal) WithParams(params *signal.Params) {
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.FlowStepID = stepID
@@ -136,6 +139,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	if err != nil {
 		return err
 	}
+	s.logStreamID = logStreamID
 
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)

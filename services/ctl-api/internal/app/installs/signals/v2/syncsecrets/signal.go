@@ -23,14 +23,18 @@ type Signal struct {
 	InstallID      string
 	WorkflowStepID string
 	SandboxMode    bool
+	logStreamID    string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID

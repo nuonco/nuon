@@ -15,14 +15,18 @@ import (
 const SignalType signal.SignalType = "mng-shutdown"
 
 type Signal struct {
-	RunnerID string `json:"runner_id"`
+	logStreamID string
+	RunnerID    string `json:"runner_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.RunnerID == "" {
@@ -93,7 +97,7 @@ func (s *Signal) createMngJob(ctx workflow.Context, runnerID string, jobType app
 		return nil, errors.Wrap(err, "unable to create log stream")
 	}
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-
+	s.logStreamID = logStream.ID
 	runnerJob, err := activities.AwaitCreateMngJob(ctx, &activities.CreateMngJobRequest{
 		RunnerID:    runner.ID,
 		LogStreamID: logStream.ID,

@@ -31,11 +31,14 @@ type Signal struct {
 	FlowStepID         string
 	FlowID             string
 	SandboxMode        bool
+	logStreamID        string
 }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -45,6 +48,7 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -133,6 +137,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// NOTE: not closed so we can re-use this log stream for apply plan
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	s.logStreamID = logStream.ID
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

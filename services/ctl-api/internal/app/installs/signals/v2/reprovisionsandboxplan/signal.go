@@ -28,12 +28,13 @@ type Signal struct {
 	FlowStepID       string
 	FlowID           string
 	SandboxMode      bool
-
-	cfg *internal.Config
+	logStreamID      string
+	cfg              *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -48,6 +49,8 @@ func (s *Signal) WithParams(params *signal.Params) {
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -122,7 +125,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-
+	s.logStreamID = logStream.ID
 	l := workflow.GetLogger(ctx)
 	l.Info("executing reprovision plan")
 

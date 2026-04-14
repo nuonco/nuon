@@ -26,13 +26,17 @@ type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
 	BuildID     string `json:"build_id" validate:"required"`
 	SandboxMode bool   `json:"sandbox_mode"`
+	logStreamID string
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.ComponentID == "" {
@@ -55,6 +59,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
+	s.logStreamID = logStream.ID
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

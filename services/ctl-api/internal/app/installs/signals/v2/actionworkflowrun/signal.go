@@ -33,11 +33,13 @@ type Signal struct {
 	TriggeredByID           string
 	TriggeredByType         string
 	RunEnvVars              map[string]string
+	logStreamID             string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -49,6 +51,8 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
+
+func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -195,6 +199,8 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
 	}()
+
+	s.logStreamID = ls.ID
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 
