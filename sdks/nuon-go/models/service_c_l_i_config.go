@@ -17,6 +17,15 @@ import (
 // swagger:model service.CLIConfig
 type ServiceCLIConfig struct {
 
+	// auth audience
+	AuthAudience string `json:"auth_audience,omitempty"`
+
+	// auth client id
+	AuthClientID string `json:"auth_client_id,omitempty"`
+
+	// auth domain
+	AuthDomain string `json:"auth_domain,omitempty"`
+
 	// dashboard url
 	DashboardURL string `json:"dashboard_url,omitempty"`
 
