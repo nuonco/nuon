@@ -10,7 +10,6 @@ import (
 
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -253,7 +252,7 @@ func Orgs(orgs []*app.Org, allTags []string, selectedTags []string, currentPage,
 										var templ_7745c5c3_Var13 string
 										templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(tag)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/orgs.templ`, Line: 69, Col: 18}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/orgs.templ`, Line: 69, Col: 18}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 										if templ_7745c5c3_Err != nil {
