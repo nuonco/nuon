@@ -6,7 +6,7 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { ArchitectureDiagramButton } from '@/components/installs/ArchitectureDiagram'
+import { InstallDetailsButton } from '@/components/installs/ArchitectureDiagram'
 import { ViewCurrentInputsButton } from '@/components/installs/management/ViewCurrentInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -43,7 +43,7 @@ export const Overview = () => {
           </Text>
         </HeadingGroup>
         <div className="flex items-center gap-2">
-          <ArchitectureDiagramButton variant="secondary" />
+          <InstallDetailsButton variant="secondary" />
           <ViewCurrentInputsButton variant="secondary" />
         </div>
       </div>

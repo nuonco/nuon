@@ -14,8 +14,7 @@ const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   statuses: <span className="text-sm text-foreground-muted">active</span>,
   region: <span className="text-sm text-foreground-muted">us-west-2</span>,
   platform: <span className="text-sm text-foreground-muted">AWS</span>,
-  created_at: new Date(Date.now() - i * 86400000).toISOString(),
-  updated_at: new Date(Date.now() - i * 3600000).toISOString(),
+  activity: <span className="text-sm text-foreground-muted">{i + 1}h ago</span>,
   action: <Button size="sm" variant="ghost">Manage</Button>,
 }))
 
