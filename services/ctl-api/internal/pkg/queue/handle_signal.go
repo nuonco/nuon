@@ -7,10 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // longRunningActivityOptions is used for activities that call workflow update handlers
@@ -36,15 +38,22 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	// skip signals that were already processed (e.g. via force-execute)
-	if isTerminalStatus(queueSignal.Status.Status) {
+	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
 		l.Info("queue signal already in terminal state, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("status", string(queueSignal.Status.Status)))
 		return nil
 	}
 
+	if queueSignal.ExecutionCount > 0 {
+		l.Info("re-executing a signal that was already executed",
+			zap.Any("status", queueSignal.Status),
+			zap.String("queue-signal-id", queueSignal.ID),
+			zap.String("status", string(queueSignal.Status.Status)))
+	}
+
 	// Mark the signal as dequeued with timestamp
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: queueSignal.ID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{
@@ -55,7 +64,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		// Persist error status so AwaitSignal callers don't block forever
-		if statusErr := activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
 		}); statusErr != nil {

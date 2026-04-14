@@ -5,9 +5,11 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const ForceExecuteUpdateName string = "force-execute"
@@ -29,6 +31,8 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
+	q.lastActivityTime = workflow.Now(ctx)
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, err
@@ -47,7 +51,7 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 	}
 
 	// if already in a terminal state, nothing to do
-	if isTerminalStatus(queueSignal.Status.Status) {
+	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
 		return &ForceExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
 	}
 
@@ -59,7 +63,7 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 	// process immediately, bypassing the channel
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
-		if statusErr := activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
 		}); statusErr != nil {
@@ -73,14 +77,4 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 	q.state.QueueRefs = append(q.state.QueueRefs, queueRef)
 
 	return &ForceExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
-}
-
-// isTerminalStatus returns true if the signal has finished processing.
-func isTerminalStatus(s app.Status) bool {
-	switch s {
-	case app.StatusSuccess, app.StatusError, app.StatusCancelled:
-		return true
-	default:
-		return false
-	}
 }

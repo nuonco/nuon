@@ -612,3 +612,32 @@ func (a *Activities) UpdateDeployStatusV2(ctx context.Context, req UpdateDeployS
 
 	return nil
 }
+
+type UpdateQueueSignalStatusV2Request struct {
+	QueueSignalID     string     `validate:"required"`
+	Status            app.Status `validate:"required"`
+	StatusDescription string
+	Metadata          map[string]any
+}
+
+// @temporal-gen-v2 activity
+func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQueueSignalStatusV2Request) error {
+	obj := app.QueueSignal{ID: req.QueueSignalID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.QueueSignal
+		if err := a.getStatus(ctx, &obj, req.QueueSignalID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.Status, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, req.Status)
+	if req.StatusDescription != "" {
+		status.StatusHumanDescription = req.StatusDescription
+	}
+	for k, v := range req.Metadata {
+		status.Metadata[k] = v
+	}
+	return a.updateStatus(ctx, &obj, status, getter)
+}

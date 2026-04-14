@@ -81,6 +81,10 @@ func init() {
 	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_handler_grace_period", "1m")
 
+	// queue idle timeout: how long a queue workflow stays alive with no activity before terminating
+	// short for local dev; prod overrides via config
+	config.RegisterDefault("queue_idle_timeout", "1m")
+
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
 	config.RegisterDefault("process_install_uptime_threshold", "8h")
@@ -295,6 +299,9 @@ type Config struct {
 
 	// Queue handler grace period
 	QueueHandlerGracePeriod time.Duration `config:"queue_handler_grace_period"`
+
+	// Queue idle timeout: how long before an idle queue workflow terminates
+	QueueIdleTimeout time.Duration `config:"queue_idle_timeout"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
