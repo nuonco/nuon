@@ -9,22 +9,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 )
 
-// RetryStepRequest is the input for retrying a workflow step.
-type RetryStepRequest struct {
+// SkipStepRequest is the input for skipping a workflow step.
+type SkipStepRequest struct {
 	InstallWorkflowID string
 	StepID            string
 }
 
-// RetryStepResponse is the response from the retry-step update.
-type RetryStepResponse struct {
+// SkipStepResponse is the response from the skip-step update.
+type SkipStepResponse struct {
 	WorkflowID string `json:"workflow_id"`
-	Retryable  bool   `json:"retryable"`
+	Skippable  bool   `json:"skippable"`
 }
 
-// RetryStep sends a "retry-step" update to the execute-flow handler workflow
-// for the given install workflow. The handler workflow stays alive while
-// retryable, so the update wakes it to retry the failed step.
-func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetryStepResponse, error) {
+// SkipStep sends a "skip-step" update to the execute-flow handler workflow
+// for the given install workflow.
+func (c *Client) SkipStep(ctx context.Context, req *SkipStepRequest) (*SkipStepResponse, error) {
 	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows")
 	if err != nil {
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
@@ -33,21 +32,21 @@ func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetrySt
 	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
 		tclient.UpdateWorkflowOptions{
 			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "retry-step",
+			UpdateName:   "skip-step",
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			Args: []any{
-				executeflow.RetryStepRequest{
+				executeflow.SkipStepRequest{
 					StepID: req.StepID,
 				},
 			},
 		})
 	if err != nil {
-		return nil, fmt.Errorf("unable to send retry-step update: %w", err)
+		return nil, fmt.Errorf("unable to send skip-step update: %w", err)
 	}
 
-	var resp RetryStepResponse
+	var resp SkipStepResponse
 	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("unable to get retry-step response: %w", err)
+		return nil, fmt.Errorf("unable to get skip-step response: %w", err)
 	}
 
 	return &resp, nil

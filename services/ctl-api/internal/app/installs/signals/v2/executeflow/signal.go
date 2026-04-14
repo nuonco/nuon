@@ -21,7 +21,12 @@ type Signal struct {
 	// Retry state - set by "retry-step" update handler
 	retryRequested bool
 	retryStepID    string
-	retryOperation string // "retry-step" or "skip-step"
+	retryOperation string
+
+	// Skip state - set by "skip-step" update handler
+	skipRequested         bool
+	skipStepID            string
+	skipAdditionalStepIDs []string
 
 	// Cancel state - set by "cancel-step" update handler
 	cancelRequested bool
@@ -45,6 +50,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "is-retryable",
 		s.isRetryableHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "skip-step",
+		s.skipStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",

@@ -15,7 +15,7 @@ templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
 			<div class="mb-6 flex gap-2 text-sm">
-				<a href="/workflows" class="text-cyan hover:underline">Workflows</a>
+				<a href="/workflows" class="text-cyan hover:underline">Nuon Workflows</a>
 				<span class="text-muted-foreground">→</span>
 				<span class="text-muted-foreground">{ wf.ID }</span>
 			</div>
@@ -45,6 +45,11 @@ templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
 				</div>
 
 				<!-- Metadata Grid -->
+				<!-- Quick Links -->
+				<div class="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs">
+					<a href={ templ.URL("/queue-signals?search=" + wf.ID) } class="text-cyan hover:underline">Workflow signal →</a>
+				</div>
+
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
 					<div>
 						<div class="text-xs text-muted-foreground uppercase">Created</div>
@@ -187,7 +192,10 @@ templ stepRow(idx int, sd StepDetailData) {
 			<!-- Queue Signal -->
 			if sd.QueueSignalJSON != "" {
 				<div>
-					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Queue Signal</div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1 flex items-center gap-2">
+						Queue Signal
+						<a href={ templ.URL("/queue-signals?search=" + step.ID) } class="text-cyan hover:underline text-[10px] font-normal normal-case">View signal →</a>
+					</div>
 					<pre class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ sd.QueueSignalJSON }</pre>
 				</div>
 			}

@@ -242,7 +242,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: flw.ID,
 			Status: app.CompositeStatus{
-				Status:                 app.StatusSuccess,
+				Status:                 app.StatusInProgress,
 				StatusHumanDescription: "finished executing step " + strconv.Itoa(step.Idx+1),
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
@@ -250,7 +250,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				},
 			},
 		}); err != nil {
-			return errors.Wrap(err, "unable to update step to success status")
+			return errors.Wrap(err, "unable to update flow status after step")
 		}
 
 		return nil
@@ -448,11 +448,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
 
-		err := s.cloneWorkflowStep(ctx, step, flw)
-		if err != nil {
-			return errors.Wrap(err, "unable to clone step for retry plan")
-		}
-
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
@@ -473,6 +468,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			StatusDescription: "Retrying step " + strconv.Itoa(step.Idx),
 		}); err != nil {
 			return errors.Wrap(err, "unable to update step target status")
+		}
+
+		if err := s.cloneWorkflowStep(ctx, step, flw); err != nil {
+			return errors.Wrap(err, "unable to clone workflow step for retry")
 		}
 		return nil
 
@@ -851,7 +850,7 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 				Retryable:      step.Retryable,
 				Skippable:      step.Skippable,
 				GroupIdx:       step.GroupIdx,
-				GroupRetryIdx:  step.GroupRetryIdx,
+				GroupRetryIdx:  step.GroupRetryIdx + 1,
 				StepTargetType: step.StepTargetType,
 				StepTargetID:   step.StepTargetID,
 			},

@@ -88,9 +88,9 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 			},
 		})
 
-		// Wait for retry-step or cancel-step update
+		// Wait for retry-step, skip-step, or cancel-step update
 		if err := workflow.Await(ctx, func() bool {
-			return s.retryRequested || s.cancelRequested
+			return s.retryRequested || s.skipRequested || s.cancelRequested
 		}); err != nil {
 			return err
 		}
@@ -98,6 +98,18 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 		// Cancel requested - stop the workflow
 		if s.cancelRequested {
 			return err
+		}
+
+		// Skip requested - execute rerun with skip operation
+		if s.skipRequested {
+			s.skipRequested = false
+			s.skipAdditionalStepIDs = nil
+			rerunErr := s.skip(ctx)
+			if rerunErr == nil {
+				return nil
+			}
+			// Skip's rerun also failed - loop back to check retryable again
+			continue
 		}
 
 		// Retry requested - execute rerun from the failed step
@@ -120,6 +132,30 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 		return false
 	}
 	return resp.Retryable
+}
+
+// skip executes a rerun of the workflow, skipping the failed step.
+func (s *Signal) skip(ctx workflow.Context) error {
+	fc := s.newConductor()
+	continueFromIdx := 0
+	for {
+		err := fc.Rerun(ctx, eventloop.EventLoopRequest{ID: s.installID}, flow.RerunInput{
+			ContinueFromIdx:       continueFromIdx,
+			FlowID:                s.InstallWorkflowID,
+			StepID:                s.skipStepID,
+			Operation:             flow.RerunOperationSkipStep,
+			AdditionalSkipStepIDs: s.skipAdditionalStepIDs,
+		})
+		if err == nil {
+			return nil
+		}
+		cerr, ok := err.(*flow.ContinueAsNewErr)
+		if ok && cerr != nil {
+			continueFromIdx = cerr.StartFromStepIdx
+			continue
+		}
+		return err
+	}
 }
 
 // retry executes a rerun of the workflow from the failed step.

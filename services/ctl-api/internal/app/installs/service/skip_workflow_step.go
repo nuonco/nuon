@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,14 +12,14 @@ import (
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
-type RetryWorkflowStepResponse struct {
+type SkipWorkflowStepResponse struct {
 	WorkflowID string `json:"workflow_id"`
-	Retryable  bool   `json:"retryable"`
+	Skippable  bool   `json:"skippable"`
 }
 
-// @ID						RetryWorkflowStep
-// @Summary					retry a failed or awaiting-approval workflow step
-// @Description.markdown	retry_workflow_by_id.md
+// @ID						SkipWorkflowStep
+// @Summary					skip a failed workflow step and continue the workflow
+// @Description.markdown	skip_workflow_step.md
 // @Param					workflow_id	path	string	true	"workflow ID"
 // @Param					step_id		path	string	true	"step ID"
 // @Tags					installs
@@ -31,9 +32,9 @@ type RetryWorkflowStepResponse struct {
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{object}	RetryWorkflowStepResponse
-// @Router					/v1/workflows/{workflow_id}/steps/{step_id}/retry [post]
-func (s *service) RetryWorkflowStep(ctx *gin.Context) {
+// @Success					201	{object}	SkipWorkflowStepResponse
+// @Router					/v1/workflows/{workflow_id}/steps/{step_id}/skip [post]
+func (s *service) SkipWorkflowStep(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
@@ -62,7 +63,7 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 
 	if workflow.OwnerType != "installs" {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("workflow %s retry not supported for owner type", workflow.ID),
+			Err: fmt.Errorf("workflow %s skip not supported for owner type", workflow.ID),
 		})
 		return
 	}
@@ -74,22 +75,22 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	}
 	if !useQueues {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("retry workflow step requires queues to be enabled"),
+			Err: fmt.Errorf("skip workflow step requires queues to be enabled"),
 		})
 		return
 	}
 
-	resp, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+	resp, err := s.flowsClient.SkipStep(ctx, &flowclient.SkipStepRequest{
 		InstallWorkflowID: workflow.ID,
 		StepID:            step.ID,
 	})
 	if err != nil {
-		ctx.Error(fmt.Errorf("retry step: %w", err))
+		ctx.Error(fmt.Errorf("skip step: %w", err))
 		return
 	}
 
-	ctx.JSON(201, RetryWorkflowStepResponse{
+	ctx.JSON(http.StatusCreated, SkipWorkflowStepResponse{
 		WorkflowID: workflow.ID,
-		Retryable:  resp.Retryable,
+		Skippable:  resp.Skippable,
 	})
 }

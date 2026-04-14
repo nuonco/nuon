@@ -216,7 +216,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		workflows.GET("", s.GetWorkflow)
 		workflows.PATCH("", s.UpdateWorkflow)
 		workflows.POST("/cancel", s.CancelWorkflow)
-		s.POST(workflows, "/retry", s.RetryOwnerWorkflow, api.APIContextTypePublic, true) // Deprecated
 
 		steps := workflows.Group("/steps")
 		{
@@ -224,6 +223,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			steps.GET("/:step_id", s.GetWorkflowStep)
 			steps.GET("/:step_id/await", s.AwaitWorkflowStep)
 			steps.POST("/:step_id/retry", s.RetryWorkflowStep)
+			steps.POST("/:step_id/skip", s.SkipWorkflowStep)
 			steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
 
 			approvals := steps.Group("/:step_id/approvals/:approval_id")

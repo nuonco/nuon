@@ -1,6 +1,6 @@
 import { api } from '@/lib/api'
 
-export async function retryWorkflowStep({
+export async function skipWorkflowStep({
   orgId,
   workflowId,
   stepId,
@@ -9,9 +9,9 @@ export async function retryWorkflowStep({
   workflowId: string
   stepId: string
 }) {
-  return api<{ workflow_id: string; retryable: boolean }>({
+  return api<{ workflow_id: string; skippable: boolean }>({
     method: 'POST',
     orgId,
-    path: `workflows/${workflowId}/steps/${stepId}/retry`,
+    path: `workflows/${workflowId}/steps/${stepId}/skip`,
   })
 }

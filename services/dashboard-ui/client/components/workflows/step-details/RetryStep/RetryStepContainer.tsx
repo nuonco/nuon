@@ -33,9 +33,9 @@ export const RetryStepModalContainer = ({
   } = useMutation<unknown, TAPIError>({
     mutationFn: () =>
       retryWorkflowStep({
-        body: { operation: 'retry-step', step_id: step.id },
         orgId: org.id,
         workflowId: step.install_workflow_id,
+        stepId: step.id,
       }),
     onSuccess: () => {
       addToast(
