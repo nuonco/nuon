@@ -106,12 +106,16 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
-		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
-		if err != nil {
-			l.Error("error generating kubernetes manifest plan", zap.Error(err))
-			return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+		// In sandbox mode, skip the real plan (which requires a synced OCI artifact)
+		// — the sandbox override below generates hardcoded content instead.
+		if !install.SandboxMode.Bool {
+			kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+			if err != nil {
+				l.Error("error generating kubernetes manifest plan", zap.Error(err))
+				return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
+			}
+			plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 		}
-		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	case app.ComponentTypePulumi:
 		l.Info("generating pulumi plan")
 		pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)

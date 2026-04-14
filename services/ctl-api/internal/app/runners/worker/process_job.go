@@ -78,6 +78,9 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		l.Info("runner is in sandbox mode")
 		// if the org is a sandbox mode + canary, we do not require the runner locally
 		if runner.Org.CreatedBy.AccountType == app.AccountTypeCanary {
+			if err := activities.AwaitWriteSandboxJobOutputs(ctx, &activities.WriteSandboxJobOutputsRequest{JobID: sreq.JobID}); err != nil {
+				l.Warn("unable to write sandbox job outputs", zap.Error(err))
+			}
 			w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusFinished, "success in sandbox/canary mode")
 			return nil
 		}
@@ -95,6 +98,9 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 				zap.String("runner_id", sreq.ID),
 			)
 			workflow.Sleep(ctx, w.cfg.SandboxModeSleep)
+			if err := activities.AwaitWriteSandboxJobOutputs(ctx, &activities.WriteSandboxJobOutputsRequest{JobID: sreq.JobID}); err != nil {
+				l.Warn("unable to write sandbox job outputs", zap.Error(err))
+			}
 			w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusFinished, "success in sandbox mode")
 			return nil
 		}
