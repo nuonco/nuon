@@ -833,6 +833,9 @@ func (s *Signal) processPolicyViolations(ctx workflow.Context, l *zap.Logger, st
 }
 
 // cloneWorkflowStep creates a clone of the step for retry.
+// The clone gets Idx+1 so it sorts immediately after the original step but before
+// the next step in the group (e.g. apply step at Idx+10). Steps are generated with
+// Idx multiples of 10, giving room for up to 9 retries per step.
 func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
@@ -844,13 +847,13 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 				Signal:         step.Signal,
 				QueueSignal:    step.QueueSignal,
 				Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
-				Idx:            step.Idx,
+				Idx:            step.Idx + 1,
 				ExecutionType:  step.ExecutionType,
 				Metadata:       step.Metadata,
 				Retryable:      step.Retryable,
 				Skippable:      step.Skippable,
 				GroupIdx:       step.GroupIdx,
-				GroupRetryIdx:  step.GroupRetryIdx + 1,
+				GroupRetryIdx:  step.GroupRetryIdx,
 				StepTargetType: step.StepTargetType,
 				StepTargetID:   step.StepTargetID,
 			},
