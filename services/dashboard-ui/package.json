@@ -12,7 +12,6 @@
     "dev:bs": "browser-sync start --proxy localhost:${HTTP_PORT:-4000} --files 'dist/**/*' --no-open --port $((${HTTP_PORT:-4000}+1))",
     "build:js": "esbuild client/index.tsx --bundle --outdir=dist/assets --entry-names=[name]-[hash] --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --minify --define:process.env.NODE_ENV='\"production\"' --metafile=dist/meta.json",
     "build:css": "cross-env NODE_ENV=production postcss client/styles.css -o dist/styles.css",
-    "prebuild": "npm run generate-api-types",
     "build": "mkdir -p dist/assets && run-p build:js build:css && node scripts/hash-assets.js",
     "generate-api-types": "node ./scripts/generate-api-types.js",
     "lint": "eslint \"client/**/*.{ts,tsx}\"",
