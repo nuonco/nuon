@@ -42,6 +42,9 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 	var wfInfo *views.WorkflowInfo
 	if signal.Workflow.Namespace != "" && signal.Workflow.ID != "" {
 		wfInfo = s.getWorkflowInfo(c, signal.Workflow.Namespace, signal.Workflow.ID)
+		if wfInfo != nil {
+			wfInfo.UpdateHandlers = updateHandlersForSignalType(string(signal.Type))
+		}
 	}
 
 	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo)
@@ -270,6 +273,19 @@ func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 		return string(raw)
 	}
 	return buf.String()
+}
+
+// updateHandlersForSignalType returns the known update handler names registered
+// by each signal type. Derived from the RegisterUpdateHandlers implementations.
+func updateHandlersForSignalType(signalType string) []string {
+	switch signalType {
+	case "execute-flow":
+		return []string{"retry-step", "approve-step", "is-retryable", "poll-next-step"}
+	case "execute-workflow-step":
+		return []string{"is-retryable", "create-step-retry", "approve-plan"}
+	default:
+		return nil
+	}
 }
 
 func formatWorkflowStatus(status enumspb.WorkflowExecutionStatus) string {

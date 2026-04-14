@@ -165,6 +165,31 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 				</div>
 			}
 
+			<!-- Update Handlers -->
+			if wfInfo != nil && len(wfInfo.UpdateHandlers) > 0 {
+				<div class="mb-6">
+					@card.Card() {
+						@card.Header() {
+							@card.Title() {
+								Update handlers
+							}
+							@card.Description() {
+								Temporal update handlers registered on this workflow
+							}
+						}
+						@card.Content() {
+							<div class="flex flex-wrap gap-2">
+								for _, handler := range wfInfo.UpdateHandlers {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										{ handler }
+									}
+								}
+							</div>
+						}
+					}
+				</div>
+			}
+
 			<!-- Info Grid -->
 			<div class="grid grid-cols-2 gap-6 mb-6">
 				<!-- Signal Info -->
