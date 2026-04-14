@@ -100,6 +100,7 @@ export type TOrgStats = {
 // install
 export type TInstall = components['schemas']['app.Install'] & {
   app?: components['schemas']['app.App']
+  created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
   org_id?: string
 }
