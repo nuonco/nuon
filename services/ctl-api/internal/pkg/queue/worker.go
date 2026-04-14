@@ -44,7 +44,7 @@ func (q *queue) startWorkers(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
-	q.idleTimeout = queue.IdleTimeout
+	q.idleTimeout = time.Duration(queue.IdleTimeout)
 
 	for i := 0; i < queue.MaxInFlight; i++ {
 		workflow.Go(ctx, func(gCtx workflow.Context) {
