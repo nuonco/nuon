@@ -17,12 +17,14 @@ services: |
     - go.sum
     - bins/runner/**
     - pkg/**
+    - sdks/**
 
   cli:
     - bins/cli/**
     - go.mod
     - go.sum
     - pkg/**
+    - sdks/**
 
   lsp:
     - bins/lsp/**

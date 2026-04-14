@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -71,7 +72,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 			"owner-type":    q.OwnerType,
 			"max-in-flight": q.MaxInFlight,
 			"max-depth":     q.MaxDepth,
-			"idle-timeout":  q.IdleTimeout.String(),
+			"idle-timeout":  time.Duration(q.IdleTimeout).String(),
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
