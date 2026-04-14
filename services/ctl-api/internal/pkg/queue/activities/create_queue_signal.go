@@ -24,7 +24,6 @@ type CreateQueueSignalRequest struct {
 }
 
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 1m
 func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSignalRequest) (*app.QueueSignal, error) {
 	info := activity.GetInfo(ctx)
 
@@ -39,6 +38,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 		Type:      req.Signal.Type(),
 		OwnerID:   req.OwnerID,
 		OwnerType: req.OwnerType,
+		Status:    app.NewCompositeStatus(ctx, app.StatusQueued),
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  info.WorkflowNamespace,
 			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),

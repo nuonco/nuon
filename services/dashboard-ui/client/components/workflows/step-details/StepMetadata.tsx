@@ -1,5 +1,6 @@
 'use client'
 
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Status } from '@/components/common/Status'
@@ -60,6 +61,11 @@ export const StepMetadata = ({ step }: IStepDetails) => {
           <CodeBlock language="json">{JSON.stringify(step, null, 2)}</CodeBlock>
         </div>
       </Expand>
+
+      <AdminDashboardLink
+        path={`/queue-signals?owner_id=${step?.id}`}
+        label="View in admin panel"
+      />
     </div>
   )
 }
