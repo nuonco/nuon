@@ -86,6 +86,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// fetchAccountToken returns (nil, nil) when the token is not found in the DB.
 		acctToken, err := m.fetchAccountToken(ctx, token)
 		if err != nil {
 			ctx.Error(err)
@@ -105,6 +106,12 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			ctx.Next()
 			return
 		}
+
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         fmt.Errorf("token not recognized"),
+			Description: "Please make sure you are using a valid token.",
+		})
+		ctx.Abort()
 	}
 }
 
