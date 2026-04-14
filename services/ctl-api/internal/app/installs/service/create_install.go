@@ -118,19 +118,19 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallWorkflowID: workflow.ID,
-		}); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
@@ -266,19 +266,19 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 			InstallWorkflowID: workflow.ID,
-		}); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

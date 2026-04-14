@@ -153,7 +153,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 				StepID:        req.StepID,
 				StepOperation: signals.RerunOperation(req.Operation),
 			},
-		}); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

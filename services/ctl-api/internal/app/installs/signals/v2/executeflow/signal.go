@@ -17,12 +17,36 @@ type Signal struct {
 
 	// installID is resolved from the workflow's OwnerID during Validate
 	installID string
+
+	// Retry state - set by "retry-step" update handler
+	retryRequested bool
+	retryStepID    string
+	retryOperation string // "retry-step" or "skip-step"
+
 }
 
 var _ qsignal.Signal = (*Signal)(nil)
+var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
 
 func (s *Signal) Type() qsignal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "retry-step",
+		s.retryStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "approve-step",
+		s.approveStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "is-retryable",
+		s.isRetryableHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	return workflow.SetUpdateHandlerWithOptions(ctx, "poll-next-step",
+		s.pollNextStepHandler, workflow.UpdateHandlerOptions{})
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

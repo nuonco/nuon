@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	actionhelper "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -39,6 +40,7 @@ type Params struct {
 	Features          *features.Features
 	L                 *zap.Logger
 	AccountsHelpers   *account.Client
+	TClient           temporalclient.Client
 }
 
 type Activities struct {
@@ -58,6 +60,7 @@ type Activities struct {
 	features          *features.Features
 	l                 *zap.Logger
 	accountsHelpers   *account.Client
+	tClient           temporalclient.Client
 }
 
 func New(params Params) *Activities {
@@ -78,5 +81,6 @@ func New(params Params) *Activities {
 		features:          params.Features,
 		l:                 params.L,
 		accountsHelpers:   params.AccountsHelpers,
+		tClient:           params.TClient,
 	}
 }

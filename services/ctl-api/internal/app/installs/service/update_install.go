@@ -86,7 +86,7 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &installupdated.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
