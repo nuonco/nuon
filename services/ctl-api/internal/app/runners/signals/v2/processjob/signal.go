@@ -1,12 +1,14 @@
 package processjob
 
 import (
+	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -37,10 +39,20 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate runner exists and is healthy
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 	if err != nil {
+		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
+			JobID:             s.JobID,
+			Status:            app.RunnerJobStatusNotAttempted,
+			StatusDescription: fmt.Sprintf("runner not found: %s", err.Error()),
+		})
 		return errors.Wrap(err, "runner not found")
 	}
 
 	if !runner.Status.IsHealthy() {
+		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
+			JobID:             s.JobID,
+			Status:            app.RunnerJobStatusNotAttempted,
+			StatusDescription: fmt.Sprintf("runner is not healthy: %s", runner.Status),
+		})
 		return errors.Errorf("runner is not healthy: %s", runner.Status)
 	}
 
