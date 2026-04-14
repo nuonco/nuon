@@ -1,3 +1,4 @@
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { ApproveAllButton } from '@/components/approvals/ApproveAll'
 import type { TWorkflow } from '@/types'
 import { CancelWorkflowButton } from '../../CancelWorkflow'
@@ -22,6 +23,11 @@ export const WorkflowActionButtons = ({
       {canShowCancel && (
         <CancelWorkflowButton workflow={workflow} />
       )}
+
+      <TemporalLink
+        namespace="installs"
+        href={`/admin/temporal/namespaces/installs/workflows?query=${encodeURIComponent(`\`WorkflowId\` STARTS_WITH "${workflow?.owner_id}-execute-workflow-${workflow?.id}"`)}`}
+      />
     </div>
   )
 }

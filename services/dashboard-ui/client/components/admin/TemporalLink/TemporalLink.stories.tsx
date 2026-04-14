@@ -6,16 +6,14 @@ import { TemporalLink } from './TemporalLink'
 
 export const Visible = () => (
   <TemporalLink
-    namespace="components"
-    eventLoopId="wf-123"
+    href="/admin/temporal/namespaces/components/workflows/event-loop-wf-123"
     isVisible={true}
   />
 )
 
 export const Hidden = () => (
   <TemporalLink
-    namespace="components"
-    eventLoopId="wf-123"
+    href="/admin/temporal/namespaces/components/workflows/event-loop-wf-123"
     isVisible={false}
   />
 )
