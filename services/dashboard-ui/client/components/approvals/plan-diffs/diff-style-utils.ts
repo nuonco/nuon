@@ -1,5 +1,9 @@
 import type { TBadgeTheme } from '@/components/common/Badge'
-import type { THelmK8sChangeAction, TTerraformChangeAction } from '@/types'
+import type {
+  THelmK8sChangeAction,
+  TPulumiChangeAction,
+  TTerraformChangeAction,
+} from '@/types'
 
 // terraform style utils
 export const TERRAFORM_ACTION_BADGE_THEME: Record<
@@ -163,6 +167,94 @@ export function getHelmActionBorderColor(action: THelmK8sChangeAction): string {
       return '!border-l-red-400 dark:!border-l-red-600'
     case 'destroyed':
       return '!border-l-red-400 dark:!border-l-red-600'
+    default:
+      return '!border-l-cool-grey-400 dark:!border-l-cool-grey-500'
+  }
+}
+
+// pulumi style utils
+export const PULUMI_ACTION_BADGE_THEME: Record<
+  TPulumiChangeAction,
+  TBadgeTheme
+> = {
+  create: 'success',
+  update: 'warn',
+  delete: 'error',
+  replace: 'brand',
+  'create-replacement': 'brand',
+  'delete-replaced': 'brand',
+  same: 'neutral',
+  read: 'info',
+  refresh: 'info',
+} as const
+
+export function getPulumiActionBgColor(action: TPulumiChangeAction): string {
+  switch (action) {
+    case 'create':
+      return [
+        'bg-green-100 dark:bg-green-500/10',
+        'hover:!bg-green-200 dark:hover:!bg-green-500/20',
+        'focus:!bg-green-200 dark:focus:!bg-green-500/20',
+        'active:!bg-green-300 dark:active:!bg-green-500/30',
+      ].join(' ')
+    case 'update':
+      return [
+        'bg-orange-100 dark:bg-orange-500/10',
+        'hover:!bg-orange-200 dark:hover:!bg-orange-500/20',
+        'focus:!bg-orange-200 dark:focus:!bg-orange-500/20',
+        'active:!bg-orange-300 dark:active:!bg-orange-500/30',
+      ].join(' ')
+    case 'delete':
+      return [
+        'bg-red-100 dark:bg-red-500/10',
+        'hover:!bg-red-200 dark:hover:!bg-red-500/20',
+        'focus:!bg-red-200 dark:focus:!bg-red-500/20',
+        'active:!bg-red-300 dark:active:!bg-red-500/30',
+      ].join(' ')
+    case 'replace':
+    case 'create-replacement':
+    case 'delete-replaced':
+      return [
+        'bg-primary-100 dark:bg-primary-500/10',
+        'hover:!bg-primary-200 dark:hover:!bg-primary-500/20',
+        'focus:!bg-primary-200 dark:focus:!bg-primary-500/20',
+        'active:!bg-primary-300 dark:active:!bg-primary-500/30',
+      ].join(' ')
+    case 'read':
+    case 'refresh':
+      return [
+        'bg-blue-100 dark:bg-blue-500/10',
+        'hover:!bg-blue-200 dark:hover:!bg-blue-500/20',
+        'focus:!bg-blue-200 dark:focus:!bg-blue-500/20',
+        'active:!bg-blue-300 dark:active:!bg-blue-500/30',
+      ].join(' ')
+    default:
+      return [
+        'bg-cool-grey-100 dark:bg-dark-grey-500/10',
+        'hover:!bg-cool-grey-200 dark:hover:!bg-dark-grey-500/20',
+        'focus:!bg-cool-grey-200 dark:focus:!bg-dark-grey-500/20',
+        'active:!bg-cool-grey-300 dark:active:!bg-dark-grey-500/30',
+      ].join(' ')
+  }
+}
+
+export function getPulumiActionBorderColor(
+  action: TPulumiChangeAction
+): string {
+  switch (action) {
+    case 'create':
+      return '!border-l-green-400 dark:!border-l-green-600'
+    case 'update':
+      return '!border-l-orange-400 dark:!border-l-orange-600'
+    case 'delete':
+      return '!border-l-red-400 dark:!border-l-red-600'
+    case 'replace':
+    case 'create-replacement':
+    case 'delete-replaced':
+      return '!border-l-primary-400 dark:!border-l-primary-600'
+    case 'read':
+    case 'refresh':
+      return '!border-l-blue-400 dark:!border-l-blue-600'
     default:
       return '!border-l-cool-grey-400 dark:!border-l-cool-grey-500'
   }
