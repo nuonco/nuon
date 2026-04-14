@@ -74,7 +74,6 @@ sdks/nuon-runner-go/.swagger.stamp
 services/ctl-api/ctl-api
 services/ctl-api/cmd/nuontest/nuontest
 services/ctl-api/internal/app/admin-dashboard/**/*_templ.go
-services/ctl-api/internal/app/admin-dashboard/service/views/queues_templ.go
 services/workers-executors/workers-executors
 services/workers-canary/workers-canary
 bins/runner/runner
