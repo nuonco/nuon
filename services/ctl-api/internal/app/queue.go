@@ -32,7 +32,7 @@ type Queue struct {
 	Name        string        `json:"name,omitzero" gorm:"default:''" temporaljson:"name,omitzero,omitempty"`
 	MaxDepth    int           `json:"max_depth,omitzero"`
 	MaxInFlight int           `json:"max_in_flight,omitzero"`
-	IdleTimeout time.Duration `json:"idle_timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer"`
+	IdleTimeout int64         `json:"idle_timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer"`
 	Metadata    pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
