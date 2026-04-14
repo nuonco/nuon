@@ -5,8 +5,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const ValidateUpdateName string = "validate"
@@ -19,7 +19,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	defer func() {
 		if r := recover(); r != nil {
 			panicErr := &signal.SignalErrPanic{Value: r, Phase: "validate"}
-			_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: panicErr.Error(),
@@ -33,7 +33,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	}
 
 	// mark the signal as in-progress in the DB
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
 	})
@@ -44,7 +44,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrValidate{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
-		_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
@@ -61,7 +61,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 
 	if err != nil {
 		validateErr := &signal.SignalErrValidate{Err: err}
-		_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: validateErr.Error(),

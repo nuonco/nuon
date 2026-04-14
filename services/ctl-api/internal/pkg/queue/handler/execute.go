@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const ExecuteUpdateName string = "execute"
@@ -27,7 +28,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	defer func() {
 		if r := recover(); r != nil {
 			panicErr := &signal.SignalErrPanic{Value: r, Phase: "execute"}
-			_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: panicErr.Error(),
@@ -51,7 +52,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrExecute{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
-		_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
@@ -65,7 +66,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	defer cancel()
 
 	start := workflow.Now(ctx)
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{
@@ -86,7 +87,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		}
 
 		execErr := &signal.SignalErrExecute{Err: err}
-		_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: execErr.Error(),
@@ -98,7 +99,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	}
 
 	// persist success status to DB
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, &activities.UpdateQueueSignalStatusRequest{
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusSuccess,
 		Metadata: map[string]any{

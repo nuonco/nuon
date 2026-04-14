@@ -18,6 +18,7 @@ func StartHandler(ctx workflow.Context, workflowID string, req HandlerRequest) {
 		TaskQueue:             "api",
 		WorkflowID:            workflowID,
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
 		WaitForCancellation:   false,
 	}
 	ctx = workflow.WithChildOptions(ctx, cwo)

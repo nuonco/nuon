@@ -51,9 +51,10 @@ func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOper
 		ID:        q.Workflow.ID,
 		TaskQueue: workflows.APITaskQueue,
 		Memo: map[string]any{
-			"id":         q.ID,
-			"owner-id":   q.OwnerID,
-			"owner-type": q.OwnerType,
+			"id":           q.ID,
+			"owner-id":     q.OwnerID,
+			"owner-type":   q.OwnerType,
+			"idle-timeout": q.IdleTimeout.String(),
 		},
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
