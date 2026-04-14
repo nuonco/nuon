@@ -10,6 +10,7 @@ import (
 
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
@@ -43,7 +44,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("/queues/" + queueID + "/signals/table")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 13, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 13, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -307,7 +308,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var15 templ.SafeURL
 								templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/queues/" + queueID + "/signals/" + sig.ID))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 35, Col: 72}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 35, Col: 72}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 								if templ_7745c5c3_Err != nil {
@@ -320,7 +321,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var16 string
 								templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(sig.ID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 36, Col: 17}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 36, Col: 17}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 								if templ_7745c5c3_Err != nil {
@@ -355,7 +356,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var18 string
 								templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(string(sig.Type))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 40, Col: 26}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 40, Col: 26}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 								if templ_7745c5c3_Err != nil {
@@ -417,7 +418,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 									var templ_7745c5c3_Var21 string
 									templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", sig.ExecutionCount))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 47, Col: 105}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 47, Col: 105}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 									if templ_7745c5c3_Err != nil {
@@ -435,7 +436,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 									var templ_7745c5c3_Var22 string
 									templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", sig.ExecutionCount))
 									if templ_7745c5c3_Err != nil {
-										return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 49, Col: 102}
+										return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 49, Col: 102}
 									}
 									_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 									if templ_7745c5c3_Err != nil {
@@ -475,7 +476,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var24 string
 								templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(sig.OwnerType)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 54, Col: 78}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 54, Col: 78}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 								if templ_7745c5c3_Err != nil {
@@ -488,7 +489,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var25 string
 								templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(sig.OwnerID)
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 55, Col: 76}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 55, Col: 76}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 								if templ_7745c5c3_Err != nil {
@@ -523,7 +524,7 @@ func QueueSignalsTable(signals []app.QueueSignal, queueID string, currentPage, t
 								var templ_7745c5c3_Var27 string
 								templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(sig.CreatedAt.Format("2006-01-02 15:04:05"))
 								if templ_7745c5c3_Err != nil {
-									return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 59, Col: 53}
+									return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 59, Col: 53}
 								}
 								_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 								if templ_7745c5c3_Err != nil {
@@ -685,7 +686,7 @@ func renderSignalsPagination(currentPage, totalPages int, queueID string) templ.
 							var templ_7745c5c3_Var34 string
 							templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pageNum))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queue_signals_table.templ`, Line: 99, Col: 34}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queue_signals_table.templ`, Line: 99, Col: 34}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 							if templ_7745c5c3_Err != nil {

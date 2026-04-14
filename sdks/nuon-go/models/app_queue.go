@@ -32,6 +32,9 @@ type AppQueue struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// idle timeout
+	IdleTimeout TimeDuration `json:"idle_timeout,omitempty"`
+
 	// max depth
 	MaxDepth int64 `json:"max_depth,omitempty"`
 
@@ -68,6 +71,10 @@ func (m *AppQueue) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateEmitters(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIdleTimeout(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -110,6 +117,27 @@ func (m *AppQueue) validateEmitters(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppQueue) validateIdleTimeout(formats strfmt.Registry) error {
+	if swag.IsZero(m.IdleTimeout) { // not required
+		return nil
+	}
+
+	if err := m.IdleTimeout.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("idle_timeout")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("idle_timeout")
+		}
+
+		return err
 	}
 
 	return nil
@@ -176,6 +204,10 @@ func (m *AppQueue) ContextValidate(ctx context.Context, formats strfmt.Registry)
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateIdleTimeout(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateQueueSignal(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -214,6 +246,28 @@ func (m *AppQueue) contextValidateEmitters(ctx context.Context, formats strfmt.R
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppQueue) contextValidateIdleTimeout(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.IdleTimeout) { // not required
+		return nil
+	}
+
+	if err := m.IdleTimeout.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("idle_timeout")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("idle_timeout")
+		}
+
+		return err
 	}
 
 	return nil

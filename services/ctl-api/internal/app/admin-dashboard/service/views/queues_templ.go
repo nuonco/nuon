@@ -10,6 +10,7 @@ import (
 
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
@@ -127,7 +128,7 @@ func Queues(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, name
 							var templ_7745c5c3_Var7 string
 							templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(ownerType)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues.templ`, Line: 25, Col: 29}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues.templ`, Line: 25, Col: 29}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 							if templ_7745c5c3_Err != nil {
@@ -140,7 +141,7 @@ func Queues(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, name
 							var templ_7745c5c3_Var8 string
 							templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues.templ`, Line: 25, Col: 41}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues.templ`, Line: 25, Col: 41}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 							if templ_7745c5c3_Err != nil {
@@ -307,7 +308,7 @@ func Queues(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, name
 										var templ_7745c5c3_Var16 string
 										templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(ns)
 										if templ_7745c5c3_Err != nil {
-											return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues.templ`, Line: 80, Col: 16}
+											return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues.templ`, Line: 80, Col: 16}
 										}
 										_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 										if templ_7745c5c3_Err != nil {
@@ -568,7 +569,7 @@ func Queues(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, name
 						var templ_7745c5c3_Var25 string
 						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(ownerID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues.templ`, Line: 145, Col: 59}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues.templ`, Line: 145, Col: 59}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 						if templ_7745c5c3_Err != nil {
@@ -581,7 +582,7 @@ func Queues(queues []app.Queue, ownerID, ownerType, searchQuery, queueName, name
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(ownerType)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/ctl-api/internal/app/admin-dashboard/service/views/queues.templ`, Line: 146, Col: 63}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `service/views/queues.templ`, Line: 146, Col: 63}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {
