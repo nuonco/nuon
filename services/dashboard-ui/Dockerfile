@@ -21,7 +21,6 @@ COPY \
 
 RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm install
 
-COPY test test
 COPY scripts scripts
 COPY public public
 COPY client client
@@ -40,16 +39,14 @@ RUN npm run lint
 
 FROM deps AS test
 
-ENV NUON_API_URL=https://api.stage.nuon.co
-
-RUN npm run test -- -t=30000
+RUN npm run test
 
 FROM deps AS test-local-spec
 
 COPY --from=openapi-spec /openapi/swagger-v3.json /openapi/swagger-v3.json
 ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
-RUN npm run test -- -t=30000
+RUN npm run test
 
 # --- Build SPA static assets ---
 
