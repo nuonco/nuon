@@ -1,6 +1,6 @@
 ---
-title: '033 - TKTK'
-description: 'TKTK'
+title: '033 - April 2026 Updates'
+description: 'April 2026 platform, CLI, dashboard, and docs updates.'
 ---
 
 _April 16, 2026_
@@ -26,7 +26,7 @@ Nuon's multi-cloud story to include Azure-native container registry and runner m
 ## Lifecycle Hooks & Webhook Delivery (Harsh Thakur)
 
 Introduced lifecycle hooks for signal events and a webhook delivery system that fires on signal lifecycle transitions.
-Adhoc action outputs are now captured and surfaced.
+Ad hoc action outputs are now captured and surfaced.
 
 <!-- TODO (Harsh Thakur): Describe supported hook events, webhook payload shape, and how to configure. -->
 
@@ -58,15 +58,15 @@ Added a dedicated VCS connection worker for processing version control system ev
 
 <!-- TODO (Jon Morehouse): What does this enable? Background repo sync? Webhook processing? -->
 
-## CLI: `nuon install stacks` Command
+## CLI: `nuon installs stacks` Command
 
-The CLI has support for a few newa commdsn:
+The CLI now supports a few new commands:
 
-For listing and retrieving install stacks. This command is useful for scripting workflows nad
+For listing and retrieving install stacks. This command is useful for scripting workflows and
 
 ```bash
 nuon installs stacks
-# e.g. to get th emost recent aws quick link url
+# e.g. to get the most recent AWS quick link URL
 nuon installs stacks latest --json | jq '.quick_link_url'
 ```
 
@@ -141,13 +141,13 @@ Major dashboard redesign covering onboarding, layout, and deploy diff views:
 - GCP runner template. _(Amit Meena, #794)_
 - Lifecycle hooks system. _(Harsh Thakur, #791)_
 - Webhook delivery for signal lifecycle events. _(Harsh Thakur, #822)_
-- Adhoc action outputs. _(Harsh Thakur, #801)_
+- Ad hoc action outputs. _(Harsh Thakur, #801)_
 - Runner process management. _(Jon Morehouse, #789)_
 - Queue admin panel. _(Jon Morehouse, #867)_
 - VCS connection worker. _(Jon Morehouse, #818)_
 - `GET /v1/apps/{app_id}/policy_config_id` endpoint. _(Prem Saraswat, #880)_
 - Fake GCP stack outputs in sandbox mode. _(Jordan Acosta, #871)_
-- CLI `nuon installs stacks` command. _(FI. Diego, #854)_
+- CLI `nuon installs stacks` command. _(fidiego, #854)_
 - Runner shutdown documentation. _(matt-zach-s, #824)_
 - Plausible analytics for docs. _(matt-zach-s, #821)_
 - Pulumi icon and component type in UI. _(Nat Hamilton, #798)_
