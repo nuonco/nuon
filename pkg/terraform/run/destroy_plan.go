@@ -17,6 +17,7 @@ func (r *run) DestroyPlan(ctx context.Context) error {
 	}
 
 	if err := pipe.Run(ctx); err != nil {
+		r.lastOutputBytes = pipe.LastStepOutput
 		return fmt.Errorf("unable to execute destroy pipeline: %w", err)
 	}
 

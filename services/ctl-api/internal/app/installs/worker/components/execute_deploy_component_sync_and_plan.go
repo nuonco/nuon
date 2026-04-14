@@ -53,6 +53,9 @@ func (w *Workflows) ExecuteDeployComponentSyncAndPlan(ctx workflow.Context, sreq
 		sreq.DeployID = installDeploy.ID
 	}
 
+	// Clear any existing structured errors from a previous attempt
+	w.clearDeployErrors(ctx, installDeploy.ID)
+
 	defer func() {
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
 			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)

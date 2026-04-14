@@ -94,6 +94,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			helmPlan.Op = "upgrade"
 		}
 		if err != nil {
+			h.reportCompositeErrors(ctx, "plan", err)
 			return err
 		}
 
@@ -144,6 +145,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			l.Error("plan did not define an Op. this is unexpected.")
 		}
 		if err != nil {
+			h.reportCompositeErrors(ctx, "apply", err)
 			return err
 		}
 	default:

@@ -95,6 +95,14 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	if err != nil {
 		l.Error("terraform run errored", zap.Error(err))
+
+		// Report structured composite errors from terraform JSON output
+		ownerType := "plan"
+		if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan {
+			ownerType = "apply"
+		}
+		p.reportCompositeErrors(ctx, tfRun, ownerType, err)
+
 		return fmt.Errorf("unable to execute %s run: %w", job.Operation, err)
 	}
 

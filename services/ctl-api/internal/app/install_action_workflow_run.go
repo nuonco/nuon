@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 )
 
 type InstallActionWorkflowRunStatus string
@@ -56,9 +57,10 @@ type InstallActionWorkflowRun struct {
 
 	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
 
-	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Status            InstallActionWorkflowRunStatus    `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                            `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                   `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Errors            structured_errors.CompositeErrors `json:"errors,omitzero" gorm:"type:jsonb" temporaljson:"errors,omitzero,omitempty"`
 
 	TriggerType ActionWorkflowTriggerType `json:"trigger_type,omitzero" gorm:"notnull;default:''" temporaljson:"trigger_type,omitzero,omitempty"`
 

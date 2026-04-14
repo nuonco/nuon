@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
+import { CompositeErrorBanner } from '@/components/errors/CompositeErrorBanner/CompositeErrorBanner'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -86,6 +87,8 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
 
       <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
+          <CompositeErrorBanner errors={deploy?.errors} />
+
           {pendingApproval ? (
             <div className="flex flex-col gap-4">
               <ApprovalBanner step={step} />

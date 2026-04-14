@@ -19,6 +19,7 @@ func (r *run) Plan(ctx context.Context) error {
 	}
 
 	if err := pipe.Run(ctx); err != nil {
+		r.lastOutputBytes = pipe.LastStepOutput
 		return fmt.Errorf("unable execute plan pipeline: %w", err)
 	}
 

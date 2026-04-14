@@ -9,6 +9,7 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	erroractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/errors/activities"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -25,6 +26,8 @@ type Params struct {
 	FlowActivities *flowactivities.Activities
 	// shared statuses tooling
 	StatusActivities *statusactivities.Activities
+	// structured error tracking
+	ErrorActivities *erroractivities.Activities
 
 	// queues / signals
 	QueueActs                 *queueactivities.Activities
@@ -40,6 +43,7 @@ type Activities struct {
 	FlowActivities            *flowactivities.Activities
 	SignalsActivities         *signalsactivities.Activities
 	StatusActivities          *statusactivities.Activities
+	ErrorActivities           *erroractivities.Activities
 	Activities                *activities.Activities
 	QueueActivities           *queueactivities.Activities
 	EmitterActivities         *emitteractivities.Activities
@@ -55,6 +59,7 @@ func (a *Activities) AllActivities() []any {
 		a.Activities,
 		a.SignalsActivities,
 		a.StatusActivities,
+		a.ErrorActivities,
 		a.QueueActivities,
 		a.EmitterActivities,
 		a.HandlerActivities,
@@ -70,6 +75,7 @@ func NewActivities(params Params) *Activities {
 		FlowActivities:            params.FlowActivities,
 		SignalsActivities:         params.SignalsActivities,
 		StatusActivities:          params.StatusActivities,
+		ErrorActivities:           params.ErrorActivities,
 		QueueActivities:           params.QueueActs,
 		EmitterActivities:         params.EmitterActs,
 		HandlerActivities:         params.HandlerActs,

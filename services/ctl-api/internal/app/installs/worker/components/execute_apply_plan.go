@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -90,6 +91,9 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
+		w.appendDeployErrors(ctx, installDeploy.ID, structured_errors.CompositeErrors{
+			structured_errors.NewCompositeTemporalError(ctx, structured_errors.OwnerTypeVariableRender, structured_errors.SeverityCritical, err.Error()),
+		})
 		return errors.Wrap(err, "unable to create deploy plan")
 	}
 
@@ -154,6 +158,9 @@ func (w *Workflows) execApplyPlan(ctx workflow.Context, install *app.Install, in
 	})
 	if err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
+		w.appendDeployErrors(ctx, installDeploy.ID, structured_errors.CompositeErrors{
+			structured_errors.NewCompositeTemporalError(ctx, structured_errors.OwnerTypeRunner, structured_errors.SeverityCritical, err.Error()),
+		})
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}

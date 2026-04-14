@@ -85,7 +85,9 @@ export type TComponentConfig =
 export type TComponentType = components['schemas']['app.ComponentType']
 
 // build
-export type TComponentBuild = components['schemas']['app.ComponentBuild']
+export type TComponentBuild = components['schemas']['app.ComponentBuild'] & {
+  errors?: TCompositeError[]
+}
 export type TBuild = TComponentBuild & { org_id: string }
 
 // org
@@ -124,6 +126,7 @@ export type TDriftedObject = components['schemas']['app.DriftedObject']
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
+  errors?: TCompositeError[]
 }
 export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
@@ -212,6 +215,7 @@ export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
 }
 export type TSandboxRun = components['schemas']['app.InstallSandboxRun'] & {
   org_id: string
+  errors?: TCompositeError[]
 }
 
 // vcs configs
@@ -299,7 +303,9 @@ export type TInstallActionWorkflow =
 // new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
-  components['schemas']['app.InstallActionWorkflowRun']
+  components['schemas']['app.InstallActionWorkflowRun'] & {
+    errors?: TCompositeError[]
+  }
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
 // App / Install Readme
@@ -411,6 +417,28 @@ export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
 // composite status
 export type TCompositeStatus = components['schemas']['app.CompositeStatus']
+
+// composite errors — manually defined, not yet in OpenAPI schema
+export type TCompositeErrorOwnerType =
+  | 'plan'
+  | 'apply'
+  | 'action-run'
+  | 'variable-renderer'
+  | 'runner'
+  | 'k8s-diagnostics'
+
+export type TCompositeErrorSeverity = 'critical' | 'warning' | 'info'
+
+export type TCompositeError = {
+  created_by_id?: string
+  created_at_ts?: number
+  owner_id?: string
+  owner_type: TCompositeErrorOwnerType
+  severity: TCompositeErrorSeverity
+  summary: string
+  detail?: string
+  metadata?: Record<string, unknown>
+}
 
 // onboarding
 export type TOnboarding = components['schemas']['app.Onboarding']

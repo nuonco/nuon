@@ -44,9 +44,9 @@ func (w *workspace) Apply(ctx context.Context, log hclog.Logger) ([]byte, error)
 	byts, err := w.apply(ctx, client, log)
 	if err != nil {
 		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
-			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+			return byts, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
 		}
-		return nil, err
+		return byts, err
 	}
 
 	if err := w.Hooks.PostApply(ctx, log); err != nil {
@@ -77,7 +77,8 @@ func (w *workspace) apply(ctx context.Context, client Terraform, log hclog.Logge
 		writer,
 		opts...,
 	); err != nil {
-		return nil, fmt.Errorf("error running apply: %w", err)
+		outBytes, _ := out.Bytes()
+		return outBytes, fmt.Errorf("error running apply: %w", err)
 	}
 
 	return out.Bytes()
@@ -96,9 +97,9 @@ func (w *workspace) Destroy(ctx context.Context, log hclog.Logger) ([]byte, erro
 	byts, err := w.destroy(ctx, client, log)
 	if err != nil {
 		if hookErr := w.Hooks.ErrorDestroy(ctx, log); hookErr != nil {
-			return nil, fmt.Errorf("error executing error-destroy hook: %w: original-error: %w", hookErr, err)
+			return byts, fmt.Errorf("error executing error-destroy hook: %w: original-error: %w", hookErr, err)
 		}
-		return nil, err
+		return byts, err
 	}
 
 	if err := w.Hooks.PostDestroy(ctx, log); err != nil {
@@ -130,7 +131,8 @@ func (w *workspace) destroy(ctx context.Context, client Terraform, log hclog.Log
 		writer,
 		opts...,
 	); err != nil {
-		return nil, fmt.Errorf("error running destroy: %w", err)
+		outBytes, _ := out.Bytes()
+		return outBytes, fmt.Errorf("error running destroy: %w", err)
 	}
 
 	return out.Bytes()
@@ -165,7 +167,8 @@ func (w *workspace) refresh(ctx context.Context, client Terraform, log hclog.Log
 		writer,
 		opts...,
 	); err != nil {
-		return nil, fmt.Errorf("unable to execute refresh: %w", err)
+		outBytes, _ := out.Bytes()
+		return outBytes, fmt.Errorf("unable to execute refresh: %w", err)
 	}
 
 	return out.Bytes()
@@ -243,9 +246,9 @@ func (w *workspace) ApplyPlan(ctx context.Context, log hclog.Logger) ([]byte, er
 	byts, err := w.applyPlan(ctx, client, log)
 	if err != nil {
 		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
-			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+			return byts, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
 		}
-		return nil, err
+		return byts, err
 	}
 
 	if err := w.Hooks.PostApply(ctx, log); err != nil {
@@ -277,7 +280,8 @@ func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.L
 		writer,
 		opts...,
 	); err != nil {
-		return nil, fmt.Errorf("error running apply: %w", err)
+		outBytes, _ := out.Bytes()
+		return outBytes, fmt.Errorf("error running apply: %w", err)
 	}
 
 	return out.Bytes()
@@ -297,9 +301,9 @@ func (w *workspace) ApplyDestroyPlan(ctx context.Context, log hclog.Logger) ([]b
 	byts, err := w.applyDestroyPlan(ctx, client, log)
 	if err != nil {
 		if hookErr := w.Hooks.ErrorApply(ctx, log); hookErr != nil {
-			return nil, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
+			return byts, fmt.Errorf("error executing error-apply hook: %w: original-error: %w", hookErr, err)
 		}
-		return nil, err
+		return byts, err
 	}
 
 	if err := w.Hooks.PostApply(ctx, log); err != nil {
@@ -331,7 +335,8 @@ func (w *workspace) applyDestroyPlan(ctx context.Context, client Terraform, log 
 		writer,
 		opts...,
 	); err != nil {
-		return nil, fmt.Errorf("error running apply: %w", err)
+		outBytes, _ := out.Bytes()
+		return outBytes, fmt.Errorf("error running apply: %w", err)
 	}
 
 	return out.Bytes()

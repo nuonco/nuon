@@ -4,6 +4,7 @@ import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
+import { CompositeErrorBanner } from '@/components/errors/CompositeErrorBanner/CompositeErrorBanner'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -74,6 +75,8 @@ const SandboxRunDetailContent = () => {
 
       <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
+          <CompositeErrorBanner errors={sandboxRun?.errors} />
+
           {pendingApproval ? (
             <div className="flex flex-col gap-4">
               <ApprovalBanner step={step} />

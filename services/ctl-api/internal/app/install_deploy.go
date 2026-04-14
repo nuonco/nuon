@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 )
 
 type InstallDeployType string
@@ -78,10 +79,11 @@ type InstallDeploy struct {
 	// Role to be used when running this component
 	Role string `json:"role,omitempty" gorm:"column:role"`
 
-	Status            InstallDeployStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`
-	StatusV2          CompositeStatus     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Status            InstallDeployStatus               `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                            `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	Type              InstallDeployType                 `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`
+	StatusV2          CompositeStatus                   `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Errors            structured_errors.CompositeErrors `json:"errors,omitzero" gorm:"type:jsonb" temporaljson:"errors,omitzero,omitempty"`
 
 	// DEPRECATED: use WorkflowID
 	InstallWorkflowID *string   `json:"install_workflow_id,omitzero" gorm:"default null" temporaljson:"install_sandbox_id,omitzero,omitempty"`

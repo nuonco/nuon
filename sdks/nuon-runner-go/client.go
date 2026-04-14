@@ -31,6 +31,7 @@ type Client interface {
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
 	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
 	UpdateJob(ctx context.Context, jobID string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error)
+	ReportCompositeErrors(ctx context.Context, jobID string, errors []models.CompositeError) error
 
 	// job executions
 	GetJobExecutions(ctx context.Context, jobID string) ([]*models.AppRunnerJobExecution, error)

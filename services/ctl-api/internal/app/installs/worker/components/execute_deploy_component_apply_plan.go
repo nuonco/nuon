@@ -41,6 +41,8 @@ func (w *Workflows) ExecuteDeployComponentApplyPlan(ctx workflow.Context, sreq s
 		return err
 	}
 
+	w.clearDeployErrors(ctx, installDeploy.ID)
+
 	l.Info("executing plan")
 	if err := w.execApplyPlan(ctx, install, installDeploy, sreq.FlowStepID, sreq.SandboxMode); err != nil {
 		w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")

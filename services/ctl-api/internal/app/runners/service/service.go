@@ -225,6 +225,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	s.PATCH(runnerJobs, "", s.UpdateRunnerJob, apiPkg.APIContextTypeRunner, true)
 	s.GET(runnerJobs, "/plan", s.GetRunnerJobPlan, apiPkg.APIContextTypeRunner, true)
 	runnerJobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
+	runnerJobs.POST("/errors", s.ReportCompositeErrors)
 
 	executions := runnerJobs.Group("/executions")
 	executions.POST("", s.CreateRunnerJobExecution)

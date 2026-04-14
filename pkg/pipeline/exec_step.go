@@ -12,6 +12,7 @@ func (p *Pipeline) execStep(ctx context.Context, step *Step) error {
 	}
 
 	byts, err := step.ExecFn(ctx, p.Log)
+	p.LastStepOutput = byts
 	if err != nil {
 		return fmt.Errorf("unable to execute: %w", err)
 	}

@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { BuildHeader } from '@/components/builds/BuildHeader'
+import { CompositeErrorBanner } from '@/components/errors/CompositeErrorBanner/CompositeErrorBanner'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -27,6 +28,7 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
   return (
     <>
       <BuildHeader component={component as TComponent} />
+      <CompositeErrorBanner errors={build?.errors} />
       {build?.status_v2?.metadata?.duplicate_build ? (
         <Banner theme="warn" className="mx-6 mt-4">
           <div className="flex flex-col">

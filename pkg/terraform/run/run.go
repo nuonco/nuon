@@ -30,6 +30,11 @@ type Run interface {
 	Plan(context.Context) error
 	Destroy(context.Context) error
 	DestroyPlan(context.Context) error
+
+	// LastOutputBytes returns the output bytes from the last pipeline step
+	// that executed, even if it failed. Useful for extracting structured
+	// error output (e.g. terraform JSON diagnostics) after a run error.
+	LastOutputBytes() []byte
 }
 
 var _ Run = (*run)(nil)
@@ -40,6 +45,12 @@ type run struct {
 	Workspace      workspace.Workspace `validate:"required"`
 	Log            hclog.Logger        `validate:"required"`
 	OutputSettings *OutputSettings     `validate:"required"`
+
+	lastOutputBytes []byte
+}
+
+func (r *run) LastOutputBytes() []byte {
+	return r.lastOutputBytes
 }
 
 type runOption func(*run) error

@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 )
 
 type SandboxRunType string
@@ -76,10 +77,11 @@ type InstallSandboxRun struct {
 	// Role to be used when planning and applying sandbox runs
 	Role string `json:"role,omitempty" gorm:"column:role"`
 
-	RunType           SandboxRunType   `json:"run_type,omitzero" temporaljson:"run_type,omitzero,omitempty"`
-	Status            SandboxRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string           `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	StatusV2          CompositeStatus  `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	RunType           SandboxRunType                    `json:"run_type,omitzero" temporaljson:"run_type,omitzero,omitempty"`
+	Status            SandboxRunStatus                  `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                            `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                   `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Errors            structured_errors.CompositeErrors `json:"errors,omitzero" gorm:"type:jsonb" temporaljson:"errors,omitzero,omitempty"`
 
 	AppSandboxConfigID string           `json:"-" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`

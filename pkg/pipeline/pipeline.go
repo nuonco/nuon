@@ -19,6 +19,11 @@ type Pipeline struct {
 	Steps []*Step `validate_steps:"required,gt=1"`
 
 	Log hclog.Logger `validate:"required"`
+
+	// LastStepOutput holds the output bytes from the last executed step,
+	// even if that step returned an error. This allows callers to inspect
+	// partial output (e.g. terraform JSON diagnostics) after a failure.
+	LastStepOutput []byte `validate:"-"`
 }
 
 type pipelineOption func(*Pipeline) error

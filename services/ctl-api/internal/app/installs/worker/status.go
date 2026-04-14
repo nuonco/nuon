@@ -6,7 +6,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	erroractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/errors/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 )
 
 func (w *Workflows) updateStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, statusDescription string) {
@@ -144,6 +146,62 @@ func (w *Workflows) updateInstallComponentStatus(ctx workflow.Context, installCo
 	}); err != nil {
 		l.Error("unable to update indtall component status",
 			zap.String("InstallComponentID", installComponentID),
+			zap.Error(err))
+	}
+}
+
+// clearDeployErrors clears any existing structured errors on a deploy, typically at the start of a retry.
+func (w *Workflows) clearDeployErrors(ctx workflow.Context, deployID string) {
+	l := workflow.GetLogger(ctx)
+	if err := erroractivities.AwaitClearDeployErrors(ctx, erroractivities.ClearErrorsRequest{
+		ID: deployID,
+	}); err != nil {
+		l.Error("unable to clear deploy errors",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+}
+
+// appendDeployErrors appends structured errors to a deploy (e.g. variable rendering failures).
+func (w *Workflows) appendDeployErrors(ctx workflow.Context, deployID string, errs structured_errors.CompositeErrors) {
+	if len(errs) == 0 {
+		return
+	}
+	l := workflow.GetLogger(ctx)
+	if err := erroractivities.AwaitAppendDeployErrors(ctx, erroractivities.AppendErrorsRequest{
+		ID:     deployID,
+		Errors: errs,
+	}); err != nil {
+		l.Error("unable to append deploy errors",
+			zap.String("deploy-id", deployID),
+			zap.Error(err))
+	}
+}
+
+// clearBuildErrors clears any existing structured errors on a build.
+func (w *Workflows) clearBuildErrors(ctx workflow.Context, buildID string) {
+	l := workflow.GetLogger(ctx)
+	if err := erroractivities.AwaitClearBuildErrors(ctx, erroractivities.ClearErrorsRequest{
+		ID: buildID,
+	}); err != nil {
+		l.Error("unable to clear build errors",
+			zap.String("build-id", buildID),
+			zap.Error(err))
+	}
+}
+
+// appendBuildErrors appends structured errors to a build.
+func (w *Workflows) appendBuildErrors(ctx workflow.Context, buildID string, errs structured_errors.CompositeErrors) {
+	if len(errs) == 0 {
+		return
+	}
+	l := workflow.GetLogger(ctx)
+	if err := erroractivities.AwaitAppendBuildErrors(ctx, erroractivities.AppendErrorsRequest{
+		ID:     buildID,
+		Errors: errs,
+	}); err != nil {
+		l.Error("unable to append build errors",
+			zap.String("build-id", buildID),
 			zap.Error(err))
 	}
 }

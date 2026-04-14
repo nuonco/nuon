@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/structured_errors"
 )
 
 type ComponentBuildStatus string
@@ -51,9 +52,10 @@ type ComponentBuild struct {
 	ComponentReleases []ComponentRelease `json:"releases,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_releases,omitzero,omitempty"`
 	InstallDeploys    []InstallDeploy    `json:"install_deploys,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
 
-	Status            ComponentBuildStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string               `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	StatusV2          CompositeStatus      `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Status            ComponentBuildStatus              `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                            `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                   `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Errors            structured_errors.CompositeErrors `json:"errors,omitzero" gorm:"type:jsonb" temporaljson:"errors,omitzero,omitempty"`
 
 	GitRef *string `json:"git_ref,omitzero" temporaljson:"git_ref,omitzero,omitempty"`
 

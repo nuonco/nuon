@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
+	composite_errors "github.com/nuonco/nuon/bins/runner/internal/pkg/composite_errors"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
@@ -104,6 +106,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			if err := h.noopWorkflowSteps(ctx, remainingSteps, remainingCfgs); err != nil {
 				l.Warn(fmt.Sprintf("unable to mark %d remaining steps as NOOP after step.%d errored", idx, idx-1))
 			}
+		}
+
+		// Report structured composite errors for action failures
+		modelErrs := composite_errors.ToModels(composite_errors.FromGoError(err, "action-run"))
+		if reportErr := h.apiClient.ReportCompositeErrors(ctx, job.ID, modelErrs); reportErr != nil {
+			l.Warn("unable to report composite errors", zap.Error(reportErr))
 		}
 
 		return errors.Wrap(err, fmt.Sprintf("action workflow failed on step %d", idx))
