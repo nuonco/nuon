@@ -73,6 +73,7 @@ sdks/nuon-runner-go/.swagger.stamp
 # ignore binaries
 services/ctl-api/ctl-api
 services/ctl-api/cmd/nuontest/nuontest
+services/ctl-api/internal/app/admin-dashboard/**/*_templ.go
 services/workers-executors/workers-executors
 services/workers-canary/workers-canary
 bins/runner/runner

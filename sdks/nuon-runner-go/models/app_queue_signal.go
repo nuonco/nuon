@@ -28,6 +28,9 @@ type AppQueueSignal struct {
 	// Optional: if this signal was emitted by an emitter
 	EmitterID string `json:"emitter_id,omitempty"`
 
+	// execution count
+	ExecutionCount int64 `json:"execution_count,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 

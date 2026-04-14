@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type Params struct {
@@ -30,6 +31,7 @@ type Params struct {
 	AuthzClient    *authz.Client
 	OrgsHelpers    *orgshelpers.Helpers
 	TemporalClient temporalclient.Client
+	QueueClient    *queueclient.Client
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
@@ -47,6 +49,7 @@ type Service struct {
 	authzClient    *authz.Client
 	orgsHelpers    *orgshelpers.Helpers
 	temporalClient temporalclient.Client
+	queueClient    *queueclient.Client
 	codecs         []converter.PayloadCodec
 }
 
@@ -113,6 +116,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
 	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
+	api.POST("/queues/:id/restart", s.RestartQueue)
 
 	// Queue signals (global view)
 	api.GET("/queue-signals", s.QueueSignals)
@@ -135,6 +139,7 @@ func New(params Params) (*service, error) {
 		authzClient:    params.AuthzClient,
 		orgsHelpers:    params.OrgsHelpers,
 		temporalClient: params.TemporalClient,
+		queueClient:    params.QueueClient,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

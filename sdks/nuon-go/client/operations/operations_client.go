@@ -92,6 +92,8 @@ type ClientService interface {
 
 	AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error)
 
+	AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepOK, error)
+
 	BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error)
 
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
@@ -870,6 +872,52 @@ func (a *Client) AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for AwaitQueueSignal: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AwaitWorkflowStep longs poll for workflow step completion
+
+Long-poll for a workflow step to complete. Blocks until the step finishes or a 60-second timeout is reached.
+*/
+func (a *Client) AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAwaitWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AwaitWorkflowStep",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/await",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AwaitWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AwaitWorkflowStepOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AwaitWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
