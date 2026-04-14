@@ -66,8 +66,8 @@ func TestBuildBaseWhereClause(t *testing.T) {
 func TestBuildTimeseriesSelectClauses(t *testing.T) {
 	interval := timeInterval{"day", "toStartOfDay(%s)"}
 
-	t.Run("without group_by", func(t *testing.T) {
-		sel, grp, ord := buildTimeseriesSelectClauses(interval, "")
+	t.Run("no dimensions", func(t *testing.T) {
+		sel, grp, ord := buildTimeseriesSelectClauses(interval, nil)
 
 		if !strings.Contains(sel, "toStartOfDay(evaluated_at) AS bucket") {
 			t.Errorf("select missing bucket expr: %s", sel)
@@ -81,35 +81,52 @@ func TestBuildTimeseriesSelectClauses(t *testing.T) {
 		if ord != "bucket" {
 			t.Errorf("orderCols = %q, want %q", ord, "bucket")
 		}
+		if strings.Contains(sel, "policy_id") {
+			t.Error("should not contain dimension columns when no dims")
+		}
 	})
 
-	t.Run("with group_by policy_id", func(t *testing.T) {
-		sel, grp, ord := buildTimeseriesSelectClauses(interval, "policy_id")
+	t.Run("single dimension", func(t *testing.T) {
+		sel, grp, ord := buildTimeseriesSelectClauses(interval, []string{"policy_id"})
 
-		if !strings.Contains(sel, "policy_id AS group_key") {
-			t.Errorf("select missing group_key: %s", sel)
+		if !strings.Contains(sel, "policy_id") {
+			t.Errorf("select missing policy_id column: %s", sel)
 		}
-		if grp != "bucket, group_key" {
-			t.Errorf("groupCols = %q, want %q", grp, "bucket, group_key")
+		if grp != "bucket, policy_id" {
+			t.Errorf("groupCols = %q, want %q", grp, "bucket, policy_id")
 		}
-		if ord != "bucket, group_key" {
-			t.Errorf("orderCols = %q, want %q", ord, "bucket, group_key")
+		if ord != "bucket, policy_id" {
+			t.Errorf("orderCols = %q, want %q", ord, "bucket, policy_id")
+		}
+	})
+
+	t.Run("multiple dimensions", func(t *testing.T) {
+		sel, grp, ord := buildTimeseriesSelectClauses(interval, []string{"policy_id", "install_id"})
+
+		if !strings.Contains(sel, "policy_id") || !strings.Contains(sel, "install_id") {
+			t.Errorf("select missing dimension columns: %s", sel)
+		}
+		if grp != "bucket, policy_id, install_id" {
+			t.Errorf("groupCols = %q, want %q", grp, "bucket, policy_id, install_id")
+		}
+		if ord != "bucket, policy_id, install_id" {
+			t.Errorf("orderCols = %q, want %q", ord, "bucket, policy_id, install_id")
 		}
 	})
 }
 
 func TestIsValidGroupBy(t *testing.T) {
-	valid := []string{"policy_id", "install_id", "component_id"}
+	valid := []string{"policy_id", "install_id", "component_id", "owner_type"}
 	for _, v := range valid {
-		if !isValidGroupBy(v) {
-			t.Errorf("isValidGroupBy(%q) = false, want true", v)
+		if _, ok := validGroupByDimensions[v]; !ok {
+			t.Errorf("validGroupByDimensions missing %q", v)
 		}
 	}
 
-	invalid := []string{"", "org_id", "SELECT 1", "policy_id; DROP TABLE"}
+	invalid := []string{"org_id", "SELECT 1", "policy_id; DROP TABLE"}
 	for _, v := range invalid {
-		if isValidGroupBy(v) {
-			t.Errorf("isValidGroupBy(%q) = true, want false", v)
+		if _, ok := validGroupByDimensions[v]; ok {
+			t.Errorf("validGroupByDimensions should not contain %q", v)
 		}
 	}
 }
