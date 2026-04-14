@@ -1,6 +1,0 @@
-export * from './builds'
-export * from './build-component'
-export * from './build-components'
-export * from './get-component'
-export * from './get-component-config'
-export * from './get-components'

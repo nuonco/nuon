@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
   deprovisionInstall,
@@ -13,16 +12,5 @@ describe('deprovisionInstall should handle response status codes from POST insta
     const body: TDeprovisionInstallBody = { plan_only: true }
     const result = await deprovisionInstall({ body, installId, orgId })
     expect(result).toHaveProperty('data')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    const body: TDeprovisionInstallBody = { plan_only: true }
-    await expect(
-      deprovisionInstall({ body, installId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

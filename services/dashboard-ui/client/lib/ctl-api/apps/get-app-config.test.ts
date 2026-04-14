@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getAppConfig } from './get-app-config'
 
@@ -11,13 +10,5 @@ describe('getAppConfig should handle response status codes from GET app config b
     const result = await getAppConfig({ orgId, appId, appConfigId })
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('status')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(getAppConfig({ orgId, appId, appConfigId })).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

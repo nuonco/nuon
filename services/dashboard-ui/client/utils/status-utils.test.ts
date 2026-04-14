@@ -20,7 +20,6 @@ describe('status-utils', () => {
       expect(getStatusTheme('access-error')).toBe('error')
       expect(getStatusTheme('access_error')).toBe('error')
       expect(getStatusTheme('timed-out')).toBe('error')
-      expect(getStatusTheme('unknown')).toBe('error')
       expect(getStatusTheme('unhealthy')).toBe('error')
       expect(getStatusTheme('not connected')).toBe('error')
       expect(getStatusTheme('not-connected')).toBe('error')
@@ -32,6 +31,7 @@ describe('status-utils', () => {
       expect(getStatusTheme('cancelled')).toBe('warn')
       expect(getStatusTheme('outdated')).toBe('warn')
       expect(getStatusTheme('warn')).toBe('warn')
+      expect(getStatusTheme('offline')).toBe('warn')
     })
 
     test('should return info theme for info statuses', () => {
@@ -55,7 +55,7 @@ describe('status-utils', () => {
       expect(getStatusTheme('noop')).toBe('neutral')
       expect(getStatusTheme('inactive')).toBe('neutral')
       expect(getStatusTheme('pending')).toBe('neutral')
-      expect(getStatusTheme('offline')).toBe('neutral')
+      expect(getStatusTheme('unknown')).toBe('neutral')
       expect(getStatusTheme('Not deployed')).toBe('neutral')
       expect(getStatusTheme('No build')).toBe('neutral')
       expect(getStatusTheme('not-attempted')).toBe('neutral')

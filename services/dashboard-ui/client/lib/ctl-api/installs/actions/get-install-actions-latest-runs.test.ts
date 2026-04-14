@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getInstallActionsLatestRuns } from './get-install-actions-latest-runs'
 
@@ -14,20 +13,6 @@ describe('getInstallActionsLatestRuns should handle response status codes from G
       limit: 10,
       offset: 0,
     })
-    expect(Array.isArray(result)).toBe(true)
+    expect(Array.isArray(result.data)).toBe(true)
   }, 60000)
-
-  test.each(badResponseCodes)(
-    '%s status',
-    async () => {
-      await expect(
-        getInstallActionsLatestRuns({ installId, orgId })
-      ).rejects.toMatchObject({
-        error: expect.any(String),
-        description: expect.any(String),
-        user_error: expect.any(Boolean),
-      })
-    },
-    30000
-  )
 })

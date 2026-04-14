@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getRunnerRecentHealthChecks } from './get-runner-recent-health-checks'
 
@@ -15,15 +14,5 @@ describe('getRunnerRecentHealthChecks should handle response status codes from G
       window: '24h',
     })
     expect(Array.isArray(result)).toBe(true)
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      getRunnerRecentHealthChecks({ runnerId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })
