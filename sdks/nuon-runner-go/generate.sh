@@ -28,6 +28,7 @@ fi
 
 if [ "$swagger_hash" != "$previous_hash" ]; then
   echo >&2 "generating with OAPI spec from $SWAGGER_FILE"
+  rm -rf models/ client/
   go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0 \
     generate \
     client \

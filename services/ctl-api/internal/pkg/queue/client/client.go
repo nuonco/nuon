@@ -1,6 +1,8 @@
 package client
 
 import (
+	"time"
+
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -54,7 +56,7 @@ func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOper
 			"id":           q.ID,
 			"owner-id":     q.OwnerID,
 			"owner-type":   q.OwnerType,
-			"idle-timeout": q.IdleTimeout.String(),
+			"idle-timeout": time.Duration(q.IdleTimeout).String(),
 		},
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
