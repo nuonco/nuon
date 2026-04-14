@@ -58,6 +58,11 @@ type Signal struct {
 	// approved is set by the "approve-plan" update handler to reactively unblock
 	// approval waiting instead of polling.
 	approved bool
+
+	// approvalResponseID and approvalResponseType are set by the "approve-plan"
+	// update handler to pass the response through without re-fetching from DB.
+	approvalResponseID   string
+	approvalResponseType string
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -131,6 +136,13 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		Status: app.CompositeStatus{
 			Status: app.StatusCancelled,
 		},
+	})
+
+	// Update the step target status to cancelled
+	activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
+		StepID:            s.StepID,
+		Status:            app.StatusCancelled,
+		StatusDescription: "Cancelled",
 	})
 
 	return err
@@ -593,70 +605,6 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	logger.Info("queue signal completed successfully", "step_name", step.Name)
 	return nil
-}
-
-// waitForApprovalResponse waits for an approval response reactively using the
-// "approve-plan" update handler, or falls back to the polling child workflow
-// for non-queue paths.
-func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
-	// Handle auto-approve
-	if flw.ApprovalOption == app.InstallApprovalOptionApproveAll {
-		return s.handleAutoApproval(ctx, flw, step)
-	}
-
-	// Wait for approve-plan update handler to set s.approved (30-day deadline)
-	ok, err := workflow.AwaitWithTimeout(ctx, 30*24*time.Hour, func() bool {
-		return s.approved
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
-	}
-	if !ok {
-		statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalExpired, map[string]any{
-				"err_message": "approval was not accepted",
-			}),
-		})
-		return nil, fmt.Errorf("approval timed out for step %s", step.ID)
-	}
-
-	// Fetch the approval response from DB (written by the API before sending update)
-	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get step after approval")
-	}
-	if step.Approval == nil || step.Approval.Response == nil {
-		return nil, errors.New("approval response not found after update")
-	}
-	return step.Approval.Response, nil
-}
-
-// handleAutoApproval handles auto-approve for workflows with ApproveAll option.
-func (s *Signal) handleAutoApproval(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: flw.ID,
-		Status: app.CompositeStatus{
-			Status:                 app.WorkflowStepApprovalStatusApproved,
-			StatusHumanDescription: "auto approved for step " + strconv.Itoa(step.Idx+1),
-			Metadata: map[string]any{
-				"step_idx": step.Idx,
-				"status":   "auto-approved",
-			},
-		},
-	}); err != nil {
-		return nil, errors.Wrap(err, "unable to update flow status for auto-approval")
-	}
-
-	resp, err := activities.AwaitCreateApprovalResponse(ctx, activities.CreateStepApprovalResponseRequest{
-		StepApprovalID: step.Approval.ID,
-		Type:           app.WorkflowStepApprovalResponseTypeApprove,
-		Note:           "auto-approved",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create auto-approval response")
-	}
-	return resp, nil
 }
 
 // handleNoopDeployPlan handles the case where the plan has no changes.

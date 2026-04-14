@@ -14,6 +14,7 @@ import (
 type ForwardApprovePlanRequest struct {
 	StepID             string `json:"step_id" validate:"required"`
 	ApprovalResponseID string `json:"approval_response_id"`
+	ResponseType       string `json:"response_type"`
 }
 
 // ForwardApprovePlanResponse is the output from forwarding an approval.
@@ -27,7 +28,10 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 	// Find the step's handler workflow via the queue_signals table
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
-		Where("owner_id = ? AND owner_type = ?", req.StepID, "install_workflow_steps").
+		Where(app.QueueSignal{
+			OwnerID:   req.StepID,
+			OwnerType: (&app.WorkflowStep{}).TableName(),
+		}).
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
@@ -43,6 +47,7 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 			Args: []any{
 				executeworkflowstep.ApprovePlanRequest{
 					ApprovalResponseID: req.ApprovalResponseID,
+					ResponseType:       req.ResponseType,
 				},
 			},
 		})

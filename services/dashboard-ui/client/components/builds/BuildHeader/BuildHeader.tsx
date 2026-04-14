@@ -13,6 +13,7 @@ import { ComponentConfigContextTooltip } from '@/components/components/Component
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { CancelRunnerJobButton } from '@/components/runners/CancelRunnerJob'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import type { TApp, TBuild, TComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
@@ -108,6 +109,13 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
             <CancelRunnerJobButton
               jobType="build"
               runnerJob={build?.runner_job}
+            />
+          ) : null}
+
+          {build?.queue_signal ? (
+            <AdminDashboardLink
+              path={`/queue-signals?search=${build.id}`}
+              label="View signal"
             />
           ) : null}
         </div>

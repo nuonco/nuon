@@ -6,6 +6,7 @@ import (
 
 	tclient "go.temporal.io/sdk/client"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 )
 
@@ -14,6 +15,7 @@ type ApprovePlanRequest struct {
 	InstallWorkflowID  string
 	StepID             string
 	ApprovalResponseID string
+	ResponseType       app.WorkflowStepResponseType
 }
 
 // ApprovePlan sends an "approve-step" update to the execute-flow handler workflow
@@ -34,6 +36,7 @@ func (c *Client) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) error
 				executeflow.ApproveStepRequest{
 					StepID:             req.StepID,
 					ApprovalResponseID: req.ApprovalResponseID,
+					ResponseType:       string(req.ResponseType),
 				},
 			},
 		})

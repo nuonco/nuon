@@ -119,16 +119,15 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	}
 
 	// If queues are enabled, send approve-plan update to reactively unblock the step
-	if s.flowsClient != nil {
-		useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-		if useQueues {
-			if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
-				InstallWorkflowID:  workflowID,
-				StepID:             stepID,
-				ApprovalResponseID: wfsaResponse.ID,
-			}); err != nil {
-				s.l.Warn("failed to send approve-plan update", zap.Error(err))
-			}
+	useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if useQueues {
+		if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
+			InstallWorkflowID:  workflowID,
+			StepID:             stepID,
+			ApprovalResponseID: wfsaResponse.ID,
+			ResponseType:       req.ResponseType,
+		}); err != nil {
+			s.l.Warn("failed to send approve-plan update", zap.Error(err))
 		}
 	}
 

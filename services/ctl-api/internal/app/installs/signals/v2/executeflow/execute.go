@@ -88,10 +88,15 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 			},
 		})
 
-		// Wait for retry-step update
+		// Wait for retry-step or cancel-step update
 		if err := workflow.Await(ctx, func() bool {
-			return s.retryRequested
+			return s.retryRequested || s.cancelRequested
 		}); err != nil {
+			return err
+		}
+
+		// Cancel requested - stop the workflow
+		if s.cancelRequested {
 			return err
 		}
 

@@ -10,6 +10,7 @@ import (
 type ApproveStepRequest struct {
 	StepID             string `json:"step_id"`
 	ApprovalResponseID string `json:"approval_response_id"`
+	ResponseType       string `json:"response_type"`
 }
 
 // ApproveStepResponse is the response from the "approve-step" update handler.
@@ -23,6 +24,7 @@ func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest
 	_, err := activities.AwaitForwardApprovePlan(ctx, activities.ForwardApprovePlanRequest{
 		StepID:             req.StepID,
 		ApprovalResponseID: req.ApprovalResponseID,
+		ResponseType:       req.ResponseType,
 	})
 	if err != nil {
 		return nil, err

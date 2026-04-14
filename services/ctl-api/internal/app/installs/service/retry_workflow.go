@@ -157,27 +157,36 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 		// its not apply step
 	}
 
-	if step.Status.Status != app.StatusError {
+	switch step.Status.Status {
+	case app.StatusError:
+		// error state is always retryable
+	case app.AwaitingApproval, app.Status("awaiting-approval"):
+		// awaiting-approval steps can be retried (e.g. after denying a plan)
+	default:
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("install workflow %s can't be retried", workflow.ID),
 		})
 		return
 	}
 
-	switch req.Operation {
-	case RetryOperationRetryStep:
-		if !step.Retryable {
-			ctx.Error(stderr.ErrUser{
-				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
-			})
-			return
-		}
-	case RetryOperationSkipStep:
-		if !step.Skippable {
-			ctx.Error(stderr.ErrUser{
-				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
-			})
-			return
+	// Only check retryable/skippable flags for error state steps.
+	// Awaiting-approval steps are always retryable (plan retry after deny).
+	if step.Status.Status == app.StatusError {
+		switch req.Operation {
+		case RetryOperationRetryStep:
+			if !step.Retryable {
+				ctx.Error(stderr.ErrUser{
+					Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
+				})
+				return
+			}
+		case RetryOperationSkipStep:
+			if !step.Skippable {
+				ctx.Error(stderr.ErrUser{
+					Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
+				})
+				return
+			}
 		}
 	}
 
