@@ -46,6 +46,8 @@ export function parseInstallsToTableData(
         platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
         variant="subtext"
         colorVariant="color"
+        displayVariant="icon-only"
+        iconSize="20"
       />
     ),
   }))
@@ -74,12 +76,6 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
-    enableSorting: true,
-    accessorKey: 'region',
-    header: 'Region',
-    cell: (info) => <Text>{info.getValue() as string}</Text>,
-  },
-  {
     accessorKey: 'platform',
     header: 'Platform',
     cell: (info) => (
@@ -88,6 +84,12 @@ const columns: ColumnDef<InstallRow>[] = [
       </Text>
     ),
     enableSorting: true,
+  },
+  {
+    enableSorting: true,
+    accessorKey: 'region',
+    header: 'Region',
+    cell: (info) => <Text>{info.getValue() as string}</Text>,
   },
   {
     enableSorting: false,

@@ -9,6 +9,11 @@
 
 # production
 /build
+/.next/
+/out/
+
+# next.js (removed but may be generated locally)
+next-env.d.ts
 
 # misc
 .DS_Store

@@ -64,7 +64,7 @@ export const ContextTooltip = ({
                   {item.leftContent ? (
                     <span className="h-full">{item.leftContent}</span>
                   ) : null}
-                  <span className="flex flex-col text-left">
+                  <span className="flex flex-col gap-0.5 text-left">
                     <Text
                       className="max-w-36 truncate"
                       variant="label"
