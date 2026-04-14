@@ -175,6 +175,18 @@ export type TTerraformPlan = {
   }
 }
 
+// Pulumi plan types
+export type TPulumiChangeAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'replace'
+  | 'create-replacement'
+  | 'delete-replaced'
+  | 'same'
+  | 'read'
+  | 'refresh'
+
 // Helm & K8s plan types
 export type THelmK8sChangeAction =
   | 'add'

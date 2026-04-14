@@ -1,7 +1,10 @@
-import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Text } from '@/components/common/Text'
+import { usePulumiPlanFilter } from '@/hooks/use-pulumi-plan-filter'
+import { DiffFilter } from '../DiffFilter'
+import { PulumiSummary } from './PulumiSummary'
+import { PulumiResourceChangesList } from './PulumiResourceChangesList'
 
 interface IPropertyDiff {
   kind: string
@@ -28,163 +31,13 @@ interface IPulumiPreviewResult {
   diagnostics?: string[]
 }
 
-const ACTION_CONFIG: Record<
-  string,
-  { label: string; badge: string; className: string }
-> = {
-  create: {
-    label: 'Create',
-    badge: '+',
-    className: 'text-green-600 dark:text-green-400',
-  },
-  update: {
-    label: 'Update',
-    badge: '~',
-    className: 'text-amber-600 dark:text-amber-400',
-  },
-  delete: {
-    label: 'Delete',
-    badge: '-',
-    className: 'text-red-600 dark:text-red-400',
-  },
-  replace: {
-    label: 'Replace',
-    badge: '±',
-    className: 'text-orange-600 dark:text-orange-400',
-  },
-  'create-replacement': {
-    label: 'Create replacement',
-    badge: '+',
-    className: 'text-orange-600 dark:text-orange-400',
-  },
-  'delete-replaced': {
-    label: 'Delete replaced',
-    badge: '-',
-    className: 'text-orange-600 dark:text-orange-400',
-  },
-  same: {
-    label: 'Unchanged',
-    badge: '=',
-    className: 'text-grey-500 dark:text-grey-400',
-  },
-  read: {
-    label: 'Read',
-    badge: '→',
-    className: 'text-blue-600 dark:text-blue-400',
-  },
-  refresh: {
-    label: 'Refresh',
-    badge: '↻',
-    className: 'text-blue-600 dark:text-blue-400',
-  },
-}
-
-function PulumiSummary({
-  changeSummary,
-}: {
-  changeSummary: Record<string, number>
-}) {
-  const entries = Object.entries(changeSummary).filter(([, count]) => count > 0)
-  if (entries.length === 0) {
-    return (
-      <div className="px-4 sm:px-6 py-3 border-b">
-        <Text variant="subtext">No changes detected</Text>
-      </div>
-    )
-  }
-
-  return (
-    <div className="px-4 sm:px-6 py-3 border-b flex gap-4 flex-wrap">
-      {entries.map(([action, count]) => {
-        const config = ACTION_CONFIG[action]
-        return (
-          <Text key={action} variant="subtext">
-            <span className={config?.className || ''}>
-              {count} to {(config?.label || action).toLowerCase()}
-            </span>
-          </Text>
-        )
-      })}
-    </div>
-  )
-}
-
-function ResourceChangeRow({ change }: { change: IResourceChange }) {
-  const [expanded, setExpanded] = useState(false)
-  const config = ACTION_CONFIG[change.action] || {
-    label: change.action,
-    badge: '?',
-    className: '',
-  }
-
-  const hasDiffs =
-    change.detailed_diff && Object.keys(change.detailed_diff).length > 0
-  const hasInputChanges = change.old_inputs || change.new_inputs
-
-  return (
-    <div className="border-b last:border-b-0">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 sm:px-6 py-3 flex items-center gap-3 text-left hover:bg-cool-grey-100 dark:hover:bg-dark-grey-800 transition-colors"
-        type="button"
-      >
-        <span
-          className={`font-mono text-sm font-bold w-5 text-center ${config.className}`}
-        >
-          {config.badge}
-        </span>
-        <div className="flex-1 min-w-0">
-          <Text variant="subtext" className="truncate">
-            <span className={config.className}>{config.label}</span>{' '}
-            <span className="font-mono">{change.type}</span>{' '}
-            <span className="font-semibold">{change.name}</span>
-          </Text>
-        </div>
-        {(hasDiffs || hasInputChanges) && (
-          <span className="text-grey-400 text-xs">{expanded ? '▼' : '▶'}</span>
-        )}
-      </button>
-
-      {expanded && (hasDiffs || hasInputChanges) && (
-        <div className="px-4 sm:px-6 pb-3 pl-12">
-          {hasDiffs && (
-            <div className="space-y-1">
-              {Object.entries(change.detailed_diff!).map(([prop, diff]) => (
-                <div key={prop} className="font-mono text-xs">
-                  <span className="text-grey-500">{prop}: </span>
-                  <span
-                    className={
-                      diff.kind === 'add'
-                        ? 'text-green-600 dark:text-green-400'
-                        : diff.kind === 'delete'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-amber-600 dark:text-amber-400'
-                    }
-                  >
-                    {diff.kind}
-                    {diff.inputDiff ? ' (input)' : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!hasDiffs && hasInputChanges && (
-            <pre className="text-xs font-mono whitespace-pre-wrap text-grey-600 dark:text-grey-400 max-h-64 overflow-y-auto">
-              {JSON.stringify(change.new_inputs || change.old_inputs, null, 2)}
-            </pre>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function PulumiDiff({
   plan,
 }: {
   plan: IPulumiPreviewResult | undefined
 }) {
+  const resourceFilter = usePulumiPlanFilter(plan?.resource_changes || [])
+
   if (!plan) {
     return <Banner theme="neutral">No Pulumi preview data available</Banner>
   }
@@ -206,11 +59,25 @@ export function PulumiDiff({
         )}
 
         {hasResourceChanges ? (
-          <div>
-            {plan.resource_changes!.map((change) => (
-              <ResourceChangeRow key={change.urn} change={change} />
-            ))}
-          </div>
+          <>
+            <DiffFilter
+              title="resources"
+              diffType="pulumi"
+              selectedActions={resourceFilter.selectedActions}
+              onInputToggle={resourceFilter.handleInputToggle}
+              onButtonClick={resourceFilter.handleButtonClick}
+              onReset={resourceFilter.handleReset}
+              selectedCount={resourceFilter.filterStats.selectedCount}
+              totalCount={resourceFilter.filterStats.totalCount}
+              searchValue={resourceFilter.searchQuery}
+              onSearchChange={resourceFilter.handleSearchChange}
+              searchPlaceholder="Search by type, name, or URN"
+            />
+
+            <PulumiResourceChangesList
+              changes={resourceFilter.filteredItems}
+            />
+          </>
         ) : (
           plan.stdout && (
             <div className="px-4 sm:px-6 py-4">
@@ -222,18 +89,20 @@ export function PulumiDiff({
         )}
 
         {plan.diagnostics && plan.diagnostics.length > 0 && (
-          <div className="px-4 sm:px-6 py-4 border-t">
-            <Text variant="subtext" weight="strong" className="mb-2">
+          <div className="px-4 sm:px-6 py-4 border-t flex flex-col gap-3">
+            <Text variant="subtext" weight="strong">
               Diagnostics
             </Text>
-            {plan.diagnostics.map((d, i) => (
-              <pre
-                key={i}
-                className="text-xs font-mono whitespace-pre-wrap text-amber-700 dark:text-amber-300"
-              >
-                {d}
-              </pre>
-            ))}
+            {plan.diagnostics.map((d, i) => {
+              const theme = d.startsWith('error') ? 'error' as const : 'warn' as const
+              return (
+                <Banner key={i} theme={theme} className="!rounded-md">
+                  <Text variant="subtext" family="mono" className="whitespace-pre-wrap">
+                    {d}
+                  </Text>
+                </Banner>
+              )
+            })}
           </div>
         )}
       </Card>
