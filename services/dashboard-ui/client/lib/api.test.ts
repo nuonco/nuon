@@ -5,10 +5,10 @@ import type { TApp } from '../types'
 import { api } from './api'
 
 const orgId = 'org-id'
-const baseURL = 'http://localhost:8081'
+const baseUrl = 'http://test.local'
 
 const server = setupServer(
-  http.get(`${baseURL}/v1/apps`, () => {
+  http.get(`${baseUrl}/v1/apps`, () => {
     return HttpResponse.json([], { status: 200 })
   })
 )
@@ -22,7 +22,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 test('api should return a list of apps when provided apps path', async () => {
-  const result = await api<TApp[]>({ path: 'apps', orgId })
+  const result = await api<TApp[]>({ path: 'apps', orgId, baseUrl })
   expect(Array.isArray(result)).toBe(true)
 })
 
@@ -30,7 +30,7 @@ test.each([[400], [401], [403], [404], [500]])(
   '%s status rejects',
   async (status) => {
     server.use(
-      http.get(`${baseURL}/v1/apps`, () => {
+      http.get(`${baseUrl}/v1/apps`, () => {
         return HttpResponse.json(
           {
             error: 'test error',
@@ -44,12 +44,12 @@ test.each([[400], [401], [403], [404], [500]])(
 
     if (status === 401) {
       await expect(
-        api<TApp[]>({ path: 'apps', orgId })
+        api<TApp[]>({ path: 'apps', orgId, baseUrl })
       ).resolves.toBeUndefined()
       expect(window.location.reload).toHaveBeenCalled()
     } else {
       await expect(
-        api<TApp[]>({ path: 'apps', orgId })
+        api<TApp[]>({ path: 'apps', orgId, baseUrl })
       ).rejects.toMatchObject({
         error: expect.any(String),
         description: expect.any(String),

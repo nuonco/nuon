@@ -39,8 +39,6 @@ RUN npm run lint
 
 FROM deps AS test
 
-ENV NUON_API_URL=https://api.stage.nuon.co
-
 RUN npm run test
 
 FROM deps AS test-local-spec
