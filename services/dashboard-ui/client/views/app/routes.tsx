@@ -7,7 +7,9 @@ import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Roles } from './Roles'
+import { PoliciesLayout } from './PoliciesLayout'
 import { Policies } from './Policies'
+import { PolicyAnalytics } from './PolicyAnalytics'
 import { PolicyDetail } from './PolicyDetail'
 import { Installs } from './Installs'
 import { Readme } from './Readme'
@@ -45,7 +47,14 @@ export const appRoutes: RouteObject[] = [
         element: <ActionDetail />,
       },
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
-      { path: ':orgId/apps/:appId/policies', element: <Policies /> },
+      {
+        path: ':orgId/apps/:appId/policies',
+        element: <PoliciesLayout />,
+        children: [
+          { index: true, element: <Policies /> },
+          { path: 'analytics', element: <PolicyAnalytics /> },
+        ],
+      },
       {
         path: ':orgId/apps/:appId/policies/:policyId',
         element: <PolicyDetail />,

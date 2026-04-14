@@ -78,6 +78,43 @@ export type TPolicyResult = components['schemas']['app.PolicyResult']
 export type TPolicyViolation = components['schemas']['app.PolicyViolation']
 export type TPolicyInputRef = components['schemas']['app.PolicyInputRef']
 
+// policy analytics
+export type TPolicyAnalyticsSummary = {
+  total_evaluations: number
+  total_denies: number
+  total_warns: number
+  total_passes: number
+  unique_reports: number
+  unique_policies: number
+  start: string
+  end: string
+}
+
+export type TSeriesPoint = {
+  labels: Record<string, string>
+  evaluations: number
+  denies: number
+  warns: number
+  passes: number
+}
+
+export type TTimeseriesBucket = {
+  time: string
+  evaluations: number
+  denies: number
+  warns: number
+  passes: number
+  series?: TSeriesPoint[]
+}
+
+export type TPolicyAnalyticsTimeseries = {
+  interval: string
+  group_by: string[]
+  start: string
+  end: string
+  buckets: TTimeseriesBucket[]
+}
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =
