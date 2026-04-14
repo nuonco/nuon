@@ -49,7 +49,7 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	pkglog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -78,4 +79,5 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(arm.NewTemplates),
 	fx.Provide(queueclient.New),
 	fx.Provide(emitterclient.New),
+	fx.Provide(flowclient.New),
 )

@@ -220,7 +220,7 @@ func (s *service) RetryOwnerWorkflow(ctx *gin.Context) {
 				StalePlan:     stalePlan,
 				RePlanStepID:  rePlanStepID,
 			},
-		}); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

@@ -1,0 +1,59 @@
+package activities
+
+import (
+	"context"
+	"fmt"
+
+	tclient "go.temporal.io/sdk/client"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
+)
+
+// ForwardApprovePlanRequest is the input for forwarding an approval to a step handler workflow.
+type ForwardApprovePlanRequest struct {
+	StepID             string `json:"step_id" validate:"required"`
+	ApprovalResponseID string `json:"approval_response_id"`
+}
+
+// ForwardApprovePlanResponse is the output from forwarding an approval.
+type ForwardApprovePlanResponse struct {
+	StepID string `json:"step_id"`
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 30s
+func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApprovePlanRequest) (*ForwardApprovePlanResponse, error) {
+	// Find the step's handler workflow via the queue_signals table
+	var qs app.QueueSignal
+	res := a.db.WithContext(ctx).
+		Where("owner_id = ? AND owner_type = ?", req.StepID, "install_workflow_steps").
+		Order("created_at DESC").
+		First(&qs)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
+	}
+
+	// Send the approve-plan update to the step's handler workflow
+	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
+		tclient.UpdateWorkflowOptions{
+			WorkflowID:   qs.Workflow.ID,
+			UpdateName:   "approve-plan",
+			WaitForStage: tclient.WorkflowUpdateStageAccepted,
+			Args: []any{
+				executeworkflowstep.ApprovePlanRequest{
+					ApprovalResponseID: req.ApprovalResponseID,
+				},
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("unable to send approve-plan update to step %s: %w", req.StepID, err)
+	}
+
+	var result error
+	if err := handle.Get(ctx, &result); err != nil {
+		return nil, fmt.Errorf("approve-plan update failed for step %s: %w", req.StepID, err)
+	}
+
+	return &ForwardApprovePlanResponse{StepID: req.StepID}, nil
+}
