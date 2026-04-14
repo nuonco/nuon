@@ -3370,6 +3370,7 @@ export interface components {
       composite_component_status?: string;
       composite_component_status_description?: string;
       created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
       drifted_objects?: components["schemas"]["app.DriftedObject"][];
       gcp_account?: components["schemas"]["app.GCPAccount"];

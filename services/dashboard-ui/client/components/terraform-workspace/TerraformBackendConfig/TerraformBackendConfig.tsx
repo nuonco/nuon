@@ -20,7 +20,7 @@ export const TerraformBackendConfigModal = ({
         onClick: onDownload,
         variant: 'primary',
       }}
-      size="sm"
+      size="lg"
       {...props}
     >
       <div className="flex flex-col gap-4">

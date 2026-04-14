@@ -203,7 +203,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
       <div
         aria-label={`${name} — ${COMPONENT_TYPE_LABELS[componentType] || 'Component'}`}
         className={cn(
-          'rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm',
+          'rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm overflow-hidden',
           isDrifted && '!border-orange-400 dark:!border-orange-500/40'
         )}
         style={{ width, height: 56 }}

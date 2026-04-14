@@ -27,6 +27,7 @@ const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
         View details
         <Icon variant="CaretRightIcon" />
       </Button>
+      <hr />
       <Text variant="label" theme="neutral">
         Settings
       </Text>

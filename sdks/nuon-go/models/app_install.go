@@ -53,6 +53,9 @@ type AppInstall struct {
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
+	// created by
+	CreatedBy *AppAccount `json:"created_by,omitempty"`
+
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
@@ -158,6 +161,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAzureAccount(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCreatedBy(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -306,6 +313,29 @@ func (m *AppInstall) validateAzureAccount(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) validateCreatedBy(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedBy) { // not required
+		return nil
+	}
+
+	if m.CreatedBy != nil {
+		if err := m.CreatedBy.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("created_by")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("created_by")
 			}
 
 			return err
@@ -720,6 +750,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateDriftedObjects(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -873,6 +907,31 @@ func (m *AppInstall) contextValidateAzureAccount(ctx context.Context, formats st
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("azure_account")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateCreatedBy(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CreatedBy != nil {
+
+		if swag.IsZero(m.CreatedBy) { // not required
+			return nil
+		}
+
+		if err := m.CreatedBy.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("created_by")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("created_by")
 			}
 
 			return err

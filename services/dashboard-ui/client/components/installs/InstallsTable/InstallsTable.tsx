@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
+import { ContextTooltip } from '@/components/common/ContextTooltip'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -54,16 +56,66 @@ const ActionSkeleton = () => (
 
 export type InstallRow = {
   action: ReactNode
+  activity: ReactNode
   appHref: string
   appName: string
-  created_at: string
   installId: string
   name: string
   nameHref: string
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
-  updated_at: string
+}
+
+function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
+  const account = install?.created_by
+  if (!account?.email) return undefined
+  const source = account.account_type === 'service' ? 'API / CLI' : 'Dashboard'
+  return { email: account.email, source }
+}
+
+function ActivityCell({ install }: { install: TInstall }) {
+  const createdBy = getCreatedBySubtitle(install)
+
+  return (
+    <ContextTooltip
+      position="top"
+      width="w-64"
+      items={[
+        ...(createdBy
+          ? [
+              {
+                id: 'created-by',
+                title: createdBy.email,
+                subtitle: `via ${createdBy.source}`,
+                leftContent: <Icon variant="User" size={16} />,
+              },
+            ]
+          : []),
+        {
+          id: 'created',
+          title: 'Created',
+          subtitle: (
+            <Time variant="label" time={install?.created_at} format="long-datetime" />
+          ),
+          leftContent: <Icon variant="PlusCircle" size={16} />,
+        },
+        {
+          id: 'updated',
+          title: 'Updated',
+          subtitle: (
+            <Time variant="label" time={install?.updated_at} format="long-datetime" />
+          ),
+          leftContent: <Icon variant="ClockCounterClockwise" size={16} />,
+        },
+      ]}
+    >
+      <span className="inline-flex items-center gap-1.5 cursor-default">
+        <Time time={install?.updated_at} variant="subtext" format="relative" />
+        <Icon variant="Info" size={12} theme="neutral" />
+      </span>
+    </ContextTooltip>
+  )
 }
 
 export function parseInstallsToTableData(
@@ -93,10 +145,10 @@ export function parseInstallsToTableData(
         variant="subtext"
         colorVariant="color"
         displayVariant="icon-only"
+        iconSize="20"
       />
     ),
-    created_at: install?.created_at,
-    updated_at: install?.updated_at,
+    activity: <ActivityCell install={install} />,
     action: (
       <div className="hidden md:block">
         <QuickManagementDropdown install={install} />
@@ -135,12 +187,6 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
-    enableSorting: true,
-    accessorKey: 'region',
-    header: 'Region',
-    cell: (info) => <Text>{info.getValue() as string}</Text>,
-  },
-  {
     accessorKey: 'platform',
     header: 'Platform',
     cell: (info) => (
@@ -151,20 +197,16 @@ const columns: ColumnDef<InstallRow>[] = [
     enableSorting: true,
   },
   {
-    accessorKey: 'created_at',
-    header: 'Created',
-    cell: (info) => <Time time={info.getValue<string>()} variant="subtext" format="relative" />,
+    enableSorting: true,
+    accessorKey: 'region',
+    header: 'Region',
+    cell: (info) => <Text>{info.getValue() as string}</Text>,
   },
   {
-    accessorKey: 'updated_at',
-    header: 'Updated',
-    cell: (info) => (
-      <Time
-        time={info.getValue<string>()}
-        variant="subtext"
-        format="relative"
-      />
-    ),
+    enableSorting: false,
+    accessorKey: 'activity',
+    header: 'Activity',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,
@@ -221,8 +263,7 @@ export const InstallsTableSkeleton = () => {
     region: <RegionSkeleton />,
     statuses: <StatusesSkeleton />,
     platform: <PlatformSkeleton />,
-    created_at: '',
-    updated_at: '',
+    activity: <Skeleton height="14px" width="80px" />,
     action: '',
   }))
 
@@ -245,28 +286,22 @@ export const InstallsTableSkeleton = () => {
       cell: (info) => info.getValue() as ReactNode,
     },
     {
-      enableSorting: true,
-      accessorKey: 'region',
-      header: 'Region',
-      cell: (info) => info.getValue() as ReactNode,
-    },
-    {
       accessorKey: 'platform',
       header: 'Platform',
       cell: (info) => info.getValue() as ReactNode,
       enableSorting: true,
     },
     {
-      accessorKey: 'created_at',
-      header: 'Created',
-      cell: () => <Skeleton height="16px" width="100px" />,
       enableSorting: true,
+      accessorKey: 'region',
+      header: 'Region',
+      cell: (info) => info.getValue() as ReactNode,
     },
     {
-      accessorKey: 'updated_at',
-      header: 'Updated',
-      cell: () => <Skeleton height="16px" width="100px" />,
-      enableSorting: true,
+      enableSorting: false,
+      accessorKey: 'activity',
+      header: 'Activity',
+      cell: (info) => info.getValue() as ReactNode,
     },
     {
       enableSorting: false,
