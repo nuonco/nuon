@@ -16,11 +16,14 @@ func init() {
 	config.RegisterDefault("dist_dir", "./dist")
 	config.RegisterDefault("public_dir", "./public")
 	config.RegisterDefault("middlewares", []string{
+		"metrics",
 		"cors",
 	})
 	config.RegisterDefault("nuon_api_url", "https://api.nuon.co")
 	config.RegisterDefault("nuon_app_url", "http://localhost:4000")
 	config.RegisterDefault("github_app_name", "nuon-connect")
+	config.RegisterDefault("disable_metrics", true)
+	config.RegisterDefault("service_deployment", "local")
 }
 
 type Config struct {
@@ -46,6 +49,8 @@ type Config struct {
 	DatadogApplicationKey string `config:"datadog_application_key"`
 	DatadogTraceDebug     bool   `config:"datadog_trace_debug"`
 	DatadogAPIUrl         string `config:"datadog_api_url"`
+	DisableMetrics        bool   `config:"disable_metrics"`
+	ServiceDeployment     string `config:"service_deployment"`
 	IsBYOC                bool   `config:"nuon_byoc"`
 	SFTrialEndpoint       string `config:"sf_trial_access_endpoint"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
