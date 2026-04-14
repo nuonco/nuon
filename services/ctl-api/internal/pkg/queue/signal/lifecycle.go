@@ -75,6 +75,15 @@ type SignalLifecycleContext struct {
 	Operation   string  `json:"operation"`
 }
 
+// SignalWithLogStream is an optional interface that signals can implement
+// to expose the log stream ID they created during execution. The handler uses
+// this after Execute() returns to pass the ID to lifecycle hooks for cleanup.
+type SignalWithLogStream interface {
+	Signal
+
+	LogStreamID() string
+}
+
 func AsSignalLifecycleHook(f any) any {
 	return fx.Annotate(
 		f,
