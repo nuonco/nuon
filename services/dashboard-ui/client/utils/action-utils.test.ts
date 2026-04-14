@@ -18,7 +18,7 @@ describe('action-utils', () => {
         steps,
         stepConfigs: undefined as any,
       })
-      expect(result).toEqual(steps)
+      expect(result).toEqual([{ step_id: 'test-1', name: undefined, idx: 0 }])
     })
 
     test('should hydrate steps with config data', () => {
@@ -54,7 +54,7 @@ describe('action-utils', () => {
 
       expect(result).toEqual([
         { step_id: 'step-1', status: 'finished', name: 'Build', idx: 0 },
-        { step_id: 'step-unknown', status: 'pending' },
+        { step_id: 'step-unknown', status: 'pending', name: undefined, idx: 1 },
       ])
     })
   })

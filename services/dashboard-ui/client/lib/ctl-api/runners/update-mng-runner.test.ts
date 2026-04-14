@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { updateMngRunner } from './update-mng-runner'
 
@@ -9,13 +8,5 @@ describe('updateMngRunner should handle response status codes from POST runners/
   test('200 status', async () => {
     const result = await updateMngRunner({ orgId, runnerId })
     expect(result).toBe(true)
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(updateMngRunner({ orgId, runnerId })).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

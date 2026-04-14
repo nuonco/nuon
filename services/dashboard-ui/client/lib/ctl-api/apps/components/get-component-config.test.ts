@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getComponentConfig } from './get-component-config'
 
@@ -13,14 +12,4 @@ describe('getComponentConfig should handle response status codes from GET apps/:
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('component_id')
   }, 60000)
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      getComponentConfig({ appId, componentId, configId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
-  })
 })

@@ -46,6 +46,13 @@ describe('useFormPersistence', () => {
 
     expect(result.current.hasDraft).toBe(true)
     expect(result.current.draftTimestamp).toBe(draftData.timestamp)
+    // draftValues is gated behind restoreDraft() — null until explicitly restored
+    expect(result.current.draftValues).toBeNull()
+
+    act(() => {
+      result.current.restoreDraft()
+    })
+
     expect(result.current.draftValues).toEqual(draftData.values)
   })
 

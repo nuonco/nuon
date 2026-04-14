@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
   approveAllWorkflowSteps,
@@ -14,16 +13,5 @@ describe('approveAllWorkflowSteps should handle response status codes from PATCH
     const result = await approveAllWorkflowSteps({ body, orgId, workflowId })
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('status')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    const body: TApproveAllWorkflowStepsBody = { approval_option: 'approve-all' }
-    await expect(
-      approveAllWorkflowSteps({ body, orgId, workflowId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

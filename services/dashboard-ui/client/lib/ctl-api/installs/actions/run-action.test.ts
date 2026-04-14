@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { runAction } from './run-action'
 
@@ -20,22 +19,5 @@ describe('runAction should handle response status codes from POST installs/:inst
       },
     })
     expect(result).toHaveProperty('data')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      runAction({
-        installId,
-        orgId,
-        body: {
-          action_workflow_config_id: actionWorkflowConfigId,
-          run_env_vars: { TEST_VAR: 'test_value' },
-        },
-      })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

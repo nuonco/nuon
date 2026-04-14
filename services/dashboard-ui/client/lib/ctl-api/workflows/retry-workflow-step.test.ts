@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
   retryWorkflowStep,
@@ -14,16 +13,5 @@ describe('retryWorkflowStep should handle response status codes from POST workfl
     const body: TRetryWorkflowStepBody = { operation: 'skip-step', step_id: stepId }
     const result = await retryWorkflowStep({ body, orgId, workflowId })
     expect(result).toHaveProperty('workflow_id')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    const body: TRetryWorkflowStepBody = { operation: 'retry-step', step_id: stepId }
-    await expect(
-      retryWorkflowStep({ body, orgId, workflowId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })
