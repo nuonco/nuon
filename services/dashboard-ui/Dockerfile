@@ -29,17 +29,11 @@ COPY client client
 
 FROM deps AS lint
 
-COPY --from=openapi-spec /openapi/swagger-v3.json /openapi/swagger-v3.json
-ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
-
-RUN npm run lint && npm run tsc
+RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
 
 FROM deps AS lint-local-spec
 
-COPY --from=openapi-spec /openapi/swagger-v3.json /openapi/swagger-v3.json
-ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
-
-RUN npm run lint && npm run tsc
+RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
 
 # --- Test targets ---
 
