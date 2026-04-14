@@ -6,8 +6,9 @@ import (
 
 // WorkflowInfo holds Temporal workflow execution info for display.
 type WorkflowInfo struct {
-	Status     string
-	Activities []ActivityInfo
+	Status         string
+	Activities     []ActivityInfo
+	UpdateHandlers []string
 }
 
 // ActivityInfo holds Temporal activity execution info for display.

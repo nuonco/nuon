@@ -23,7 +23,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to initialize state")
 	}
 
-	if err := signal.ApplyUpdateHandlers(h.sig, ctx); err != nil {
+	if err := signal.RegisterUpdateHandlers(h.sig, ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register signal update handlers")
 	}
 

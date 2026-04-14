@@ -12,9 +12,9 @@ type SignalWithUpdateHandlers interface {
 	RegisterUpdateHandlers(ctx workflow.Context) error
 }
 
-// ApplyUpdateHandlers checks if the signal implements SignalWithUpdateHandlers
+// RegisterUpdateHandlers checks if the signal implements SignalWithUpdateHandlers
 // and calls RegisterUpdateHandlers if so.
-func ApplyUpdateHandlers(sig Signal, ctx workflow.Context) error {
+func RegisterUpdateHandlers(sig Signal, ctx workflow.Context) error {
 	if su, ok := sig.(SignalWithUpdateHandlers); ok {
 		return su.RegisterUpdateHandlers(ctx)
 	}

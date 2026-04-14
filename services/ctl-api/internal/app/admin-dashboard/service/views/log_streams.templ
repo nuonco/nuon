@@ -1,0 +1,307 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
+)
+
+const ActivePageLogStreams ActivePage = "log-streams"
+
+templ LogStreamSearch() {
+	@Layout("Log Streams", ActivePageLogStreams) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Log Stream Viewer
+					}
+					@card.Description() {
+						Enter a log stream ID or owner ID to view logs
+					}
+				}
+				@card.Content() {
+					<form action="" method="GET" class="flex gap-3">
+						<input
+							type="text"
+							name="id"
+							id="log-stream-id-input"
+							placeholder="Enter log stream ID (ls...) or owner ID..."
+							class="flex-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cyan focus:border-transparent"
+							autofocus
+						/>
+						<button
+							type="submit"
+							class="bg-cyan text-cyan-foreground px-4 py-2 rounded text-sm font-medium hover:bg-cyan/90 transition-colors"
+							onclick="event.preventDefault(); var id = document.getElementById('log-stream-id-input').value.trim(); if(id) window.location.href='/log-streams/'+encodeURIComponent(id);"
+						>
+							View Logs
+						</button>
+					</form>
+				}
+			}
+		</div>
+	}
+}
+
+templ LogStreamDetail(ls *app.LogStream, logs []app.OtelLogRecord, currentPage, totalPages int) {
+	@Layout("Log Stream: " + ls.ID, ActivePageLogStreams) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb -->
+			<div class="mb-6 flex gap-2 text-sm">
+				<a href="/log-streams" class="text-cyan hover:underline">Log Streams</a>
+				<span class="text-muted-foreground">→</span>
+				<span class="text-muted-foreground">{ ls.ID }</span>
+			</div>
+
+			<!-- Header Card -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-center gap-3 mb-2">
+					<h1 class="text-2xl font-bold">Log Stream</h1>
+					if ls.Open {
+						@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
+							Open
+						}
+					} else {
+						@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+							Closed
+						}
+					}
+				</div>
+				<div class="flex items-center gap-2 mb-1">
+					<span class="text-xs text-muted-foreground uppercase">ID:</span>
+					<span id="ls-detail-id" class="font-mono text-xs text-foreground">{ ls.ID }</span>
+					@copybutton.CopyButton(copybutton.Props{TargetID: "ls-detail-id"})
+				</div>
+
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Owner Type</div>
+						<div class="font-mono text-sm">{ ls.OwnerType }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Owner ID</div>
+						<div class="font-mono text-sm">{ ls.OwnerID }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Org ID</div>
+						<div class="font-mono text-sm">
+							<a href={ templ.URL("/orgs/" + ls.OrgID) } class="text-cyan hover:underline">{ ls.OrgID }</a>
+						</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Created</div>
+						<div class="font-mono text-sm">{ ls.CreatedAt.Format("2006-01-02 15:04:05") }</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Logs -->
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Logs
+					}
+				}
+				@card.Content() {
+					@LogStreamLogsTable(ls.ID, logs, currentPage, totalPages)
+				}
+			}
+		</div>
+		@copybutton.Script()
+	}
+}
+
+templ LogStreamLogsTable(logStreamID string, logs []app.OtelLogRecord, currentPage, totalPages int) {
+	<div id="logs-table-wrapper">
+		if len(logs) == 0 {
+			<div class="text-sm text-muted-foreground">No logs found.</div>
+		} else {
+			<div class="space-y-1">
+				for i, log := range logs {
+					@logEntry(i, log)
+				}
+			</div>
+		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@logStreamPagination(logStreamID, currentPage, totalPages)
+			</div>
+		}
+	</div>
+}
+
+templ logEntry(idx int, log app.OtelLogRecord) {
+	<details class="group rounded border border-border">
+		<summary class="flex items-center gap-2 py-1 px-2 text-xs cursor-pointer list-none select-none hover:bg-muted/30 font-mono">
+			<span class="text-muted-foreground shrink-0 w-40">{ log.Timestamp.Format("15:04:05.000000") }</span>
+			@severityBadge(log.SeverityText)
+			if log.ServiceName != "" {
+				<span class="text-cyan shrink-0">{ log.ServiceName }</span>
+			}
+			<span class="truncate text-foreground">{ log.Body }</span>
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-2 space-y-2 text-xs">
+			<!-- Core fields -->
+			<div class="grid grid-cols-2 gap-2">
+				if log.TraceID != "" {
+					<div>
+						<span class="text-muted-foreground">Trace ID: </span>
+						<span class="font-mono">{ log.TraceID }</span>
+					</div>
+				}
+				if log.SpanID != "" {
+					<div>
+						<span class="text-muted-foreground">Span ID: </span>
+						<span class="font-mono">{ log.SpanID }</span>
+					</div>
+				}
+				if log.ScopeName != "" {
+					<div>
+						<span class="text-muted-foreground">Scope: </span>
+						<span class="font-mono">{ log.ScopeName }</span>
+					</div>
+				}
+				if log.RunnerJobID != "" {
+					<div>
+						<span class="text-muted-foreground">Runner Job: </span>
+						<span class="font-mono">{ log.RunnerJobID }</span>
+					</div>
+				}
+				if log.RunnerJobExecutionStep != "" {
+					<div>
+						<span class="text-muted-foreground">Exec Step: </span>
+						<span class="font-mono">{ log.RunnerJobExecutionStep }</span>
+					</div>
+				}
+			</div>
+
+			<!-- Resource Attributes -->
+			if len(log.ResourceAttributes) > 0 {
+				<details class="rounded border border-border">
+					<summary class="px-2 py-1 cursor-pointer text-muted-foreground hover:bg-muted/30">
+						Resource Attributes ({ fmt.Sprintf("%d", len(log.ResourceAttributes)) })
+					</summary>
+					<div class="px-2 py-1 space-y-1">
+						for k, v := range log.ResourceAttributes {
+							<div class="flex gap-2">
+								<span class="text-muted-foreground shrink-0">{ k }:</span>
+								<span class="font-mono break-all">{ v }</span>
+							</div>
+						}
+					</div>
+				</details>
+			}
+
+			<!-- Scope Attributes -->
+			if len(log.ScopeAttributes) > 0 {
+				<details class="rounded border border-border">
+					<summary class="px-2 py-1 cursor-pointer text-muted-foreground hover:bg-muted/30">
+						Scope Attributes ({ fmt.Sprintf("%d", len(log.ScopeAttributes)) })
+					</summary>
+					<div class="px-2 py-1 space-y-1">
+						for k, v := range log.ScopeAttributes {
+							<div class="flex gap-2">
+								<span class="text-muted-foreground shrink-0">{ k }:</span>
+								<span class="font-mono break-all">{ v }</span>
+							</div>
+						}
+					</div>
+				</details>
+			}
+
+			<!-- Log Attributes -->
+			if len(log.LogAttributes) > 0 {
+				<details class="rounded border border-border">
+					<summary class="px-2 py-1 cursor-pointer text-muted-foreground hover:bg-muted/30">
+						Log Attributes ({ fmt.Sprintf("%d", len(log.LogAttributes)) })
+					</summary>
+					<div class="px-2 py-1 space-y-1">
+						for k, v := range log.LogAttributes {
+							<div class="flex gap-2">
+								<span class="text-muted-foreground shrink-0">{ k }:</span>
+								<span class="font-mono break-all">{ v }</span>
+							</div>
+						}
+					</div>
+				</details>
+			}
+
+			<!-- Full body -->
+			if len(log.Body) > 120 {
+				<div>
+					<div class="text-muted-foreground mb-1">Full Body:</div>
+					<pre class="bg-background border border-border rounded p-2 font-mono text-[11px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ log.Body }</pre>
+				</div>
+			}
+		</div>
+	</details>
+}
+
+templ severityBadge(severity string) {
+	switch severity {
+		case "DEBUG", "TRACE":
+			<span class="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground shrink-0">{ severity }</span>
+		case "INFO":
+			<span class="px-1.5 py-0.5 rounded text-[10px] bg-info-bg text-info border border-info-border shrink-0">{ severity }</span>
+		case "WARN", "WARNING":
+			<span class="px-1.5 py-0.5 rounded text-[10px] bg-warning-bg text-warning border border-warning-border shrink-0">{ severity }</span>
+		case "ERROR", "FATAL":
+			<span class="px-1.5 py-0.5 rounded text-[10px] bg-error-bg text-error border border-error-border shrink-0">{ severity }</span>
+		default:
+			if severity != "" {
+				<span class="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground shrink-0">{ severity }</span>
+			}
+	}
+}
+
+templ logStreamPagination(logStreamID string, currentPage, totalPages int) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":    fmt.Sprintf("/log-streams/%s/logs/table?page=%d", logStreamID, currentPage-1),
+						"hx-target": "#logs-table-wrapper",
+						"hx-swap":   "outerHTML",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":    fmt.Sprintf("/log-streams/%s/logs/table?page=%d", logStreamID, pageNum),
+							"hx-target": "#logs-table-wrapper",
+							"hx-swap":   "outerHTML",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":    fmt.Sprintf("/log-streams/%s/logs/table?page=%d", logStreamID, currentPage+1),
+						"hx-target": "#logs-table-wrapper",
+						"hx-swap":   "outerHTML",
+					},
+				})
+			}
+		}
+	}
+}
