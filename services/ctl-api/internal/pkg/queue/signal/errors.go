@@ -41,6 +41,16 @@ func (e *SignalErrExecute) Unwrap() error {
 	return e.Err
 }
 
+// SignalErrBlocked indicates a phase was blocked by a lifecycle before-phase hook.
+type SignalErrBlocked struct {
+	Phase  SignalPhase
+	Reason string
+}
+
+func (e *SignalErrBlocked) Error() string {
+	return fmt.Sprintf("blocked by lifecycle hook during %s: %s", e.Phase, e.Reason)
+}
+
 // SignalErrPanic wraps a panic that occurred during signal processing.
 type SignalErrPanic struct {
 	Value any

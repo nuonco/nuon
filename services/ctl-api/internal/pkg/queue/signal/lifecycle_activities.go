@@ -3,6 +3,7 @@ package signal
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -60,11 +61,15 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Co
 		}
 
 		processedHooks++
+		hookStart := time.Now()
 		decision, err := hook.BeforePhase(ctx, req.Event)
+		hookDur := time.Since(hookStart)
 		if err != nil {
-			l.Error("before-phase hook failed", zap.String("hook", hook.Name()), zap.Error(err))
+			l.Error("before-phase hook failed", zap.String("hook", hook.Name()), zap.Duration("hook_duration", hookDur), zap.Error(err))
 			return nil, fmt.Errorf("before-phase hook %q failed: %w", hook.Name(), err)
 		}
+
+		l.Info("before-phase hook completed", zap.String("hook", hook.Name()), zap.Duration("hook_duration", hookDur))
 
 		if len(decision.Metadata) > 0 {
 			resp.Metadata = mergeSignalLifecycleMetadata(resp.Metadata, decision.Metadata)
@@ -120,12 +125,16 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		}
 
 		processedHooks++
+		hookStart := time.Now()
 		if err := hook.AfterPhase(ctx, req.Event, req.Outcome); err != nil {
 			failedHooks++
 			l.Error("after-phase hook failed",
 				zap.String("hook", hook.Name()),
+				zap.Duration("hook_duration", time.Since(hookStart)),
 				zap.Error(err))
+			continue
 		}
+		l.Info("after-phase hook completed", zap.String("hook", hook.Name()), zap.Duration("hook_duration", time.Since(hookStart)))
 	}
 
 	l.Info("completed signal lifecycle after-phase hooks",
