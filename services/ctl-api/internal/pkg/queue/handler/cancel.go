@@ -62,10 +62,12 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusReq)
 
 	dur := workflow.Now(ctx).Sub(start)
-	h.runAfterPhaseSafe(ctx, event, signal.SignalPhaseOutcome{
+	cancelOutcome := signal.SignalPhaseOutcome{
 		Status:   signal.SignalStatusCancelled,
 		Duration: dur,
-	})
+		Metadata: logStreamMetadata(h.sig),
+	}
+	h.runAfterPhaseSafe(ctx, event, cancelOutcome)
 
 	return &CancelResponse{}, nil
 }

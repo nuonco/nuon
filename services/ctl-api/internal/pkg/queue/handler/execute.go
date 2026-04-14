@@ -78,7 +78,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 	dur := workflow.Now(ctx).Sub(start)
 
 	// run after-phase hooks (best-effort)
-	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
+	h.runAfterPhaseSafe(ctx, event, buildOutcome(h.sig, err, dur))
 
 	if err != nil {
 		if h.canceled {

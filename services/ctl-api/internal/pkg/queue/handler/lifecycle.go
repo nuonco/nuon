@@ -72,18 +72,33 @@ func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseE
 	}
 }
 
-// outcomeFromError builds a SignalPhaseOutcome from an error and duration.
-func outcomeFromError(err error, dur time.Duration) signal.SignalPhaseOutcome {
-	if err != nil {
-		return signal.SignalPhaseOutcome{
-			Status:     signal.SignalStatusError,
-			ErrMessage: err.Error(),
-			Duration:   dur,
+// logStreamMetadata returns a metadata map containing the log stream ID
+// if the signal implements SignalWithLogStream and has a non-empty ID.
+// Returns nil otherwise.
+func logStreamMetadata(sig signal.Signal) map[string]any {
+	if ls, ok := sig.(signal.SignalWithLogStream); ok {
+		if id := ls.LogStreamID(); id != "" {
+			return map[string]any{
+				"log_stream_id": id,
+			}
 		}
 	}
+	return nil
+}
 
-	return signal.SignalPhaseOutcome{
+// buildOutcome builds a SignalPhaseOutcome from an error and duration.
+// If the signal implements SignalWithLogStream, the log stream ID is
+// included in metadata so that lifecycle hooks can close it.
+func buildOutcome(sig signal.Signal, err error, dur time.Duration) signal.SignalPhaseOutcome {
+	outcome := signal.SignalPhaseOutcome{
 		Status:   signal.SignalStatusSuccess,
 		Duration: dur,
+		Metadata: logStreamMetadata(sig),
 	}
+	if err != nil {
+		outcome.Status = signal.SignalStatusError
+		outcome.ErrMessage = err.Error()
+	}
+
+	return outcome
 }

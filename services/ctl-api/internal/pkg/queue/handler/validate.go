@@ -57,7 +57,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	dur := workflow.Now(ctx).Sub(start)
 
 	// run after-phase hooks (best-effort)
-	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
+	h.runAfterPhaseSafe(ctx, event, buildOutcome(h.sig, err, dur))
 
 	if err != nil {
 		validateErr := &signal.SignalErrValidate{Err: err}
