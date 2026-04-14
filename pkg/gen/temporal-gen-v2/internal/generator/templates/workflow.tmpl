@@ -13,6 +13,13 @@ func Exec{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow
 		{{- if .Options.WaitForCancellation}}
 		WaitForCancellation: true,
 		{{- end}}
+		{{- if .Options.Memo}}
+		Memo: map[string]interface{}{
+			{{- range $key, $value := .Options.Memo}}
+			"{{$key}}": "{{$value}}",
+			{{- end}}
+		},
+		{{- end}}
 	}
 
 	// Apply overrides
@@ -40,7 +47,12 @@ func Exec{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow
 				cwo.CronSchedule = opt.CronSchedule
 			}
 			if opt.Memo != nil {
-				cwo.Memo = opt.Memo
+				if cwo.Memo == nil {
+					cwo.Memo = make(map[string]interface{})
+				}
+				for k, v := range opt.Memo {
+					cwo.Memo[k] = v
+				}
 			}
 			if opt.SearchAttributes != nil {
 				cwo.SearchAttributes = opt.SearchAttributes

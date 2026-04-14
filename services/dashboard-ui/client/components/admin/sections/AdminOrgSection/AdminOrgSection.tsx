@@ -13,6 +13,7 @@ import {
   adminReprovisionOrg,
   adminRestartOrg,
   adminRestartOrgRunners,
+  adminRestartOrgQueues,
   adminRestartRunner,
   adminGracefulRunnerShutdown,
   adminForceRunnerShutdown,
@@ -98,6 +99,14 @@ export const AdminOrgSection = ({
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart the organization event loop. Continue?"
+        />
+        <AdminActionCard
+          title="Restart org queues"
+          description="Restart all queue workflows for this org"
+          action={() => adminRestartOrgQueues({ orgId, adminEmail })}
+          variant="warning"
+          requiresConfirmation
+          confirmationText="This will restart all queue workflows for this organization. Continue?"
         />
       </AdminActionGroup>
 

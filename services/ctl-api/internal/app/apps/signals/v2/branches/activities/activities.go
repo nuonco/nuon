@@ -7,7 +7,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -18,42 +20,48 @@ import (
 type Params struct {
 	fx.In
 
-	V             *validator.Validate
-	Helpers       *helpers.Helpers
-	DB            *gorm.DB `name:"psql"`
-	BlobService   blobstore.Service
-	AcctClient    *account.Client
-	AuthzClient   *authz.Client
-	Cfg           *internal.Config
-	L             *zap.Logger
-	RunnerHelpers *runnerhelpers.Helpers
-	VCSHelpers    *vcshelpers.Helpers
+	V                *validator.Validate
+	Helpers          *helpers.Helpers
+	DB               *gorm.DB `name:"psql"`
+	BlobService      blobstore.Service
+	AcctClient       *account.Client
+	AuthzClient      *authz.Client
+	Cfg              *internal.Config
+	L                *zap.Logger
+	RunnerHelpers    *runnerhelpers.Helpers
+	VCSHelpers       *vcshelpers.Helpers
+	ComponentHelpers *componenthelpers.Helpers
+	ActionsHelpers   *actionshelpers.Helpers
 }
 
 type Activities struct {
-	v             *validator.Validate
-	db            *gorm.DB
-	helpers       *helpers.Helpers
-	blobSvc       blobstore.Service
-	acctClient    *account.Client
-	authzClient   *authz.Client
-	cfg           *internal.Config
-	l             *zap.Logger
-	runnerHelpers *runnerhelpers.Helpers
-	vcsHelpers    *vcshelpers.Helpers
+	v                *validator.Validate
+	db               *gorm.DB
+	helpers          *helpers.Helpers
+	blobSvc          blobstore.Service
+	acctClient       *account.Client
+	authzClient      *authz.Client
+	cfg              *internal.Config
+	l                *zap.Logger
+	runnerHelpers    *runnerhelpers.Helpers
+	vcsHelpers       *vcshelpers.Helpers
+	componentHelpers *componenthelpers.Helpers
+	actionsHelpers   *actionshelpers.Helpers
 }
 
 func New(params Params) (*Activities, error) {
 	return &Activities{
-		v:             params.V,
-		db:            params.DB,
-		helpers:       params.Helpers,
-		blobSvc:       params.BlobService,
-		acctClient:    params.AcctClient,
-		authzClient:   params.AuthzClient,
-		cfg:           params.Cfg,
-		l:             params.L,
-		runnerHelpers: params.RunnerHelpers,
-		vcsHelpers:    params.VCSHelpers,
+		v:                params.V,
+		db:               params.DB,
+		helpers:          params.Helpers,
+		blobSvc:          params.BlobService,
+		acctClient:       params.AcctClient,
+		authzClient:      params.AuthzClient,
+		cfg:              params.Cfg,
+		l:                params.L,
+		runnerHelpers:    params.RunnerHelpers,
+		vcsHelpers:       params.VCSHelpers,
+		componentHelpers: params.ComponentHelpers,
+		actionsHelpers:   params.ActionsHelpers,
 	}, nil
 }

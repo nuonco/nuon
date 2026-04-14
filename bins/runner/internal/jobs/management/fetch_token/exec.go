@@ -41,7 +41,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		result, err = FetchAndStoreTokenAzure(ctx, h.apiClient, h.settings.Cfg.RunnerID)
 	default:
 		l.Info("authenticating with cloud instance credentials")
-		result, err = FetchAndStoreToken(ctx, h.apiClient)
+		result, err = FetchAndStoreToken(ctx, h.apiClient, h.settings.Cfg.RunnerAuthMethod, h.settings.Cfg.RunnerID)
 	}
 	if err != nil {
 		return err

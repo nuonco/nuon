@@ -1,11 +1,14 @@
 package queue
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type QueueWorkflowRequest struct {
@@ -31,6 +34,7 @@ type QueueState struct {
 // @temporal-gen-v2 workflow
 // @task-queue "queue"
 // @id-template queue-{{.QueueID}}
+// @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
 	q := &queue{
 		cfg:           w.cfg,
@@ -58,6 +62,9 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 	}
 	if !finished {
 		req.State = q.state
+		// Clear the log stream from context before continue-as-new so the next
+		// run doesn't inherit a stale log stream from a previously executed signal.
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, nil)
 		return workflow.NewContinueAsNewError(ctx, w.Queue, req)
 	}
 
@@ -77,6 +84,18 @@ type queue struct {
 	restarted bool
 	paused    bool
 	maxDepth  int
+
+	// idleTimeout is how long the queue can be idle before terminating.
+	// Loaded from the queue's DB record, falling back to config default.
+	idleTimeout time.Duration
+
+	// lastActivityTime tracks when any worker last received a signal or when the queue started.
+	// Used to detect idle queues that should terminate to free resources.
+	lastActivityTime time.Time
+
+	// activeWorkers tracks the number of workers currently processing a signal.
+	// Used to prevent continue-as-new while workers are mid-processing.
+	activeWorkers int
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -64,10 +65,14 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		ID:        q.Workflow.ID,
 		TaskQueue: workflows.APITaskQueue,
 		Memo: map[string]any{
-			"id":         q.ID,
-			"name":       q.Name,
-			"owner-id":   q.OwnerID,
-			"owner-type": q.OwnerType,
+			"type":          "queue",
+			"id":            q.ID,
+			"name":          q.Name,
+			"owner-id":      q.OwnerID,
+			"owner-type":    q.OwnerType,
+			"max-in-flight": q.MaxInFlight,
+			"max-depth":     q.MaxDepth,
+			"idle-timeout":  time.Duration(q.IdleTimeout).String(),
 		},
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{

@@ -1,15 +1,14 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -62,22 +61,17 @@ func (s *service) CreateAppAction(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
+	aw, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create action workflow: %w", err))
 		return
 	}
 
-	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, nil); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to ensure actions"))
-		return
-	}
-
-	s.evClient.Send(ctx, app.ID, &signals.Signal{
+	s.evClient.Send(ctx, aw.ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
 
-	ctx.JSON(http.StatusCreated, app)
+	ctx.JSON(http.StatusCreated, aw)
 }
 
 type CreateAppActionWorkflowRequest struct {
@@ -133,37 +127,23 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	app, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
+	aw, err := s.createActionWorkflow(ctx, org.ID, appID, &req)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create action workflow: %w", err))
 		return
 	}
 
-	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, nil); err != nil {
-		ctx.Error(errors.Wrap(err, "unable to ensure actions"))
-		return
-	}
-
-	s.evClient.Send(ctx, app.ID, &signals.Signal{
+	s.evClient.Send(ctx, aw.ID, &signals.Signal{
 		Type: signals.OperationCreated,
 	})
 
-	ctx.JSON(http.StatusCreated, app)
+	ctx.JSON(http.StatusCreated, aw)
 }
 
-func (s *service) createActionWorkflow(ctx context.Context, orgID, appID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
-	newAW := app.ActionWorkflow{
-		AppID:  appID,
-		OrgID:  orgID,
-		Name:   req.Name,
-		Status: app.ActionWorkflowStatusActive,
-	}
-
-	res := s.db.WithContext(ctx).
-		Create(&newAW)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create action workflow: %w", res.Error)
-	}
-
-	return &newAW, nil
+func (s *service) createActionWorkflow(ctx *gin.Context, orgID, appID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
+	return s.actionsHelpers.CreateAction(ctx, &helpers.CreateActionParams{
+		AppID: appID,
+		OrgID: orgID,
+		Name:  req.Name,
+	})
 }

@@ -9,10 +9,12 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 )
 
-// EnsureComponent creates a component if it doesn't exist.
-func EnsureComponent(ctx context.Context, db *gorm.DB, comp *config.Component, appID string) error {
+// EnsureComponent creates a component if it doesn't exist, using the shared helpers
+// for full initialization (queue creation, dependencies, install components).
+func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string) error {
 	_, err := getComponent(ctx, db, comp.Name, appID)
 	if err == nil {
 		return nil
@@ -25,16 +27,16 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, comp *config.Component, a
 		}
 	}
 
-	newComp := app.Component{
-		AppID: appID,
-		Name:  comp.Name,
-	}
-
-	res := db.WithContext(ctx).Create(&newComp)
-	if res.Error != nil {
+	_, err = helpers.CreateComponent(ctx, &componenthelpers.CreateComponentParams{
+		AppID:        appID,
+		Name:         comp.Name,
+		VarName:      comp.VarName,
+		Dependencies: comp.Dependencies,
+	})
+	if err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create component %s", comp.Name),
-			Err:         res.Error,
+			Err:         err,
 		}
 	}
 

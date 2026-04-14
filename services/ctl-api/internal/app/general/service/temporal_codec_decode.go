@@ -39,5 +39,5 @@ func (s *service) TemporalCodecDecode(ctx *gin.Context) {
 		payloadspb.Payloads = out
 	}
 
-	ctx.JSON(http.StatusOK, payloadspb)
+	ctx.JSON(http.StatusOK, &payloadspb)
 }

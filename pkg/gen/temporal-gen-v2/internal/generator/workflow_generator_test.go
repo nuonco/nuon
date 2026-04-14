@@ -79,3 +79,75 @@ func TestGenerateWorkflowWithCallerIDTemplate(t *testing.T) {
 	// Verify Info field is still present (backward compatibility)
 	assert.Contains(t, code, "Info     *workflow.Info")
 }
+
+func TestGenerateWorkflowWithMemo(t *testing.T) {
+	data := WorkflowData{
+		Name:         "QueueWorkflow",
+		OriginalName: "QueueWorkflow",
+		InputType:    "QueueInput",
+		OutputType:   "",
+		Options: &parser.WorkflowOptions{
+			Memo: map[string]string{
+				"type": "queue",
+			},
+		},
+	}
+
+	output, err := GenerateWorkflow(data)
+	require.NoError(t, err)
+
+	code := string(output)
+
+	// Verify static memo is initialized in cwo
+	assert.Contains(t, code, `Memo: map[string]interface{}{`)
+	assert.Contains(t, code, `"type": "queue"`)
+
+	// Verify merge logic instead of replace
+	assert.Contains(t, code, "for k, v := range opt.Memo")
+	assert.Contains(t, code, "cwo.Memo[k] = v")
+}
+
+func TestGenerateWorkflowWithMultipleMemo(t *testing.T) {
+	data := WorkflowData{
+		Name:         "HandlerWorkflow",
+		OriginalName: "HandlerWorkflow",
+		InputType:    "HandlerInput",
+		OutputType:   "",
+		Options: &parser.WorkflowOptions{
+			Memo: map[string]string{
+				"type":  "queue-handler",
+				"owner": "system",
+			},
+		},
+	}
+
+	output, err := GenerateWorkflow(data)
+	require.NoError(t, err)
+
+	code := string(output)
+
+	assert.Contains(t, code, `"queue-handler"`)
+	assert.Contains(t, code, `"owner"`)
+	assert.Contains(t, code, `"system"`)
+}
+
+func TestGenerateWorkflowWithoutMemo(t *testing.T) {
+	data := WorkflowData{
+		Name:         "SimpleWorkflow",
+		OriginalName: "SimpleWorkflow",
+		InputType:    "SimpleInput",
+		OutputType:   "",
+		Options:      &parser.WorkflowOptions{},
+	}
+
+	output, err := GenerateWorkflow(data)
+	require.NoError(t, err)
+
+	code := string(output)
+
+	// Verify no static memo initialization when no memo is set
+	assert.NotContains(t, code, `Memo: map[string]interface{}{`)
+
+	// Verify merge logic is still present for dynamic opts
+	assert.Contains(t, code, "for k, v := range opt.Memo")
+}

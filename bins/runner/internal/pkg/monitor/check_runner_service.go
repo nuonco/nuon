@@ -156,7 +156,7 @@ func (h *Monitor) ensureRunnerTokenValid(ctx context.Context) error {
 	case "azure":
 		result, err = fetchtoken.FetchTokenAzure(ctx, unauthClient, h.settings.Cfg.RunnerID)
 	default:
-		result, err = fetchtoken.FetchToken(ctx, unauthClient)
+		result, err = fetchtoken.FetchToken(ctx, unauthClient, h.settings.Cfg.RunnerAuthMethod, h.settings.Cfg.RunnerID)
 	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new token")

@@ -31,6 +31,7 @@ func (b *gcpBuilder) Build(appAttributes []string) (*config.AppConfig, error) {
 		},
 		Runner: &config.AppRunnerConfig{
 			RunnerType: "gcp",
+			HelmDriver: "configmap",
 		},
 		Stack: &config.StackConfig{
 			Type:        "gcp-terraform",
