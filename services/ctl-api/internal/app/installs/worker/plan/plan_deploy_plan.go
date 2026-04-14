@@ -90,20 +90,30 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.NoopDeployPlan = p.createNoopDeployPlan()
 	case app.ComponentTypeTerraformModule:
 		l.Info("generating terraform plan")
-		tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
-		if err != nil {
-			l.Info("error generating terraform plan", zap.Error(err))
-			return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
+		// In sandbox mode, skip the real plan (which renders env vars / variables
+		// against install state that has empty component outputs in sandbox mode)
+		// — the sandbox override below generates hardcoded content instead.
+		if !install.SandboxMode.Bool {
+			tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+			if err != nil {
+				l.Info("error generating terraform plan", zap.Error(err))
+				return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
+			}
+			plan.TerraformDeployPlan = tfPlan
 		}
-		plan.TerraformDeployPlan = tfPlan
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
-		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
-		if err != nil {
-			l.Error("error generating helm plan", zap.Error(err))
-			return nil, nil, errors.Wrap(err, "unable to helm deploy plan")
+		// In sandbox mode, skip the real plan (which renders values / namespace
+		// against install state that has empty component outputs in sandbox mode)
+		// — the sandbox override below generates hardcoded content instead.
+		if !install.SandboxMode.Bool {
+			helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+			if err != nil {
+				l.Error("error generating helm plan", zap.Error(err))
+				return nil, nil, errors.Wrap(err, "unable to helm deploy plan")
+			}
+			plan.HelmDeployPlan = helmPlan
 		}
-		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
 		// In sandbox mode, skip the real plan (which requires a synced OCI artifact)
@@ -118,12 +128,17 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		}
 	case app.ComponentTypePulumi:
 		l.Info("generating pulumi plan")
-		pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
-		if err != nil {
-			l.Error("error generating pulumi plan", zap.Error(err))
-			return nil, nil, errors.Wrap(err, "unable to create pulumi deploy plan")
+		// In sandbox mode, skip the real plan (which renders config / env vars
+		// against install state that has empty component outputs in sandbox mode)
+		// — the sandbox override below generates hardcoded content instead.
+		if !install.SandboxMode.Bool {
+			pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+			if err != nil {
+				l.Error("error generating pulumi plan", zap.Error(err))
+				return nil, nil, errors.Wrap(err, "unable to create pulumi deploy plan")
+			}
+			plan.PulumiDeployPlan = pulumiPlan
 		}
-		plan.PulumiDeployPlan = pulumiPlan
 	}
 
 	if install.SandboxMode.Bool {
@@ -145,7 +160,12 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 
 			plan.SandboxMode.KubernetesManifest = sandboxPlan
 		case app.ComponentTypeTerraformModule:
-			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, plan.TerraformDeployPlan)
+			installComp, err := activities.AwaitGetInstallComponentByID(ctx, installDeploy.InstallComponentID)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to get install component for sandbox plan")
+			}
+
+			sandboxPlan, err := p.createTerraformDeploySandboxMode(ctx, installComp.TerraformWorkspace.ID)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "unable to create sandbox plan")
 			}

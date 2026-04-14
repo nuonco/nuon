@@ -134,7 +134,7 @@ func (p *Planner) createTerraformDeployPlan(
 
 func (p *Planner) createTerraformDeploySandboxMode(
 	ctx workflow.Context,
-	req *plantypes.TerraformDeployPlan,
+	workspaceID string,
 ) (*plantypes.TerraformSandboxMode, error) {
 	pdcJSONByts := new(bytes.Buffer)
 	if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
@@ -147,7 +147,7 @@ func (p *Planner) createTerraformDeploySandboxMode(
 	}
 
 	return &plantypes.TerraformSandboxMode{
-		WorkspaceID: req.TerraformBackend.WorkspaceID,
+		WorkspaceID: workspaceID,
 
 		StateJSON:           stJSONByts.Bytes(),
 		PlanContents:        FakeTerraformPlanContents,
