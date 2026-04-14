@@ -27,7 +27,7 @@ export type TRoleInfo = {
   policies: Array<{ name?: string; contents?: string }>
 }
 
-const CARD_W = 240
+const CARD_W = 280
 const CARD_H = 64
 const CARD_GAP = 12
 const PAD = 16

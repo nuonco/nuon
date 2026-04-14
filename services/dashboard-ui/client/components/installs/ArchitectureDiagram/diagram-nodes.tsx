@@ -55,16 +55,17 @@ export const ContainerNode = memo(({ data }: NodeProps) => {
       )}
       style={{ width, height }}
     >
-      <div className="flex items-center gap-1.5 px-3 py-2">
+      <div className="flex items-center gap-1.5 px-3 py-2 overflow-hidden">
         <Icon
           variant={data.icon as TIconVariant}
           size={14}
           theme="neutral"
+          className="shrink-0"
         />
-        <Text variant="label" weight="strong" theme="neutral">
+        <Text variant="label" weight="strong" theme="neutral" className="truncate !block min-w-0">
           {data.label as string}
         </Text>
-        {status ? <Status status={status} variant="badge" /> : null}
+        {status ? <Status status={status} variant="badge" className="shrink-0" /> : null}
       </div>
     </div>
   )
@@ -203,7 +204,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
       <div
         aria-label={`${name} — ${COMPONENT_TYPE_LABELS[componentType] || 'Component'}`}
         className={cn(
-          'rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm',
+          'rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm overflow-hidden',
           isDrifted && '!border-orange-400 dark:!border-orange-500/40'
         )}
         style={{ width, height: 56 }}
@@ -215,17 +216,16 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
           colorVariant="color"
           iconSize="16"
         />
-        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <Text
-            variant="label"
-            weight="strong"
-            className="truncate !block"
+        <div className="flex flex-col gap-0.5 min-w-0 flex-1 overflow-hidden">
+          <span
+            className="text-[11px] leading-[16px] font-strong overflow-hidden text-ellipsis whitespace-nowrap block"
+            title={name}
           >
             {name}
-          </Text>
-          <Text variant="label" theme="neutral" className="truncate !block">
+          </span>
+          <span className="text-[11px] leading-[16px] text-cool-grey-600 dark:text-white/70 overflow-hidden text-ellipsis whitespace-nowrap block">
             {COMPONENT_TYPE_LABELS[componentType] || 'Component'}
-          </Text>
+          </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isDrifted && (
