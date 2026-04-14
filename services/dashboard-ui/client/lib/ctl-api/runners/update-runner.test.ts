@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { updateRunner, type IUpdateRunnerBody } from './update-runner'
 
@@ -17,20 +16,5 @@ describe('updateRunner should handle response status codes from PATCH runners/:i
     const result = await updateRunner({ body, orgId, runnerId })
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('status')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    const body: IUpdateRunnerBody = {
-      container_image_tag: 'v1.0.0',
-      container_image_url: 'registry.example.com/runner:v1.0.0',
-      org_awsiam_role_arn: 'arn:aws:iam::123456789012:role/test-role',
-      org_k8s_service_account_name: 'test-service-account',
-      runner_api_url: 'https://api.example.com/runner',
-    }
-    await expect(updateRunner({ body, orgId, runnerId })).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

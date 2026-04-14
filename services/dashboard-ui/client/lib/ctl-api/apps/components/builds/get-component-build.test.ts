@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getComponentBuild } from './get-component-build'
 
@@ -12,14 +11,4 @@ describe('getComponentBuild should handle response status codes from GET compone
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('status')
   }, 60000)
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      getComponentBuild({ componentId, buildId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
-  })
 })

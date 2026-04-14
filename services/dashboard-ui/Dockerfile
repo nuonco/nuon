@@ -11,15 +11,12 @@ WORKDIR /src
 RUN apk add --no-cache build-base make python3 py3-pip
 
 COPY \
-    .eslintrc.json \
     .prettierrc \
     vitest.config.ts \
     vitest.setup.ts \
     package-lock.json \
     postcss.config.js \
-    tailwind.config.ts \
     package.json \
-    tsconfig.json \
     ./
 
 RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm install
@@ -27,18 +24,17 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm install
 COPY test test
 COPY scripts scripts
 COPY public public
-COPY src src
 COPY client client
 
 # --- Lint targets ---
 
 FROM deps AS lint
 
-RUN npm run lint:spa
+RUN npm run lint
 
 FROM deps AS lint-local-spec
 
-RUN npm run lint:spa
+RUN npm run lint
 
 # --- Test targets ---
 
@@ -61,7 +57,7 @@ FROM deps AS build-spa
 
 ARG NUON_API_URL=https://api.stage.nuon.co
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build:spa
+RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build
 
 # --- Build Go server ---
 

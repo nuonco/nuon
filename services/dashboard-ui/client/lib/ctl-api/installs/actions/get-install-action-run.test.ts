@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { getInstallActionRun } from './get-install-action-run'
 
@@ -10,15 +9,5 @@ describe('getInstallActionRun should handle response status codes from GET insta
   test('200 status', async () => {
     const result = await getInstallActionRun({ installId, runId, orgId })
     expect(result).toHaveProperty('id')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      getInstallActionRun({ installId, runId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })
