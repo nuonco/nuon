@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 type Params struct {
@@ -39,6 +40,7 @@ type Params struct {
 	Features        *features.Features
 	EndpointAudit   *api.EndpointAudit
 	QueueClient     *queueclient.Client
+	EmitterClient   *emitterclient.Client
 }
 
 type service struct {
@@ -58,6 +60,7 @@ type service struct {
 	features        *features.Features
 	endpointAudit   *api.EndpointAudit
 	queueClient     *queueclient.Client
+	emitterClient   *emitterclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -146,6 +149,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-add-priority", s.AdminAddPriority)
 			org.POST("/admin-forget", s.AdminForgetOrg)
 			org.POST("/admin-force-sandbox-mode", s.AdminForceSandboxMode)
+			org.POST("/admin-restart-queues", s.RestartOrgQueues)
 			org.POST("/admin-restart-runners", s.AdminRestartRunners)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)
 			org.POST("/admin-add-tags", s.AdminAddTags)
@@ -188,5 +192,6 @@ func New(params Params) *service {
 		accountsHelpers: params.AccountsHelpers,
 		features:        params.Features,
 		queueClient:     params.QueueClient,
+		emitterClient:   params.EmitterClient,
 	}
 }

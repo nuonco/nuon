@@ -30,6 +30,8 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
+	q.lastActivityTime = workflow.Now(ctx)
+
 	l.Info("starting workers")
 	if err := q.startWorkers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to start workers")
@@ -37,8 +39,8 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	q.ready = true
 
-	if err := workflow.Await(ctx, func() bool {
-		return generics.AnyTrue(q.stopped, q.restarted)
+	if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
+		return generics.AnyTrue(q.stopped, q.restarted) || q.isIdle(ctx)
 	}); err != nil {
 		return false, err
 	}
@@ -47,6 +49,10 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, nil
 	}
 	if q.stopped {
+		return true, nil
+	}
+	if q.isIdle(ctx) {
+		l.Info("queue is idle, terminating workflow")
 		return true, nil
 	}
 

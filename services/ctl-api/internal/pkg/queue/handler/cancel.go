@@ -7,8 +7,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const (
@@ -52,14 +52,14 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 	}
 
 	// persist cancelled status to DB
-	statusReq := &activities.UpdateQueueSignalStatusRequest{
+	statusReq := statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusCancelled,
 	}
 	if cancelCallbackInvoked {
 		statusReq.StatusDescription = "cancel-callback-invoked"
 	}
-	_ = activities.AwaitUpdateQueueSignalStatus(ctx, statusReq)
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusReq)
 
 	dur := workflow.Now(ctx).Sub(start)
 	h.runAfterPhaseSafe(ctx, event, signal.SignalPhaseOutcome{
