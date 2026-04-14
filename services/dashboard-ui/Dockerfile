@@ -29,11 +29,11 @@ COPY client client
 
 FROM deps AS lint
 
-RUN npm run lint
+RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
 
 FROM deps AS lint-local-spec
 
-RUN npm run lint
+RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
 
 # --- Test targets ---
 
