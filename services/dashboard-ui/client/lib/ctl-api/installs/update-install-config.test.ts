@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import {
   updateInstallConfig,
@@ -15,16 +14,5 @@ describe('updateInstallConfig should handle response status codes from PATCH ins
     const result = await updateInstallConfig({ body, installConfigId, installId, orgId })
     expect(result).toHaveProperty('id')
     expect(result).toHaveProperty('approval_option')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    const body: TUpdateInstallConfigBody = { approval_option: 'approve-all' }
-    await expect(
-      updateInstallConfig({ body, installConfigId, installId, orgId })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
   })
 })

@@ -2413,6 +2413,13 @@ export interface paths {
      */
     post: operations["CreateWorkflowStepApprovalResponse"];
   };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/await": {
+    /**
+     * long-poll for workflow step completion
+     * @description Long-poll for a workflow step to complete. Blocks until the step finishes or a 60-second timeout is reached.
+     */
+    get: operations["AwaitWorkflowStep"];
+  };
   "/v1/workflows/{workflow_id}/steps/{step_id}/retry": {
     /**
      * rerun the workflow steps starting from input step id, can be used to retry a failed step
@@ -4017,6 +4024,7 @@ export interface components {
       created_by_id?: string;
       emitters?: components["schemas"]["app.QueueEmitter"][];
       id?: string;
+      idle_timeout?: number;
       max_depth?: number;
       max_in_flight?: number;
       metadata?: {
@@ -4070,6 +4078,7 @@ export interface components {
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
       emitter_id?: string;
+      execution_count?: number;
       id?: string;
       org_id?: string;
       owner_id?: string;
@@ -4387,7 +4396,7 @@ export interface components {
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     /** @enum {string} */
-    "app.StackType": "aws-cloudformation" | "gcp-terraform";
+    "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
@@ -23257,6 +23266,58 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * long-poll for workflow step completion
+   * @description Long-poll for a workflow step to complete. Blocks until the step finishes or a 60-second timeout is reached.
+   */
+  AwaitWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow id */
+        workflow_id: string;
+        /** @description step id */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStep"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Request Timeout */
+      408: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

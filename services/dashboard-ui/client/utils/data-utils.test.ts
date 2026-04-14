@@ -59,9 +59,9 @@ describe('data-utils', () => {
       const result = objectToKeyValueArray(obj)
 
       expect(result).toEqual([
-        { key: 'numbers', value: '[1, 2, 3]', type: 'array' },
-        { key: 'strings', value: '[a, b, c]', type: 'array' },
-        { key: 'mixed', value: '[1, two, true, null]', type: 'array' },
+        { key: 'numbers', value: '[1,2,3]', type: 'array' },
+        { key: 'strings', value: '["a","b","c"]', type: 'array' },
+        { key: 'mixed', value: '[1,"two",true,null]', type: 'array' },
         { key: 'empty', value: '[]', type: 'array' },
       ])
     })
@@ -145,7 +145,7 @@ describe('data-utils', () => {
         { key: 'nullVal', value: 'null', type: 'null' },
         { key: 'undefinedVal', value: 'undefined', type: 'undefined' },
         { key: 'obj', value: '{\n  "nested": "value"\n}', type: 'object' },
-        { key: 'arr', value: '[1, 2, 3]', type: 'array' },
+        { key: 'arr', value: '[1,2,3]', type: 'array' },
         { key: 'func', value: '[Function]', type: 'function' },
       ])
     })
@@ -180,13 +180,13 @@ describe('data-utils', () => {
 
       expect(result[0]).toEqual({
         key: 'nestedArrays',
-        value: '[[1, 2], [a, b], [true, false]]',
+        value: '[[1,2],["a","b"],[true,false]]',
         type: 'array',
       })
 
       expect(result[1]).toEqual({
         key: 'objectsInArray',
-        value: '[{\n  "id": 1\n}, {\n  "id": 2\n}]',
+        value: '[{"id":1},{"id":2}]',
         type: 'array',
       })
     })

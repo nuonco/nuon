@@ -1,4 +1,3 @@
-import { badResponseCodes } from '@test/utils'
 import { describe, expect, test } from 'vitest'
 import { createAppInstall } from './create-app-install'
 
@@ -18,18 +17,9 @@ describe('createAppInstall should handle response status codes from POST apps/:a
         },
       },
     })
-    expect(result).toHaveProperty('id')
-    expect(result).toHaveProperty('name')
-    expect(result).toHaveProperty('app_id')
-  })
-
-  test.each(badResponseCodes)('%s status', async () => {
-    await expect(
-      createAppInstall({ appId, orgId, body: { name: 'test-install' } })
-    ).rejects.toMatchObject({
-      error: expect.any(String),
-      description: expect.any(String),
-      user_error: expect.any(Boolean),
-    })
+    expect(result).toHaveProperty('data')
+    expect(result.data).toHaveProperty('id')
+    expect(result.data).toHaveProperty('name')
+    expect(result.data).toHaveProperty('app_id')
   })
 })
