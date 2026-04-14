@@ -17,4 +17,5 @@ func newLogger(cfg *internal.Config) (*zap.Logger, error) {
 var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(internal.NewConfig),
 	fx.Provide(newLogger),
+	fx.Provide(NewMetricsWriter),
 )
