@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type QueueWorkflowRequest struct {
@@ -61,6 +62,9 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 	}
 	if !finished {
 		req.State = q.state
+		// Clear the log stream from context before continue-as-new so the next
+		// run doesn't inherit a stale log stream from a previously executed signal.
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, nil)
 		return workflow.NewContinueAsNewError(ctx, w.Queue, req)
 	}
 
