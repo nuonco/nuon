@@ -34,7 +34,7 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		AuthClientID:    "",
 		AuthAudience:    "",
 		DashboardURL:    s.cfg.AppURL,
-		NuonAuthEnabled: s.cfg.NuonAuthProviderType != "",
+		NuonAuthEnabled: true,
 		RootDomain:      s.cfg.RootDomain,
 	})
 }
