@@ -160,6 +160,8 @@ type ClientService interface {
 
 	GetRunnerProcess(params *GetRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerProcessOK, error)
 
+	GetRunnerProcessShutdowns(params *GetRunnerProcessShutdownsParams, opts ...ClientOption) (*GetRunnerProcessShutdownsOK, error)
+
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
@@ -1582,6 +1584,49 @@ func (a *Client) GetRunnerProcess(params *GetRunnerProcessParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunnerProcessShutdowns gets shutdowns for a runner process
+*/
+func (a *Client) GetRunnerProcessShutdowns(params *GetRunnerProcessShutdownsParams, opts ...ClientOption) (*GetRunnerProcessShutdownsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerProcessShutdownsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerProcessShutdowns",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/shutdowns",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerProcessShutdownsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerProcessShutdownsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerProcessShutdowns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
