@@ -70,7 +70,7 @@ func (s *service) AdminUpdateInstallRunner(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &reprovisionrunner.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

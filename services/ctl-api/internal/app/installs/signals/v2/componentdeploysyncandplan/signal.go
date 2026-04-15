@@ -47,6 +47,13 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
+var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) IsNoOpCheckable() bool          { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool { return true }
+func (s *Signal) AutoRetry() bool                { return true }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{

@@ -160,6 +160,59 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
+const installWorkflowsPerPage = 10
+
+// InstallWorkflowsTable handles the HTMX endpoint for install workflows
+func (s *service) InstallWorkflowsTable(c *gin.Context) {
+	ctx := c.Request.Context()
+	installID := c.Param("id")
+	page := getPageFromQuery(c)
+
+	if installID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "install ID required"})
+		return
+	}
+
+	workflows, totalPages, err := s.getWorkflowsForInstall(ctx, installID, page)
+	if err != nil {
+		s.l.Error("failed to fetch install workflows", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch workflows"})
+		return
+	}
+
+	component := views.InstallWorkflowsTable(installID, workflows, page, totalPages)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) getWorkflowsForInstall(ctx context.Context, installID string, page int) ([]*app.Workflow, int, error) {
+	var totalCount int64
+	countQuery := s.db.WithContext(ctx).
+		Model(&app.Workflow{}).
+		Where("owner_id = ? AND owner_type = 'installs'", installID)
+
+	if err := countQuery.Count(&totalCount).Error; err != nil {
+		return nil, 0, fmt.Errorf("unable to count workflows: %w", err)
+	}
+
+	totalPages := int(math.Ceil(float64(totalCount) / float64(installWorkflowsPerPage)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	offset := (page - 1) * installWorkflowsPerPage
+	var workflows []*app.Workflow
+	if err := s.db.WithContext(ctx).
+		Where("owner_id = ? AND owner_type = 'installs'", installID).
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(installWorkflowsPerPage).
+		Find(&workflows).Error; err != nil {
+		return nil, 0, fmt.Errorf("unable to get workflows: %w", err)
+	}
+
+	return workflows, totalPages, nil
+}
+
 // getInstall fetches an install by ID with necessary preloads
 func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 	installID := c.Param("id")

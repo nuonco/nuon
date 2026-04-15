@@ -4,41 +4,23 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	rerunflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/rerunflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 )
 
-type RetryWorkflowStepRequest struct {
-	// Retry indicates whether to retry the current step or not
-	Operation RetryOperation `json:"operation" swaggertype:"string"`
-}
-
 type RetryWorkflowStepResponse struct {
-	WorkflowID string `json:"workflow_id" swaggertype:"string"`
-}
-
-func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
-	if err := v.Struct(c); err != nil {
-		return validatorPkg.FormatValidationError(err)
-	}
-	return nil
+	WorkflowID string `json:"workflow_id"`
+	Retryable  bool   `json:"retryable"`
 }
 
 // @ID						RetryWorkflowStep
-// @Summary					rerun the workflow steps starting from input step id, can be used to retry a failed step
+// @Summary					retry a failed or awaiting-approval workflow step
 // @Description.markdown	retry_workflow_by_id.md
-// @Param					workflow_id	path	string					true	"workflow ID"
-// @Param					step_id		path	string					true	"step ID"
-// @Param					req			body	RetryWorkflowStepRequest	true	"Input"
+// @Param					workflow_id	path	string	true	"workflow ID"
+// @Param					step_id		path	string	true	"step ID"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
@@ -49,7 +31,7 @@ func (c *RetryWorkflowStepResponse) Validate(v *validator.Validate) error {
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{object}	RetryWorkflowByIDResponse
+// @Success					201	{object}	RetryWorkflowStepResponse
 // @Router					/v1/workflows/{workflow_id}/steps/{step_id}/retry [post]
 func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -60,19 +42,11 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 		return
 	}
 
-	var req RetryWorkflowByIDRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(stderr.ErrUser{
-			Err: err,
-		})
-		return
-	}
-
 	workflowID := ctx.Param("workflow_id")
 	workflow, err := s.getWorkflow(ctx, org.ID, workflowID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow not found: %s", workflow.ID),
+			Err: fmt.Errorf("workflow not found: %w", err),
 		})
 		return
 	}
@@ -81,112 +55,14 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	step, err := s.getWorkflowStep(ctx, org.ID, workflow.ID, stepID)
 	if err != nil {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow step not found: %s", req.StepID),
+			Err: fmt.Errorf("workflow step not found: %w", err),
 		})
 		return
 	}
 
-	var stalePlan bool
-	var rePlanStepID string
-	switch step.Signal.Type {
-	case string(signals.OperationProvisionSandboxApplyPlan),
-		string(signals.OperationDeprovisionSandboxApplyPlan),
-		string(signals.OperationExecuteDeployComponentApplyPlan),
-		string(signals.OperationExecuteTeardownComponentApplyPlan),
-		string(signals.OperationReprovisionSandboxApplyPlan):
-
-		var planStepSignal []eventloop.SignalType
-		switch step.StepTargetType {
-		case plugins.TableName(s.db, app.InstallDeploy{}):
-			runnerJob, err := s.getRunnerJob(ctx, step.StepTargetID, app.RunnerJobOperationTypeApplyPlan)
-			if err != nil {
-				ctx.Error(stderr.ErrUser{
-					Err: fmt.Errorf("component runner job not found for owner id %s", step.StepTargetID),
-				})
-				return
-			}
-
-			if runnerJob.Type == app.RunnerJobTypeTerraformDeploy || runnerJob.Type == app.RunnerJobTypePulumiDeploy {
-				switch step.Signal.Type {
-				case string(signals.OperationExecuteDeployComponentApplyPlan):
-					planStepSignal = []eventloop.SignalType{
-						signals.OperationExecuteDeployComponentPlanOnly,
-						signals.OperationExecuteDeployComponentSyncAndPlan,
-					}
-				case string(signals.OperationExecuteTeardownComponentApplyPlan):
-					planStepSignal = []eventloop.SignalType{
-						signals.OperationExecuteTeardownComponentSyncAndPlan,
-					}
-				}
-			}
-		case plugins.TableName(s.db, app.InstallSandboxRun{}):
-			switch step.Signal.Type {
-			case string(signals.OperationProvisionSandboxApplyPlan):
-				planStepSignal = []eventloop.SignalType{signals.OperationProvisionSandboxPlan}
-			case string(signals.OperationReprovisionSandboxApplyPlan):
-				planStepSignal = []eventloop.SignalType{signals.OperationReprovisionSandboxPlan}
-			case string(signals.OperationDeprovisionSandboxApplyPlan):
-				planStepSignal = []eventloop.SignalType{signals.OperationDeprovisionSandboxPlan}
-			}
-		default:
-			// its a terraform apply step ( sandbox or component deploy )
-		}
-
-		// if we have a plan step signal, we need to fetch the plan step for the apply step
-		if len(planStepSignal) != 0 {
-			rePlanStep, err := s.getPlanStepForApplyStep(ctx, workflow, step, &planStepSignal)
-			if err != nil {
-				ctx.Error(stderr.ErrUser{
-					Err: fmt.Errorf("unable to fetch plan step for apply step %s", step.ID),
-				})
-				return
-			}
-			rePlanStepID = rePlanStep.ID
-			stalePlan = true
-		}
-	default:
-		// its not apply step
-	}
-
-	if step.Status.Status != app.StatusError {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("install workflow %s can't be retried", workflow.ID),
-		})
-		return
-	}
-
-	switch req.Operation {
-	case RetryOperationRetryStep:
-		if !step.Retryable {
-			ctx.Error(stderr.ErrUser{
-				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
-			})
-			return
-		}
-	case RetryOperationSkipStep:
-		if !step.Skippable {
-			ctx.Error(stderr.ErrUser{
-				Err: fmt.Errorf("install workflow step %s can't be %s", req.StepID, req.Operation),
-			})
-			return
-		}
-	}
-
-	if req.Operation == RetryOperationRetryStep {
-		if err = s.helpers.UpdateInstallWorkflowStepRetry(ctx, helpers.UpdateInstallWorkflowStepRetry{
-			StepID: req.StepID,
-		}); err != nil {
-			ctx.Error(stderr.ErrSystem{
-				Err: fmt.Errorf("failed to update install workflow step retry: %w", err),
-			})
-			return
-		}
-	}
-
-	// TODO: support more than just installs workflow retries
 	if workflow.OwnerType != "installs" {
 		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("workflow %s retry not support for owner type", workflow.ID),
+			Err: fmt.Errorf("workflow %s retry not supported for owner type", workflow.ID),
 		})
 		return
 	}
@@ -196,39 +72,24 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallWorkflowsQueueID(ctx, workflow.OwnerID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &rerunflow.Signal{
-			InstallID:         workflow.OwnerID,
-			InstallWorkflowID: workflow.ID,
-			RerunConfiguration: signals.RerunConfiguration{
-				StepID:        req.StepID,
-				StepOperation: signals.RerunOperation(req.Operation),
-				StalePlan:     stalePlan,
-				RePlanStepID:  rePlanStepID,
-			},
-		}); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, workflow.OwnerID, &signals.Signal{
-			Type:              signals.OperationRerunFlow,
-			InstallWorkflowID: workflow.ID,
-			RerunConfiguration: signals.RerunConfiguration{
-				StepID:        req.StepID,
-				StepOperation: signals.RerunOperation(req.Operation),
-				StalePlan:     stalePlan,
-				RePlanStepID:  rePlanStepID,
-			},
+	if !useQueues {
+		ctx.Error(stderr.ErrUser{
+			Err: fmt.Errorf("retry workflow step requires queues to be enabled"),
 		})
+		return
 	}
 
-	ctx.JSON(201, RetryWorkflowByIDResponse{
+	resp, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+		InstallWorkflowID: workflow.ID,
+		StepID:            step.ID,
+	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("retry step: %w", err))
+		return
+	}
+
+	ctx.JSON(201, RetryWorkflowStepResponse{
 		WorkflowID: workflow.ID,
+		Retryable:  resp.Retryable,
 	})
 }

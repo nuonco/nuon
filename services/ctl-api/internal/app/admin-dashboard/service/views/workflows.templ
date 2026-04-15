@@ -1,0 +1,210 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/pagination"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/search"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"net/url"
+)
+
+const ActivePageWorkflows ActivePage = "workflows"
+
+templ Workflows(workflows []*app.Workflow, currentPage, totalPages int, searchQuery, sort, typeFilter string) {
+	@Layout("Workflows", ActivePageWorkflows) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Workflows
+					}
+					@card.Description() {
+						Search by workflow ID or owner ID (install, app)
+					}
+				}
+				@card.Content() {
+					<div
+						hx-get="/workflows/table"
+						hx-trigger="change from:[name='sort'], change from:[name='type']"
+						hx-target="#workflows-table-wrapper"
+						hx-swap="outerHTML"
+						hx-include="[name='search'],[name='sort'],[name='type']"
+					>
+						@search.SearchInput(search.Props{
+							Placeholder: "Search by workflow ID (inw...) or owner ID...",
+							TargetURL:   "/workflows/table",
+							TargetID:    "workflows-table-wrapper",
+							Value:       searchQuery,
+						})
+						<div class="flex gap-3 mb-4">
+							<select name="sort" class="bg-background border border-border rounded px-3 py-1.5 text-sm">
+								<option value="newest" selected?={ sort == "newest" }>Newest first</option>
+								<option value="oldest" selected?={ sort == "oldest" }>Oldest first</option>
+							</select>
+							<select name="type" class="bg-background border border-border rounded px-3 py-1.5 text-sm">
+								<option value="" selected?={ typeFilter == "" }>All types</option>
+								<option value="provision" selected?={ typeFilter == "provision" }>provision</option>
+								<option value="deprovision" selected?={ typeFilter == "deprovision" }>deprovision</option>
+								<option value="manual_deploy" selected?={ typeFilter == "manual_deploy" }>manual_deploy</option>
+								<option value="deploy_components" selected?={ typeFilter == "deploy_components" }>deploy_components</option>
+								<option value="input_update" selected?={ typeFilter == "input_update" }>input_update</option>
+								<option value="reprovision_sandbox" selected?={ typeFilter == "reprovision_sandbox" }>reprovision_sandbox</option>
+								<option value="teardown_components" selected?={ typeFilter == "teardown_components" }>teardown_components</option>
+								<option value="action_workflow_run" selected?={ typeFilter == "action_workflow_run" }>action_workflow_run</option>
+								<option value="sync_secrets" selected?={ typeFilter == "sync_secrets" }>sync_secrets</option>
+								<option value="drift_run" selected?={ typeFilter == "drift_run" }>drift_run</option>
+							</select>
+						</div>
+					</div>
+					@WorkflowsTable(workflows, currentPage, totalPages, searchQuery, sort, typeFilter)
+				}
+			}
+		</div>
+		@copybutton.Script()
+	}
+}
+
+templ WorkflowsTable(workflows []*app.Workflow, currentPage, totalPages int, searchQuery, sort, typeFilter string) {
+	<div id="workflows-table-wrapper">
+		if len(workflows) == 0 {
+			<div class="text-sm text-muted-foreground">No workflows found.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Workflow }
+						@table.Head() { Type }
+						@table.Head() { Owner }
+						@table.Head() { Status }
+						@table.Head() { Steps }
+						@table.Head() { Started }
+						@table.Head() { Duration }
+					}
+				}
+				@table.Body() {
+					for _, wf := range workflows {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex items-center gap-2">
+									<a href={ templ.URL("/workflows/" + wf.ID) } class="text-cyan hover:underline font-mono text-xs">{ wf.ID }</a>
+									@copybutton.CopyButton(copybutton.Props{TargetID: "wf-id-" + wf.ID})
+								</div>
+								<span id={ "wf-id-" + wf.ID } class="hidden">{ wf.ID }</span>
+							}
+							@table.Cell() {
+								@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+									{ string(wf.Type) }
+								}
+							}
+							@table.Cell() {
+								<a href={ templ.URL(workflowOwnerLink(wf)) } class="text-cyan hover:underline font-mono text-xs">{ wf.OwnerID }</a>
+							}
+							@table.Cell() {
+								@status.StatusAutoSimple(string(wf.Status.Status))
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								{ fmt.Sprintf("%d", len(wf.Steps)) }
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								if !wf.StartedAt.IsZero() {
+									{ wf.StartedAt.Format("2006-01-02 15:04:05") }
+								} else {
+									<span class="text-muted-foreground">-</span>
+								}
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-sm"}) {
+								if wf.ExecutionTime > 0 {
+									{ formatDuration(wf.ExecutionTime) }
+								} else {
+									<span class="text-muted-foreground">-</span>
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		if totalPages > 1 {
+			<div class="mt-4">
+				@workflowsPagination(currentPage, totalPages, searchQuery, sort, typeFilter)
+			</div>
+		}
+	</div>
+}
+
+func workflowOwnerLink(wf *app.Workflow) string {
+	if wf.OwnerType == "installs" {
+		return "/installs/" + wf.OwnerID
+	}
+	return "#"
+}
+
+func buildWorkflowsTableURL(page int, search, sort, typeFilter string) string {
+	params := url.Values{}
+	if page > 1 {
+		params.Set("page", fmt.Sprintf("%d", page))
+	}
+	if search != "" {
+		params.Set("search", search)
+	}
+	if sort != "" && sort != "newest" {
+		params.Set("sort", sort)
+	}
+	if typeFilter != "" {
+		params.Set("type", typeFilter)
+	}
+	q := params.Encode()
+	if q != "" {
+		return "/workflows/table?" + q
+	}
+	return "/workflows/table"
+}
+
+templ workflowsPagination(currentPage, totalPages int, searchQuery, sort, typeFilter string) {
+	{{ paginationData := pagination.CreatePagination(currentPage, totalPages, 5) }}
+	@pagination.Pagination() {
+		@pagination.Content() {
+			@pagination.Item() {
+				@pagination.Previous(pagination.PreviousProps{
+					Disabled: !paginationData.HasPrevious,
+					Label:    "Previous",
+					Attributes: templ.Attributes{
+						"hx-get":     buildWorkflowsTableURL(currentPage-1, searchQuery, sort, typeFilter),
+						"hx-target":  "#workflows-table-wrapper",
+						"hx-swap":    "outerHTML",
+					},
+				})
+			}
+			for _, pageNum := range paginationData.Pages {
+				@pagination.Item() {
+					@pagination.Link(pagination.LinkProps{
+						IsActive: pageNum == currentPage,
+						Attributes: templ.Attributes{
+							"hx-get":    buildWorkflowsTableURL(pageNum, searchQuery, sort, typeFilter),
+							"hx-target": "#workflows-table-wrapper",
+							"hx-swap":   "outerHTML",
+						},
+					}) {
+						{ fmt.Sprintf("%d", pageNum) }
+					}
+				}
+			}
+			@pagination.Item() {
+				@pagination.Next(pagination.NextProps{
+					Disabled: !paginationData.HasNext,
+					Label:    "Next",
+					Attributes: templ.Attributes{
+						"hx-get":    buildWorkflowsTableURL(currentPage+1, searchQuery, sort, typeFilter),
+						"hx-target": "#workflows-table-wrapper",
+						"hx-swap":   "outerHTML",
+					},
+				})
+			}
+		}
+	}
+}

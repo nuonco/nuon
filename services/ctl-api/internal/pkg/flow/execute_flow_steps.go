@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -46,6 +47,31 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 			})
 			if refetchErr != nil {
 				return errors.Wrap(refetchErr, "unable to get steps after signal execution")
+			}
+
+			// Read directive from the executed step's metadata.
+			// The step workflow writes directives to communicate how the parent should proceed.
+			if err == nil {
+				if directive := readStepDirective(steps, step.ID); directive != "" {
+					switch directive {
+					case flowutil.DirectiveAwaitApproval:
+						return NewApprovalPauseErr(step.ID)
+					case flowutil.DirectiveSkipGroup:
+						i = findNextGroupStart(steps, step.GroupIdx, i)
+						continue
+					case flowutil.DirectiveStop:
+						if err := c.cancelFutureSteps(ctx, flw, i, "workflow step was denied"); err != nil {
+							return errors.Wrap(err, "unable to cancel future steps")
+						}
+						return ErrNotApproved
+					case flowutil.DirectiveRetry:
+						// Clone was already created by step workflow; re-fetch picked it up.
+						// Don't advance i - the loop will pick up the clone at the next iteration.
+						continue
+					case flowutil.DirectiveContinue:
+						// Normal success, fall through to batch check
+					}
+				}
 			}
 		} else {
 			var reFetchSteps bool
@@ -91,4 +117,32 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 	}
 
 	return nil
+}
+
+// readStepDirective reads the directive from a step's status metadata.
+func readStepDirective(steps []app.WorkflowStep, stepID string) string {
+	for _, s := range steps {
+		if s.ID == stepID {
+			if s.Status.Metadata != nil {
+				if d, ok := s.Status.Metadata[flowutil.DirectiveKey]; ok {
+					if ds, ok := d.(string); ok {
+						return ds
+					}
+				}
+			}
+			return ""
+		}
+	}
+	return ""
+}
+
+// findNextGroupStart returns the index of the first step that belongs to a different group
+// than the given groupIdx, starting from afterIdx. If no such step exists, returns len(steps).
+func findNextGroupStart(steps []app.WorkflowStep, groupIdx int, afterIdx int) int {
+	for j := afterIdx + 1; j < len(steps); j++ {
+		if steps[j].GroupIdx != groupIdx {
+			return j - 1 // -1 because the loop will i++ to get to j
+		}
+	}
+	return len(steps) // skip past all remaining steps
 }

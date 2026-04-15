@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"os"
 	"strings"
@@ -10,9 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-
-	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 )
+
+//go:embed testdata/fake_terraform_plan_display_contents.json
+var fakeTerraformPlanDisplayContents string
 
 func TestEvaluateRule_TerraformPolicy(t *testing.T) {
 	ctx := context.Background()
@@ -28,7 +30,7 @@ func TestEvaluateRule_TerraformPolicy(t *testing.T) {
 		ComponentName: "test-component",
 	}
 
-	inputs, _, err := a.prepareTerraformPolicyInputs([]byte(workerplan.FakeTerraformPlanDisplayContents), pctx)
+	inputs, _, err := a.prepareTerraformPolicyInputs([]byte(fakeTerraformPlanDisplayContents), pctx)
 	require.NoError(t, err, "failed to prepare terraform policy inputs")
 	require.Len(t, inputs, 1, "expected exactly one input")
 

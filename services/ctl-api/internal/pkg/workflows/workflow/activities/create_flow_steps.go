@@ -26,6 +26,7 @@ type CreateFlowStep struct {
 	GroupRetryIdx  int                           `json:"group_retry_idx"`
 	StepTargetType string                        `json:"step_target_type"`
 	StepTargetID   string                        `json:"step_target_id"`
+	RetryIndex     int                           `json:"retry_index"`
 
 	// TODO(jm): this is being deprecated
 	Signal      *app.Signal          `json:"signal"`
@@ -60,6 +61,7 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			GroupRetryIdx:     req.GroupRetryIdx,
 			StepTargetType:    req.StepTargetType,
 			StepTargetID:      req.StepTargetID,
+			RetryIndex:        req.RetryIndex,
 			Signal:            req.Signal,
 			QueueSignal:       req.QueueSignal,
 		}

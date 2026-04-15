@@ -1,0 +1,334 @@
+package views
+
+import (
+	"fmt"
+	"time"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+)
+
+templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
+	@Layout("Workflow: " + wf.ID, ActivePageWorkflows) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			<!-- Breadcrumb -->
+			<div class="mb-6 flex gap-2 text-sm">
+				<a href="/workflows" class="text-cyan hover:underline">Nuon Workflows</a>
+				<span class="text-muted-foreground">→</span>
+				<span class="text-muted-foreground">{ wf.ID }</span>
+			</div>
+
+			<!-- Header Card -->
+			<div class="bg-card border border-border rounded-lg p-6 mb-6">
+				<div class="flex items-start justify-between">
+					<div class="flex-1">
+						<div class="flex items-center gap-3 mb-2">
+							<h1 class="text-2xl font-bold">{ wf.Name }</h1>
+							@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+								{ string(wf.Type) }
+							}
+							@status.StatusAutoSimple(string(wf.Status.Status))
+						</div>
+						<div class="flex items-center gap-2 mb-1">
+							<span class="text-xs text-muted-foreground uppercase">Workflow ID:</span>
+							<span id="wf-detail-id" class="font-mono text-xs text-foreground">{ wf.ID }</span>
+							@copybutton.CopyButton(copybutton.Props{TargetID: "wf-detail-id"})
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="text-xs text-muted-foreground uppercase">Owner:</span>
+							<a href={ templ.URL(workflowOwnerLink(wf)) } class="font-mono text-xs text-cyan hover:underline">{ wf.OwnerID }</a>
+							<span class="text-xs text-muted-foreground">({ wf.OwnerType })</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Metadata Grid -->
+				<!-- Quick Links -->
+				<div class="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs">
+					<a href={ templ.URL("/queue-signals?search=" + wf.ID) } class="text-cyan hover:underline">Workflow signal →</a>
+				</div>
+
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Created</div>
+						<div class="font-mono text-sm">{ wf.CreatedAt.Format("2006-01-02 15:04:05") }</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Started</div>
+						<div class="font-mono text-sm">
+							if !wf.StartedAt.IsZero() {
+								{ wf.StartedAt.Format("2006-01-02 15:04:05") }
+							} else {
+								<span class="text-muted-foreground">-</span>
+							}
+						</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Finished</div>
+						<div class="font-mono text-sm">
+							if !wf.FinishedAt.IsZero() {
+								{ wf.FinishedAt.Format("2006-01-02 15:04:05") }
+							} else {
+								<span class="text-muted-foreground">-</span>
+							}
+						</div>
+					</div>
+					<div>
+						<div class="text-xs text-muted-foreground uppercase">Duration</div>
+						<div class="font-mono text-sm">
+							if wf.ExecutionTime > 0 {
+								{ formatDuration(wf.ExecutionTime) }
+							} else {
+								<span class="text-muted-foreground">-</span>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Status History -->
+			if len(wf.Status.History) > 0 {
+				<div class="mb-6">
+					@card.Card() {
+						@card.Header() {
+							@card.Title() {
+								Workflow status history
+							}
+						}
+						@card.Content() {
+							@compositeStatusHistory(wf.Status)
+						}
+					}
+				</div>
+			}
+
+			<!-- Steps -->
+			<div class="mb-6">
+				@card.Card() {
+					@card.Header() {
+						<div class="flex items-center justify-between">
+							@card.Title() {
+								Steps ({ fmt.Sprintf("%d", len(stepDetails)) })
+							}
+						</div>
+					}
+					@card.Content() {
+						if len(stepDetails) == 0 {
+							<div class="text-sm text-muted-foreground">No steps recorded.</div>
+						} else {
+							<div class="space-y-2">
+								for i, sd := range stepDetails {
+									@stepRow(i, sd)
+								}
+							</div>
+						}
+					}
+				}
+			</div>
+		</div>
+		@copybutton.Script()
+	}
+}
+
+templ stepRow(idx int, sd StepDetailData) {
+	{{ step := sd.Step }}
+	<details class="group rounded border border-border">
+		<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
+			<div class="flex items-center gap-2 w-8 shrink-0">
+				<span class="text-muted-foreground font-mono">{ fmt.Sprintf("%d", step.Idx) }</span>
+			</div>
+			<div class="flex items-center gap-2 shrink-0">
+				@stepStatusDot(string(step.Status.Status))
+			</div>
+			<div class="flex items-center gap-2 w-48 shrink-0">
+				<span class="font-mono truncate" title={ step.Name }>{ step.Name }</span>
+			</div>
+			<div class="w-20 shrink-0">
+				@status.StatusAutoSimple(string(step.Status.Status))
+			</div>
+			if !step.StartedAt.IsZero() {
+				<div class="text-muted-foreground w-36 shrink-0">
+					{ step.StartedAt.Format("15:04:05.000") }
+					if !step.FinishedAt.IsZero() {
+						<span class="text-foreground/40"> → </span>
+						{ step.FinishedAt.Format("15:04:05.000") }
+					}
+				</div>
+			}
+			if step.ExecutionTime > 0 {
+				<div class="font-mono text-cyan">
+					{ formatDuration(step.ExecutionTime) }
+				</div>
+			}
+			if step.GroupIdx > 0 {
+				<div class="text-muted-foreground">
+					g{ fmt.Sprintf("%d", step.GroupIdx) }
+					if step.GroupRetryIdx > 0 {
+						r{ fmt.Sprintf("%d", step.GroupRetryIdx) }
+					}
+				</div>
+			}
+			if string(step.ExecutionType) != "system" && string(step.ExecutionType) != "" {
+				@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+					{ string(step.ExecutionType) }
+				}
+			}
+			<div class="ml-auto text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-3 py-3 space-y-4">
+			<!-- Status History -->
+			if len(step.Status.History) > 0 {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-2">Status History</div>
+					@compositeStatusHistory(step.Status)
+				</div>
+			}
+
+			<!-- Queue Signal -->
+			if sd.QueueSignalJSON != "" {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1 flex items-center gap-2">
+						Queue Signal
+						<a href={ templ.URL("/queue-signals?search=" + step.ID) } class="text-cyan hover:underline text-[10px] font-normal normal-case">View signal →</a>
+					</div>
+					<pre class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ sd.QueueSignalJSON }</pre>
+				</div>
+			}
+
+			<!-- Step Target -->
+			if sd.StepTarget != nil {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Step Target</div>
+					<div class="space-y-1">
+						@stepInfoRow("Type", sd.StepTarget.Type)
+						@stepInfoRow("ID", sd.StepTarget.ID)
+						if sd.StepTarget.Status != "" {
+							<div class="flex items-start gap-3">
+								<span class="text-xs text-muted-foreground w-24 shrink-0">Status</span>
+								@status.StatusAutoSimple(sd.StepTarget.Status)
+							</div>
+						}
+						if sd.StepTarget.LogStreamID != "" {
+							<div class="flex items-start gap-3">
+								<span class="text-xs text-muted-foreground w-24 shrink-0">Log Stream</span>
+								<a href={ templ.URL("/log-streams/" + sd.StepTarget.LogStreamID) } class="font-mono text-xs text-cyan hover:underline">{ sd.StepTarget.LogStreamID }</a>
+							</div>
+						}
+					</div>
+				</div>
+			}
+
+			<!-- Approval -->
+			if step.Approval != nil {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Approval</div>
+					<div class="space-y-1">
+						@stepInfoRow("Type", string(step.Approval.Type))
+						if step.Approval.Response != nil {
+							@stepInfoRow("Response", string(step.Approval.Response.Type))
+							if step.Approval.Response.Note != "" {
+								@stepInfoRow("Note", step.Approval.Response.Note)
+							}
+						}
+					</div>
+				</div>
+			}
+
+			<!-- Metadata -->
+			if len(step.Metadata) > 0 {
+				<div>
+					<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Metadata</div>
+					<div class="space-y-1">
+						for k, v := range step.Metadata {
+							if v != nil {
+								@stepInfoRow(k, *v)
+							}
+						}
+					</div>
+				</div>
+			}
+
+			<!-- Step flags -->
+			<div class="flex gap-2">
+				if step.Retryable {
+					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+						retryable
+					}
+				}
+				if step.Skippable {
+					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+						skippable
+					}
+				}
+				if step.Retried {
+					@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+						retried
+					}
+				}
+			</div>
+		</div>
+	</details>
+}
+
+templ stepInfoRow(label, value string) {
+	<div class="flex items-start gap-3">
+		<span class="text-xs text-muted-foreground w-24 shrink-0">{ label }</span>
+		<span class="font-mono text-xs text-foreground break-all">{ value }</span>
+	</div>
+}
+
+templ compositeStatusHistory(cs app.CompositeStatus) {
+	<div class="space-y-2">
+		for _, h := range cs.History {
+			<div class="flex items-start gap-3 text-xs border-b border-border pb-2 last:border-0">
+				<div class="shrink-0">
+					@status.StatusAutoSimple(string(h.Status))
+				</div>
+				<div class="flex-1 space-y-1">
+					<div class="text-foreground">
+						{ string(h.Status) }
+						if h.StatusHumanDescription != "" {
+							<span class="text-muted-foreground"> — { h.StatusHumanDescription }</span>
+						}
+					</div>
+					if h.CreatedAtTS > 0 {
+						<div class="text-muted-foreground">
+							{ time.Unix(h.CreatedAtTS, 0).UTC().Format("2006-01-02 15:04:05 UTC") }
+						</div>
+					}
+					if len(h.Metadata) > 0 {
+						<div class="flex flex-wrap gap-x-4 gap-y-1">
+							for k, v := range h.Metadata {
+								<span class="text-muted-foreground">
+									<span class="text-foreground/60">{ k }:</span> { fmt.Sprintf("%v", v) }
+								</span>
+							}
+						</div>
+					}
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ stepStatusDot(statusStr string) {
+	switch statusStr {
+		case "success":
+			<div class="w-2 h-2 rounded-full bg-green-500 shrink-0"></div>
+		case "in-progress", "executing", "planning", "applying":
+			<div class="w-2 h-2 rounded-full bg-cyan animate-pulse shrink-0"></div>
+		case "error", "failed":
+			<div class="w-2 h-2 rounded-full bg-red-500 shrink-0"></div>
+		case "cancelled", "user-skipped", "auto-skipped":
+			<div class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
+		case "pending", "queued", "not-attempted":
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
+		default:
+			<div class="w-2 h-2 rounded-full bg-muted-foreground/30 shrink-0"></div>
+	}
+}
