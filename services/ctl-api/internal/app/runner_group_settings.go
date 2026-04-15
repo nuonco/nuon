@@ -43,10 +43,15 @@ type RunnerGroupSettings struct {
 	RunnerGroupID string `json:"runner_group_id,omitzero" gorm:"index:idx_runner_group_settings,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 
 	// configuration for deploying the runner
-	ContainerImageURL string `json:"container_image_url,omitzero" gorm:"default null;not null" temporaljson:"container_image_url,omitzero,omitempty"`
-	ContainerImageTag string `json:"container_image_tag,omitzero" gorm:"default null;not null" temporaljson:"container_image_tag,omitzero,omitempty"`
-	ExpectedVersion   string `json:"-" gorm:"-" temporaljson:"expected_version,omitzero,omitempty"`
-	RunnerAPIURL      string `json:"runner_api_url,omitzero" gorm:"default null;not null" temporaljson:"runner_apiurl,omitzero,omitempty"`
+	ContainerImageURL  string `json:"container_image_url,omitzero" gorm:"default null;not null" temporaljson:"container_image_url,omitzero,omitempty"`
+	ContainerImageTag  string `json:"container_image_tag,omitzero" gorm:"default null;not null" temporaljson:"container_image_tag,omitzero,omitempty"`
+	ContainerMaxUptime int    `json:"container_max_uptime,omitzero" gorm:"default: 14400;" temporaljson:"container_max_uptime,omitzero,omitempty"`
+	ExpectedVersion    string `json:"-" gorm:"-" temporaljson:"expected_version,omitzero,omitempty"`
+	RunnerAPIURL       string `json:"runner_api_url,omitzero" gorm:"default null;not null" temporaljson:"runner_apiurl,omitzero,omitempty"`
+
+	// configuration for managing the runner binary version (for mng mode, not the install runner)
+	BinaryVersion string `json:"binary_version,omitzero" gorm:"default null;" temporaljson:"binary_version,omitzero,omitempty"`
+	VMMaxUptime   int    `json:"vm_max_uptime,omitzero" gorm:"default: 604800;" temporaljson:"vm_max_uptime,omitzero,omitempty"`
 
 	// configuration for managing the runner server side
 	SandboxMode bool `json:"sandbox_mode,omitzero" temporaljson:"sandbox_mode,omitzero,omitempty"`
@@ -143,6 +148,12 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 	}
 	if r.OrgAzureClientID != "" {
 		r.Platform = CloudPlatformAzure
+	}
+	if r.BinaryVersion == "" {
+		// TODO: implement versionFromContext(tx.Statement.Context)
+		if r.BinaryVersion == "" {
+			r.BinaryVersion = "latest"
+		}
 	}
 	return nil
 }
