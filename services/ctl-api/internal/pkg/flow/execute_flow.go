@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -165,29 +164,5 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 }
 
 func (c *WorkflowConductor[DomainSignal]) generateSteps(ctx workflow.Context, flw *app.Workflow) (*app.Workflow, error) {
-	gen, has := c.Generators[flw.Type]
-	if !has {
-		return nil, errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
-	}
-
-	steps, err := gen(ctx, flw)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
-	}
-
-	steps, err = workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
-		WorkflowID: flw.ID,
-		Steps:      steps,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create steps for workflow")
-	}
-
-	// TODO(sdboyer) remove this once types align
-	flw.Steps = make([]app.WorkflowStep, len(steps))
-	for i, step := range steps {
-		flw.Steps[i] = *step
-	}
-
-	return flw, nil
+	return GenerateSteps(ctx, c.stepConfig(), flw, c.Generators)
 }

@@ -75,6 +75,49 @@ type SignalWithSkipCleanup interface {
 }
 
 // ---------------------------------------------------------------------------
+// Approval Response Lifecycle Hooks
+// ---------------------------------------------------------------------------
+
+// SignalWithOnApprove is called when an approval step receives an "approve" response.
+// Signals can implement this to perform side effects after approval is granted.
+type SignalWithOnApprove interface {
+	OnApprove(ctx workflow.Context) error
+}
+
+// SignalWithOnRetry is called when an approval step receives a "retry plan" response.
+// Signals can implement this to perform cleanup or preparation before the retry clone is created.
+type SignalWithOnRetry interface {
+	OnRetry(ctx workflow.Context) error
+}
+
+// SignalWithOnSkip is called when an approval step receives a "skip" response
+// (either skip-current or skip-current-and-dependents).
+// Distinct from SignalWithSkipCleanup.OnSkipped which is called by the conductor
+// when programmatically skipping a step.
+type SignalWithOnSkip interface {
+	OnSkip(ctx workflow.Context) error
+}
+
+// SignalWithOnDeny is called when an approval step receives a "deny" response.
+// Signals can implement this to perform cleanup when approval is denied.
+type SignalWithOnDeny interface {
+	OnDeny(ctx workflow.Context) error
+}
+
+// ---------------------------------------------------------------------------
+// Step Generation
+// ---------------------------------------------------------------------------
+
+// SignalWithFetchSteps marks a signal as a step generator.
+// The signal must register a "FetchSteps" update handler that returns workflow steps.
+// The conductor enqueues the signal, sends the "FetchSteps" update, and uses the
+// returned steps instead of the hardcoded Generators map.
+type SignalWithFetchSteps interface {
+	Signal
+	SignalWithUpdateHandlers
+}
+
+// ---------------------------------------------------------------------------
 // Queue & Scheduling
 // ---------------------------------------------------------------------------
 

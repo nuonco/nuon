@@ -15,7 +15,7 @@ type IsRetryableResponse struct {
 
 func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse, error) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
-		FlowID: s.InstallWorkflowID,
+		FlowID: s.WorkflowID,
 	})
 	if err != nil {
 		return nil, err

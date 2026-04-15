@@ -9,13 +9,59 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+// awaitAndHandleApproval writes the await-approval directive, waits for a
+// user response, and dispatches to the appropriate handler based on response type.
+func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	l, _ := log.WorkflowLogger(ctx)
+
+	if err := writeDirective(ctx, step.ID, DirectiveAwaitApproval, map[string]any{
+		"step_idx": step.Idx,
+		"status":   "awaiting-approval",
+	}); err != nil {
+		return errors.Wrap(err, "unable to write await-approval directive")
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.AwaitingApproval,
+			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
+			Metadata: map[string]any{
+				"step_idx":   step.Idx,
+				"status":     "ok",
+				DirectiveKey: DirectiveAwaitApproval,
+			},
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to update step to awaiting approval status")
+	}
+
+	resp, err := s.waitForApprovalResponse(ctx, flw, step)
+	if err != nil {
+		return err
+	}
+
+	switch resp.Type {
+	case app.WorkflowStepApprovalResponseTypeApprove:
+		return s.handleApproveResponse(ctx, l, step, flw)
+	case app.WorkflowStepApprovalResponseTypeRetryPlan:
+		return s.handleRetryResponse(ctx, l, step, flw)
+	case app.WorkflowStepApprovalResponseTypeSkipCurrent:
+		return s.handleSkipResponse(ctx, l, step, flw)
+	case app.WorkflowStepApprovalResponseTypeSkipCurrentAndDependents:
+		return s.handleSkipDependentsResponse(ctx, l, step, flw)
+	default:
+		return s.handleDenyResponse(ctx, l, step, flw)
+	}
+}
+
 // waitForApprovalResponse waits for an approval response reactively using the
-// "approve-plan" update handler, or falls back to the polling child workflow
-// for non-queue paths.
+// "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
 	// Handle auto-approve
 	if flw.ApprovalOption == app.InstallApprovalOptionApproveAll {
@@ -40,7 +86,6 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 	}
 
 	// Fetch the step from DB to get the approval response.
-	// The approvalResponseID hint confirms the response exists.
 	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get step after approval")

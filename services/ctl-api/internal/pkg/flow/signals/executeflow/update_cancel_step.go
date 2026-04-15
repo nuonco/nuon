@@ -26,5 +26,5 @@ func (s *Signal) cancelStepHandler(ctx workflow.Context, req CancelStepRequest) 
 	}
 
 	s.cancelRequested = true
-	return &CancelStepResponse{WorkflowID: s.InstallWorkflowID}, nil
+	return &CancelStepResponse{WorkflowID: s.WorkflowID}, nil
 }

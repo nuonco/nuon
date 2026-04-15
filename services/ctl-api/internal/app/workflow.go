@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type WorkflowType string
@@ -177,6 +178,11 @@ type Workflow struct {
 	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
+
+	// GenerateStepsSignal is an optional queue signal that generates workflow steps.
+	// When set, the conductor enqueues this signal and calls its "FetchSteps" update
+	// handler instead of using the hardcoded Generators map.
+	GenerateStepsSignal *signaldb.SignalData `json:"generate_steps_signal,omitempty" gorm:"type:jsonb"`
 
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`

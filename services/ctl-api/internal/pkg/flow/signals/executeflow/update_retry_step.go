@@ -43,14 +43,14 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		s.resumeRunType = app.WorkflowRunTypeRetry
 		s.resumeStepID = req.StepID
 		return &RetryStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Retryable:  true,
 		}, nil
 
 	case app.StatusError:
 		if !step.Retryable {
 			return &RetryStepResponse{
-				WorkflowID: s.InstallWorkflowID,
+				WorkflowID: s.WorkflowID,
 				Retryable:  false,
 			}, nil
 		}
@@ -67,13 +67,13 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		s.resumeRunType = app.WorkflowRunTypeRetry
 		s.resumeStepID = req.StepID
 		return &RetryStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Retryable:  true,
 		}, nil
 
 	default:
 		return &RetryStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Retryable:  false,
 		}, nil
 	}

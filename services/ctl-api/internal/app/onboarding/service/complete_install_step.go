@@ -13,9 +13,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/created"
-	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 type CompleteInstallStepRequest struct {
@@ -213,7 +213,7 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			InstallWorkflowID: workflow.ID,
+			WorkflowID: workflow.ID,
 		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return

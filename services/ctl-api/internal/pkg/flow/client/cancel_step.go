@@ -6,7 +6,7 @@ import (
 
 	tclient "go.temporal.io/sdk/client"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 // CancelStepRequest is the input for cancelling a workflow step.

@@ -36,5 +36,5 @@ func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest
 	s.resumeRequested = true
 	s.resumeRunType = app.WorkflowRunTypeResume
 	s.resumeStepID = req.StepID
-	return &ApproveStepResponse{WorkflowID: s.InstallWorkflowID}, nil
+	return &ApproveStepResponse{WorkflowID: s.WorkflowID}, nil
 }

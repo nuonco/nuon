@@ -16,7 +16,7 @@ type PollNextStepResponse struct {
 
 func (s *Signal) pollNextStepHandler(ctx workflow.Context) (*PollNextStepResponse, error) {
 	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
-		FlowID: s.InstallWorkflowID,
+		FlowID: s.WorkflowID,
 	})
 	if err != nil {
 		return nil, err

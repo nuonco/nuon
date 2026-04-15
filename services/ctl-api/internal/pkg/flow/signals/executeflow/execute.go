@@ -2,46 +2,17 @@ package executeflow
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
+	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
-
-func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
-	return map[app.WorkflowType]flow.WorkflowStepGenerator{
-		app.WorkflowTypeManualDeploy:               v2workflows.ManualDeploySteps,
-		app.WorkflowTypeDriftRun:                   v2workflows.ManualDeploySteps,
-		app.WorkflowTypeDeployComponents:           v2workflows.DeployAllComponents,
-		app.WorkflowTypeTeardownComponent:          v2workflows.TeardownComponent,
-		app.WorkflowTypeTeardownComponents:         v2workflows.TeardownComponents,
-		app.WorkflowTypeInputUpdate:                v2workflows.InputUpdate,
-		app.WorkflowTypeActionWorkflowRun:          v2workflows.RunActionWorkflow,
-		app.WorkflowTypeProvision:                  v2workflows.Provision,
-		app.WorkflowTypeReprovision:                v2workflows.Reprovision,
-		app.WorkflowTypeReprovisionSandbox:         v2workflows.ReprovisionSandbox,
-		app.WorkflowTypeDriftRunReprovisionSandbox: v2workflows.ReprovisionSandbox,
-		app.WorkflowTypeDeprovision:                v2workflows.Deprovision,
-		app.WorkflowTypeDeprovisionSandbox:         v2workflows.DeprovisionSandbox,
-		app.WorkflowTypeSyncSecrets:                v2workflows.SyncSecrets,
-	}
-}
-
-func (s *Signal) newConductor() *flow.WorkflowConductor[*signals.Signal] {
-	return &flow.WorkflowConductor[*signals.Signal]{
-		Generators:          getWorkflowStepGenerators(),
-		StepChildWorkflow:   true,
-		StepQueueName:       "install-workflow-steps",
-		StepTargetQueueName: "install-signals",
-		StepOwnerID:         s.installID,
-		StepOwnerType:       "installs",
-	}
-}
 
 // executeFlow runs the workflow conductor with run-based execution.
 // Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
@@ -75,7 +46,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 
 			// Mark workflow as failed, awaiting retry
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: s.InstallWorkflowID,
+				ID: s.WorkflowID,
 				Status: app.CompositeStatus{
 					Status:                 app.StatusError,
 					StatusHumanDescription: "workflow failed, awaiting retry",
@@ -107,16 +78,14 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 	}
 }
 
-// executeRun executes a single workflow run, handling ContinueAsNew internally.
-// Returns nil when the run completes (either all steps done or paused at approval).
-// Returns an error for actual execution failures.
+// executeRun executes a single workflow run, directly managing step generation
+// and execution without going through the WorkflowConductor.
 func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
-	fc := s.newConductor()
-	eventLoopReq := eventloop.EventLoopRequest{ID: s.installID}
+	cfg := s.stepConfig()
 	startIdx := run.StartFromIdx
 
 	for {
-		err := fc.Handle(ctx, eventLoopReq, s.InstallWorkflowID, startIdx)
+		err := s.handle(ctx, startIdx)
 		if err == nil {
 			return nil
 		}
@@ -133,14 +102,149 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 		}
 
 		// Actual failure
+		_ = cfg // suppress unused warning in case of early return refactors
 		return err
+	}
+}
+
+// handle is the inlined equivalent of WorkflowConductor.Handle(). It manages
+// the full lifecycle of a flow execution: generate steps, execute steps, update status.
+func (s *Signal) handle(ctx workflow.Context, startFromStepIdx int) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil
+	}
+
+	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get workflow object")
+	}
+	if flw.Status.Status == app.StatusCancelled {
+		return errors.New("workflow already cancelled")
+	}
+
+	defer func() {
+		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer cancelCtxCancel()
+
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status: app.StatusCancelled,
+				},
+			}); err != nil {
+				l.Error("unable to update status on cancellation", zap.Error(err))
+			}
+		}
+	}()
+
+	if startFromStepIdx == 0 {
+		if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, s.WorkflowID); err != nil {
+			return err
+		}
+	}
+
+	// Generate steps
+	l.Debug("generating steps for workflow")
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "generating steps for workflow",
+		},
+	}); err != nil {
+		return err
+	}
+
+	cfg := s.stepConfig()
+	flw, err = flow.GenerateSteps(ctx, cfg, flw, getWorkflowStepGenerators(s.OwnerType))
+	if err != nil {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.WorkflowID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusError,
+				StatusHumanDescription: "error while generating steps",
+				Metadata: map[string]any{
+					"error_message": err.Error(),
+				},
+			},
+		}); err != nil {
+			return err
+		}
+
+		return errors.Wrap(err, "unable to generate workflow steps")
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "successfully generated all steps",
+		},
+	}); err != nil {
+		return err
+	}
+
+	// Execute steps
+	l.Debug("executing steps for workflow")
+	err = flow.ExecuteStepsViaChildWorkflow(ctx, cfg, flw, startFromStepIdx)
+	if err != nil {
+		if _, ok := err.(*flow.ContinueAsNewErr); ok {
+			return err
+		}
+	}
+
+	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
+		l.Error("unable to update finished at", zap.Error(err))
+	}
+
+	if err != nil {
+		status := app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: "error while executing steps",
+			Metadata: map[string]any{
+				"error_message": err.Error(),
+			},
+		}
+
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     s.WorkflowID,
+			Status: status,
+		}); err != nil {
+			return err
+		}
+
+		return errors.Wrap(err, "unable to execute workflow steps")
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusSuccess,
+			StatusHumanDescription: "successfully executed workflow",
+		},
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// stepConfig returns the StepConfig for this signal.
+func (s *Signal) stepConfig() flow.StepConfig {
+	return flow.StepConfig{
+		QueueName:       s.StepQueueName,
+		TargetQueueName: s.StepTargetQueueName,
+		OwnerID:         s.OwnerID,
+		OwnerType:       s.OwnerType,
 	}
 }
 
 // createRun creates a WorkflowRun record to track this execution segment.
 func (s *Signal) createRun(ctx workflow.Context, runType app.WorkflowRunType, triggerStepID string, startFromIdx int) (*app.WorkflowRun, error) {
 	return workflowactivities.AwaitPkgWorkflowsFlowCreateWorkflowRun(ctx, workflowactivities.CreateWorkflowRunRequest{
-		WorkflowID:    s.InstallWorkflowID,
+		WorkflowID:    s.WorkflowID,
 		Type:          runType,
 		TriggerStepID: triggerStepID,
 		StartFromIdx:  startFromIdx,
@@ -159,7 +263,7 @@ func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.
 
 // isWorkflowComplete checks if all steps in the workflow have terminal statuses.
 func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
-	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.InstallWorkflowID)
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.WorkflowID)
 	if err != nil {
 		return false
 	}
@@ -182,7 +286,7 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 // checkRetryable checks if the workflow is still eligible for retry.
 func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 	resp, err := installactivities.AwaitCheckWorkflowRetryable(ctx, installactivities.CheckWorkflowRetryableRequest{
-		WorkflowID: s.InstallWorkflowID,
+		WorkflowID: s.WorkflowID,
 	})
 	if err != nil {
 		return false

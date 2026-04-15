@@ -14,19 +14,23 @@ import (
 const SignalType qsignal.SignalType = "execute-flow"
 
 type Signal struct {
-	InstallWorkflowID string `json:"install_workflow_id"`
+	// WorkflowID is the ID of the workflow to execute.
+	WorkflowID string `json:"workflow_id"`
 
-	// installID is resolved from the workflow's OwnerID during Validate
-	installID string
+	// Conductor configuration — set by the creator when enqueuing.
+	StepQueueName       string `json:"step_queue_name"`
+	StepTargetQueueName string `json:"step_target_queue_name"`
+	OwnerID             string `json:"owner_id"`
+	OwnerType           string `json:"owner_type"`
 
-	// Resume state - set by update handlers (approve/retry/skip) to wake the
+	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
 	resumeRunType   app.WorkflowRunType
 	resumeStepID    string
 	resumeStartIdx  int
 
-	// Cancel state - set by "cancel-step" update handler
+	// Cancel state — set by "cancel-step" update handler.
 	cancelRequested bool
 }
 
@@ -35,6 +39,38 @@ var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
 
 func (s *Signal) Type() qsignal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) Validate(ctx workflow.Context) error {
+	if s.WorkflowID == "" {
+		return errors.New("workflow_id is required")
+	}
+
+	// Resolve owner from the workflow if not explicitly set.
+	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get workflow")
+	}
+	if s.OwnerID == "" {
+		s.OwnerID = flw.OwnerID
+	}
+	if s.OwnerType == "" {
+		s.OwnerType = flw.OwnerType
+	}
+
+	// Validate owner exists.
+	// NOTE: currently install-specific; will be abstracted when activities move.
+	if s.OwnerType == "installs" {
+		if _, err := installactivities.AwaitGetByInstallID(ctx, s.OwnerID); err != nil {
+			return errors.Wrap(err, "owner not found")
+		}
+	}
+
+	return nil
+}
+
+func (s *Signal) Execute(ctx workflow.Context) error {
+	return s.executeFlow(ctx)
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
@@ -60,32 +96,4 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	}
 	return workflow.SetUpdateHandlerWithOptions(ctx, "poll-next-step",
 		s.pollNextStepHandler, workflow.UpdateHandlerOptions{})
-}
-
-func (s *Signal) Validate(ctx workflow.Context) error {
-	if s.InstallWorkflowID == "" {
-		return errors.New("install_workflow_id is required")
-	}
-
-	// Resolve install ID from the workflow's OwnerID
-	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.InstallWorkflowID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get workflow")
-	}
-	if flw.OwnerID == "" || flw.OwnerType != "installs" {
-		return errors.New("workflow does not belong to an install")
-	}
-	s.installID = flw.OwnerID
-
-	// Validate install exists
-	_, err = installactivities.AwaitGetByInstallID(ctx, s.installID)
-	if err != nil {
-		return errors.Wrap(err, "install not found")
-	}
-
-	return nil
-}
-
-func (s *Signal) Execute(ctx workflow.Context) error {
-	return s.executeFlow(ctx)
 }

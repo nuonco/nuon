@@ -41,7 +41,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		s.resumeRunType = app.WorkflowRunTypeSkip
 		s.resumeStepID = req.StepID
 		return &SkipStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Skippable:  true,
 		}, nil
 	}
@@ -49,14 +49,14 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	// Only error state steps can be skipped via the direct path
 	if step.Status.Status != app.StatusError {
 		return &SkipStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Skippable:  false,
 		}, nil
 	}
 
 	if !step.Skippable {
 		return &SkipStepResponse{
-			WorkflowID: s.InstallWorkflowID,
+			WorkflowID: s.WorkflowID,
 			Skippable:  false,
 		}, nil
 	}
@@ -76,7 +76,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	s.resumeRunType = app.WorkflowRunTypeSkip
 	s.resumeStepID = req.StepID
 	return &SkipStepResponse{
-		WorkflowID: s.InstallWorkflowID,
+		WorkflowID: s.WorkflowID,
 		Skippable:  true,
 	}, nil
 }
