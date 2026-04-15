@@ -13,7 +13,6 @@ import (
 
 // testSignal is a local signal type to avoid import cycles with the example package
 type testSignal struct {
-	signal.Hooks
 	Value string
 }
 

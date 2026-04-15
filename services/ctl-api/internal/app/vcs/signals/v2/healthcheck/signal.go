@@ -14,7 +14,6 @@ import (
 const SignalType signal.SignalType = "vcs_connection_healthcheck"
 
 type Signal struct {
-	signal.Hooks
 	VCSConnectionID string `json:"vcs_connection_id"`
 }
 

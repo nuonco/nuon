@@ -18,7 +18,6 @@ import (
 const SignalType signal.SignalType = "process_shutdown"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID     string `json:"runner_id"`
 	ProcessID    string `json:"process_id"`
 	ShutdownType string `json:"shutdown_type"`

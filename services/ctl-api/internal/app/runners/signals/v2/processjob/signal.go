@@ -16,7 +16,6 @@ import (
 const SignalType signal.SignalType = "process_job"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID string `json:"runner_id"`
 	JobID    string `json:"job_id"`
 }

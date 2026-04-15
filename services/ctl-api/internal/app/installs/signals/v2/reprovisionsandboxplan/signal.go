@@ -23,21 +23,22 @@ import (
 const SignalType signal.SignalType = "reprovision-sandbox-plan"
 
 type Signal struct {
-	signal.Hooks
 	InstallSandboxID string
 	WorkflowStepID   string
 	FlowStepID       string
 	FlowID           string
 	SandboxMode      bool
-	cfg              *internal.Config
+
+	cfg *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
-var _ signal.SignalWithInit = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
-func (s *Signal) Init(_ workflow.Context) error {
-	s.Hooks.Operation = "sandbox-reprovision"
-	return nil
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		Operation: "sandbox-reprovision",
+	}
 }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -121,7 +122,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.Hooks.LogStreamID = logStream.ID
+
 	l := workflow.GetLogger(ctx)
 	l.Info("executing reprovision plan")
 

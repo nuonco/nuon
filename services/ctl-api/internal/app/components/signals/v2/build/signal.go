@@ -23,7 +23,6 @@ import (
 )
 
 type Signal struct {
-	signal.Hooks
 	ComponentID string `json:"component_id" validate:"required"`
 	BuildID     string `json:"build_id" validate:"required"`
 	SandboxMode bool   `json:"sandbox_mode"`
@@ -56,7 +55,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.Hooks.LogStreamID = logStream.ID
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

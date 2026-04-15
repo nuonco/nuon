@@ -24,7 +24,6 @@ import (
 const SignalType signal.SignalType = "deprovision-sandbox-apply-plan"
 
 type Signal struct {
-	signal.Hooks
 	InstallSandboxID string
 	FlowID           string
 	FlowStepID       string
@@ -34,11 +33,12 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
-var _ signal.SignalWithInit = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
-func (s *Signal) Init(_ workflow.Context) error {
-	s.Hooks.Operation = "sandbox-deprovision"
-	return nil
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		Operation: "sandbox-deprovision",
+	}
 }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -132,7 +132,6 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	if err != nil {
 		return err
 	}
-	s.Hooks.LogStreamID = logStreamID
 
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)

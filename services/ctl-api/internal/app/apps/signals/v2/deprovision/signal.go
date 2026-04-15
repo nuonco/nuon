@@ -23,7 +23,6 @@ const (
 )
 
 type Signal struct {
-	signal.Hooks
 	AppID string `json:"app_id"`
 }
 
