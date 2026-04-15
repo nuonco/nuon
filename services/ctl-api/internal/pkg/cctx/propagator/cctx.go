@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -52,7 +53,14 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 	}
 	logStream, _ := cctx.GetLogStreamWorkflow(ctx)
 
-	payload, err := s.dataConverter.ToPayload(Payload{
+	// Get a workflow-context-aware copy of the data converter so that
+	// DataConverterWithoutDeadlockDetection can pause the deadlock detector
+	// during serialization. Without this, the converter's context field is nil
+	// and PauseDeadlockDetector is a no-op, which allows json-iterator's
+	// first-time reflection cache build to trigger TMPRL1101 panics.
+	dc := withWorkflowContext(ctx, s.dataConverter)
+
+	payload, err := dc.ToPayload(Payload{
 		OrgID:     orgID,
 		AccountID: acctID,
 		TraceID:   traceID,
@@ -66,13 +74,32 @@ func (s *propagator) InjectFromWorkflow(ctx workflow.Context, writer workflow.He
 }
 
 func (s *propagator) getPayload(reader workflow.HeaderReader) (*Payload, error) {
+	return s.getPayloadFromDC(s.dataConverter, reader)
+}
+
+func (s *propagator) getPayloadWithWorkflowContext(ctx workflow.Context, reader workflow.HeaderReader) (*Payload, error) {
+	dc := withWorkflowContext(ctx, s.dataConverter)
+	return s.getPayloadFromDC(dc, reader)
+}
+
+// withWorkflowContext returns a DataConverter that pauses the deadlock detector
+// during serialization calls. If the converter doesn't implement ContextAware
+// it is returned as-is.
+func withWorkflowContext(ctx workflow.Context, dc converter.DataConverter) converter.DataConverter {
+	if ca, ok := dc.(workflow.ContextAware); ok {
+		return ca.WithWorkflowContext(ctx)
+	}
+	return dc
+}
+
+func (s *propagator) getPayloadFromDC(dc converter.DataConverter, reader workflow.HeaderReader) (*Payload, error) {
 	value, ok := reader.Get(propagationHeader)
 	if !ok {
 		return nil, fmt.Errorf("no propagation key (%s) set for cctx", propagationHeader)
 	}
 
 	var payload Payload
-	if err := s.dataConverter.FromPayload(value, &payload); err != nil {
+	if err := dc.FromPayload(value, &payload); err != nil {
 		return nil, errors.Wrap(err, "unable to convert payload")
 	}
 
@@ -104,7 +131,7 @@ func (s *propagator) Extract(ctx context.Context, reader workflow.HeaderReader) 
 
 // ExtractToWorkflow extracts values from headers and puts them into context
 func (s *propagator) ExtractToWorkflow(ctx workflow.Context, reader workflow.HeaderReader) (workflow.Context, error) {
-	payload, err := s.getPayload(reader)
+	payload, err := s.getPayloadWithWorkflowContext(ctx, reader)
 	if err != nil {
 		return nil, err
 	}
