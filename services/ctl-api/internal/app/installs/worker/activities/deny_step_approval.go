@@ -7,7 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // DenyStepApprovalRequest is the input for denying a step's approval and forwarding the denial.
@@ -52,7 +52,7 @@ func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalR
 			Where(app.QueueSignal{
 				OwnerID:   req.StepID,
 				OwnerType: (&app.WorkflowStep{}).TableName(),
-				Type:      executeworkflowstep.SignalType,
+				Type:      signal.SignalType("execute-workflow-step"),
 			}).
 			Order("created_at DESC").
 			First(&qs)
@@ -66,7 +66,10 @@ func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalR
 				UpdateName:   "approve-plan",
 				WaitForStage: tclient.WorkflowUpdateStageAccepted,
 				Args: []any{
-					executeworkflowstep.ApprovePlanRequest{
+					struct {
+					ApprovalResponseID string `json:"approval_response_id"`
+					ResponseType       string `json:"response_type"`
+				}{
 						ApprovalResponseID: response.ID,
 						ResponseType:       string(app.WorkflowStepApprovalResponseTypeRetryPlan),
 					},
