@@ -21,6 +21,7 @@ const healthcheckSignalType queuesignal.SignalType = "healthcheck"
 // matches healthcheck.Signal. The emitter deserializes this template when
 // firing the signal; only the exported fields matter.
 type healthcheckSignalTemplate struct {
+	queuesignal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 

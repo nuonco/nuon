@@ -100,15 +100,15 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 	return ok
 }
 
-func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event signal.SignalPhaseEvent) (signal.BeforePhaseDecision, error) {
+func (h *WebhookSignalLifecycleHook) PreExecute(ctx context.Context, event signal.SignalPhaseEvent) (signal.PreExecuteDecision, error) {
 	if err := h.deliverer.Publish(ctx, event, nil, "before"); err != nil {
-		h.l.Debug("failed to publish pre-phase signal lifecycle webhook", zap.Error(err))
+		h.l.Debug("failed to publish pre-execute signal lifecycle webhook", zap.Error(err))
 	}
 
-	return signal.AllowPhaseDecision(), nil
+	return signal.AllowDecision(), nil
 }
 
-func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
+func (h *WebhookSignalLifecycleHook) PostExecute(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
 	h.l.Debug("webhook after-phase called",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),

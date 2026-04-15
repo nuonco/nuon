@@ -12,19 +12,16 @@ import (
 const SignalType signal.SignalType = "app-branch-app-config"
 
 type Signal struct {
+	signal.Hooks
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
-	logStreamID string
 }
 
 var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
-
-func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	v := validator.New()

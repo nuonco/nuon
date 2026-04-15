@@ -25,20 +25,18 @@ import (
 const SignalType signal.SignalType = "component-sync-image"
 
 type Signal struct {
+	signal.Hooks
 	InstallComponentID string
 	DeployID           string
 	ComponentID        string
 	WorkflowStepID     string
 	FlowID             string
 	SandboxMode        bool
-	logStreamID        string
 }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
-
-func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -46,7 +44,6 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLogStream = (*Signal)(nil)
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists
@@ -115,7 +112,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.logStreamID = logStream.ID
+	s.Hooks.LogStreamID = logStream.ID
 	l, err = log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

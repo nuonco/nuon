@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "on_inactive"
 
 type Signal struct {
+	signal.Hooks
 	RunnerID  string `json:"runner_id"`
 	ProcessID string `json:"process_id"`
 	Reason    string `json:"reason"`

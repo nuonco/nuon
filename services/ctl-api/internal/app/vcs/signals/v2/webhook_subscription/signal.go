@@ -14,6 +14,7 @@ import (
 const SignalType signal.SignalType = "vcs_webhook_subscription"
 
 type Signal struct {
+	signal.Hooks
 	VCSConnectionID string `json:"vcs_connection_id"`
 }
 

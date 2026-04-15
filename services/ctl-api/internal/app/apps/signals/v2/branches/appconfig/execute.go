@@ -28,7 +28,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if logStream != nil {
-		s.logStreamID = logStream.ID
+		s.Hooks.LogStreamID = logStream.ID
 		if err := activities.AwaitUpdateAppBranchRunLogStream(ctx, activities.UpdateAppBranchRunLogStreamRequest{
 			Req: &activities.UpdateAppBranchRunLogStreamInput{
 				RunID:       s.RunID,

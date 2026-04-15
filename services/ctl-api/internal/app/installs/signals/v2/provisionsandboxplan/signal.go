@@ -23,23 +23,21 @@ import (
 const SignalType signal.SignalType = "provision-sandbox-plan"
 
 type Signal struct {
+	signal.Hooks
 	InstallSandboxID string
 	WorkflowStepID   string
 	FlowStepID       string
 	FlowID           string
 	SandboxMode      bool
-	logStreamID      string
 	cfg              *internal.Config
 }
 
 var _ signal.Signal = &Signal{}
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithLogStream = (*Signal)(nil)
+var _ signal.SignalWithInit = (*Signal)(nil)
 
-func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
-	return signal.SignalLifecycleContext{
-		Operation: "sandbox-provision",
-	}
+func (s *Signal) Init(_ workflow.Context) error {
+	s.Hooks.Operation = "sandbox-provision"
+	return nil
 }
 
 func (s *Signal) WithParams(params *signal.Params) {
@@ -49,8 +47,6 @@ func (s *Signal) WithParams(params *signal.Params) {
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
-
-func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -126,7 +122,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStream.ID)
 	}()
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.logStreamID = logStream.ID
+	s.Hooks.LogStreamID = logStream.ID
 	l := workflow.GetLogger(ctx)
 	l.Info("executing provision plan")
 

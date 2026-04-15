@@ -38,12 +38,11 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 		Status:        app.StatusInProgress,
 	})
 
-	err := h.withLifecycle(ctx, signal.SignalPhaseValidate, func(ctx workflow.Context) error {
-		return h.sig.Validate(ctx)
-	})
+	hooks := h.sig.GetHooks()
 
-	if blocked, ok := err.(*signal.SignalErrBlocked); ok {
-		validateErr := &signal.SignalErrValidate{Err: errors.New(blocked.Error())}
+	result, _ := hooks.PreExecuteHooks(ctx, signal.SignalPhaseValidate)
+	if !result.Allow {
+		validateErr := &signal.SignalErrValidate{Err: errors.New((&signal.SignalErrBlocked{Phase: signal.SignalPhaseValidate, Reason: result.Reason}).Error())}
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
@@ -51,6 +50,12 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 		})
 		return nil, validateErr
 	}
+
+	start := workflow.Now(ctx)
+	err := h.sig.Validate(ctx)
+	dur := workflow.Now(ctx).Sub(start)
+
+	hooks.PostExecuteHooks(ctx, result.Event, hooks.BuildOutcome(err, dur))
 
 	if err != nil {
 		validateErr := &signal.SignalErrValidate{Err: err}

@@ -60,12 +60,11 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		},
 	})
 
-	err := h.withLifecycle(ctx, signal.SignalPhaseExecute, func(_ workflow.Context) error {
-		return h.sig.Execute(execCtx)
-	})
+	hooks := h.sig.GetHooks()
 
-	if blocked, ok := err.(*signal.SignalErrBlocked); ok {
-		execErr := &signal.SignalErrExecute{Err: errors.New(blocked.Error())}
+	result, _ := hooks.PreExecuteHooks(ctx, signal.SignalPhaseExecute)
+	if !result.Allow {
+		execErr := &signal.SignalErrExecute{Err: errors.New((&signal.SignalErrBlocked{Phase: signal.SignalPhaseExecute, Reason: result.Reason}).Error())}
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
@@ -73,6 +72,12 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		})
 		return nil, execErr
 	}
+
+	executeStart := workflow.Now(ctx)
+	err := h.sig.Execute(execCtx)
+	executeDur := workflow.Now(ctx).Sub(executeStart)
+
+	hooks.PostExecuteHooks(ctx, result.Event, hooks.BuildOutcome(err, executeDur))
 
 	if err != nil {
 		if h.canceled {

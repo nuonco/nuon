@@ -45,11 +45,11 @@ func (h *LogStreamCleanupHook) Supports(event signal.SignalPhaseEvent) bool {
 	return event.Phase == signal.SignalPhaseExecute || event.Phase == signal.SignalPhaseCancel
 }
 
-func (h *LogStreamCleanupHook) BeforePhase(_ context.Context, _ signal.SignalPhaseEvent) (signal.BeforePhaseDecision, error) {
-	return signal.AllowPhaseDecision(), nil
+func (h *LogStreamCleanupHook) PreExecute(_ context.Context, _ signal.SignalPhaseEvent) (signal.PreExecuteDecision, error) {
+	return signal.AllowDecision(), nil
 }
 
-func (h *LogStreamCleanupHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
+func (h *LogStreamCleanupHook) PostExecute(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
 	logStreamID, ok := outcome.Metadata[logStreamMetadataKey].(string)
 	if !ok || logStreamID == "" {
 		return nil

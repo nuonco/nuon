@@ -25,20 +25,18 @@ import (
 const SignalType signal.SignalType = "component-teardown-sync-and-plan"
 
 type Signal struct {
+	signal.Hooks
 	InstallComponentID string
 	ComponentID        string
 	WorkflowStepID     string
 	FlowStepID         string
 	FlowID             string
 	SandboxMode        bool
-	logStreamID        string
 }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
-
-func (s *Signal) LogStreamID() string { return s.logStreamID }
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.WorkflowStepID = stepID
@@ -47,14 +45,12 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithLogStream = (*Signal)(nil)
+var _ signal.SignalWithInit = (*Signal)(nil)
 
-func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
-	return signal.SignalLifecycleContext{
-		ComponentID: &s.ComponentID,
-		Operation:   "component-teardown",
-	}
+func (s *Signal) Init(_ workflow.Context) error {
+	s.Hooks.ComponentID = &s.ComponentID
+	s.Hooks.Operation = "component-teardown"
+	return nil
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -131,7 +127,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// NOTE: not closed so we can re-use this log stream for apply plan
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.logStreamID = logStream.ID
+	s.Hooks.LogStreamID = logStream.ID
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
