@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -290,7 +292,26 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 	}
 	l.Info("sync image job was successfully completed")
 
-	// Don't create OCI artifact record here like in sync-image, because we're continuing to execPlan
+	// parse outputs and create OCI artifact record
+	job, err := activities.AwaitGetJobByID(ctx, runnerJob.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner job")
+	}
+
+	var ociArtOutputs state.OCIArtifactOutputs
+	if err := mapstructure.Decode(job.ParsedOutputs["image"], &ociArtOutputs); err != nil {
+		l.Error("error parsing oci artifact outputs", zap.Error(err))
+		return errors.Wrap(err, "unable to parse oci artifact outputs")
+	}
+
+	if _, err := activities.AwaitCreateOCIArtifact(ctx, activities.CreateOCIArtifactRequest{
+		OwnerID:   installDeploy.ID,
+		OwnerType: "install_deploys",
+		Outputs:   ociArtOutputs,
+	}); err != nil {
+		return errors.Wrap(err, "unable to create oci artifact")
+	}
+
 	return nil
 }
 
