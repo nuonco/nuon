@@ -1,0 +1,231 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
+)
+
+const ActivePageSignalCatalog ActivePage = "signal-catalog"
+
+templ SignalCatalogView(infos []catalog.SignalTypeInfo) {
+	@Layout("Signal Catalog", ActivePageSignalCatalog) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Signal Catalog
+					}
+					@card.Description() {
+						All registered signal types and their capabilities ({ fmt.Sprintf("%d", len(infos)) } types)
+					}
+				}
+				@card.Content() {
+					if len(infos) == 0 {
+						<div class="text-sm text-muted-foreground py-8 text-center">No signal types registered.</div>
+					} else {
+						@table.Table() {
+							@table.Header() {
+								@table.Row() {
+									@table.Head() { Type }
+									@table.Head() { Operation }
+									@table.Head() { Auto-Retry }
+									@table.Head() { Max Retries }
+									@table.Head() { Capabilities }
+								}
+							}
+							@table.Body() {
+								for _, info := range infos {
+									@table.Row() {
+										@table.Cell(table.CellProps{Class: "font-mono text-xs font-medium"}) {
+											{ string(info.Type) }
+										}
+										@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+											if info.Operation != "" {
+												{ info.Operation }
+											} else {
+												<span class="text-muted-foreground">—</span>
+											}
+										}
+										@table.Cell() {
+											if info.AutoRetry {
+												@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
+													Yes
+												}
+											} else {
+												<span class="text-muted-foreground text-xs">No</span>
+											}
+										}
+										@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+											{ fmt.Sprintf("%d", info.MaxRetries) }
+										}
+										@table.Cell() {
+											<div class="flex flex-wrap gap-1">
+												@signalCapabilityBadges(info)
+											</div>
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		</div>
+	}
+}
+
+templ signalCapabilityBadges(info catalog.SignalTypeInfo) {
+	if info.HasCloneSteps {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			clone-steps
+		}
+	}
+	if info.HasNoOpCheck {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			noop-check
+		}
+	}
+	if info.HasPolicyEval {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			policy-eval
+		}
+	}
+	if info.HasSkipCleanup {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			skip-cleanup
+		}
+	}
+	if info.HasOnApprove {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			on-approve
+		}
+	}
+	if info.HasOnRetry {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			on-retry
+		}
+	}
+	if info.HasOnSkip {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			on-skip
+		}
+	}
+	if info.HasOnDeny {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			on-deny
+		}
+	}
+	if info.HasFetchSteps {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			fetch-steps
+		}
+	}
+	if info.HasQueue {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			queue: { info.Queue }
+		}
+	}
+	if info.IsParallelizable {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			parallelizable
+		}
+	}
+	if info.HasStepContext {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			step-context
+		}
+	}
+	if info.HasLifecycle {
+		@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+			lifecycle
+		}
+	}
+}
+
+// SignalAttributes renders an inline attributes card for a specific signal's capabilities.
+// Used on the signal detail page.
+templ SignalAttributes(info *catalog.SignalTypeInfo) {
+	if info != nil {
+		<div class="mb-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Signal attributes
+					}
+					@card.Description() {
+						Capabilities declared by this signal type
+					}
+				}
+				@card.Content() {
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+						@attributeItem("Auto-Retry", info.AutoRetry)
+						@attributeItem("Max Retries", fmt.Sprintf("%d", info.MaxRetries))
+						@attributeItem("Clone Steps", info.HasCloneSteps)
+						@attributeItem("NoOp Check", info.HasNoOpCheck)
+						@attributeItem("Policy Eval", info.HasPolicyEval)
+						@attributeItem("Skip Cleanup", info.HasSkipCleanup)
+						@attributeItem("Parallelizable", info.IsParallelizable)
+						@attributeItem("Step Context", info.HasStepContext)
+						if info.Operation != "" {
+							@attributeItem("Operation", info.Operation)
+						}
+						if info.HasQueue {
+							@attributeItem("Queue", info.Queue)
+						}
+					</div>
+					if info.HasOnApprove || info.HasOnRetry || info.HasOnSkip || info.HasOnDeny || info.HasFetchSteps {
+						<div class="mt-3 pt-3 border-t border-border">
+							<span class="text-xs text-muted-foreground uppercase font-medium mb-2 block">Lifecycle hooks</span>
+							<div class="flex flex-wrap gap-1">
+								if info.HasOnApprove {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										on-approve
+									}
+								}
+								if info.HasOnRetry {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										on-retry
+									}
+								}
+								if info.HasOnSkip {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										on-skip
+									}
+								}
+								if info.HasOnDeny {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										on-deny
+									}
+								}
+								if info.HasFetchSteps {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										fetch-steps
+									}
+								}
+							</div>
+						</div>
+					}
+				}
+			}
+		</div>
+	}
+}
+
+templ attributeItem(label string, value any) {
+	<div class="flex flex-col gap-1">
+		<span class="text-xs text-muted-foreground uppercase">{ label }</span>
+		switch v := value.(type) {
+			case bool:
+				if v {
+					<span class="text-sm font-mono text-cyan">Yes</span>
+				} else {
+					<span class="text-sm font-mono text-muted-foreground">No</span>
+				}
+			case string:
+				<span class="text-sm font-mono text-foreground">{ v }</span>
+		}
+	</div>
+}

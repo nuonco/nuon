@@ -14,27 +14,14 @@ import (
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
 // (from SignalWithMaxRetries) hasn't been exhausted, it creates a clone
-// and writes a retry directive.
+// and writes a retry directive so the conductor continues to the clone.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
 	sig := stepSignal(step)
 
 	// Check auto-retry on inner signal
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
-		// No auto-retry — mark error and return
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusError,
-				Metadata: map[string]any{
-					"reason": stepErr.Error(),
-				},
-				StatusHumanDescription: flowutil.StepHumanDescription(stepErr),
-			},
-		}); err != nil {
-			return errors.Wrap(err, "unable to mark step as error")
-		}
-		return stepErr
+		return s.markStepFailed(ctx, step, stepErr, nil)
 	}
 
 	// Determine max retries from the signal, falling back to default
@@ -51,25 +38,32 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", step.RetryIndex))
 
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: flowutil.StepHumanDescription(stepErr),
-				Metadata: map[string]any{
-					"reason":            stepErr.Error(),
-					"retries_exhausted": true,
-					"max_retries":       maxRetries,
-					"retry_index":       step.RetryIndex,
-				},
-			},
-		}); err != nil {
-			return errors.Wrap(err, "unable to mark step as error")
-		}
-		return stepErr
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"retries_exhausted": true,
+			"max_retries":       maxRetries,
+			"retry_index":       step.RetryIndex,
+		})
 	}
 
-	// Mark the step as failed with auto-retry metadata
+	// Clone the step first — only mark auto-retry metadata if clone succeeds
+	if err := s.cloneWorkflowStep(ctx, step, flw); err != nil {
+		l.Warn("auto-retry clone failed, returning original error",
+			zap.String("step_id", step.ID),
+			zap.Error(err))
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"retries_exhausted": true,
+			"clone_error":       err.Error(),
+		})
+	}
+
+	l.Debug("auto-retry triggered, cloned step",
+		zap.String("step_id", step.ID),
+		zap.String("workflow_id", flw.ID),
+		zap.Int("retry_index", nextRetryIndex),
+		zap.Int("max_retries", maxRetries))
+
+	// Clone succeeded — mark step as failed with auto-retry directive so the
+	// conductor knows to continue to the cloned step.
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
@@ -84,22 +78,31 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			},
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to mark step as error")
+		return errors.Wrap(err, "unable to mark step as auto-retried")
 	}
-
-	// Clone the step for retry
-	if err := s.cloneWorkflowStep(ctx, step, flw); err != nil {
-		l.Warn("auto-retry clone failed, returning original error",
-			zap.String("step_id", step.ID),
-			zap.Error(err))
-		return stepErr
-	}
-
-	l.Debug("auto-retry triggered, cloned step",
-		zap.String("step_id", step.ID),
-		zap.String("workflow_id", flw.ID),
-		zap.Int("retry_index", nextRetryIndex),
-		zap.Int("max_retries", maxRetries))
 
 	return nil
+}
+
+// markStepFailed writes a StatusError update for the step with the given error
+// and optional extra metadata. It always returns stepErr.
+func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, stepErr error, extraMeta map[string]any) error {
+	meta := map[string]any{
+		"reason": stepErr.Error(),
+	}
+	for k, v := range extraMeta {
+		meta[k] = v
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: flowutil.StepHumanDescription(stepErr),
+			Metadata:               meta,
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to mark step as error")
+	}
+	return stepErr
 }

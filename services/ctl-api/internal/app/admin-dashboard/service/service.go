@@ -139,6 +139,9 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
 	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
 
+	// Signal catalog
+	api.GET("/signal-catalog", s.SignalCatalog)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }

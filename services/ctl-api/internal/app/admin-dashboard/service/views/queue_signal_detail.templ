@@ -9,9 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 )
 
-templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo) {
+templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo, attrs *catalog.SignalTypeInfo) {
 	@Layout("Signal: " + signal.ID, ActivePageQueues) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -56,6 +57,9 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 					</div>
 				</div>
 			</div>
+
+			<!-- Signal Attributes -->
+			@SignalAttributes(attrs)
 
 			<!-- Timeline -->
 			{{ enqueuedAt := signal.CreatedAt.Format("2006-01-02 15:04:05 MST") }}

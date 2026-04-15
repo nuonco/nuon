@@ -48,7 +48,9 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo)
+	attrs := signalAttributesForType(signal.Type)
+
+	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo, attrs)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 

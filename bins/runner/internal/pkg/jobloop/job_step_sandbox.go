@@ -6,8 +6,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 )
@@ -40,11 +41,6 @@ func (j *jobLoop) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 	}
 
 	jobType := string(job.Type)
-	if jobType == string(models.AppRunnerJobTypeSandboxDashTerraform) {
-		l.Error("injecting an error into sandbox run")
-		return errors.New("testing error")
-	}
-
 	duration := j.cfg.SandboxJobDuration
 	faultsEnabled := j.cfg.SandboxModeFaultsEnabled
 	shouldFault := faultsEnabled && rand.Intn(10) == 0
