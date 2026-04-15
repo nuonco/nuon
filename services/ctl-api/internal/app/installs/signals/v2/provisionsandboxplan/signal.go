@@ -33,16 +33,19 @@ type Signal struct {
 	cfg *internal.Config
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
-var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
-var _ signal.SignalWithSkipCleanup = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var (
+	_ signal.Signal                     = &Signal{}
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithNoOpCheck        = (*Signal)(nil)
+	_ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
+	_ signal.SignalWithSkipCleanup      = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+)
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool { return true }
 func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) MaxRetries() int                { return 3 }
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)
