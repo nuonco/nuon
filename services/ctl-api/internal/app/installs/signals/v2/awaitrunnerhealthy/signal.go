@@ -27,6 +27,9 @@ type Signal struct {
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithParams = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.v = params.V

@@ -8,8 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 // DEPRECATED: This endpoint is deprecated and will be removed in a future release.
@@ -66,14 +66,14 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			InstallWorkflowID: workflow.ID,
-		}); err != nil {
+			WorkflowID: workflow.ID,
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

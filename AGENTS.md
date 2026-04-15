@@ -240,6 +240,28 @@ When working with Go code in this repository, agents should follow these practic
 - Add appropriate logging with structured fields
 - Ensure proper imports and avoid unused dependencies
 
+### GORM Query Conventions
+
+**Always use struct-based `Where` clauses instead of raw SQL strings.** This applies to all GORM queries throughout the codebase.
+
+```go
+// ✅ CORRECT - Struct-based Where clause
+db.Where(app.QueueSignal{
+    OwnerID:   stepID,
+    OwnerType: (&app.WorkflowStep{}).TableName(),
+}).First(&qs)
+
+// ❌ WRONG - Raw SQL string Where clause
+db.Where("owner_id = ? AND owner_type = ?", stepID, "install_workflow_steps").First(&qs)
+```
+
+**Why:**
+- Type-safe: compiler catches field name typos
+- Refactor-safe: field renames propagate automatically
+- Consistent: matches the established codebase pattern
+
+**Note:** Use `(&app.Model{}).TableName()` (pointer receiver) when the model's `TableName()` method has a pointer receiver.
+
 ### Logging
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.

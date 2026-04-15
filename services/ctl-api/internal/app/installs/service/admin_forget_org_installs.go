@@ -56,7 +56,7 @@ func (s *service) ForgetOrgInstalls(ctx *gin.Context) {
 			}
 			if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
 				InstallID: install.ID,
-			}); err != nil {
+			}, "", ""); err != nil {
 				ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 				return
 			}

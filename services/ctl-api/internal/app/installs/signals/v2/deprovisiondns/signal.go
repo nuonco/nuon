@@ -16,6 +16,9 @@ type Signal struct {
 }
 
 var _ signal.Signal = &Signal{}
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
