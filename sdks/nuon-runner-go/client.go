@@ -64,6 +64,7 @@ type Client interface {
 	// runner processes
 	CreateProcess(ctx context.Context, req *models.ServiceCreateRunnerProcessRequest) (*models.AppRunnerProcess, error)
 	GetProcess(ctx context.Context, processID string) (*models.AppRunnerProcess, error)
+	GetProcessShutdowns(ctx context.Context, processID string) ([]*models.AppRunnerProcessShutdown, error)
 	UpdateProcess(ctx context.Context, processID string, req *models.ServiceUpdateRunnerProcessRequest) (*models.AppRunnerProcess, error)
 	CompleteShutdown(ctx context.Context, processID, shutdownID string) (*models.AppRunnerProcessShutdown, error)
 

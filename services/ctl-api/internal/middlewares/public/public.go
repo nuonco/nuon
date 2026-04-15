@@ -32,6 +32,9 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/runner-auth/gcp"}:     {},
 	{"POST", "/v1/runner-auth/azure"}:   {},
 	{"POST", "/v1/runner-auth/aws-iid"}: {},
+
+	// runner shutdown polling: must work without auth so broken runners can still be shut down
+	{"GET", "/v1/runners/:runner_id/processes/:process_id/shutdowns"}: {},
 }
 
 type middleware struct {
