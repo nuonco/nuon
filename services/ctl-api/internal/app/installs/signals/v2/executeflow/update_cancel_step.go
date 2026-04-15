@@ -3,7 +3,7 @@ package executeflow
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 // CancelStepRequest is the input for the "cancel-step" update handler.
@@ -18,7 +18,7 @@ type CancelStepResponse struct {
 
 func (s *Signal) cancelStepHandler(ctx workflow.Context, req CancelStepRequest) (*CancelStepResponse, error) {
 	// Forward the cancel to the step's handler workflow via activity.
-	_, err := activities.AwaitForwardCancelStep(ctx, activities.ForwardCancelStepRequest{
+	_, err := installactivities.AwaitForwardCancelStep(ctx, installactivities.ForwardCancelStepRequest{
 		StepID: req.StepID,
 	})
 	if err != nil {

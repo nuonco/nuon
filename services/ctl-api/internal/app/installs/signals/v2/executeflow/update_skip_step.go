@@ -6,6 +6,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -26,7 +28,25 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
 	}
 
-	// Only error state steps can be skipped
+	// Steps awaiting approval can be skipped via the approval mechanism
+	if step.Status.Status == app.AwaitingApproval || step.Status.Status == app.Status("awaiting-approval") {
+		if _, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
+			StepID:       req.StepID,
+			ResponseType: string(app.WorkflowStepApprovalResponseTypeSkipCurrent),
+		}); err != nil {
+			return nil, fmt.Errorf("unable to forward skip approval for step %s: %w", req.StepID, err)
+		}
+
+		s.resumeRequested = true
+		s.resumeRunType = app.WorkflowRunTypeSkip
+		s.resumeStepID = req.StepID
+		return &SkipStepResponse{
+			WorkflowID: s.InstallWorkflowID,
+			Skippable:  true,
+		}, nil
+	}
+
+	// Only error state steps can be skipped via the direct path
 	if step.Status.Status != app.StatusError {
 		return &SkipStepResponse{
 			WorkflowID: s.InstallWorkflowID,
@@ -41,26 +61,20 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		}, nil
 	}
 
-	s.skipRequested = true
-	s.skipStepID = req.StepID
-
-	// If this is a plan step (approval execution type), find the apply step in the same group
-	// so we can skip both plan and apply together.
-	if step.ExecutionType == app.WorkflowStepExecutionTypeApproval {
-		allSteps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.InstallWorkflowID)
-		if err == nil {
-			for _, s2 := range allSteps {
-				if s2.GroupIdx == step.GroupIdx &&
-					s2.GroupRetryIdx == step.GroupRetryIdx &&
-					s2.ID != step.ID &&
-					s2.ExecutionType == app.WorkflowStepExecutionTypeSystem {
-					s.skipAdditionalStepIDs = append(s.skipAdditionalStepIDs, s2.ID)
-					break
-				}
-			}
-		}
+	// Mark the errored step as skipped so the conductor advances past it.
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: req.StepID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusUserSkipped,
+			StatusHumanDescription: "Step was skipped by the user.",
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", req.StepID, err)
 	}
 
+	s.resumeRequested = true
+	s.resumeRunType = app.WorkflowRunTypeSkip
+	s.resumeStepID = req.StepID
 	return &SkipStepResponse{
 		WorkflowID: s.InstallWorkflowID,
 		Skippable:  true,

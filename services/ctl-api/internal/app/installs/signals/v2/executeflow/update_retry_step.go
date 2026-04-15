@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -27,8 +27,26 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
 	}
 
-	// Validate step is in a retryable state
 	switch step.Status.Status {
+	case app.AwaitingApproval, app.Status("awaiting-approval"):
+		// Step is awaiting approval - forward a retry response through the
+		// approval mechanism. The step workflow will handle cloning and write
+		// a retry directive.
+		if _, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
+			StepID:       req.StepID,
+			ResponseType: string(app.WorkflowStepApprovalResponseTypeRetryPlan),
+		}); err != nil {
+			return nil, fmt.Errorf("unable to forward retry approval for step %s: %w", req.StepID, err)
+		}
+
+		s.resumeRequested = true
+		s.resumeRunType = app.WorkflowRunTypeRetry
+		s.resumeStepID = req.StepID
+		return &RetryStepResponse{
+			WorkflowID: s.InstallWorkflowID,
+			Retryable:  true,
+		}, nil
+
 	case app.StatusError:
 		if !step.Retryable {
 			return &RetryStepResponse{
@@ -36,31 +54,27 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 				Retryable:  false,
 			}, nil
 		}
-	case app.AwaitingApproval, app.Status("awaiting-approval"):
-		// Deny the approval so the step handler unblocks. The step handler's
-		// RetryPlan response path handles cloning the step with incremented
-		// GroupRetryIdx, so we don't need to set retryRequested here.
-		if _, err := activities.AwaitDenyStepApproval(ctx, activities.DenyStepApprovalRequest{
+
+		// Step failed during execution (not at approval). Create a clone step
+		// directly via the step's create-step-retry update handler, then resume.
+		if _, err := installactivities.AwaitForwardCreateStepRetry(ctx, installactivities.ForwardCreateStepRetryRequest{
 			StepID: req.StepID,
 		}); err != nil {
-			return nil, fmt.Errorf("unable to deny approval for step %s: %w", req.StepID, err)
+			return nil, fmt.Errorf("unable to create step retry for step %s: %w", req.StepID, err)
 		}
+
+		s.resumeRequested = true
+		s.resumeRunType = app.WorkflowRunTypeRetry
+		s.resumeStepID = req.StepID
 		return &RetryStepResponse{
 			WorkflowID: s.InstallWorkflowID,
 			Retryable:  true,
 		}, nil
+
 	default:
 		return &RetryStepResponse{
 			WorkflowID: s.InstallWorkflowID,
 			Retryable:  false,
 		}, nil
 	}
-
-	s.retryRequested = true
-	s.retryStepID = req.StepID
-	s.retryOperation = "retry-step"
-	return &RetryStepResponse{
-		WorkflowID: s.InstallWorkflowID,
-		Retryable:  true,
-	}, nil
 }

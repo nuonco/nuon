@@ -605,7 +605,7 @@ func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 func updateHandlersForSignalType(signalType string) []string {
 	switch signalType {
 	case "execute-flow":
-		return []string{"retry-step", "approve-step", "is-retryable", "poll-next-step"}
+		return []string{"retry-step", "approve-step", "skip-step", "cancel-step", "is-retryable", "poll-next-step"}
 	case "execute-workflow-step":
 		return []string{"is-retryable", "create-step-retry", "approve-plan"}
 	default:

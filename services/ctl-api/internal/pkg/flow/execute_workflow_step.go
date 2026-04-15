@@ -421,6 +421,11 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 }
 
 func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	newRetryIndex := step.RetryIndex + 1
+	if newRetryIndex > 10 {
+		return fmt.Errorf("step %s has exceeded maximum retry count of 10", step.ID)
+	}
+
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
 			{
@@ -439,7 +444,9 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 				GroupIdx:       step.GroupIdx,
 				GroupRetryIdx:  step.GroupRetryIdx,
 				StepTargetType: step.StepTargetType,
-				StepTargetID:   step.StepTargetID,
+				RetryIndex:     newRetryIndex,
+				// StepTargetID intentionally omitted — the clone must create
+				// a fresh target when it executes, not reuse the original.
 			},
 		},
 	})

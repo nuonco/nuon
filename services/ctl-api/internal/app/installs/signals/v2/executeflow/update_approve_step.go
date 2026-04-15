@@ -3,7 +3,8 @@ package executeflow
 import (
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 // ApproveStepRequest is the input for the "approve-step" update handler.
@@ -21,7 +22,7 @@ type ApproveStepResponse struct {
 func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest) (*ApproveStepResponse, error) {
 	// Forward the approval to the step's handler workflow via activity.
 	// The step's "approve-plan" handler sets s.approved = true to unblock the step.
-	_, err := activities.AwaitForwardApprovePlan(ctx, activities.ForwardApprovePlanRequest{
+	_, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
 		StepID:             req.StepID,
 		ApprovalResponseID: req.ApprovalResponseID,
 		ResponseType:       req.ResponseType,
@@ -30,5 +31,10 @@ func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest
 		return nil, err
 	}
 
+	// Wake up the parent execute loop to continue after approval.
+	// The step workflow will have written a directive indicating what to do next.
+	s.resumeRequested = true
+	s.resumeRunType = app.WorkflowRunTypeResume
+	s.resumeStepID = req.StepID
 	return &ApproveStepResponse{WorkflowID: s.InstallWorkflowID}, nil
 }

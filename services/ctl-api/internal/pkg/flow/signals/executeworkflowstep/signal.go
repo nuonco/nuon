@@ -402,22 +402,31 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Update status to awaiting approval
+	// Update status to awaiting approval and write directive so the parent
+	// conductor knows to pause execution at this point.
+	if err := writeDirective(ctx, step.ID, DirectiveAwaitApproval, map[string]any{
+		"step_idx": step.Idx,
+		"status":   "awaiting-approval",
+	}); err != nil {
+		return errors.Wrap(err, "unable to write await-approval directive")
+	}
+
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.AwaitingApproval,
 			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
 			Metadata: map[string]any{
-				"step_idx": step.Idx,
-				"status":   "ok",
+				"step_idx":     step.Idx,
+				"status":       "ok",
+				DirectiveKey:   DirectiveAwaitApproval,
 			},
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to update step to success status")
+		return errors.Wrap(err, "unable to update step to awaiting approval status")
 	}
 
-	// Wait for approval via V2 child workflow
+	// Wait for approval via update handler (30-day deadline)
 	resp, err := s.waitForApprovalResponse(ctx, flw, step)
 	if err != nil {
 		return err
@@ -428,18 +437,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Debug("handling approval response type: approved",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status:                 app.WorkflowStepApprovalStatusApproved,
-				StatusHumanDescription: "approved " + strconv.Itoa(step.Idx+1),
-				Metadata: map[string]any{
-					"step_idx": step.Idx,
-					"status":   "ok",
-				},
-			},
+		if err := writeDirective(ctx, step.ID, DirectiveContinue, map[string]any{
+			"step_idx": step.Idx,
+			"status":   "approved",
 		}); err != nil {
-			return errors.Wrap(err, "unable to update step to success status")
+			return errors.Wrap(err, "unable to write continue directive")
 		}
 		return nil
 
@@ -448,14 +450,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
 
+		// Mark the current step as discarded
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
-				Status:                 app.WorkflowStepApprovalStatusApprovalRetryPlan,
+				Status:                 app.StatusDiscarded,
 				StatusHumanDescription: "retrying " + strconv.Itoa(step.Idx),
 				Metadata: map[string]any{
-					"step_idx": step.Idx,
-					"status":   "retrying",
+					"step_idx":   step.Idx,
+					"status":     "retrying",
+					DirectiveKey: DirectiveRetry,
 				},
 			},
 		}); err != nil {
@@ -470,9 +474,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to update step target status")
 		}
 
+		// Create the clone step for retry
 		if err := s.cloneWorkflowStep(ctx, step, flw); err != nil {
-			return errors.Wrap(err, "unable to clone workflow step for retry")
+			return errors.Wrap(err, "unable to clone step for retry")
 		}
+
 		return nil
 
 	case app.WorkflowStepApprovalResponseTypeSkipCurrent:
@@ -481,14 +487,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("workflow_id", flw.ID))
 
 		if err := s.markWorkflowApprovalPlanDenied(ctx, flw, step); err != nil {
-			statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: flw.ID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "failed to deny plan and update step status",
-					Metadata:               map[string]any{},
-				},
-			})
+			l.Error("failed to deny plan and update step status", zap.Error(err))
+		}
+
+		if err := writeDirective(ctx, step.ID, DirectiveSkipGroup, map[string]any{
+			"step_idx": step.Idx,
+			"status":   "skipped",
+		}); err != nil {
+			return errors.Wrap(err, "unable to write skip-group directive")
 		}
 		return nil
 
@@ -498,14 +504,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			zap.String("workflow_id", flw.ID))
 
 		if err := s.markDependentStepsAsSkipped(ctx, flw, step); err != nil {
-			statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: flw.ID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "failed to deny plan and update step status",
-					Metadata:               map[string]any{},
-				},
-			})
+			l.Error("failed to deny plan and update step status", zap.Error(err))
+		}
+
+		if err := writeDirective(ctx, step.ID, DirectiveStop, map[string]any{
+			"step_idx": step.Idx,
+			"status":   "stopped",
+		}); err != nil {
+			return errors.Wrap(err, "unable to write stop directive")
 		}
 		return nil
 	}
@@ -514,7 +520,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalDenied, map[string]any{
-			"reason": "approval denied",
+			"reason":     "approval denied",
+			DirectiveKey: DirectiveStop,
 		}),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update")
@@ -527,7 +534,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update step target status")
 	}
 
-	return fmt.Errorf("not approved")
+	return nil
 }
 
 // executeInnerSignal handles the actual signal dispatch for a step.
@@ -567,6 +574,11 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	if sig == nil {
 		return nil
 	}
+
+	// Ensure the inner signal references this step's ID, not the original step's.
+	// Cloned (retry) steps copy QueueSignal from the original, so the embedded
+	// step ID fields (WorkflowStepID, FlowStepID, etc.) may be stale.
+	signal.ApplyStepContext(sig, step.ID, s.WorkflowID)
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("enqueuing signal to target queue",
@@ -837,6 +849,11 @@ func (s *Signal) processPolicyViolations(ctx workflow.Context, l *zap.Logger, st
 // the next step in the group (e.g. apply step at Idx+10). Steps are generated with
 // Idx multiples of 10, giving room for up to 9 retries per step.
 func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	newRetryIndex := step.RetryIndex + 1
+	if newRetryIndex > 10 {
+		return fmt.Errorf("step %s has exceeded maximum retry count of 10", step.ID)
+	}
+
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
 			{
@@ -855,7 +872,9 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 				GroupIdx:       step.GroupIdx,
 				GroupRetryIdx:  step.GroupRetryIdx,
 				StepTargetType: step.StepTargetType,
-				StepTargetID:   step.StepTargetID,
+				RetryIndex:     newRetryIndex,
+				// StepTargetID intentionally omitted — the clone must create
+				// a fresh target when it executes, not reuse the original.
 			},
 		},
 	})

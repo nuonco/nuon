@@ -110,9 +110,10 @@ type WorkflowStep struct {
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
-	Retryable bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
-	Skippable bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
-	Retried   bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
+	Retryable  bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
+	Skippable  bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
+	Retried    bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
+	RetryIndex int  `json:"retry_index" gorm:"default:0" temporaljson:"retry_index,omitzero,omitempty"`
 
 	// Fields that are de-nested at read time using AfterQuery
 	WorkflowID string `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_id,omitzero,omitempty"`

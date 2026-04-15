@@ -2370,14 +2370,6 @@ export interface paths {
      */
     post: operations["CancelWorkflow"];
   };
-  "/v1/workflows/{workflow_id}/retry": {
-    /**
-     * rerun the workflow steps starting from input step id, can be used to retry a failed step
-     * @deprecated
-     * @description Retry a workflow execution by id.
-     */
-    post: operations["RetryOwnerWorkflowByID"];
-  };
   "/v1/workflows/{workflow_id}/steps": {
     /**
      * get all of the steps for a given workflow
@@ -2420,12 +2412,20 @@ export interface paths {
      */
     get: operations["AwaitWorkflowStep"];
   };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/cancel": {
+    /** cancel an in-progress workflow step */
+    post: operations["CancelWorkflowStep"];
+  };
   "/v1/workflows/{workflow_id}/steps/{step_id}/retry": {
     /**
-     * rerun the workflow steps starting from input step id, can be used to retry a failed step
+     * retry a failed or awaiting-approval workflow step
      * @description Retry a workflow execution by id.
      */
     post: operations["RetryWorkflowStep"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/skip": {
+    /** skip a failed workflow step and continue the workflow */
+    post: operations["SkipWorkflowStep"];
   };
 }
 
@@ -4583,7 +4583,25 @@ export interface components {
       steps?: components["schemas"]["app.WorkflowStep"][];
       type?: components["schemas"]["app.WorkflowType"];
       updated_at?: string;
+      workflow_runs?: components["schemas"]["app.WorkflowRun"][];
     };
+    "app.WorkflowRun": {
+      created_at?: string;
+      created_by_id?: string;
+      finished_at?: string;
+      id?: string;
+      /** @description StartFromIdx is the step index to start execution from. */
+      start_from_idx?: number;
+      started_at?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      /** @description TriggerStepID is the step that triggered this run (empty for initial runs). */
+      trigger_step_id?: string;
+      type?: components["schemas"]["app.WorkflowRunType"];
+      updated_at?: string;
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.WorkflowRunType": "initial" | "retry" | "skip" | "resume";
     "app.WorkflowStep": {
       approval?: components["schemas"]["app.WorkflowStepApproval"];
       created_at?: string;
@@ -4612,6 +4630,7 @@ export interface components {
       owner_type?: string;
       policy_validation?: components["schemas"]["app.WorkflowStepPolicyValidation"];
       retried?: boolean;
+      retry_index?: number;
       retryable?: boolean;
       skippable?: boolean;
       started_at?: string;
@@ -5385,11 +5404,17 @@ export interface components {
     };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
+      auth_audience?: string;
+      auth_client_id?: string;
+      auth_domain?: string;
       dashboard_url?: string;
       nuon_auth_enabled?: boolean;
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CancelWorkflowStepResponse": {
+      workflow_id?: string;
+    };
     "service.CompleteInstallStepRequest": {
       aws_account?: {
         region?: string;
@@ -5987,15 +6012,6 @@ export interface components {
       role?: string;
       skip_components?: boolean;
     };
-    "service.RetryWorkflowByIDRequest": {
-      /** @description Retry indicates whether to retry the current step or not */
-      operation?: string;
-      /** @description StepID is the ID of the step to start the retry from */
-      step_id?: string;
-    };
-    "service.RetryWorkflowByIDResponse": {
-      workflow_id?: string;
-    };
     "service.RetryWorkflowRequest": {
       /** @description Retry indicates whether to retry the current step or not */
       operation?: string;
@@ -6006,9 +6022,9 @@ export interface components {
     "service.RetryWorkflowResponse": {
       workflow_id?: string;
     };
-    "service.RetryWorkflowStepRequest": {
-      /** @description Retry indicates whether to retry the current step or not */
-      operation?: string;
+    "service.RetryWorkflowStepResponse": {
+      retryable?: boolean;
+      workflow_id?: string;
     };
     "service.RunnerCardDetailsResponse": {
       latest_heart_beat?: components["schemas"]["app.RunnerHeartBeat"];
@@ -6020,6 +6036,10 @@ export interface components {
     };
     "service.ShutdownRunnerProcessRequest": {
       shutdown_type: string;
+    };
+    "service.SkipWorkflowStepResponse": {
+      skippable?: boolean;
+      workflow_id?: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -22948,63 +22968,6 @@ export interface operations {
     };
   };
   /**
-   * rerun the workflow steps starting from input step id, can be used to retry a failed step
-   * @deprecated
-   * @description Retry a workflow execution by id.
-   */
-  RetryOwnerWorkflowByID: {
-    parameters: {
-      path: {
-        /** @description workflow ID */
-        workflow_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RetryWorkflowByIDRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
    * get all of the steps for a given workflow
    * @description Return all steps for a workflow.
    */
@@ -23330,8 +23293,57 @@ export interface operations {
       };
     };
   };
+  /** cancel an in-progress workflow step */
+  CancelWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.CancelWorkflowStepResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
-   * rerun the workflow steps starting from input step id, can be used to retry a failed step
+   * retry a failed or awaiting-approval workflow step
    * @description Retry a workflow execution by id.
    */
   RetryWorkflowStep: {
@@ -23343,17 +23355,60 @@ export interface operations {
         step_id: string;
       };
     };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RetryWorkflowStepRequest"];
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryWorkflowStepResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** skip a failed workflow step and continue the workflow */
+  SkipWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
+          "application/json": components["schemas"]["service.SkipWorkflowStepResponse"];
         };
       };
       /** @description Bad Request */

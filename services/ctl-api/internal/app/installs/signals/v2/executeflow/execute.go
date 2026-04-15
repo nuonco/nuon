@@ -5,11 +5,12 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func getWorkflowStepGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
@@ -42,141 +43,149 @@ func (s *Signal) newConductor() *flow.WorkflowConductor[*signals.Signal] {
 	}
 }
 
-// executeFlow runs the workflow conductor with v2 generators and queue-based execution.
-// It handles ContinueAsNewErr by looping internally since the signal Execute() runs
-// inside a queue handler workflow and cannot use Temporal's ContinueAsNew directly.
-//
-// After a step failure, if the workflow is retryable, the signal stays alive and waits
-// for a "retry-step" update handler to be called. This enables reactive retries without
-// creating new rerun-flow signals.
+// executeFlow runs the workflow conductor with run-based execution.
+// Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
+// The flow pauses at approval points and errors, waiting for update handlers to resume.
 func (s *Signal) executeFlow(ctx workflow.Context) error {
-	eventLoopReq := eventloop.EventLoopRequest{
-		ID: s.installID,
+	// Create and execute the initial run
+	run, err := s.createRun(ctx, app.WorkflowRunTypeInitial, "", 0)
+	if err != nil {
+		return err
 	}
 
-	fc := s.newConductor()
-
-	// Initial execution
-	startFromStepIdx := 0
 	for {
-		err := fc.Handle(ctx, eventLoopReq, s.InstallWorkflowID, startFromStepIdx)
-		if err == nil {
-			return nil
-		}
+		runErr := s.executeRun(ctx, run)
 
-		cerr, ok := err.(*flow.ContinueAsNewErr)
-		if ok && cerr != nil {
-			startFromStepIdx = cerr.StartFromStepIdx
-			continue
-		}
+		if runErr == nil {
+			// Run completed without error. Check if workflow is fully done
+			// or if we paused at an approval/directive point.
+			if s.isWorkflowComplete(ctx) {
+				s.updateRunStatus(ctx, run.ID, app.StatusSuccess)
+				return nil
+			}
+			// Paused at approval - update run status and wait for resume
+			s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
+		} else {
+			// Actual execution error
+			s.updateRunStatus(ctx, run.ID, app.StatusError)
 
-		// Step failed - check if workflow is retryable
-		if !s.checkRetryable(ctx) {
-			return err
-		}
+			if !s.checkRetryable(ctx) {
+				return runErr
+			}
 
-		// Mark workflow as failed, awaiting retry
-		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: s.InstallWorkflowID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "workflow failed, awaiting retry",
-				Metadata: map[string]any{
-					"error_message":  err.Error(),
-					"awaiting_retry": true,
+			// Mark workflow as failed, awaiting retry
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.InstallWorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "workflow failed, awaiting retry",
+					Metadata: map[string]any{
+						"error_message":  runErr.Error(),
+						"awaiting_retry": true,
+					},
 				},
-			},
-		})
+			})
+		}
 
-		// Wait for retry-step, skip-step, or cancel-step update
+		// Wait for a resume or cancel signal from an update handler
 		if err := workflow.Await(ctx, func() bool {
-			return s.retryRequested || s.skipRequested || s.cancelRequested
+			return s.resumeRequested || s.cancelRequested
 		}); err != nil {
 			return err
 		}
 
-		// Cancel requested - stop the workflow
 		if s.cancelRequested {
+			return runErr
+		}
+
+		// Create a new run for the resume
+		s.resumeRequested = false
+		run, err = s.createRun(ctx, s.resumeRunType, s.resumeStepID, s.resumeStartIdx)
+		if err != nil {
 			return err
 		}
+	}
+}
 
-		// Skip requested - execute rerun with skip operation
-		if s.skipRequested {
-			s.skipRequested = false
-			s.skipAdditionalStepIDs = nil
-			rerunErr := s.skip(ctx)
-			if rerunErr == nil {
-				return nil
-			}
-			// Skip's rerun also failed - loop back to check retryable again
-			continue
-		}
+// executeRun executes a single workflow run, handling ContinueAsNew internally.
+// Returns nil when the run completes (either all steps done or paused at approval).
+// Returns an error for actual execution failures.
+func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
+	fc := s.newConductor()
+	eventLoopReq := eventloop.EventLoopRequest{ID: s.installID}
+	startIdx := run.StartFromIdx
 
-		// Retry requested - execute rerun from the failed step
-		s.retryRequested = false
-		rerunErr := s.retry(ctx)
-		if rerunErr == nil {
+	for {
+		err := fc.Handle(ctx, eventLoopReq, s.InstallWorkflowID, startIdx)
+		if err == nil {
 			return nil
 		}
 
-		// Rerun also failed - loop back to check retryable again
+		// Handle ContinueAsNew (batch size limit)
+		if cerr, ok := err.(*flow.ContinueAsNewErr); ok && cerr != nil {
+			startIdx = cerr.StartFromStepIdx
+			continue
+		}
+
+		// ApprovalPauseErr means we stopped at an approval - return nil to enter wait loop
+		if _, ok := err.(*flow.ApprovalPauseErr); ok {
+			return nil
+		}
+
+		// Actual failure
+		return err
 	}
+}
+
+// createRun creates a WorkflowRun record to track this execution segment.
+func (s *Signal) createRun(ctx workflow.Context, runType app.WorkflowRunType, triggerStepID string, startFromIdx int) (*app.WorkflowRun, error) {
+	return workflowactivities.AwaitPkgWorkflowsFlowCreateWorkflowRun(ctx, workflowactivities.CreateWorkflowRunRequest{
+		WorkflowID:    s.InstallWorkflowID,
+		Type:          runType,
+		TriggerStepID: triggerStepID,
+		StartFromIdx:  startFromIdx,
+	})
+}
+
+// updateRunStatus updates the status of a workflow run.
+func (s *Signal) updateRunStatus(ctx workflow.Context, runID string, status app.Status) {
+	workflowactivities.AwaitPkgWorkflowsFlowUpdateWorkflowRunStatus(ctx, workflowactivities.UpdateWorkflowRunStatusRequest{
+		RunID: runID,
+		Status: app.CompositeStatus{
+			Status: status,
+		},
+	})
+}
+
+// isWorkflowComplete checks if all steps in the workflow have terminal statuses.
+func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, s.InstallWorkflowID)
+	if err != nil {
+		return false
+	}
+
+	for _, step := range steps {
+		switch step.Status.Status {
+		case app.StatusSuccess, app.StatusAutoSkipped, app.StatusUserSkipped,
+			app.StatusDiscarded, app.StatusCancelled,
+			app.WorkflowStepApprovalStatusApproved,
+			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
+			continue
+		default:
+			return false
+		}
+	}
+
+	return true
 }
 
 // checkRetryable checks if the workflow is still eligible for retry.
 func (s *Signal) checkRetryable(ctx workflow.Context) bool {
-	resp, err := activities.AwaitCheckWorkflowRetryable(ctx, activities.CheckWorkflowRetryableRequest{
+	resp, err := installactivities.AwaitCheckWorkflowRetryable(ctx, installactivities.CheckWorkflowRetryableRequest{
 		WorkflowID: s.InstallWorkflowID,
 	})
 	if err != nil {
 		return false
 	}
 	return resp.Retryable
-}
-
-// skip executes a rerun of the workflow, skipping the failed step.
-func (s *Signal) skip(ctx workflow.Context) error {
-	fc := s.newConductor()
-	continueFromIdx := 0
-	for {
-		err := fc.Rerun(ctx, eventloop.EventLoopRequest{ID: s.installID}, flow.RerunInput{
-			ContinueFromIdx:       continueFromIdx,
-			FlowID:                s.InstallWorkflowID,
-			StepID:                s.skipStepID,
-			Operation:             flow.RerunOperationSkipStep,
-			AdditionalSkipStepIDs: s.skipAdditionalStepIDs,
-		})
-		if err == nil {
-			return nil
-		}
-		cerr, ok := err.(*flow.ContinueAsNewErr)
-		if ok && cerr != nil {
-			continueFromIdx = cerr.StartFromStepIdx
-			continue
-		}
-		return err
-	}
-}
-
-// retry executes a rerun of the workflow from the failed step.
-func (s *Signal) retry(ctx workflow.Context) error {
-	fc := s.newConductor()
-	continueFromIdx := 0
-	for {
-		err := fc.Rerun(ctx, eventloop.EventLoopRequest{ID: s.installID}, flow.RerunInput{
-			ContinueFromIdx: continueFromIdx,
-			FlowID:          s.InstallWorkflowID,
-			StepID:          s.retryStepID,
-			Operation:       flow.RerunOperation(s.retryOperation),
-		})
-		if err == nil {
-			return nil
-		}
-		cerr, ok := err.(*flow.ContinueAsNewErr)
-		if ok && cerr != nil {
-			continueFromIdx = cerr.StartFromStepIdx
-			continue
-		}
-		return err
-	}
 }

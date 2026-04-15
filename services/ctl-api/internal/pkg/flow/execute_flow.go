@@ -28,6 +28,19 @@ func NewContinueAsNewErr(startsFromStepIdx int) *ContinueAsNewErr {
 	}
 }
 
+// ApprovalPauseErr indicates that execution stopped because a step is awaiting approval.
+type ApprovalPauseErr struct {
+	StepID string
+}
+
+func (e *ApprovalPauseErr) Error() string {
+	return "workflow paused at approval step " + e.StepID
+}
+
+func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
+	return &ApprovalPauseErr{StepID: stepID}
+}
+
 func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)

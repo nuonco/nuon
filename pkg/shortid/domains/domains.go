@@ -210,6 +210,10 @@ func NewWorkflowStepApprovalResponseID() string {
 	return shortid.NewNanoID("war")
 }
 
+func NewWorkflowRunID() string {
+	return shortid.NewNanoID("wfr")
+}
+
 func NewInstanceID() string {
 	return shortid.NewNanoID("ins")
 }

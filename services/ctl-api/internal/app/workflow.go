@@ -192,6 +192,7 @@ type Workflow struct {
 	InstallDeploys            []InstallDeploy            `json:"install_deploys,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
 	InstallActionWorkflowRuns []InstallActionWorkflowRun `json:"install_action_workflow_runs,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_action_runs,omitzero,omitempty"`
 	AppBranchRuns             []AppBranchRun             `json:"app_branch_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"app_branch_runs,omitzero,omitempty"`
+	WorkflowRuns              []WorkflowRun              `json:"workflow_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"workflow_runs,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 }

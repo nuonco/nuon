@@ -5,7 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -18,15 +19,12 @@ type Signal struct {
 	// installID is resolved from the workflow's OwnerID during Validate
 	installID string
 
-	// Retry state - set by "retry-step" update handler
-	retryRequested bool
-	retryStepID    string
-	retryOperation string
-
-	// Skip state - set by "skip-step" update handler
-	skipRequested         bool
-	skipStepID            string
-	skipAdditionalStepIDs []string
+	// Resume state - set by update handlers (approve/retry/skip) to wake the
+	// main execute loop when it is waiting after an approval pause or error.
+	resumeRequested bool
+	resumeRunType   app.WorkflowRunType
+	resumeStepID    string
+	resumeStartIdx  int
 
 	// Cancel state - set by "cancel-step" update handler
 	cancelRequested bool
@@ -80,7 +78,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	s.installID = flw.OwnerID
 
 	// Validate install exists
-	_, err = activities.AwaitGetByInstallID(ctx, s.installID)
+	_, err = installactivities.AwaitGetByInstallID(ctx, s.installID)
 	if err != nil {
 		return errors.Wrap(err, "install not found")
 	}

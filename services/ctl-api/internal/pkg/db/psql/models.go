@@ -153,6 +153,7 @@ func AllModels() []any {
 		&app.WorkflowStepApproval{},
 		&app.WorkflowStepApprovalResponse{},
 		&app.WorkflowStepPolicyValidation{},
+		&app.WorkflowRun{},
 		&app.PolicyReport{},
 
 		// internal
