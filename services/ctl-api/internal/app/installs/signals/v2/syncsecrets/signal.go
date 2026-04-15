@@ -20,6 +20,7 @@ import (
 const SignalType signal.SignalType = "sync-secrets"
 
 type Signal struct {
+	signal.Hooks
 	InstallID      string
 	WorkflowStepID string
 	SandboxMode    bool

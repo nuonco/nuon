@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -13,6 +14,7 @@ import (
 const SignalType qsignal.SignalType = "execute-flow"
 
 type Signal struct {
+	signal.Hooks
 	InstallWorkflowID string `json:"install_workflow_id"`
 
 	// installID is resolved from the workflow's OwnerID during Validate

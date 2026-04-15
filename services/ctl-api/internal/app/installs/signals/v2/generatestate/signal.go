@@ -14,6 +14,7 @@ import (
 const SignalType signal.SignalType = "generate-state"
 
 type Signal struct {
+	signal.Hooks
 	InstallID string
 }
 

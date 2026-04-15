@@ -19,6 +19,7 @@ func init() {
 
 // PanickingSignal is a test signal whose Execute always panics.
 type PanickingSignal struct {
+	signal.Hooks
 	Message string `json:"message"`
 }
 

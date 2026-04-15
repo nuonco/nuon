@@ -33,6 +33,17 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 		QueueSignalID: h.queueSignalID,
 	})
 
+	// Populate infrastructure fields on the signal's Hooks struct.
+	hooks := h.sig.GetHooks()
+	hooks.QueueSignalID = h.queueSignalID
+	hooks.QueueID = h.queueID
+	if queueSignal != nil {
+		hooks.SignalType = signal.SignalType(queueSignal.Type)
+		if queueSignal.OrgID != nil {
+			hooks.OrgID = *queueSignal.OrgID
+		}
+	}
+
 	if err := signal.ApplyInit(h.sig, ctx); err != nil {
 		initErr := &signal.SignalErrInit{Err: err}
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
