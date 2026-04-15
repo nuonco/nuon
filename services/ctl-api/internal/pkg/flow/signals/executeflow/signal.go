@@ -6,8 +6,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -49,7 +49,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	// Resolve owner from the workflow if not explicitly set.
 	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get workflow")
+		return s.failWorkflow(ctx, errors.Wrap(err, "unable to get workflow"))
 	}
 	if s.OwnerID == "" {
 		s.OwnerID = flw.OwnerID
@@ -58,15 +58,44 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		s.OwnerType = flw.OwnerType
 	}
 
-	// Validate owner exists.
-	// NOTE: currently install-specific; will be abstracted when activities move.
-	if s.OwnerType == "installs" {
-		if _, err := installactivities.AwaitGetByInstallID(ctx, s.OwnerID); err != nil {
-			return errors.Wrap(err, "owner not found")
+	// The workflow must have a GenerateStepsSignal set.
+	if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
+		return s.failWorkflow(ctx, errors.Errorf("workflow %s has no generate-steps signal", s.WorkflowID))
+	}
+
+	// Resolve queue names from owner type if not explicitly set.
+	if s.StepQueueName == "" || s.StepTargetQueueName == "" {
+		switch s.OwnerType {
+		case "installs":
+			if s.StepQueueName == "" {
+				s.StepQueueName = "install-workflow-steps"
+			}
+			if s.StepTargetQueueName == "" {
+				s.StepTargetQueueName = "install-signals"
+			}
+		default:
+			return s.failWorkflow(ctx, errors.Errorf("unable to resolve queue names for owner type %s", s.OwnerType))
 		}
 	}
 
 	return nil
+}
+
+// failWorkflow marks the workflow as errored and returns the error.
+func (s *Signal) failWorkflow(ctx workflow.Context, err error) error {
+	if s.WorkflowID != "" {
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.WorkflowID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusError,
+				StatusHumanDescription: "validation failed",
+				Metadata: map[string]any{
+					"error_message": err.Error(),
+				},
+			},
+		})
+	}
+	return err
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {

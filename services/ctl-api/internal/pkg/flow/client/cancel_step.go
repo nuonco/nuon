@@ -24,7 +24,7 @@ type CancelStepResponse struct {
 // for the given install workflow. The handler workflow forwards the cancellation
 // to the step's handler workflow.
 func (c *Client) CancelStep(ctx context.Context, req *CancelStepRequest) (*CancelStepResponse, error) {
-	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows")
+	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}

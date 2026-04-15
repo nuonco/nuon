@@ -22,7 +22,7 @@ type ApprovePlanRequest struct {
 // for the given install workflow. The execute-flow handler forwards the approval to
 // the step's handler workflow.
 func (c *Client) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) error {
-	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows")
+	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {
 		return fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}

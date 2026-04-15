@@ -4,7 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 // ApproveStepRequest is the input for the "approve-step" update handler.
@@ -22,7 +22,7 @@ type ApproveStepResponse struct {
 func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest) (*ApproveStepResponse, error) {
 	// Forward the approval to the step's handler workflow via activity.
 	// The step's "approve-plan" handler sets s.approved = true to unblock the step.
-	_, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
+	_, err := workflowactivities.AwaitForwardApprovePlan(ctx, workflowactivities.ForwardApprovePlanRequest{
 		StepID:             req.StepID,
 		ApprovalResponseID: req.ApprovalResponseID,
 		ResponseType:       req.ResponseType,

@@ -24,7 +24,7 @@ type SkipStepResponse struct {
 // SkipStep sends a "skip-step" update to the execute-flow handler workflow
 // for the given install workflow.
 func (c *Client) SkipStep(ctx context.Context, req *SkipStepRequest) (*SkipStepResponse, error) {
-	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows")
+	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}

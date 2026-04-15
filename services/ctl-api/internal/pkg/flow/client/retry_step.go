@@ -25,7 +25,7 @@ type RetryStepResponse struct {
 // for the given install workflow. The handler workflow stays alive while
 // retryable, so the update wakes it to retry the failed step.
 func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetryStepResponse, error) {
-	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows")
+	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}

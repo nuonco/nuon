@@ -11,19 +11,6 @@ func init() {
 	generateworkflowsteps.RegisterGenerators("installs", installGenerators)
 }
 
-// getWorkflowStepGenerators returns the step generators for a given owner type.
-// NOTE: currently only "installs" generators are registered. When additional domains
-// (app-branches, etc.) adopt this signal, their generators will be added here or
-// moved to a registry pattern.
-func getWorkflowStepGenerators(ownerType string) map[app.WorkflowType]flow.WorkflowStepGenerator {
-	switch ownerType {
-	case "installs":
-		return installGenerators()
-	default:
-		return nil
-	}
-}
-
 func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
 		app.WorkflowTypeManualDeploy:               v2workflows.ManualDeploySteps,

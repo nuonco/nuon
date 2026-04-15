@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -32,7 +31,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		// Step is awaiting approval - forward a retry response through the
 		// approval mechanism. The step workflow will handle cloning and write
 		// a retry directive.
-		if _, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
+		if _, err := workflowactivities.AwaitForwardApprovePlan(ctx, workflowactivities.ForwardApprovePlanRequest{
 			StepID:       req.StepID,
 			ResponseType: string(app.WorkflowStepApprovalResponseTypeRetryPlan),
 		}); err != nil {
@@ -57,7 +56,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 
 		// Step failed during execution (not at approval). Create a clone step
 		// directly via the step's create-step-retry update handler, then resume.
-		if _, err := installactivities.AwaitForwardCreateStepRetry(ctx, installactivities.ForwardCreateStepRetryRequest{
+		if _, err := workflowactivities.AwaitForwardCreateStepRetry(ctx, workflowactivities.ForwardCreateStepRetryRequest{
 			StepID: req.StepID,
 		}); err != nil {
 			return nil, fmt.Errorf("unable to create step retry for step %s: %w", req.StepID, err)

@@ -6,7 +6,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -30,7 +29,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 
 	// Steps awaiting approval can be skipped via the approval mechanism
 	if step.Status.Status == app.AwaitingApproval || step.Status.Status == app.Status("awaiting-approval") {
-		if _, err := installactivities.AwaitForwardApprovePlan(ctx, installactivities.ForwardApprovePlanRequest{
+		if _, err := workflowactivities.AwaitForwardApprovePlan(ctx, workflowactivities.ForwardApprovePlanRequest{
 			StepID:       req.StepID,
 			ResponseType: string(app.WorkflowStepApprovalResponseTypeSkipCurrent),
 		}); err != nil {

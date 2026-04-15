@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -158,7 +157,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromStepIdx int) error {
 	}
 
 	cfg := s.stepConfig()
-	flw, err = flow.GenerateSteps(ctx, cfg, flw, getWorkflowStepGenerators(s.OwnerType))
+	flw, err = flow.GenerateSteps(ctx, cfg, flw, nil)
 	if err != nil {
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,
@@ -285,7 +284,7 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 
 // checkRetryable checks if the workflow is still eligible for retry.
 func (s *Signal) checkRetryable(ctx workflow.Context) bool {
-	resp, err := installactivities.AwaitCheckWorkflowRetryable(ctx, installactivities.CheckWorkflowRetryableRequest{
+	resp, err := workflowactivities.AwaitCheckWorkflowRetryable(ctx, workflowactivities.CheckWorkflowRetryableRequest{
 		WorkflowID: s.WorkflowID,
 	})
 	if err != nil {

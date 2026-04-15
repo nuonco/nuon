@@ -7,7 +7,6 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 )
 
 // ForwardApprovePlanRequest is the input for forwarding an approval to a step handler workflow.
@@ -32,12 +31,18 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 		Where(app.QueueSignal{
 			OwnerID:   req.StepID,
 			OwnerType: (&app.WorkflowStep{}).TableName(),
-			Type:      executeworkflowstep.SignalType,
+			Type:      "execute-workflow-step",
 		}).
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
+	}
+
+	// The approve-plan update arg must match executeworkflowstep.ApprovePlanRequest JSON shape.
+	type approvePlanArg struct {
+		ApprovalResponseID string `json:"approval_response_id"`
+		ResponseType       string `json:"response_type"`
 	}
 
 	// Send the approve-plan update to the step's handler workflow
@@ -47,7 +52,7 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 			UpdateName:   "approve-plan",
 			WaitForStage: tclient.WorkflowUpdateStageAccepted,
 			Args: []any{
-				executeworkflowstep.ApprovePlanRequest{
+				approvePlanArg{
 					ApprovalResponseID: req.ApprovalResponseID,
 					ResponseType:       req.ResponseType,
 				},

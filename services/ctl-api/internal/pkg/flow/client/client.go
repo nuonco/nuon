@@ -10,6 +10,7 @@ import (
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // Client provides methods for interacting with running flow workflows
@@ -37,15 +38,19 @@ func New(params Params) *Client {
 	}
 }
 
-// findQueueSignalByOwner looks up the most recent queue signal for a given owner.
-func (c *Client) findQueueSignalByOwner(ctx context.Context, ownerID, ownerType string) (*app.QueueSignal, error) {
+// findQueueSignalByOwner looks up the most recent queue signal for a given owner and signal type.
+func (c *Client) findQueueSignalByOwner(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType) (*app.QueueSignal, error) {
 	var qs app.QueueSignal
 	res := c.db.WithContext(ctx).
-		Where("owner_id = ? AND owner_type = ?", ownerID, ownerType).
+		Where(app.QueueSignal{
+			OwnerID:   ownerID,
+			OwnerType: ownerType,
+			Type:      signalType,
+		}).
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
-		return nil, fmt.Errorf("queue signal not found for owner %s/%s: %w", ownerType, ownerID, res.Error)
+		return nil, fmt.Errorf("queue signal not found for owner %s/%s type %s: %w", ownerType, ownerID, signalType, res.Error)
 	}
 	return &qs, nil
 }

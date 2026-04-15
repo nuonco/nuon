@@ -24,7 +24,7 @@ type IsRetryableResponse struct {
 // IsRetryable sends an "is-retryable" update to the execute-workflow-step
 // handler workflow to check if the step can be retried.
 func (c *Client) IsRetryable(ctx context.Context, req *IsRetryableRequest) (*IsRetryableResponse, error) {
-	qs, err := c.findQueueSignalByOwner(ctx, req.StepID, "install_workflow_steps")
+	qs, err := c.findQueueSignalByOwner(ctx, req.StepID, "install_workflow_steps", executeworkflowstep.SignalType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find step queue signal: %w", err)
 	}

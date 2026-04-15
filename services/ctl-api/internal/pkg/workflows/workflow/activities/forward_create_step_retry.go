@@ -7,7 +7,6 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 )
 
 // ForwardCreateStepRetryRequest is the input for forwarding a create-step-retry to a step handler workflow.
@@ -48,7 +47,11 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 		return nil, fmt.Errorf("unable to send create-step-retry update to step %s: %w", req.StepID, err)
 	}
 
-	var result executeworkflowstep.CreateStepRetryResponse
+	// Response shape matches executeworkflowstep.CreateStepRetryResponse
+	type stepRetryResult struct {
+		NewStepID string `json:"new_step_id"`
+	}
+	var result stepRetryResult
 	if err := handle.Get(ctx, &result); err != nil {
 		return nil, fmt.Errorf("create-step-retry update failed for step %s: %w", req.StepID, err)
 	}
