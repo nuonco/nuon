@@ -41,6 +41,7 @@ const (
 // status updates, inner signal dispatch, approval handling, policy checks, and
 // noop plan detection.
 type Signal struct {
+	signal.Hooks
 	StepID     string `json:"step_id"`
 	WorkflowID string `json:"workflow_id"`
 

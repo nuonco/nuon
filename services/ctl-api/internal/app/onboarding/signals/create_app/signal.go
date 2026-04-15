@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "onboarding-create-app"
 
 type Signal struct {
+	signal.Hooks
 	OnboardingID string `json:"onboarding_id" validate:"required"`
 
 	// Example app fields (populated when AppType=example)

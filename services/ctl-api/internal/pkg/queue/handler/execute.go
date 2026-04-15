@@ -46,20 +46,6 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		return nil, errors.New("signal was canceled")
 	}
 
-	event := h.buildSignalPhaseEvent(signal.SignalPhaseExecute)
-
-	// run before-phase hooks (fail-open)
-	decision := h.runBeforePhase(ctx, event)
-	if !decision.Allow {
-		blockedErr := &signal.SignalErrExecute{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
-			QueueSignalID:     h.queueSignalID,
-			Status:            app.StatusError,
-			StatusDescription: blockedErr.Error(),
-		})
-		return nil, blockedErr
-	}
-
 	execCtx, cancel := workflow.WithCancel(ctx)
 	h.executingCtx = execCtx
 	h.executingCancel = cancel
@@ -74,11 +60,24 @@ func (h *handler) executeHandler(ctx workflow.Context) (resp *ExecuteResponse, r
 		},
 	})
 
-	err := h.sig.Execute(execCtx)
-	dur := workflow.Now(ctx).Sub(start)
+	hooks := h.sig.GetHooks()
 
-	// run after-phase hooks (best-effort)
-	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
+	result, _ := hooks.PreExecuteHooks(ctx, signal.SignalPhaseExecute)
+	if !result.Allow {
+		execErr := &signal.SignalErrExecute{Err: errors.New((&signal.SignalErrBlocked{Phase: signal.SignalPhaseExecute, Reason: result.Reason}).Error())}
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: execErr.Error(),
+		})
+		return nil, execErr
+	}
+
+	executeStart := workflow.Now(ctx)
+	err := h.sig.Execute(execCtx)
+	executeDur := workflow.Now(ctx).Sub(executeStart)
+
+	hooks.PostExecuteHooks(ctx, result.Event, hooks.BuildOutcome(err, executeDur))
 
 	if err != nil {
 		if h.canceled {

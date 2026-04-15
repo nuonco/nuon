@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "onboarding-create-org"
 
 type Signal struct {
+	signal.Hooks
 	OnboardingID string `json:"onboarding_id" validate:"required"`
 	AccountID    string `json:"account_id" validate:"required"`
 	OrgName      string `json:"org_name" validate:"required"`

@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "onboarding-create-install"
 
 type Signal struct {
+	signal.Hooks
 	OnboardingID string                                      `json:"onboarding_id" validate:"required"`
 	InstallName  string                                      `json:"install_name" validate:"required"`
 	AWSAccount   *activities.CreateOnboardingInstallAWS      `json:"aws_account,omitempty"`

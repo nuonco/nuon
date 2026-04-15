@@ -20,6 +20,7 @@ const (
 )
 
 type Signal struct {
+	signal.Hooks
 	ComponentID string `json:"component_id" validate:"required"`
 }
 

@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "app-branch-run"
 
 type Signal struct {
+	signal.Hooks
 	RunID string `json:"run_id" validate:"required"` // The app branch run ID - everything else fetched from DB
 }
 

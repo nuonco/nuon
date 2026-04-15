@@ -15,6 +15,7 @@ import (
 const SignalType signal.SignalType = "mng-update"
 
 type Signal struct {
+	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 
@@ -76,7 +77,7 @@ func (s *Signal) createMngJob(ctx workflow.Context, runnerID string, jobType app
 		return nil, errors.Wrap(err, "unable to create log stream")
 	}
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-
+	s.Hooks.LogStreamID = logStream.ID
 	runnerJob, err := activities.AwaitCreateMngJob(ctx, &activities.CreateMngJobRequest{
 		RunnerID:    runner.ID,
 		LogStreamID: logStream.ID,

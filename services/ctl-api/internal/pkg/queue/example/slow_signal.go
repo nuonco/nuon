@@ -18,7 +18,7 @@ func init() {
 }
 
 // SlowSignal is a test signal that blocks in Execute until the context is canceled.
-type SlowSignal struct{}
+type SlowSignal struct{ signal.Hooks }
 
 var _ signal.Signal = (*SlowSignal)(nil)
 

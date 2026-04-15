@@ -14,6 +14,7 @@ import (
 const SignalType signal.SignalType = "forgotten"
 
 type Signal struct {
+	signal.Hooks
 	InstallID string `json:"install_id"`
 }
 
