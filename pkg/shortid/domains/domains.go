@@ -421,3 +421,7 @@ func NewRunnerProcessID() string {
 func NewRunnerProcessShutdownID() string {
 	return shortid.NewNanoID("rps")
 }
+
+func NewSandboxConfigID() string {
+	return shortid.NewNanoID("sbc")
+}

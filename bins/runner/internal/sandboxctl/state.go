@@ -1,9 +1,12 @@
 package sandboxctl
 
 import (
+	"encoding/json"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
 type ResponsePreset string
@@ -24,6 +27,14 @@ type JobTypeConfig struct {
 	ErrorMessage string                 `json:"error_message,omitempty"`
 	Outputs      map[string]interface{} `json:"outputs,omitempty"`
 	FaultRate    float64                `json:"fault_rate"`
+
+	// API-driven fields (synced from centralized sandbox configs)
+	LogLines        []string      `json:"log_lines,omitempty"`
+	PlanContents    string        `json:"plan_contents,omitempty"`
+	FailAtStep      string        `json:"fail_at_step,omitempty"`
+	SleepDuration   time.Duration `json:"sleep_duration,omitempty"`
+	Timeout         time.Duration `json:"timeout,omitempty"`
+	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
 }
 
 type State struct {
@@ -181,4 +192,46 @@ func (s *State) GetAllConfigs() map[string]*JobTypeConfig {
 		jt[k] = &cpy
 	}
 	return jt
+}
+
+// SyncFromAPI overwrites local state with configs fetched from the centralized API.
+func (s *State) SyncFromAPI(configs []*nuonrunner.SandboxConfig) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, cfg := range configs {
+		var logLines []string
+		if len(cfg.LogLines) > 0 {
+			_ = json.Unmarshal(cfg.LogLines, &logLines)
+		}
+
+		var outputs map[string]interface{}
+		if len(cfg.Outputs) > 0 {
+			_ = json.Unmarshal(cfg.Outputs, &outputs)
+		}
+
+		preset := ResponsePreset(cfg.Preset)
+		if preset == "" {
+			preset = PresetDefault
+		}
+
+		duration := cfg.Duration
+		if duration == 0 {
+			duration = s.DefaultDuration
+		}
+
+		s.JobTypes[cfg.JobType] = &JobTypeConfig{
+			Preset:          preset,
+			Duration:        duration,
+			FaultRate:       cfg.FaultRate,
+			ErrorMessage:    cfg.ErrorMessage,
+			LogLines:        logLines,
+			PlanContents:    cfg.PlanContents,
+			FailAtStep:      cfg.FailAtStep,
+			SleepDuration:   cfg.SleepDuration,
+			Timeout:         cfg.Timeout,
+			TriggerShutdown: cfg.TriggerShutdown,
+			Outputs:         outputs,
+		}
+	}
 }

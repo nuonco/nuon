@@ -97,6 +97,13 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/accounts/:id/installs/table", s.AccountInstallsTable)
 	api.GET("/accounts/:id/audit-logs/table", s.AccountAuditLogsTable)
 
+	// Runners routes
+	api.GET("/runners", s.Runners)
+	api.GET("/runners/:id", s.RunnerDetail)
+	api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
+	api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
+	api.POST("/runners/:id/configs/reset", s.RunnerResetConfigs)
+
 	// Global installs routes
 	api.GET("/installs", s.Installs)
 	api.GET("/installs/table", s.InstallsTableGlobal)

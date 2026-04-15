@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
@@ -67,6 +68,11 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		}
 
 		return err
+	}
+
+	// If sandbox mode, replace handler with universal sandbox handler
+	if j.isSandbox(job) {
+		handler = sandboxhandler.New(j.sandboxCtl, j.apiClient, j.cfg, j.shutdowner, job, execution)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

@@ -1,0 +1,548 @@
+package sandboxhandler
+
+import (
+	"bytes"
+	"compress/gzip"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/rand"
+	"net/http"
+	"net/url"
+	"time"
+
+	cockerrors "github.com/cockroachdb/errors"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/bins/runner/internal"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+)
+
+const (
+	logPeriod  = time.Second / 4
+	totalSteps = 6
+)
+
+// Handler is a universal sandbox job handler that replaces the real handler
+// when sandbox mode is active. It implements the jobs.JobHandler interface.
+type Handler struct {
+	sandboxCtl *sandboxctl.Server
+	apiClient  nuonrunner.Client
+	cfg        *internal.Config
+	shutdowner fx.Shutdowner
+
+	job       *models.AppRunnerJob
+	execution *models.AppRunnerJobExecution
+}
+
+func New(
+	sandboxCtl *sandboxctl.Server,
+	apiClient nuonrunner.Client,
+	cfg *internal.Config,
+	shutdowner fx.Shutdowner,
+	job *models.AppRunnerJob,
+	execution *models.AppRunnerJobExecution,
+) *Handler {
+	return &Handler{
+		sandboxCtl: sandboxCtl,
+		apiClient:  apiClient,
+		cfg:        cfg,
+		shutdowner: shutdowner,
+		job:        job,
+		execution:  execution,
+	}
+}
+
+func (h *Handler) Name() string {
+	return "sandbox"
+}
+
+func (h *Handler) JobType() models.AppRunnerJobType {
+	return h.job.Type
+}
+
+func (h *Handler) JobStatus() models.AppRunnerJobStatus {
+	return h.job.Status
+}
+
+// Reset implements jobs.StatefulJobHandler.
+func (h *Handler) Reset(ctx context.Context) error {
+	return h.execStepForStep(ctx, "resetting")
+}
+
+func (h *Handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	return h.execStepForStep(ctx, "fetching")
+}
+
+func (h *Handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	return h.execStepForStep(ctx, "validate")
+}
+
+func (h *Handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	return h.execStepForStep(ctx, "initialize")
+}
+
+func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	if job.Type == models.AppRunnerJobTypeActionsDashWorkflow {
+		return h.execActionSandboxStep(ctx, job)
+	}
+	return h.execSandboxStep(ctx, job)
+}
+
+func (h *Handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	return h.execStepForStep(ctx, "cleanup")
+}
+
+func (h *Handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
+	return nil
+}
+
+func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
+	// Check for per-step failure at "outputs" step
+	if err := h.execStepForStep(ctx, "outputs"); err != nil {
+		return nil, err
+	}
+
+	outputs, err := h.sandboxOutputs(ctx)
+	if err != nil {
+		return nil, cockerrors.Wrap(err, "unable to get sandbox outputs")
+	}
+
+	// Write plan contents / execution results as side effects
+	if err := h.writeSandboxResults(ctx); err != nil {
+		return nil, err
+	}
+
+	return outputs, nil
+}
+
+// execStepForStep checks if the config has FailAtStep set and it matches the current step.
+// If nothing special, just logs the step.
+func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
+	l, _ := pkgctx.Logger(ctx)
+
+	state := h.sandboxCtl.GetState()
+	if state == nil {
+		if l != nil {
+			l.Info("sandbox: in handler step", zap.String("step", stepName))
+		}
+		return nil
+	}
+
+	jobType := string(h.job.Type)
+	cfg := state.GetConfig(jobType)
+
+	if cfg.FailAtStep != "" && cfg.FailAtStep == stepName {
+		if l != nil {
+			l.Error("sandbox: injecting failure at step",
+				zap.String("step", stepName),
+				zap.String("job_type", jobType),
+			)
+		}
+		state.RecordResult(false)
+		msg := cfg.ErrorMessage
+		if msg == "" {
+			msg = fmt.Sprintf("sandbox: failure injected at step %s", stepName)
+		}
+		return errors.New(msg)
+	}
+
+	if l != nil {
+		l.Info("sandbox: in handler step", zap.String("step", stepName), zap.String("job_type", jobType))
+	}
+	return nil
+}
+
+// execSandboxStep runs the main sandbox execution simulation with duration, faults, log lines, etc.
+func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	if state := h.sandboxCtl.GetState(); state != nil {
+		if state.CheckAndClearPanic() {
+			l.Error("sandbox control: panic requested")
+			panic("sandbox: panic requested via sandbox control API")
+		}
+		if state.CheckAndClearShutdown() {
+			l.Error("sandbox control: shutdown requested")
+			h.shutdowner.Shutdown()
+			return errors.New("sandbox: shutdown requested via sandbox control API")
+		}
+	}
+
+	jobType := string(job.Type)
+	duration := h.cfg.SandboxJobDuration
+	faultsEnabled := h.cfg.SandboxModeFaultsEnabled
+	shouldFault := faultsEnabled && rand.Intn(10) == 0
+	var faultMessage string
+	var cfg sandboxctl.JobTypeConfig
+
+	if state := h.sandboxCtl.GetState(); state != nil {
+		cfg = state.GetConfig(jobType)
+		duration = cfg.Duration
+		if cfg.FaultRate > 0 {
+			shouldFault = rand.Float64() < cfg.FaultRate
+			faultsEnabled = true
+		} else if cfg.FaultRate == 0 && cfg.Preset != "default" {
+			shouldFault = false
+		}
+		if cfg.ErrorMessage != "" {
+			faultMessage = cfg.ErrorMessage
+		}
+
+		if cfg.TriggerShutdown {
+			l.Error("sandbox: trigger_shutdown enabled for job type", zap.String("job_type", jobType))
+			h.shutdowner.Shutdown()
+			return errors.New("sandbox: shutdown triggered for job type " + jobType)
+		}
+
+		if cfg.SleepDuration > 0 {
+			l.Info("sandbox: sleeping before execution",
+				zap.Duration("sleep_duration", cfg.SleepDuration),
+				zap.String("job_type", jobType),
+			)
+			select {
+			case <-time.After(cfg.SleepDuration):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+
+	if cfg.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+		defer cancel()
+	}
+
+	stepDuration := duration / totalSteps
+	l.Info("sandbox mode enabled, faking job output",
+		zap.String("step", "initialize"),
+		zap.Duration("duration", duration),
+		zap.String("job_type", jobType),
+	)
+
+	if shouldFault && faultsEnabled {
+		l.Error("sandbox mode fault selected, will return an error at the end of this job")
+	}
+
+	timeout := time.NewTimer(stepDuration)
+	ticker := time.NewTicker(logPeriod)
+	defer ticker.Stop()
+	defer timeout.Stop()
+
+	logLineIdx := 0
+	hasCustomLogs := len(cfg.LogLines) > 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			if state := h.sandboxCtl.GetState(); state != nil {
+				state.RecordResult(false)
+			}
+			return fmt.Errorf("sandbox: job timed out for %s", jobType)
+		case <-ticker.C:
+			if hasCustomLogs && logLineIdx < len(cfg.LogLines) {
+				l.Info(cfg.LogLines[logLineIdx])
+				logLineIdx++
+			} else if !hasCustomLogs {
+				l.Info("sandbox job log",
+					zap.String("key", "value"),
+					zap.Any("obj", map[string]interface{}{}),
+				)
+			}
+		case <-timeout.C:
+			goto BREAK
+		}
+	}
+BREAK:
+	l.Info("sandbox job log ending",
+		zap.String("key", "value"),
+		zap.Any("obj", map[string]interface{}{}),
+	)
+
+	if shouldFault && faultsEnabled {
+		if state := h.sandboxCtl.GetState(); state != nil {
+			state.RecordResult(false)
+		}
+		if faultMessage != "" {
+			return errors.New(faultMessage)
+		}
+		return errors.New("Sandbox Mode Fault Injected")
+	}
+
+	if state := h.sandboxCtl.GetState(); state != nil {
+		state.RecordResult(true)
+	}
+
+	return nil
+}
+
+// execActionSandboxStep handles sandbox mode for actions-workflow job types.
+func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunnerJob) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
+	l.Info("fetching actions job plan")
+	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to get job plan")
+	}
+
+	var plan plantypes.ActionWorkflowRunPlan
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return cockerrors.Wrap(err, "unable to parse action workflow run plan")
+	}
+
+	run, err := h.apiClient.GetInstallActionWorkflowRun(ctx, plan.InstallID, plan.ID)
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to get action workflow run")
+	}
+
+	isAdhoc := run.ActionWorkflowConfigID == ""
+
+	var actionCfg *models.AppActionWorkflowConfig
+	if !isAdhoc {
+		l.Info("fetching actions workflow config")
+		actionCfg, err = h.apiClient.GetActionWorkflowConfig(ctx, run.ActionWorkflowConfigID)
+		if err != nil {
+			return cockerrors.Wrap(err, "unable to get action workflow config")
+		}
+	}
+
+	for idx, step := range run.Steps {
+		var stepName string
+		var actionWorkflowID string
+
+		if isAdhoc {
+			if step.AdhocConfig != nil {
+				stepName = step.AdhocConfig.Name
+			} else {
+				stepName = "adhoc step"
+			}
+			actionWorkflowID = run.ID
+		} else {
+			stepCfg := actionCfg.Steps[idx]
+			stepName = stepCfg.Name
+			actionWorkflowID = actionCfg.ActionWorkflowID
+		}
+
+		l = l.With(
+			zap.String("workflow_step_name", stepName),
+			zap.String("step_run_id", step.ID),
+		)
+
+		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepName, idx+1, len(run.Steps)))
+
+		_, err := h.apiClient.UpdateInstallActionWorkflowRunStep(ctx, plan.InstallID, actionWorkflowID, step.ID, &models.ServiceUpdateInstallActionWorkflowRunStepRequest{
+			Status:            models.AppInstallActionWorkflowRunStepStatusFinished,
+			ExecutionDuration: int64(time.Second * 5),
+		})
+		if err != nil {
+			return cockerrors.Wrap(err, "unable to update step status")
+		}
+	}
+
+	return nil
+}
+
+// sandboxOutputs returns the outputs map for a sandbox job.
+func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, error) {
+	// Check for API-driven outputs from sandbox config
+	if state := h.sandboxCtl.GetState(); state != nil {
+		cfg := state.GetConfig(string(h.job.Type))
+		if cfg.Outputs != nil && len(cfg.Outputs) > 0 {
+			return cfg.Outputs, nil
+		}
+	}
+
+	plan, err := h.getSandboxModePlan(ctx)
+	if err != nil {
+		return nil, cockerrors.Wrap(err, "unable to get sandbox mode plan")
+	}
+
+	if plan.SandboxMode == nil || !plan.SandboxMode.Enabled {
+		return map[string]interface{}{}, nil
+	}
+
+	return plan.SandboxMode.Outputs, nil
+}
+
+// writeSandboxResults writes plan contents and execution results for sandbox jobs.
+func (h *Handler) writeSandboxResults(ctx context.Context) error {
+	// Check for API-driven plan contents from sandbox config
+	if state := h.sandboxCtl.GetState(); state != nil {
+		cfg := state.GetConfig(string(h.job.Type))
+		if cfg.PlanContents != "" {
+			if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+				ContentsCompressed: compress(cfg.PlanContents),
+				Success:            true,
+			}); err != nil {
+				return cockerrors.Wrap(err, "unable to write sandbox config plan contents")
+			}
+			return nil
+		}
+	}
+
+	// Fall back to plan-based sandbox mode outputs
+	plan, err := h.getSandboxModePlan(ctx)
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to get sandbox mode plan")
+	}
+
+	if plan.SandboxMode != nil && plan.SandboxMode.Terraform != nil {
+		if err := h.writeTerraformSandboxMode(ctx, plan.SandboxMode.Terraform); err != nil {
+			return cockerrors.Wrap(err, "unable to write sandbox mode terraform")
+		}
+	}
+	if plan.SandboxMode != nil && plan.SandboxMode.Helm != nil {
+		if err := h.writeHelmSandboxMode(ctx, plan.SandboxMode.Helm); err != nil {
+			return cockerrors.Wrap(err, "unable to write sandbox mode helm")
+		}
+	}
+	if plan.SandboxMode != nil && plan.SandboxMode.KubernetesManifest != nil {
+		if err := h.writeKubernetesManifestSandboxMode(ctx, plan.SandboxMode.KubernetesManifest); err != nil {
+			return cockerrors.Wrap(err, "unable to write sandbox mode kubernetes_manifest")
+		}
+	}
+	if plan.SandboxMode != nil && plan.SandboxMode.Pulumi != nil {
+		if err := h.writePulumiSandboxMode(ctx, plan.SandboxMode.Pulumi); err != nil {
+			return cockerrors.Wrap(err, "unable to write sandbox mode pulumi")
+		}
+	}
+
+	return nil
+}
+
+func (h *Handler) getSandboxModePlan(ctx context.Context) (*plantypes.MinSandboxMode, error) {
+	var plan plantypes.MinSandboxMode
+
+	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, h.job.ID)
+	if err != nil {
+		return nil, cockerrors.Wrap(err, "unable to get job plan")
+	}
+
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return nil, cockerrors.Wrap(err, "unable to convert to sandbox plan")
+	}
+
+	return &plan, nil
+}
+
+func (h *Handler) writeTerraformSandboxMode(ctx context.Context, plan *plantypes.TerraformSandboxMode) error {
+	params := url.Values{
+		"job_id":       {h.job.ID},
+		"workspace_id": {plan.WorkspaceID},
+		"token":        {h.cfg.RunnerAPIToken},
+	}
+
+	u, err := url.JoinPath(h.cfg.RunnerAPIURL, "/v1/terraform-backend")
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to get url")
+	}
+	u = u + "?" + params.Encode()
+
+	req, err := http.NewRequest("POST", u, bytes.NewBuffer(plan.StateJSON))
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to create request")
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to make request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return cockerrors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	if _, err := h.apiClient.UpdateTerraformStateJSON(ctx, plan.WorkspaceID, &h.job.ID, []byte(plan.StateJSON)); err != nil {
+		return cockerrors.Errorf("unable to update state json")
+	}
+
+	if len(plan.PlanContents) > 0 {
+		var planDisplayJson *map[string]interface{}
+		err = json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return cockerrors.Wrap(err, "unable to unmarshal plan display")
+		}
+
+		if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+			Success:                   true,
+		}); err != nil {
+			return cockerrors.Wrap(err, "unable to create job execution results")
+		}
+	}
+
+	return nil
+}
+
+func (h *Handler) writeHelmSandboxMode(ctx context.Context, plan *plantypes.HelmSandboxMode) error {
+	if len(plan.PlanContents) > 0 {
+		var planDisplayJson *map[string]interface{}
+		err := json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return cockerrors.Wrap(err, "unable to unmarshal plan display")
+		}
+
+		h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+		})
+	}
+
+	return nil
+}
+
+func (h *Handler) writeKubernetesManifestSandboxMode(ctx context.Context, plan *plantypes.KubernetesSandboxMode) error {
+	if len(plan.PlanContents) > 0 {
+		var planDisplayJson *map[string]interface{}
+		err := json.Unmarshal([]byte(plan.PlanDisplayContents), &planDisplayJson)
+		if err != nil {
+			return cockerrors.Wrap(err, "unable to unmarshal plan display")
+		}
+
+		h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+		})
+	}
+
+	return nil
+}
+
+func (h *Handler) writePulumiSandboxMode(ctx context.Context, plan *plantypes.PulumiSandboxMode) error {
+	if len(plan.PlanContents) > 0 {
+		if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed:        compress(plan.PlanContents),
+			ContentsDisplayCompressed: compress(plan.PlanDisplayContents),
+		}); err != nil {
+			return cockerrors.Wrap(err, "unable to create job execution result")
+		}
+	}
+
+	return nil
+}
+
+func compress(s string) string {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	gz.Write([]byte(s))
+	gz.Close()
+	b64 := base64.URLEncoding.EncodeToString(b.Bytes())
+	return b64
+}

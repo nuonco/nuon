@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
 type Params struct {
@@ -22,6 +24,7 @@ type Params struct {
 	Cfg        *internal.Config
 	Settings   *settings.Settings
 	L          *zap.Logger `name:"system"`
+	APIClient  nuonrunner.Client
 }
 
 type Server struct {
@@ -32,6 +35,7 @@ type Server struct {
 	enabled    bool
 	wg         *conc.WaitGroup
 	cancelFn   func()
+	apiClient  nuonrunner.Client
 }
 
 func New(params Params) *Server {
@@ -39,6 +43,7 @@ func New(params Params) *Server {
 		shutdowner: params.Shutdowner,
 		l:          params.L,
 		wg:         conc.NewWaitGroup(),
+		apiClient:  params.APIClient,
 	}
 
 	if !params.Settings.SandboxMode {
@@ -76,6 +81,18 @@ func (s *Server) Enabled() bool {
 	return s.enabled
 }
 
+func (s *Server) syncFromAPI(ctx context.Context) {
+	configs, err := s.apiClient.GetSandboxConfigs(ctx)
+	if err != nil {
+		s.l.Warn("unable to sync sandbox configs from API", zap.Error(err))
+		return
+	}
+	if len(configs) > 0 {
+		s.state.SyncFromAPI(configs)
+		s.l.Debug("synced sandbox configs from API", zap.Int("count", len(configs)))
+	}
+}
+
 func (s *Server) LifecycleHook() fx.Hook {
 	return fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -83,13 +100,30 @@ func (s *Server) LifecycleHook() fx.Hook {
 				return nil
 			}
 
-			_, cancelFn := context.WithCancel(context.Background())
+			bgCtx, cancelFn := context.WithCancel(context.Background())
 			s.cancelFn = cancelFn
+
+			// Initial sync from API
+			s.syncFromAPI(bgCtx)
 
 			s.l.Info("starting sandbox control server", zap.String("addr", s.httpServer.Addr))
 			s.wg.Go(func() {
 				if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					log.Fatal(err)
+				}
+			})
+
+			// Periodic sync from API every 30 seconds
+			s.wg.Go(func() {
+				ticker := time.NewTicker(30 * time.Second)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-bgCtx.Done():
+						return
+					case <-ticker.C:
+						s.syncFromAPI(bgCtx)
+					}
 				}
 			})
 

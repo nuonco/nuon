@@ -1,11 +1,13 @@
 'use client'
 
-import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Link } from '@/components/common/Link'
+import { useOrg } from '@/hooks/use-org'
+import { useInstall } from '@/hooks/use-install'
 import type { IStepDetails } from './types'
 
 const StepHistoryStatus = ({
@@ -22,6 +24,9 @@ const StepHistoryStatus = ({
 }
 
 export const StepMetadata = ({ step }: IStepDetails) => {
+  const { org } = useOrg()
+  const { install } = useInstall()
+
   return (
     <div className="flex flex-col gap-2">
       <Text variant="label" theme="neutral">
@@ -62,10 +67,9 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         </div>
       </Expand>
 
-      <AdminDashboardLink
-        path={`/queue-signals?owner_id=${step?.id}`}
-        label="View in admin panel"
-      />
+      <Link className="text-xs" href={`/${org?.id}/installs/${install?.id}/workflows`}>
+        View workflows
+      </Link>
     </div>
   )
 }
