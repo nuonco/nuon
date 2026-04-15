@@ -9,9 +9,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 )
 
-templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo) {
+templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo, attrs *catalog.SignalTypeInfo) {
 	@Layout("Signal: " + signal.ID, ActivePageQueues) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -43,6 +44,14 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 									}
 								</a>
 							}
+							<a href="/signal-catalog">
+								@button.Button(button.Props{
+									Variant: button.VariantOutline,
+									Size:    button.SizeSm,
+								}) {
+									View in catalog
+								}
+							</a>
 						</div>
 						<div class="flex items-center gap-2 mb-1">
 							<span class="text-xs text-muted-foreground uppercase">Signal ID:</span>
@@ -57,6 +66,9 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 				</div>
 			</div>
 
+			<!-- Signal Attributes -->
+			@SignalAttributes(attrs)
+
 			<!-- Timeline -->
 			{{ enqueuedAt := signal.CreatedAt.Format("2006-01-02 15:04:05 MST") }}
 			{{ dequeuedAt := getMetadataString(signal.Status, "dequeued_at") }}
@@ -70,13 +82,13 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						}
 					}
 					@card.Content() {
-						<div class="space-y-0">
+						<div class="flex items-start">
 							@timelineStep("Enqueued", enqueuedAt, true)
-							@timelineDuration(computeQueueWait(signal))
+							@timelineConnector(computeQueueWait(signal))
 							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
-							@timelineDuration(computeDequeuedToExecute(signal))
+							@timelineConnector(computeDequeuedToExecute(signal))
 							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
-							@timelineDuration(computeDuration(signal))
+							@timelineConnector(computeDuration(signal))
 							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
 						</div>
 					}
@@ -85,81 +97,39 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 
 			<!-- Workflow Info -->
 			if wfInfo != nil {
+				@workflowActivitiesCard(wfInfo)
+			}
+
+			<!-- Child Workflows -->
+			if wfInfo != nil {
+				@workflowChildWorkflowsCard(wfInfo, temporalUIURL, signal.Workflow.Namespace)
+			}
+
+			<!-- Awaited Signals -->
+			if wfInfo != nil {
+				@workflowAwaitedSignalsCard(wfInfo, temporalUIURL)
+			}
+
+			<!-- Update Handlers -->
+			if wfInfo != nil && len(wfInfo.UpdateHandlers) > 0 {
 				<div class="mb-6">
 					@card.Card() {
 						@card.Header() {
-							<div class="flex items-center justify-between">
-								@card.Title() {
-									Workflow execution
-								}
-								@workflowStatusBadge(wfInfo.Status)
-							</div>
+							@card.Title() {
+								Update handlers
+							}
+							@card.Description() {
+								Temporal update handlers registered on this workflow
+							}
 						}
 						@card.Content() {
-							if len(wfInfo.Activities) > 0 {
-								<div class="space-y-2">
-									for i, act := range wfInfo.Activities {
-										<details class="group rounded border border-border">
-											<summary class="flex items-center gap-4 py-2 px-3 text-xs cursor-pointer list-none select-none hover:bg-muted/30">
-												<div class="flex items-center gap-2 w-64 shrink-0">
-													@activityStatusDot(act.Status)
-													<span class="font-mono truncate" title={ act.Name }>{ act.Name }</span>
-												</div>
-												<div class="w-20 shrink-0">
-													@activityStatusText(act.Status)
-												</div>
-												if !act.StartedAt.IsZero() {
-													<div class="text-muted-foreground w-36 shrink-0">
-														{ act.StartedAt.Format("15:04:05.000") }
-														if !act.FinishedAt.IsZero() {
-															<span class="text-foreground/40"> → </span>
-															{ act.FinishedAt.Format("15:04:05.000") }
-														}
-													</div>
-												}
-												if act.Duration > 0 {
-													<div class="font-mono text-cyan">
-														{ formatDuration(act.Duration) }
-													</div>
-												}
-												if act.Attempt > 1 {
-													<div class="text-amber-500">
-														attempt { fmt.Sprintf("%d", act.Attempt) }
-													</div>
-												}
-												if act.Failure != "" {
-													<div class="text-red-400 truncate flex-1" title={ act.Failure }>
-														{ act.Failure }
-													</div>
-												}
-												<div class="ml-auto text-muted-foreground shrink-0">
-													<span class="group-open:hidden">▸</span>
-													<span class="hidden group-open:inline">▾</span>
-												</div>
-											</summary>
-											<div class="border-t border-border px-3 py-2 space-y-2">
-												if act.Input != "" {
-													<div>
-														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Request</div>
-														<pre id={ fmt.Sprintf("act-input-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Input }</pre>
-													</div>
-												}
-												if act.Result != "" {
-													<div>
-														<div class="text-[10px] text-muted-foreground uppercase font-medium mb-1">Response</div>
-														<pre id={ fmt.Sprintf("act-result-%d", i) } class="bg-background border border-border rounded p-2 text-[11px] font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all">{ act.Result }</pre>
-													</div>
-												}
-												if act.Input == "" && act.Result == "" {
-													<div class="text-xs text-muted-foreground">No input/output data available.</div>
-												}
-											</div>
-										</details>
+							<div class="flex flex-wrap gap-2">
+								for _, handler := range wfInfo.UpdateHandlers {
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										{ handler }
 									}
-								</div>
-							} else {
-								<div class="text-sm text-muted-foreground">No activities recorded yet.</div>
-							}
+								}
+							</div>
 						}
 					}
 				</div>
@@ -203,7 +173,10 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 					@card.Content() {
 						<div class="space-y-3">
 							@infoRow("Owner type", signal.OwnerType)
-							@infoRow("Owner ID", signal.OwnerID)
+							<div class="flex items-start gap-3">
+								<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Owner ID</span>
+								<span class="font-mono text-xs text-foreground break-all">{ signal.OwnerID }</span>
+							</div>
 							if signal.EmitterID != nil {
 								<div class="flex items-start gap-3">
 									<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Emitter</span>
@@ -215,6 +188,27 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 							}
 							if signal.Workflow.Namespace != "" {
 								@infoRow("Namespace", signal.Workflow.Namespace)
+							}
+						</div>
+						<!-- Quick links -->
+						<div class="mt-4 pt-3 border-t border-border flex flex-wrap gap-3">
+							<a href={ templ.URL("/queue-signals?search=" + signal.OwnerID) } class="text-xs text-cyan hover:underline">
+								Owner signals →
+							</a>
+							if signal.Workflow.ID != "" && signal.Workflow.Namespace != "" {
+								<a href={ templ.URL("/temporal-workflows?namespace=" + signal.Workflow.Namespace + "&workflow_id=" + signal.Workflow.ID) } class="text-xs text-cyan hover:underline">
+									Handler workflow →
+								</a>
+							}
+							if signal.OwnerType == "install_workflow_steps" {
+								<a href={ templ.URL("/workflows?search=" + signal.OwnerID) } class="text-xs text-cyan hover:underline">
+									Step's workflow →
+								</a>
+							}
+							if signal.OwnerType == "install_workflows" {
+								<a href={ templ.URL("/workflows?search=" + signal.OwnerID) } class="text-xs text-cyan hover:underline">
+									Install workflow →
+								</a>
 							}
 						</div>
 					}
@@ -237,85 +231,86 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 			}
 
 			<!-- Status History -->
-			if len(signal.Status.History) > 0 {
-				<div class="mt-6">
-					@card.Card() {
-						@card.Header() {
-							@card.Title() {
-								Status history
-							}
-						}
-						@card.Content() {
-							<div class="space-y-3">
-								for _, h := range signal.Status.History {
-									<div class="flex items-start gap-3 text-xs border-b border-border pb-2 last:border-0">
-										<div class="shrink-0">
-											@signalStatusBadge(h)
-										</div>
-										<div class="flex-1 space-y-1">
-											<div class="text-foreground">
-												{ string(h.Status) }
-												if h.StatusHumanDescription != "" {
-													<span class="text-muted-foreground"> — { h.StatusHumanDescription }</span>
-												}
-											</div>
-											if h.CreatedAtTS > 0 {
-												<div class="text-muted-foreground">
-													{ time.Unix(h.CreatedAtTS, 0).UTC().Format("2006-01-02 15:04:05 UTC") }
-												</div>
-											}
-											if len(h.Metadata) > 0 {
-												<div class="flex flex-wrap gap-x-4 gap-y-1">
-													for k, v := range h.Metadata {
-														<span class="text-muted-foreground">
-															<span class="text-foreground/60">{ k }:</span> { fmt.Sprintf("%v", v) }
-														</span>
-													}
-												</div>
-											}
-										</div>
-									</div>
-								}
-							</div>
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Status history
 						}
 					}
-				</div>
-			}
+					@card.Content() {
+						<div class="space-y-3">
+							<!-- Current status -->
+							@statusHistoryEntry(signal.Status, true)
+							<!-- Historical statuses -->
+							for _, h := range signal.Status.History {
+								@statusHistoryEntry(h, false)
+							}
+						</div>
+					}
+				}
+			</div>
 		</div>
 		@copybutton.Script()
 	}
 }
 
 templ timelineStep(label, value string, active bool) {
-	<div class="flex items-start gap-3 py-2">
-		<div class="flex flex-col items-center pt-1 shrink-0">
-			if active {
-				<div class="w-2.5 h-2.5 rounded-full bg-cyan"></div>
-			} else {
-				<div class="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"></div>
-			}
-			<div class="w-px flex-1 bg-border mt-1"></div>
-		</div>
-		<div class="min-w-0">
-			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
-			if value != "" {
-				<div class="text-sm font-mono mt-0.5">{ value }</div>
-			} else {
-				<div class="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
-			}
-		</div>
+	<div class="flex flex-col items-center text-center min-w-0 flex-shrink-0">
+		if active {
+			<div class="w-3 h-3 rounded-full bg-cyan mb-2"></div>
+		} else {
+			<div class="w-3 h-3 rounded-full bg-muted-foreground/30 mb-2"></div>
+		}
+		<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
+		if value != "" {
+			<div class="text-xs font-mono mt-1 max-w-[160px] break-all">{ value }</div>
+		} else {
+			<div class="text-xs font-mono mt-1 text-muted-foreground">—</div>
+		}
 	</div>
 }
 
-templ timelineDuration(duration string) {
-	if duration != "" {
-		<div class="flex items-start gap-3 py-0.5">
-			<div class="flex flex-col items-center shrink-0">
-				<div class="w-px flex-1 bg-border" style="min-height: 16px;"></div>
-			</div>
-			<div class="text-xs font-mono text-cyan/70 pl-0.5">{ duration }</div>
+templ timelineConnector(duration string) {
+	<div class="flex flex-col items-center flex-1 min-w-[60px] pt-1">
+		<div class="h-px w-full bg-border mt-1"></div>
+		if duration != "" {
+			<div class="text-xs font-mono text-cyan/70 mt-1">{ duration }</div>
+		}
+	</div>
+}
+
+templ statusHistoryEntry(h app.CompositeStatus, isCurrent bool) {
+	<div class="flex items-start gap-3 text-xs border-b border-border pb-2 last:border-0">
+		<div class="shrink-0">
+			@signalStatusBadge(h)
 		</div>
-	}
+		<div class="flex-1 space-y-1">
+			<div class="text-foreground">
+				{ string(h.Status) }
+				if isCurrent {
+					<span class="text-cyan font-medium ml-1">(current)</span>
+				}
+				if h.StatusHumanDescription != "" {
+					<span class="text-muted-foreground"> — { h.StatusHumanDescription }</span>
+				}
+			</div>
+			if h.CreatedAtTS > 0 {
+				<div class="text-muted-foreground">
+					{ time.Unix(h.CreatedAtTS, 0).UTC().Format("2006-01-02 15:04:05 UTC") }
+				</div>
+			}
+			if len(h.Metadata) > 0 {
+				<div class="flex flex-wrap gap-x-4 gap-y-1">
+					for k, v := range h.Metadata {
+						<span class="text-muted-foreground">
+							<span class="text-foreground/60">{ k }:</span> { fmt.Sprintf("%v", v) }
+						</span>
+					}
+				</div>
+			}
+		</div>
+	</div>
 }
 
 templ infoRow(label, value string) {
@@ -331,10 +326,6 @@ func formatSignalData(signal *app.QueueSignal) string {
 		return "{}"
 	}
 	return string(data)
-}
-
-func hasTimingMetadata(signal *app.QueueSignal) bool {
-	return true
 }
 
 func getMetadataString(status app.CompositeStatus, key string) string {

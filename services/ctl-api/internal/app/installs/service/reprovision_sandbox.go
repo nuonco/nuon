@@ -10,8 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 type ReprovisionInstallSandboxRequest struct {
@@ -80,8 +80,8 @@ func (s *service) ReprovisionInstallSandbox(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-			InstallWorkflowID: workflow.ID,
-		}); err != nil {
+			WorkflowID: workflow.ID,
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

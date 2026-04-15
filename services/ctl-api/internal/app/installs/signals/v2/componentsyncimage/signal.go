@@ -43,6 +43,9 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install component exists

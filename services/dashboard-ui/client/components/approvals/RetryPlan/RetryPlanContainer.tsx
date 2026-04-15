@@ -7,7 +7,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRemovePanelByKey } from '@/hooks/use-remove-panel-by-key'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import { approveWorkflowStep } from '@/lib'
+import { retryWorkflowStep } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { RETRY_MODAL_COPY } from '@/utils/approval-utils'
 import { RetryPlanModal } from './RetryPlan'
@@ -34,12 +34,10 @@ export const RetryPlanModalContainer = ({
     error,
   } = useMutation({
     mutationFn: () =>
-      approveWorkflowStep({
-        body: { note: 'Retry plan', response_type: 'retry' },
+      retryWorkflowStep({
         orgId: org.id,
         workflowId: step.install_workflow_id,
-        workflowStepId: step.id,
-        approvalId: step?.approval?.id,
+        stepId: step.id,
       }),
     onSuccess: () => {
       addToast(

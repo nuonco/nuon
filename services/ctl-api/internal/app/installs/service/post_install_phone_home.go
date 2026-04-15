@@ -157,7 +157,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 			}
 			if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
 				InstallStackID: stackVersion.InstallStackID,
-			}); err != nil {
+			}, "", ""); err != nil {
 				return fmt.Errorf("enqueue signal: %w", err)
 			}
 		} else {

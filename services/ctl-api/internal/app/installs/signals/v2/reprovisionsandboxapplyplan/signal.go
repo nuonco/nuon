@@ -11,6 +11,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
@@ -34,6 +35,11 @@ type Signal struct {
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) MaxRetries() int { return 3 }
+func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -55,6 +61,28 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithCloneSteps = (*Signal)(nil)
+
+func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+	return []signal.CloneStepDef{
+		{
+			Signal: &reprovisionsandboxplan.Signal{
+				InstallSandboxID: s.InstallSandboxID,
+				SandboxMode:      s.SandboxMode,
+			},
+			Name:          originalStepName + " (plan)",
+			ExecutionType: "approval",
+		},
+		{
+			Signal: &Signal{
+				InstallSandboxID: s.InstallSandboxID,
+				SandboxMode:      s.SandboxMode,
+			},
+			Name:          originalStepName,
+			ExecutionType: "system",
+		},
+	}
+}
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallSandboxID == "" {

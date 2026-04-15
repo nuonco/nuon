@@ -24,6 +24,7 @@ type Params struct {
 	V              *validator.Validate
 	Cfg            *internal.Config
 	DB             *gorm.DB `name:"psql"`
+	CHDB           *gorm.DB `name:"ch"`
 	MW             metrics.Writer
 	L              *zap.Logger
 	AppsHelpers    *appshelpers.Helpers
@@ -42,6 +43,7 @@ type Service struct {
 	v              *validator.Validate
 	l              *zap.Logger
 	db             *gorm.DB
+	chDB           *gorm.DB
 	mw             metrics.Writer
 	cfg            *internal.Config
 	appsHelpers    *appshelpers.Helpers
@@ -107,6 +109,17 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/active-deployments/table", s.InstallActiveDeploymentsTable)
 	api.GET("/installs/:id/activity/table", s.InstallActivityTable)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
+	api.GET("/installs/:id/workflows/table", s.InstallWorkflowsTable)
+
+	// Workflow routes
+	api.GET("/workflows", s.Workflows)
+	api.GET("/workflows/table", s.WorkflowsTable)
+	api.GET("/workflows/:workflow_id", s.WorkflowDetail)
+
+	// Log stream routes
+	api.GET("/log-streams", s.LogStreamViewer)
+	api.GET("/log-streams/:log_stream_id", s.LogStreamDetail)
+	api.GET("/log-streams/:log_stream_id/logs/table", s.LogStreamLogsTable)
 
 	// Queue routes
 	api.GET("/queues", s.Queues)
@@ -118,10 +131,17 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
 	api.POST("/queues/:id/restart", s.RestartQueue)
 
+	// Temporal workflow viewer
+	api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
+
 	// Queue signals (global view)
 	api.GET("/queue-signals", s.QueueSignals)
 	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
 	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
+
+	// Signal catalog
+	api.GET("/signal-catalog", s.SignalCatalog)
+	api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
 
 	s.l.Info("admin-dashboard routes registered")
 	return nil
@@ -133,6 +153,7 @@ func New(params Params) (*service, error) {
 		l:              params.L,
 		v:              params.V,
 		db:             params.DB,
+		chDB:           params.CHDB,
 		mw:             params.MW,
 		appsHelpers:    params.AppsHelpers,
 		acctClient:     params.AcctClient,

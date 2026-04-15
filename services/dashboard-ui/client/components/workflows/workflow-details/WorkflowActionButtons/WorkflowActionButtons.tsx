@@ -1,23 +1,18 @@
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { ApproveAllButton } from '@/components/approvals/ApproveAll'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import type { TWorkflow } from '@/types'
 import { CancelWorkflowButton } from '../../CancelWorkflow'
 
 export interface IWorkflowActionButtons {
   workflow: TWorkflow
-  temporalLinkParams: string
   canShowApproveAll: boolean
   canShowCancel: boolean
-  canShowTemporalLink: boolean
 }
 
 export const WorkflowActionButtons = ({
   workflow,
-  temporalLinkParams,
   canShowApproveAll,
   canShowCancel,
-  canShowTemporalLink,
 }: IWorkflowActionButtons) => {
   return (
     <div className="flex items-center gap-4">
@@ -29,14 +24,10 @@ export const WorkflowActionButtons = ({
         <CancelWorkflowButton workflow={workflow} />
       )}
 
-      {canShowTemporalLink && (
-        <Button
-          href={`/admin/temporal/namespaces/installs/workflows${temporalLinkParams}`}
-          target="_blank"
-        >
-          View in Temporal <Icon variant="ArrowSquareOutIcon" />
-        </Button>
-      )}
+      <TemporalLink
+        namespace="installs"
+        href={`/admin/temporal/namespaces/installs/workflows?query=${encodeURIComponent(`\`WorkflowId\` STARTS_WITH "${workflow?.owner_id}-execute-workflow-${workflow?.id}"`)}`}
+      />
     </div>
   )
 }

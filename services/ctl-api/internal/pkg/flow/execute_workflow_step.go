@@ -19,6 +19,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -421,6 +423,26 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 }
 
 func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	newRetryIndex := step.RetryIndex + 1
+
+	maxRetries := signal.DefaultMaxRetries
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if mr, ok := step.QueueSignal.Signal.(signal.SignalWithMaxRetries); ok {
+			maxRetries = mr.MaxRetries()
+		}
+	}
+	if newRetryIndex > maxRetries {
+		return fmt.Errorf("step %s has exceeded maximum retry count of %d", step.ID, maxRetries)
+	}
+
+	// If the signal defines clone steps (e.g. apply signals that need a plan step first),
+	// create those instead of a simple copy.
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if cs, ok := step.QueueSignal.Signal.(signal.SignalWithCloneSteps); ok {
+			return c.createCloneSteps(ctx, step, flw, cs, newRetryIndex)
+		}
+	}
+
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
 			{
@@ -439,10 +461,39 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 				GroupIdx:       step.GroupIdx,
 				GroupRetryIdx:  step.GroupRetryIdx,
 				StepTargetType: step.StepTargetType,
-				StepTargetID:   step.StepTargetID,
+				RetryIndex:     newRetryIndex,
+				// StepTargetID intentionally omitted — the clone must create
+				// a fresh target when it executes, not reuse the original.
 			},
 		},
 	})
+	return err
+}
+
+// createCloneSteps builds multiple steps from a SignalWithCloneSteps implementation.
+func (c *WorkflowConductor[DomainSignal]) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, cs signal.SignalWithCloneSteps, retryIndex int) error {
+	defs := cs.CloneSteps(removeRetryFromStepName(step.Name))
+	steps := make([]activities.CreateFlowStep, 0, len(defs))
+	for i, def := range defs {
+		steps = append(steps, activities.CreateFlowStep{
+			FlowID:         flw.ID,
+			OwnerID:        flw.OwnerID,
+			OwnerType:      flw.OwnerType,
+			Name:           getCloneStepName(def.Name),
+			QueueSignal:    &signaldb.SignalData{Signal: def.Signal},
+			Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+			Idx:            step.Idx + i,
+			ExecutionType:  app.WorkflowStepExecutionType(def.ExecutionType),
+			Metadata:       step.Metadata,
+			Retryable:      step.Retryable,
+			Skippable:      step.Skippable,
+			GroupIdx:       step.GroupIdx,
+			GroupRetryIdx:  step.GroupRetryIdx,
+			StepTargetType: step.StepTargetType,
+			RetryIndex:     retryIndex,
+		})
+	}
+	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
 	return err
 }
 
