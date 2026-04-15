@@ -24,6 +24,7 @@ import (
 const SignalType signal.SignalType = "install-action-workflow-run"
 
 type Signal struct {
+	signal.Hooks
 	InstallID               string
 	InstallWorkflowID       string
 	WorkflowStepID          string
@@ -37,13 +38,12 @@ type Signal struct {
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithInit = (*Signal)(nil)
 
-func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
-	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "action-workflow-run",
-	}
+func (s *Signal) Init(_ workflow.Context) error {
+	s.Hooks.InstallID = &s.InstallID
+	s.Hooks.Operation = "action-workflow-run"
+	return nil
 }
 
 func (s *Signal) Type() signal.SignalType {
@@ -195,6 +195,8 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, ls.ID)
 	}()
+
+	s.Hooks.LogStreamID = ls.ID
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, ls)
 

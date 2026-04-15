@@ -19,6 +19,7 @@ import (
 const SignalType signal.SignalType = "update-install-stack-outputs"
 
 type Signal struct {
+	signal.Hooks
 	InstallStackID          string
 	SkipInputUpdateWorkflow bool
 }

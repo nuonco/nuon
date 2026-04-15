@@ -19,6 +19,7 @@ func init() {
 }
 
 type ControllableSignal struct {
+	signal.Hooks
 	ShouldBlock bool `json:"should_block"`
 
 	isValidated bool

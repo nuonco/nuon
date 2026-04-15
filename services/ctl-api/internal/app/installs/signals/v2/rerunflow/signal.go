@@ -7,12 +7,14 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const SignalType qsignal.SignalType = "rerun-flow"
 
 type Signal struct {
+	signal.Hooks
 	InstallID          string                     `json:"install_id"`
 	InstallWorkflowID  string                     `json:"install_workflow_id"`
 	RerunConfiguration signals.RerunConfiguration `json:"rerun_configuration"`
