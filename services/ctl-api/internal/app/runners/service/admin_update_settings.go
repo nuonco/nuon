@@ -19,9 +19,12 @@ import (
 )
 
 type AdminUpdateRunnerSettingsRequest struct {
-	ContainerImageURL string `json:"container_image_url"`
-	ContainerImageTag string `json:"container_image_tag"`
-	RunnerAPIURL      string `json:"runner_api_url"`
+	ContainerImageURL  string `json:"container_image_url"`
+	ContainerImageTag  string `json:"container_image_tag"`
+	RunnerAPIURL       string `json:"runner_api_url"`
+	BinaryVersion      string `json:"binary_version"`
+	ContainerMaxUptime int    `json:"container_max_uptime"`
+	VMMaxUptime        int    `json:"vm_max_uptime"`
 
 	K8sServiceAccountName string `json:"k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"aws_iam_role_arn"`
@@ -87,6 +90,9 @@ func (s *service) adminUpdateRunnerSettings(ctx context.Context, runnerID string
 		ContainerImageURL:        req.ContainerImageURL,
 		ContainerImageTag:        req.ContainerImageTag,
 		RunnerAPIURL:             req.RunnerAPIURL,
+		BinaryVersion:            req.BinaryVersion,
+		ContainerMaxUptime:       req.ContainerMaxUptime,
+		VMMaxUptime:              req.VMMaxUptime,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
 		RunnerBinaryURL:          req.RunnerBinaryURL,
