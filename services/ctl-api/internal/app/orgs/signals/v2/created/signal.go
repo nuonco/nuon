@@ -17,6 +17,7 @@ import (
 const SignalType signal.SignalType = "org-created"
 
 type Signal struct {
+	signal.Hooks
 	OrgID string `json:"org_id"`
 }
 

@@ -14,6 +14,7 @@ import (
 )
 
 type Signal struct {
+	signal.Hooks
 	ComponentID string `json:"component_id" validate:"required"`
 	AppConfigID string `json:"app_config_id"` // optional; if set, use branch VCS commit when component shares same VCS config
 	BuildID     string `json:"build_id"`      // optional; if set, skip build creation and trigger pre-created build

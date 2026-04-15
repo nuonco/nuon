@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "app-branch-sandbox-build"
 
 type Signal struct {
+	signal.Hooks
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
 }

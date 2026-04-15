@@ -17,6 +17,7 @@ import (
 const SignalType signal.SignalType = "runner-deprovision"
 
 type Signal struct {
+	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 

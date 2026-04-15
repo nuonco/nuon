@@ -18,6 +18,7 @@ func init() {
 }
 
 type ExampleSignal struct {
+	signal.Hooks
 	Arg1 string `json:"arg_1"`
 	Arg2 string `json:"arg_2"`
 

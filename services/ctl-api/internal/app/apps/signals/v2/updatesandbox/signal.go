@@ -13,6 +13,7 @@ import (
 const SignalType signal.SignalType = "update_sandbox"
 
 type Signal struct {
+	signal.Hooks
 	AppID string `json:"app_id"`
 }
 

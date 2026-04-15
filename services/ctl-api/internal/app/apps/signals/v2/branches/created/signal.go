@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "app-branch-created"
 
 type Signal struct {
+	signal.Hooks
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 }
 

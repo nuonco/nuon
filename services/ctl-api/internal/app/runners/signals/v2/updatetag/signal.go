@@ -18,6 +18,7 @@ import (
 const SignalType signal.SignalType = "update_runner_tag"
 
 type Signal struct {
+	signal.Hooks
 	RunnerID string `json:"runner_id"`
 	Tag      string `json:"tag"`
 }

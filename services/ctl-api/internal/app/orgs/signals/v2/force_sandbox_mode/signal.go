@@ -13,6 +13,7 @@ import (
 const SignalType signal.SignalType = "org-force-sandbox-mode"
 
 type Signal struct {
+	signal.Hooks
 	OrgID string `json:"org_id"`
 }
 
