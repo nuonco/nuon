@@ -16,7 +16,6 @@ import (
 const SignalType signal.SignalType = "provision_service_account"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 

@@ -12,7 +12,6 @@ import (
 const SignalType signal.SignalType = "org-enable-feature-flags"
 
 type Signal struct {
-	signal.Hooks
 	OrgID string `json:"org_id"`
 }
 
