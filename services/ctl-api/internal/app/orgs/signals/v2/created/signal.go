@@ -56,6 +56,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// temporalanalytics.Writer is not available in the signal context.
 	// Original code: w.analytics.Track(ctx, events.OrgCreated, map[string]any{"org_id": org.ID, "org_type": org.OrgType})
 
+	// Add support users to trial orgs
+	if hasTag(org.Tags, "Trial") {
+		if _, err := activities.AwaitAddSupportUsersByOrgID(ctx, s.OrgID); err != nil {
+			l := workflow.GetLogger(ctx)
+			l.Error("unable to add support users to trial org",
+				zap.Error(err),
+				zap.String("org_id", s.OrgID))
+		}
+	}
+
 	return nil
 }
 
@@ -81,4 +91,13 @@ func (s *Signal) sendNotification(ctx workflow.Context, typ notifications.Type, 
 			zap.Error(err),
 			zap.String("type", typ.String()))
 	}
+}
+
+func hasTag(tags []string, target string) bool {
+	for _, t := range tags {
+		if t == target {
+			return true
+		}
+	}
+	return false
 }
