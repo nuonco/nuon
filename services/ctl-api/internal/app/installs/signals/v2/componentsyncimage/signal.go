@@ -25,7 +25,6 @@ import (
 const SignalType signal.SignalType = "component-sync-image"
 
 type Signal struct {
-	signal.Hooks
 	InstallComponentID string
 	DeployID           string
 	ComponentID        string
@@ -112,7 +111,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.Hooks.LogStreamID = logStream.ID
 	l, err = log.WorkflowLogger(ctx)
 	if err != nil {
 		return err

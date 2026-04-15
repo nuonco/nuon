@@ -25,7 +25,6 @@ import (
 const SignalType signal.SignalType = "await-install-stack-version-run"
 
 type Signal struct {
-	signal.Hooks
 	InstallStackID string
 	WorkflowStepID string
 }
