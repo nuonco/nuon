@@ -27,7 +27,6 @@ const (
 )
 
 type Signal struct {
-	signal.Hooks
 	OrgID       string `json:"org_id"`
 	ForceDelete bool   `json:"force_delete"`
 }

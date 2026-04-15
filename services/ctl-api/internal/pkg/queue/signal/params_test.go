@@ -12,7 +12,6 @@ import (
 
 // testSignalWithParams implements both Signal and SignalWithParams
 type testSignalWithParams struct {
-	Hooks
 	params *Params
 }
 
@@ -22,9 +21,7 @@ func (s *testSignalWithParams) Execute(workflow.Context) error  { return nil }
 func (s *testSignalWithParams) WithParams(p *Params)            { s.params = p }
 
 // testSignalWithoutParams implements only Signal (no SignalWithParams)
-type testSignalWithoutParams struct {
-	Hooks
-}
+type testSignalWithoutParams struct{}
 
 func (s *testSignalWithoutParams) Type() SignalType                { return "test-without-params" }
 func (s *testSignalWithoutParams) Validate(workflow.Context) error { return nil }

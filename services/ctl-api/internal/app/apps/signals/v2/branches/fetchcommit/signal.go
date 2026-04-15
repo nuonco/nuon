@@ -12,7 +12,6 @@ import (
 const SignalType signal.SignalType = "app-branch-fetch-commit"
 
 type Signal struct {
-	signal.Hooks
 	RunID       string `json:"run_id" validate:"required"`
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 }

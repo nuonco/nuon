@@ -15,7 +15,6 @@ import (
 const SignalType signal.SignalType = "install_stack_version_run"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID                 string `json:"runner_id"`
 	InstallStackVersionRunID string `json:"install_stack_version_run_id"`
 }

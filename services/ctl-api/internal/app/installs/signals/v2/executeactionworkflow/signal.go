@@ -12,7 +12,6 @@ const SignalType signal.SignalType = "execute-action-workflow"
 // Signal is an alias for actionworkflowrun.Signal
 // The execute-action-workflow operation uses the same logic as action-workflow-run
 type Signal struct {
-	signal.Hooks
 	*actionworkflowrun.Signal
 }
 

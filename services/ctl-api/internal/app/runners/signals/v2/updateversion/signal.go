@@ -19,7 +19,6 @@ import (
 const SignalType signal.SignalType = "update_version"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID      string `json:"runner_id"`
 	HealthCheckID string `json:"health_check_id"`
 }
@@ -59,7 +58,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create log stream for health check")
 	}
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.Hooks.LogStreamID = logStream.ID
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not get logger")

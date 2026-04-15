@@ -31,7 +31,6 @@ const (
 )
 
 type Signal struct {
-	signal.Hooks
 	InstallStackID string
 	WorkflowStepID string
 
