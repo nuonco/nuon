@@ -24,7 +24,6 @@ func init() {
 // CancellableSignal blocks in Execute until cancelled and tracks whether
 // its Cancel callback was invoked.
 type CancellableSignal struct {
-	signal.Hooks
 	cancelCallbackInvoked bool
 }
 

@@ -12,7 +12,6 @@ import (
 const SignalType signal.SignalType = "restart-children"
 
 type Signal struct {
-	signal.Hooks
 	InstallID string `json:"install_id"`
 }
 

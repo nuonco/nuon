@@ -10,7 +10,6 @@ import (
 )
 
 type Signal struct {
-	signal.Hooks
 	ComponentID   string            `json:"component_id" validate:"required"`
 	ComponentType app.ComponentType `json:"component_type" validate:"required"`
 }

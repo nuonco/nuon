@@ -12,7 +12,6 @@ import (
 const SignalType signal.SignalType = "app-branch-deploy-group-to-queue"
 
 type Signal struct {
-	signal.Hooks
 	InstallGroupID string `json:"install_group_id" validate:"required"`
 	AppBranchID    string `json:"app_branch_id" validate:"required"`
 	RunID          string `json:"run_id" validate:"required"`
