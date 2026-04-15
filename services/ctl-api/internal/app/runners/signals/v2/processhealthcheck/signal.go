@@ -27,6 +27,7 @@ const (
 )
 
 type Signal struct {
+	signal.Hooks
 	RunnerID  string `json:"runner_id"`
 	ProcessID string `json:"process_id"`
 }

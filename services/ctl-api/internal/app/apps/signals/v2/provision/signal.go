@@ -17,6 +17,7 @@ import (
 const SignalType signal.SignalType = "app-provision"
 
 type Signal struct {
+	signal.Hooks
 	AppID string `json:"app_id"`
 }
 

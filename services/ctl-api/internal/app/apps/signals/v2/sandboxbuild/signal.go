@@ -20,6 +20,7 @@ const SignalType signal.SignalType = "app-sandbox-build"
 // Signal triggers a sandbox build for a given app config.
 // If AppSandboxBuildID is set, the existing build record is used; otherwise a new one is created.
 type Signal struct {
+	signal.Hooks
 	AppConfigID       string `json:"app_config_id" validate:"required"`
 	AppSandboxBuildID string `json:"app_sandbox_build_id,omitempty"`
 }

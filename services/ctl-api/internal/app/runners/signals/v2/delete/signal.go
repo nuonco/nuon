@@ -14,6 +14,7 @@ import (
 const SignalType signal.SignalType = "delete"
 
 type Signal struct {
+	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 

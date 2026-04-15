@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "workflow-approve-all"
 
 type Signal struct {
+	signal.Hooks
 	InstallID      string `json:"install_id"`
 	WorkflowStepID string `json:"workflow_step_id"`
 }

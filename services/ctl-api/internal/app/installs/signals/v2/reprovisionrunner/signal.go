@@ -14,17 +14,17 @@ import (
 const SignalType signal.SignalType = "reprovision-runner"
 
 type Signal struct {
+	signal.Hooks
 	InstallID string `json:"install_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithInit = (*Signal)(nil)
 
-func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
-	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "runner-reprovision",
-	}
+func (s *Signal) Init(_ workflow.Context) error {
+	s.Hooks.InstallID = &s.InstallID
+	s.Hooks.Operation = "runner-reprovision"
+	return nil
 }
 
 func (s *Signal) Type() signal.SignalType {

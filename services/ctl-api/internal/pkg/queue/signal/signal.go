@@ -11,6 +11,7 @@ type SignalType string
 
 type Signal interface {
 	Type() SignalType
+	GetHooks() *Hooks
 
 	// workflow handler methods
 	Validate(ctx workflow.Context) error
@@ -32,6 +33,7 @@ const DefaultSleepAfter = 1 * time.Minute
 // package. The queue handler deserializes into the real registered type via the
 // catalog at execution time.
 type Raw struct {
+	Hooks
 	signalType SignalType
 	data       map[string]any
 }

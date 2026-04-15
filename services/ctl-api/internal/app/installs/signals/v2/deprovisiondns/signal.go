@@ -12,6 +12,7 @@ import (
 const SignalType signal.SignalType = "deprovision-dns"
 
 type Signal struct {
+	signal.Hooks
 	InstallID string
 }
 

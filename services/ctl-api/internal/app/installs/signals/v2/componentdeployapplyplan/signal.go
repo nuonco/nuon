@@ -24,6 +24,7 @@ import (
 const SignalType signal.SignalType = "component-deploy-apply-plan"
 
 type Signal struct {
+	signal.Hooks
 	InstallComponentID    string
 	ComponentID           string
 	FlowID                string
@@ -43,13 +44,12 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithInit = (*Signal)(nil)
 
-func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
-	return signal.SignalLifecycleContext{
-		ComponentID: &s.ComponentID,
-		Operation:   "component-deploy",
-	}
+func (s *Signal) Init(_ workflow.Context) error {
+	s.Hooks.ComponentID = &s.ComponentID
+	s.Hooks.Operation = "component-deploy"
+	return nil
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -135,6 +135,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	if err != nil {
 		return err
 	}
+	s.Hooks.LogStreamID = logStreamID
 
 	defer func() {
 		activities.AwaitCloseLogStreamByLogStreamID(ctx, logStreamID)
