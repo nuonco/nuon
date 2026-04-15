@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -9,6 +10,7 @@ import (
 // SignalTypeInfo describes the capabilities and attributes of a registered signal type.
 type SignalTypeInfo struct {
 	Type             signal.SignalType
+	Namespace        string
 	AutoRetry        bool
 	MaxRetries       int
 	HasCloneSteps    bool
@@ -26,6 +28,16 @@ type SignalTypeInfo struct {
 	HasStepContext   bool
 	HasLifecycle     bool
 	Operation        string
+}
+
+// deriveNamespace extracts a namespace from a signal type string.
+// e.g., "install-created" -> "install", "component-deploy-apply-plan" -> "component"
+func deriveNamespace(typ signal.SignalType) string {
+	s := string(typ)
+	if idx := strings.Index(s, "-"); idx > 0 {
+		return s[:idx]
+	}
+	return s
 }
 
 // InspectAll returns information about every registered signal type by instantiating
@@ -48,26 +60,37 @@ func InspectType(typ signal.SignalType) (SignalTypeInfo, error) {
 	return inspect(typ, constructor()), nil
 }
 
+// safeCall runs fn and recovers from any panic, returning the zero value on failure.
+func safeCall[T any](fn func() T) (result T) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Method panicked on zero-value receiver; use zero value.
+		}
+	}()
+	return fn()
+}
+
 func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 	info := SignalTypeInfo{
 		Type:       typ,
+		Namespace:  deriveNamespace(typ),
 		MaxRetries: signal.DefaultMaxRetries,
 	}
 
 	if ar, ok := sig.(signal.SignalWithAutoRetry); ok {
-		info.AutoRetry = ar.AutoRetry()
+		info.AutoRetry = safeCall(func() bool { return ar.AutoRetry() })
 	}
 	if mr, ok := sig.(signal.SignalWithMaxRetries); ok {
-		info.MaxRetries = mr.MaxRetries()
+		info.MaxRetries = safeCall(func() int { return mr.MaxRetries() })
 	}
 	if _, ok := sig.(signal.SignalWithCloneSteps); ok {
 		info.HasCloneSteps = true
 	}
 	if noop, ok := sig.(signal.SignalWithNoOpCheck); ok {
-		info.HasNoOpCheck = noop.IsNoOpCheckable()
+		info.HasNoOpCheck = safeCall(func() bool { return noop.IsNoOpCheckable() })
 	}
 	if pe, ok := sig.(signal.SignalWithPolicyEvaluation); ok {
-		info.HasPolicyEval = pe.RequiresPolicyEvaluation()
+		info.HasPolicyEval = safeCall(func() bool { return pe.RequiresPolicyEvaluation() })
 	}
 	if _, ok := sig.(signal.SignalWithSkipCleanup); ok {
 		info.HasSkipCleanup = true
@@ -89,17 +112,17 @@ func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 	}
 	if q, ok := sig.(signal.SignalWithQueue); ok {
 		info.HasQueue = true
-		info.Queue = q.Queue()
+		info.Queue = safeCall(func() string { return q.Queue() })
 	}
 	if p, ok := sig.(signal.SignalWithParallelizable); ok {
-		info.IsParallelizable = p.IsParallelizable()
+		info.IsParallelizable = safeCall(func() bool { return p.IsParallelizable() })
 	}
 	if _, ok := sig.(signal.SignalWithStepContext); ok {
 		info.HasStepContext = true
 	}
 	if lc, ok := sig.(signal.SignalWithLifecycleContext); ok {
 		info.HasLifecycle = true
-		info.Operation = lc.LifecycleContext().Operation
+		info.Operation = safeCall(func() string { return lc.LifecycleContext().Operation })
 	}
 
 	return info

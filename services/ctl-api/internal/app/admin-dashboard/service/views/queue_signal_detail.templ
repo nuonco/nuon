@@ -44,6 +44,14 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 									}
 								</a>
 							}
+							<a href="/signal-catalog">
+								@button.Button(button.Props{
+									Variant: button.VariantOutline,
+									Size:    button.SizeSm,
+								}) {
+									View in catalog
+								}
+							</a>
 						</div>
 						<div class="flex items-center gap-2 mb-1">
 							<span class="text-xs text-muted-foreground uppercase">Signal ID:</span>
@@ -74,13 +82,13 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 						}
 					}
 					@card.Content() {
-						<div class="space-y-0">
+						<div class="flex items-start">
 							@timelineStep("Enqueued", enqueuedAt, true)
-							@timelineDuration(computeQueueWait(signal))
+							@timelineConnector(computeQueueWait(signal))
 							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
-							@timelineDuration(computeDequeuedToExecute(signal))
+							@timelineConnector(computeDequeuedToExecute(signal))
 							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
-							@timelineDuration(computeDuration(signal))
+							@timelineConnector(computeDuration(signal))
 							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
 						</div>
 					}
@@ -248,35 +256,28 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 }
 
 templ timelineStep(label, value string, active bool) {
-	<div class="flex items-start gap-3 py-2">
-		<div class="flex flex-col items-center pt-1 shrink-0">
-			if active {
-				<div class="w-2.5 h-2.5 rounded-full bg-cyan"></div>
-			} else {
-				<div class="w-2.5 h-2.5 rounded-full bg-muted-foreground/30"></div>
-			}
-			<div class="w-px flex-1 bg-border mt-1"></div>
-		</div>
-		<div class="min-w-0">
-			<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
-			if value != "" {
-				<div class="text-sm font-mono mt-0.5">{ value }</div>
-			} else {
-				<div class="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
-			}
-		</div>
+	<div class="flex flex-col items-center text-center min-w-0 flex-shrink-0">
+		if active {
+			<div class="w-3 h-3 rounded-full bg-cyan mb-2"></div>
+		} else {
+			<div class="w-3 h-3 rounded-full bg-muted-foreground/30 mb-2"></div>
+		}
+		<div class="text-xs text-muted-foreground uppercase font-medium">{ label }</div>
+		if value != "" {
+			<div class="text-xs font-mono mt-1 max-w-[160px] break-all">{ value }</div>
+		} else {
+			<div class="text-xs font-mono mt-1 text-muted-foreground">—</div>
+		}
 	</div>
 }
 
-templ timelineDuration(duration string) {
-	if duration != "" {
-		<div class="flex items-start gap-3 py-0.5">
-			<div class="flex flex-col items-center shrink-0">
-				<div class="w-px flex-1 bg-border" style="min-height: 16px;"></div>
-			</div>
-			<div class="text-xs font-mono text-cyan/70 pl-0.5">{ duration }</div>
-		</div>
-	}
+templ timelineConnector(duration string) {
+	<div class="flex flex-col items-center flex-1 min-w-[60px] pt-1">
+		<div class="h-px w-full bg-border mt-1"></div>
+		if duration != "" {
+			<div class="text-xs font-mono text-cyan/70 mt-1">{ duration }</div>
+		}
+	</div>
 }
 
 templ statusHistoryEntry(h app.CompositeStatus, isCurrent bool) {

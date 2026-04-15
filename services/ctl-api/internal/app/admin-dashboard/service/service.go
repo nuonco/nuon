@@ -141,6 +141,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 	// Signal catalog
 	api.GET("/signal-catalog", s.SignalCatalog)
+	api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
 
 	s.l.Info("admin-dashboard routes registered")
 	return nil
