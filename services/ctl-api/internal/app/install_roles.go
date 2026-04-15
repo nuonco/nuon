@@ -25,7 +25,7 @@ type InstallRoles struct {
 	Install   Install `json:"-" temporaljson:"install,omitzero,omitempty"`
 
 	AppRoleConfigID string              `json:"app_role_config_id,omitzero" gorm:"notnull;default null" temporaljson:"app_role_config_id,omitzero,omitempty"`
-	AppRoleConfig   AppAWSIAMRoleConfig `json:"-" temporaljson:"app_role_config,omitzero,omitempty"`
+	AppRoleConfig   AppAWSIAMRoleConfig `json:"app_role_config,omitzero" temporaljson:"app_role_config,omitzero,omitempty"`
 
 	Enabled bool `json:"enabled,omitzero" gorm:"default:false" temporaljson:"enabled,omitzero,omitempty"`
 

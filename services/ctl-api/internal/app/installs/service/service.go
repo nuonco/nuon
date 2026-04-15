@@ -190,6 +190,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		roles := installs.Group("/roles")
 		{
 			roles.GET("", s.GetInstallRoles)
+			roles.GET("/latest", s.GetLatestInstallRoles)
 			roles.PATCH("/:role_id", s.UpdateInstallRole)
 		}
 

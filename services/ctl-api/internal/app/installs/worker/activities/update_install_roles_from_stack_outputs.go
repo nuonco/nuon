@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -43,8 +44,22 @@ func (a *Activities) UpdateInstallRolesFromStackOutputs(ctx context.Context, req
 		return nil
 	}
 
+	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
+	if err != nil {
+		return fmt.Errorf("unable to get install state: %w", err)
+	}
+	stateData, err := installState.AsMap()
+	if err != nil {
+		return fmt.Errorf("unable to convert install state to map: %w", err)
+	}
+
 	for _, ir := range install.InstallRoles {
-		roleID, err := resolveRoleID(stackOutputs, ir.AppRoleConfig)
+		roleCfg := ir.AppRoleConfig
+		if err := render.RenderStruct(&roleCfg, stateData); err != nil {
+			continue
+		}
+
+		roleID, err := resolveRoleID(stackOutputs, roleCfg)
 		if err != nil {
 			roleID = ""
 		}

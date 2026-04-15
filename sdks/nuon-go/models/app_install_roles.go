@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -16,6 +18,9 @@ import (
 //
 // swagger:model app.InstallRoles
 type AppInstallRoles struct {
+
+	// app role config
+	AppRoleConfig *AppAppAWSIAMRoleConfig `json:"app_role_config,omitempty"`
 
 	// app role config id
 	AppRoleConfigID string `json:"app_role_config_id,omitempty"`
@@ -42,7 +47,7 @@ type AppInstallRoles struct {
 	Provisioned bool `json:"provisioned,omitempty"`
 
 	// cloud specific role identifier
-	RoleID string `json:"roleID,omitempty"`
+	RoleID string `json:"role_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
@@ -50,11 +55,77 @@ type AppInstallRoles struct {
 
 // Validate validates this app install roles
 func (m *AppInstallRoles) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateAppRoleConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app install roles based on context it is used
+func (m *AppInstallRoles) validateAppRoleConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppRoleConfig) { // not required
+		return nil
+	}
+
+	if m.AppRoleConfig != nil {
+		if err := m.AppRoleConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_role_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_role_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app install roles based on the context it is used
 func (m *AppInstallRoles) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAppRoleConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppInstallRoles) contextValidateAppRoleConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppRoleConfig != nil {
+
+		if swag.IsZero(m.AppRoleConfig) { // not required
+			return nil
+		}
+
+		if err := m.AppRoleConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_role_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_role_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

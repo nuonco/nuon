@@ -2,7 +2,6 @@ package generateinstallstackversion
 
 import (
 	"fmt"
-
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -43,8 +41,10 @@ func (s *Signal) WithParams(params *signal.Params) {
 	s.cfg = params.Cfg
 }
 
-var _ signal.SignalWithParams = (*Signal)(nil)
-var _ signal.SignalWithStepContext = (*Signal)(nil)
+var (
+	_ signal.SignalWithParams      = (*Signal)(nil)
+	_ signal.SignalWithStepContext = (*Signal)(nil)
+)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

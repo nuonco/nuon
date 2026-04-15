@@ -532,6 +532,8 @@ type ClientService interface {
 
 	GetLatestAppSecretsConfig(params *GetLatestAppSecretsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestAppSecretsConfigOK, error)
 
+	GetLatestInstallRoles(params *GetLatestInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestInstallRolesOK, error)
+
 	GetLatestRunnerHeartBeat(params *GetLatestRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerHeartBeatOK, error)
 
 	GetLogStream(params *GetLogStreamParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLogStreamOK, error)
@@ -11155,6 +11157,52 @@ func (a *Client) GetLatestAppSecretsConfig(params *GetLatestAppSecretsConfigPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetLatestAppSecretsConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetLatestInstallRoles gets latest install roles
+
+get install roles for the current app config
+*/
+func (a *Client) GetLatestInstallRoles(params *GetLatestInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestInstallRolesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetLatestInstallRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetLatestInstallRoles",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/roles/latest",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetLatestInstallRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetLatestInstallRolesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetLatestInstallRoles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
