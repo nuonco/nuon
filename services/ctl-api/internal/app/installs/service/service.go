@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -39,6 +40,7 @@ type Params struct {
 	FeaturesClient   *features.Features
 	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
+	FlowsClient      *flowclient.Client
 	EndpointAudit    *api.EndpointAudit
 }
 
@@ -58,6 +60,7 @@ type service struct {
 	featuresClient   *features.Features
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
+	flowsClient      *flowclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -213,7 +216,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		workflows.GET("", s.GetWorkflow)
 		workflows.PATCH("", s.UpdateWorkflow)
 		workflows.POST("/cancel", s.CancelWorkflow)
-		s.POST(workflows, "/retry", s.RetryOwnerWorkflow, api.APIContextTypePublic, true) // Deprecated
 
 		steps := workflows.Group("/steps")
 		{
@@ -221,6 +223,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			steps.GET("/:step_id", s.GetWorkflowStep)
 			steps.GET("/:step_id/await", s.AwaitWorkflowStep)
 			steps.POST("/:step_id/retry", s.RetryWorkflowStep)
+			steps.POST("/:step_id/skip", s.SkipWorkflowStep)
+			steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
 
 			approvals := steps.Group("/:step_id/approvals/:approval_id")
 			{
@@ -312,5 +316,6 @@ func New(params Params) *service {
 		runnersHelpers:   params.RunnersHelpers,
 		actionsHelpers:   params.ActionsHelpers,
 		featuresClient:   params.FeaturesClient,
+		flowsClient:      params.FlowsClient,
 	}
 }

@@ -57,7 +57,7 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 	}
 
 	for idx, step := range steps {
-		step.Idx = idx
+		step.Idx = idx * 10
 		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
 			ID:            step.ID,
 			FlowID:        fid,

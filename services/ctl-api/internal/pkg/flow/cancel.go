@@ -1,108 +1,27 @@
 package flow
 
 import (
-	"fmt"
-
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"golang.org/x/net/context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+// isCancellationErr delegates to IsCancellationErr.
 func (c *WorkflowConductor[DomainSignal]) isCancellationErr(ctx workflow.Context, err error) bool {
-	if errors.Is(ctx.Err(), workflow.ErrCanceled) || errors.Is(err, context.Canceled) {
-		return true
-	}
-
-	return false
+	return IsCancellationErr(ctx, err)
 }
 
+// checkStepCancellation marks a step as cancelled if the workflow context is cancelled.
 func (c *WorkflowConductor[DomainSignal]) checkStepCancellation(ctx workflow.Context, stepID string) error {
-	if errors.Is(ctx.Err(), workflow.ErrCanceled) {
-		cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
-		defer cancelCtxCancel()
-
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-			ID: stepID,
-			Status: app.CompositeStatus{
-				Status: app.StatusCancelled,
-			},
-		}); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
+	return CheckStepCancellation(ctx, stepID)
 }
 
+// handleCancellation delegates to HandleCancellation.
 func (c *WorkflowConductor[DomainSignal]) handleCancellation(ctx workflow.Context, stepErr error, stepID string, idx int, flw *app.Workflow) error {
-	if !c.isCancellationErr(ctx, stepErr) {
-		return stepErr
-	}
-
-	cancelCtx, _ := workflow.NewDisconnectedContext(ctx)
-
-	// update the step target
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
-		StepID:            stepID,
-		Status:            app.StatusCancelled,
-		StatusDescription: "Cancelled",
-	}); err != nil {
-		return errors.Wrap(err, "unable to update step target status")
-	}
-
-	// cancel all steps
-	if idx < len(flw.Steps)-1 {
-		for _, cancelStep := range flw.Steps[idx+1:] {
-			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-				ID: cancelStep.ID,
-				Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
-					"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", FlowCancellationErr.Error()),
-				}),
-			}); err != nil {
-				return errors.Wrap(err, "unable to cancel step after cancelled workflow")
-			}
-		}
-	}
-
-	// update the workflow status
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-		ID: stepID,
-		Status: app.NewCompositeTemporalStatus(ctx, app.StatusCancelled, map[string]any{
-			"reason": FlowCancellationErr.Error(),
-		}),
-	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow step as cancelled")
-	}
-
-	// close the workflow
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, flw.ID); err != nil {
-		return errors.Wrap(err, "unable to set finished at on the workflow")
-	}
-
-	return stepErr
+	return HandleCancellation(ctx, stepErr, stepID, idx, flw)
 }
 
+// cancelFutureSteps delegates to CancelFutureSteps.
 func (c *WorkflowConductor[DomainSignal]) cancelFutureSteps(ctx workflow.Context, flw *app.Workflow, idx int, reason string) error {
-	if idx >= len(flw.Steps) {
-		// No future steps to cancel
-		return nil
-	}
-
-	for _, cancelStep := range flw.Steps[idx+1:] {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: cancelStep.ID,
-			Status: app.NewCompositeTemporalStatus(ctx, app.StatusNotAttempted, map[string]any{
-				"reason": fmt.Sprintf("%s and workflow was configured with abort-on-error.", reason),
-			}),
-		}); err != nil {
-			return errors.Wrap(err, "unable to update status")
-		}
-	}
-
-	return nil
+	return CancelFutureSteps(ctx, flw, idx, reason)
 }

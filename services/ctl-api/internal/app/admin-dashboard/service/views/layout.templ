@@ -24,6 +24,7 @@ templ Layout(title string, activePage ActivePage) {
 			<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 			<link rel="stylesheet" href="/assets/css/output.css"/>
 			<!-- htmx for dynamic updates -->
+			<meta name="htmx-config" content='{"selfRequestsOnly":false}'/>
 			<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 		</head>
 		<body class="min-h-screen bg-background text-foreground">
@@ -37,6 +38,10 @@ templ Layout(title string, activePage ActivePage) {
 						<a href="/installs" class={ navLinkClass(activePage == ActivePageInstalls) }>Installs</a>
 						<a href="/queues" class={ navLinkClass(activePage == ActivePageQueues) }>Queues</a>
 						<a href="/queue-signals" class={ navLinkClass(activePage == ActivePageQueueSignals) }>Signals</a>
+						<a href="/signal-catalog" class={ navLinkClass(activePage == ActivePageSignalCatalog) }>Catalog</a>
+						<a href="/workflows" class={ navLinkClass(activePage == ActivePageWorkflows) }>Workflows</a>
+						<a href="/log-streams" class={ navLinkClass(activePage == ActivePageLogStreams) }>Log Streams</a>
+						<a href="/temporal-workflows" class={ navLinkClass(activePage == ActivePageTemporalWorkflows) }>Temporal</a>
 						<a href="/livez" class={ navLinkClass(activePage == ActivePageHealth) }>Health</a>
 					</div>
 				</div>

@@ -1,4 +1,4 @@
-package rerunflow
+package generateworkflowsteps
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"

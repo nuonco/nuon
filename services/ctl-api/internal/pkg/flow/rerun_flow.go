@@ -29,6 +29,10 @@ type RerunInput struct {
 	StalePlan       bool           `json:"stale_plan"`
 	RePlanStepID    string         `json:"replan_step_id"`
 	ContinueFromIdx int            `json:"continue_from_idx"`
+
+	// AdditionalSkipStepIDs are extra steps to mark as skipped alongside the primary StepID.
+	// Used when skipping a plan step to also skip the corresponding apply step.
+	AdditionalSkipStepIDs []string `json:"additional_skip_step_ids,omitempty"`
 }
 
 // updateFlowStatusWithError is a helper function to update flow status with error information
@@ -222,6 +226,24 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 		return nil, 0, errors.Wrapf(err, "unable to update flow step %s status to discarded", step.ID)
 	}
 
+	// Mark additional steps as skipped (e.g., apply step when skipping a plan step)
+	if inp.Operation == RerunOperationSkipStep && len(inp.AdditionalSkipStepIDs) > 0 {
+		for _, additionalStepID := range inp.AdditionalSkipStepIDs {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: additionalStepID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusUserSkipped,
+					StatusHumanDescription: "Step skipped, continuing with next step.",
+					Metadata: map[string]any{
+						"reason": "The step was skipped as part of a group skip.",
+					},
+				},
+			}); err != nil {
+				l.Error("unable to update additional skip step status", zap.String("step_id", additionalStepID), zap.Error(err))
+			}
+		}
+	}
+
 	if err := c.updateFlowStatus(
 		ctx, inp.FlowID, app.StatusInProgress, "generating steps for flow", nil); err != nil {
 		l.Error("unable to update status on retry", zap.Error(err))
@@ -314,15 +336,19 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 		return nil, 0, errors.Errorf("unable to fetch steps for workflow %s: %v", inp.FlowID, err)
 	}
 
-	// get the index of newly created step
+	// Build a set of all skipped step IDs to find the correct start index
+	skippedStepIDs := map[string]bool{inp.StepID: true}
+	for _, id := range inp.AdditionalSkipStepIDs {
+		skippedStepIDs[id] = true
+	}
+
+	// Find the start step: first step after all skipped/retried steps
 	var workflowStartStepNumber int
 	for i, step := range flowSteps {
-		if step.ID == inp.StepID {
-			// if the step was retried it'll start from the new retry step
-			// if the step was not retried, it'll start from next step
-			// if apply step was retried, it'll start from retrying the plan step then apply step
-			workflowStartStepNumber = i + 1
-			break
+		if skippedStepIDs[step.ID] {
+			if i+1 > workflowStartStepNumber {
+				workflowStartStepNumber = i + 1
+			}
 		}
 	}
 

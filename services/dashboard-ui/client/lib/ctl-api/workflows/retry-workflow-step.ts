@@ -1,23 +1,17 @@
 import { api } from '@/lib/api'
 
-export type TRetryWorkflowStepBody = {
-  operation: 'retry-step' | 'skip-step'
-  step_id: string
-}
-
 export async function retryWorkflowStep({
-  body,
   orgId,
   workflowId,
+  stepId,
 }: {
-  body: TRetryWorkflowStepBody
   orgId: string
   workflowId: string
+  stepId: string
 }) {
-  return api<{ workflow_id: string }>({
-    body,
+  return api<{ workflow_id: string; retryable: boolean }>({
     method: 'POST',
     orgId,
-    path: `workflows/${workflowId}/retry`,
+    path: `workflows/${workflowId}/steps/${stepId}/retry`,
   })
 }

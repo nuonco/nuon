@@ -7,7 +7,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRemovePanelByKey } from '@/hooks/use-remove-panel-by-key'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import { retryWorkflowStep } from '@/lib'
+import { skipWorkflowStep } from '@/lib'
 import type { TAPIError, TWorkflowStep } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { SkipStepModal } from './SkipStep'
@@ -31,10 +31,10 @@ export const SkipStepModalContainer = ({
     error,
   } = useMutation<unknown, TAPIError>({
     mutationFn: () =>
-      retryWorkflowStep({
-        body: { operation: 'skip-step', step_id: step.id },
+      skipWorkflowStep({
         orgId: org.id,
         workflowId: step.install_workflow_id,
+        stepId: step.id,
       }),
     onSuccess: () => {
       addToast(

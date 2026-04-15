@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { createOrg, getOrg, adminAddSupportUsersToOrg } from '@/lib'
+import { createOrg, getOrg } from '@/lib'
 import { useAuth } from '@/hooks/use-auth'
 import { useConfig } from '@/hooks/use-config'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
@@ -31,13 +31,6 @@ export const CreateOrgStepContainer = ({
     onSuccess: (org) => {
       setCreatedOrg(org)
       setSharedData('orgId', org.id)
-
-      if (!isByoc) {
-        adminAddSupportUsersToOrg({
-          orgId: org.id,
-          adminEmail: user?.email ?? '',
-        }).catch(() => {})
-      }
 
       if (!isByoc && sfTrialEndpoint) {
         const nameParts = (user?.name ?? '').split(' ')

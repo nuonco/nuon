@@ -87,13 +87,13 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		return
 	}
 
-	proc, err := sp.apiClient.GetProcess(ctx, processID)
+	shutdowns, err := sp.apiClient.GetProcessShutdowns(ctx, processID)
 	if err != nil {
 		sp.l.Warn("unable to poll process for shutdown", zap.Error(err))
 		return
 	}
 
-	for _, shutdown := range proc.Shutdowns {
+	for _, shutdown := range shutdowns {
 		if shutdown == nil {
 			continue
 		}

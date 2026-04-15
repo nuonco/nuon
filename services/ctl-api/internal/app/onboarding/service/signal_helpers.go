@@ -30,10 +30,12 @@ func (s *service) getInstallSignalsQueueID(ctx context.Context, installID string
 }
 
 // enqueueInstallSignal enqueues a v2 signal to the given install queue.
-func (s *service) enqueueInstallSignal(ctx context.Context, queueID string, sig signal.Signal) error {
+func (s *service) enqueueInstallSignal(ctx context.Context, queueID string, sig signal.Signal, ownerID, ownerType string) error {
 	_, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: queueID,
-		Signal:  sig,
+		QueueID:   queueID,
+		Signal:    sig,
+		OwnerID:   ownerID,
+		OwnerType: ownerType,
 	})
 	return err
 }
