@@ -22,7 +22,7 @@ func (s *service) AdminGetRunnerSettings(ctx *gin.Context) {
 
 	runner, err := s.getRunner(ctx, runnerID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get runner job: %w", err))
+		ctx.Error(fmt.Errorf("unable to get runner: %w", err))
 		return
 	}
 
