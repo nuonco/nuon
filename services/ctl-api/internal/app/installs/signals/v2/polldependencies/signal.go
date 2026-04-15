@@ -19,7 +19,6 @@ const (
 )
 
 type Signal struct {
-	signal.Hooks
 	InstallID string `json:"install_id"`
 }
 

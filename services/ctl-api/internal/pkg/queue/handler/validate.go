@@ -38,24 +38,26 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 		Status:        app.StatusInProgress,
 	})
 
-	hooks := h.sig.GetHooks()
+	event := h.buildSignalPhaseEvent(signal.SignalPhaseValidate)
 
-	result, _ := hooks.PreExecuteHooks(ctx, signal.SignalPhaseValidate)
-	if !result.Allow {
-		validateErr := &signal.SignalErrValidate{Err: errors.New((&signal.SignalErrBlocked{Phase: signal.SignalPhaseValidate, Reason: result.Reason}).Error())}
+	// run before-phase hooks (fail-open)
+	decision := h.runBeforePhase(ctx, event)
+	if !decision.Allow {
+		blockedErr := &signal.SignalErrValidate{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
-			StatusDescription: validateErr.Error(),
+			StatusDescription: blockedErr.Error(),
 		})
-		return nil, validateErr
+		return nil, blockedErr
 	}
 
 	start := workflow.Now(ctx)
 	err := h.sig.Validate(ctx)
 	dur := workflow.Now(ctx).Sub(start)
 
-	hooks.PostExecuteHooks(ctx, result.Event, hooks.BuildOutcome(err, dur))
+	// run after-phase hooks (best-effort)
+	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	if err != nil {
 		validateErr := &signal.SignalErrValidate{Err: err}

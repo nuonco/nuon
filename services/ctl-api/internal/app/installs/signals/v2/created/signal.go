@@ -17,17 +17,17 @@ import (
 const SignalType signal.SignalType = "install-created"
 
 type Signal struct {
-	signal.Hooks
 	InstallID string `json:"install_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithInit = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
-func (s *Signal) Init(_ workflow.Context) error {
-	s.Hooks.InstallID = &s.InstallID
-	s.Hooks.Operation = "install-created"
-	return nil
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		InstallID: &s.InstallID,
+		Operation: "install-created",
+	}
 }
 
 func (s *Signal) Type() signal.SignalType {

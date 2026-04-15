@@ -14,7 +14,6 @@ import (
 const SignalType signal.SignalType = "org-restart-runners"
 
 type Signal struct {
-	signal.Hooks
 	OrgID string `json:"org_id"`
 }
 

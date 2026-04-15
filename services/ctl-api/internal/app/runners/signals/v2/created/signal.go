@@ -12,7 +12,6 @@ import (
 const SignalType signal.SignalType = "runner-created"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 

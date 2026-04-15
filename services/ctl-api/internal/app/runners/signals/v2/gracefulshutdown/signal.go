@@ -15,7 +15,6 @@ import (
 const SignalType signal.SignalType = "graceful_shutdown"
 
 type Signal struct {
-	signal.Hooks
 	RunnerID string `json:"runner_id"`
 }
 
@@ -101,7 +100,7 @@ func (s *Signal) createRunnerShutdownJob(ctx workflow.Context, runnerID string, 
 		return nil, errors.Wrap(err, "unable to create log stream for shutdown")
 	}
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	s.Hooks.LogStreamID = logStream.ID
+
 	// Create shutdown job
 	runnerJob, err := activities.AwaitCreateShutdownJob(ctx, &activities.CreateShutdownJobRequest{
 		RunnerID:    runner.ID,
