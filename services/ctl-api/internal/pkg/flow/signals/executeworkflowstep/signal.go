@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -32,6 +33,16 @@ const (
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
 )
+
+// stepSignal extracts the underlying signal.Signal from a workflow step's QueueSignal,
+// returning nil if either is absent. Used for interface type assertions on optional
+// signal capabilities (e.g. SignalWithNoOpCheck, SignalWithPolicyEvaluation).
+func stepSignal(step *app.WorkflowStep) signal.Signal {
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		return step.QueueSignal.Signal
+	}
+	return nil
+}
 
 // Signal encapsulates the full lifecycle of executing a single workflow step.
 // When dispatched to the step queue (e.g. install-workflow-steps), it fetches all
@@ -274,113 +285,119 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to mark step status as checking plan")
 	}
 
-	noopPlan, err := activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
-		StepTargetID: step.StepTargetID,
-	})
-	if err != nil {
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusError,
-				Metadata: map[string]any{
-					"reason": "Step failed, failed to check for noop plan.",
-				},
-				StatusHumanDescription: "Step failed",
-			},
-		}); err != nil {
-			return errors.Wrap(err, "unable to mark step as error")
-		}
-		return errors.Wrap(err, "failed to check for noop plan")
-	}
-
-	// Noop plan: auto-skip this step and the next apply step
-	if noopPlan {
-		l.Debug("approval plan contents empty",
-			zap.String("step_id", step.ID),
-			zap.String("workflow_id", flw.ID))
-		if err := s.handleNoopDeployPlan(ctx, step, flw); err != nil {
+	// Check for noop plan if the signal supports it
+	var noopPlan bool
+	if nc, ok := stepSignal(step).(signal.SignalWithNoOpCheck); ok && nc.IsNoOpCheckable() {
+		noopPlan, err = activities.AwaitCheckNoopPlan(ctx, &activities.CheckNoopPlanRequest{
+			StepTargetID: step.StepTargetID,
+		})
+		if err != nil {
 			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status: app.StatusError,
 					Metadata: map[string]any{
-						"reason": "Step failed, unable to handle noop plan.",
+						"reason": "Step failed, failed to check for noop plan.",
 					},
 					StatusHumanDescription: "Step failed",
 				},
 			}); err != nil {
 				return errors.Wrap(err, "unable to mark step as error")
 			}
-			return errors.Wrap(err, "failed to handle noop plan")
+			return errors.Wrap(err, "failed to check for noop plan")
 		}
 
-		if !flw.PlanOnly {
-			return nil
+		// Noop plan: auto-skip this step and the next apply step
+		if noopPlan {
+			l.Debug("approval plan contents empty",
+				zap.String("step_id", step.ID),
+				zap.String("workflow_id", flw.ID))
+			if err := s.handleNoopDeployPlan(ctx, step, flw); err != nil {
+				if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: step.ID,
+					Status: app.CompositeStatus{
+						Status: app.StatusError,
+						Metadata: map[string]any{
+							"reason": "Step failed, unable to handle noop plan.",
+						},
+						StatusHumanDescription: "Step failed",
+					},
+				}); err != nil {
+					return errors.Wrap(err, "unable to mark step as error")
+				}
+				return errors.Wrap(err, "failed to handle noop plan")
+			}
+
+			if !flw.PlanOnly {
+				return nil
+			}
 		}
 	}
 
-	// Check policies
-	l.Debug("starting policy check",
-		zap.String("step_id", step.ID),
-		zap.String("step_target_id", step.StepTargetID),
-		zap.String("step_target_type", step.StepTargetType),
-		zap.String("workflow_id", flw.ID))
-
-	violations, policyContext, policyErr := s.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
-	if policyErr != nil {
-		l.Warn("failed to check policies",
+	// Check policies if the signal supports it
+	if pe, ok := stepSignal(step).(signal.SignalWithPolicyEvaluation); ok && pe.RequiresPolicyEvaluation() {
+		l.Debug("starting policy check",
 			zap.String("step_id", step.ID),
 			zap.String("step_target_id", step.StepTargetID),
 			zap.String("step_target_type", step.StepTargetType),
-			zap.String("workflow_id", flw.ID),
-			zap.Error(policyErr))
+			zap.String("workflow_id", flw.ID))
+
+		violations, policyContext, policyErr := s.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+		if policyErr != nil {
+			l.Warn("failed to check policies",
+				zap.String("step_id", step.ID),
+				zap.String("step_target_id", step.StepTargetID),
+				zap.String("step_target_type", step.StepTargetType),
+				zap.String("workflow_id", flw.ID),
+				zap.Error(policyErr))
+		}
+
+		if policyContext != nil {
+			policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
+			for _, policyID := range policyContext.PolicyIDs {
+				policyInputCounts[policyID] = policyContext.InputCount
+			}
+			var validationID *string
+			if step.PolicyValidation != nil {
+				validationID = &step.PolicyValidation.ID
+			}
+			reportResult, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
+				OrgID:                          policyContext.OrgID,
+				AppID:                          policyContext.AppID,
+				InstallID:                      policyContext.InstallID,
+				InstallSandboxID:               policyContext.InstallSandboxID,
+				ComponentID:                    policyContext.ComponentID,
+				ComponentBuildID:               policyContext.ComponentBuildID,
+				WorkflowStepPolicyValidationID: validationID,
+				OwnerID:                        step.StepTargetID,
+				OwnerType:                      step.StepTargetType,
+				Violations:                     violations,
+				PolicyIDs:                      policyContext.PolicyIDs,
+				PolicyInputCounts:              policyInputCounts,
+				OrgName:                        policyContext.OrgName,
+				AppName:                        policyContext.AppName,
+				InstallName:                    policyContext.InstallName,
+				ComponentName:                  policyContext.ComponentName,
+			})
+			if err != nil {
+				l.Warn("failed to persist policy report", zap.Error(err))
+			}
+
+			var passedPolicyIDs []string
+			if reportResult != nil {
+				passedPolicyIDs = reportResult.PassedPolicyIDs
+			}
+			if err := s.processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
+				return errors.Wrap(err, "unable to process check for policy violation")
+			}
+		}
+
+		l.Debug("policy check completed successfully",
+			zap.String("step_id", step.ID),
+			zap.String("step_target_id", step.StepTargetID),
+			zap.String("step_target_type", step.StepTargetType),
+			zap.String("workflow_id", flw.ID))
 	}
-
-	if policyContext != nil {
-		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
-		for _, policyID := range policyContext.PolicyIDs {
-			policyInputCounts[policyID] = policyContext.InputCount
-		}
-		var validationID *string
-		if step.PolicyValidation != nil {
-			validationID = &step.PolicyValidation.ID
-		}
-		reportResult, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
-			OrgID:                          policyContext.OrgID,
-			AppID:                          policyContext.AppID,
-			InstallID:                      policyContext.InstallID,
-			InstallSandboxID:               policyContext.InstallSandboxID,
-			ComponentID:                    policyContext.ComponentID,
-			ComponentBuildID:               policyContext.ComponentBuildID,
-			WorkflowStepPolicyValidationID: validationID,
-			OwnerID:                        step.StepTargetID,
-			OwnerType:                      step.StepTargetType,
-			Violations:                     violations,
-			PolicyIDs:                      policyContext.PolicyIDs,
-			PolicyInputCounts:              policyInputCounts,
-			OrgName:                        policyContext.OrgName,
-			AppName:                        policyContext.AppName,
-			InstallName:                    policyContext.InstallName,
-			ComponentName:                  policyContext.ComponentName,
-		})
-		if err != nil {
-			l.Warn("failed to persist policy report", zap.Error(err))
-		}
-
-		var passedPolicyIDs []string
-		if reportResult != nil {
-			passedPolicyIDs = reportResult.PassedPolicyIDs
-		}
-		if err := s.processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
-			return errors.Wrap(err, "unable to process check for policy violation")
-		}
-	}
-
-	l.Debug("policy check completed successfully",
-		zap.String("step_id", step.ID),
-		zap.String("step_target_id", step.StepTargetID),
-		zap.String("step_target_type", step.StepTargetType),
-		zap.String("workflow_id", flw.ID))
 
 	// Auto approve if plan-only mode
 	if flw.PlanOnly {
@@ -417,9 +434,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Status:                 app.AwaitingApproval,
 			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
 			Metadata: map[string]any{
-				"step_idx":     step.Idx,
-				"status":       "ok",
-				DirectiveKey:   DirectiveAwaitApproval,
+				"step_idx":   step.Idx,
+				"status":     "ok",
+				DirectiveKey: DirectiveAwaitApproval,
 			},
 		},
 	}); err != nil {
@@ -845,13 +862,28 @@ func (s *Signal) processPolicyViolations(ctx workflow.Context, l *zap.Logger, st
 }
 
 // cloneWorkflowStep creates a clone of the step for retry.
-// The clone gets Idx+1 so it sorts immediately after the original step but before
-// the next step in the group (e.g. apply step at Idx+10). Steps are generated with
-// Idx multiples of 10, giving room for up to 9 retries per step.
+// If the step's signal implements SignalWithCloneSteps, multiple steps are created
+// (e.g. a plan step followed by an apply step). Otherwise a single clone is created.
+// The clone gets Idx+1 so it sorts immediately after the original step.
 func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	newRetryIndex := step.RetryIndex + 1
-	if newRetryIndex > 10 {
-		return fmt.Errorf("step %s has exceeded maximum retry count of 10", step.ID)
+
+	maxRetries := signal.DefaultMaxRetries
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if mr, ok := step.QueueSignal.Signal.(signal.SignalWithMaxRetries); ok {
+			maxRetries = mr.MaxRetries()
+		}
+	}
+	if newRetryIndex > maxRetries {
+		return fmt.Errorf("step %s has exceeded maximum retry count of %d", step.ID, maxRetries)
+	}
+
+	// If the signal defines clone steps (e.g. apply signals that need a plan step first),
+	// create those instead of a simple copy.
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if cs, ok := step.QueueSignal.Signal.(signal.SignalWithCloneSteps); ok {
+			return s.createCloneSteps(ctx, step, flw, cs, newRetryIndex)
+		}
 	}
 
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
@@ -881,6 +913,33 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 	return err
 }
 
+// createCloneSteps builds multiple steps from a SignalWithCloneSteps implementation.
+func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, cs signal.SignalWithCloneSteps, retryIndex int) error {
+	defs := cs.CloneSteps(removeRetryFromStepName(step.Name))
+	steps := make([]activities.CreateFlowStep, 0, len(defs))
+	for i, def := range defs {
+		steps = append(steps, activities.CreateFlowStep{
+			FlowID:         flw.ID,
+			OwnerID:        flw.OwnerID,
+			OwnerType:      flw.OwnerType,
+			Name:           getCloneStepName(def.Name),
+			QueueSignal:    &signaldb.SignalData{Signal: def.Signal},
+			Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+			Idx:            step.Idx + 1 + i,
+			ExecutionType:  app.WorkflowStepExecutionType(def.ExecutionType),
+			Metadata:       step.Metadata,
+			Retryable:      step.Retryable,
+			Skippable:      step.Skippable,
+			GroupIdx:       step.GroupIdx,
+			GroupRetryIdx:  step.GroupRetryIdx,
+			StepTargetType: step.StepTargetType,
+			RetryIndex:     retryIndex,
+		})
+	}
+	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
+	return err
+}
+
 func getCloneStepName(name string) string {
 	re := regexp.MustCompile(`^(.*)\(retry (\d+)\)$`)
 	matches := re.FindStringSubmatch(name)
@@ -894,6 +953,15 @@ func getCloneStepName(name string) string {
 	}
 
 	return fmt.Sprintf("%s (retry 1)", name)
+}
+
+func removeRetryFromStepName(name string) string {
+	re := regexp.MustCompile(`^(.*)\(retry \d+\)$`)
+	matches := re.FindStringSubmatch(name)
+	if len(matches) == 2 {
+		return strings.TrimSpace(matches[1])
+	}
+	return name
 }
 
 // markWorkflowApprovalPlanDenied marks the approval step and its group siblings as denied/skipped.

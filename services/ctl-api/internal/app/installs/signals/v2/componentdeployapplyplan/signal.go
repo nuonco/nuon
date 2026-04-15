@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
@@ -44,6 +45,30 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithCloneSteps = (*Signal)(nil)
+
+func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+	return []signal.CloneStepDef{
+		{
+			Signal: &componentdeploysyncandplan.Signal{
+				InstallComponentID: s.InstallComponentID,
+				ComponentID:        s.ComponentID,
+				SandboxMode:        s.SandboxMode,
+			},
+			Name:          originalStepName + " (plan)",
+			ExecutionType: "approval",
+		},
+		{
+			Signal: &Signal{
+				InstallComponentID: s.InstallComponentID,
+				ComponentID:        s.ComponentID,
+				SandboxMode:        s.SandboxMode,
+			},
+			Name:          originalStepName,
+			ExecutionType: "system",
+		},
+	}
+}
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
