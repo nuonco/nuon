@@ -67,9 +67,9 @@ func (a *Activities) DenyStepApproval(ctx context.Context, req DenyStepApprovalR
 				WaitForStage: tclient.WorkflowUpdateStageAccepted,
 				Args: []any{
 					struct {
-					ApprovalResponseID string `json:"approval_response_id"`
-					ResponseType       string `json:"response_type"`
-				}{
+						ApprovalResponseID string `json:"approval_response_id"`
+						ResponseType       string `json:"response_type"`
+					}{
 						ApprovalResponseID: response.ID,
 						ResponseType:       string(app.WorkflowStepApprovalResponseTypeRetryPlan),
 					},
