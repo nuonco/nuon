@@ -169,6 +169,7 @@ export const Dropdown = ({
     if (!isOpen || !closeOnBlur) return
 
     const triggerEl = triggerRef.current
+    const contentEl = contentRef.current
     const handleFocusOut = (event: FocusEvent) => {
       if (!isInsideTree(event.relatedTarget as Node)) {
         handleClose()
@@ -176,8 +177,10 @@ export const Dropdown = ({
     }
 
     triggerEl?.addEventListener('focusout', handleFocusOut, true)
+    contentEl?.addEventListener('focusout', handleFocusOut, true)
     return () => {
       triggerEl?.removeEventListener('focusout', handleFocusOut, true)
+      contentEl?.removeEventListener('focusout', handleFocusOut, true)
     }
   }, [isOpen, closeOnBlur, handleClose, isInsideTree])
 
@@ -201,7 +204,36 @@ export const Dropdown = ({
       id={`dropdown-content-${id}`}
       isVisible={isOpen}
       style={styles}
+      role="menu"
       tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          handleClose()
+          const trigger = triggerRef.current?.querySelector<HTMLElement>('button')
+          trigger?.focus()
+          return
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault()
+          const content = contentRef.current
+          if (!content) return
+          const items = Array.from(
+            content.querySelectorAll<HTMLElement>(
+              'button:not([data-focus-guard]), a, [role="menuitem"], [tabindex]:not([tabindex="-1"]):not([data-focus-guard])'
+            )
+          )
+          if (!items.length) return
+          const current = items.indexOf(document.activeElement as HTMLElement)
+          let next: number
+          if (e.key === 'ArrowDown') {
+            next = current < items.length - 1 ? current + 1 : 0
+          } else {
+            next = current > 0 ? current - 1 : items.length - 1
+          }
+          items[next]?.focus()
+        }
+      }}
       onClick={(e) => {
         if (!closeOnBlur) return
         const target = e.target as HTMLElement
@@ -210,9 +242,29 @@ export const Dropdown = ({
         }
       }}
     >
+      <span
+        tabIndex={0}
+        data-focus-guard
+        aria-hidden="true"
+        style={{ position: 'fixed', opacity: 0, pointerEvents: 'none' }}
+        onFocus={() => {
+          handleClose()
+          triggerRef.current?.querySelector<HTMLElement>('button')?.focus()
+        }}
+      />
       <DropdownNestingContext.Provider value={nestingContext}>
         {children}
       </DropdownNestingContext.Provider>
+      <span
+        tabIndex={0}
+        data-focus-guard
+        aria-hidden="true"
+        style={{ position: 'fixed', opacity: 0, pointerEvents: 'none' }}
+        onFocus={() => {
+          handleClose()
+          triggerRef.current?.querySelector<HTMLElement>('button')?.focus()
+        }}
+      />
     </TransitionDiv>
   )
 
@@ -244,6 +296,24 @@ export const Dropdown = ({
         }}
         onFocus={() => {
           if (!isOpen) setIsOpen(true)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            if (!isOpen) setIsOpen(true)
+            requestAnimationFrame(() => {
+              const content = contentRef.current
+              if (!content) return
+              const focusable = content.querySelector<HTMLElement>(
+                'button:not([data-focus-guard]), a, [role="menuitem"], [tabindex]:not([tabindex="-1"]):not([data-focus-guard])'
+              )
+              focusable?.focus()
+            })
+          }
+          if (e.key === 'Escape' && isOpen) {
+            e.preventDefault()
+            handleClose()
+          }
         }}
         {...props}
       >
