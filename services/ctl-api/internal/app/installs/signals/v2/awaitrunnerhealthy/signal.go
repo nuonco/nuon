@@ -61,8 +61,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	time.Sleep(time.Second * 2)
-
 	// Get the install
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {

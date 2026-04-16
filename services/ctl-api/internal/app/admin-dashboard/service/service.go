@@ -162,10 +162,6 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 
-	// Load test routes
-	api.POST("/load-test/queues/create", s.LoadTestCreateQueues)
-	api.POST("/load-test/queues/enqueue", s.LoadTestEnqueueSignals)
-
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }

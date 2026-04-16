@@ -49,5 +49,12 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 		return nil, wrapped
 	}
 
+	// Resolve the run-id so callers can pin subsequent updates to this exact run.
+	run, err := startOp.Get(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get handler workflow run")
+	}
+	resp.RunID = run.GetRunID()
+
 	return &resp, nil
 }
