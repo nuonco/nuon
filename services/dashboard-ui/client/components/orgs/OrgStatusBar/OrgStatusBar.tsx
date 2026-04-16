@@ -5,6 +5,7 @@ import {
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
@@ -48,7 +49,16 @@ export const OrgStatusBar = ({
 
   return (
     <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
-      <Text family="mono" variant="subtext">
+      <Text family="mono" variant="subtext" className="!flex items-center gap-1.5">
+        {org.sandbox_mode && (
+          <Tooltip tipContent={<Text variant="subtext" as="span">Sandbox mode</Text>} tipContentClassName="!py-0.5" position="top">
+            <Icon
+              variant="TestTube"
+              className="!w-[14px] !h-[14px] shrink-0"
+              size="14"
+            />
+          </Tooltip>
+        )}
         {org.name}
       </Text>
 

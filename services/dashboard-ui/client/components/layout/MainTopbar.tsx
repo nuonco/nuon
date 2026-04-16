@@ -1,5 +1,6 @@
 import React from 'react'
 import { UserDropdown } from '@/components/users/UserDropdown'
+import { SpotlightTrigger } from '@/components/spotlight/SpotlightTrigger'
 import { cn } from '@/utils/classnames'
 import { MainSidebarButton } from './MainSidebarButton'
 
@@ -36,7 +37,8 @@ export const MainTopbar = ({
         )}
         {children}
 
-        <div className="hidden md:flex ml-auto">
+        <div className="hidden md:flex items-center gap-2 ml-auto">
+          <SpotlightTrigger />
           <UserDropdown alignment="right" hideOrgSettings={hideOrgSettings} />
         </div>
       </div>
