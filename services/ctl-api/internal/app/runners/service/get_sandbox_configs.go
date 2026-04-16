@@ -13,9 +13,9 @@ import (
 func (s *service) GetRunnerSandboxConfigs(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	var configs []app.SandboxConfig
+	var configs []app.SandboxModeConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxConfig{RunnerID: runnerID}).
+		Where(app.SandboxModeConfig{RunnerID: runnerID}).
 		Order("job_type asc").
 		Find(&configs); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox configs: %w", res.Error))

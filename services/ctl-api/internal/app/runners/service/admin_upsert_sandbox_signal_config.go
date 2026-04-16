@@ -38,7 +38,7 @@ func (s *service) AdminUpsertSandboxSignalConfig(ctx *gin.Context) {
 		enabled = *req.Enabled
 	}
 
-	config := app.SandboxSignalConfig{
+	config := app.SandboxModeSignalConfig{
 		SignalType:    signalType,
 		Enabled:       enabled,
 		DeadlockSleep: req.DeadlockSleep,

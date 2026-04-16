@@ -10,7 +10,7 @@ import (
 )
 
 func (s *service) AdminListSandboxSignalConfigs(ctx *gin.Context) {
-	var configs []app.SandboxSignalConfig
+	var configs []app.SandboxModeSignalConfig
 	if res := s.db.WithContext(ctx).
 		Order("signal_type asc").
 		Find(&configs); res.Error != nil {

@@ -29,7 +29,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 
 	view := views.RunnerDetailView{
 		Runner:  runner,
-		Configs: make(map[string]*app.SandboxConfig),
+		Configs: make(map[string]*app.SandboxModeConfig),
 	}
 
 	// Resolve install
@@ -55,9 +55,9 @@ func (s *service) RunnerDetail(c *gin.Context) {
 	}
 
 	// Load sandbox configs keyed by job type
-	var configs []app.SandboxConfig
+	var configs []app.SandboxModeConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxConfig{RunnerID: runnerID}).
+		Where(app.SandboxModeConfig{RunnerID: runnerID}).
 		Find(&configs); res.Error == nil {
 		for i := range configs {
 			view.Configs[configs[i].JobType] = &configs[i]
@@ -99,7 +99,7 @@ func (s *service) RunnerUpsertConfig(c *gin.Context) {
 		errorMessage = ""
 	}
 
-	config := app.SandboxConfig{
+	config := app.SandboxModeConfig{
 		RunnerID:     runnerID,
 		JobType:      req.JobType,
 		Duration:     req.Duration,
@@ -128,8 +128,8 @@ func (s *service) RunnerDeleteConfig(c *gin.Context) {
 	jobType := c.Param("job_type")
 
 	if res := s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxConfig{RunnerID: runnerID, JobType: jobType}).
-		Delete(&app.SandboxConfig{}); res.Error != nil {
+		Where(app.SandboxModeConfig{RunnerID: runnerID, JobType: jobType}).
+		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		s.l.Error("failed to delete sandbox config", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete config"})
 		return
@@ -142,8 +142,8 @@ func (s *service) RunnerResetConfigs(c *gin.Context) {
 	runnerID := c.Param("id")
 
 	if res := s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxConfig{RunnerID: runnerID}).
-		Delete(&app.SandboxConfig{}); res.Error != nil {
+		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		s.l.Error("failed to reset sandbox configs", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset configs"})
 		return

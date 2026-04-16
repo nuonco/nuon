@@ -13,8 +13,8 @@ func (s *service) AdminResetSandboxConfigs(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxConfig{RunnerID: runnerID}).
-		Delete(&app.SandboxConfig{}); res.Error != nil {
+		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to reset sandbox configs: %w", res.Error))
 		return
 	}

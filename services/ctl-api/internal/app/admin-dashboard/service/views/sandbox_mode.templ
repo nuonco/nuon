@@ -15,9 +15,9 @@ const ActivePageSandboxMode ActivePage = "sandbox-mode"
 
 type SandboxModeData struct {
 	ActiveTab         string
-	RunnerJobConfigs  []app.SandboxConfig
-	SignalConfigs     []app.SandboxSignalConfig
-	StackConfig       *app.SandboxConfig
+	RunnerJobConfigs  []app.SandboxModeConfig
+	SignalConfigs     []app.SandboxModeSignalConfig
+	StackConfig       *app.SandboxModeConfig
 	AllSignalTypes    []string
 	AllRunnerJobTypes []string
 	LogTemplates      []sandboxmode.SandboxLogTemplate
@@ -84,7 +84,7 @@ func sandboxTabClass(isActive bool) string {
 // Runner Jobs Tab
 // ===========================================================================
 
-templ SandboxModeRunnerJobsTable(configs []app.SandboxConfig, allJobTypes []string, search string, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
+templ SandboxModeRunnerJobsTable(configs []app.SandboxModeConfig, allJobTypes []string, search string, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
 	@card.Card() {
 		@card.Header() {
 			<div class="flex items-center justify-between">
@@ -123,20 +123,20 @@ templ SandboxModeRunnerJobsTable(configs []app.SandboxConfig, allJobTypes []stri
 	}
 }
 
-templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
-	<details class="group" id={ "rj-" + jobType }>
+templ runnerJobRowInner(jobType string, cfg *app.SandboxModeConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate, saved bool) {
+	<details class="group" id={ "rj-" + jobType } if saved { open }>
 		<summary class="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
 			<div class="flex items-center gap-3">
 				<svg class="chv w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"></path></svg>
 				<span class="font-mono text-sm">{ jobType }</span>
-				if cfg != nil && cfg.Preset != "" && cfg.Preset != "default" {
-					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) { { cfg.Preset } }
-				}
 				if cfg != nil && cfg.ErrorMessage != "" {
 					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { error }
 				}
 				if cfg != nil && cfg.TriggerShutdown {
 					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { shutdown }
+				}
+				if saved {
+					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { saved }
 				}
 			</div>
 			<label class="tgl" onclick="event.stopPropagation()">
@@ -148,13 +148,48 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 		</summary>
 
 		<div class="px-4 pb-5 pt-2 ml-11">
-			<div class="max-w-4xl space-y-4">
-				<!-- Row 1: Outputs + Sleep -->
-				<div class="grid grid-cols-3 gap-4">
-					<!-- Outputs -->
-					<div class="col-span-2 rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Outputs</span>
+			<form
+				hx-put={ "/sandbox-mode/runner-jobs/" + jobType }
+				hx-target={ "#rj-" + jobType }
+				hx-swap="outerHTML"
+				class="max-w-4xl space-y-4"
+			>
+				<div class="grid grid-cols-2 gap-4">
+					<!-- Total duration -->
+					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
+						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total duration</span>
+						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Duration</span>
+							<p class="text-[10px] text-muted-foreground/70">The execute step will mimic output for this long</p>
+							<div class="flex items-center gap-1.5">
+								@input.Input(input.Props{
+									Name: "duration_ms", Type: input.TypeNumber,
+									Value: safeDurationMs(cfg), Placeholder: "5000",
+									Class: "h-7 text-sm w-20",
+									Attributes: templ.Attributes{"min": "0"},
+								})
+								<span class="text-[11px] text-muted-foreground">ms</span>
+							</div>
+							@durationBadgesRow("duration_ms", msBadges())
+						</div>
+						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Sleep</span>
+							<div class="flex items-center gap-1.5">
+								@input.Input(input.Props{
+									Name: "sleep_duration_ms", Type: input.TypeNumber,
+									Value: safeSleepMs(cfg), Placeholder: "0",
+									Class: "h-7 text-sm w-20",
+									Attributes: templ.Attributes{"min": "0"},
+								})
+								<span class="text-[11px] text-muted-foreground">ms</span>
+							</div>
+							@durationBadgesRow("sleep_duration_ms", msBadges())
+						</div>
+					</div>
 
+					<!-- Outputs -->
+					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
+						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Outputs</span>
 						<div class="space-y-2">
 							<span class="text-xs font-medium text-muted-foreground">Log response</span>
 							<select name="log_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
@@ -164,7 +199,6 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 								}
 							</select>
 						</div>
-
 						<div class="space-y-2">
 							<span class="text-xs font-medium text-muted-foreground">Plan response</span>
 							<select name="plan_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
@@ -174,61 +208,10 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 								}
 							</select>
 						</div>
-
-						<label class="flex flex-col gap-1.5">
-							<span class="text-xs font-medium text-muted-foreground">Preset</span>
-							@input.Input(input.Props{
-								Name: "preset", Value: rjPreset(cfg),
-								Placeholder: "default", Class: "h-8 text-sm",
-							})
-						</label>
-					</div>
-
-					<!-- Sleep -->
-					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Sleep</span>
-						<div class="space-y-3">
-							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Duration</span>
-								<div class="flex items-center gap-1.5">
-									@input.Input(input.Props{
-										Name: "duration_ms", Type: input.TypeNumber,
-										Value: safeDurationMs(cfg), Placeholder: "5000",
-										Class: "h-7 text-sm w-20",
-										Attributes: templ.Attributes{"min": "0"},
-									})
-									<span class="text-[11px] text-muted-foreground">ms</span>
-								</div>
-							</div>
-							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Sleep before</span>
-								<div class="flex items-center gap-1.5">
-									@input.Input(input.Props{
-										Name: "sleep_duration_ms", Type: input.TypeNumber,
-										Value: safeSleepMs(cfg), Placeholder: "0",
-										Class: "h-7 text-sm w-20",
-										Attributes: templ.Attributes{"min": "0"},
-									})
-									<span class="text-[11px] text-muted-foreground">ms</span>
-								</div>
-							</div>
-							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Timeout</span>
-								<div class="flex items-center gap-1.5">
-									@input.Input(input.Props{
-										Name: "timeout_ms", Type: input.TypeNumber,
-										Value: safeTimeoutMs(cfg), Placeholder: "0",
-										Class: "h-7 text-sm w-20",
-										Attributes: templ.Attributes{"min": "0"},
-									})
-									<span class="text-[11px] text-muted-foreground">ms</span>
-								</div>
-							</div>
-						</div>
 					</div>
 				</div>
 
-				<!-- Row 2: Failure modes -->
+				<!-- Failure modes -->
 				<div class="rounded-lg border border-border bg-card p-4 space-y-4">
 					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
 					<div class="grid grid-cols-3 gap-4">
@@ -240,14 +223,20 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 								Class: "h-8 text-sm",
 							})
 						</label>
-						<label class="flex flex-col gap-1.5">
+						<div class="flex flex-col gap-1.5">
 							<span class="text-xs font-medium text-muted-foreground">Fail at step</span>
-							@input.Input(input.Props{
-								Name: "fail_at_step", Value: rjFailAtStep(cfg),
-								Placeholder: "e.g. execute, validate",
-								Class: "h-8 text-sm",
-							})
-						</label>
+							<select name="fail_at_step" class="h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
+								for _, step := range failAtSteps() {
+									<option value={ step } if rjFailAtStep(cfg) == step { selected }>
+										if step == "" {
+											— none —
+										} else {
+											{ step }
+										}
+									</option>
+								}
+							</select>
+						</div>
 						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
 							<span class="text-xs font-medium text-muted-foreground">Fault rate</span>
 							<div class="flex items-center gap-1.5">
@@ -262,15 +251,23 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 						</div>
 					</div>
 					<div class="flex items-center gap-6 pt-1">
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="panic" class="rounded border-border"/>
+						<label class="flex items-center gap-3 text-sm cursor-pointer">
+							<span class="tgl">
+								<input type="checkbox" name="panic"
+									if cfg != nil && cfg.FaultRate > 0 { checked }
+									class="rounded border-border"
+								/>
+								<span class="tgl-s"></span>
+							</span>
 							<span class="text-xs">Panic</span>
 						</label>
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="trigger_shutdown"
-								if cfg != nil && cfg.TriggerShutdown { checked }
-								class="rounded border-border"
-							/>
+						<label class="flex items-center gap-3 text-sm cursor-pointer">
+							<span class="tgl">
+								<input type="checkbox" name="trigger_shutdown"
+									if cfg != nil && cfg.TriggerShutdown { checked }
+								/>
+								<span class="tgl-s"></span>
+							</span>
 							<span class="text-xs">Shutdown runner</span>
 						</label>
 					</div>
@@ -278,30 +275,33 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 
 				<!-- Footer -->
 				<div class="flex items-center justify-between pt-1">
-					<div class="flex items-center gap-4">
-						<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
-							<span class="tgl">
-								<input type="checkbox" name="enabled" if cfg != nil && cfg.Enabled { checked }/>
-								<span class="tgl-s"></span>
-							</span>
-							Enabled
-						</label>
-						if cfg != nil {
-							<span class="text-xs text-muted-foreground font-mono">{ cfg.RunnerID }</span>
-						}
-					</div>
+					<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
+						<span class="tgl">
+							<input type="checkbox" name="enabled" if cfg != nil && cfg.Enabled { checked }/>
+							<span class="tgl-s"></span>
+						</span>
+						Enabled
+					</label>
 					@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
 				</div>
-			</div>
+			</form>
 		</div>
 	</details>
+}
+
+templ runnerJobRow(jobType string, cfg *app.SandboxModeConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
+	@runnerJobRowInner(jobType, cfg, logTpls, planTpls, false)
+}
+
+templ RunnerJobRowSaved(jobType string, cfg *app.SandboxModeConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
+	@runnerJobRowInner(jobType, cfg, logTpls, planTpls, true)
 }
 
 // ===========================================================================
 // Signals Tab
 // ===========================================================================
 
-templ SandboxModeSignalsTable(configs []app.SandboxSignalConfig, allTypes []string, search string) {
+templ SandboxModeSignalsTable(configs []app.SandboxModeSignalConfig, allTypes []string, search string) {
 	@card.Card() {
 		@card.Header() {
 			<div class="flex items-center justify-between">
@@ -340,8 +340,8 @@ templ SandboxModeSignalsTable(configs []app.SandboxSignalConfig, allTypes []stri
 	}
 }
 
-templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
-	<details class="group" id={ "signal-" + signalType }>
+templ signalRowInner(signalType string, cfg *app.SandboxModeSignalConfig, saved bool) {
+	<details class="group" id={ "signal-" + signalType } if saved { open }>
 		<summary class="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
 			<div class="flex items-center gap-3">
 				<svg class="chv w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"></path></svg>
@@ -355,6 +355,9 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 				if cfg != nil && (cfg.DeadlockSleep > 0 || cfg.WorkflowSleep > 0) {
 					@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) { sleeping }
 				}
+				if saved {
+					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { saved }
+				}
 			</div>
 			<label class="tgl" onclick="event.stopPropagation()">
 				<input type="checkbox"
@@ -362,7 +365,6 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 					hx-put={ "/sandbox-mode/signals/" + signalType }
 					hx-target={ "#signal-" + signalType }
 					hx-swap="outerHTML"
-					hx-encoding="application/json"
 					hx-vals={ signalToggleVals(cfg) }
 					hx-trigger="change"
 				/>
@@ -375,7 +377,6 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 				hx-put={ "/sandbox-mode/signals/" + signalType }
 				hx-target={ "#signal-" + signalType }
 				hx-swap="outerHTML"
-				hx-encoding="application/json"
 				class="max-w-3xl"
 			>
 				<div class="grid grid-cols-2 gap-4">
@@ -414,6 +415,7 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 									})
 									<span class="text-[11px] text-muted-foreground">sec</span>
 								</div>
+								@durationBadgesRow("deadlock_sleep_seconds", secBadges())
 							</div>
 							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
 								<span class="text-xs font-medium text-muted-foreground">Workflow</span>
@@ -426,6 +428,7 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 									})
 									<span class="text-[11px] text-muted-foreground">sec</span>
 								</div>
+								@durationBadgesRow("workflow_sleep_seconds", secBadges())
 							</div>
 						</div>
 					</div>
@@ -449,11 +452,19 @@ templ signalRow(signalType string, cfg *app.SandboxSignalConfig) {
 	</details>
 }
 
+templ signalRow(signalType string, cfg *app.SandboxModeSignalConfig) {
+	@signalRowInner(signalType, cfg, false)
+}
+
+templ SignalRowSaved(signalType string, cfg *app.SandboxModeSignalConfig) {
+	@signalRowInner(signalType, cfg, true)
+}
+
 // ===========================================================================
 // Stacks Tab
 // ===========================================================================
 
-templ SandboxModeStacksTable(cfg *app.SandboxConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
+templ SandboxModeStacksTable(cfg *app.SandboxModeConfig, logTpls []sandboxmode.SandboxLogTemplate, planTpls []sandboxmode.SandboxPlanTemplate) {
 	@card.Card() {
 		@card.Header() {
 			@card.Title() { Sandbox stack }
@@ -473,7 +484,7 @@ templ SandboxModeStacksTable(cfg *app.SandboxConfig, logTpls []sandboxmode.Sandb
 // Helpers
 // ===========================================================================
 
-func findSignalConfig(configs []app.SandboxSignalConfig, signalType string) *app.SandboxSignalConfig {
+func findSignalConfig(configs []app.SandboxModeSignalConfig, signalType string) *app.SandboxModeSignalConfig {
 	for i := range configs {
 		if configs[i].SignalType == signalType {
 			return &configs[i]
@@ -482,7 +493,11 @@ func findSignalConfig(configs []app.SandboxSignalConfig, signalType string) *app
 	return nil
 }
 
-func findRunnerJobConfig(configs []app.SandboxConfig, jobType string) *app.SandboxConfig {
+func failAtSteps() []string {
+	return []string{"", "resetting", "fetching", "validate", "initialize", "execute", "outputs", "cleanup"}
+}
+
+func findRunnerJobConfig(configs []app.SandboxModeConfig, jobType string) *app.SandboxModeConfig {
 	for i := range configs {
 		if configs[i].JobType == jobType {
 			return &configs[i]
@@ -498,21 +513,25 @@ func truncateRunnerID(id string) string {
 	return id
 }
 
-func signalToggleVals(cfg *app.SandboxSignalConfig) string {
+func signalToggleVals(cfg *app.SandboxModeSignalConfig) string {
 	if cfg == nil {
-		return `{"enabled": true, "deadlock_sleep_seconds": 0, "workflow_sleep_seconds": 0, "panic": false, "error": ""}`
+		return `{"enabled": "true", "deadlock_sleep_seconds": "0", "workflow_sleep_seconds": "0", "error": ""}`
+	}
+	enabledStr := "true"
+	if cfg.Enabled {
+		enabledStr = "" // toggling off: absent or empty = false
 	}
 	return fmt.Sprintf(
-		`{"enabled": %t, "deadlock_sleep_seconds": %d, "workflow_sleep_seconds": %d, "panic": %t, "error": "%s"}`,
-		!cfg.Enabled,
-		int(cfg.DeadlockSleep.Seconds()),
-		int(cfg.WorkflowSleep.Seconds()),
+		`{"enabled": "%s", "deadlock_sleep_seconds": "%.1f", "workflow_sleep_seconds": "%.1f", "panic": "%t", "error": "%s"}`,
+		enabledStr,
+		cfg.DeadlockSleep.Seconds(),
+		cfg.WorkflowSleep.Seconds(),
 		cfg.Panic,
 		cfg.Error,
 	)
 }
 
-func rjPreset(cfg *app.SandboxConfig) string {
+func rjPreset(cfg *app.SandboxModeConfig) string {
 	if cfg == nil {
 		return "default"
 	}
@@ -522,14 +541,14 @@ func rjPreset(cfg *app.SandboxConfig) string {
 	return cfg.Preset
 }
 
-func rjErrorMessage(cfg *app.SandboxConfig) string {
+func rjErrorMessage(cfg *app.SandboxModeConfig) string {
 	if cfg == nil {
 		return ""
 	}
 	return cfg.ErrorMessage
 }
 
-func rjFailAtStep(cfg *app.SandboxConfig) string {
+func rjFailAtStep(cfg *app.SandboxModeConfig) string {
 	if cfg == nil {
 		return ""
 	}
@@ -543,42 +562,42 @@ func safeStr(val, fallback string) string {
 	return fallback
 }
 
-func safeError(cfg *app.SandboxSignalConfig) string {
+func safeError(cfg *app.SandboxModeSignalConfig) string {
 	if cfg == nil {
 		return ""
 	}
 	return cfg.Error
 }
 
-func safeDurationMs(cfg *app.SandboxConfig) string {
+func safeDurationMs(cfg *app.SandboxModeConfig) string {
 	if cfg == nil || cfg.Duration == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%d", cfg.Duration.Milliseconds())
 }
 
-func safeSleepMs(cfg *app.SandboxConfig) string {
+func safeSleepMs(cfg *app.SandboxModeConfig) string {
 	if cfg == nil || cfg.SleepDuration == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%d", cfg.SleepDuration.Milliseconds())
 }
 
-func safeTimeoutMs(cfg *app.SandboxConfig) string {
+func safeTimeoutMs(cfg *app.SandboxModeConfig) string {
 	if cfg == nil || cfg.Timeout == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%d", cfg.Timeout.Milliseconds())
 }
 
-func safeFaultPct(cfg *app.SandboxConfig) string {
+func safeFaultPct(cfg *app.SandboxModeConfig) string {
 	if cfg == nil || cfg.FaultRate == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%.0f", cfg.FaultRate*100)
 }
 
-func safeDeadlockSleep(cfg *app.SandboxSignalConfig) string {
+func safeDeadlockSleep(cfg *app.SandboxModeSignalConfig) string {
 	if cfg == nil || cfg.DeadlockSleep == 0 {
 		return ""
 	}
@@ -589,7 +608,7 @@ func safeDeadlockSleep(cfg *app.SandboxSignalConfig) string {
 	return fmt.Sprintf("%.1f", seconds)
 }
 
-func safeWorkflowSleep(cfg *app.SandboxSignalConfig) string {
+func safeWorkflowSleep(cfg *app.SandboxModeSignalConfig) string {
 	if cfg == nil || cfg.WorkflowSleep == 0 {
 		return ""
 	}
@@ -598,4 +617,37 @@ func safeWorkflowSleep(cfg *app.SandboxSignalConfig) string {
 		return fmt.Sprintf("%d", int(seconds))
 	}
 	return fmt.Sprintf("%.1f", seconds)
+}
+
+type durationPreset struct {
+	Label string
+	Value string
+}
+
+func msBadges() []durationPreset {
+	return []durationPreset{
+		{"1s", "1000"}, {"2s", "2000"}, {"5s", "5000"}, {"1m", "60000"}, {"2m", "120000"},
+	}
+}
+
+func secBadges() []durationPreset {
+	return []durationPreset{
+		{"1s", "1"}, {"2s", "2"}, {"5s", "5"}, {"1m", "60"}, {"2m", "120"},
+	}
+}
+
+templ durationBadgesRow(inputName string, presets []durationPreset) {
+	<div class="flex gap-1 mt-1">
+		for _, p := range presets {
+			<button type="button"
+				class="text-[10px] px-1.5 py-0.5 rounded border border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors cursor-pointer"
+				onclick={ setInputValue(inputName, p.Value) }
+			>{ p.Label }</button>
+		}
+	</div>
+}
+
+script setInputValue(name string, value string) {
+	const el = event.target.closest("form").querySelector(`input[name="${name}"]`);
+	if (el) el.value = value;
 }

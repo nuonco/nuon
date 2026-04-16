@@ -14,10 +14,10 @@ import (
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 // @by-field signalType
-func (a *Activities) getSandboxSignalConfig(ctx context.Context, signalType string) (*app.SandboxSignalConfig, error) {
-	var cfg app.SandboxSignalConfig
+func (a *Activities) getSandboxSignalConfig(ctx context.Context, signalType string) (*app.SandboxModeSignalConfig, error) {
+	var cfg app.SandboxModeSignalConfig
 	res := a.db.WithContext(ctx).
-		Where(app.SandboxSignalConfig{SignalType: signalType, Enabled: true}).
+		Where(app.SandboxModeSignalConfig{SignalType: signalType, Enabled: true}).
 		First(&cfg)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {

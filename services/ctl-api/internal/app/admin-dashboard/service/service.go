@@ -159,6 +159,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/sandbox-mode/signals/table", s.SandboxModeSignalsTable)
 	api.GET("/sandbox-mode/stacks/table", s.SandboxModeStacksTable)
 	api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
+	api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
 	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 

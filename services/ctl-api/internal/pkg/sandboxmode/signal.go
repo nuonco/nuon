@@ -14,13 +14,13 @@ import (
 // based on the SandboxSignalConfig.
 type SandboxSignal struct {
 	inner  signal.Signal
-	config *app.SandboxSignalConfig
+	config *app.SandboxModeSignalConfig
 }
 
 var _ signal.Signal = (*SandboxSignal)(nil)
 
 // WrapSignal creates a SandboxSignal wrapper around the real signal.
-func WrapSignal(inner signal.Signal, config *app.SandboxSignalConfig) signal.Signal {
+func WrapSignal(inner signal.Signal, config *app.SandboxModeSignalConfig) signal.Signal {
 	return &SandboxSignal{
 		inner:  inner,
 		config: config,

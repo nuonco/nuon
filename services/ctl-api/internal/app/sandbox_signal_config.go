@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type SandboxSignalConfig struct {
+type SandboxModeSignalConfig struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull"`
@@ -29,9 +29,11 @@ type SandboxSignalConfig struct {
 	Error         string        `json:"error,omitempty"`          // returns error with this message
 }
 
-func (s *SandboxSignalConfig) BeforeCreate(tx *gorm.DB) error {
+func (SandboxModeSignalConfig) TableName() string { return "sandbox_signal_configs" }
+
+func (s *SandboxModeSignalConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = domains.NewSandboxSignalConfigID()
+		s.ID = domains.NewSandboxModeSignalConfigID()
 	}
 	if s.CreatedByID == "" {
 		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -39,10 +41,10 @@ func (s *SandboxSignalConfig) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (s *SandboxSignalConfig) Indexes(db *gorm.DB) []migrations.Index {
+func (s *SandboxModeSignalConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:    indexes.Name(db, &SandboxSignalConfig{}, "signal_type"),
+			Name:    indexes.Name(db, &SandboxModeSignalConfig{}, "signal_type"),
 			Columns: []string{"signal_type"},
 		},
 	}

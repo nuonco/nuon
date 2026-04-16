@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type SandboxConfig struct {
+type SandboxModeConfig struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull"`
@@ -46,9 +46,11 @@ type SandboxConfig struct {
 	Outputs []byte `json:"outputs,omitempty" gorm:"type:jsonb" swaggertype:"string"`
 }
 
-func (s *SandboxConfig) BeforeCreate(tx *gorm.DB) error {
+func (SandboxModeConfig) TableName() string { return "sandbox_configs" }
+
+func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = domains.NewSandboxConfigID()
+		s.ID = domains.NewSandboxModeConfigID()
 	}
 	if s.CreatedByID == "" {
 		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -56,14 +58,14 @@ func (s *SandboxConfig) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (s *SandboxConfig) Indexes(db *gorm.DB) []migrations.Index {
+func (s *SandboxModeConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:    indexes.Name(db, &SandboxConfig{}, "runner_id"),
+			Name:    indexes.Name(db, &SandboxModeConfig{}, "runner_id"),
 			Columns: []string{"runner_id"},
 		},
 		{
-			Name:    indexes.Name(db, &SandboxConfig{}, "runner_id_job_type"),
+			Name:    indexes.Name(db, &SandboxModeConfig{}, "runner_id_job_type"),
 			Columns: []string{"runner_id", "job_type"},
 		},
 	}

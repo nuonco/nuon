@@ -11,7 +11,7 @@ import (
 
 func (s *service) AdminDisableAllSandboxSignalConfigs(ctx *gin.Context) {
 	if res := s.db.WithContext(ctx).
-		Model(&app.SandboxSignalConfig{}).
+		Model(&app.SandboxModeSignalConfig{}).
 		Where("enabled = ?", true).
 		Update("enabled", false); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to disable all sandbox signal configs: %w", res.Error))
