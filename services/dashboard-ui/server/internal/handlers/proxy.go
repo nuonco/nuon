@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,12 +19,21 @@ import (
 )
 
 type ProxyHandler struct {
-	cfg *internal.Config
-	l   *zap.Logger
+	cfg            *internal.Config
+	l              *zap.Logger
+	codecClient    *http.Client
+	codecSemaphore chan struct{}
 }
 
 func NewProxyHandler(cfg *internal.Config, l *zap.Logger) *ProxyHandler {
-	return &ProxyHandler{cfg: cfg, l: l}
+	return &ProxyHandler{
+		cfg: cfg,
+		l:   l,
+		codecClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		codecSemaphore: make(chan struct{}, 10),
+	}
 }
 
 func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
@@ -37,7 +47,6 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
 
 	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
-	e.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
 
 	authed := e.Group("/", h.requireAuth())
 	nuonOnly := authed.Group("/", h.requireNuonEmail())
@@ -58,6 +67,7 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 		ErrorLog: zap.NewStdLog(h.l),
 	}
 
+	nuonOnly.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
 	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
 	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
@@ -160,17 +170,40 @@ func (h *ProxyHandler) newTemporalProxy(upstreamBase string) *httputil.ReversePr
 }
 
 func (h *ProxyHandler) proxyTemporalCodecDecode(c *gin.Context) {
+	select {
+	case h.codecSemaphore <- struct{}{}:
+		defer func() { <-h.codecSemaphore }()
+	default:
+		c.Status(http.StatusTooManyRequests)
+		return
+	}
+
 	target := h.cfg.AdminAPIUrl + "/v1/general/temporal-codec/decode"
-	body, _ := io.ReadAll(c.Request.Body)
-	req, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, target, bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 5<<20))
 	if err != nil {
+		h.l.Error("failed to read codec decode request body", zap.Error(err))
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, target, bytes.NewReader(body))
+	if err != nil {
+		h.l.Error("failed to create codec decode request", zap.Error(err))
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := h.codecClient.Do(req)
+	if err != nil {
+		h.l.Error("codec decode upstream request failed", zap.Error(err))
 		c.Status(http.StatusBadGateway)
 		return
 	}
 	defer resp.Body.Close()
-	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+
+	limitedBody := io.LimitReader(resp.Body, 10<<20)
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), limitedBody, nil)
 }
 
 func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
