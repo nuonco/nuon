@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, comp *app.Component, installID string, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup) ([]*app.WorkflowStep, error) {
+func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, comp *app.Component, installID string, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
 		ComponentID: comp.ID,
@@ -26,16 +26,6 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflows")
-	}
-
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get current app config")
 	}
 
 	awcMap := make(map[string]app.ActionWorkflowConfig, len(appCfg.ActionWorkflowConfigs))
@@ -75,7 +65,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 	return steps, nil
 }
 
-func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.Workflow, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup) ([]*app.WorkflowStep, error) {
+func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.Workflow, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
 	installActions, err := activities.AwaitGetInstallActionWorkflowsByTriggerType(ctx, activities.GetInstallActionWorkflowsByTriggerTypeRequest{
@@ -84,16 +74,6 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflows")
-	}
-
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get current app config")
 	}
 
 	awcMap := make(map[string]app.ActionWorkflowConfig, len(appCfg.ActionWorkflowConfigs))
@@ -138,20 +118,11 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 	return steps, nil
 }
 
-func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup) ([]*app.WorkflowStep, error) {
+func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
-	appcfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get app config")
-	}
 	components := make(map[string]app.Component)
-	for _, ccc := range appcfg.ComponentConfigConnections {
+	for _, ccc := range appCfg.ComponentConfigConnections {
 		components[ccc.ComponentID] = ccc.Component
 	}
 
@@ -177,7 +148,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		}
 
 		if !flw.PlanOnly {
-			preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent, sg)
+			preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent, sg, appCfg)
 			if err != nil {
 				return nil, err
 			}
@@ -222,7 +193,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			}
 		}
 		if !flw.PlanOnly {
-			postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
+			postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg, appCfg)
 			if err != nil {
 				return nil, err
 			}
@@ -233,14 +204,9 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 	return steps, nil
 }
 
-func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
+func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: install.ID,
+		InstallID: installID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
@@ -260,19 +226,19 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg, appCfg)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, lifecycleSteps...)
 	}
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg, appCfg)
 		if err != nil {
 			return nil, err
 		}
