@@ -15,19 +15,7 @@ const validateUpdateType = handlerTypeUpdate
 
 type ValidateResponse struct{}
 
-func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse, retErr error) {
-	defer func() {
-		if r := recover(); r != nil {
-			panicErr := &signal.SignalErrPanic{Value: r, Phase: "validate"}
-			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
-				QueueSignalID:     h.queueSignalID,
-				Status:            app.StatusError,
-				StatusDescription: panicErr.Error(),
-			})
-			retErr = panicErr
-		}
-	}()
-
+func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, error) {
 	if h.sig == nil {
 		return nil, errors.New("signal was empty can not proceed")
 	}
@@ -53,13 +41,24 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	}
 
 	start := workflow.Now(ctx)
-	err := h.sig.Validate(ctx)
+	err := h.runSignalValidate(ctx)
 	dur := workflow.Now(ctx).Sub(start)
 
 	// run after-phase hooks (best-effort)
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	if err != nil {
+		// If the signal panicked, write error status here (outside the panic boundary).
+		var panicErr *signal.SignalErrPanic
+		if errors.As(err, &panicErr) {
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+				QueueSignalID:     h.queueSignalID,
+				Status:            app.StatusError,
+				StatusDescription: panicErr.Error(),
+			})
+			return nil, panicErr
+		}
+
 		validateErr := &signal.SignalErrValidate{Err: err}
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
@@ -70,4 +69,15 @@ func (h *handler) validateHandler(ctx workflow.Context) (resp *ValidateResponse,
 	}
 
 	return nil, nil
+}
+
+// runSignalValidate calls the user-provided signal Validate in a panic-safe boundary.
+func (h *handler) runSignalValidate(ctx workflow.Context) (retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = &signal.SignalErrPanic{Value: r, Phase: "validate"}
+		}
+	}()
+
+	return h.sig.Validate(ctx)
 }

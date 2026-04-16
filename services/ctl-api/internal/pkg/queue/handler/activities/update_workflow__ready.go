@@ -19,6 +19,7 @@ import (
 func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ReadyResponse, error) {
 	info := activity.GetInfo(ctx)
 
+	startOp := a.handlerStartOperation(workflowID, queueID, updateID)
 	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
 		tclient.UpdateWithStartWorkflowOptions{
@@ -27,7 +28,7 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 				UpdateName:   handler.ReadyHandlerName,
 				WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			},
-			StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
+			StartWorkflowOperation: startOp,
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to call query handler")
@@ -37,6 +38,13 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 	if err := rawResp.Get(ctx, &resp); err != nil {
 		return nil, errors.Wrap(err, "unable get response")
 	}
+
+	// Resolve the run-id so callers can pin subsequent updates to this exact run.
+	run, err := startOp.Get(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get handler workflow run")
+	}
+	resp.RunID = run.GetRunID()
 
 	return &resp, nil
 }

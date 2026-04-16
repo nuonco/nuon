@@ -16,6 +16,18 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
+	// If the signal is already in-progress, a previous handler was abandoned (e.g. panic).
+	// Mark it as failed so anything waiting on it gets unblocked.
+	//if queueSignal.Status.Status == app.StatusInProgress {
+	//abandonErr := errors.New("previous execution was abandoned, marking as failed")
+	//_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	//QueueSignalID:     h.queueSignalID,
+	//Status:            app.StatusError,
+	//StatusDescription: abandonErr.Error(),
+	//})
+	//return nil
+	//}
+
 	sig, err := activities.AwaitGetQueueSignalSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get signal")
