@@ -80,11 +80,12 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {
 	l.Info("making sure queue signal workflow is ready")
-	if _, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
+	readyResp, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
-	}); err != nil {
+	})
+	if err != nil {
 		return errors.Wrap(err, "unable to update")
 	}
 
@@ -93,6 +94,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
+		RunID:      readyResp.RunID,
 	}, longRunningActivityOptions); err != nil {
 		return errors.Wrap(err, "unable to validate")
 	}
@@ -101,6 +103,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
+		RunID:      readyResp.RunID,
 	}, longRunningActivityOptions); err != nil {
 		return errors.Wrap(err, "unable to execute")
 	}
