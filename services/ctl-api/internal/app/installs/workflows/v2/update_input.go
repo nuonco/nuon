@@ -37,18 +37,25 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs, sg)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, lifecycleSteps...)
-
 	appConfig, err := activities.AwaitGetAppConfig(ctx, activities.GetAppConfigRequest{
 		ID: install.AppConfigID,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to get app config for install %s", installID)
 	}
+
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreUpdateInputs, sg, appConfig, awData)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, lifecycleSteps...)
 
 	var changedRefs []refs.Ref
 	for _, input := range changedInputs {
@@ -87,20 +94,20 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg, appConfig, awData)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
 		}
 		steps = append(steps, sandboxSteps...)
 	} else {
-		deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+		deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg, appConfig, awData)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get component deploy steps")
 		}
 		steps = append(steps, deploySteps...)
 	}
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs, sg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostUpdateInputs, sg, appConfig, awData)
 	if err != nil {
 		return nil, err
 	}
