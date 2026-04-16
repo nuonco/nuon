@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "d67d89c289abe89f2dab6fb6d2939bb085a20b75",
+  "prompts": {
+    "4e879558028894c3": {
+      "agent_id": {
+        "tool": "amp",
+        "id": "toolu_vrtx_01RmQF5G2c8b4QHZEwtjziBd",
+        "model": "unknown"
+      },
+      "human_author": "Harsh <harsh@nuon.co>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 1,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
