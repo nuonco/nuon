@@ -882,6 +882,95 @@ export const MixedWithNoOp = () => (
   />
 )
 
+export const RBACArrayNoise = () => (
+  <TerraformDiff
+    plan={{
+      resource_changes: [
+        {
+          address: 'kubernetes_cluster_role.system_node',
+          type: 'kubernetes_cluster_role',
+          name: 'system_node',
+          module_address: 'module.eks',
+          change: {
+            actions: ['update'],
+            before: {
+              metadata: { name: 'system:node' },
+              rule: [
+                {
+                  api_groups: [''],
+                  resources: ['nodes'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: null,
+                },
+                {
+                  api_groups: [''],
+                  resources: ['pods'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: null,
+                },
+                {
+                  api_groups: [''],
+                  resources: ['services'],
+                  verbs: ['get', 'list'],
+                  resource_names: null,
+                },
+                {
+                  api_groups: ['apps'],
+                  resources: ['daemonsets'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: null,
+                },
+                {
+                  api_groups: ['coordination.k8s.io'],
+                  resources: ['leases'],
+                  verbs: ['get', 'create', 'update'],
+                  resource_names: null,
+                },
+              ],
+            },
+            after: {
+              metadata: { name: 'system:node' },
+              rule: [
+                {
+                  api_groups: [''],
+                  resources: ['nodes'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: [],
+                },
+                {
+                  api_groups: [''],
+                  resources: ['pods'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: [],
+                },
+                {
+                  api_groups: [''],
+                  resources: ['services'],
+                  verbs: ['get', 'list'],
+                  resource_names: [],
+                },
+                {
+                  api_groups: ['apps'],
+                  resources: ['daemonsets'],
+                  verbs: ['get', 'list', 'watch'],
+                  resource_names: [],
+                },
+                {
+                  api_groups: ['coordination.k8s.io'],
+                  resources: ['leases'],
+                  verbs: ['get', 'create', 'update', 'patch'],
+                  resource_names: [],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      output_changes: {},
+    } as any}
+  />
+)
+
 export const DriftDetected = () => (
   <TerraformDiff
     plan={{
