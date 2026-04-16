@@ -240,7 +240,7 @@ export const FlexibleTitles = () => (
         <TimelineEvent
           title={
             <span>
-              <Badge theme="error" size="sm">
+              <Badge theme="error">
                 CRITICAL
               </Badge>{' '}
               Database connection failed
