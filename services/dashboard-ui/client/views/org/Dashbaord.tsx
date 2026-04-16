@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Banner } from '@/components/common/Banner'
 import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
 import { PendingApprovals } from '@/components/orgs/PendingApprovals'
 import {
@@ -109,6 +110,20 @@ export const Dashboard = () => {
           </Text>
         </HeadingGroup>
       </PageHeader>
+      {org?.sandbox_mode && (
+        <div className="px-6 pt-6">
+          <Banner theme="warn">
+            <div className="flex flex-col gap-1">
+              <Text weight="strong">Sandbox mode</Text>
+              <Text variant="subtext" theme="neutral">
+                This organization is running in sandbox mode. Installs use
+                simulated infrastructure instead of deploying to a real cloud
+                account.
+              </Text>
+            </div>
+          </Banner>
+        </div>
+      )}
       <PageContent>
         <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
           <PageSection className="flex-1 border-r !gap-12">
