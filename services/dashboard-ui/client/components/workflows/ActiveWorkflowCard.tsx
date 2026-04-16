@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
@@ -9,23 +10,6 @@ import type { TInstall, TWorkflow } from '@/types'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getPendingApprovalCount } from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
-
-function useElapsed(since?: string, intervalMs = 1000) {
-  const [now, setNow] = useState(Date.now())
-  useEffect(() => {
-    if (!since) return
-    const id = setInterval(() => setNow(Date.now()), intervalMs)
-    return () => clearInterval(id)
-  }, [since, intervalMs])
-
-  if (!since) return null
-  const diff = Math.max(0, Math.floor((now - new Date(since).getTime()) / 1000))
-  if (diff < 60) return `${diff}s`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ${diff % 60}s`
-  const h = Math.floor(diff / 3600)
-  const m = Math.floor((diff % 3600) / 60)
-  return `${h}h ${m}m`
-}
 
 function getWorkflowTitle(workflow: TWorkflow) {
   if (
@@ -35,19 +19,6 @@ function getWorkflowTitle(workflow: TWorkflow) {
     return `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
   }
   return workflow.name || toSentenceCase(snakeToWords(workflow.type))
-}
-
-function CardInfo({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 w-24">
-      <Text variant="label" theme="neutral">
-        {label}
-      </Text>
-      <Text variant="body" className="truncate">
-        {children}
-      </Text>
-    </div>
-  )
 }
 
 export const ActiveWorkflowCard = ({
@@ -60,7 +31,6 @@ export const ActiveWorkflowCard = ({
   const { org } = useOrg()
   const installId = workflow.owner_id
   const installName = workflow.metadata?.owner_name
-  const elapsed = useElapsed(workflow.created_at)
   const pendingApprovals = getPendingApprovalCount(workflow)
 
   return (
@@ -85,15 +55,23 @@ export const ActiveWorkflowCard = ({
       </div>
 
       <div className="flex items-center gap-6 flex-wrap">
-        <CardInfo label="Initiated by">
-          {workflow?.created_by?.email?.split('@')[0] ?? '—'}
-        </CardInfo>
-        <CardInfo label="Elapsed time">
-          {elapsed ?? '—'}
-        </CardInfo>
-        <CardInfo label="Type">
-          {toSentenceCase(snakeToWords(workflow.type))}
-        </CardInfo>
+        <LabeledValue label="Initiated by" className="w-24">
+
+            {workflow?.created_by?.email?.split('@')[0] ?? '—'}
+
+        </LabeledValue>
+        <LabeledValue label="Elapsed time" className="w-24">
+          <Duration
+            variant="subtext"
+            beginTime={workflow.created_at}
+            durationUnits={['hours', 'minutes', 'seconds']}
+          />
+        </LabeledValue>
+        <LabeledValue label="Type" className="w-24">
+          <Text variant="subtext" className="truncate">
+            {toSentenceCase(snakeToWords(workflow.type))}
+          </Text>
+        </LabeledValue>
 
         {(workflow.plan_only ||
           workflow?.type === 'drift_run_reprovision_sandbox' ||
