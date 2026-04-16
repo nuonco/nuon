@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -24,10 +25,12 @@ type Signal struct {
 	v *validator.Validate
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithParams = (*Signal)(nil)
-var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var (
+	_ signal.Signal                = (*Signal)(nil)
+	_ signal.SignalWithParams      = (*Signal)(nil)
+	_ signal.SignalWithStepContext = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry   = (*Signal)(nil)
+)
 
 func (s *Signal) AutoRetry() bool { return true }
 
