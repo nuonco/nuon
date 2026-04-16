@@ -124,6 +124,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
+	deploy.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, deploy)
 }
 
@@ -228,6 +229,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
+	deploy.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, deploy)
 }
 

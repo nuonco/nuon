@@ -14,7 +14,7 @@ func (s *Service) DeployComponents(ctx context.Context, installID string, roleNa
 		return ui.PrintError(err)
 	}
 
-	err = s.api.DeployInstallComponents(ctx, installID, roleName, planOnly)
+	_, err = s.api.DeployInstallComponents(ctx, installID, roleName, planOnly)
 	if err != nil {
 		fmt.Printf("deploy components err: %+s\n", err)
 		return ui.PrintJSONError(err)

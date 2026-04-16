@@ -102,6 +102,8 @@ type ClientService interface {
 
 	CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error)
 
+	CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error)
+
 	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
 
 	CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error)
@@ -266,9 +268,9 @@ type ClientService interface {
 
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
 
-	FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngCreated, error)
+	FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngOK, error)
 
-	ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForceShutDownRunnerCreated, error)
+	ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForceShutDownRunnerOK, error)
 
 	ForgetInstall(params *ForgetInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForgetInstallOK, error)
 
@@ -642,7 +644,7 @@ type ClientService interface {
 
 	GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error)
 
-	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerCreated, error)
+	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
 
@@ -652,7 +654,7 @@ type ClientService interface {
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
 
-	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownCreated, error)
+	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error)
 
 	PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error)
 
@@ -668,17 +670,17 @@ type ClientService interface {
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
-	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallCreated, error)
-
-	RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryOwnerWorkflowByIDCreated, error)
+	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error)
 
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
 
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
 
-	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngCreated, error)
+	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngOK, error)
 
 	ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error)
+
+	SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -1102,6 +1104,50 @@ func (a *Client) CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflowStep cancels an in progress workflow step
+*/
+func (a *Client) CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowStep",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowStepAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -4937,7 +4983,7 @@ func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxPara
 /*
 FetchRunnerTokenMng fetches authentication token for an install runner via the mng process
 */
-func (a *Client) FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngCreated, error) {
+func (a *Client) FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewFetchRunnerTokenMngParams()
@@ -4964,7 +5010,7 @@ func (a *Client) FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*FetchRunnerTokenMngCreated)
+	success, ok := result.(*FetchRunnerTokenMngOK)
 	if ok {
 		return success, nil
 	}
@@ -4985,7 +5031,7 @@ func (a *Client) FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo
 
 This will result in jobs being lost/cancelled if they are in-flight.
 */
-func (a *Client) ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForceShutDownRunnerCreated, error) {
+func (a *Client) ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForceShutDownRunnerOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewForceShutDownRunnerParams()
@@ -5012,7 +5058,7 @@ func (a *Client) ForceShutDownRunner(params *ForceShutDownRunnerParams, authInfo
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*ForceShutDownRunnerCreated)
+	success, ok := result.(*ForceShutDownRunnerOK)
 	if ok {
 		return success, nil
 	}
@@ -13687,7 +13733,7 @@ func (a *Client) GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawBy
 
 _NOTE_ when a runner is unhealthy, the runner will not be able to pick up this job, so use force shut down instead.
 */
-func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerCreated, error) {
+func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewGracefulShutDownRunnerParams()
@@ -13714,7 +13760,7 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*GracefulShutDownRunnerCreated)
+	success, ok := result.(*GracefulShutDownRunnerOK)
 	if ok {
 		return success, nil
 	}
@@ -13913,7 +13959,7 @@ func (a *Client) LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo run
 /*
 MngVMShutDown shuts down an install runner VM
 */
-func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownCreated, error) {
+func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewMngVMShutDownParams()
@@ -13940,7 +13986,7 @@ func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.Cli
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*MngVMShutDownCreated)
+	success, ok := result.(*MngVMShutDownOK)
 	if ok {
 		return success, nil
 	}
@@ -14286,7 +14332,7 @@ func (a *Client) ResetUserJourney(params *ResetUserJourneyParams, authInfo runti
 /*
 RestartRunnerInstall restarts the runner install process via the mng process
 */
-func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallCreated, error) {
+func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewRestartRunnerInstallParams()
@@ -14313,7 +14359,7 @@ func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authIn
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*RestartRunnerInstallCreated)
+	success, ok := result.(*RestartRunnerInstallOK)
 	if ok {
 		return success, nil
 	}
@@ -14324,52 +14370,6 @@ func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RestartRunnerInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-RetryOwnerWorkflowByID reruns the workflow steps starting from input step id can be used to retry a failed step
-
-Retry a workflow execution by id.
-*/
-func (a *Client) RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryOwnerWorkflowByIDCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewRetryOwnerWorkflowByIDParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "RetryOwnerWorkflowByID",
-		Method:             "POST",
-		PathPattern:        "/v1/workflows/{workflow_id}/retry",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &RetryOwnerWorkflowByIDReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*RetryOwnerWorkflowByIDCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for RetryOwnerWorkflowByID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14420,7 +14420,7 @@ func (a *Client) RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.Cli
 }
 
 /*
-RetryWorkflowStep reruns the workflow steps starting from input step id can be used to retry a failed step
+RetryWorkflowStep retries a failed or awaiting approval workflow step
 
 Retry a workflow execution by id.
 */
@@ -14468,7 +14468,7 @@ func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo run
 /*
 ShutDownRunnerMng shuts down an install runner s mng process does not shut down the install runner process
 */
-func (a *Client) ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngCreated, error) {
+func (a *Client) ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewShutDownRunnerMngParams()
@@ -14495,7 +14495,7 @@ func (a *Client) ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo run
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*ShutDownRunnerMngCreated)
+	success, ok := result.(*ShutDownRunnerMngOK)
 	if ok {
 		return success, nil
 	}
@@ -14550,6 +14550,50 @@ func (a *Client) ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ShutdownRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SkipWorkflowStep skips a failed workflow step and continue the workflow
+*/
+func (a *Client) SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSkipWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SkipWorkflowStep",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/skip",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SkipWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SkipWorkflowStepCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

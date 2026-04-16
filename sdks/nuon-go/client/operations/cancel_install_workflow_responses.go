@@ -77,7 +77,7 @@ CancelInstallWorkflowAccepted describes a response with status code 202, with de
 Accepted
 */
 type CancelInstallWorkflowAccepted struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this cancel install workflow accepted response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *CancelInstallWorkflowAccepted) String() string {
 	return fmt.Sprintf("[POST /v1/install-workflows/{install_workflow_id}/cancel][%d] cancelInstallWorkflowAccepted %s", 202, payload)
 }
 
-func (o *CancelInstallWorkflowAccepted) GetPayload() bool {
+func (o *CancelInstallWorkflowAccepted) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

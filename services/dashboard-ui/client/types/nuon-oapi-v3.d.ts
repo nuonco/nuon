@@ -2729,6 +2729,7 @@ export interface components {
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
     };
     "app.AppBreakGlassConfig": {
       app_config_id?: string;
@@ -3236,6 +3237,7 @@ export interface components {
       /** @description These fields will be populated from the drifts_view */
       target_type?: string;
     };
+    "app.EmptyResponse": Record<string, never>;
     "app.ExternalImageComponentConfig": {
       aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
       azure_acr_image_config?: components["schemas"]["app.AzureACRImageConfig"];
@@ -3410,6 +3412,8 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.InstallActionWorkflow": {
@@ -3582,6 +3586,8 @@ export interface components {
       values?: {
         [key: string]: string;
       };
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
     };
     "app.InstallSandbox": {
       created_at?: string;
@@ -4594,6 +4600,9 @@ export interface components {
       type?: components["schemas"]["app.WorkflowType"];
       updated_at?: string;
       workflow_runs?: components["schemas"]["app.WorkflowRun"][];
+    };
+    "app.WorkflowResponse": {
+      workflow_id?: string;
     };
     "app.WorkflowRun": {
       created_at?: string;
@@ -6742,7 +6751,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7172,7 +7181,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7672,7 +7681,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -8799,7 +8808,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10042,7 +10051,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10378,7 +10387,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12021,7 +12030,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12296,7 +12305,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12752,7 +12761,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14019,7 +14028,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14489,7 +14498,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -14783,7 +14792,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -15909,7 +15918,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16024,7 +16033,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16408,7 +16417,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -16510,7 +16519,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16899,7 +16908,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16955,7 +16964,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17175,7 +17184,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17541,7 +17550,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17654,7 +17663,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17710,7 +17719,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -18238,7 +18247,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -20466,10 +20475,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20524,10 +20533,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20743,10 +20752,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20796,10 +20805,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20849,10 +20858,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20902,10 +20911,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -22945,7 +22954,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */

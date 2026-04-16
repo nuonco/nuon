@@ -87,6 +87,9 @@ type Install struct {
 	DriftedObjects                      []DriftedObject        `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
 	Links                               map[string]any         `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
+	// WorkflowID is populated by handlers that create a workflow. Not persisted.
+	WorkflowID *string `json:"workflow_id,omitempty" gorm:"-"`
+
 	// TODO(jm): deprecate these fields once the terraform provider has been updated
 	Status            string `json:"status,omitzero" gorm:"-" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string `json:"status_description,omitzero" gorm:"-" temporaljson:"status_description,omitzero,omitempty"`

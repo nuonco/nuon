@@ -13,7 +13,7 @@ func (s *Service) Deprovision(ctx context.Context, installID string, asJSON bool
 		return ui.PrintError(err)
 	}
 
-	err = s.api.DeprovisionInstall(ctx, installID)
+	_, err = s.api.DeprovisionInstall(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}

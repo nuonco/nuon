@@ -77,7 +77,7 @@ DeleteActionWorkflowOK describes a response with status code 200, with default h
 OK
 */
 type DeleteActionWorkflowOK struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this delete action workflow o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *DeleteActionWorkflowOK) String() string {
 	return fmt.Sprintf("[DELETE /v1/action-workflows/{action_workflow_id}][%d] deleteActionWorkflowOK %s", 200, payload)
 }
 
-func (o *DeleteActionWorkflowOK) GetPayload() bool {
+func (o *DeleteActionWorkflowOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

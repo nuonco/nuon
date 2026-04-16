@@ -31,7 +31,7 @@ type AppBranchRun struct {
 	AppBranchConfigID string          `json:"app_branch_config_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"app_branch_config_id,omitzero,omitempty"`
 	AppBranchConfig   AppBranchConfig `json:"app_branch_config,omitempty" temporaljson:"app_branch_config,omitzero,omitempty"`
 
-	WorkflowID *string   `json:"workflow_id,omitempty" swaggerignore:"true" temporaljson:"workflow_id,omitzero,omitempty"`
+	WorkflowID *string   `json:"workflow_id,omitempty" temporaljson:"workflow_id,omitzero,omitempty"`
 	Workflow   *Workflow `json:"workflow,omitempty" temporaljson:"workflow,omitzero,omitempty"`
 
 	// Status tracks the current state of the run

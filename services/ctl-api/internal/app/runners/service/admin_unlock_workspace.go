@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type AdminUnlockWorkspace struct{}
@@ -17,7 +19,7 @@ type AdminUnlockWorkspace struct{}
 // @Param					req			body	AdminDeleteRunnerRequest	true	"Input"
 // @Param workspace_id	path	string	true	"workspace ID or owner ID of workspace to unlock"
 // @Produce				json
-// @Success				200	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/terraform-workspaces/{workspace_id}/unlock [post]
 func (s *service) AdminUnlockWorkspace(ctx *gin.Context) {
 	workspaceID := ctx.Param("workspace_id")
@@ -33,5 +35,5 @@ func (s *service) AdminUnlockWorkspace(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

@@ -65,7 +65,7 @@ ForgetInstallOK describes a response with status code 200, with default header v
 OK
 */
 type ForgetInstallOK struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this forget install o k response has a 2xx status code
@@ -108,7 +108,7 @@ func (o *ForgetInstallOK) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/forget][%d] forgetInstallOK %s", 200, payload)
 }
 
-func (o *ForgetInstallOK) GetPayload() bool {
+func (o *ForgetInstallOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

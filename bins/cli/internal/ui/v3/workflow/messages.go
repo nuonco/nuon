@@ -138,10 +138,7 @@ func (m model) retryAllCmd() tea.Msg {
 	if target == nil {
 		return retryAllMsg{retried: 0, err: nil}
 	}
-	_, err := m.api.RetryOwnerWorkflow(m.ctx, m.workflowID, &models.ServiceRetryWorkflowByIDRequest{
-		Operation: "retry-step",
-		StepID:    target.ID,
-	})
+	err := m.api.RetryWorkflowStep(m.ctx, m.workflowID, target.ID, nil)
 	if err != nil {
 		return retryAllMsg{retried: 0, err: err}
 	}

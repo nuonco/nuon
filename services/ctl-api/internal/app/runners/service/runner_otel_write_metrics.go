@@ -29,7 +29,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	string
+// @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/runners/{runner_id}/metrics [POST]
 func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
@@ -56,7 +56,7 @@ func (s *service) OtelWriteMetrics(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
 func (s *service) writeRunnerMetrics(ctx context.Context, runnerID string, req *pmetricotlp.ExportRequest) []error {

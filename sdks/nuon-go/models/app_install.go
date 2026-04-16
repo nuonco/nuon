@@ -137,6 +137,9 @@ type AppInstall struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
+	// WorkflowID is populated by handlers that create a workflow. Not persisted.
+	WorkflowID string `json:"workflow_id,omitempty"`
+
 	// workflows
 	Workflows []*AppWorkflow `json:"workflows"`
 }

@@ -13,7 +13,7 @@ func (s *Service) DeprovisionSandbox(ctx context.Context, installID string, asJS
 		return ui.PrintError(err)
 	}
 
-	err = s.api.DeprovisionInstallSandbox(ctx, installID)
+	_, err = s.api.DeprovisionInstallSandbox(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}

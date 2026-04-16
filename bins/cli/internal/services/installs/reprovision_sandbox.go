@@ -16,18 +16,21 @@ func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, skip
 		ui.PrintLn("install id: " + installID)
 	}
 
-	workflowID, err := s.api.ReprovisionInstallSandbox(ctx, installID, skipComponents)
+	resp, err := s.api.ReprovisionInstallSandbox(ctx, installID, skipComponents)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
-	if s.cfg.Debug {
+
+	workflowID := ""
+	if resp != nil {
+		workflowID = resp.WorkflowID
+	}
+
+	if s.cfg.Debug && workflowID != "" {
 		ui.PrintLn("workflow id: " + workflowID)
 	}
 
 	ui.PrintLn("successfully scheduled reprovision of install sandbox")
-	if workflowID != "" && s.cfg.Debug {
-		ui.PrintLn("workflow id: " + workflowID)
-	}
 
 	if workflowID != "" && s.cfg.Preview {
 		return s.workflowsTUI(ctx, installID, workflowID, false)

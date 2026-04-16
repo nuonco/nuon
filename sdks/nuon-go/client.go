@@ -115,16 +115,16 @@ type Client interface {
 	DeleteVCSConnection(ctx context.Context, connID string) error
 
 	// installs
-	CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, string, error)
+	CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, error)
 	GetAppInstalls(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
 	GetAllInstalls(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
 
 	GetInstall(ctx context.Context, installID string) (*models.AppInstall, error)
 	UpdateInstall(ctx context.Context, installID string, req *models.ServiceUpdateInstallRequest) (*models.AppInstall, error)
-	DeleteInstall(ctx context.Context, installID string) (bool, error)
+	DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
-	ReprovisionInstall(ctx context.Context, installID string) error
-	DeprovisionInstall(ctx context.Context, installID string) error
+	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 
 	// install config
 	CreateInstallConfig(ctx context.Context, installID string, req *models.ServiceCreateInstallConfigRequest) (*models.AppInstallConfig, error)
@@ -141,16 +141,16 @@ type Client interface {
 
 	// install components
 	GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallComponent, bool, error)
-	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) error
-	TeardownInstallComponents(ctx context.Context, installID string) error
-	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) error
+	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error)
+	TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error)
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
 	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
 	GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error)
 
 	// install sandbox
-	DeprovisionInstallSandbox(ctx context.Context, installID string) error
-	ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (string, error)
+	DeprovisionInstallSandbox(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error)
 	GetInstallSandboxRuns(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallSandboxRun, bool, error)
 	GetInstallSandboxRun(ctx context.Context, installID, runID string) (*models.AppInstallSandboxRun, error)
 
@@ -158,7 +158,7 @@ type Client interface {
 	GetInstallInputs(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallInputs, bool, error)
 	GetInstallCurrentInputs(ctx context.Context, installID string) (*models.AppInstallInputs, error)
 	CreateInstallInputs(ctx context.Context, installID string, req *models.ServiceCreateInstallInputsRequest) (*models.AppInstallInputs, error)
-	UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, string, error)
+	UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error)
 
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
@@ -170,7 +170,6 @@ type Client interface {
 	CreateWorkflowStepApprovalResponse(cxt context.Context, workflowID string, workflowStepID string, approvalID string, req *models.ServiceCreateWorkflowStepApprovalResponseRequest) (*models.ServiceCreateWorkflowStepApprovalResponseResponse, error)
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
-	RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error)
 
 	// install runner
 	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)

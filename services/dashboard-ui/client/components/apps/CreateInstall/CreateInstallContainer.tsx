@@ -94,7 +94,7 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
-      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      const workflowId = result.data.workflow_id
       const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
 
       if (workflowId) {
