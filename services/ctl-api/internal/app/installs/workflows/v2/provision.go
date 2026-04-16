@@ -70,7 +70,8 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 	steps = append(steps, step)
 
 	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &updateinstallstackoutputs.Signal{
-		InstallStackID: stackID,
+		InstallStackID:          stackID,
+		SkipInputUpdateWorkflow: true,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
