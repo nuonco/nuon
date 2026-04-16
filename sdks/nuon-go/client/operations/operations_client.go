@@ -102,6 +102,8 @@ type ClientService interface {
 
 	CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error)
 
+	CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error)
+
 	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
 
 	CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error)
@@ -670,8 +672,6 @@ type ClientService interface {
 
 	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallCreated, error)
 
-	RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryOwnerWorkflowByIDCreated, error)
-
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
 
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
@@ -679,6 +679,8 @@ type ClientService interface {
 	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngCreated, error)
 
 	ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error)
+
+	SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -1102,6 +1104,50 @@ func (a *Client) CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflowStep cancels an in progress workflow step
+*/
+func (a *Client) CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowStep",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowStepAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14328,52 +14374,6 @@ func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authIn
 }
 
 /*
-RetryOwnerWorkflowByID reruns the workflow steps starting from input step id can be used to retry a failed step
-
-Retry a workflow execution by id.
-*/
-func (a *Client) RetryOwnerWorkflowByID(params *RetryOwnerWorkflowByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryOwnerWorkflowByIDCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewRetryOwnerWorkflowByIDParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "RetryOwnerWorkflowByID",
-		Method:             "POST",
-		PathPattern:        "/v1/workflows/{workflow_id}/retry",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &RetryOwnerWorkflowByIDReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*RetryOwnerWorkflowByIDCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for RetryOwnerWorkflowByID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 RetryWorkflow reruns the workflow steps starting from input step id can be used to retry a failed step
 
 Retry a failed workflow execution.
@@ -14420,7 +14420,7 @@ func (a *Client) RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.Cli
 }
 
 /*
-RetryWorkflowStep reruns the workflow steps starting from input step id can be used to retry a failed step
+RetryWorkflowStep retries a failed or awaiting approval workflow step
 
 Retry a workflow execution by id.
 */
@@ -14550,6 +14550,50 @@ func (a *Client) ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ShutdownRunnerProcess: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SkipWorkflowStep skips a failed workflow step and continue the workflow
+*/
+func (a *Client) SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSkipWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SkipWorkflowStep",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/skip",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SkipWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SkipWorkflowStepCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

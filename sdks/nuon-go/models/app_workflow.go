@@ -44,6 +44,13 @@ type AppWorkflow struct {
 	// finished at
 	FinishedAt string `json:"finished_at,omitempty"`
 
+	// GenerateStepsSignal is an optional queue signal that generates workflow steps.
+	// When set, the conductor enqueues this signal and calls its "FetchSteps" update
+	// handler instead of using the hardcoded Generators map.
+	GenerateStepsSignal struct {
+		SignaldbSignalData
+	} `json:"generate_steps_signal,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -94,6 +101,9 @@ type AppWorkflow struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// workflow runs
+	WorkflowRuns []*AppWorkflowRun `json:"workflow_runs"`
 }
 
 // Validate validates this app workflow
@@ -109,6 +119,10 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCreatedBy(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGenerateStepsSignal(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -133,6 +147,10 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateWorkflowRuns(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -211,6 +229,14 @@ func (m *AppWorkflow) validateCreatedBy(formats strfmt.Registry) error {
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppWorkflow) validateGenerateStepsSignal(formats strfmt.Registry) error {
+	if swag.IsZero(m.GenerateStepsSignal) { // not required
+		return nil
 	}
 
 	return nil
@@ -380,6 +406,36 @@ func (m *AppWorkflow) validateType(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppWorkflow) validateWorkflowRuns(formats strfmt.Registry) error {
+	if swag.IsZero(m.WorkflowRuns) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.WorkflowRuns); i++ {
+		if swag.IsZero(m.WorkflowRuns[i]) { // not required
+			continue
+		}
+
+		if m.WorkflowRuns[i] != nil {
+			if err := m.WorkflowRuns[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("workflow_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("workflow_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app workflow based on the context it is used
 func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -393,6 +449,10 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGenerateStepsSignal(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -417,6 +477,10 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateWorkflowRuns(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -498,6 +562,11 @@ func (m *AppWorkflow) contextValidateCreatedBy(ctx context.Context, formats strf
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *AppWorkflow) contextValidateGenerateStepsSignal(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
@@ -660,6 +729,35 @@ func (m *AppWorkflow) contextValidateType(ctx context.Context, formats strfmt.Re
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppWorkflow) contextValidateWorkflowRuns(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.WorkflowRuns); i++ {
+
+		if m.WorkflowRuns[i] != nil {
+
+			if swag.IsZero(m.WorkflowRuns[i]) { // not required
+				return nil
+			}
+
+			if err := m.WorkflowRuns[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("workflow_runs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("workflow_runs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

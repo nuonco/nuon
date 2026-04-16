@@ -14,8 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewRetryWorkflowStepParams creates a new RetryWorkflowStepParams object,
@@ -62,12 +60,6 @@ RetryWorkflowStepParams contains all the parameters to send to the API endpoint
 	Typically these are written to a http.Request.
 */
 type RetryWorkflowStepParams struct {
-
-	/* Req.
-
-	   Input
-	*/
-	Req *models.ServiceRetryWorkflowStepRequest
 
 	/* StepID.
 
@@ -134,17 +126,6 @@ func (o *RetryWorkflowStepParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithReq adds the req to the retry workflow step params
-func (o *RetryWorkflowStepParams) WithReq(req *models.ServiceRetryWorkflowStepRequest) *RetryWorkflowStepParams {
-	o.SetReq(req)
-	return o
-}
-
-// SetReq adds the req to the retry workflow step params
-func (o *RetryWorkflowStepParams) SetReq(req *models.ServiceRetryWorkflowStepRequest) {
-	o.Req = req
-}
-
 // WithStepID adds the stepID to the retry workflow step params
 func (o *RetryWorkflowStepParams) WithStepID(stepID string) *RetryWorkflowStepParams {
 	o.SetStepID(stepID)
@@ -174,11 +155,6 @@ func (o *RetryWorkflowStepParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-	if o.Req != nil {
-		if err := r.SetBodyParam(o.Req); err != nil {
-			return err
-		}
-	}
 
 	// path param step_id
 	if err := r.SetPathParam("step_id", o.StepID); err != nil {
