@@ -361,9 +361,22 @@ ARM_USE_MSI=true
 HOST_IP=$(curl -s https://checkip.amazonaws.com)
 EOF
 
-# Install the runner binary on the host for mng mode using install.sh
-# Uses CONTAINER_IMAGE_TAG (semver) as the version, with automatic latest.txt fallback
+# Determine runner binary version from public-settings endpoint
 RUNNER_BINARY_VERSION="${CONTAINER_IMAGE_TAG:-latest}"
+echo "determining runner binary version"
+echo "> $RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings"
+for i in $(seq 1 30); do
+  runner_binary_version=$(curl -s "$RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings" | jq -r '.binary_version // empty')
+  if [ -n "$runner_binary_version" ] && [ "$runner_binary_version" != "null" ]; then
+    RUNNER_BINARY_VERSION="$runner_binary_version"
+    echo "determined runner binary version: $RUNNER_BINARY_VERSION"
+    break
+  fi
+  echo "attempt $i/30: failed to determine runner binary version, retrying in 2s"
+  sleep 2
+done
+
+# Install the runner binary on the host for mng mode using install.sh
 mkdir -p /opt/nuon/runner/bin
 curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/install.sh > /tmp/install-runner.sh
 chmod +x /tmp/install-runner.sh
