@@ -49,7 +49,10 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
             >
               {prefixChars[line.prefix]}
             </span>
-            <span style={{ paddingLeft: `${line.indent * 1.5}rem` }}>
+            <span
+              style={{ paddingLeft: `${line.indent * 1.5}rem` }}
+              className={cn(line.type === 'removed' && 'line-through opacity-70')}
+            >
               {line.text === 'Known after apply' ||
               line.text === '"Known after apply"' ? (
                 <em className="opacity-60">{line.text}</em>
