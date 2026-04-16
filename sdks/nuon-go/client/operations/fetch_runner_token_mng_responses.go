@@ -25,8 +25,8 @@ type FetchRunnerTokenMngReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *FetchRunnerTokenMngReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 201:
-		result := NewFetchRunnerTokenMngCreated()
+	case 200:
+		result := NewFetchRunnerTokenMngOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -66,65 +66,65 @@ func (o *FetchRunnerTokenMngReader) ReadResponse(response runtime.ClientResponse
 	}
 }
 
-// NewFetchRunnerTokenMngCreated creates a FetchRunnerTokenMngCreated with default headers values
-func NewFetchRunnerTokenMngCreated() *FetchRunnerTokenMngCreated {
-	return &FetchRunnerTokenMngCreated{}
+// NewFetchRunnerTokenMngOK creates a FetchRunnerTokenMngOK with default headers values
+func NewFetchRunnerTokenMngOK() *FetchRunnerTokenMngOK {
+	return &FetchRunnerTokenMngOK{}
 }
 
 /*
-FetchRunnerTokenMngCreated describes a response with status code 201, with default header values.
+FetchRunnerTokenMngOK describes a response with status code 200, with default header values.
 
-Created
+OK
 */
-type FetchRunnerTokenMngCreated struct {
-	Payload bool
+type FetchRunnerTokenMngOK struct {
+	Payload models.AppEmptyResponse
 }
 
-// IsSuccess returns true when this fetch runner token mng created response has a 2xx status code
-func (o *FetchRunnerTokenMngCreated) IsSuccess() bool {
+// IsSuccess returns true when this fetch runner token mng o k response has a 2xx status code
+func (o *FetchRunnerTokenMngOK) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this fetch runner token mng created response has a 3xx status code
-func (o *FetchRunnerTokenMngCreated) IsRedirect() bool {
+// IsRedirect returns true when this fetch runner token mng o k response has a 3xx status code
+func (o *FetchRunnerTokenMngOK) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this fetch runner token mng created response has a 4xx status code
-func (o *FetchRunnerTokenMngCreated) IsClientError() bool {
+// IsClientError returns true when this fetch runner token mng o k response has a 4xx status code
+func (o *FetchRunnerTokenMngOK) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this fetch runner token mng created response has a 5xx status code
-func (o *FetchRunnerTokenMngCreated) IsServerError() bool {
+// IsServerError returns true when this fetch runner token mng o k response has a 5xx status code
+func (o *FetchRunnerTokenMngOK) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this fetch runner token mng created response a status code equal to that given
-func (o *FetchRunnerTokenMngCreated) IsCode(code int) bool {
-	return code == 201
+// IsCode returns true when this fetch runner token mng o k response a status code equal to that given
+func (o *FetchRunnerTokenMngOK) IsCode(code int) bool {
+	return code == 200
 }
 
-// Code gets the status code for the fetch runner token mng created response
-func (o *FetchRunnerTokenMngCreated) Code() int {
-	return 201
+// Code gets the status code for the fetch runner token mng o k response
+func (o *FetchRunnerTokenMngOK) Code() int {
+	return 200
 }
 
-func (o *FetchRunnerTokenMngCreated) Error() string {
+func (o *FetchRunnerTokenMngOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/fetch-token][%d] fetchRunnerTokenMngCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/fetch-token][%d] fetchRunnerTokenMngOK %s", 200, payload)
 }
 
-func (o *FetchRunnerTokenMngCreated) String() string {
+func (o *FetchRunnerTokenMngOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/fetch-token][%d] fetchRunnerTokenMngCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/fetch-token][%d] fetchRunnerTokenMngOK %s", 200, payload)
 }
 
-func (o *FetchRunnerTokenMngCreated) GetPayload() bool {
+func (o *FetchRunnerTokenMngOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 
-func (o *FetchRunnerTokenMngCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *FetchRunnerTokenMngOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {

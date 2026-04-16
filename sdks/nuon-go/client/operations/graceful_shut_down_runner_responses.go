@@ -25,8 +25,8 @@ type GracefulShutDownRunnerReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GracefulShutDownRunnerReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 201:
-		result := NewGracefulShutDownRunnerCreated()
+	case 200:
+		result := NewGracefulShutDownRunnerOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -66,65 +66,65 @@ func (o *GracefulShutDownRunnerReader) ReadResponse(response runtime.ClientRespo
 	}
 }
 
-// NewGracefulShutDownRunnerCreated creates a GracefulShutDownRunnerCreated with default headers values
-func NewGracefulShutDownRunnerCreated() *GracefulShutDownRunnerCreated {
-	return &GracefulShutDownRunnerCreated{}
+// NewGracefulShutDownRunnerOK creates a GracefulShutDownRunnerOK with default headers values
+func NewGracefulShutDownRunnerOK() *GracefulShutDownRunnerOK {
+	return &GracefulShutDownRunnerOK{}
 }
 
 /*
-GracefulShutDownRunnerCreated describes a response with status code 201, with default header values.
+GracefulShutDownRunnerOK describes a response with status code 200, with default header values.
 
-Created
+OK
 */
-type GracefulShutDownRunnerCreated struct {
-	Payload bool
+type GracefulShutDownRunnerOK struct {
+	Payload models.AppEmptyResponse
 }
 
-// IsSuccess returns true when this graceful shut down runner created response has a 2xx status code
-func (o *GracefulShutDownRunnerCreated) IsSuccess() bool {
+// IsSuccess returns true when this graceful shut down runner o k response has a 2xx status code
+func (o *GracefulShutDownRunnerOK) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this graceful shut down runner created response has a 3xx status code
-func (o *GracefulShutDownRunnerCreated) IsRedirect() bool {
+// IsRedirect returns true when this graceful shut down runner o k response has a 3xx status code
+func (o *GracefulShutDownRunnerOK) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this graceful shut down runner created response has a 4xx status code
-func (o *GracefulShutDownRunnerCreated) IsClientError() bool {
+// IsClientError returns true when this graceful shut down runner o k response has a 4xx status code
+func (o *GracefulShutDownRunnerOK) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this graceful shut down runner created response has a 5xx status code
-func (o *GracefulShutDownRunnerCreated) IsServerError() bool {
+// IsServerError returns true when this graceful shut down runner o k response has a 5xx status code
+func (o *GracefulShutDownRunnerOK) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this graceful shut down runner created response a status code equal to that given
-func (o *GracefulShutDownRunnerCreated) IsCode(code int) bool {
-	return code == 201
+// IsCode returns true when this graceful shut down runner o k response a status code equal to that given
+func (o *GracefulShutDownRunnerOK) IsCode(code int) bool {
+	return code == 200
 }
 
-// Code gets the status code for the graceful shut down runner created response
-func (o *GracefulShutDownRunnerCreated) Code() int {
-	return 201
+// Code gets the status code for the graceful shut down runner o k response
+func (o *GracefulShutDownRunnerOK) Code() int {
+	return 200
 }
 
-func (o *GracefulShutDownRunnerCreated) Error() string {
+func (o *GracefulShutDownRunnerOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/graceful-shutdown][%d] gracefulShutDownRunnerCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/graceful-shutdown][%d] gracefulShutDownRunnerOK %s", 200, payload)
 }
 
-func (o *GracefulShutDownRunnerCreated) String() string {
+func (o *GracefulShutDownRunnerOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/graceful-shutdown][%d] gracefulShutDownRunnerCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/graceful-shutdown][%d] gracefulShutDownRunnerOK %s", 200, payload)
 }
 
-func (o *GracefulShutDownRunnerCreated) GetPayload() bool {
+func (o *GracefulShutDownRunnerOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 
-func (o *GracefulShutDownRunnerCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *GracefulShutDownRunnerOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {

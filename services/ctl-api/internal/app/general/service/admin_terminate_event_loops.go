@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -21,7 +22,7 @@ type AdminTerminateEventLoopsRequest struct{}
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
-// @Success				201	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/general/terminate-event-loops [POST]
 func (s *service) AdminTerminateEventLoops(ctx *gin.Context) {
 	var req AdminTerminateEventLoopsRequest
@@ -34,5 +35,5 @@ func (s *service) AdminTerminateEventLoops(ctx *gin.Context) {
 		Type: signals.OperationTerminateEventLoops,
 	})
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

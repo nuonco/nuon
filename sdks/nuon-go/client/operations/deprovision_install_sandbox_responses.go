@@ -77,7 +77,7 @@ DeprovisionInstallSandboxCreated describes a response with status code 201, with
 Created
 */
 type DeprovisionInstallSandboxCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this deprovision install sandbox created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *DeprovisionInstallSandboxCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/deprovision-sandbox][%d] deprovisionInstallSandboxCreated %s", 201, payload)
 }
 
-func (o *DeprovisionInstallSandboxCreated) GetPayload() string {
+func (o *DeprovisionInstallSandboxCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *DeprovisionInstallSandboxCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

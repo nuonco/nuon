@@ -98,33 +98,11 @@ func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string)
 }
 
 func (c *client) RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error {
-	if req == nil {
-		req = &models.ServiceRetryWorkflowStepRequest{
-			Operation: "retry-step",
-		}
-	}
+	// Note: req parameter is ignored in the current API - the endpoint no longer accepts a request body
 	_, err := c.genClient.Operations.RetryWorkflowStep(&operations.RetryWorkflowStepParams{
 		WorkflowID: workflowID,
 		StepID:     stepID,
-		Req:        req,
 		Context:    ctx,
 	}, c.getOrgIDAuthInfo())
 	return err
-}
-
-func (c *client) RetryOwnerWorkflow(ctx context.Context, workflowID string, req *models.ServiceRetryWorkflowByIDRequest) (*models.ServiceRetryWorkflowByIDResponse, error) {
-	if req == nil {
-		req = &models.ServiceRetryWorkflowByIDRequest{
-			Operation: "retry-step",
-		}
-	}
-	resp, err := c.genClient.Operations.RetryOwnerWorkflowByID(&operations.RetryOwnerWorkflowByIDParams{
-		WorkflowID: workflowID,
-		Req:        req,
-		Context:    ctx,
-	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
-	}
-	return resp.Payload, nil
 }

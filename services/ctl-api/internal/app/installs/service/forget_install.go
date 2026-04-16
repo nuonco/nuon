@@ -27,7 +27,7 @@ type ForgetInstallRequest struct{}
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/installs/{install_id}/forget [POST]
 func (s *service) ForgetInstall(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -72,5 +72,5 @@ func (s *service) ForgetInstall(ctx *gin.Context) {
 			Type: signals.OperationForget,
 		})
 	}
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

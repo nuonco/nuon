@@ -48,8 +48,8 @@ func (c *client) GetInstallSandboxRun(ctx context.Context, installID, runID stri
 	return resp.Payload, nil
 }
 
-func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string) error {
-	_, err := c.genClient.Operations.DeprovisionInstallSandbox(&operations.DeprovisionInstallSandboxParams{
+func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.DeprovisionInstallSandbox(&operations.DeprovisionInstallSandboxParams{
 		InstallID: installID,
 		Context:   ctx,
 		// TODO: make this configurable
@@ -58,25 +58,23 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp.Payload, nil
 }
 
-func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (string, error) {
-	hr := newResponseHeaderReader(&operations.ReprovisionInstallSandboxReader{})
-
-	_, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
+func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallSandboxRequest{
 			PlanOnly: false,
 		},
-	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return hr.GetHeader(HeaderInstallWorkflowID), nil
+	return resp.Payload, nil
 }

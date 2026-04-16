@@ -25,8 +25,8 @@ type MngVMShutDownReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *MngVMShutDownReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 201:
-		result := NewMngVMShutDownCreated()
+	case 200:
+		result := NewMngVMShutDownOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -66,65 +66,65 @@ func (o *MngVMShutDownReader) ReadResponse(response runtime.ClientResponse, cons
 	}
 }
 
-// NewMngVMShutDownCreated creates a MngVMShutDownCreated with default headers values
-func NewMngVMShutDownCreated() *MngVMShutDownCreated {
-	return &MngVMShutDownCreated{}
+// NewMngVMShutDownOK creates a MngVMShutDownOK with default headers values
+func NewMngVMShutDownOK() *MngVMShutDownOK {
+	return &MngVMShutDownOK{}
 }
 
 /*
-MngVMShutDownCreated describes a response with status code 201, with default header values.
+MngVMShutDownOK describes a response with status code 200, with default header values.
 
-Created
+OK
 */
-type MngVMShutDownCreated struct {
-	Payload bool
+type MngVMShutDownOK struct {
+	Payload models.AppEmptyResponse
 }
 
-// IsSuccess returns true when this mng Vm shut down created response has a 2xx status code
-func (o *MngVMShutDownCreated) IsSuccess() bool {
+// IsSuccess returns true when this mng Vm shut down o k response has a 2xx status code
+func (o *MngVMShutDownOK) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this mng Vm shut down created response has a 3xx status code
-func (o *MngVMShutDownCreated) IsRedirect() bool {
+// IsRedirect returns true when this mng Vm shut down o k response has a 3xx status code
+func (o *MngVMShutDownOK) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this mng Vm shut down created response has a 4xx status code
-func (o *MngVMShutDownCreated) IsClientError() bool {
+// IsClientError returns true when this mng Vm shut down o k response has a 4xx status code
+func (o *MngVMShutDownOK) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this mng Vm shut down created response has a 5xx status code
-func (o *MngVMShutDownCreated) IsServerError() bool {
+// IsServerError returns true when this mng Vm shut down o k response has a 5xx status code
+func (o *MngVMShutDownOK) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this mng Vm shut down created response a status code equal to that given
-func (o *MngVMShutDownCreated) IsCode(code int) bool {
-	return code == 201
+// IsCode returns true when this mng Vm shut down o k response a status code equal to that given
+func (o *MngVMShutDownOK) IsCode(code int) bool {
+	return code == 200
 }
 
-// Code gets the status code for the mng Vm shut down created response
-func (o *MngVMShutDownCreated) Code() int {
-	return 201
+// Code gets the status code for the mng Vm shut down o k response
+func (o *MngVMShutDownOK) Code() int {
+	return 200
 }
 
-func (o *MngVMShutDownCreated) Error() string {
+func (o *MngVMShutDownOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/shutdown-vm][%d] mngVmShutDownCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/shutdown-vm][%d] mngVmShutDownOK %s", 200, payload)
 }
 
-func (o *MngVMShutDownCreated) String() string {
+func (o *MngVMShutDownOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/shutdown-vm][%d] mngVmShutDownCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/shutdown-vm][%d] mngVmShutDownOK %s", 200, payload)
 }
 
-func (o *MngVMShutDownCreated) GetPayload() bool {
+func (o *MngVMShutDownOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 
-func (o *MngVMShutDownCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *MngVMShutDownOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
