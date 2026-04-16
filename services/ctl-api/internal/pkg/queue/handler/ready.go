@@ -12,9 +12,7 @@ const (
 
 type ReadyRequest struct{}
 
-type ReadyResponse struct {
-	RunID string
-}
+type ReadyResponse struct{}
 
 func (h *handler) readyHandler(ctx workflow.Context, req *ReadyRequest) (*ReadyResponse, error) {
 	if err := workflow.Await(ctx, func() bool {

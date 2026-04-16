@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 type Params struct {
@@ -33,6 +34,7 @@ type Params struct {
 	OrgsHelpers    *orgshelpers.Helpers
 	TemporalClient temporalclient.Client
 	QueueClient    *queueclient.Client
+	EmitterClient  *emitterclient.Client
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
@@ -52,6 +54,7 @@ type Service struct {
 	orgsHelpers    *orgshelpers.Helpers
 	temporalClient temporalclient.Client
 	queueClient    *queueclient.Client
+	emitterClient  *emitterclient.Client
 	codecs         []converter.PayloadCodec
 }
 
@@ -159,6 +162,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 
+	// Load test routes
+	api.POST("/load-test/queues/create", s.LoadTestCreateQueues)
+	api.POST("/load-test/queues/enqueue", s.LoadTestEnqueueSignals)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }
@@ -177,6 +184,7 @@ func New(params Params) (*service, error) {
 		orgsHelpers:    params.OrgsHelpers,
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
+		emitterClient:  params.EmitterClient,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

@@ -26,11 +26,11 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		return nil, errors.Wrap(err, "unable to get queue")
 	}
 
-	rawResp, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
+	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
 		UpdateOptions: tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
 			UpdateName:   queue.EnqueueUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			Args: []any{
 				queue.EnqueueHandlerInput{
 					Signal:    req.Signal,
@@ -45,10 +45,5 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		return nil, errors.Wrap(err, "unable to call enqueue handler")
 	}
 
-	var resp queue.EnqueueResponse
-	if err := rawResp.Get(ctx, &resp); err != nil {
-		return nil, errors.Wrap(err, "unable get response")
-	}
-
-	return &resp, nil
+	return nil, nil
 }

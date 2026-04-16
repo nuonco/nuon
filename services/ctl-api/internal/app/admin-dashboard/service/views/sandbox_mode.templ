@@ -142,163 +142,157 @@ templ runnerJobRow(jobType string, cfg *app.SandboxConfig, logTpls []sandboxmode
 			<label class="tgl" onclick="event.stopPropagation()">
 				<input type="checkbox"
 					if cfg != nil && cfg.Enabled { checked }
-					disabled?={ cfg == nil }
 				/>
 				<span class="tgl-s"></span>
 			</label>
 		</summary>
 
 		<div class="px-4 pb-5 pt-2 ml-11">
-			if cfg == nil {
-				<p class="text-sm text-muted-foreground">No config yet. Enable via the admin API or React dashboard to configure.</p>
-			} else {
-				<div class="max-w-4xl space-y-4">
-					<!-- Row 1: Outputs + Sleep -->
-					<div class="grid grid-cols-3 gap-4">
-						<!-- Outputs -->
-						<div class="col-span-2 rounded-lg border border-border bg-card p-4 space-y-4">
-							<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Outputs</span>
+			<div class="max-w-4xl space-y-4">
+				<!-- Row 1: Outputs + Sleep -->
+				<div class="grid grid-cols-3 gap-4">
+					<!-- Outputs -->
+					<div class="col-span-2 rounded-lg border border-border bg-card p-4 space-y-4">
+						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Outputs</span>
 
-							<!-- Log response -->
-							<div class="space-y-2">
-								<span class="text-xs font-medium text-muted-foreground">Log response</span>
-								<select class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-									<option value="">None (default logs)</option>
-									for _, tpl := range logTpls {
-										<option value={ tpl.Key }>{ tpl.Key } — { tpl.Description }</option>
-									}
-								</select>
-							</div>
-
-							<!-- Plan response -->
-							<div class="space-y-2">
-								<span class="text-xs font-medium text-muted-foreground">Plan response</span>
-								<select class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-									<option value="">None (no plan)</option>
-									for _, tpl := range planTpls {
-										<option value={ tpl.Key }>{ tpl.Key } — { tpl.Description }</option>
-									}
-								</select>
-							</div>
-
-							<!-- Preset -->
-							<label class="flex flex-col gap-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Preset</span>
-								@input.Input(input.Props{
-									Name: "preset", Value: safeStr(cfg.Preset, "default"),
-									Placeholder: "default", Class: "h-8 text-sm",
-								})
-							</label>
+						<div class="space-y-2">
+							<span class="text-xs font-medium text-muted-foreground">Log response</span>
+							<select name="log_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None (default logs)</option>
+								for _, tpl := range logTpls {
+									<option value={ tpl.Key }>{ tpl.Key } — { tpl.Description }</option>
+								}
+							</select>
 						</div>
 
-						<!-- Sleep -->
-						<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-							<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Sleep</span>
-							<div class="space-y-3">
-								<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-									<span class="text-xs font-medium text-muted-foreground">Duration</span>
-									<div class="flex items-center gap-1.5">
-										@input.Input(input.Props{
-											Name: "duration_ms", Type: input.TypeNumber,
-											Value: safeDurationMs(cfg), Placeholder: "5000",
-											Class: "h-7 text-sm w-20",
-											Attributes: templ.Attributes{"min": "0"},
-										})
-										<span class="text-[11px] text-muted-foreground">ms</span>
-									</div>
-								</div>
-								<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-									<span class="text-xs font-medium text-muted-foreground">Sleep before</span>
-									<div class="flex items-center gap-1.5">
-										@input.Input(input.Props{
-											Name: "sleep_duration_ms", Type: input.TypeNumber,
-											Value: safeSleepMs(cfg), Placeholder: "0",
-											Class: "h-7 text-sm w-20",
-											Attributes: templ.Attributes{"min": "0"},
-										})
-										<span class="text-[11px] text-muted-foreground">ms</span>
-									</div>
-								</div>
-								<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-									<span class="text-xs font-medium text-muted-foreground">Timeout</span>
-									<div class="flex items-center gap-1.5">
-										@input.Input(input.Props{
-											Name: "timeout_ms", Type: input.TypeNumber,
-											Value: safeTimeoutMs(cfg), Placeholder: "0",
-											Class: "h-7 text-sm w-20",
-											Attributes: templ.Attributes{"min": "0"},
-										})
-										<span class="text-[11px] text-muted-foreground">ms</span>
-									</div>
-								</div>
-							</div>
+						<div class="space-y-2">
+							<span class="text-xs font-medium text-muted-foreground">Plan response</span>
+							<select name="plan_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None (no plan)</option>
+								for _, tpl := range planTpls {
+									<option value={ tpl.Key }>{ tpl.Key } — { tpl.Description }</option>
+								}
+							</select>
 						</div>
+
+						<label class="flex flex-col gap-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Preset</span>
+							@input.Input(input.Props{
+								Name: "preset", Value: rjPreset(cfg),
+								Placeholder: "default", Class: "h-8 text-sm",
+							})
+						</label>
 					</div>
 
-					<!-- Row 2: Failure modes -->
+					<!-- Sleep -->
 					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
-						<div class="grid grid-cols-3 gap-4">
-							<label class="flex flex-col gap-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Error message</span>
-								@input.Input(input.Props{
-									Name: "error_message", Value: cfg.ErrorMessage,
-									Placeholder: "Return this error on fault",
-									Class: "h-8 text-sm",
-								})
-							</label>
-							<label class="flex flex-col gap-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Fail at step</span>
-								@input.Input(input.Props{
-									Name: "fail_at_step", Value: cfg.FailAtStep,
-									Placeholder: "e.g. execute, validate",
-									Class: "h-8 text-sm",
-								})
-							</label>
+						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Sleep</span>
+						<div class="space-y-3">
 							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Fault rate</span>
+								<span class="text-xs font-medium text-muted-foreground">Duration</span>
 								<div class="flex items-center gap-1.5">
 									@input.Input(input.Props{
-										Name: "fault_rate_pct", Type: input.TypeNumber,
-										Value: safeFaultPct(cfg), Placeholder: "0",
-										Class: "h-7 text-sm w-16",
-										Attributes: templ.Attributes{"min": "0", "max": "100"},
+										Name: "duration_ms", Type: input.TypeNumber,
+										Value: safeDurationMs(cfg), Placeholder: "5000",
+										Class: "h-7 text-sm w-20",
+										Attributes: templ.Attributes{"min": "0"},
 									})
-									<span class="text-[11px] text-muted-foreground">%</span>
+									<span class="text-[11px] text-muted-foreground">ms</span>
+								</div>
+							</div>
+							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
+								<span class="text-xs font-medium text-muted-foreground">Sleep before</span>
+								<div class="flex items-center gap-1.5">
+									@input.Input(input.Props{
+										Name: "sleep_duration_ms", Type: input.TypeNumber,
+										Value: safeSleepMs(cfg), Placeholder: "0",
+										Class: "h-7 text-sm w-20",
+										Attributes: templ.Attributes{"min": "0"},
+									})
+									<span class="text-[11px] text-muted-foreground">ms</span>
+								</div>
+							</div>
+							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
+								<span class="text-xs font-medium text-muted-foreground">Timeout</span>
+								<div class="flex items-center gap-1.5">
+									@input.Input(input.Props{
+										Name: "timeout_ms", Type: input.TypeNumber,
+										Value: safeTimeoutMs(cfg), Placeholder: "0",
+										Class: "h-7 text-sm w-20",
+										Attributes: templ.Attributes{"min": "0"},
+									})
+									<span class="text-[11px] text-muted-foreground">ms</span>
 								</div>
 							</div>
 						</div>
-						<div class="flex items-center gap-6 pt-1">
-							<label class="flex items-center gap-2 text-sm cursor-pointer">
-								<input type="checkbox" name="panic" class="rounded border-border"/>
-								<span class="text-xs">Panic</span>
-							</label>
-							<label class="flex items-center gap-2 text-sm cursor-pointer">
-								<input type="checkbox" name="trigger_shutdown"
-									if cfg.TriggerShutdown { checked }
-									class="rounded border-border"
-								/>
-								<span class="text-xs">Shutdown runner</span>
-							</label>
-						</div>
-					</div>
-
-					<!-- Footer -->
-					<div class="flex items-center justify-between pt-1">
-						<div class="flex items-center gap-4">
-							<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
-								<span class="tgl">
-									<input type="checkbox" name="enabled" if cfg.Enabled { checked }/>
-									<span class="tgl-s"></span>
-								</span>
-								Enabled
-							</label>
-							<span class="text-xs text-muted-foreground font-mono">{ cfg.RunnerID }</span>
-						</div>
-						@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
 					</div>
 				</div>
-			}
+
+				<!-- Row 2: Failure modes -->
+				<div class="rounded-lg border border-border bg-card p-4 space-y-4">
+					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
+					<div class="grid grid-cols-3 gap-4">
+						<label class="flex flex-col gap-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Error message</span>
+							@input.Input(input.Props{
+								Name: "error_message", Value: rjErrorMessage(cfg),
+								Placeholder: "Return this error on fault",
+								Class: "h-8 text-sm",
+							})
+						</label>
+						<label class="flex flex-col gap-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Fail at step</span>
+							@input.Input(input.Props{
+								Name: "fail_at_step", Value: rjFailAtStep(cfg),
+								Placeholder: "e.g. execute, validate",
+								Class: "h-8 text-sm",
+							})
+						</label>
+						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
+							<span class="text-xs font-medium text-muted-foreground">Fault rate</span>
+							<div class="flex items-center gap-1.5">
+								@input.Input(input.Props{
+									Name: "fault_rate_pct", Type: input.TypeNumber,
+									Value: safeFaultPct(cfg), Placeholder: "0",
+									Class: "h-7 text-sm w-16",
+									Attributes: templ.Attributes{"min": "0", "max": "100"},
+								})
+								<span class="text-[11px] text-muted-foreground">%</span>
+							</div>
+						</div>
+					</div>
+					<div class="flex items-center gap-6 pt-1">
+						<label class="flex items-center gap-2 text-sm cursor-pointer">
+							<input type="checkbox" name="panic" class="rounded border-border"/>
+							<span class="text-xs">Panic</span>
+						</label>
+						<label class="flex items-center gap-2 text-sm cursor-pointer">
+							<input type="checkbox" name="trigger_shutdown"
+								if cfg != nil && cfg.TriggerShutdown { checked }
+								class="rounded border-border"
+							/>
+							<span class="text-xs">Shutdown runner</span>
+						</label>
+					</div>
+				</div>
+
+				<!-- Footer -->
+				<div class="flex items-center justify-between pt-1">
+					<div class="flex items-center gap-4">
+						<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
+							<span class="tgl">
+								<input type="checkbox" name="enabled" if cfg != nil && cfg.Enabled { checked }/>
+								<span class="tgl-s"></span>
+							</span>
+							Enabled
+						</label>
+						if cfg != nil {
+							<span class="text-xs text-muted-foreground font-mono">{ cfg.RunnerID }</span>
+						}
+					</div>
+					@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
+				</div>
+			</div>
 		</div>
 	</details>
 }
@@ -516,6 +510,30 @@ func signalToggleVals(cfg *app.SandboxSignalConfig) string {
 		cfg.Panic,
 		cfg.Error,
 	)
+}
+
+func rjPreset(cfg *app.SandboxConfig) string {
+	if cfg == nil {
+		return "default"
+	}
+	if cfg.Preset == "" {
+		return "default"
+	}
+	return cfg.Preset
+}
+
+func rjErrorMessage(cfg *app.SandboxConfig) string {
+	if cfg == nil {
+		return ""
+	}
+	return cfg.ErrorMessage
+}
+
+func rjFailAtStep(cfg *app.SandboxConfig) string {
+	if cfg == nil {
+		return ""
+	}
+	return cfg.FailAtStep
 }
 
 func safeStr(val, fallback string) string {
