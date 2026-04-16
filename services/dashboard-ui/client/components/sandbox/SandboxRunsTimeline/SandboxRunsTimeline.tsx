@@ -29,6 +29,7 @@ export const SandboxRunsTimeline = ({
             key={run.id}
             caption={<ID>{run?.id}</ID>}
             createdAt={run?.created_at}
+            createdBy={run?.created_by?.email}
             status={run?.status}
             title={
               <span className="flex items-center gap-2">
@@ -38,13 +39,12 @@ export const SandboxRunsTimeline = ({
                   {toSentenceCase(snakeToWords(run?.run_type))}
                 </Link>
                 {run?.status_v2?.status === 'drifted' ? (
-                  <Badge variant="code" size="sm">
+                  <Badge variant="code">
                     drift scan
                   </Badge>
                 ) : null}
               </span>
             }
-            underline={<>Run by: {run?.created_by?.email}</>}
           />
         )
       }}

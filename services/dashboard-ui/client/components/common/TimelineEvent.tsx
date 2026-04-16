@@ -2,6 +2,8 @@ import React from 'react'
 import { cn } from '@/utils/classnames'
 import { toSentenceCase } from '@/utils/string-utils'
 import { Badge, type IBadge } from './Badge'
+import { Duration } from './Duration'
+import { Icon } from './Icon'
 import { Status, type TStatusType } from './Status'
 import { Text } from './Text'
 import { Time } from './Time'
@@ -15,9 +17,11 @@ export interface ITimelineEvent
   caption?: React.ReactNode | string
   createdAt: string
   createdBy?: string
+  duration?: number
   status: TStatusType
   title: React.ReactNode | string
   underline?: React.ReactNode | string
+  updatedAt?: string
 }
 
 export const TimelineEvent = ({
@@ -28,9 +32,11 @@ export const TimelineEvent = ({
   className,
   createdAt,
   createdBy,
+  duration,
   status,
   title,
   underline,
+  updatedAt,
   ...props
 }: ITimelineEvent) => {
   return (
@@ -61,33 +67,39 @@ export const TimelineEvent = ({
           className="relative z-1"
         />
       </Tooltip>
-      <div className="w-full">
+      <div className="w-full flex flex-col gap-1">
         <hgroup className="w-full flex items-center justify-between">
-          <Text variant="body" weight="strong">
+          <div className="flex items-center gap-3 min-w-0 flex-wrap">
             {title}
-          </Text>
+            {additionalCaption}
+            {badge?.children ? <Badge {...badge} /> : null}
+          </div>
 
-          <span className="flex items-center gap-2">           
+          <span className="flex items-center gap-2 shrink-0">
             <Text variant="subtext" theme="neutral">
-              <Time time={createdAt} format="relative" variant="subtext" />{' '}
-              {createdBy ? `by ${createdBy}` : null}
+              <Time time={updatedAt || createdAt} format="relative" variant="subtext" />
+              {createdBy ? ` by ${createdBy}` : null}
             </Text>
-             {actions ? <span>{actions}</span> : null}
+            {actions ? <span>{actions}</span> : null}
           </span>
         </hgroup>
-        <span className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Text flex className="gap-1" variant="subtext" theme="neutral">
+            <Icon variant="CalendarBlankIcon" size={14} />
+            <Time time={createdAt} variant="subtext" />
+          </Text>
+          {duration ? (
+            <Text flex className="gap-1" variant="subtext" theme="neutral">
+              <Icon variant="TimerIcon" size={14} />
+              <Duration nanoseconds={duration} variant="subtext" />
+            </Text>
+          ) : null}
           {caption ? (
             <Text variant="subtext" theme="neutral">
               {caption}
             </Text>
-          ) : null}{' '}
-          {additionalCaption ? (
-            <Text variant="subtext" theme="neutral">
-              {additionalCaption}
-            </Text>
           ) : null}
-          {badge?.children ? <Badge size="sm" {...badge} /> : null}
-        </span>
+        </div>
         {underline ? (
           <Text variant="label" theme="neutral">
             {underline}
