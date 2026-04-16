@@ -25,7 +25,7 @@ type AdminPromotionRequest struct {
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
-// @Success				201	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/general/promotion [POST]
 func (s *service) AdminPromotion(ctx *gin.Context) {
 	var req AdminPromotionRequest
@@ -45,7 +45,7 @@ func (s *service) AdminPromotion(ctx *gin.Context) {
 
 	// TODO: remove this when the install state initialization has already ran in the promotion workflow
 	s.initializeInstallStates(ctx)
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) initializeInstallStates(ctx *gin.Context) {

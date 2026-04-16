@@ -45,7 +45,7 @@ func (c *TeardownInstallComponentRequest) Validate(v *validator.Validate) error 
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{string}	ok
+// @Success				201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/components/{component_id}/teardown [post]
 func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -129,5 +129,5 @@ func (s *service) TeardownInstallComponent(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 }

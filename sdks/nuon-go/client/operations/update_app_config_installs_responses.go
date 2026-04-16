@@ -77,7 +77,7 @@ UpdateAppConfigInstallsOK describes a response with status code 200, with defaul
 OK
 */
 type UpdateAppConfigInstallsOK struct {
-	Payload string
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this update app config installs o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *UpdateAppConfigInstallsOK) String() string {
 	return fmt.Sprintf("[POST /v1/apps/{app_id}/config/{app_config_id}/update-installs][%d] updateAppConfigInstallsOK %s", 200, payload)
 }
 
-func (o *UpdateAppConfigInstallsOK) GetPayload() string {
+func (o *UpdateAppConfigInstallsOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

@@ -26,7 +26,7 @@ type AdminUpdateOrgsFeaturesRequest struct {
 // @Accept					json
 // @Param					req	body	AdminUpdateOrgsFeaturesRequest	true	"Input"
 // @Produce				json
-// @Success				200	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/orgs/admin-features  [PATCH]
 func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 	var req AdminUpdateOrgsFeaturesRequest
@@ -41,7 +41,7 @@ func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) bulkUpdateOrgFeatures(ctx context.Context, features map[string]bool) error {

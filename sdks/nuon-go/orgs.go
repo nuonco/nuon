@@ -50,14 +50,14 @@ func (c *client) GetOrgs(ctx context.Context, query *models.GetPaginatedQuery) (
 }
 
 func (c *client) DeleteOrg(ctx context.Context) (bool, error) {
-	resp, err := c.genClient.Operations.DeleteOrg(&operations.DeleteOrgParams{
+	_, err := c.genClient.Operations.DeleteOrg(&operations.DeleteOrgParams{
 		Context: ctx,
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return false, err
 	}
 
-	return resp.Payload, nil
+	return true, nil
 }
 
 func (c *client) CreateOrg(ctx context.Context, req *models.ServiceCreateOrgRequest) (*models.AppOrg, error) {

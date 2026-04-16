@@ -523,20 +523,21 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 		}
 	}
 
-	resp, err := s.api.RetryOwnerWorkflow(ctx, workflowID, &models.ServiceRetryWorkflowByIDRequest{
-		Operation: "retry-step",
-		StepID:    stepID,
-	})
+	err := s.api.RetryWorkflowStep(ctx, workflowID, stepID, nil)
 	if err != nil {
 		return view.Error(err)
 	}
 
 	if asJSON {
-		ui.PrintJSON(resp)
+		ui.PrintJSON(map[string]string{
+			"workflow_id": workflowID,
+			"step_id":     stepID,
+			"status":      "retried",
+		})
 		return nil
 	}
 
-	fmt.Printf("Retrying step %s\n", stepID)
+	fmt.Printf("Retried step %s\n", stepID)
 	return nil
 }
 

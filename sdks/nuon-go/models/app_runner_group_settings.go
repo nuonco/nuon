@@ -29,11 +29,17 @@ type AppRunnerGroupSettings struct {
 	// aws tags
 	AwsTags map[string]string `json:"aws_tags,omitempty"`
 
+	// configuration for managing the runner binary version (for mng mode, not the install runner)
+	BinaryVersion string `json:"binary_version,omitempty"`
+
 	// container image tag
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
 
 	// configuration for deploying the runner
 	ContainerImageURL string `json:"container_image_url,omitempty"`
+
+	// container max uptime
+	ContainerMaxUptime int64 `json:"container_max_uptime,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -108,6 +114,9 @@ type AppRunnerGroupSettings struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// vm max uptime
+	VMMaxUptime int64 `json:"vm_max_uptime,omitempty"`
 }
 
 // Validate validates this app runner group settings

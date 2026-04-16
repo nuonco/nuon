@@ -31,7 +31,7 @@ import (
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
-// @Success					201	{string}	ok
+// @Success					201	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -136,7 +136,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 }
 
 // PrependRunEnvPrefix modifies the keys in the provided RunEnvVars map

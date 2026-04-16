@@ -2,18 +2,9 @@ package nuon
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
-
-type statusErr struct {
-	Status string
-}
-
-func (s statusErr) Error() string {
-	return fmt.Sprintf("invalid status %s", s.Status)
-}
 
 type stderrResponse interface {
 	error

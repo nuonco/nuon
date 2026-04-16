@@ -2729,6 +2729,7 @@ export interface components {
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
     };
     "app.AppBreakGlassConfig": {
       app_config_id?: string;
@@ -3236,6 +3237,7 @@ export interface components {
       /** @description These fields will be populated from the drifts_view */
       target_type?: string;
     };
+    "app.EmptyResponse": Record<string, never>;
     "app.ExternalImageComponentConfig": {
       aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
       azure_acr_image_config?: components["schemas"]["app.AzureACRImageConfig"];
@@ -3410,6 +3412,8 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.InstallActionWorkflow": {
@@ -3582,6 +3586,8 @@ export interface components {
       values?: {
         [key: string]: string;
       };
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
     };
     "app.InstallSandbox": {
       created_at?: string;
@@ -4145,9 +4151,12 @@ export interface components {
       aws_tags?: {
         [key: string]: string;
       };
+      /** @description configuration for managing the runner binary version (for mng mode, not the install runner) */
+      binary_version?: string;
       container_image_tag?: string;
       /** @description configuration for deploying the runner */
       container_image_url?: string;
+      container_max_uptime?: number;
       created_at?: string;
       created_by_id?: string;
       enable_logging?: boolean;
@@ -4190,6 +4199,7 @@ export interface components {
       /** @description configuration for managing the runner server side */
       sandbox_mode?: boolean;
       updated_at?: string;
+      vm_max_uptime?: number;
     };
     /** @enum {string} */
     "app.RunnerGroupType": "install" | "org";
@@ -4560,6 +4570,12 @@ export interface components {
       execution_time?: number;
       finished?: boolean;
       finished_at?: string;
+      /**
+       * @description GenerateStepsSignal is an optional queue signal that generates workflow steps.
+       * When set, the conductor enqueues this signal and calls its "FetchSteps" update
+       * handler instead of using the hardcoded Generators map.
+       */
+      generate_steps_signal?: components["schemas"]["signaldb.SignalData"];
       id?: string;
       install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -4584,6 +4600,9 @@ export interface components {
       type?: components["schemas"]["app.WorkflowType"];
       updated_at?: string;
       workflow_runs?: components["schemas"]["app.WorkflowRun"][];
+    };
+    "app.WorkflowResponse": {
+      workflow_id?: string;
     };
     "app.WorkflowRun": {
       created_at?: string;
@@ -6116,8 +6135,10 @@ export interface components {
     "service.UpdateRunnerSettingsRequest": {
       /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
+      binary_version?: string;
       container_image_tag?: string;
       container_image_url?: string;
+      container_max_uptime?: number;
       /**
        * @description JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
        * e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
@@ -6128,6 +6149,7 @@ export interface components {
       org_awsiam_role_arn?: string;
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
+      vm_max_uptime?: number;
     };
     "service.UpdateUserJourneyStepRequest": {
       complete?: boolean;
@@ -6729,7 +6751,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7159,7 +7181,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7659,7 +7681,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -8786,7 +8808,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10029,7 +10051,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10365,7 +10387,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12008,7 +12030,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12283,7 +12305,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12739,7 +12761,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14006,7 +14028,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14476,7 +14498,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -14770,7 +14792,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -15896,7 +15918,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16011,7 +16033,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16395,7 +16417,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -16497,7 +16519,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16886,7 +16908,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16942,7 +16964,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17162,7 +17184,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17528,7 +17550,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17641,7 +17663,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17697,7 +17719,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -18225,7 +18247,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -20453,10 +20475,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20511,10 +20533,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20730,10 +20752,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20783,10 +20805,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20836,10 +20858,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20889,10 +20911,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -22932,7 +22954,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */

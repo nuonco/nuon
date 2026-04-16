@@ -116,7 +116,7 @@ func (c *client) UpdateComponent(ctx context.Context, componentID string, req *m
 }
 
 func (c *client) DeleteComponent(ctx context.Context, componentID string) (bool, error) {
-	resp, err := c.genClient.Operations.DeleteComponent(&operations.DeleteComponentParams{
+	_, err := c.genClient.Operations.DeleteComponent(&operations.DeleteComponentParams{
 		ComponentID: componentID,
 		Context:     ctx,
 	}, c.getOrgIDAuthInfo())
@@ -124,7 +124,7 @@ func (c *client) DeleteComponent(ctx context.Context, componentID string) (bool,
 		return false, err
 	}
 
-	return resp.Payload, nil
+	return true, nil
 }
 
 // component configs

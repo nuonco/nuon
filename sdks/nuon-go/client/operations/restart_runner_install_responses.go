@@ -25,8 +25,8 @@ type RestartRunnerInstallReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *RestartRunnerInstallReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 201:
-		result := NewRestartRunnerInstallCreated()
+	case 200:
+		result := NewRestartRunnerInstallOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -66,65 +66,65 @@ func (o *RestartRunnerInstallReader) ReadResponse(response runtime.ClientRespons
 	}
 }
 
-// NewRestartRunnerInstallCreated creates a RestartRunnerInstallCreated with default headers values
-func NewRestartRunnerInstallCreated() *RestartRunnerInstallCreated {
-	return &RestartRunnerInstallCreated{}
+// NewRestartRunnerInstallOK creates a RestartRunnerInstallOK with default headers values
+func NewRestartRunnerInstallOK() *RestartRunnerInstallOK {
+	return &RestartRunnerInstallOK{}
 }
 
 /*
-RestartRunnerInstallCreated describes a response with status code 201, with default header values.
+RestartRunnerInstallOK describes a response with status code 200, with default header values.
 
-Created
+OK
 */
-type RestartRunnerInstallCreated struct {
-	Payload bool
+type RestartRunnerInstallOK struct {
+	Payload models.AppEmptyResponse
 }
 
-// IsSuccess returns true when this restart runner install created response has a 2xx status code
-func (o *RestartRunnerInstallCreated) IsSuccess() bool {
+// IsSuccess returns true when this restart runner install o k response has a 2xx status code
+func (o *RestartRunnerInstallOK) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this restart runner install created response has a 3xx status code
-func (o *RestartRunnerInstallCreated) IsRedirect() bool {
+// IsRedirect returns true when this restart runner install o k response has a 3xx status code
+func (o *RestartRunnerInstallOK) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this restart runner install created response has a 4xx status code
-func (o *RestartRunnerInstallCreated) IsClientError() bool {
+// IsClientError returns true when this restart runner install o k response has a 4xx status code
+func (o *RestartRunnerInstallOK) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this restart runner install created response has a 5xx status code
-func (o *RestartRunnerInstallCreated) IsServerError() bool {
+// IsServerError returns true when this restart runner install o k response has a 5xx status code
+func (o *RestartRunnerInstallOK) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this restart runner install created response a status code equal to that given
-func (o *RestartRunnerInstallCreated) IsCode(code int) bool {
-	return code == 201
+// IsCode returns true when this restart runner install o k response a status code equal to that given
+func (o *RestartRunnerInstallOK) IsCode(code int) bool {
+	return code == 200
 }
 
-// Code gets the status code for the restart runner install created response
-func (o *RestartRunnerInstallCreated) Code() int {
-	return 201
+// Code gets the status code for the restart runner install o k response
+func (o *RestartRunnerInstallOK) Code() int {
+	return 200
 }
 
-func (o *RestartRunnerInstallCreated) Error() string {
+func (o *RestartRunnerInstallOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/restart][%d] restartRunnerInstallCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/restart][%d] restartRunnerInstallOK %s", 200, payload)
 }
 
-func (o *RestartRunnerInstallCreated) String() string {
+func (o *RestartRunnerInstallOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/restart][%d] restartRunnerInstallCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/mng/restart][%d] restartRunnerInstallOK %s", 200, payload)
 }
 
-func (o *RestartRunnerInstallCreated) GetPayload() bool {
+func (o *RestartRunnerInstallOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 
-func (o *RestartRunnerInstallCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *RestartRunnerInstallOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
