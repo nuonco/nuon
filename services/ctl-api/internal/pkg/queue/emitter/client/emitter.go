@@ -137,6 +137,60 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	return &em, nil
 }
 
+type UpdateEmitterRequest struct {
+	QueueID     string `validate:"required"`
+	Name        string `validate:"required"`
+	Description string
+
+	Mode app.QueueEmitterMode `validate:"required"`
+
+	// For cron mode: the cron schedule expression (e.g., "0 * * * *")
+	CronSchedule string
+	// For scheduled mode: when to fire the signal
+	ScheduledAt *time.Time
+
+	SignalType     signal.SignalType `validate:"required"`
+	SignalTemplate signal.Signal
+}
+
+// UpdateEmitter finds an existing emitter by queue ID and name. If found, it updates
+// the emitter fields and restarts the workflow. If not found, it creates a new emitter.
+func (c *Client) UpdateEmitter(ctx context.Context, req *UpdateEmitterRequest) (*app.QueueEmitter, error) {
+	var existing app.QueueEmitter
+	res := c.db.WithContext(ctx).Where("queue_id = ? AND name = ?", req.QueueID, req.Name).First(&existing)
+	if res.Error == nil {
+		// Update existing emitter
+		existing.Description = req.Description
+		existing.CronSchedule = req.CronSchedule
+		existing.ScheduledAt = req.ScheduledAt
+		existing.SignalType = req.SignalType
+		if req.SignalTemplate != nil {
+			existing.SignalTemplate = signaldb.SignalData{
+				Signal: req.SignalTemplate,
+			}
+		}
+
+		if res := c.db.WithContext(ctx).Save(&existing); res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to update emitter")
+		}
+
+		c.l.Debug("emitter updated", zap.String("id", existing.ID), zap.String("name", req.Name))
+		return &existing, nil
+	}
+
+	// Not found — create via existing method
+	return c.CreateEmitter(ctx, &CreateEmitterRequest{
+		QueueID:        req.QueueID,
+		Name:           req.Name,
+		Description:    req.Description,
+		Mode:           req.Mode,
+		CronSchedule:   req.CronSchedule,
+		ScheduledAt:    req.ScheduledAt,
+		SignalType:     req.SignalType,
+		SignalTemplate: req.SignalTemplate,
+	})
+}
+
 func (c *Client) GetEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {

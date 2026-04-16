@@ -58,6 +58,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
 			EnableLogging:     true,
 			LoggingLevel:      slog.LevelInfo.String(),
+			BinaryVersion:     h.cfg.Version,
 			// NOTE(jm): until we add support for writing metrics via our API, this must be disabled as we
 			// do not guarantee datadog is running in install accounts.
 			EnableMetrics:   false,

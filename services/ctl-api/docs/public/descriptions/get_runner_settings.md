@@ -1,1 +1,1 @@
-Return runner settings for the provided runner.
+Return runner public settings for the provided runner.

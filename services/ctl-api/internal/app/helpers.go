@@ -47,3 +47,10 @@ func configFromContext(ctx context.Context) *internal.Config {
 	}
 	return valObj
 }
+
+func versionFromContext(ctx context.Context) string {
+	if cfg := configFromContext(ctx); cfg != nil {
+		return cfg.Version
+	}
+	return ""
+}

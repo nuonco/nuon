@@ -53,7 +53,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		signals.OperationFlushOrphanedJobs: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitFlushOrphanedJobs(ctx, input)
 		},
-
 		// independent runner
 		signals.OperationProvisionServiceAccount: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitProvisionServiceAccount(ctx, input)

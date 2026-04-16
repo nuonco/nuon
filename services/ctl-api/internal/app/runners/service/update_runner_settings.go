@@ -10,8 +10,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
@@ -134,10 +135,8 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 		return nil, fmt.Errorf("unable to update runner settings: %w", res.Error)
 	}
 
-	if req.ContainerImageTag != "" {
-		s.evClient.Send(ctx, runnerID, &signals.Signal{
-			Type: signals.OperationRestart,
-		})
+	if err := s.helpers.EnqueueSettingsChanged(ctx, runnerID); err != nil {
+		s.l.Warn("failed to enqueue settings_changed signal", zap.Error(err))
 	}
 
 	return &obj, nil

@@ -107,6 +107,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/restart"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/settingschanged"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/updatetag"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/updateversion"

@@ -208,7 +208,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("", s.GetRunner)
 	runners.GET("/jobs", s.GetRunnerJobs)
 	runners.GET("/settings", s.GetRunnerSettings)
-	runners.GET("/public-settings", s.GetRunnerPublicSettings)
+	runners.GET("/public-settings", s.GetRunnerSettingsPublic)
 	runners.POST("/traces", s.OtelWriteTraces)
 	runners.POST("/metrics", s.OtelWriteMetrics)
 	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
