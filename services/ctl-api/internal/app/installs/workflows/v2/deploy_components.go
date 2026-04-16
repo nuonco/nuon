@@ -19,6 +19,11 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workfl
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
@@ -49,14 +54,14 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workfl
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg, appCfg)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, lifecycleSteps...)
 	}
 
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg)
+	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workfl
 	steps = append(steps, deploySteps...)
 
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg, appCfg)
 		if err != nil {
 			return nil, err
 		}

@@ -2,6 +2,7 @@ package v2
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -20,7 +21,17 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
-	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg)
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +40,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	return steps, nil
 }
 
-func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
+func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroup() // generate install state
@@ -50,7 +61,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovisionSandbox, sg)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovisionSandbox, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +93,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +108,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +124,14 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	steps = append(steps, step)
 
 	if generics.FromPtrStr(flw.Metadata["skip_components"]) != "true" {
-		deploySteps, err := deployAllComponents(ctx, installID, flw, sg)
+		deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, deploySteps...)
 	}
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox, sg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovisionSandbox, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}

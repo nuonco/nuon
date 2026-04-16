@@ -56,6 +56,10 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
 
 	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)
@@ -79,6 +83,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		installID,
 		app.ActionWorkflowTriggerTypePreDeployComponent,
 		sg,
+		appCfg,
 	)
 	if err != nil {
 		return nil, err
@@ -131,7 +136,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		}
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg, appCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +154,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}
 
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
-	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg)
+	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg, appCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}
