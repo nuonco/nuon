@@ -345,6 +345,22 @@ Before building a new component, **check `client/components/common/` and other d
 glob pattern: client/components/**/*.stories.tsx
 ```
 
+### Icons
+
+**Use the `Icon` component (`client/components/common/Icon.tsx`) for ALL icons.** Never import from `lucide-react`, `heroicons`, or any other icon package. The project uses `@phosphor-icons/react` via the `Icon` wrapper — all icon usage must go through it.
+
+```tsx
+// ✅ Correct
+import { Icon } from '@/components/common/Icon'
+<Icon variant="MagnifyingGlassIcon" size={16} />
+
+// ❌ Wrong — do not import icons from other packages
+import { Search } from 'lucide-react'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+```
+
+Browse Phosphor icons at https://phosphoricons.com. The variant name is the Phosphor export name (e.g., `MagnifyingGlass` → `MagnifyingGlassIcon`). Custom icons for cloud providers and tools are also available — see the `customIcons` map in `Icon.tsx`.
+
 ### `Tabs` Component — Key Casing
 
 The `Tabs` component renders tab labels by running each object key through `toSentenceCase(camelToWords(key))`. `toSentenceCase` capitalizes the first character and **lowercases everything else**. Always write tab keys in all-lowercase so the rendered label is correct:
