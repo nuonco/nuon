@@ -12487,7 +12487,7 @@ func (a *Client) GetRunnerRecentHealthChecks(params *GetRunnerRecentHealthChecks
 /*
 GetRunnerSettings gets runner settings
 
-Return runner settings for the provided runner.
+Return runner public settings for the provided runner.
 */
 func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error) {
 	// NOTE: parameters are not validated before sending
