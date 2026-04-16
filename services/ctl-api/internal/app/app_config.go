@@ -106,6 +106,14 @@ func (a *AppConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			// supports MAX(version) in BeforeCreate and the (app_id, version) join in app_configs_latest_view_v2
+			Name: indexes.Name(db, &AppConfig{}, "app_id_version"),
+			Columns: []string{
+				"app_id",
+				"version",
+			},
+		},
 	}
 }
 

@@ -121,6 +121,14 @@ func (a *ComponentConfigConnection) Indexes(db *gorm.DB) []migrations.Index {
 				"deleted_at",
 			},
 		},
+		{
+			// supports MAX(version) in BeforeCreate and the (component_id, version) join in latest_component_config_connections_view_v2
+			Name: indexes.Name(db, &ComponentConfigConnection{}, "component_id_version"),
+			Columns: []string{
+				"component_id",
+				"version",
+			},
+		},
 	}
 }
 
