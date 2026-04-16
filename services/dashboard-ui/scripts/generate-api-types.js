@@ -16,7 +16,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const SPEC_FILE = process.env.NUON_OPENAPI_SPEC_FILE;
-const API_URL = process.env.NUON_API_URL || 'https://api.nuon.co';
+const API_URL = process.env.NUON_API_URL || 'http://localhost:8081';
 const OUTPUT_FILE = './client/types/nuon-oapi-v3.d.ts';
 
 const isLocalhost = (url) => {
