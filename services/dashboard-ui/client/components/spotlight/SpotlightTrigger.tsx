@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { SpotlightModalContainer } from '@/components/spotlight/Spotlight'
@@ -16,17 +15,17 @@ export const SpotlightTrigger = () => {
     <button
       type="button"
       onClick={() => addModal(React.createElement(SpotlightModalContainer))}
-      className="hidden md:flex items-center gap-2 h-8 px-3 max-w-[280px] w-full border border-border rounded-lg bg-muted/50 text-muted-foreground text-sm cursor-pointer hover:bg-muted transition-colors"
+      className="hidden md:flex items-center gap-3 h-9 pl-3 pr-2 py-2 w-[240px] border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded-lg bg-white dark:bg-dark-grey-900 text-[#9ea8b3] dark:text-[#9ea8b3] text-sm font-normal leading-[21px] tracking-[-0.2px] cursor-pointer transition-colors overflow-hidden"
     >
-      <Icon variant="MagnifyingGlassIcon" size={14} className="shrink-0" />
-      <span className="flex-1 text-left">Search...</span>
-      <span className="inline-flex gap-0.5 shrink-0">
-        <Badge variant="code" size="sm">
-          {mac ? '⌘' : 'CTRL'}
-        </Badge>
-        <Badge variant="code" size="sm">
+      <Icon variant="MagnifyingGlassIcon" size={16} className="shrink-0" />
+      <span className="flex-1 text-left min-w-0">Search...</span>
+      <span className="inline-flex gap-1 items-center shrink-0">
+        <span className="flex items-center justify-center size-5 border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded bg-white dark:bg-dark-grey-900 text-[11px] font-medium shrink-0">
+          {mac ? '⌘' : '⌃'}
+        </span>
+        <span className="flex items-center justify-center size-5 border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded bg-white dark:bg-dark-grey-900 text-[11px] font-medium shrink-0">
           K
-        </Badge>
+        </span>
       </span>
     </button>
   )
