@@ -67,7 +67,8 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	steps = append(steps, step)
 
 	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &updateinstallstackoutputs.Signal{
-		InstallStackID: stack.ID,
+		InstallStackID:          stack.ID,
+		SkipInputUpdateWorkflow: true,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
