@@ -77,7 +77,7 @@ DeleteActionOK describes a response with status code 200, with default header va
 OK
 */
 type DeleteActionOK struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this delete action o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *DeleteActionOK) String() string {
 	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/actions/{action_id}][%d] deleteActionOK %s", 200, payload)
 }
 
-func (o *DeleteActionOK) GetPayload() bool {
+func (o *DeleteActionOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

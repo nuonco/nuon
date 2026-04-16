@@ -28,7 +28,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -89,5 +89,5 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.WorkflowResponse{WorkflowID: workflow.ID})
 }

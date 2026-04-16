@@ -41,7 +41,7 @@ func (c *UpdateAppConfigInstallsRequest) Validate(v *validator.Validate) error {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/configs/{config_id}/update-installs [POST]
 func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
@@ -63,7 +63,7 @@ func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 // @ID						UpdateAppConfigInstalls
@@ -82,7 +82,7 @@ func (s *service) UpdateAppConfigInstallsV2(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/config/{app_config_id}/update-installs [POST]
 func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
@@ -104,7 +104,7 @@ func (s *service) UpdateAppConfigInstalls(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *UpdateAppConfigInstallsRequest) error {

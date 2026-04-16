@@ -77,7 +77,7 @@ SyncSecretsCreated describes a response with status code 201, with default heade
 Created
 */
 type SyncSecretsCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this sync secrets created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *SyncSecretsCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/sync-secrets][%d] syncSecretsCreated %s", 201, payload)
 }
 
-func (o *SyncSecretsCreated) GetPayload() string {
+func (o *SyncSecretsCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *SyncSecretsCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

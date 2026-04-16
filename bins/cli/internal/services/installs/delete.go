@@ -14,15 +14,19 @@ func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) err
 	}
 
 	if asJSON {
-		res, err := s.api.DeleteInstall(ctx, installID)
+		resp, err := s.api.DeleteInstall(ctx, installID)
 		if err != nil {
 			return ui.PrintJSONError(err)
 		}
 		type response struct {
-			ID      string `json:"id"`
-			Deleted bool   `json:"deleted"`
+			ID         string `json:"id"`
+			Deleted    bool   `json:"deleted"`
+			WorkflowID string `json:"workflow_id,omitempty"`
 		}
-		r := response{ID: installID, Deleted: res}
+		r := response{ID: installID, Deleted: resp != nil}
+		if resp != nil {
+			r.WorkflowID = resp.WorkflowID
+		}
 		ui.PrintJSON(r)
 		return nil
 	}

@@ -73,7 +73,7 @@ func (c *client) UpdateApp(ctx context.Context, appID string, req *models.Servic
 }
 
 func (c *client) DeleteApp(ctx context.Context, appID string) (bool, error) {
-	resp, err := c.genClient.Operations.DeleteApp(&operations.DeleteAppParams{
+	_, err := c.genClient.Operations.DeleteApp(&operations.DeleteAppParams{
 		AppID:   appID,
 		Context: ctx,
 	}, c.getOrgIDAuthInfo())
@@ -81,5 +81,5 @@ func (c *client) DeleteApp(ctx context.Context, appID string) (bool, error) {
 		return false, err
 	}
 
-	return resp.IsSuccess(), nil
+	return true, nil
 }

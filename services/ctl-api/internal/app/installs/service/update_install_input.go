@@ -166,6 +166,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
+	inputs.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusOK, inputs)
 }
 

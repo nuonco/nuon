@@ -77,7 +77,7 @@ RunnerOtelWriteMetricsCreated describes a response with status code 201, with de
 Created
 */
 type RunnerOtelWriteMetricsCreated struct {
-	Payload string
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this runner otel write metrics created response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *RunnerOtelWriteMetricsCreated) String() string {
 	return fmt.Sprintf("[POST /v1/runners/{runner_id}/metrics][%d] runnerOtelWriteMetricsCreated %s", 201, payload)
 }
 
-func (o *RunnerOtelWriteMetricsCreated) GetPayload() string {
+func (o *RunnerOtelWriteMetricsCreated) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

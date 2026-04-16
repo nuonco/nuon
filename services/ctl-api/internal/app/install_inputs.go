@@ -31,6 +31,9 @@ type InstallInputs struct {
 
 	AppInputConfigID string         `json:"app_input_config_id,omitzero" temporaljson:"app_input_config_id,omitzero,omitempty"`
 	AppInputConfig   AppInputConfig `json:"-" temporaljson:"app_input_config,omitzero,omitempty"`
+
+	// WorkflowID is populated by handlers that create a workflow. Not persisted.
+	WorkflowID *string `json:"workflow_id,omitempty" gorm:"-"`
 }
 
 func (i *InstallInputs) Indexes(db *gorm.DB) []migrations.Index {

@@ -25,8 +25,8 @@ type ForceShutDownRunnerReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ForceShutDownRunnerReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (any, error) {
 	switch response.Code() {
-	case 201:
-		result := NewForceShutDownRunnerCreated()
+	case 200:
+		result := NewForceShutDownRunnerOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -66,65 +66,65 @@ func (o *ForceShutDownRunnerReader) ReadResponse(response runtime.ClientResponse
 	}
 }
 
-// NewForceShutDownRunnerCreated creates a ForceShutDownRunnerCreated with default headers values
-func NewForceShutDownRunnerCreated() *ForceShutDownRunnerCreated {
-	return &ForceShutDownRunnerCreated{}
+// NewForceShutDownRunnerOK creates a ForceShutDownRunnerOK with default headers values
+func NewForceShutDownRunnerOK() *ForceShutDownRunnerOK {
+	return &ForceShutDownRunnerOK{}
 }
 
 /*
-ForceShutDownRunnerCreated describes a response with status code 201, with default header values.
+ForceShutDownRunnerOK describes a response with status code 200, with default header values.
 
-Created
+OK
 */
-type ForceShutDownRunnerCreated struct {
-	Payload bool
+type ForceShutDownRunnerOK struct {
+	Payload models.AppEmptyResponse
 }
 
-// IsSuccess returns true when this force shut down runner created response has a 2xx status code
-func (o *ForceShutDownRunnerCreated) IsSuccess() bool {
+// IsSuccess returns true when this force shut down runner o k response has a 2xx status code
+func (o *ForceShutDownRunnerOK) IsSuccess() bool {
 	return true
 }
 
-// IsRedirect returns true when this force shut down runner created response has a 3xx status code
-func (o *ForceShutDownRunnerCreated) IsRedirect() bool {
+// IsRedirect returns true when this force shut down runner o k response has a 3xx status code
+func (o *ForceShutDownRunnerOK) IsRedirect() bool {
 	return false
 }
 
-// IsClientError returns true when this force shut down runner created response has a 4xx status code
-func (o *ForceShutDownRunnerCreated) IsClientError() bool {
+// IsClientError returns true when this force shut down runner o k response has a 4xx status code
+func (o *ForceShutDownRunnerOK) IsClientError() bool {
 	return false
 }
 
-// IsServerError returns true when this force shut down runner created response has a 5xx status code
-func (o *ForceShutDownRunnerCreated) IsServerError() bool {
+// IsServerError returns true when this force shut down runner o k response has a 5xx status code
+func (o *ForceShutDownRunnerOK) IsServerError() bool {
 	return false
 }
 
-// IsCode returns true when this force shut down runner created response a status code equal to that given
-func (o *ForceShutDownRunnerCreated) IsCode(code int) bool {
-	return code == 201
+// IsCode returns true when this force shut down runner o k response a status code equal to that given
+func (o *ForceShutDownRunnerOK) IsCode(code int) bool {
+	return code == 200
 }
 
-// Code gets the status code for the force shut down runner created response
-func (o *ForceShutDownRunnerCreated) Code() int {
-	return 201
+// Code gets the status code for the force shut down runner o k response
+func (o *ForceShutDownRunnerOK) Code() int {
+	return 200
 }
 
-func (o *ForceShutDownRunnerCreated) Error() string {
+func (o *ForceShutDownRunnerOK) Error() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/force-shutdown][%d] forceShutDownRunnerCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/force-shutdown][%d] forceShutDownRunnerOK %s", 200, payload)
 }
 
-func (o *ForceShutDownRunnerCreated) String() string {
+func (o *ForceShutDownRunnerOK) String() string {
 	payload, _ := json.Marshal(o.Payload)
-	return fmt.Sprintf("[POST /v1/runners/{runner_id}/force-shutdown][%d] forceShutDownRunnerCreated %s", 201, payload)
+	return fmt.Sprintf("[POST /v1/runners/{runner_id}/force-shutdown][%d] forceShutDownRunnerOK %s", 200, payload)
 }
 
-func (o *ForceShutDownRunnerCreated) GetPayload() bool {
+func (o *ForceShutDownRunnerOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 
-func (o *ForceShutDownRunnerCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *ForceShutDownRunnerOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {

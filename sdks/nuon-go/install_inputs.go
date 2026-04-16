@@ -60,19 +60,15 @@ func (c *client) CreateInstallInputs(ctx context.Context, installID string, req 
 	return resp.Payload, nil
 }
 
-func (c *client) UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, string, error) {
-	hr := newResponseHeaderReader(&operations.UpdateInstallInputsReader{})
-
+func (c *client) UpdateInstallInputs(ctx context.Context, installID string, req *models.ServiceUpdateInstallInputsRequest) (*models.AppInstallInputs, error) {
 	resp, err := c.genClient.Operations.UpdateInstallInputs(&operations.UpdateInstallInputsParams{
 		InstallID: installID,
 		Req:       req,
 		Context:   ctx,
-	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	workflowID := hr.GetHeader(HeaderInstallWorkflowID)
-
-	return resp.Payload, workflowID, nil
+	return resp.Payload, nil
 }

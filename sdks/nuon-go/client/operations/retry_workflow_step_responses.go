@@ -77,7 +77,7 @@ RetryWorkflowStepCreated describes a response with status code 201, with default
 Created
 */
 type RetryWorkflowStepCreated struct {
-	Payload *models.ServiceRetryWorkflowByIDResponse
+	Payload *models.ServiceRetryWorkflowStepResponse
 }
 
 // IsSuccess returns true when this retry workflow step created response has a 2xx status code
@@ -120,13 +120,13 @@ func (o *RetryWorkflowStepCreated) String() string {
 	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/steps/{step_id}/retry][%d] retryWorkflowStepCreated %s", 201, payload)
 }
 
-func (o *RetryWorkflowStepCreated) GetPayload() *models.ServiceRetryWorkflowByIDResponse {
+func (o *RetryWorkflowStepCreated) GetPayload() *models.ServiceRetryWorkflowStepResponse {
 	return o.Payload
 }
 
 func (o *RetryWorkflowStepCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ServiceRetryWorkflowByIDResponse)
+	o.Payload = new(models.ServiceRetryWorkflowStepResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {

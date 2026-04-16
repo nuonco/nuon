@@ -43,7 +43,7 @@ const (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{string}	ok
+// @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/installs/{install_id}/phone-home/{phone_home_id} [post]
 func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -71,7 +71,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	}
 
 	if requestType == phoneHomeRequestTypeDelete {
-		ctx.JSON(http.StatusOK, "ok")
+		ctx.JSON(http.StatusOK, app.EmptyResponse{})
 		return
 	}
 
@@ -80,7 +80,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
 func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID string, req *InstallPhoneHomeRequest) error {
