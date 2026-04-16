@@ -8,6 +8,7 @@ import (
 
 	"go.temporal.io/sdk/activity"
 	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -20,28 +21,35 @@ import (
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
-func (a *Activities) updateWorkflowExecute(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ExecuteResponse, error) {
+func (a *Activities) updateWorkflowExecute(ctx context.Context, workflowID string, updateID string, queueID string, runID string) (*handler.ExecuteResponse, error) {
 	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*handler.ExecuteResponse, error) {
 		info := activity.GetInfo(ctx)
 
-		rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
+		rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
 			info.WorkflowNamespace,
-			tclient.UpdateWithStartWorkflowOptions{
-				UpdateOptions: tclient.UpdateWorkflowOptions{
-					UpdateID:     updateID + "-execute",
-					WorkflowID:   workflowID,
-					UpdateName:   handler.ExecuteUpdateName,
-					WaitForStage: tclient.WorkflowUpdateStageCompleted,
-				},
-				StartWorkflowOperation: a.handlerStartOperation(workflowID, queueID, updateID),
+			tclient.UpdateWorkflowOptions{
+				UpdateID:     updateID + "-execute",
+				WorkflowID:   workflowID,
+				RunID:        runID,
+				UpdateName:   handler.ExecuteUpdateName,
+				WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			})
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to call query handler")
+			return nil, errors.Wrap(err, "unable to call update handler")
 		}
 
 		var resp handler.ExecuteResponse
 		if err := rawResp.Get(ctx, &resp); err != nil {
-			return nil, errors.Wrap(err, "unable get response")
+			wrapped := errors.Wrap(err, "unable get response")
+			var appErr *temporal.ApplicationError
+			if errors.As(err, &appErr) && appErr.Type() == "AcceptedUpdateCompletedWorkflow" {
+				return nil, temporal.NewNonRetryableApplicationError(
+					appErr.Message(),
+					appErr.Type(),
+					wrapped,
+				)
+			}
+			return nil, wrapped
 		}
 
 		return &resp, nil
