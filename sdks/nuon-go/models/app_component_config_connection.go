@@ -92,7 +92,7 @@ type AppComponentConfigConnection struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
-	// version
+	// version is computed at write time as the sequential config number for this component
 	Version int64 `json:"version,omitempty"`
 }
 

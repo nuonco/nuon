@@ -110,7 +110,7 @@ type AppAppConfig struct {
 	// vcs connection commit
 	VcsConnectionCommit *AppVCSConnectionCommit `json:"vcs_connection_commit,omitempty"`
 
-	// fields that are filled in via after query or views
+	// version is computed at write time as the sequential config number for this app
 	Version int64 `json:"version,omitempty"`
 }
 
