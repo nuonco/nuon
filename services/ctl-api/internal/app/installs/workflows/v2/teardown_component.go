@@ -26,6 +26,13 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
 	sg := newStepGroup()
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -57,7 +64,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent, sg, appCfg)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +112,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		steps = append(steps, deployStep)
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg, appCfg)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}

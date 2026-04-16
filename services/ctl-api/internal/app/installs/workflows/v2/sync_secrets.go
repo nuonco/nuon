@@ -26,6 +26,13 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroup() // generate install state
@@ -37,7 +44,7 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +61,7 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}

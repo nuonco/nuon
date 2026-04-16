@@ -27,10 +27,17 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
-	return teardownComponents(ctx, flw, newStepGroup(), appCfg)
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	return teardownComponents(ctx, flw, newStepGroup(), appCfg, awData)
 }
 
-func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig) ([]*app.WorkflowStep, error) {
+func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -49,7 +56,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents, sg, appCfg)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +122,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 			continue
 		}
 
-		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent, sg, appCfg)
+		preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
@@ -143,14 +150,14 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 		}
 		steps = append(steps, deployStep)
 
-		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg, appCfg)
+		postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, postDeploySteps...)
 	}
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostTeardownAllComponents, sg, appCfg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostTeardownAllComponents, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}

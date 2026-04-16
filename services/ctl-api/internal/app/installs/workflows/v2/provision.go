@@ -99,7 +99,14 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		return nil, errors.Wrap(err, "unable to get app config")
 	}
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreProvision, sg, appCfg)
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreProvision, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +138,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +153,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
@@ -161,13 +168,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg)
+		deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, deploySteps...)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostProvision, sg, appCfg)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostProvision, sg, appCfg, awData)
 		if err != nil {
 			return nil, err
 		}
