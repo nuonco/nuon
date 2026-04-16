@@ -69,12 +69,22 @@ export function ClickToCopy({
         className
       )}
       onClick={() => handleCopy(text)}
-      title="Click to copy"
       {...props}
     >
       {isCopied && <CopiedNotice className={noticeClassName} />}
       {children}
-      <span>
+      <span
+        className="rounded focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80"
+        tabIndex={0}
+        role="button"
+        title="Copy"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleCopy(text)
+          }
+        }}
+      >
         {isCopied ? <Icon variant="Check" /> : <Icon variant="Copy" />}
       </span>
     </span>
@@ -98,9 +108,18 @@ export function ClickToCopyButton({
       className={cn(
         'hover:bg-black/10 dark:hover:bg-white/5',
         'flex items-center gap-2 cursor-pointer relative border rounded-md p-1 text-sm',
+        'focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80',
         className
       )}
       onClick={() => handleCopy(textToCopy)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleCopy(textToCopy)
+        }
+      }}
+      tabIndex={0}
+      role="button"
       title="Click to copy"
       {...props}
     >
