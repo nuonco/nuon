@@ -161,6 +161,7 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		}
 	}
 
+	install.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, install)
 }
 
@@ -309,5 +310,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		}
 	}
 
+	install.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusCreated, install)
 }

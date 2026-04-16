@@ -153,12 +153,12 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		}
 	}
 
-	appInstall, installWorkflowID, err := s.api.CreateInstall(ctx, s.appID, &req)
+	appInstall, err := s.api.CreateInstall(ctx, s.appID, &req)
 	if err != nil {
 		return nil, fmt.Errorf("error creating install %s: %w", installCfg.Name, err)
 	}
 
-	err = s.handleWorkflow(ctx, installWorkflowID, appInstall.ID, autoApprove, wait)
+	err = s.handleWorkflow(ctx, appInstall.WorkflowID, appInstall.ID, autoApprove, wait)
 	if err != nil {
 		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
 	}
@@ -277,14 +277,14 @@ func (s *appInstallSyncer) syncExistingInstall(
 
 	// If inputs have divereged, update the install inputs.
 	if hasInputChanged {
-		_, workflowID, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
+		installInputs, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
 			Inputs: installCfgInputs,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
 		}
 
-		err = s.handleWorkflow(ctx, workflowID, appInstall.ID, autoApprove, wait)
+		err = s.handleWorkflow(ctx, installInputs.WorkflowID, appInstall.ID, autoApprove, wait)
 		if err != nil {
 			return nil, fmt.Errorf("error handling workflow for install %s: %w", appInstall.Name, err)
 		}

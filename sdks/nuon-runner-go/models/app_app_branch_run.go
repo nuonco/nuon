@@ -79,6 +79,9 @@ type AppAppBranchRun struct {
 
 	// workflow
 	Workflow *AppWorkflow `json:"workflow,omitempty"`
+
+	// workflow id
+	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
 // Validate validates this app app branch run

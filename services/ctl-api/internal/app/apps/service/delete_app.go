@@ -28,7 +28,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id} [DELETE]
 func (s *service) DeleteApp(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
@@ -108,7 +108,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 	s.evClient.Send(ctx, appID, &signals.Signal{
 		Type: signals.OperationDeprovision,
 	})
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) deleteApp(ctx context.Context, appID string) error {

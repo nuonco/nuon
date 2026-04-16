@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { TWorkflowResponse } from '@/types'
 
 export type TRunActionBody = {
   action_workflow_config_id: string
@@ -14,7 +15,7 @@ export async function runAction({
   installId: string
   orgId: string
 }) {
-  return api<string>({
+  return api<TWorkflowResponse>({
     withHeaders: true,
     body,
     method: 'POST',

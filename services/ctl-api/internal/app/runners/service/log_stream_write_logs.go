@@ -32,7 +32,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	string
+// @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/log-streams/{log_stream_id}/logs [POST]
 func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	logStreamID := ctx.Param("log_stream_id")
@@ -78,7 +78,7 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
 func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportRequest) []app.OtelLogRecord {

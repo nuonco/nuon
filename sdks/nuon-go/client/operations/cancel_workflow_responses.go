@@ -77,7 +77,7 @@ CancelWorkflowAccepted describes a response with status code 202, with default h
 Accepted
 */
 type CancelWorkflowAccepted struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this cancel workflow accepted response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *CancelWorkflowAccepted) String() string {
 	return fmt.Sprintf("[POST /v1/workflows/{workflow_id}/cancel][%d] cancelWorkflowAccepted %s", 202, payload)
 }
 
-func (o *CancelWorkflowAccepted) GetPayload() bool {
+func (o *CancelWorkflowAccepted) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

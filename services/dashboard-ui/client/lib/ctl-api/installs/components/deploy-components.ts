@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { TWorkflowResponse } from '@/types'
 
 export type TDeployComponentsBody = {
   plan_only?: boolean
@@ -13,7 +14,7 @@ export const deployComponents = ({
   orgId: string
   body: TDeployComponentsBody
 }) =>
-  api<string>({
+  api<TWorkflowResponse>({
     withHeaders: true,
     path: `installs/${installId}/components/deploy-all`,
     method: 'POST',

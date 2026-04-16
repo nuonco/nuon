@@ -138,7 +138,7 @@ function CreateInstallStepContentContainer({
           <Text>Install created successfully!</Text>
         </Toast>
       )
-      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      const workflowId = result.data.workflow_id
       const suffix =
         result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
       if (workflowId) {

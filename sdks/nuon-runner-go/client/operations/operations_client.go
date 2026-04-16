@@ -162,6 +162,8 @@ type ClientService interface {
 
 	GetRunnerProcessShutdowns(params *GetRunnerProcessShutdownsParams, opts ...ClientOption) (*GetRunnerProcessShutdownsOK, error)
 
+	GetRunnerPublicSettings(params *GetRunnerPublicSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerPublicSettingsOK, error)
+
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
@@ -186,7 +188,7 @@ type ClientService interface {
 
 	RunnerOtelWriteMetrics(params *RunnerOtelWriteMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteMetricsCreated, error)
 
-	RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesCreated, error)
+	RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesOK, error)
 
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
@@ -1631,6 +1633,52 @@ func (a *Client) GetRunnerProcessShutdowns(params *GetRunnerProcessShutdownsPara
 }
 
 /*
+GetRunnerPublicSettings gets runner public settings
+
+Return runner settings for the provided runner.
+*/
+func (a *Client) GetRunnerPublicSettings(params *GetRunnerPublicSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerPublicSettingsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerPublicSettingsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerPublicSettings",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/public-settings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerPublicSettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerPublicSettingsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerPublicSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunnerSettings gets runner settings
 
 Return runner settings for the provided runner.
@@ -2187,7 +2235,7 @@ func (a *Client) RunnerOtelWriteMetrics(params *RunnerOtelWriteMetricsParams, au
 
 stack.
 */
-func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesCreated, error) {
+func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
 		params = NewRunnerOtelWriteTracesParams()
@@ -2214,7 +2262,7 @@ func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, auth
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*RunnerOtelWriteTracesCreated)
+	success, ok := result.(*RunnerOtelWriteTracesOK)
 	if ok {
 		return success, nil
 	}

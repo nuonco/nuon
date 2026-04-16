@@ -77,7 +77,7 @@ CreateInstallActionWorkflowRunCreated describes a response with status code 201,
 Created
 */
 type CreateInstallActionWorkflowRunCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this create install action workflow run created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *CreateInstallActionWorkflowRunCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/action-workflows/runs][%d] createInstallActionWorkflowRunCreated %s", 201, payload)
 }
 
-func (o *CreateInstallActionWorkflowRunCreated) GetPayload() string {
+func (o *CreateInstallActionWorkflowRunCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *CreateInstallActionWorkflowRunCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 
