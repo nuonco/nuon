@@ -48,7 +48,7 @@ export const MainTopbar = ({
             <Tooltip
               tipContent={
                 <Text variant="subtext">
-                  This organization is running in sandbox mode. Install are simulated instead of deploying to a real cloud account.
+                  This organization is running in sandbox mode. Installs are simulated instead of deploying to a real cloud account.
                 </Text>
               }
               position="bottom"
