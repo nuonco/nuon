@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -24,6 +26,9 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
+		Metadata: map[string]any{
+			"validate_started_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+		},
 	})
 
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseValidate)
@@ -36,6 +41,9 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
+			Metadata: map[string]any{
+				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
 		})
 		return nil, blockedErr
 	}
@@ -55,6 +63,9 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: panicErr.Error(),
+				Metadata: map[string]any{
+					"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+				},
 			})
 			return nil, panicErr
 		}
@@ -64,9 +75,21 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: validateErr.Error(),
+			Metadata: map[string]any{
+				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
 		})
 		return nil, validateErr
 	}
+
+	// record validate completion timestamp
+	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		QueueSignalID: h.queueSignalID,
+		Status:        app.StatusInProgress,
+		Metadata: map[string]any{
+			"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+		},
+	})
 
 	return nil, nil
 }
