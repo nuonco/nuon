@@ -22,6 +22,8 @@ type SandboxConfig struct {
 	Runner   Runner `json:"-"`
 	JobType  string `json:"job_type,omitzero" gorm:"notnull;index:idx_sandbox_config_unique,unique"`
 
+	Enabled bool `json:"enabled" gorm:"default:true"`
+
 	// Behavior
 	Preset       string        `json:"preset,omitzero"`
 	Duration     time.Duration `json:"duration,omitzero"`

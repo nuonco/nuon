@@ -15,6 +15,7 @@ import (
 
 type AdminUpsertSandboxConfigRequest struct {
 	JobType         string        `json:"job_type" validate:"required"`
+	Enabled         *bool         `json:"enabled"`
 	Preset          string        `json:"preset"`
 	Duration        time.Duration `json:"duration"`
 	FaultRate       float64       `json:"fault_rate"`
@@ -64,9 +65,15 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 		}
 	}
 
+	enabled := true
+	if req.Enabled != nil {
+		enabled = *req.Enabled
+	}
+
 	config := app.SandboxConfig{
 		RunnerID:        runnerID,
 		JobType:         req.JobType,
+		Enabled:         enabled,
 		Preset:          req.Preset,
 		Duration:        req.Duration,
 		FaultRate:       req.FaultRate,
@@ -83,7 +90,7 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "runner_id"}, {Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "log_lines", "plan_contents", "outputs", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "log_lines", "plan_contents", "outputs", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to upsert sandbox config: %w", res.Error))

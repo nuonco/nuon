@@ -53,6 +53,23 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         </div>
       </Expand>
 
+      {step.status?.metadata?.retry_type && (
+        <div className="flex flex-col gap-1 border rounded-md p-4">
+          <Text variant="label" theme="neutral">
+            Retry info
+          </Text>
+          <Text variant="subtext">Type: {step.status.metadata.retry_type as string}</Text>
+          {step.status.metadata.retry_idx !== undefined && (
+            <Text variant="subtext">
+              Attempt: {step.status.metadata.retry_idx as number}
+              {step.status.metadata.max_retries !== undefined
+                ? ` / ${step.status.metadata.max_retries}`
+                : ''}
+            </Text>
+          )}
+        </div>
+      )}
+
       <Expand
         className="border rounded-md"
         id="step-json"

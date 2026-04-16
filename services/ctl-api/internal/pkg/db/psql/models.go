@@ -133,6 +133,7 @@ func AllModels() []any {
 		&app.OCIArtifact{},
 		&app.HelmRelease{},
 		&app.SandboxConfig{},
+		&app.SandboxSignalConfig{},
 
 		// queues
 		&app.Queue{},

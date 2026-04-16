@@ -150,6 +150,15 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/signal-catalog", s.SignalCatalog)
 	api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
 
+	// Sandbox mode routes
+	api.GET("/sandbox-mode", s.SandboxMode)
+	api.GET("/sandbox-mode/runner-jobs/table", s.SandboxModeRunnerJobsTable)
+	api.GET("/sandbox-mode/signals/table", s.SandboxModeSignalsTable)
+	api.GET("/sandbox-mode/stacks/table", s.SandboxModeStacksTable)
+	api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
+	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
+	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
+
 	s.l.Info("admin-dashboard routes registered")
 	return nil
 }

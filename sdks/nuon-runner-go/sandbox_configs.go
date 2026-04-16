@@ -17,6 +17,7 @@ type SandboxConfig struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
+	Enabled      bool          `json:"enabled"`
 	Preset       string        `json:"preset"`
 	Duration     time.Duration `json:"duration"`
 	FaultRate    float64       `json:"fault_rate"`

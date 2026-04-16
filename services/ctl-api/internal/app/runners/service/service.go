@@ -176,6 +176,22 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		}
 	}
 
+	// sandbox mode management
+	sandboxMode := api.Group("/v1/sandbox-mode")
+	{
+		signals := sandboxMode.Group("/signals")
+		signals.GET("", s.AdminListSandboxSignalConfigs)
+		signals.GET("/types", s.AdminListSignalTypes)
+		signals.PUT("/:signal_type", s.AdminUpsertSandboxSignalConfig)
+		signals.DELETE("/:signal_type", s.AdminDeleteSandboxSignalConfig)
+		signals.POST("/reset", s.AdminResetSandboxSignalConfigs)
+		signals.POST("/disable-all", s.AdminDisableAllSandboxSignalConfigs)
+
+		runnerJobs := sandboxMode.Group("/runner-jobs")
+		runnerJobs.GET("", s.AdminListAllSandboxConfigs)
+		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
+	}
+
 	// runner groups
 	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
 	{

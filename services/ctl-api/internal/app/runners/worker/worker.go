@@ -64,9 +64,10 @@ func New(params WorkerParams) (*Worker, error) {
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
-		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
-		Interceptors:                       params.Interceptors,
-		WorkflowPanicPolicy:                panicPolicy,
+		MaxConcurrentActivityExecutionSize:     params.Cfg.TemporalMaxConcurrentActivities,
+		Interceptors:                           params.Interceptors,
+		WorkflowPanicPolicy:                    panicPolicy,
+		MaxConcurrentWorkflowTaskExecutionSize: 500000,
 	})
 
 	// register activities

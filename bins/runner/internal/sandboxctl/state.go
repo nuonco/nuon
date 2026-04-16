@@ -200,6 +200,10 @@ func (s *State) SyncFromAPI(configs []*nuonrunner.SandboxConfig) {
 	defer s.mu.Unlock()
 
 	for _, cfg := range configs {
+		if !cfg.Enabled {
+			continue
+		}
+
 		var logLines []string
 		if len(cfg.LogLines) > 0 {
 			_ = json.Unmarshal(cfg.LogLines, &logLines)

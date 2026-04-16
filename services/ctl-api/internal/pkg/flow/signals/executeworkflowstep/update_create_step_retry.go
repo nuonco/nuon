@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -28,12 +29,24 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 		return nil, errors.Wrap(err, "unable to get workflow")
 	}
 
+	maxRetries := signal.DefaultMaxRetries
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if mr, ok := step.QueueSignal.Signal.(signal.SignalWithMaxRetries); ok {
+			maxRetries = mr.MaxRetries()
+		}
+	}
+
 	// Mark original step as discarded
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusDiscarded,
 			StatusHumanDescription: "Step was discarded and retried by the user.",
+			Metadata: map[string]any{
+				"retry_type":  "manual",
+				"retry_idx":   step.RetryIndex,
+				"max_retries": maxRetries,
+			},
 		},
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to mark step as discarded")

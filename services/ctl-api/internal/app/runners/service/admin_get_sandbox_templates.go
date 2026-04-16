@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
 )
 
 func (s *service) AdminGetSandboxTemplates(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, app.DefaultSandboxTemplates())
+	ctx.JSON(http.StatusOK, sandboxmode.DefaultSandboxTemplates())
 }

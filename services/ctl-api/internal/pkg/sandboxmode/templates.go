@@ -1,4 +1,4 @@
-package app
+package sandboxmode
 
 // SandboxLogTemplate represents a pre-built log template that can be used
 // to populate sandbox config log lines.
@@ -6,6 +6,7 @@ type SandboxLogTemplate struct {
 	Key         string   `json:"key"`
 	Description string   `json:"description"`
 	Category    string   `json:"category"`
+	Type        string   `json:"type"` // e.g. "failing-action", "kube-action", "success"
 	Lines       []string `json:"lines"`
 }
 
@@ -15,6 +16,7 @@ type SandboxPlanTemplate struct {
 	Key         string `json:"key"`
 	Description string `json:"description"`
 	Category    string `json:"category"`
+	Type        string `json:"type"` // e.g. "noop", "s3", "database", "full-sandbox"
 	Contents    string `json:"contents"`
 }
 

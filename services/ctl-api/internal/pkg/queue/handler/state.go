@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -76,6 +77,12 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 			StatusDescription: initErr.Error(),
 		})
 		return initErr
+	}
+
+	// Check for sandbox signal config and wrap the signal if found
+	sandboxCfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(h.queueSignal.Type))
+	if err == nil && sandboxCfg != nil && sandboxCfg.Enabled {
+		h.sig = sandboxmode.WrapSignal(h.sig, sandboxCfg)
 	}
 
 	return nil
