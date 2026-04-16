@@ -605,6 +605,13 @@ export interface paths {
      */
     get: operations["GetAppPoliciesConfig"];
   };
+  "/v1/apps/{app_id}/policy-analytics/breakdown": {
+    /**
+     * get policy analytics breakdown by dimension
+     * @description Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.
+     */
+    get: operations["GetPolicyAnalyticsBreakdown"];
+  };
   "/v1/apps/{app_id}/policy-analytics/summary": {
     /**
      * get policy analytics summary
@@ -5563,6 +5570,13 @@ export interface components {
     "service.Branch": {
       name?: string;
     };
+    "service.BreakdownEntry": {
+      denies?: number;
+      evaluations?: number;
+      key?: string;
+      passes?: number;
+      warns?: number;
+    };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
       auth_audience?: string;
@@ -6140,6 +6154,12 @@ export interface components {
     };
     "service.PatchInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+    };
+    "service.PolicyAnalyticsBreakdown": {
+      dimension?: string;
+      end?: string;
+      entries?: components["schemas"]["service.BreakdownEntry"][];
+      start?: string;
     };
     "service.PolicyAnalyticsSummary": {
       end?: string;
@@ -11550,6 +11570,64 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get policy analytics breakdown by dimension
+   * @description Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.
+   */
+  GetPolicyAnalyticsBreakdown: {
+    parameters: {
+      query: {
+        /** @description dimension to break down by: policy_id, install_id, owner_type */
+        dimension: string;
+        /** @description start time (RFC3339) */
+        start?: string;
+        /** @description end time (RFC3339) */
+        end?: string;
+        /** @description filter by install ID */
+        install_id?: string;
+        /** @description filter by policy ID */
+        policy_id?: string;
+        /** @description max entries to return (default 10) */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PolicyAnalyticsBreakdown"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

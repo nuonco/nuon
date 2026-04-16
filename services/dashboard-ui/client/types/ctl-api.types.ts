@@ -86,6 +86,9 @@ export type TPolicyAnalyticsTimeseries =
 export type TTimeseriesBucket =
   components['schemas']['service.TimeseriesBucket']
 export type TSeriesPoint = components['schemas']['service.SeriesPoint']
+export type TPolicyAnalyticsBreakdown =
+  components['schemas']['service.PolicyAnalyticsBreakdown']
+export type TBreakdownEntry = components['schemas']['service.BreakdownEntry']
 
 // component
 export type TComponent = components['schemas']['app.Component']

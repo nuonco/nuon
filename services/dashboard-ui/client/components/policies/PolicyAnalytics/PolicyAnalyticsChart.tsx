@@ -19,6 +19,9 @@ interface IPolicyAnalyticsChart {
 function formatTick(value: string, interval: string) {
   const dt = DateTime.fromISO(value)
   if (!dt.isValid) return value
+  if (interval === '15m' || interval === '30m') {
+    return dt.toFormat('HH:mm')
+  }
   if (interval === 'hour' || interval === '6h') {
     return dt.toFormat('MMM d HH:mm')
   }
