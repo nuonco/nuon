@@ -125,9 +125,7 @@ export function generateDiffLines(
   }
 
   if (after === null || after === undefined) {
-    const lines = renderFullValue(before, '-', indent)
-    lines.push({ indent, prefix: '+', type: 'added', text: 'null' })
-    return lines
+    return renderFullValue(before, '-', indent)
   }
 
   if (!isComplex(before) && !isComplex(after)) {
@@ -155,17 +153,40 @@ export function generateDiffLines(
         type: 'unchanged' as const,
       }))
     }
-    const lines: DiffLine[] = [
-      { indent, prefix: '~', type: 'changed', text: '[' },
+
+    let anyChanged = false
+    const innerLines: DiffLine[] = []
+    const maxLen = Math.max(before.length, after.length)
+
+    for (let i = 0; i < maxLen; i++) {
+      if (i >= before.length) {
+        anyChanged = true
+        innerLines.push(...renderFullValue(after[i], '+', indent + 1))
+      } else if (i >= after.length) {
+        anyChanged = true
+        innerLines.push(...renderFullValue(before[i], '-', indent + 1))
+      } else if (deepEqual(before[i], after[i])) {
+        const sub = renderFullValue(after[i], ' ' as any, indent + 1).map(
+          (l) => ({
+            ...l,
+            prefix: ' ' as const,
+            type: 'unchanged' as const,
+          })
+        )
+        innerLines.push(...sub)
+      } else {
+        anyChanged = true
+        innerLines.push(...generateDiffLines(before[i], after[i], indent + 1, maxDepth))
+      }
+    }
+
+    const bracketPrefix = anyChanged ? '~' : ' '
+    const bracketType = anyChanged ? 'changed' : 'unchanged'
+    return [
+      { indent, prefix: bracketPrefix as DiffLine['prefix'], type: bracketType as DiffLine['type'], text: '[' },
+      ...innerLines,
+      { indent, prefix: bracketPrefix as DiffLine['prefix'], type: bracketType as DiffLine['type'], text: ']' },
     ]
-    before.forEach((item) => {
-      lines.push(...renderFullValue(item, '-', indent + 1))
-    })
-    after.forEach((item) => {
-      lines.push(...renderFullValue(item, '+', indent + 1))
-    })
-    lines.push({ indent, prefix: '~', type: 'changed', text: ']' })
-    return lines
   }
 
   if (
@@ -215,15 +236,27 @@ export function generateDiffLines(
         }
       } else {
         anyChanged = true
-        const childLines = generateDiffLines(bVal, aVal, indent + 1, maxDepth)
-        if (childLines.length > 0) {
-          const firstLine = childLines[0]
-          childLines[0] = {
-            ...firstLine,
-            text: `${JSON.stringify(key)}: ${firstLine.text}`,
+        if (
+          (bVal === null && isComplex(aVal)) ||
+          (aVal === null && isComplex(bVal))
+        ) {
+          renderFullValue(bVal, '-', indent + 1, key).forEach((l) =>
+            innerLines.push(l)
+          )
+          renderFullValue(aVal, '+', indent + 1, key).forEach((l) =>
+            innerLines.push(l)
+          )
+        } else {
+          const childLines = generateDiffLines(bVal, aVal, indent + 1, maxDepth)
+          if (childLines.length > 0) {
+            const firstLine = childLines[0]
+            childLines[0] = {
+              ...firstLine,
+              text: `${JSON.stringify(key)}: ${firstLine.text}`,
+            }
           }
+          innerLines.push(...childLines)
         }
-        innerLines.push(...childLines)
       }
     })
 
