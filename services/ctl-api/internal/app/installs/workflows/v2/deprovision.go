@@ -4,6 +4,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/pkg/errors"
+
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
@@ -37,13 +39,30 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovision, sg)
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovision, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	deploySteps, err := teardownComponents(ctx, flw, sg)
+	deploySteps, err := teardownComponents(ctx, flw, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +91,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovision, sg)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovision, sg, appCfg, awData)
 	if err != nil {
 		return nil, err
 	}
