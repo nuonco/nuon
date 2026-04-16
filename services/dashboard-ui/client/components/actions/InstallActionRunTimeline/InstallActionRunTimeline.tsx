@@ -4,6 +4,7 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
+import { Text } from '@/components/common/Text'
 import type { TInstallActionRun, TActionConfigTriggerType } from '@/types'
 
 interface IInstallActionRunTimeline {
@@ -30,7 +31,6 @@ export const InstallActionRunTimeline = ({
           key={run.id}
           caption={<ID>{run?.id}</ID>}
           createdAt={run?.created_at}
-          createdBy={run?.created_by?.email}
           status={run?.status}
           title={
             <span className="flex items-center gap-2">
@@ -43,13 +43,19 @@ export const InstallActionRunTimeline = ({
                 triggerType={run?.triggered_by_type as TActionConfigTriggerType}
                 componentName={run?.run_env_vars?.COMPONENT_NAME}
                 componentPath={`${basePath}/components/${run?.run_env_vars?.COMPONENT_ID}`}
+                size="sm"
               />
               {run?.status_v2?.status === 'drifted' ? (
-                <Badge variant="code">
+                <Badge variant="code" size="sm">
                   drift scan
                 </Badge>
               ) : null}
             </span>
+          }
+          underline={
+            <Text variant="label" theme="neutral">
+              Run by: {run?.created_by?.email}
+            </Text>
           }
         />
       )}

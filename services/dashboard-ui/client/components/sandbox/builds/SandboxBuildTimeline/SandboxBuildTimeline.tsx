@@ -42,7 +42,6 @@ export const SandboxBuildTimeline = ({
             key={build.id}
             caption={<ID>{build?.id}</ID>}
             createdAt={build?.created_at}
-            createdBy={build?.created_by?.email}
             status={build?.status}
             title={
               <span className="flex items-center gap-2">
@@ -52,39 +51,45 @@ export const SandboxBuildTimeline = ({
                   Sandbox build
                 </Link>
                 {build?.status_v2?.status === 'drifted' ? (
-                  <Badge variant="code">
+                  <Badge variant="code" size="sm">
                     drift scan
                   </Badge>
                 ) : null}
                 {build?.status_v2?.metadata?.duplicate_build ? (
-                  <Badge variant="code" theme="warn">
+                  <Badge variant="code" size="sm" theme="warn">
                     duplicate build
                   </Badge>
                 ) : null}
               </span>
             }
             underline={
-              build?.vcs_connection_commit?.message &&
-              build?.vcs_connection_commit?.sha ? (
-                <span className="flex flex-col gap-1 mt-2">
-                  <Text
-                    className="truncate !flex w-full"
-                    variant="label"
-                    family="mono"
-                  >
-                    SHA: {build?.vcs_connection_commit?.sha}
-                  </Text>
-                  <Text
-                    className="!max-w-[350px] !flex"
-                    variant="label"
-                    theme="neutral"
-                  >
-                    <span className="truncate">
-                      {build?.vcs_connection_commit?.message}
-                    </span>
-                  </Text>
-                </span>
-              ) : undefined
+              <span className="flex flex-col mt-2">
+                <Text variant="label" theme="neutral">
+                  Built by: {build?.created_by?.email}
+                </Text>
+
+                {build?.vcs_connection_commit?.message &&
+                build?.vcs_connection_commit?.sha ? (
+                  <span>
+                    <Text
+                      className="truncate !flex w-full"
+                      variant="label"
+                      family="mono"
+                    >
+                      SHA: {build?.vcs_connection_commit?.sha}
+                    </Text>
+                    <Text
+                      className="!max-w-[350px] !flex"
+                      variant="label"
+                      theme="neutral"
+                    >
+                      <span className="truncate">
+                        {build?.vcs_connection_commit?.message}
+                      </span>
+                    </Text>
+                  </span>
+                ) : null}
+              </span>
             }
           />
         )

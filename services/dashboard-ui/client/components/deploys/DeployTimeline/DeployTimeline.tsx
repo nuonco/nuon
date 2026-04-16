@@ -53,7 +53,6 @@ export const DeployTimeline = ({
             key={deploy.id}
             caption={<ID>{deploy?.id}</ID>}
             createdAt={deploy?.created_at}
-            createdBy={deploy?.created_by?.email}
             status={deploy?.status}
             title={
               <span className="flex items-center gap-2">
@@ -66,11 +65,16 @@ export const DeployTimeline = ({
                     : 'deploy'}
                 </Link>
                 {deploy?.status_v2?.status === 'drifted' ? (
-                  <Badge variant="code">
+                  <Badge variant="code" size="sm">
                     drift scan
                   </Badge>
                 ) : null}
               </span>
+            }
+            underline={
+              <Text variant="label" theme="neutral">
+                Deployed by: {deploy?.created_by?.email}
+              </Text>
             }
           />
         )
