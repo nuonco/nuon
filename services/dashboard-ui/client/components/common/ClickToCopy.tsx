@@ -4,6 +4,7 @@ import { cn } from '@/utils/classnames'
 
 export interface IClickToCopy extends React.HTMLAttributes<HTMLSpanElement> {
   noticeClassName?: string
+  variant?: 'default' | 'button'
 }
 
 type TUseCopyStateResult = {
@@ -47,6 +48,7 @@ export function ClickToCopy({
   className,
   children,
   noticeClassName,
+  variant = 'default',
   ...props
 }: IClickToCopy) {
   // Try to infer text to copy from children, fallback to rendering children as is.
@@ -74,7 +76,11 @@ export function ClickToCopy({
       {isCopied && <CopiedNotice className={noticeClassName} />}
       {children}
       <span
-        className="rounded focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80"
+        className={cn(
+          'rounded focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80',
+          variant === 'button' &&
+            'inline-flex items-center justify-center size-6 rounded hover:bg-cool-grey-100 dark:hover:bg-white/5 transition-colors'
+        )}
         tabIndex={0}
         role="button"
         title="Copy"
@@ -85,7 +91,11 @@ export function ClickToCopy({
           }
         }}
       >
-        {isCopied ? <Icon variant="Check" /> : <Icon variant="Copy" />}
+        {isCopied ? (
+          <Icon variant="Check" size={variant === 'button' ? 14 : undefined} />
+        ) : (
+          <Icon variant="Copy" size={variant === 'button' ? 14 : undefined} />
+        )}
       </span>
     </span>
   )

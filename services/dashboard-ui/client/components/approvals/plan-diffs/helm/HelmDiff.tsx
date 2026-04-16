@@ -68,7 +68,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
                 id={`change-${idx}`}
                 key={`${change.release}-${idx}`}
                 className={`border-l-4 ${borderColor}`}
-                headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
+                headerClassName="!px-4 sm:!px-6"
                 heading={
                   <div className="text-left w-full">
                     <div className="flex items-start justify-between w-full">
@@ -95,7 +95,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
                 }
               >
                 <CodeBlock
-                  className="!rounded-none border-t"
+                  className="!rounded-none border-t !max-h-none"
                   language="yaml"
                   isDiff
                 >

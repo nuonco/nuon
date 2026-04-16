@@ -90,13 +90,13 @@ export const DifferentContentTypes = () => (
 
         <LabeledValue label="Tags">
           <div className="flex flex-wrap gap-2">
-            <Badge theme="brand" size="sm">
+            <Badge theme="brand">
               Frontend
             </Badge>
-            <Badge theme="info" size="sm">
+            <Badge theme="info">
               React
             </Badge>
-            <Badge theme="neutral" size="sm">
+            <Badge theme="neutral">
               TypeScript
             </Badge>
           </div>
@@ -201,7 +201,7 @@ export const FormLayouts = () => (
 
           <LabeledValue label="Monitoring">
             <div className="flex items-center gap-2">
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 Active
               </Badge>
               <Button variant="ghost" size="sm">
@@ -265,7 +265,7 @@ export const ResponsiveLayouts = () => (
 
           <LabeledValue label="Deployment">
             <div className="flex items-center gap-2">
-              <Badge theme="info" size="sm">
+              <Badge theme="info">
                 v2.1.0
               </Badge>
               <Button variant="ghost" size="sm">
@@ -320,19 +320,19 @@ export const UsageExamples = () => (
           <LabeledValue label="Status Codes">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Badge theme="success" size="sm">
+                <Badge theme="success">
                   200
                 </Badge>
                 <Text variant="subtext">Success</Text>
               </div>
               <div className="flex items-center gap-2">
-                <Badge theme="warn" size="sm">
+                <Badge theme="warn">
                   400
                 </Badge>
                 <Text variant="subtext">Bad Request</Text>
               </div>
               <div className="flex items-center gap-2">
-                <Badge theme="error" size="sm">
+                <Badge theme="error">
                   401
                 </Badge>
                 <Text variant="subtext">Unauthorized</Text>
@@ -373,7 +373,7 @@ export const UsageExamples = () => (
           <LabeledValue label="Memory Usage">
             <div className="flex items-center gap-2">
               <Text>6.2GB / 16GB</Text>
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 39%
               </Badge>
             </div>

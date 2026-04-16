@@ -28,7 +28,7 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
         <Text variant="base" weight="strong">
           Pending approvals
         </Text>
-        <Badge theme="warn" size="sm" variant="code">
+        <Badge theme="warn" variant="code">
           {approvals.length}
         </Badge>
       </div>
@@ -74,7 +74,7 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
                 )}
               </div>
               {approval.type && (
-                <Badge theme="warn" size="sm" variant="code">
+                <Badge theme="warn" variant="code">
                   {getApprovalType(approval.type)}
                 </Badge>
               )}

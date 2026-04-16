@@ -70,21 +70,21 @@ export const LogPanel = ({ className, log, ...props }: ILogPanel) => {
         <Text flex nowrap className="gap-2">
           Use
           <span className="inline-flex items-center gap-1">
-            <Badge variant="code" size="sm">
+            <Badge variant="code">
               <Icon variant="ArrowUp" />
             </Badge>
             /
-            <Badge variant="code" size="sm">
+            <Badge variant="code">
               <Icon variant="ArrowDown" />
             </Badge>
             or
-            <Badge variant="code" size="sm">
+            <Badge variant="code">
               <Text family="mono" variant="subtext">
                 k
               </Text>
             </Badge>
             /
-            <Badge variant="code" size="sm">
+            <Badge variant="code">
               <Text family="mono" variant="subtext">
                 j
               </Text>

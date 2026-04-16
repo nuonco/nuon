@@ -11,9 +11,9 @@ const COLLAPSE_THRESHOLD = 200
 const INITIAL_VISIBLE = 50
 
 const lineStyles: Record<DiffLine['type'], string> = {
-  added: 'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
-  removed: 'bg-red-500/15 dark:bg-red-500/5 text-red-800 dark:text-red-400',
-  changed: 'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
+  added: 'bg-green-500/5 dark:bg-green-500/5 text-green-800 dark:text-green-400',
+  removed: 'bg-red-500/5 dark:bg-red-500/5 text-red-800 dark:text-red-400',
+  changed: 'bg-orange-500/5 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
   unchanged: 'text-current',
 }
 

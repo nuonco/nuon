@@ -21,7 +21,7 @@ export const DeploySummary = ({
         <span className="flex items-center gap-4">
           {deploy.id}
           {isLatest ? (
-            <Badge theme="info" size="sm">
+            <Badge theme="info">
               Latest
             </Badge>
           ) : null}

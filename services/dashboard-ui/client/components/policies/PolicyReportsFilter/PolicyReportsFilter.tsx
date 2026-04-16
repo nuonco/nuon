@@ -84,7 +84,7 @@ export function PolicyReportsFilter({
                   checked={currentStatus === option.value}
                   labelProps={{
                     labelText: (
-                      <Badge theme={option.theme} size="sm">
+                      <Badge theme={option.theme}>
                         {option.label}
                       </Badge>
                     ),
@@ -110,7 +110,7 @@ export function PolicyReportsFilter({
                   checked={currentOwnerType === option.value}
                   labelProps={{
                     labelText: (
-                      <Badge theme={option.theme} size="sm">
+                      <Badge theme={option.theme}>
                         {option.label}
                       </Badge>
                     ),

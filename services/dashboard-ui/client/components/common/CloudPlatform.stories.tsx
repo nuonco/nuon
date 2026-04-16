@@ -295,7 +295,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="success" size="sm">
+          <Badge theme="success">
             Active
           </Badge>
         </div>
@@ -309,7 +309,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="warn" size="sm">
+          <Badge theme="warn">
             Updating
           </Badge>
         </div>
@@ -323,7 +323,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="info" size="sm">
+          <Badge theme="info">
             Idle
           </Badge>
         </div>
@@ -347,7 +347,7 @@ export const UsageExamples = () => (
               <CloudPlatform platform="aws" displayVariant="icon-only" />
               <Text variant="subtext">us-west-2</Text>
               <Text variant="subtext">t3.medium</Text>
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 Running
               </Badge>
             </div>
@@ -357,7 +357,7 @@ export const UsageExamples = () => (
               <CloudPlatform platform="gcp" displayVariant="icon-only" />
               <Text variant="subtext">europe-west1</Text>
               <Text variant="subtext">n1-standard-2</Text>
-              <Badge theme="error" size="sm">
+              <Badge theme="error">
                 Stopped
               </Badge>
             </div>

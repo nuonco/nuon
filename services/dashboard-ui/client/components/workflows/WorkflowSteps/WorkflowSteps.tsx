@@ -50,7 +50,7 @@ export const WorkflowSteps = ({
 
                 <div className="flex items-center flex-wrap gap-2 md:gap-4">
                   {badgeConfig?.children ? (
-                    <Badge {...badgeConfig} size="sm" />
+                    <Badge {...badgeConfig} />
                   ) : null}
 
                   <PolicyCountsBadge step={step} />

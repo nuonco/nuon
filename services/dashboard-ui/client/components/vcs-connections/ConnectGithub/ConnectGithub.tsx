@@ -83,7 +83,7 @@ export const ConnectGithubModal = ({
               className="!inline-block text-balance !text-center leading-relaxed"
             >
               Add a new GitHub connection to your Nuon org by installing the{' '}
-              <Badge className="!inline-block" variant="code" size="md">
+              <Badge className="!inline-block" variant="code">
                 {githubAppName}
               </Badge>{' '}
               GitHub app and allowing access to the repositories of your choice.
@@ -106,7 +106,7 @@ export const ConnectGithubModal = ({
             >
               Add an existing GitHub connection to your Nuon org by manually
               entering the GitHub{' '}
-              <Badge className="!inline-block" variant="code" size="md">
+              <Badge className="!inline-block" variant="code">
                 github_install_id
               </Badge>
             </Text>

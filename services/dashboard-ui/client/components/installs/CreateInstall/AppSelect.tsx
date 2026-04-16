@@ -148,7 +148,7 @@ export const AppSelect = ({
                         </div>
                       </div>
                       {!isProvisionable && (
-                        <Badge size="sm" theme="neutral">
+                        <Badge theme="neutral">
                           Not provisionable
                         </Badge>
                       )}

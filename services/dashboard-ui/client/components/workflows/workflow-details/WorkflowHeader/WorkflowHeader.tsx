@@ -35,7 +35,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
               : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
 
             {hasDrift ? (
-              <Badge variant="code" theme="warn" size="sm">
+              <Badge variant="code" theme="warn">
                 drift detected
               </Badge>
             ) : null}

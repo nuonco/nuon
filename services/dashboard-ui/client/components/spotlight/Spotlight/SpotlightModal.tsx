@@ -141,7 +141,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
                 onClick={() => setRaw(prefix)}
                 className="cursor-pointer"
               >
-                <Badge size="sm" variant="code" theme="neutral">
+                <Badge variant="code" theme="neutral">
                   {prefix}
                 </Badge>
               </button>
@@ -152,7 +152,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
           <div className="px-2 py-1 flex items-center gap-1.5">
             <Text variant="subtext" className="text-cool-grey-600">
               Type{' '}
-              <Badge size="sm" variant="code" theme="neutral">
+              <Badge variant="code" theme="neutral">
                 /
               </Badge>{' '}
               to run commands

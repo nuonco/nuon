@@ -347,7 +347,7 @@ export const CloudSetupStepContainer = ({
             <Text variant="base" weight="strong" className="flex-1">
               Use demo mode
             </Text>
-            <Badge size="sm" theme="info">
+            <Badge theme="info">
               Recommended
             </Badge>
             <SelectionIndicator selected={selected === 'sandbox'} />

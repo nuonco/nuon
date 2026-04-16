@@ -5,17 +5,18 @@ import { cn } from '@/utils/classnames'
 type TBadgeVariant = 'default' | 'code'
 export type TBadgeTheme = TTheme
 
+const STATUS_THEMES: TTheme[] = ['success', 'error', 'warn', 'info']
+
 export interface IBadge extends HTMLAttributes<HTMLSpanElement> {
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'lg'
   theme?: TBadgeTheme
   variant?: TBadgeVariant
 }
 
-const SIZE_CLASSES: Record<NonNullable<IBadge['size']>, string> = {
+const SIZE_CLASSES = {
   sm: 'text-[11px] leading-[14px] tracking-[-0.2px] px-2 py-0.5',
-  md: 'text-[12px] leading-[17px] tracking-[-0.2px] px-2 py-0.5',
   lg: 'text-[12px] leading-[17px] tracking-[-0.2px] px-3 py-1',
-}
+} as const
 
 const VARIANT_CLASSES: Record<NonNullable<IBadge['variant']>, string> = {
   default: 'font-sans rounded-full',
@@ -40,16 +41,18 @@ const THEME_CLASSES: Record<NonNullable<IBadge['theme']>, string> = {
 export const Badge = ({
   className,
   children,
-  size = 'lg',
+  size,
   theme = 'neutral',
   variant = 'default',
   ...props
 }: IBadge) => {
+  const resolvedSize = size ?? (STATUS_THEMES.includes(theme) ? 'sm' : 'lg')
+
   return (
     <span
       className={cn(
         'border flex gap-1.5 items-center shrink-0 grow-0 w-fit',
-        SIZE_CLASSES[size],
+        SIZE_CLASSES[resolvedSize],
         VARIANT_CLASSES[variant],
         THEME_CLASSES[theme],
         className

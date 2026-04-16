@@ -289,7 +289,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="success" size="sm">
+          <Badge theme="success">
             Active
           </Badge>
         </div>
@@ -303,7 +303,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="warn" size="sm">
+          <Badge theme="warn">
             Updating
           </Badge>
         </div>
@@ -317,7 +317,7 @@ export const UsageExamples = () => (
               </Text>
             </div>
           </div>
-          <Badge theme="info" size="sm">
+          <Badge theme="info">
             Idle
           </Badge>
         </div>
@@ -341,7 +341,7 @@ export const UsageExamples = () => (
               <ComponentType type="docker_build" displayVariant="icon-only" />
               <Text variant="subtext">api-gateway</Text>
               <Text variant="subtext">v2.1.4</Text>
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 Running
               </Badge>
             </div>
@@ -351,7 +351,7 @@ export const UsageExamples = () => (
               <ComponentType type="kubernetes_manifest" displayVariant="icon-only" />
               <Text variant="subtext">ingress-controller</Text>
               <Text variant="subtext">v1.0.0</Text>
-              <Badge theme="error" size="sm">
+              <Badge theme="error">
                 Failed
               </Badge>
             </div>

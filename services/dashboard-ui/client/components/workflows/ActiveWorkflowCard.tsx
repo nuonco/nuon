@@ -79,7 +79,7 @@ export const ActiveWorkflowCard = ({
           pendingApprovals > 0) && (
           <div className="flex items-center gap-2">
             {workflow.plan_only && (
-              <Badge variant="code" size="sm">
+              <Badge variant="code">
                 drift scan
               </Badge>
             )}
@@ -87,18 +87,18 @@ export const ActiveWorkflowCard = ({
               install?.drifted_objects?.find(
                 (d) => d?.install_workflow_id === workflow?.id
               ) && (
-                <Badge size="sm" variant="code" theme="warn">
+                <Badge variant="code" theme="warn">
                   drift detected
                 </Badge>
               )}
             {(workflow?.type === 'drift_run_reprovision_sandbox' ||
               workflow?.type === 'drift_run') && (
-              <Badge variant="code" size="sm">
+              <Badge variant="code">
                 cron scheduled
               </Badge>
             )}
             {pendingApprovals > 0 && (
-              <Badge size="sm" theme="warn">
+              <Badge theme="warn">
                 Pending approval
               </Badge>
             )}

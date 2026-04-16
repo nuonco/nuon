@@ -73,7 +73,7 @@ export const RepositoriesSection = ({
                   </Link>
 
                   {repo?.private || repo?.fork ? (
-                    <Badge className="!pl-1.5" size="sm" variant="code">
+                    <Badge className="!pl-1.5" variant="code">
                       {repo.private && (
                         <>
                           <Icon variant="Lock" size="12" /> private
@@ -87,7 +87,7 @@ export const RepositoriesSection = ({
                     </Badge>
                   ) : null}
 
-                  <Badge className="!pl-1.5" size="sm" variant="code">
+                  <Badge className="!pl-1.5" variant="code">
                     <Icon variant="GitBranchIcon" size="12" />
                     {repo?.default_branch}
                   </Badge>

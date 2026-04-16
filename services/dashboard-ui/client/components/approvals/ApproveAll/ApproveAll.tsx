@@ -60,7 +60,7 @@ export const ApproveAllModal = ({
         </Text>
         <div className="flex flex-wrap gap-2">
           {pendingSteps.map((s) => (
-            <Badge variant="code" key={s.id} size="sm">
+            <Badge variant="code" key={s.id}>
               {toSentenceCase(s.name)}
             </Badge>
           ))}

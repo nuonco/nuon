@@ -103,7 +103,7 @@ export const ComplexMenu = () => (
         </div>
         <div className="px-3 py-2 flex items-center justify-between">
           <Text variant="subtext">Environment</Text>
-          <Badge theme="info" size="sm">
+          <Badge theme="info">
             Production
           </Badge>
         </div>

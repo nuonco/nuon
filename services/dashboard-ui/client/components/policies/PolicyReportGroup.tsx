@@ -27,7 +27,7 @@ function formatOwnerType(ownerType: string): {
 function getOverallStatusBadge(report: TPolicyReport) {
   if ((report.deny_count || 0) > 0) {
     return (
-      <Badge theme="error" size="md">
+      <Badge theme="error">
         <Icon variant="XCircle" size={12} />
         Denied
       </Badge>
@@ -35,14 +35,14 @@ function getOverallStatusBadge(report: TPolicyReport) {
   }
   if ((report.warn_count || 0) > 0) {
     return (
-      <Badge theme="warn" size="md">
+      <Badge theme="warn">
         <Icon variant="Warning" size={12} />
         Warning
       </Badge>
     )
   }
   return (
-    <Badge theme="success" size="md">
+    <Badge theme="success">
       <Icon variant="CheckCircle" size={12} />
       Passed
     </Badge>
@@ -52,7 +52,7 @@ function getOverallStatusBadge(report: TPolicyReport) {
 function getPolicyStatusBadge(policy: TPolicyResult) {
   if (policy.status === 'deny') {
     return (
-      <Badge theme="error" size="sm">
+      <Badge theme="error">
         <Icon variant="XCircle" size={10} />
         Denied
       </Badge>
@@ -60,17 +60,17 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   }
   if (policy.status === 'warn') {
     return (
-      <Badge theme="warn" size="sm">
+      <Badge theme="warn">
         <Icon variant="Warning" size={10} />
         Warning
       </Badge>
     )
   }
   return (
-    <Badge theme="success" size="sm">
-      <Icon variant="CheckCircle" size={10} />
-      Passed
-    </Badge>
+      <Badge theme="success">
+        <Icon variant="CheckCircle" size={10} />
+        Passed
+      </Badge>
   )
 }
 
@@ -98,7 +98,7 @@ export function PolicyReportGroup({ report, orgId, policyNameMap }: IPolicyRepor
           </div>
           <div className="flex items-center gap-1.5">
             <Text variant="subtext" theme="neutral">Type:</Text>
-            <Badge theme={ownerTypeTheme} size="md">
+            <Badge theme={ownerTypeTheme}>
               {ownerTypeLabel}
             </Badge>
           </div>

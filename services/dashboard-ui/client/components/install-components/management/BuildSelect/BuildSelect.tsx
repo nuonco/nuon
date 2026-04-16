@@ -142,7 +142,7 @@ export const BuildSelect = ({
                             {build.id}
                           </Text>
                           {externalImageTag && (
-                            <Badge size="sm" theme="neutral">
+                            <Badge theme="neutral">
                               {externalImageTag}
                             </Badge>
                           )}
@@ -179,11 +179,11 @@ export const BuildSelect = ({
                       <div className="flex items-center gap-2">
                         {isCurrentDeployment ? (
                           currentDeployStatus === 'active' ? (
-                            <Badge size="sm" theme="info">
+                            <Badge theme="info">
                               Current deployment
                             </Badge>
                           ) : currentDeployStatus === 'inactive' ? (
-                            <Badge size="sm" theme="neutral">
+                            <Badge theme="neutral">
                               Previously deployed
                             </Badge>
                           ) : null

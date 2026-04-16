@@ -182,13 +182,12 @@ const ResourceHeading = ({ resource }) => {
           </Text>
         </span>
         <span className="flex flex-col gap-2">
-          <Badge className="self-end" variant="code" size="sm">
+          <Badge className="self-end" variant="code">
             {resource?.type}
           </Badge>
           <Badge
             className="self-end"
             variant="code"
-            size="sm"
             theme={RESOURCE_MODE_THEME[resource?.mode]}
           >
             {resource?.mode}
@@ -219,7 +218,7 @@ const ResourceDetails = ({ resource }) => {
           <Text>Depends on:</Text>
           <div className="flex items-center gap-2 flex-wrap">
             {resource?.depends_on?.map((d) => (
-              <Badge variant="code" size="sm" key={d}>
+              <Badge variant="code" key={d}>
                 {d}
               </Badge>
             ))}

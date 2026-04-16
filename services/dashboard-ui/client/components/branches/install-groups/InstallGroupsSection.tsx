@@ -38,7 +38,7 @@ export const InstallGroupsSection = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Badge variant="code" theme="neutral" size="sm">
+                <Badge variant="code" theme="neutral">
                   {idx + 1}
                 </Badge>
                 <Text variant="base" weight="strong">
@@ -47,12 +47,12 @@ export const InstallGroupsSection = ({
               </div>
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 {group.requires_approval && (
-                  <Badge theme="warn" size="sm">
+                  <Badge theme="warn">
                     Requires approval
                   </Badge>
                 )}
                 {group.rollback_on_failure && (
-                  <Badge theme="info" size="sm">
+                  <Badge theme="info">
                     Rollback on failure
                   </Badge>
                 )}

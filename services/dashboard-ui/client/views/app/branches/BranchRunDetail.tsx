@@ -213,7 +213,6 @@ export const BranchRunDetail = () => {
                                 : isError ? 'error'
                                 : 'neutral'
                               }
-                              size="md"
                             >
                               Group {step.group_idx}
                             </Badge>

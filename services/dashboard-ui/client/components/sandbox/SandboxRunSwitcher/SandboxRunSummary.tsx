@@ -21,7 +21,7 @@ export const SandboxRunSummary = ({
         <span className="flex items-center gap-4">
           {sandboxRun.id}
           {isLatest ? (
-            <Badge theme="info" size="sm">
+            <Badge theme="info">
               Latest
             </Badge>
           ) : null}

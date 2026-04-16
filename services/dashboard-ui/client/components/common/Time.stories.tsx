@@ -340,7 +340,7 @@ export const UsageExamples = () => (
             seconds={Math.floor(Date.now() / 1000) - 300}
             format="log-datetime"
           />
-          <Badge theme="info" size="sm">
+          <Badge theme="info">
             INFO
           </Badge>
           <Text>Application started successfully</Text>
@@ -350,7 +350,7 @@ export const UsageExamples = () => (
             seconds={Math.floor(Date.now() / 1000) - 240}
             format="log-datetime"
           />
-          <Badge theme="warn" size="sm">
+          <Badge theme="warn">
             WARN
           </Badge>
           <Text>High memory usage detected: 85%</Text>
@@ -360,7 +360,7 @@ export const UsageExamples = () => (
             seconds={Math.floor(Date.now() / 1000) - 180}
             format="log-datetime"
           />
-          <Badge theme="error" size="sm">
+          <Badge theme="error">
             ERROR
           </Badge>
           <Text>Failed to connect to external API</Text>

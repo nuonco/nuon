@@ -246,7 +246,7 @@ export const CustomContent = () => (
             <div className="flex items-center gap-2">
               <Status status="success" isWithoutText />
               <Text weight="strong">Server Status</Text>
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 Online
               </Badge>
             </div>
@@ -266,7 +266,7 @@ export const CustomContent = () => (
             <div className="flex items-center gap-2">
               <Icon variant="Warning" size="16" className="text-orange-600" />
               <Text weight="strong">Configuration Issues</Text>
-              <Badge theme="warn" size="sm">
+              <Badge theme="warn">
                 3 Issues
               </Badge>
             </div>
@@ -299,7 +299,7 @@ export const CustomContent = () => (
                   </Text>
                 </div>
               </div>
-              <Badge theme="brand" size="sm">
+              <Badge theme="brand">
                 Pro
               </Badge>
             </div>

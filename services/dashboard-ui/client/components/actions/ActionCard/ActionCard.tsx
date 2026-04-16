@@ -51,7 +51,7 @@ export const ActionCard = ({
           {name}
         </Text>
       )}
-      {hasRun && triggerType && <ActionTriggerType triggerType={triggerType} size="sm" />}
+      {hasRun && triggerType && <ActionTriggerType triggerType={triggerType} />}
       {hasRun && status && <Status status={status} variant="badge" />}
       {!hasRun && (
         <Text variant="subtext" theme="neutral">

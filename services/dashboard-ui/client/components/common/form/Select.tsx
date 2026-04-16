@@ -348,7 +348,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
               {currentValue?.label || placeholder || 'Select an option...'}
             </span>
             {currentValue?.badge && (
-              <Badge size="sm" theme={currentValue.badge.theme}>
+              <Badge theme={currentValue.badge.theme}>
                 {currentValue.badge.label}
               </Badge>
             )}
@@ -440,7 +440,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                   >
                     <span className="truncate flex-1">{option.label}</span>
                     {option.badge && (
-                      <Badge size="sm" theme={option.badge.theme}>
+                      <Badge theme={option.badge.theme}>
                         {option.badge.label}
                       </Badge>
                     )}

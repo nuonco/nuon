@@ -68,7 +68,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <Text weight="strong">{error.name}</Text>
-                    <Badge size="sm" theme="error">
+                    <Badge theme="error">
                       error
                     </Badge>
                   </div>
@@ -104,7 +104,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
                 key={idx}
                 id={`change-${idx}`}
                 className={`border-l-4 ${borderColor}`}
-                headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
+                headerClassName="!px-4 sm:!px-6"
                 heading={
                   <div className="text-left w-full">
                     <div className="flex items-start justify-between w-full">
@@ -120,7 +120,6 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
 
                       <div className="flex items-center pr-4 self-center">
                         <Badge
-                          size="sm"
                           theme={HELM_ACTION_BADGE_THEME[change.action]}
                         >
                           {change.action}
@@ -131,7 +130,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
                 }
               >
                 <CodeBlock
-                  className="!rounded-none border-t"
+                  className="!rounded-none border-t !max-h-none"
                   language="yaml"
                   isDiff
                 >

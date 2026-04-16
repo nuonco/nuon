@@ -119,7 +119,7 @@ export const ProcessCard = ({
             </Text>
             <Status status={process.composite_status?.status} variant="badge" />
             {process.labels?.map((label) => (
-              <Badge key={label} theme="neutral" variant="code" size="sm">
+              <Badge key={label} theme="neutral" variant="code">
                 {label}
               </Badge>
             ))}

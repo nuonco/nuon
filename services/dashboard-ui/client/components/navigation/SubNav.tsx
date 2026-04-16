@@ -116,13 +116,13 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
                 >
                   {isPageSidebarOpen ? 'Collapse' : 'Expand'} sidebar
                   <span className="inline-flex gap-0.5">
-                    <Badge variant="code" size="sm">
+                    <Badge variant="code">
                       ALT
                     </Badge>
-                    <Badge variant="code" size="sm">
+                    <Badge variant="code">
                       SHIFT
                     </Badge>
-                    <Badge variant="code" size="sm">
+                    <Badge variant="code">
                       S
                     </Badge>
                   </span>

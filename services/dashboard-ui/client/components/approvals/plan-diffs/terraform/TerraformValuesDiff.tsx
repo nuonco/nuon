@@ -10,9 +10,9 @@ type TTerraformValues = Pick<
 >
 
 const DIFF_STYLES = {
-  added: 'bg-green-500/15 dark:bg-green-500/5 text-green-800 dark:text-green-400',
-  removed: 'bg-red-500/15 dark:bg-red-500/5 text-red-800 dark:text-red-400',
-  changed: 'bg-orange-500/15 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
+  added: 'bg-green-500/5 dark:bg-green-500/5 text-green-800 dark:text-green-400',
+  removed: 'bg-red-500/5 dark:bg-red-500/5 text-red-800 dark:text-red-400',
+  changed: 'bg-orange-500/5 dark:bg-orange-500/5 text-orange-800 dark:text-orange-400',
   unchanged: '',
 }
 
@@ -53,7 +53,7 @@ export const TerraformValuesDiff = ({
   }
 
   return (
-    <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+    <div className="p-2 bg-code border-t shadow-xs min-h-[3rem] font-mono text-[13px] leading-6">
       {valuesDiff.length ? (
         valuesDiff.map((value, idx) => {
           const prefix = getDiffPrefix(values.action, value.changed)

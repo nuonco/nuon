@@ -128,7 +128,7 @@ export const TechnicalExamples = () => (
               API Key
             </Text>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="code" size="sm" theme="neutral">
+              <Badge variant="code" theme="neutral">
                 sk_live_4eC39HqLyjWDarjtT1zdp7dc
               </Badge>
               <ClickToCopyButton textToCopy="sk_live_4eC39HqLyjWDarjtT1zdp7dc" />
@@ -142,7 +142,7 @@ export const TechnicalExamples = () => (
             </Text>
             <div className="flex items-center gap-2 mt-1">
               <ClickToCopy>
-                <Badge variant="code" size="sm" theme="info">
+                <Badge variant="code" theme="info">
                   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
                 </Badge>
               </ClickToCopy>
@@ -294,7 +294,7 @@ export const UsageExamples = () => (
               Share this error ID with support for faster resolution:
             </Text>
             <div className="mt-3 flex items-center gap-2">
-              <Badge variant="code" theme="error" size="sm">
+              <Badge variant="code" theme="error">
                 ERR_123456789
               </Badge>
               <ClickToCopyButton textToCopy="ERR_123456789" />

@@ -20,19 +20,19 @@ export const PolicyCountsBadge = ({ step }: IPolicyCountsBadge) => {
   return (
     <div className="flex items-center gap-1">
       {denyCount > 0 ? (
-        <Badge theme="error" size="sm">
+        <Badge theme="error">
           <Icon variant="XCircle" size={10} />
           {denyCount}
         </Badge>
       ) : null}
       {warnCount > 0 ? (
-        <Badge theme="warn" size="sm">
+        <Badge theme="warn">
           <Icon variant="Warning" size={10} />
           {warnCount}
         </Badge>
       ) : null}
       {!hasViolations ? (
-        <Badge theme="success" size="sm">
+        <Badge theme="success">
           <Icon variant="CheckCircle" size={10} />
           Passed
         </Badge>

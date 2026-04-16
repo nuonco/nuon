@@ -124,11 +124,11 @@ const IngressHeading = ({ name, ingress }) => {
         </Text>
       </div>
       <div className="flex items-center space-x-2">
-        <Badge size="sm" theme={isPublic ? 'warn' : 'info'} variant="code">
+        <Badge theme={isPublic ? 'warn' : 'info'} variant="code">
           {isPublic ? 'PUBLIC' : 'INTERNAL'}
         </Badge>
         {hasSSL && (
-          <Badge size="sm" theme="success" variant="code">
+          <Badge theme="success" variant="code">
             SSL
           </Badge>
         )}
@@ -172,7 +172,6 @@ const IngressDetails = ({ ingress }) => {
             <LabeledValue label="Scheme">
               <Badge
                 variant="code"
-                size="sm"
                 theme={isPublic ? 'warn' : 'info'}
               >
                 {scheme || 'Unknown'}
@@ -223,7 +222,7 @@ const IngressDetails = ({ ingress }) => {
         <div className="flex flex-col gap-2">
           <Text weight="strong">SSL Certificate</Text>
           <div className="flex items-center gap-2">
-            <Badge variant="code" size="lg" theme="success">
+            <Badge variant="code" theme="success">
               {certificateArn}
             </Badge>
             <ClickToCopyButton textToCopy={certificateArn} />

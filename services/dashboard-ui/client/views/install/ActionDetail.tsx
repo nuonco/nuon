@@ -116,7 +116,6 @@ export const ActionDetail = () => {
               </LabeledValue>
               <LabeledValue label="Last trigger">
                 <ActionTriggerType
-                  size="sm"
                   triggerType={
                     action.runs[0].triggered_by_type as TActionConfigTriggerType
                   }

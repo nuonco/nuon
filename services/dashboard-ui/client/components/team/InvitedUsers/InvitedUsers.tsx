@@ -35,7 +35,7 @@ export const InvitedUsers = ({
         <div className="flex items-center gap-4" key={i?.id}>
           <Status variant="badge" status={i?.status} />
           <Text variant="subtext">{i?.email}</Text>
-          <Badge size="sm" variant="code">
+          <Badge variant="code">
             {i?.role_type === 'org_admin' ? 'Admin' : i?.role_type}
           </Badge>
           <ResendOrgInviteButton invite={i} size="sm" />

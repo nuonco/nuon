@@ -39,7 +39,7 @@ export const ActionRunMetadata = ({
         />
 
         <LabeledValue label="Triggered by">
-          <Badge size="md" variant="code">
+          <Badge variant="code">
             {isAdhocActionRun && createdBy ? ' ' + createdBy?.email : null}
 
             {!isAdhocActionRun ? actionRun?.triggered_by_type : null}

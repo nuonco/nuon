@@ -56,7 +56,6 @@ export const InstallActionRunHeader = ({
               triggerType={
                 installActionRun?.triggered_by_type as TActionConfigTriggerType
               }
-              size="sm"
             />
           </Text>
           <span className="flex items-center gap-4">

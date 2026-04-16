@@ -118,7 +118,7 @@ export const WithAdditionalContent = () => (
               <Text role="heading" level={2} variant="h2" weight="stronger">
                 Project Dashboard
               </Text>
-              <Badge theme="success" size="sm">
+              <Badge theme="success">
                 Active
               </Badge>
             </div>
@@ -134,10 +134,10 @@ export const WithAdditionalContent = () => (
               <Text role="heading" level={2} variant="h2" weight="stronger">
                 API Documentation
               </Text>
-              <Badge theme="brand" size="sm">
+              <Badge theme="brand">
                 v2.1
               </Badge>
-              <Badge theme="info" size="sm">
+              <Badge theme="info">
                 Updated
               </Badge>
             </div>
@@ -223,7 +223,7 @@ export const UsageExamples = () => (
             <Text variant="label" theme="neutral">
               Reading time: 12 min
             </Text>
-            <Badge theme="brand" size="sm">
+            <Badge theme="brand">
               Featured
             </Badge>
           </div>

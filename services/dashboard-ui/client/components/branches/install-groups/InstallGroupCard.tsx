@@ -45,12 +45,12 @@ export const InstallGroupCard = ({
         </Text>
         <div className="flex items-center gap-2">
           {group.requires_approval && (
-            <Badge theme="warn" size="sm">
+            <Badge theme="warn">
               Requires approval
             </Badge>
           )}
           {group.rollback_on_failure && (
-            <Badge theme="info" size="sm">
+            <Badge theme="info">
               Rollback on failure
             </Badge>
           )}

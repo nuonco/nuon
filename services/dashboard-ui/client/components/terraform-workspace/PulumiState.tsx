@@ -172,7 +172,7 @@ const PulumiResourceHeading = ({ resource }: { resource: TPulumiResource }) => {
             </Text>
           </Text>
         </span>
-        <Badge className="self-start" variant="code" size="sm">
+        <Badge className="self-start" variant="code">
           {resource.type}
         </Badge>
       </div>
@@ -188,7 +188,7 @@ const PulumiResourceDetails = ({ resource }: { resource: TPulumiResource }) => {
           <Text>Dependencies</Text>
           <div className="flex items-center gap-2 flex-wrap">
             {resource.dependencies.map((d) => (
-              <Badge variant="code" size="sm" key={d}>
+              <Badge variant="code" key={d}>
                 {getResourceName(d)}
               </Badge>
             ))}

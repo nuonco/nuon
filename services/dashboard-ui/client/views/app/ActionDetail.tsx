@@ -88,7 +88,6 @@ export const ActionDetail = () => {
                       className="flex items-center gap-2 flex-wrap"
                     >
                       <ActionTriggerType
-                        size="sm"
                         triggerType={trigger.type as TActionConfigTriggerType}
                         componentName={trigger?.component?.name}
                         componentPath={`/${org?.id}/apps/${app?.id}/components/${trigger?.component_id}`}

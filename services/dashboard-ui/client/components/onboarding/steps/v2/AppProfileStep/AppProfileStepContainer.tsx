@@ -301,7 +301,7 @@ const SampleAppCard = ({ app, selected, onSelect }: ISampleAppCardProps) => (
           {app.tags
             .filter((tag) => !TAG_TO_COMPONENT_TYPE[tag])
             .map((tag) => (
-              <Badge key={tag} size="sm" variant="code">{tag}</Badge>
+              <Badge key={tag} variant="code">{tag}</Badge>
             ))}
         </div>
       )}

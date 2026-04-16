@@ -223,7 +223,7 @@ export const CustomContent = () => (
             </div>
             <div className="px-3 py-2 flex items-center justify-between">
               <Text variant="subtext">Account Type</Text>
-              <Badge theme="brand" size="sm">
+              <Badge theme="brand">
                 Premium
               </Badge>
             </div>

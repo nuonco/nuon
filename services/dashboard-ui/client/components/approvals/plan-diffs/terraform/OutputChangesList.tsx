@@ -29,7 +29,7 @@ export function OutputChangesList({ changes }: OutputChangesListProps) {
               key={`${change.output}-${idx}`}
               id={change.output}
               className={`border-l-4 ${borderColor}`}
-              headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
+              headerClassName="w-full px-4 py-3 gap-3 text-left focus:outline-none"
               heading={
                 <div className="text-left w-full">
                   <div className="flex items-start justify-between w-full">
