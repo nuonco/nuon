@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
 type Params struct {
@@ -22,6 +23,7 @@ type Params struct {
 	Cfg        *internal.Config
 	Settings   *settings.Settings
 	L          *zap.Logger `name:"system"`
+	APIClient  nuonrunner.Client
 }
 
 type Server struct {
@@ -32,6 +34,7 @@ type Server struct {
 	enabled    bool
 	wg         *conc.WaitGroup
 	cancelFn   func()
+	apiClient  nuonrunner.Client
 }
 
 func New(params Params) *Server {
@@ -39,6 +42,7 @@ func New(params Params) *Server {
 		shutdowner: params.Shutdowner,
 		l:          params.L,
 		wg:         conc.NewWaitGroup(),
+		apiClient:  params.APIClient,
 	}
 
 	if !params.Settings.SandboxMode {
@@ -76,6 +80,63 @@ func (s *Server) Enabled() bool {
 	return s.enabled
 }
 
+// SyncNow fetches the latest configs from the API immediately.
+// Call this before each job to ensure the handler uses fresh config.
+func (s *Server) SyncNow(ctx context.Context) {
+	if !s.enabled {
+		return
+	}
+	s.syncFromAPI(ctx)
+}
+
+// SyncForJob fetches the sandbox config for a specific job type and operation from the API.
+func (s *Server) SyncForJob(ctx context.Context, jobType, operation string) {
+	if !s.enabled {
+		return
+	}
+
+	cfg, err := s.apiClient.GetSandboxConfig(ctx, jobType, operation)
+	if err != nil {
+		s.l.Warn("sandbox-sync: unable to fetch config for job",
+			zap.String("job_type", jobType),
+			zap.String("operation", operation),
+			zap.Error(err),
+		)
+		return
+	}
+
+	if cfg == nil {
+		s.l.Info("sandbox-sync: no config found for job",
+			zap.String("job_type", jobType),
+			zap.String("operation", operation),
+		)
+		return
+	}
+
+	s.l.Info("sandbox-sync: fetched config for job",
+		zap.String("job_type", cfg.JobType),
+		zap.String("operation", cfg.Operation),
+		zap.Bool("enabled", cfg.Enabled),
+		zap.Duration("duration", cfg.Duration),
+	)
+
+	s.state.SyncSingleFromAPI(cfg)
+}
+
+func (s *Server) syncFromAPI(ctx context.Context) {
+	configs, err := s.apiClient.GetSandboxConfigs(ctx)
+	if err != nil {
+		s.l.Warn("sandbox-sync: unable to sync sandbox configs from API", zap.Error(err))
+		return
+	}
+	s.l.Info("sandbox-sync: fetched configs from API",
+		zap.Int("count", len(configs)),
+	)
+	if len(configs) > 0 {
+		s.state.SyncFromAPI(configs)
+	}
+}
+
 func (s *Server) LifecycleHook() fx.Hook {
 	return fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -83,8 +144,11 @@ func (s *Server) LifecycleHook() fx.Hook {
 				return nil
 			}
 
-			_, cancelFn := context.WithCancel(context.Background())
+			bgCtx, cancelFn := context.WithCancel(context.Background())
 			s.cancelFn = cancelFn
+
+			// Initial sync from API
+			s.syncFromAPI(bgCtx)
 
 			s.l.Info("starting sandbox control server", zap.String("addr", s.httpServer.Addr))
 			s.wg.Go(func() {

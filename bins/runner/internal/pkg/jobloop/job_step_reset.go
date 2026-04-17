@@ -11,13 +11,11 @@ import (
 )
 
 func (j *jobLoop) executeResetJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if j.isSandbox(job) {
-		j.execSandboxStep(ctx, job)
-		return nil
-	}
-
-	if err := workspace.CleanupAll(ctx); err != nil {
-		return errors.Wrap(err, "unable to cleanup old workspaces")
+	// Skip workspace cleanup in sandbox mode — no real workspaces to clean
+	if !j.isSandbox(job) {
+		if err := workspace.CleanupAll(ctx); err != nil {
+			return errors.Wrap(err, "unable to cleanup old workspaces")
+		}
 	}
 
 	statefulHandler, ok := handler.(jobs.StatefulJobHandler)

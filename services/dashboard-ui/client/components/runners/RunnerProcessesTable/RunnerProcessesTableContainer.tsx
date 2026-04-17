@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { getRunnerProcesses } from '@/lib'
@@ -18,6 +20,8 @@ export const RunnerProcessesTableContainer = ({
 }) => {
   const { org } = useOrg()
   const { runner } = useRunner()
+  const { user, isLoading: isAuthLoading } = useAuth()
+  const config = useConfig()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
@@ -35,10 +39,14 @@ export const RunnerProcessesTableContainer = ({
     enabled: !!org?.id && !!runner?.id,
   })
 
+  const isAdminVisible = !isAuthLoading && !!user?.email?.endsWith('@nuon.co')
+  const adminDashboardUrl = isAdminVisible ? (config.adminDashboardUrl ?? '') : undefined
+
   return (
     <RunnerProcessesTable
       processes={result?.data ?? []}
       isLoading={isLoading}
+      adminDashboardUrl={adminDashboardUrl || undefined}
     />
   )
 }

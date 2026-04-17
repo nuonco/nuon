@@ -23,6 +23,8 @@ const (
 )
 
 type CreateQueueRequest struct {
+	OrgID *string
+
 	OwnerID   string `validate:"required"`
 	OwnerType string `validate:"required"`
 	Namespace string `validate:"required"`
@@ -38,6 +40,7 @@ type CreateQueueRequest struct {
 // @start-to-close-timeout 1m
 func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queue, error) {
 	q := app.Queue{
+		OrgID:       req.OrgID,
 		OwnerID:     req.OwnerID,
 		OwnerType:   req.OwnerType,
 		Name:        req.Name,

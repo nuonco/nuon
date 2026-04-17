@@ -25,11 +25,17 @@ func (s *service) Queues(c *gin.Context) {
 	search := c.Query("search")
 	queueName := c.Query("queue_name")
 	namespace := c.Query("namespace")
+	redirect := c.Query("redirect")
 
 	queues, totalPages, err := s.getQueues(ctx, ownerID, ownerType, search, queueName, namespace, page)
 	if err != nil {
 		s.l.Error("failed to get queues", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queues"})
+		return
+	}
+
+	if redirect == "true" && len(queues) == 1 {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/queues/%s", queues[0].ID))
 		return
 	}
 
