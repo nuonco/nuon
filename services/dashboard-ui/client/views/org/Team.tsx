@@ -43,7 +43,7 @@ export const Team = () => {
         <PageSection>
           <div>
             <Text variant="base" weight="strong">
-              Active memebers
+              Active members
             </Text>
             <TeamTable shouldPoll />
           </div>

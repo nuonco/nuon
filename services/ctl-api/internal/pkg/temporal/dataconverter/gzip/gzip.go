@@ -27,7 +27,7 @@ type dataConverter struct {
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
 	// TODO(fd): add a gauge or similar to determine how many where actually encoded
-	// TODO(fd): add a tag for success/failure based on wether or not an error was returned
+	// TODO(fd): add a tag for success/failure based on whether or not an error was returned
 	startTime := time.Now()
 	tags := []string{"format:gzip", "op:encode"}
 	defer func() {
