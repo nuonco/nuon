@@ -22,7 +22,6 @@ func (h *handler) checkSandboxMode(ctx workflow.Context) (signal.Signal, error) 
 	}
 
 	if !org.SandboxMode {
-		panic("not a sandbox-mode org")
 		return h.sig, nil
 	}
 

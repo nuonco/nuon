@@ -29,9 +29,11 @@ type SandboxConfig struct {
 	Timeout         time.Duration `json:"timeout,omitempty"`
 	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
 
-	LogLines     json.RawMessage `json:"log_lines,omitempty"`
-	PlanContents string          `json:"plan_contents,omitempty"`
-	Outputs      json.RawMessage `json:"outputs,omitempty"`
+	LogLines            json.RawMessage `json:"log_lines,omitempty"`
+	PlanContents        string          `json:"plan_contents,omitempty"`
+	PlanDisplayContents string          `json:"plan_display_contents,omitempty"`
+	StateJSON           string          `json:"state_json,omitempty"`
+	Outputs             json.RawMessage `json:"outputs,omitempty"`
 }
 
 // GetSandboxConfigs fetches all sandbox configs for this runner.

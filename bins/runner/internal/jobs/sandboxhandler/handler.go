@@ -73,57 +73,22 @@ func (h *Handler) JobStatus() models.AppRunnerJobStatus {
 
 // Reset implements jobs.StatefulJobHandler.
 func (h *Handler) Reset(ctx context.Context) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Reset",
-			zap.String("job_type", string(h.job.Type)),
-			zap.String("job_id", h.job.ID),
-		)
-	}
 	return h.execStepForStep(ctx, "resetting")
 }
 
 func (h *Handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Fetch",
-			zap.String("job_type", string(job.Type)),
-			zap.String("job_id", job.ID),
-		)
-	}
 	return h.execStepForStep(ctx, "fetching")
 }
 
 func (h *Handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Validate",
-			zap.String("job_type", string(job.Type)),
-			zap.String("job_id", job.ID),
-		)
-	}
 	return h.execStepForStep(ctx, "validate")
 }
 
 func (h *Handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Initialize",
-			zap.String("job_type", string(job.Type)),
-			zap.String("job_id", job.ID),
-		)
-	}
 	return h.execStepForStep(ctx, "initialize")
 }
 
 func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Exec starting",
-			zap.String("job_type", string(job.Type)),
-			zap.String("job_id", job.ID),
-		)
-	}
 	if job.Type == models.AppRunnerJobTypeActionsDashWorkflow {
 		return h.execActionSandboxStep(ctx, job)
 	}
@@ -131,13 +96,6 @@ func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 }
 
 func (h *Handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Cleanup",
-			zap.String("job_type", string(job.Type)),
-			zap.String("job_id", job.ID),
-		)
-	}
 	return h.execStepForStep(ctx, "cleanup")
 }
 
@@ -146,14 +104,6 @@ func (h *Handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 }
 
 func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	l, _ := pkgctx.Logger(ctx)
-	if l != nil {
-		l.Info("sandbox-handler: Outputs starting",
-			zap.String("job_type", string(h.job.Type)),
-			zap.String("job_id", h.job.ID),
-		)
-	}
-
 	// Check for per-step failure at "outputs" step
 	if err := h.execStepForStep(ctx, "outputs"); err != nil {
 		return nil, err
@@ -162,13 +112,6 @@ func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 	outputs, err := h.sandboxOutputs(ctx)
 	if err != nil {
 		return nil, cockerrors.Wrap(err, "unable to get sandbox outputs")
-	}
-
-	if l != nil {
-		l.Info("sandbox-handler: Outputs complete",
-			zap.String("job_type", string(h.job.Type)),
-			zap.Int("output_count", len(outputs)),
-		)
 	}
 
 	// Write plan contents / execution results as side effects
@@ -231,16 +174,11 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 
 	if state := h.sandboxCtl.GetState(); state != nil {
 		cfg = state.GetConfigForOperation(jobType, operation)
-		l.Info("sandbox-handler: execSandboxStep config loaded",
+		l.Info("sandbox-handler: config loaded",
 			zap.String("job_type", jobType),
-			zap.String("operation", operation),
 			zap.Duration("duration", cfg.Duration),
-			zap.Bool("trigger_shutdown", cfg.TriggerShutdown),
-			zap.Duration("sleep_duration", cfg.SleepDuration),
-			zap.String("error_message", cfg.ErrorMessage),
-			zap.String("fail_at_step", cfg.FailAtStep),
-			zap.Int("log_lines_count", len(cfg.LogLines)),
-			zap.Bool("has_plan_contents", cfg.PlanContents != ""),
+			zap.Bool("has_error", cfg.ErrorMessage != ""),
+			zap.Int("log_lines", len(cfg.LogLines)),
 		)
 		duration = cfg.Duration
 
@@ -277,11 +215,6 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 	}
 
 	stepDuration := duration / totalSteps
-	l.Info("sandbox mode enabled, faking job output",
-		zap.String("step", "initialize"),
-		zap.Duration("duration", duration),
-		zap.String("job_type", jobType),
-	)
 
 	timeout := time.NewTimer(stepDuration)
 	ticker := time.NewTicker(logPeriod)
@@ -302,20 +235,15 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 			if hasCustomLogs && logLineIdx < len(cfg.LogLines) {
 				l.Info(cfg.LogLines[logLineIdx])
 				logLineIdx++
-			} else if !hasCustomLogs {
-				l.Info("sandbox job log",
-					zap.String("key", "value"),
-					zap.Any("obj", map[string]interface{}{}),
-				)
 			}
 		case <-timeout.C:
 			goto BREAK
 		}
 	}
 BREAK:
-	l.Info("sandbox job log ending",
-		zap.String("key", "value"),
-		zap.Any("obj", map[string]interface{}{}),
+	l.Info("sandbox job complete",
+		zap.String("job_type", jobType),
+		zap.Duration("duration", duration),
 	)
 
 	if state := h.sandboxCtl.GetState(); state != nil {
@@ -423,10 +351,14 @@ func (h *Handler) writeSandboxResults(ctx context.Context) error {
 	if state := h.sandboxCtl.GetState(); state != nil {
 		cfg := state.GetConfigForOperation(string(h.job.Type), string(h.job.Operation))
 		if cfg.PlanContents != "" {
-			if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
+			req := &models.ServiceCreateRunnerJobExecutionResultRequest{
 				ContentsCompressed: compress(cfg.PlanContents),
 				Success:            true,
-			}); err != nil {
+			}
+			if cfg.PlanDisplayContents != "" {
+				req.ContentsDisplayCompressed = compress(cfg.PlanDisplayContents)
+			}
+			if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, req); err != nil {
 				return cockerrors.Wrap(err, "unable to write sandbox config plan contents")
 			}
 			return nil

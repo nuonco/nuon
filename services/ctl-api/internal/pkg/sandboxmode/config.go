@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
 
@@ -15,7 +15,7 @@ import (
 func (s *Signal) fetchConfig(ctx workflow.Context) *app.SandboxModeSignalConfig {
 	cfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(s.Signal.Type()))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if generics.IsGormErrRecordNotFound(err) {
 			return nil
 		}
 	}

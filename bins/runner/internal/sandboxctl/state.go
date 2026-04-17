@@ -28,12 +28,14 @@ type JobTypeConfig struct {
 	Outputs      map[string]interface{} `json:"outputs,omitempty"`
 
 	// API-driven fields (synced from centralized sandbox configs)
-	LogLines        []string      `json:"log_lines,omitempty"`
-	PlanContents    string        `json:"plan_contents,omitempty"`
-	FailAtStep      string        `json:"fail_at_step,omitempty"`
-	SleepDuration   time.Duration `json:"sleep_duration,omitempty"`
-	Timeout         time.Duration `json:"timeout,omitempty"`
-	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
+	LogLines            []string      `json:"log_lines,omitempty"`
+	PlanContents        string        `json:"plan_contents,omitempty"`
+	PlanDisplayContents string        `json:"plan_display_contents,omitempty"`
+	StateJSON           string        `json:"state_json,omitempty"`
+	FailAtStep          string        `json:"fail_at_step,omitempty"`
+	SleepDuration       time.Duration `json:"sleep_duration,omitempty"`
+	Timeout             time.Duration `json:"timeout,omitempty"`
+	TriggerShutdown     bool          `json:"trigger_shutdown,omitempty"`
 }
 
 type State struct {
@@ -264,15 +266,17 @@ func configFromAPI(cfg *nuonrunner.SandboxConfig, defaultDuration time.Duration)
 	}
 
 	return &JobTypeConfig{
-		Preset:          preset,
-		Duration:        duration,
-		ErrorMessage:    cfg.ErrorMessage,
-		LogLines:        logLines,
-		PlanContents:    cfg.PlanContents,
-		FailAtStep:      cfg.FailAtStep,
-		SleepDuration:   cfg.SleepDuration,
-		Timeout:         cfg.Timeout,
-		TriggerShutdown: cfg.TriggerShutdown,
-		Outputs:         outputs,
+		Preset:              preset,
+		Duration:            duration,
+		ErrorMessage:        cfg.ErrorMessage,
+		LogLines:            logLines,
+		PlanContents:        cfg.PlanContents,
+		PlanDisplayContents: cfg.PlanDisplayContents,
+		StateJSON:           cfg.StateJSON,
+		FailAtStep:          cfg.FailAtStep,
+		SleepDuration:       cfg.SleepDuration,
+		Timeout:             cfg.Timeout,
+		TriggerShutdown:     cfg.TriggerShutdown,
+		Outputs:             outputs,
 	}
 }

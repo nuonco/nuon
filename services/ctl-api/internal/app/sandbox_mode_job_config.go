@@ -33,9 +33,11 @@ type SandboxModeJobConfig struct {
 	TriggerShutdown bool `json:"trigger_shutdown"`
 
 	// Template references (keys into the templates package)
-	LogTemplate    string `json:"log_template,omitempty"`
-	PlanTemplate   string `json:"plan_template,omitempty"`
-	OutputTemplate string `json:"output_template,omitempty"`
+	LogTemplate         string `json:"log_template,omitempty"`
+	PlanTemplate        string `json:"plan_template,omitempty"`
+	PlanDisplayTemplate string `json:"plan_display_template,omitempty"`
+	StateTemplate       string `json:"state_template,omitempty"`
+	OutputTemplate      string `json:"output_template,omitempty"`
 }
 
 func (s *SandboxModeJobConfig) BeforeCreate(tx *gorm.DB) error {

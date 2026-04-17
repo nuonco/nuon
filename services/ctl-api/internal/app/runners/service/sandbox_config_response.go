@@ -24,9 +24,11 @@ type SandboxConfigResponse struct {
 	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
 
 	// Resolved template contents
-	LogLines     json.RawMessage `json:"log_lines,omitempty"`
-	PlanContents string          `json:"plan_contents,omitempty"`
-	Outputs      json.RawMessage `json:"outputs,omitempty"`
+	LogLines            json.RawMessage `json:"log_lines,omitempty"`
+	PlanContents        string          `json:"plan_contents,omitempty"`
+	PlanDisplayContents string          `json:"plan_display_contents,omitempty"`
+	StateJSON           string          `json:"state_json,omitempty"`
+	Outputs             json.RawMessage `json:"outputs,omitempty"`
 
 	// Failure modes
 	ErrorMessage string `json:"error_message,omitempty"`
@@ -59,6 +61,20 @@ func convertToSandboxConfigResponse(cfg app.SandboxModeJobConfig) SandboxConfigR
 	if cfg.PlanTemplate != "" {
 		if t := templates.FindTemplate(cfg.PlanTemplate); t != nil {
 			resp.PlanContents = t.Contents
+		}
+	}
+
+	// Resolve plan display template -> plan_display_contents
+	if cfg.PlanDisplayTemplate != "" {
+		if t := templates.FindTemplate(cfg.PlanDisplayTemplate); t != nil {
+			resp.PlanDisplayContents = t.Contents
+		}
+	}
+
+	// Resolve state template -> state_json
+	if cfg.StateTemplate != "" {
+		if t := templates.FindTemplate(cfg.StateTemplate); t != nil {
+			resp.StateJSON = t.Contents
 		}
 	}
 

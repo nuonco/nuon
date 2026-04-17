@@ -171,24 +171,26 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	sleepMs, _ := strconv.ParseInt(c.PostForm("sleep_duration_ms"), 10, 64)
 
 	config := app.SandboxModeJobConfig{
-		CreatedByID:     createdByIDFromGinContext(c),
-		JobType:         jobType,
-		Operation:       c.PostForm("operation"),
-		Enabled:         c.PostForm("enabled") == "on",
-		Duration:        time.Duration(durationMs) * time.Millisecond,
-		SleepDuration:   time.Duration(sleepMs) * time.Millisecond,
-		ShouldError:     c.PostForm("should_error") == "on",
-		Panic:           c.PostForm("panic") == "on",
-		TriggerShutdown: c.PostForm("trigger_shutdown") == "on",
-		LogTemplate:     c.PostForm("log_template"),
-		PlanTemplate:    c.PostForm("plan_template"),
-		OutputTemplate:  c.PostForm("output_template"),
+		CreatedByID:         createdByIDFromGinContext(c),
+		JobType:             jobType,
+		Operation:           c.PostForm("operation"),
+		Enabled:             c.PostForm("enabled") == "on",
+		Duration:            time.Duration(durationMs) * time.Millisecond,
+		SleepDuration:       time.Duration(sleepMs) * time.Millisecond,
+		ShouldError:         c.PostForm("should_error") == "on",
+		Panic:               c.PostForm("panic") == "on",
+		TriggerShutdown:     c.PostForm("trigger_shutdown") == "on",
+		LogTemplate:         c.PostForm("log_template"),
+		PlanTemplate:        c.PostForm("plan_template"),
+		PlanDisplayTemplate: c.PostForm("plan_display_template"),
+		StateTemplate:       c.PostForm("state_template"),
+		OutputTemplate:      c.PostForm("output_template"),
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "output_template", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert runner job config", zap.Error(res.Error))
@@ -244,19 +246,21 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 
 	for _, fc := range flow.Configs {
 		config := app.SandboxModeJobConfig{
-			CreatedByID:    createdBy,
-			JobType:        fc.JobType,
-			Enabled:        fc.Enabled,
-			Duration:       time.Duration(fc.DurationMs) * time.Millisecond,
-			LogTemplate:    fc.LogTemplate,
-			PlanTemplate:   fc.PlanTemplate,
-			OutputTemplate: fc.OutputTemplate,
+			CreatedByID:         createdBy,
+			JobType:             fc.JobType,
+			Enabled:             fc.Enabled,
+			Duration:            time.Duration(fc.DurationMs) * time.Millisecond,
+			LogTemplate:         fc.LogTemplate,
+			PlanTemplate:        fc.PlanTemplate,
+			PlanDisplayTemplate: fc.PlanDisplayTemplate,
+			StateTemplate:       fc.StateTemplate,
+			OutputTemplate:      fc.OutputTemplate,
 		}
 
 		if res := s.db.WithContext(c.Request.Context()).
 			Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
-				DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "log_template", "plan_template", "output_template", "updated_at"}),
+				DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
 			}).
 			Create(&config); res.Error != nil {
 			s.l.Error("failed to apply flow template config", zap.String("job_type", fc.JobType), zap.Error(res.Error))
@@ -265,12 +269,9 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 		}
 	}
 
-	// Re-render the runner jobs tab
-	configs, _ := s.getSandboxRunnerJobConfigs(c.Request.Context())
-	component := views.SandboxModeRunnerJobsTable(configs, sandboxmode.AllRunnerJobTypes(), "", sbtemplates.AllTemplates())
-	c.Header("HX-Retarget", "#runner-jobs-tab")
-	c.Header("HX-Reswap", "innerHTML")
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	// Redirect to runner-jobs tab so the user can see the applied configs
+	c.Header("HX-Redirect", "/sandbox-mode?tab=runner-jobs")
+	c.Status(http.StatusOK)
 }
 
 func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeJobConfig, error) {

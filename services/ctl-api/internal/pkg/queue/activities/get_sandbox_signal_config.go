@@ -2,11 +2,9 @@ package activities
 
 import (
 	"context"
-	"errors"
-
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @temporal-gen-v2 activity
@@ -20,10 +18,8 @@ func (a *Activities) getSandboxSignalConfig(ctx context.Context, signalType stri
 		Where(app.SandboxModeSignalConfig{SignalType: signalType, Enabled: true}).
 		First(&cfg)
 	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, res.Error
+		return nil, generics.TemporalGormError(res.Error, "unable to get sandbox-config")
 	}
+
 	return &cfg, nil
 }

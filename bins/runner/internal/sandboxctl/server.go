@@ -131,15 +131,7 @@ func (s *Server) syncFromAPI(ctx context.Context) {
 	}
 	s.l.Info("sandbox-sync: fetched configs from API",
 		zap.Int("count", len(configs)),
-		zap.Bool("enabled", s.enabled),
 	)
-	for _, cfg := range configs {
-		s.l.Info("sandbox-sync: config",
-			zap.String("job_type", cfg.JobType),
-			zap.Bool("enabled", cfg.Enabled),
-			zap.Duration("duration", cfg.Duration),
-		)
-	}
 	if len(configs) > 0 {
 		s.state.SyncFromAPI(configs)
 	}
