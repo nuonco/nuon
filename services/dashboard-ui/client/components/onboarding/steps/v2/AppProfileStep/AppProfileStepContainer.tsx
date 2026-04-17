@@ -440,8 +440,16 @@ export const AppProfileStepContainer = ({
     mutationFn: () => {
       if (!orgId) throw new Error('Organization not created yet')
       if (selectedSampleApp) {
+        const exApp = exampleApps.find((a) => a.slug === selectedSampleApp)
+        if (!exApp?.cloud_provider) {
+          throw new Error(`cloud_provider missing for example app ${selectedSampleApp}`)
+        }
         return completeYourStackStep({
-          body: { app_type: 'example', example_app_slug: selectedSampleApp },
+          body: {
+            app_type: 'example',
+            example_app_slug: selectedSampleApp,
+            cloud_provider: exApp.cloud_provider,
+          },
           orgId,
         })
       }

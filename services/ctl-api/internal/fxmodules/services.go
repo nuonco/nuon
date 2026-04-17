@@ -49,6 +49,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(vcsservice.New)),
 	fx.Provide(api.AsService(onboardingservice.New)),
+	fx.Provide(onboardingservice.NewCatalog),
 )
 
 // PublicServicesModule provides services for the public API (excludes authservice).

@@ -27,6 +27,7 @@ type service struct {
 	evClient        eventloop.Client
 	featuresClient  *features.Features
 	accountsHelpers *accountshelpers.Helpers
+	catalog         *Catalog
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -44,6 +45,7 @@ type Params struct {
 	EvClient        eventloop.Client
 	FeaturesClient  *features.Features
 	AccountsHelpers *accountshelpers.Helpers
+	Catalog         *Catalog
 }
 
 func New(params Params) *service {
@@ -60,6 +62,7 @@ func New(params Params) *service {
 		evClient:        params.EvClient,
 		featuresClient:  params.FeaturesClient,
 		accountsHelpers: params.AccountsHelpers,
+		catalog:         params.Catalog,
 	}
 }
 
