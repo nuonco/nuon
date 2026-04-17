@@ -51,10 +51,15 @@ Playwright smoke tests that run against a live local (or staging) environment. C
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
+- Playwright browsers installed: `npx playwright install chromium`
 
 ### Running
 
 ```bash
+# Creates a fresh test org, runs tests, deletes org on teardown
+E2E_EMAIL=you@nuon.co npm run test:e2e
+
+# Use an existing org (skips create/teardown)
 E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
 ```
 
@@ -64,12 +69,17 @@ E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
 |----------|---------|----------|---------|
 | `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
 | `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
+| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no | Public API for org creation |
 | `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
-| `E2E_ORG_ID` | — | yes | Org ID for test navigation |
+| `E2E_ORG_ID` | — | no | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
 
-### How auth works
+### How it works
 
-The global setup calls `POST /v1/general/admin-static-token` on the admin API to generate a short-lived (1h) token, injects it as the `X-Nuon-Auth` cookie, and saves the browser state. All specs reuse this saved auth state.
+1. Global setup generates a static token via the admin API
+2. If no `E2E_ORG_ID` is set, creates a fresh org via the public API (the token user becomes org admin)
+3. Injects the token as the `X-Nuon-Auth` cookie and saves browser state
+4. Tests run against the org
+5. Global teardown deletes the org if it was created by the setup
 
 ### Flow docs
 
