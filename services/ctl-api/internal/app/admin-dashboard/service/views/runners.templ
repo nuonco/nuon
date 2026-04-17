@@ -1,0 +1,109 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
+)
+
+const ActivePageRunners ActivePage = "runners"
+
+type SandboxRunnerView struct {
+	Runner       app.Runner
+	ProcessOnline bool
+	Version      string
+	Configs      []app.SandboxModeJobConfig
+	InstallID    string
+	InstallName  string
+}
+
+templ Runners(runners []SandboxRunnerView) {
+	@Layout("Sandbox Runners", ActivePageRunners) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Sandbox Mode
+					}
+					@card.Description() {
+						Active runners with sandbox mode enabled
+					}
+				}
+				@card.Content() {
+					if len(runners) == 0 {
+						<div class="text-center py-12 text-muted-foreground">
+							<p class="text-lg mb-2">No active sandbox runners</p>
+							<p class="text-sm">Enable sandbox mode on a runner group and ensure the runner is active.</p>
+						</div>
+					} else {
+						<div class="space-y-4">
+							for _, r := range runners {
+								@runnerCard(r)
+							}
+						</div>
+					}
+				}
+			}
+		</div>
+	}
+}
+
+templ runnerCard(r SandboxRunnerView) {
+	<a href={ templ.URL(fmt.Sprintf("/runners/%s", r.Runner.ID)) } class="block border border-border rounded-lg p-5 bg-card hover:border-cyan/50 transition-colors cursor-pointer">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				if r.InstallName != "" {
+					<h3 class="text-base font-semibold">{ r.InstallName }</h3>
+				} else if r.Runner.DisplayName != "" {
+					<h3 class="text-base font-semibold">{ r.Runner.DisplayName }</h3>
+				} else if r.Runner.Name != "" {
+					<h3 class="text-base font-semibold">{ r.Runner.Name }</h3>
+				} else {
+					<h3 class="text-base font-semibold">Sandbox Runner</h3>
+				}
+				if r.ProcessOnline {
+					@status.Status(status.Props{Text: "Online", Variant: status.VariantSuccess, Size: status.SizeSm})
+				} else {
+					@status.Status(status.Props{Text: "Offline", Variant: status.VariantError, Size: status.SizeSm})
+				}
+				if r.Version != "" {
+					<span class="text-xs text-muted-foreground font-mono">{ r.Version }</span>
+				}
+			</div>
+			<div class="flex items-center gap-4">
+				if len(r.Configs) > 0 {
+					<span class="text-xs text-muted-foreground">{ fmt.Sprintf("%d configs", len(r.Configs)) }</span>
+				}
+				<span class="text-sm text-cyan">→</span>
+			</div>
+		</div>
+		<div class="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2 text-xs text-muted-foreground">
+			<div class="flex items-center gap-1.5">
+				<span class="uppercase">ID:</span>
+				<span id={ "runner-id-" + r.Runner.ID } class="font-mono text-foreground">{ r.Runner.ID }</span>
+				@copybutton.CopyButton(copybutton.Props{TargetID: "runner-id-" + r.Runner.ID})
+			</div>
+			if r.InstallID != "" {
+				<div class="flex items-center gap-1.5">
+					<span class="uppercase">Install:</span>
+					<span class="font-mono text-foreground">{ r.InstallID }</span>
+				</div>
+			}
+		</div>
+	</a>
+}
+
+func presetVariant(preset string) status.Variant {
+	switch preset {
+	case "failure", "failure_timeout", "failure_panic":
+		return status.VariantError
+	case "success_slow", "success_fast":
+		return status.VariantSuccess
+	case "partial_failure":
+		return status.VariantWarning
+	default:
+		return status.VariantInfo
+	}
+}

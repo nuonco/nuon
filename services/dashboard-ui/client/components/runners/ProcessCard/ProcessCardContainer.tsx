@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import {
@@ -23,6 +25,8 @@ export const ProcessCardContainer = ({
 }) => {
   const { org } = useOrg()
   const { runner } = useRunner()
+  const { isAdmin } = useAuth()
+  const config = useConfig()
 
   const { data: heartbeat } = useQuery({
     queryKey: ['process-heartbeat', org?.id, runner?.id, process.id],
@@ -55,6 +59,8 @@ export const ProcessCardContainer = ({
       : settings?.container_image_tag) || '-'
   const reportedVersion = heartbeat?.version || process.version || '-'
 
+  const adminDashboardUrl = isAdmin ? (config.adminDashboardUrl || undefined) : undefined
+
   return (
     <ProcessCard
       process={process}
@@ -70,6 +76,7 @@ export const ProcessCardContainer = ({
           settings={settings}
         />
       }
+      adminDashboardUrl={adminDashboardUrl}
     />
   )
 }

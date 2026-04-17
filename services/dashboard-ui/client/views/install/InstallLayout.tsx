@@ -9,6 +9,7 @@ import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -144,6 +145,10 @@ const InstallTemplate = () => {
                   </Text>
                 </LabeledValue>
                 <InstallStatusesContainer />
+                <AdminDashboardLink
+                  path={`/queues?owner_id=${install.id}`}
+                  label="View in admin panel"
+                />
                 <InstallManagementDropdown />
               </div>
             </div>

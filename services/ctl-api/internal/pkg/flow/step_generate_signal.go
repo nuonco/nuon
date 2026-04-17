@@ -77,7 +77,7 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		Steps: make([]activities.CreateFlowStep, 0, len(steps)),
 	}
 	for idx, step := range steps {
-		step.Idx = idx * 10
+		step.Idx = idx * 100
 		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
 			ID:            step.ID,
 			FlowID:        flw.ID,

@@ -116,9 +116,14 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 func (h *handler) runSignalExecute(ctx workflow.Context) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = &signal.SignalErrPanic{Value: r, Phase: "execute"}
+			retErr = signal.NewSignalErrPanic(r, "execute")
 		}
 	}()
 
-	return h.sig.Execute(ctx)
+	sig, err := h.checkSandboxMode(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to check sandbox mode")
+	}
+
+	return sig.Execute(ctx)
 }

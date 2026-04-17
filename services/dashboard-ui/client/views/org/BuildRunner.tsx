@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -15,25 +17,47 @@ import {
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
+import { useAuth } from '@/hooks/use-auth'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 
-const RunnerHeading = ({ runnerId }: { runnerId?: string }) => (
+const RunnerHeading = ({
+  runnerId,
+  adminDashboardUrl,
+}: {
+  runnerId?: string
+  adminDashboardUrl?: string
+}) => (
   <PageHeader>
     <HeadingGroup>
-      <Text variant="h3" weight="strong" level={1}>
-        Build runner
-      </Text>
-      {runnerId ? <ID>{runnerId}</ID> : null}
+      <div className="flex items-center gap-3">
+        <Text variant="h3" weight="strong" level={1}>
+          Build runner
+        </Text>
+        {runnerId ? <ID>{runnerId}</ID> : null}
+      </div>
+      {adminDashboardUrl && runnerId && (
+        <Button
+          size="sm"
+          href={`${adminDashboardUrl}/queues?owner_id=${runnerId}`}
+          target="_blank"
+        >
+          View queues in admin panel <Icon variant="ArrowSquareOutIcon" />
+        </Button>
+      )}
     </HeadingGroup>
   </PageHeader>
 )
 
 export const BuildRunner = () => {
   const { org } = useOrg()
+  const { isAdmin } = useAuth()
+  const config = useConfig()
   const runnerId = org?.runner_group?.runners?.[0]?.id
+  const adminDashboardUrl = isAdmin ? (config.adminDashboardUrl || undefined) : undefined
 
   const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
@@ -91,7 +115,7 @@ export const BuildRunner = () => {
       <SurfacesProvider>
         <PageLayout className="pb-6">
           {breadcrumbs}
-          <RunnerHeading runnerId={runnerId} />
+          <RunnerHeading runnerId={runnerId} adminDashboardUrl={adminDashboardUrl} />
 
           <PageContent>
             <PageSection>
