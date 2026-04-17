@@ -662,7 +662,7 @@ resource phoneHomeScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
       
       # Construct the JSON payload with stack outputs
       #
-      # Including the credentails object for backwards compatibility.
+      # Including the credentials object for backwards compatibility.
       # We used to need this when the org runner did the sandbox provision,
       # but the independent runner obviates the need for this.
       #

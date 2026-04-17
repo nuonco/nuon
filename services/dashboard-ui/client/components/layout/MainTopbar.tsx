@@ -1,6 +1,10 @@
 import React from 'react'
 import { UserDropdown } from '@/components/users/UserDropdown'
 import { SpotlightTrigger } from '@/components/spotlight/SpotlightTrigger'
+import { Badge } from '@/components/common/Badge'
+import { Tooltip } from '@/components/common/Tooltip'
+import { Text } from '@/components/common/Text'
+import { useOrg } from '@/hooks/use-org'
 import { cn } from '@/utils/classnames'
 import { MainSidebarButton } from './MainSidebarButton'
 
@@ -16,6 +20,8 @@ export const MainTopbar = ({
   hideOrgSettings = false,
   ...props
 }: IMainTopbar) => {
+  const { org } = useOrg()
+
   return (
     <header
       className={cn(
@@ -37,7 +43,21 @@ export const MainTopbar = ({
         )}
         {children}
 
-        <div className="hidden md:flex items-center gap-2 ml-auto">
+        <div className="hidden md:flex items-center gap-4 ml-auto">
+          {org?.sandbox_mode && (
+            <Tooltip
+              tipContent={
+                <Text variant="subtext">
+                  This organization is running in sandbox mode. Installs are simulated instead of deploying to a real cloud account.
+                </Text>
+              }
+              position="bottom"
+            >
+              <Badge variant="code" theme="neutral">
+                Sandbox mode
+              </Badge>
+            </Tooltip>
+          )}
           <SpotlightTrigger />
           <UserDropdown alignment="right" hideOrgSettings={hideOrgSettings} />
         </div>

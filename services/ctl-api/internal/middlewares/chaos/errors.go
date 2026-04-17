@@ -17,7 +17,7 @@ func panicHandler(ctx *gin.Context, logger *zap.Logger) {
 func internalServerErrorHandler(ctx *gin.Context, logger *zap.Logger) {
 	logger.Error("chaos monkey 500 error triggered")
 	ctx.JSON(http.StatusInternalServerError, stderr.ErrSystem{
-		Err:         fmt.Errorf("thanos snapped away half the shirts in the world for univeral shirts versus skins basketball game"),
+		Err:         fmt.Errorf("thanos snapped away half the shirts in the world for universal shirts versus skins basketball game"),
 		Description: "Internal server error triggered by a thanos snap",
 	})
 	ctx.Abort()

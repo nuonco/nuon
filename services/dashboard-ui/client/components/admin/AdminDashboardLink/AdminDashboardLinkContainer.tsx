@@ -9,9 +9,9 @@ export const AdminDashboardLinkContainer = ({
   path: string
   label: string
 }) => {
-  const { user, isLoading } = useAuth()
+  const { isAdmin, isLoading } = useAuth()
   const config = useConfig()
-  const isVisible = !isLoading && !!user?.email?.endsWith('@nuon.co')
+  const isVisible = !isLoading && !!isAdmin
 
   return (
     <AdminDashboardLink

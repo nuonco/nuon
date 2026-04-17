@@ -101,7 +101,7 @@ export const BuildRunner = () => {
 
               {processesLoading ? (
                 <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
                     <ProcessCardSkeleton />
                     <ProcessCardSkeleton />
                   </div>
@@ -122,7 +122,7 @@ export const BuildRunner = () => {
                 />
               ) : (
                 <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
                     {processes.map((process) => (
                       <ProcessCard
                         key={process.id}
