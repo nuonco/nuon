@@ -71,7 +71,7 @@ function ProcessRow({ process, adminDashboardUrl }: { process: TRunnerProcess; a
         <td className="px-4 py-3">
           <Button
             size="sm"
-            href={`${adminDashboardUrl}/queues?owner_id=${process.id}`}
+            href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
             target="_blank"
           >
             View in admin panel <Icon variant="ArrowSquareOutIcon" />

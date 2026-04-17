@@ -74,22 +74,57 @@ func (h *Handler) JobStatus() models.AppRunnerJobStatus {
 
 // Reset implements jobs.StatefulJobHandler.
 func (h *Handler) Reset(ctx context.Context) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Reset",
+			zap.String("job_type", string(h.job.Type)),
+			zap.String("job_id", h.job.ID),
+		)
+	}
 	return h.execStepForStep(ctx, "resetting")
 }
 
 func (h *Handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Fetch",
+			zap.String("job_type", string(job.Type)),
+			zap.String("job_id", job.ID),
+		)
+	}
 	return h.execStepForStep(ctx, "fetching")
 }
 
 func (h *Handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Validate",
+			zap.String("job_type", string(job.Type)),
+			zap.String("job_id", job.ID),
+		)
+	}
 	return h.execStepForStep(ctx, "validate")
 }
 
 func (h *Handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Initialize",
+			zap.String("job_type", string(job.Type)),
+			zap.String("job_id", job.ID),
+		)
+	}
 	return h.execStepForStep(ctx, "initialize")
 }
 
 func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Exec starting",
+			zap.String("job_type", string(job.Type)),
+			zap.String("job_id", job.ID),
+		)
+	}
 	if job.Type == models.AppRunnerJobTypeActionsDashWorkflow {
 		return h.execActionSandboxStep(ctx, job)
 	}
@@ -97,6 +132,13 @@ func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 }
 
 func (h *Handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Cleanup",
+			zap.String("job_type", string(job.Type)),
+			zap.String("job_id", job.ID),
+		)
+	}
 	return h.execStepForStep(ctx, "cleanup")
 }
 
@@ -105,6 +147,14 @@ func (h *Handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob
 }
 
 func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
+	l, _ := pkgctx.Logger(ctx)
+	if l != nil {
+		l.Info("sandbox-handler: Outputs starting",
+			zap.String("job_type", string(h.job.Type)),
+			zap.String("job_id", h.job.ID),
+		)
+	}
+
 	// Check for per-step failure at "outputs" step
 	if err := h.execStepForStep(ctx, "outputs"); err != nil {
 		return nil, err
@@ -113,6 +163,13 @@ func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 	outputs, err := h.sandboxOutputs(ctx)
 	if err != nil {
 		return nil, cockerrors.Wrap(err, "unable to get sandbox outputs")
+	}
+
+	if l != nil {
+		l.Info("sandbox-handler: Outputs complete",
+			zap.String("job_type", string(h.job.Type)),
+			zap.Int("output_count", len(outputs)),
+		)
 	}
 
 	// Write plan contents / execution results as side effects
@@ -188,6 +245,18 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 
 	if state := h.sandboxCtl.GetState(); state != nil {
 		cfg = state.GetConfig(jobType)
+		l.Info("sandbox-handler: execSandboxStep config loaded",
+			zap.String("job_type", jobType),
+			zap.Duration("duration", cfg.Duration),
+			zap.Float64("fault_rate", cfg.FaultRate),
+			zap.String("preset", string(cfg.Preset)),
+			zap.Bool("trigger_shutdown", cfg.TriggerShutdown),
+			zap.Duration("sleep_duration", cfg.SleepDuration),
+			zap.String("error_message", cfg.ErrorMessage),
+			zap.String("fail_at_step", cfg.FailAtStep),
+			zap.Int("log_lines_count", len(cfg.LogLines)),
+			zap.Bool("has_plan_contents", cfg.PlanContents != ""),
+		)
 		duration = cfg.Duration
 		if cfg.FaultRate > 0 {
 			shouldFault = rand.Float64() < cfg.FaultRate

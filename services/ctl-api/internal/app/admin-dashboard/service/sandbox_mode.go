@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
+	sbtemplates "github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode/templates"
 )
 
 func (s *service) SandboxMode(c *gin.Context) {
@@ -30,7 +31,7 @@ func (s *service) SandboxMode(c *gin.Context) {
 	var stackConfig *app.SandboxModeConfig
 
 	switch tab {
-	case "runner-jobs":
+	case "runner-jobs", "templates":
 		runnerJobConfigs, _ = s.getSandboxRunnerJobConfigs(ctx)
 	case "signals":
 		signalConfigs, _ = s.getSandboxSignalConfigs(ctx)
@@ -38,7 +39,6 @@ func (s *service) SandboxMode(c *gin.Context) {
 		stackConfig, _ = s.getSandboxStackConfig(ctx)
 	}
 
-	templates := sandboxmode.DefaultSandboxTemplates()
 	component := views.SandboxMode(views.SandboxModeData{
 		ActiveTab:         tab,
 		RunnerJobConfigs:  runnerJobConfigs,
@@ -46,8 +46,8 @@ func (s *service) SandboxMode(c *gin.Context) {
 		StackConfig:       stackConfig,
 		AllSignalTypes:    signals.AllSignalTypes(),
 		AllRunnerJobTypes: sandboxmode.AllRunnerJobTypes(),
-		LogTemplates:      templates.LogTemplates,
-		PlanTemplates:     templates.PlanTemplates,
+		Templates:         sbtemplates.AllTemplates(),
+		FlowTemplates:     sbtemplates.FlowTemplates(),
 	})
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
@@ -61,8 +61,24 @@ func (s *service) SandboxModeRunnerJobsTable(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	templates := sandboxmode.DefaultSandboxTemplates()
-	component := views.SandboxModeRunnerJobsTable(configs, sandboxmode.AllRunnerJobTypes(), search, templates.LogTemplates, templates.PlanTemplates)
+	component := views.SandboxModeRunnerJobsTable(configs, sandboxmode.AllRunnerJobTypes(), search, sbtemplates.AllTemplates())
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) SandboxModeBuilder(c *gin.Context) {
+	jobType := c.Query("job_type")
+
+	var cfg *app.SandboxModeConfig
+	if jobType != "" {
+		var found app.SandboxModeConfig
+		if res := s.db.WithContext(c.Request.Context()).
+			Where(app.SandboxModeConfig{JobType: jobType}).
+			First(&found); res.Error == nil {
+			cfg = &found
+		}
+	}
+
+	component := views.SandboxModeBuilder(jobType, cfg, sbtemplates.AllTemplates(), sandboxmode.AllRunnerJobTypes())
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -87,8 +103,7 @@ func (s *service) SandboxModeStacksTable(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	templates := sandboxmode.DefaultSandboxTemplates()
-	component := views.SandboxModeStacksTable(cfg, templates.LogTemplates, templates.PlanTemplates)
+	component := views.SandboxModeStacksTable(cfg, sbtemplates.AllTemplates())
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -109,6 +124,7 @@ func (s *service) SandboxModeUpsertSignalConfig(c *gin.Context) {
 	workflowSec, _ := strconv.ParseFloat(c.PostForm("workflow_sleep_seconds"), 64)
 
 	config := app.SandboxModeSignalConfig{
+		CreatedByID:   createdByIDFromGinContext(c),
 		SignalType:    signalType,
 		Enabled:       c.PostForm("enabled") == "on" || c.PostForm("enabled") == "true",
 		DeadlockSleep: time.Duration(deadlockSec * float64(time.Second)),
@@ -153,26 +169,25 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 
 	durationMs, _ := strconv.ParseInt(c.PostForm("duration_ms"), 10, 64)
 	sleepMs, _ := strconv.ParseInt(c.PostForm("sleep_duration_ms"), 10, 64)
-	timeoutMs, _ := strconv.ParseInt(c.PostForm("timeout_ms"), 10, 64)
-	faultPct, _ := strconv.ParseFloat(c.PostForm("fault_rate_pct"), 64)
 
 	config := app.SandboxModeConfig{
+		CreatedByID:     createdByIDFromGinContext(c),
 		JobType:         jobType,
 		Enabled:         c.PostForm("enabled") == "on",
-		Preset:          c.PostForm("preset"),
 		Duration:        time.Duration(durationMs) * time.Millisecond,
-		FaultRate:       faultPct / 100,
-		ErrorMessage:    c.PostForm("error_message"),
-		FailAtStep:      c.PostForm("fail_at_step"),
 		SleepDuration:   time.Duration(sleepMs) * time.Millisecond,
-		Timeout:         time.Duration(timeoutMs) * time.Millisecond,
+		ShouldError:     c.PostForm("should_error") == "on",
+		Panic:           c.PostForm("panic") == "on",
 		TriggerShutdown: c.PostForm("trigger_shutdown") == "on",
+		LogTemplate:     c.PostForm("log_template"),
+		PlanTemplate:    c.PostForm("plan_template"),
+		OutputTemplate:  c.PostForm("output_template"),
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert runner job config", zap.Error(res.Error))
@@ -187,8 +202,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 		First(&saved)
 
 	// Return re-rendered row (open state so user sees feedback)
-	templates := sandboxmode.DefaultSandboxTemplates()
-	component := views.RunnerJobRowSaved(jobType, &saved, templates.LogTemplates, templates.PlanTemplates)
+	component := views.RunnerJobRowSaved(jobType, &saved, sbtemplates.AllTemplates())
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
@@ -216,6 +230,48 @@ func (s *service) SandboxModeDisableAllRunnerJobs(c *gin.Context) {
 	c.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
+func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
+	templateKey := c.Param("template_key")
+
+	flow := sbtemplates.FindFlowTemplate(templateKey)
+	if flow == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "template not found: " + templateKey})
+		return
+	}
+
+	createdBy := createdByIDFromGinContext(c)
+
+	for _, fc := range flow.Configs {
+		config := app.SandboxModeConfig{
+			CreatedByID:    createdBy,
+			JobType:        fc.JobType,
+			Enabled:        fc.Enabled,
+			Duration:       time.Duration(fc.DurationMs) * time.Millisecond,
+			LogTemplate:    fc.LogTemplate,
+			PlanTemplate:   fc.PlanTemplate,
+			OutputTemplate: fc.OutputTemplate,
+		}
+
+		if res := s.db.WithContext(c.Request.Context()).
+			Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+				DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "log_template", "plan_template", "output_template", "updated_at"}),
+			}).
+			Create(&config); res.Error != nil {
+			s.l.Error("failed to apply flow template config", zap.String("job_type", fc.JobType), zap.Error(res.Error))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
+			return
+		}
+	}
+
+	// Re-render the runner jobs tab
+	configs, _ := s.getSandboxRunnerJobConfigs(c.Request.Context())
+	component := views.SandboxModeRunnerJobsTable(configs, sandboxmode.AllRunnerJobTypes(), "", sbtemplates.AllTemplates())
+	c.Header("HX-Retarget", "#runner-jobs-tab")
+	c.Header("HX-Reswap", "innerHTML")
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
 func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeConfig, error) {
 	var configs []app.SandboxModeConfig
 	if res := s.db.WithContext(ctx).Order("job_type asc").Find(&configs); res.Error != nil {
@@ -240,4 +296,20 @@ func (s *service) getSandboxStackConfig(ctx context.Context) (*app.SandboxModeCo
 		return nil, res.Error
 	}
 	return &cfg, nil
+}
+
+func boolToFloat(b bool) float64 {
+	if b {
+		return 1.0
+	}
+	return 0
+}
+
+func createdByIDFromGinContext(c *gin.Context) string {
+	if acctID, exists := c.Get("account_id"); exists {
+		if s, ok := acctID.(string); ok && s != "" {
+			return s
+		}
+	}
+	return "admin-dashboard"
 }

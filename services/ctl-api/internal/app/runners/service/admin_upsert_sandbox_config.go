@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,17 +15,14 @@ import (
 type AdminUpsertSandboxConfigRequest struct {
 	JobType         string        `json:"job_type" validate:"required"`
 	Enabled         *bool         `json:"enabled"`
-	Preset          string        `json:"preset"`
 	Duration        time.Duration `json:"duration"`
-	FaultRate       float64       `json:"fault_rate"`
-	ErrorMessage    string        `json:"error_message"`
-	FailAtStep      string        `json:"fail_at_step"`
 	SleepDuration   time.Duration `json:"sleep_duration"`
-	Timeout         time.Duration `json:"timeout"`
+	ShouldError     bool          `json:"should_error"`
+	Panic           bool          `json:"panic"`
 	TriggerShutdown bool          `json:"trigger_shutdown"`
-	LogLines        []string      `json:"log_lines"`
-	PlanContents    string        `json:"plan_contents"`
-	Outputs         any           `json:"outputs"`
+	LogTemplate     string        `json:"log_template"`
+	PlanTemplate    string        `json:"plan_template"`
+	OutputTemplate  string        `json:"output_template"`
 }
 
 func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
@@ -41,53 +37,28 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Serialize log lines to JSON
-	var logLinesJSON []byte
-	if len(req.LogLines) > 0 {
-		var err error
-		logLinesJSON, err = json.Marshal(req.LogLines)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to marshal log lines: %w", err))
-			return
-		}
-	}
-
-	// Serialize outputs to JSON
-	var outputsJSON []byte
-	if req.Outputs != nil {
-		var err error
-		outputsJSON, err = json.Marshal(req.Outputs)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to marshal outputs: %w", err))
-			return
-		}
-	}
-
 	enabled := true
 	if req.Enabled != nil {
 		enabled = *req.Enabled
 	}
 
 	config := app.SandboxModeConfig{
-		JobType:             req.JobType,
-		Enabled:             enabled,
-		Preset:              req.Preset,
-		Duration:            req.Duration,
-		FaultRate:           req.FaultRate,
-		ErrorMessage:        req.ErrorMessage,
-		FailAtStep:          req.FailAtStep,
-		SleepDuration:       req.SleepDuration,
-		Timeout:             req.Timeout,
-		TriggerShutdown:     req.TriggerShutdown,
-		LogLines:            logLinesJSON,
-		PlanMachineContents: req.PlanContents,
-		Outputs:             outputsJSON,
+		JobType:         req.JobType,
+		Enabled:         enabled,
+		Duration:        req.Duration,
+		SleepDuration:   req.SleepDuration,
+		ShouldError:     req.ShouldError,
+		Panic:           req.Panic,
+		TriggerShutdown: req.TriggerShutdown,
+		LogTemplate:     req.LogTemplate,
+		PlanTemplate:    req.PlanTemplate,
+		OutputTemplate:  req.OutputTemplate,
 	}
 
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "log_lines", "machine_contents", "outputs", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to upsert sandbox config: %w", res.Error))

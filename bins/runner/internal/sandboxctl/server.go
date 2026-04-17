@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
@@ -81,15 +80,34 @@ func (s *Server) Enabled() bool {
 	return s.enabled
 }
 
+// SyncNow fetches the latest configs from the API immediately.
+// Call this before each job to ensure the handler uses fresh config.
+func (s *Server) SyncNow(ctx context.Context) {
+	if !s.enabled {
+		return
+	}
+	s.syncFromAPI(ctx)
+}
+
 func (s *Server) syncFromAPI(ctx context.Context) {
 	configs, err := s.apiClient.GetSandboxConfigs(ctx)
 	if err != nil {
-		s.l.Warn("unable to sync sandbox configs from API", zap.Error(err))
+		s.l.Warn("sandbox-sync: unable to sync sandbox configs from API", zap.Error(err))
 		return
+	}
+	s.l.Info("sandbox-sync: fetched configs from API",
+		zap.Int("count", len(configs)),
+		zap.Bool("enabled", s.enabled),
+	)
+	for _, cfg := range configs {
+		s.l.Info("sandbox-sync: config",
+			zap.String("job_type", cfg.JobType),
+			zap.Bool("enabled", cfg.Enabled),
+			zap.Duration("duration", cfg.Duration),
+		)
 	}
 	if len(configs) > 0 {
 		s.state.SyncFromAPI(configs)
-		s.l.Debug("synced sandbox configs from API", zap.Int("count", len(configs)))
 	}
 }
 
@@ -110,20 +128,6 @@ func (s *Server) LifecycleHook() fx.Hook {
 			s.wg.Go(func() {
 				if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 					log.Fatal(err)
-				}
-			})
-
-			// Periodic sync from API every 30 seconds
-			s.wg.Go(func() {
-				ticker := time.NewTicker(30 * time.Second)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-bgCtx.Done():
-						return
-					case <-ticker.C:
-						s.syncFromAPI(bgCtx)
-					}
 				}
 			})
 

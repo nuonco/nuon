@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -16,33 +17,24 @@ type SandboxModeConfig struct {
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_sandbox_config_unique,unique"`
+	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	JobType string `json:"job_type,omitzero" gorm:"notnull;index:idx_sandbox_config_unique,unique"`
+	JobType string `json:"job_type,omitzero" gorm:"notnull"`
+	Enabled bool   `json:"enabled" gorm:"default:true"`
 
-	Enabled bool `json:"enabled" gorm:"default:true"`
+	// Timing
+	Duration      time.Duration `json:"duration,omitzero"`
+	SleepDuration time.Duration `json:"sleep_duration,omitempty"`
 
-	// Behavior
-	Preset       string        `json:"preset,omitzero"`
-	Duration     time.Duration `json:"duration,omitzero"`
-	FaultRate    float64       `json:"fault_rate"`
-	ErrorMessage string        `json:"error_message,omitempty"`
-	FailAtStep   string        `json:"fail_at_step,omitempty"`
+	// Failure modes (simple toggles)
+	ShouldError     bool `json:"should_error"`
+	Panic           bool `json:"panic"`
+	TriggerShutdown bool `json:"trigger_shutdown"`
 
-	// Sleep/timeout/shutdown controls
-	SleepDuration   time.Duration `json:"sleep_duration,omitempty"`
-	Timeout         time.Duration `json:"timeout,omitempty"`
-	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
-
-	// Log data — stored in DB, editable from dashboard
-	LogLines []byte `json:"log_lines,omitempty" gorm:"type:jsonb" swaggertype:"string"`
-
-	// Plan contents (for plan-type jobs)
-	PlanMachineContents string `json:"machine_contents,omitempty" gorm:"type:text"`
-	PlanDisplayContents string `json:"display_contents,omitempty" gorm:"type:text"`
-
-	// Custom outputs
-	Outputs []byte `json:"outputs,omitempty" gorm:"type:jsonb" swaggertype:"string"`
+	// Template references (keys into the templates package)
+	LogTemplate    string `json:"log_template,omitempty"`
+	PlanTemplate   string `json:"plan_template,omitempty"`
+	OutputTemplate string `json:"output_template,omitempty"`
 }
 
 func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
@@ -58,12 +50,9 @@ func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 func (s *SandboxModeConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:    indexes.Name(db, &SandboxModeConfig{}, "runner_id"),
-			Columns: []string{"runner_id"},
-		},
-		{
-			Name:    indexes.Name(db, &SandboxModeConfig{}, "runner_id_job_type"),
-			Columns: []string{"runner_id", "job_type"},
+			Name:        indexes.Name(db, &SandboxModeConfig{}, "job_type"),
+			Columns:     []string{"job_type", "deleted_at"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

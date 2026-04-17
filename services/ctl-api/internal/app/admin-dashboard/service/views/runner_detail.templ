@@ -231,35 +231,32 @@ templ configRow(runnerID string, jobType string, cfg *app.SandboxModeConfig) {
 				<input
 					type="checkbox"
 					name="should_error"
-					if cfg != nil && cfg.ErrorMessage != "" {
+					if cfg != nil && cfg.ShouldError {
 						checked
 					}
 					class="accent-destructive"
 				/>
 			</div>
-			<!-- Error message -->
-			<div class="flex-1">
+			<div class="flex items-center gap-1.5">
+				<label class="text-xs text-muted-foreground whitespace-nowrap">Panic</label>
 				<input
-					type="text"
-					name="error_message"
-					placeholder="error message (optional)"
-					if cfg != nil && cfg.ErrorMessage != "" {
-						value={ cfg.ErrorMessage }
+					type="checkbox"
+					name="panic"
+					if cfg != nil && cfg.Panic {
+						checked
 					}
-					class="w-full bg-background border border-border rounded px-2 py-1 text-xs font-mono focus:border-cyan focus:outline-none"
+					class="accent-destructive"
 				/>
 			</div>
-			<!-- Plan contents -->
 			<div class="flex items-center gap-1.5">
-				<label class="text-xs text-muted-foreground whitespace-nowrap">Plan</label>
+				<label class="text-xs text-muted-foreground whitespace-nowrap">Shutdown</label>
 				<input
-					type="text"
-					name="plan_contents"
-					placeholder="plan output"
-					if cfg != nil && cfg.PlanMachineContents != "" {
-						value={ cfg.PlanMachineContents }
+					type="checkbox"
+					name="trigger_shutdown"
+					if cfg != nil && cfg.TriggerShutdown {
+						checked
 					}
-					class="w-32 bg-background border border-border rounded px-2 py-1 text-xs font-mono focus:border-cyan focus:outline-none"
+					class="accent-destructive"
 				/>
 			</div>
 			<!-- Actions -->

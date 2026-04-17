@@ -134,7 +134,7 @@ export const ProcessCard = ({
           {adminDashboardUrl && (
             <Button
               size="sm"
-              href={`${adminDashboardUrl}/queues?owner_id=${process.id}`}
+              href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
               target="_blank"
             >
               View in admin panel <Icon variant="ArrowSquareOutIcon" />

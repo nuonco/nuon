@@ -82,27 +82,23 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 
 func (s *service) setAdminAccountContext() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Try to resolve account from X-Nuon-Auth cookie
 		token, _ := c.Cookie("X-Nuon-Auth")
-		if token == "" {
-			c.Next()
-			return
+		if token != "" {
+			var userToken app.Token
+			if res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken); res.Error == nil {
+				if acct, err := s.acctClient.FetchAccount(c, userToken.AccountID); err == nil {
+					cctx.SetAccountGinContext(c, acct)
+					c.Next()
+					return
+				}
+			}
 		}
 
-		var userToken app.Token
-		res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken)
-		if res.Error != nil {
-			c.Next()
-			return
-		}
-
-		acct, err := s.acctClient.FetchAccount(c, userToken.AccountID)
-		if err != nil {
-			s.l.Warn("admin dashboard: failed to fetch account from token", zap.Error(err))
-			c.Next()
-			return
-		}
-
-		cctx.SetAccountGinContext(c, acct)
+		// Fallback: set account ID on the request context so GORM BeforeCreate hooks
+		// can read it via createdByIDFromContext(tx.Statement.Context).
+		ctx := cctx.SetAccountIDContext(c.Request.Context(), "admin-dashboard")
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }
@@ -188,12 +184,14 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	// Sandbox mode routes
 	api.GET("/sandbox-mode", s.SandboxMode)
 	api.GET("/sandbox-mode/runner-jobs/table", s.SandboxModeRunnerJobsTable)
+	api.GET("/sandbox-mode/builder", s.SandboxModeBuilder)
 	api.GET("/sandbox-mode/signals/table", s.SandboxModeSignalsTable)
 	api.GET("/sandbox-mode/stacks/table", s.SandboxModeStacksTable)
 	api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
 	api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
 	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
+	api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
 
 	s.l.Info("admin-dashboard routes registered")
 	return nil

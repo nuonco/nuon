@@ -69,11 +69,11 @@ func (s *service) RunnerDetail(c *gin.Context) {
 }
 
 type dashboardUpsertConfigRequest struct {
-	JobType      string        `json:"job_type"`
-	Duration     time.Duration `json:"duration"`
-	ShouldError  bool          `json:"should_error"`
-	ErrorMessage string        `json:"error_message"`
-	PlanContents string        `json:"plan_contents"`
+	JobType         string        `json:"job_type"`
+	Duration        time.Duration `json:"duration"`
+	ShouldError     bool          `json:"should_error"`
+	Panic           bool          `json:"panic"`
+	TriggerShutdown bool          `json:"trigger_shutdown"`
 }
 
 func (s *service) RunnerUpsertConfig(c *gin.Context) {
@@ -90,28 +90,18 @@ func (s *service) RunnerUpsertConfig(c *gin.Context) {
 		return
 	}
 
-	// If should_error is checked but no message, use a default
-	errorMessage := req.ErrorMessage
-	if req.ShouldError && errorMessage == "" {
-		errorMessage = "sandbox: injected error"
-	}
-	if !req.ShouldError {
-		errorMessage = ""
-	}
-
 	config := app.SandboxModeConfig{
-		JobType:             req.JobType,
-		Duration:            req.Duration,
-		ErrorMessage:        errorMessage,
-		PlanMachineContents: req.PlanContents,
-		// Set fault rate to 1.0 when error is enabled so every job fails
-		FaultRate: boolToFaultRate(req.ShouldError),
+		JobType:         req.JobType,
+		Duration:        req.Duration,
+		ShouldError:     req.ShouldError,
+		Panic:           req.Panic,
+		TriggerShutdown: req.TriggerShutdown,
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"duration", "fault_rate", "error_message", "machine_contents", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"duration", "should_error", "panic", "trigger_shutdown", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert sandbox config", zap.Error(res.Error))
@@ -149,11 +139,4 @@ func (s *service) RunnerResetConfigs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"ok": true})
-}
-
-func boolToFaultRate(b bool) float64 {
-	if b {
-		return 1.0
-	}
-	return 0
 }
