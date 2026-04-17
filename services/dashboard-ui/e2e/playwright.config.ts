@@ -8,7 +8,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
 
-  reporter: process.env.CI ? "github" : "html",
+  outputDir: "./.results",
+  reporter: process.env.CI ? "github" : [["html", { outputFolder: "./.report" }]],
 
   globalSetup: "./global-setup.ts",
 

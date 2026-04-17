@@ -10,10 +10,10 @@ export default async function globalSetup(_config: FullConfig) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Nuon-Admin-Email": env.adminEmail,
+        "X-Nuon-Admin-Email": env.email,
       },
       body: JSON.stringify({
-        email_or_subject: env.userEmail,
+        email_or_subject: env.email,
         duration: "1h",
       }),
     },
@@ -26,7 +26,7 @@ export default async function globalSetup(_config: FullConfig) {
     );
   }
 
-  const { token } = (await res.json()) as { token: string };
+  const { api_token } = (await res.json()) as { api_token: string };
 
   const baseUrl = new URL(env.baseUrl);
   const browser = await chromium.launch();
@@ -35,7 +35,7 @@ export default async function globalSetup(_config: FullConfig) {
   await context.addCookies([
     {
       name: "X-Nuon-Auth",
-      value: token,
+      value: api_token,
       domain: baseUrl.hostname,
       path: "/",
       httpOnly: true,
