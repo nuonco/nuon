@@ -256,7 +256,7 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 		// if current plan has a stale plan, create new plan step
 		// in case of stale plan, retry entire group for now it includes plan + apply step
 		if inp.StalePlan {
-			l.Debug("retry step is a apply plan wiht stale plan")
+			l.Debug("retry step is a apply plan with stale plan")
 			l.Debug("updating group number for new plan set and new step group")
 			updatedGroupRetryIdx += 1
 
@@ -300,7 +300,7 @@ func (c *WorkflowConductor[SignalType]) prepareWorkflowForRerun(ctx workflow.Con
 				return nil, 0, errors.Wrapf(err, "unable to update plan step %s status to discarded", planStep.ID)
 			}
 
-			// fix grop idx and retry count for plan step since this will be in new group
+			// fix group idx and retry count for plan step since this will be in new group
 			planStep.GroupRetryIdx = updatedGroupRetryIdx
 			planStep.Name = removeRetryFromStepName(planStep.Name)
 			step.Name = removeRetryFromStepName(step.Name)

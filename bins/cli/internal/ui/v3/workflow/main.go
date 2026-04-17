@@ -61,7 +61,7 @@ type model struct {
 
 	// data
 	workflow                     *models.AppWorkflow
-	steps                        [][]*models.AppWorkflowStep // standlone so we can sort them, nested so we can group them
+	steps                        [][]*models.AppWorkflowStep // standalone so we can sort them, nested so we can group them
 	selectedIndex                int                         // used to set selectedStep on data refresh (smells, use map or something better)
 	selectedStep                 *models.AppWorkflowStep
 	selectedStepApprovalResponse *models.ServiceCreateWorkflowStepApprovalResponseResponse
@@ -342,7 +342,7 @@ func (m *model) resize() {
 	third := int(m.width / 3)
 	// the list width controls the width of the style.Width we render the list with
 	m.listWidth = third
-	// horizonal margin is just 2 because of the padding of 1
+	// horizontal margin is just 2 because of the padding of 1
 	hMargin := 2
 	m.header.SetWidth(m.width - hMargin)
 	m.progress.SetWidth(third)
