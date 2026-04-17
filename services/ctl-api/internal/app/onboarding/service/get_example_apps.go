@@ -17,5 +17,5 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Router					/v1/onboarding/example-apps [GET]
 func (s *service) GetExampleApps(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, exampleAppsCatalog)
+	ctx.JSON(http.StatusOK, s.catalog.Get(ctx.Request.Context()))
 }

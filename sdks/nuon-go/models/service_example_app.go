@@ -17,9 +17,6 @@ import (
 // swagger:model service.ExampleApp
 type ServiceExampleApp struct {
 
-	// branch
-	Branch string `json:"branch,omitempty"`
-
 	// category
 	Category string `json:"category,omitempty"`
 
@@ -37,9 +34,6 @@ type ServiceExampleApp struct {
 
 	// display name
 	DisplayName string `json:"display_name,omitempty"`
-
-	// repo
-	Repo string `json:"repo,omitempty"`
 
 	// slug
 	Slug string `json:"slug,omitempty"`
