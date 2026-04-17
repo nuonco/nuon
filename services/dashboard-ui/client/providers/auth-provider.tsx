@@ -1,15 +1,20 @@
-import { createContext } from 'react'
+import { createContext, useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMe } from '@/lib/ctl-api/auth/get-me'
 import { isNuonSession } from '@/utils/session-utils'
 import type { IUser, TMe } from '@/types'
 
+const DEMO_MODE_KEY = 'nuon_demo_mode'
+
 interface IAuthContext {
   user: IUser | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isNuonEmployee: boolean
   isLoading: boolean
   error: unknown
+  demoMode: boolean
+  toggleDemoMode: () => void
 }
 
 export const AuthContext = createContext<IAuthContext | undefined>(undefined)
@@ -33,16 +38,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     retry: false,
   })
 
+  const [demoMode, setDemoMode] = useState(
+    () => localStorage.getItem(DEMO_MODE_KEY) === 'true'
+  )
+
+  const toggleDemoMode = useCallback(() => {
+    setDemoMode((prev) => {
+      const next = !prev
+      localStorage.setItem(DEMO_MODE_KEY, String(next))
+      return next
+    })
+  }, [])
+
   const user = me ? meToUser(me) : null
+  const isNuonEmployee = !!user && isNuonSession(user)
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
-        isAdmin: !!user && isNuonSession(user),
+        isNuonEmployee,
+        isAdmin: isNuonEmployee && !demoMode,
         isLoading,
         error,
+        demoMode,
+        toggleDemoMode,
       }}
     >
       {children}
