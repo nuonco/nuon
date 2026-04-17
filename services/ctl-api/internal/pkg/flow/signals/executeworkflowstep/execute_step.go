@@ -20,11 +20,6 @@ import (
 // WorkflowConductor.executeFlowStep but as a self-contained signal that fetches
 // its own state from the database.
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Yield to allow cancellation signals to be processed before starting work.
-	if err := workflow.Sleep(ctx, 0); err != nil {
-		return err
-	}
-
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get workflow logger")

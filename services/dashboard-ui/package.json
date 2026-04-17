@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "mkdir -p dist && npm run dev:html && run-p dev:css dev:ts dev:bs generate-api-types",
+    "predev": "npm run generate-api-types",
+    "dev": "mkdir -p dist && npm run dev:html && run-p dev:css dev:ts dev:bs",
     "dev:ladle": "ladle dev",
     "dev:css": "postcss client/styles.css -o dist/styles.css -w",
     "dev:ts": "esbuild client/index.tsx --bundle --outfile=dist/app.js --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --sourcemap --define:process.env.NODE_ENV='\"development\"' --watch=forever",
@@ -17,10 +18,7 @@
     "fmt": "prettier client",
     "test": "vitest run --testTimeout 40000",
     "pretsc": "npm run generate-api-types",
-    "tsc": "tsc --noEmit --project client/tsconfig.json",
-    "test:e2e": "playwright test -c e2e/playwright.config.ts",
-    "test:e2e:ui": "playwright test -c e2e/playwright.config.ts --ui",
-    "test:e2e:headed": "playwright test -c e2e/playwright.config.ts --headed"
+    "tsc": "tsc --noEmit --project client/tsconfig.json"
   },
   "dependencies": {
     "@andypf/json-viewer": "^2.1.10",
@@ -100,7 +98,6 @@
     "tsx": "^4.19.3",
     "typescript": "^5",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^3.1.1",
-    "@playwright/test": "^1.52.0"
+    "vitest": "^3.1.1"
   }
 }

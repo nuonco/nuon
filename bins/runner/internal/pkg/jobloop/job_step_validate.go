@@ -10,11 +10,6 @@ import (
 )
 
 func (j *jobLoop) executeValidateJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if j.isSandbox(job) {
-		j.execSandboxStep(ctx, job)
-		return nil
-	}
-
 	if err := handler.Validate(ctx, job, jobExecution); err != nil {
 		return fmt.Errorf("unable to validate job: %w", err)
 	}

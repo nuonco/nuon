@@ -19,6 +19,13 @@ func (s *Signal) handleRetryResponse(ctx workflow.Context, l *zap.Logger, step *
 		zap.String("step_id", step.ID),
 		zap.String("workflow_id", flw.ID))
 
+	maxRetries := signal.DefaultMaxRetries
+	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+		if mr, ok := step.QueueSignal.Signal.(signal.SignalWithMaxRetries); ok {
+			maxRetries = mr.MaxRetries()
+		}
+	}
+
 	if or, ok := stepSignal(step).(signal.SignalWithOnRetry); ok {
 		if err := or.OnRetry(ctx); err != nil {
 			l.Warn("OnRetry hook failed", zap.Error(err))
@@ -32,9 +39,12 @@ func (s *Signal) handleRetryResponse(ctx workflow.Context, l *zap.Logger, step *
 			Status:                 app.StatusDiscarded,
 			StatusHumanDescription: "retrying " + strconv.Itoa(step.Idx),
 			Metadata: map[string]any{
-				"step_idx":   step.Idx,
-				"status":     "retrying",
-				DirectiveKey: DirectiveRetry,
+				"step_idx":    step.Idx,
+				"status":      "retrying",
+				"retry_type":  "manual",
+				"retry_idx":   step.RetryIndex,
+				"max_retries": maxRetries,
+				DirectiveKey:  DirectiveRetry,
 			},
 		},
 	}); err != nil {

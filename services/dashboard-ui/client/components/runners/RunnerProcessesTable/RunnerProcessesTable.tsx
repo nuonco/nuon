@@ -1,6 +1,8 @@
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -33,7 +35,7 @@ function formatUptime(startedAt: string | undefined): string {
   return `${minutes}m`
 }
 
-function ProcessRow({ process }: { process: TRunnerProcess }) {
+function ProcessRow({ process, adminDashboardUrl }: { process: TRunnerProcess; adminDashboardUrl?: string }) {
   return (
     <tr className="border-b border-neutral-100 last:border-0">
       <td className="px-4 py-3">
@@ -65,6 +67,17 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
             : '-'}
         </Text>
       </td>
+      {adminDashboardUrl && (
+        <td className="px-4 py-3">
+          <Button
+            size="sm"
+            href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
+            target="_blank"
+          >
+            View in admin panel <Icon variant="ArrowSquareOutIcon" />
+          </Button>
+        </td>
+      )}
     </tr>
   )
 }
@@ -72,11 +85,13 @@ function ProcessRow({ process }: { process: TRunnerProcess }) {
 interface IRunnerProcessesTable {
   processes: TRunnerProcess[]
   isLoading: boolean
+  adminDashboardUrl?: string
 }
 
 export const RunnerProcessesTable = ({
   processes,
   isLoading,
+  adminDashboardUrl,
 }: IRunnerProcessesTable) => {
   if (isLoading) {
     return <RunnerProcessesTableSkeleton />
@@ -117,11 +132,16 @@ export const RunnerProcessesTable = ({
             <th className="px-4 py-2">
               <Text variant="subtext" weight="strong">Started</Text>
             </th>
+            {adminDashboardUrl && (
+              <th className="px-4 py-2">
+                <Text variant="subtext" weight="strong">Admin</Text>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {processes.map((process) => (
-            <ProcessRow key={process.id} process={process} />
+            <ProcessRow key={process.id} process={process} adminDashboardUrl={adminDashboardUrl} />
           ))}
         </tbody>
       </table>

@@ -58,9 +58,9 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	if sig == nil {
 		panic("signal was nil")
 	}
+	h.sig = sig
 
 	h.queueSignal = queueSignal
-	h.sig = sig
 
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
