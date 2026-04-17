@@ -98,9 +98,14 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 func (h *handler) runSignalValidate(ctx workflow.Context) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
-			retErr = &signal.SignalErrPanic{Value: r, Phase: "validate"}
+			retErr = signal.NewSignalErrPanic(r, "validate")
 		}
 	}()
 
-	return h.sig.Validate(ctx)
+	sig, err := h.checkSandboxMode(ctx)
+	if err != nil {
+		return errors.Wrap(err, "unable to check sandbox mode")
+	}
+
+	return sig.Validate(ctx)
 }

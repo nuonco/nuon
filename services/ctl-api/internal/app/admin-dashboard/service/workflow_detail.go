@@ -55,7 +55,22 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.WorkflowDetail(&wf, stepDetails)
+	// Load the generate-steps queue signal if the workflow has one
+	var generateStepsSignal *app.QueueSignal
+	if wf.GenerateStepsSignal != nil {
+		var qs app.QueueSignal
+		if err := s.db.WithContext(ctx).
+			Preload("Queue").
+			Where(app.QueueSignal{
+				OwnerID:   wf.ID,
+				OwnerType: "install_workflows",
+			}).
+			First(&qs).Error; err == nil {
+			generateStepsSignal = &qs
+		}
+	}
+
+	component := views.WorkflowDetail(&wf, stepDetails, generateStepsSignal)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 

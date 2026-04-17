@@ -83,6 +83,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 
 	// Create the org-signals queue
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OrgID:       &org.ID,
 		OwnerID:     org.ID,
 		OwnerType:   plugins.TableName(h.db, app.Org{}),
 		Namespace:   "orgs",

@@ -65,6 +65,49 @@ const (
 	OperationReprovisionRunner eventloop.SignalType = "reprovision-runner"
 )
 
+// AllSignalTypes returns all known signal type strings.
+func AllSignalTypes() []string {
+	return []string{
+		string(OperationForget),
+		string(OperationRestart),
+		string(OperationRestartChildren),
+		string(OperationSyncActionWorkflowTriggers),
+		string(OperationActionWorkflowRun),
+		string(OperationPollDependencies),
+		string(OperationCreated),
+		string(OperationUpdated),
+		string(OperationGenerateInstallStackVersion),
+		string(OperationProvisionRunner),
+		string(OperationAwaitInstallStackVersionRun),
+		string(OperationUpdateInstallStackOutputs),
+		string(OperationAwaitRunnerHealthy),
+		string(OperationProvisionSandbox),
+		string(OperationProvisionDNS),
+		string(OperationDeprovisionDNS),
+		string(OperationExecuteActionWorkflow),
+		string(OperationExecuteDeployComponent),
+		string(OperationExecuteTeardownComponent),
+		string(OperationSyncSecrets),
+		string(OperationWorkflowApproveAll),
+		string(OperationGenerateState),
+		string(OperationExecuteFlow),
+		string(OperationRerunFlow),
+		string(OperationExecuteDeployComponentSyncImage),
+		string(OperationExecuteDeployComponentSyncAndPlan),
+		string(OperationExecuteDeployComponentApplyPlan),
+		string(OperationExecuteDeployComponentPlanOnly),
+		string(OperationExecuteTeardownComponentSyncAndPlan),
+		string(OperationExecuteTeardownComponentApplyPlan),
+		string(OperationProvisionSandboxPlan),
+		string(OperationProvisionSandboxApplyPlan),
+		string(OperationDeprovisionSandboxPlan),
+		string(OperationDeprovisionSandboxApplyPlan),
+		string(OperationReprovisionSandboxPlan),
+		string(OperationReprovisionSandboxApplyPlan),
+		string(OperationReprovisionRunner),
+	}
+}
+
 type InstallActionWorkflowTriggerSubSignal struct {
 	InstallActionWorkflowID string                        `json:"install-action-workflow-id"`
 	TriggerType             app.ActionWorkflowTriggerType `json:"trigger-type"`

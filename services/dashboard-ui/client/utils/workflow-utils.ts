@@ -92,8 +92,13 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
   const email = step?.created_by?.email
 
   if (status === 'error') {
+    const metadata = step?.status?.metadata
+    const retryInfo =
+      metadata?.retry_type
+        ? ` (${metadata.retry_type} retry ${metadata.retry_idx ?? ''}/${metadata.max_retries ?? ''})`
+        : ''
     return {
-      copy: `Step encountered an error: ${status_human_description}`,
+      copy: `Step encountered an error: ${status_human_description}${retryInfo}`,
       theme: 'error',
       title: `Step ${step?.name} failed`,
     }
@@ -140,8 +145,10 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
   }
 
   if (step?.retryable && step?.retried) {
+    const metadata = step?.status?.metadata
+    const retryType = metadata?.retry_type ? `${metadata.retry_type} ` : ''
     return {
-      copy: `Step was retried by ${email}: ${status_human_description}`,
+      copy: `Step was ${retryType}retried by ${email}: ${status_human_description}`,
       theme: 'info',
       title: `Step ${step?.name} retried`,
     }
