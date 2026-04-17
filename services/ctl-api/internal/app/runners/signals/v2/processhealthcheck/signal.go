@@ -193,22 +193,33 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create process health check")
 	}
 
-	// Version mismatch check: compare API version to runner's reported version
+	// Version mismatch check: compare configured version to runner's reported version
 	if heartbeat != nil && heartbeat.Version != "" {
-		apiVersion, err := activities.AwaitGetAPIVersion(ctx)
+		runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 		if err != nil {
-			l.Warn("unable to get API version for comparison",
-				zap.String("process_id", s.ProcessID),
+			l.Warn("unable to get runner for version comparison",
+				zap.String("runner_id", s.RunnerID),
 				zap.Error(err),
 			)
 		} else {
+			settings := runner.RunnerGroup.Settings
+			var configuredVersion string
+			switch process.Type {
+			case app.RunnerProcessTypeMng:
+				configuredVersion = settings.BinaryVersion
+			default:
+				configuredVersion = settings.ContainerImageTag
+			}
+
 			var metadata map[string]any
-			if apiVersion != heartbeat.Version {
+			if configuredVersion != "" && configuredVersion != heartbeat.Version {
 				metadata = map[string]any{
-					"version_warning": "Reported runner version does not match running API version and could cause issues. Please update the tag to the same version as the control plane (" + apiVersion + ")",
+					"version_warning": fmt.Sprintf(
+						"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
+						heartbeat.Version, configuredVersion,
+					),
 				}
 			} else {
-				// Clear the warning if versions now match
 				metadata = map[string]any{
 					"version_warning": "",
 				}
