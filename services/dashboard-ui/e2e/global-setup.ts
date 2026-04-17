@@ -43,11 +43,30 @@ async function apiFetch(
 }
 
 export default async function globalSetup(_config: FullConfig) {
-  const seedRes = await adminFetch("/v1/general/seed-user", {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
-  const { api_token } = (await seedRes.json()) as { api_token: string };
+  // seed-user creates the account if it doesn't exist and returns a token.
+  // The admin middleware may append an error to the response body if the
+  // X-Nuon-Admin-Email account doesn't exist yet, resulting in two concatenated
+  // JSON objects. We parse only the first one.
+  const seedRes = await fetch(
+    `${env.adminApiUrl}/v1/general/seed-user`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Nuon-Admin-Email": env.email,
+      },
+      body: JSON.stringify({}),
+    },
+  );
+  const seedBody = await seedRes.text();
+  const firstJson = seedBody.match(/^\{[^}]*\}/);
+  if (!firstJson) {
+    throw new Error(`seed-user returned unexpected response: ${seedBody}`);
+  }
+  const { api_token } = JSON.parse(firstJson[0]) as { api_token: string };
+  if (!api_token) {
+    throw new Error(`seed-user did not return a token: ${seedBody}`);
+  }
 
   let orgId = env.orgId;
   let createdOrg = false;

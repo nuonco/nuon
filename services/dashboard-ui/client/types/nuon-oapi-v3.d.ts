@@ -5919,14 +5919,12 @@ export interface components {
       role?: string;
     };
     "service.ExampleApp": {
-      branch?: string;
       category?: string;
       cloud_provider?: string;
       description?: string;
       difficulty?: string;
       directory?: string;
       display_name?: string;
-      repo?: string;
       slug?: string;
       tags?: string[];
     };
