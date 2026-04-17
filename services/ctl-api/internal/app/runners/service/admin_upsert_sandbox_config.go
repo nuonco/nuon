@@ -14,6 +14,7 @@ import (
 
 type AdminUpsertSandboxConfigRequest struct {
 	JobType         string        `json:"job_type" validate:"required"`
+	Operation       string        `json:"operation"`
 	Enabled         *bool         `json:"enabled"`
 	Duration        time.Duration `json:"duration"`
 	SleepDuration   time.Duration `json:"sleep_duration"`
@@ -44,6 +45,7 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 
 	config := app.SandboxModeConfig{
 		JobType:         req.JobType,
+		Operation:       req.Operation,
 		Enabled:         enabled,
 		Duration:        req.Duration,
 		SleepDuration:   req.SleepDuration,
@@ -57,7 +59,7 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+			Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
 			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {

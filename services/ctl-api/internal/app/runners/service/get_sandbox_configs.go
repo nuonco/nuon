@@ -20,5 +20,10 @@ func (s *service) GetRunnerSandboxConfigs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, configs)
+	resp := make([]SandboxConfigResponse, 0, len(configs))
+	for _, cfg := range configs {
+		resp = append(resp, convertToSandboxConfigResponse(cfg))
+	}
+
+	ctx.JSON(http.StatusOK, resp)
 }

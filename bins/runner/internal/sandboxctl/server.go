@@ -89,6 +89,40 @@ func (s *Server) SyncNow(ctx context.Context) {
 	s.syncFromAPI(ctx)
 }
 
+// SyncForJob fetches the sandbox config for a specific job type and operation from the API.
+func (s *Server) SyncForJob(ctx context.Context, jobType, operation string) {
+	if !s.enabled {
+		return
+	}
+
+	cfg, err := s.apiClient.GetSandboxConfig(ctx, jobType, operation)
+	if err != nil {
+		s.l.Warn("sandbox-sync: unable to fetch config for job",
+			zap.String("job_type", jobType),
+			zap.String("operation", operation),
+			zap.Error(err),
+		)
+		return
+	}
+
+	if cfg == nil {
+		s.l.Info("sandbox-sync: no config found for job",
+			zap.String("job_type", jobType),
+			zap.String("operation", operation),
+		)
+		return
+	}
+
+	s.l.Info("sandbox-sync: fetched config for job",
+		zap.String("job_type", cfg.JobType),
+		zap.String("operation", cfg.Operation),
+		zap.Bool("enabled", cfg.Enabled),
+		zap.Duration("duration", cfg.Duration),
+	)
+
+	s.state.SyncSingleFromAPI(cfg)
+}
+
 func (s *Server) syncFromAPI(ctx context.Context) {
 	configs, err := s.apiClient.GetSandboxConfigs(ctx)
 	if err != nil {

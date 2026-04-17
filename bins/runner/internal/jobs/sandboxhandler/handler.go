@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
@@ -194,7 +193,8 @@ func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	}
 
 	jobType := string(h.job.Type)
-	cfg := state.GetConfig(jobType)
+	operation := string(h.job.Operation)
+	cfg := state.GetConfigForOperation(jobType, operation)
 
 	if cfg.FailAtStep != "" && cfg.FailAtStep == stepName {
 		if l != nil {
@@ -217,39 +217,24 @@ func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	return nil
 }
 
-// execSandboxStep runs the main sandbox execution simulation with duration, faults, log lines, etc.
+// execSandboxStep runs the main sandbox execution simulation with duration and log lines.
 func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob) error {
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
 	}
 
-	if state := h.sandboxCtl.GetState(); state != nil {
-		if state.CheckAndClearPanic() {
-			l.Error("sandbox control: panic requested")
-			panic("sandbox: panic requested via sandbox control API")
-		}
-		if state.CheckAndClearShutdown() {
-			l.Error("sandbox control: shutdown requested")
-			h.shutdowner.Shutdown()
-			return errors.New("sandbox: shutdown requested via sandbox control API")
-		}
-	}
-
 	jobType := string(job.Type)
+	operation := string(job.Operation)
 	duration := h.cfg.SandboxJobDuration
-	faultsEnabled := h.cfg.SandboxModeFaultsEnabled
-	shouldFault := faultsEnabled && rand.Intn(10) == 0
-	var faultMessage string
 	var cfg sandboxctl.JobTypeConfig
 
 	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg = state.GetConfig(jobType)
+		cfg = state.GetConfigForOperation(jobType, operation)
 		l.Info("sandbox-handler: execSandboxStep config loaded",
 			zap.String("job_type", jobType),
+			zap.String("operation", operation),
 			zap.Duration("duration", cfg.Duration),
-			zap.Float64("fault_rate", cfg.FaultRate),
-			zap.String("preset", string(cfg.Preset)),
 			zap.Bool("trigger_shutdown", cfg.TriggerShutdown),
 			zap.Duration("sleep_duration", cfg.SleepDuration),
 			zap.String("error_message", cfg.ErrorMessage),
@@ -258,14 +243,12 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 			zap.Bool("has_plan_contents", cfg.PlanContents != ""),
 		)
 		duration = cfg.Duration
-		if cfg.FaultRate > 0 {
-			shouldFault = rand.Float64() < cfg.FaultRate
-			faultsEnabled = true
-		} else if cfg.FaultRate == 0 && cfg.Preset != "default" {
-			shouldFault = false
-		}
+
 		if cfg.ErrorMessage != "" {
-			faultMessage = cfg.ErrorMessage
+			if state := h.sandboxCtl.GetState(); state != nil {
+				state.RecordResult(false)
+			}
+			return errors.New(cfg.ErrorMessage)
 		}
 
 		if cfg.TriggerShutdown {
@@ -299,10 +282,6 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 		zap.Duration("duration", duration),
 		zap.String("job_type", jobType),
 	)
-
-	if shouldFault && faultsEnabled {
-		l.Error("sandbox mode fault selected, will return an error at the end of this job")
-	}
 
 	timeout := time.NewTimer(stepDuration)
 	ticker := time.NewTicker(logPeriod)
@@ -338,16 +317,6 @@ BREAK:
 		zap.String("key", "value"),
 		zap.Any("obj", map[string]interface{}{}),
 	)
-
-	if shouldFault && faultsEnabled {
-		if state := h.sandboxCtl.GetState(); state != nil {
-			state.RecordResult(false)
-		}
-		if faultMessage != "" {
-			return errors.New(faultMessage)
-		}
-		return errors.New("Sandbox Mode Fault Injected")
-	}
 
 	if state := h.sandboxCtl.GetState(); state != nil {
 		state.RecordResult(true)
@@ -430,7 +399,7 @@ func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, error) {
 	// Check for API-driven outputs from sandbox config
 	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg := state.GetConfig(string(h.job.Type))
+		cfg := state.GetConfigForOperation(string(h.job.Type), string(h.job.Operation))
 		if cfg.Outputs != nil && len(cfg.Outputs) > 0 {
 			return cfg.Outputs, nil
 		}
@@ -452,7 +421,7 @@ func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, e
 func (h *Handler) writeSandboxResults(ctx context.Context) error {
 	// Check for API-driven plan contents from sandbox config
 	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg := state.GetConfig(string(h.job.Type))
+		cfg := state.GetConfigForOperation(string(h.job.Type), string(h.job.Operation))
 		if cfg.PlanContents != "" {
 			if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 				ContentsCompressed: compress(cfg.PlanContents),

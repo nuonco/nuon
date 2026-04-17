@@ -244,6 +244,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 
 	// sandbox configs
 	runners.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
+	runners.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
 	// runner process lifecycle
 	runners.POST("/processes", s.CreateRunnerProcess)

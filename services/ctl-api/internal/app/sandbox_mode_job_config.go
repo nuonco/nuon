@@ -19,8 +19,9 @@ type SandboxModeConfig struct {
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-"`
 
-	JobType string `json:"job_type,omitzero" gorm:"notnull"`
-	Enabled bool   `json:"enabled" gorm:"default:true"`
+	JobType   string `json:"job_type,omitzero" gorm:"notnull"`
+	Operation string `json:"operation,omitempty" gorm:"default:''"`
+	Enabled   bool   `json:"enabled" gorm:"default:true"`
 
 	// Timing
 	Duration      time.Duration `json:"duration,omitzero"`
@@ -37,6 +38,10 @@ type SandboxModeConfig struct {
 	OutputTemplate string `json:"output_template,omitempty"`
 }
 
+func (s *SandboxModeConfig) TableName() string {
+	return "sandbox_mode_job_configs"
+}
+
 func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
 		s.ID = domains.NewSandboxModeConfigID()
@@ -50,8 +55,8 @@ func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 func (s *SandboxModeConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:        indexes.Name(db, &SandboxModeConfig{}, "job_type"),
-			Columns:     []string{"job_type", "deleted_at"},
+			Name:        indexes.Name(db, &SandboxModeConfig{}, "job_type_operation"),
+			Columns:     []string{"job_type", "operation", "deleted_at"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}

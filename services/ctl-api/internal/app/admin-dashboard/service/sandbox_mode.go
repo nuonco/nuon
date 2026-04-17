@@ -173,6 +173,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	config := app.SandboxModeConfig{
 		CreatedByID:     createdByIDFromGinContext(c),
 		JobType:         jobType,
+		Operation:       c.PostForm("operation"),
 		Enabled:         c.PostForm("enabled") == "on",
 		Duration:        time.Duration(durationMs) * time.Millisecond,
 		SleepDuration:   time.Duration(sleepMs) * time.Millisecond,
@@ -186,7 +187,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+			Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
 			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
@@ -254,7 +255,7 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 
 		if res := s.db.WithContext(c.Request.Context()).
 			Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+				Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
 				DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "log_template", "plan_template", "output_template", "updated_at"}),
 			}).
 			Create(&config); res.Error != nil {

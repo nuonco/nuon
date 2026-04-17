@@ -72,9 +72,10 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	// If sandbox mode, sync configs from API and replace handler
 	if j.isSandbox(job) {
-		j.sandboxCtl.SyncNow(ctx)
+		j.sandboxCtl.SyncForJob(ctx, string(job.Type), string(job.Operation))
 		l.Info("sandbox mode active, replacing handler with sandbox handler",
 			zap.String("job_type", string(job.Type)),
+			zap.String("operation", string(job.Operation)),
 			zap.String("job_id", job.ID),
 			zap.Bool("sandbox_mode_setting", j.settings.SandboxMode),
 		)
