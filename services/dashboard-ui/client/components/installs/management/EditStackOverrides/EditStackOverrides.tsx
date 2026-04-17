@@ -95,7 +95,7 @@ export const EditStackOverridesModal = ({
       childrenClassName="overflow-y-auto"
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="Layers" size="24" />
+          <Icon variant="StackSimple" size="24" />
           Edit stack overrides
         </Text>
       }
