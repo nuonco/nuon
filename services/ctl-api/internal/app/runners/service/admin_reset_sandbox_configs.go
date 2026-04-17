@@ -12,7 +12,7 @@ import (
 func (s *service) AdminResetSandboxConfigs(ctx *gin.Context) {
 	if res := s.db.WithContext(ctx).
 		Where("job_type != ''").
-		Delete(&app.SandboxModeConfig{}); res.Error != nil {
+		Delete(&app.SandboxModeJobConfig{}); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to reset sandbox configs: %w", res.Error))
 		return
 	}

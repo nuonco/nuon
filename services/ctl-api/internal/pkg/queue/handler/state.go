@@ -63,6 +63,12 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	h.queueSignal = queueSignal
 	h.sig = sig
 
+	if queueSignal.OrgID != nil {
+		if org, err := activities.AwaitGetOrgByIDByOrgID(ctx, *queueSignal.OrgID); err == nil && org != nil && org.SandboxMode {
+			h.sig = sandboxmode.WrapSignal(sig)
+		}
+	}
+
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
 		V:             h.v,
@@ -77,12 +83,6 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 			StatusDescription: initErr.Error(),
 		})
 		return initErr
-	}
-
-	// Check for sandbox signal config and wrap the signal if found
-	sandboxCfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(h.queueSignal.Type))
-	if err == nil && sandboxCfg != nil && sandboxCfg.Enabled {
-		h.sig = sandboxmode.WrapSignal(h.sig, sandboxCfg)
 	}
 
 	return nil

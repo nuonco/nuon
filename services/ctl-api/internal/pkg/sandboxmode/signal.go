@@ -7,77 +7,44 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// SandboxSignal wraps a real signal and intercepts Validate/Execute
-// based on the SandboxSignalConfig.
-type SandboxSignal struct {
-	inner  signal.Signal
-	config *app.SandboxModeSignalConfig
+// Signal wraps a real signal and checks for a SandboxModeSignalConfig
+// during Validate and Execute. If a config exists for the signal type,
+// sandbox behavior is applied instead of the real signal logic.
+type Signal struct {
+	signal.Signal
 }
 
-var _ signal.Signal = (*SandboxSignal)(nil)
-
-// WrapSignal creates a SandboxSignal wrapper around the real signal.
-func WrapSignal(inner signal.Signal, config *app.SandboxModeSignalConfig) signal.Signal {
-	return &SandboxSignal{
-		inner:  inner,
-		config: config,
-	}
+// WrapSignal wraps the given signal with sandbox-mode checking.
+func WrapSignal(inner signal.Signal) *Signal {
+	return &Signal{Signal: inner}
 }
 
-func (s *SandboxSignal) Type() signal.SignalType {
-	return s.inner.Type()
-}
-
-func (s *SandboxSignal) Validate(ctx workflow.Context) error {
-	return s.applyConfig(ctx)
-}
-
-func (s *SandboxSignal) Execute(ctx workflow.Context) error {
-	return s.applyConfig(ctx)
-}
-
-func (s *SandboxSignal) applyConfig(ctx workflow.Context) error {
-	if s.config.Panic {
-		panic("sandbox signal config: panic requested for " + string(s.inner.Type()))
-	}
-	if s.config.Error != "" {
-		return errors.New(s.config.Error)
-	}
-	if s.config.DeadlockSleep > 0 {
-		// Real sleep — blocks the goroutine/activity, simulating a deadlock.
-		// The Temporal activity timeout (30s) will eventually kill it.
-		time.Sleep(s.config.DeadlockSleep)
-		return errors.New("sandbox signal config: deadlock sleep expired")
-	}
-	if s.config.WorkflowSleep > 0 {
-		_ = workflow.Sleep(ctx, s.config.WorkflowSleep)
+func (s *Signal) fetchConfig(ctx workflow.Context) *app.SandboxModeSignalConfig {
+	cfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(s.Signal.Type()))
+	if err != nil || cfg == nil || !cfg.Enabled {
 		return nil
 	}
+	return cfg
+}
+
+func (s *Signal) applyConfig(ctx workflow.Context, cfg *app.SandboxModeSignalConfig) error {
+	if cfg.Panic {
+		panic("sandbox signal config: panic requested for " + string(s.Signal.Type()))
+	}
+	if cfg.DeadlockSleep > 0 {
+		time.Sleep(cfg.DeadlockSleep)
+		return errors.New("sandbox signal config: deadlock sleep expired")
+	}
+	if cfg.WorkflowSleep > 0 {
+		_ = workflow.Sleep(ctx, cfg.WorkflowSleep)
+		return nil
+	}
+	if cfg.Error != "" {
+		return errors.New(cfg.Error)
+	}
 	return nil
-}
-
-// Delegate optional interfaces so the handler framework still works.
-
-func (s *SandboxSignal) AutoRetry() bool {
-	if ar, ok := s.inner.(signal.SignalWithAutoRetry); ok {
-		return ar.AutoRetry()
-	}
-	return false
-}
-
-func (s *SandboxSignal) LifecycleContext() signal.SignalLifecycleContext {
-	if lc, ok := s.inner.(signal.SignalWithLifecycleContext); ok {
-		return lc.LifecycleContext()
-	}
-	return signal.SignalLifecycleContext{}
-}
-
-func (s *SandboxSignal) SleepAfter() time.Duration {
-	if sa, ok := s.inner.(signal.SleepAfter); ok {
-		return sa.SleepAfter()
-	}
-	return signal.DefaultSleepAfter
 }

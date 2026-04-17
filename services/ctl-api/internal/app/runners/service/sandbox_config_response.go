@@ -32,7 +32,7 @@ type SandboxConfigResponse struct {
 	ErrorMessage string `json:"error_message,omitempty"`
 }
 
-func convertToSandboxConfigResponse(cfg app.SandboxModeConfig) SandboxConfigResponse {
+func convertToSandboxConfigResponse(cfg app.SandboxModeJobConfig) SandboxConfigResponse {
 	resp := SandboxConfigResponse{
 		ID:              cfg.ID,
 		JobType:         cfg.JobType,

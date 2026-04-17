@@ -40,7 +40,7 @@ type SandboxModeJobConfig struct {
 
 func (s *SandboxModeJobConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = domains.NewSandboxModeJobConfigID()
+		s.ID = domains.NewSandboxModeConfigID()
 	}
 	if s.CreatedByID == "" {
 		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)

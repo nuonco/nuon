@@ -11,7 +11,7 @@ import (
 
 // GetRunnerSandboxConfigs returns sandbox configs for the authenticated runner.
 func (s *service) GetRunnerSandboxConfigs(ctx *gin.Context) {
-	var configs []app.SandboxModeConfig
+	var configs []app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
 		Where("job_type != ''").
 		Order("job_type asc").

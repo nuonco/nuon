@@ -29,7 +29,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 
 	view := views.RunnerDetailView{
 		Runner:  runner,
-		Configs: make(map[string]*app.SandboxModeConfig),
+		Configs: make(map[string]*app.SandboxModeJobConfig),
 	}
 
 	// Resolve install
@@ -55,7 +55,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 	}
 
 	// Load sandbox configs keyed by job type
-	var configs []app.SandboxModeConfig
+	var configs []app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
 		Where("job_type != ''").
 		Find(&configs); res.Error == nil {
@@ -90,7 +90,7 @@ func (s *service) RunnerUpsertConfig(c *gin.Context) {
 		return
 	}
 
-	config := app.SandboxModeConfig{
+	config := app.SandboxModeJobConfig{
 		JobType:         req.JobType,
 		Duration:        req.Duration,
 		ShouldError:     req.ShouldError,
@@ -117,8 +117,8 @@ func (s *service) RunnerDeleteConfig(c *gin.Context) {
 	jobType := c.Param("job_type")
 
 	if res := s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeConfig{JobType: jobType}).
-		Delete(&app.SandboxModeConfig{}); res.Error != nil {
+		Where(app.SandboxModeJobConfig{JobType: jobType}).
+		Delete(&app.SandboxModeJobConfig{}); res.Error != nil {
 		s.l.Error("failed to delete sandbox config", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete config"})
 		return
@@ -132,7 +132,7 @@ func (s *service) RunnerResetConfigs(c *gin.Context) {
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Where("job_type != ''").
-		Delete(&app.SandboxModeConfig{}); res.Error != nil {
+		Delete(&app.SandboxModeJobConfig{}); res.Error != nil {
 		s.l.Error("failed to reset sandbox configs", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset configs"})
 		return

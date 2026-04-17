@@ -10,7 +10,7 @@ import (
 )
 
 func (s *service) AdminListAllSandboxConfigs(ctx *gin.Context) {
-	var configs []app.SandboxModeConfig
+	var configs []app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
 		Order("job_type asc").
 		Find(&configs); res.Error != nil {

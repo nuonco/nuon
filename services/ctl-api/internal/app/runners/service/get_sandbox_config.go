@@ -23,9 +23,9 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 
 	// Try exact match with operation first
 	if operation != "" {
-		var cfg app.SandboxModeConfig
+		var cfg app.SandboxModeJobConfig
 		if res := s.db.WithContext(ctx).
-			Where(app.SandboxModeConfig{JobType: jobType, Operation: operation}).
+			Where(app.SandboxModeJobConfig{JobType: jobType, Operation: operation}).
 			First(&cfg); res.Error == nil {
 			ctx.JSON(http.StatusOK, convertToSandboxConfigResponse(cfg))
 			return
@@ -33,9 +33,9 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 	}
 
 	// Fall back to job-type-only config (empty operation)
-	var cfg app.SandboxModeConfig
+	var cfg app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{JobType: jobType, Operation: ""}).
+		Where(app.SandboxModeJobConfig{JobType: jobType, Operation: ""}).
 		First(&cfg); res.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no sandbox config for job_type=%s", jobType)})
 		return

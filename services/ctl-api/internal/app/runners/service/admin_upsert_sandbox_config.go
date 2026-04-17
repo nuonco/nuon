@@ -43,7 +43,7 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 		enabled = *req.Enabled
 	}
 
-	config := app.SandboxModeConfig{
+	config := app.SandboxModeJobConfig{
 		JobType:         req.JobType,
 		Operation:       req.Operation,
 		Enabled:         enabled,

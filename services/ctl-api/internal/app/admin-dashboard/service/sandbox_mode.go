@@ -26,9 +26,9 @@ func (s *service) SandboxMode(c *gin.Context) {
 		tab = "runner-jobs"
 	}
 
-	var runnerJobConfigs []app.SandboxModeConfig
+	var runnerJobConfigs []app.SandboxModeJobConfig
 	var signalConfigs []app.SandboxModeSignalConfig
-	var stackConfig *app.SandboxModeConfig
+	var stackConfig *app.SandboxModeJobConfig
 
 	switch tab {
 	case "runner-jobs", "templates":
@@ -68,11 +68,11 @@ func (s *service) SandboxModeRunnerJobsTable(c *gin.Context) {
 func (s *service) SandboxModeBuilder(c *gin.Context) {
 	jobType := c.Query("job_type")
 
-	var cfg *app.SandboxModeConfig
+	var cfg *app.SandboxModeJobConfig
 	if jobType != "" {
-		var found app.SandboxModeConfig
+		var found app.SandboxModeJobConfig
 		if res := s.db.WithContext(c.Request.Context()).
-			Where(app.SandboxModeConfig{JobType: jobType}).
+			Where(app.SandboxModeJobConfig{JobType: jobType}).
 			First(&found); res.Error == nil {
 			cfg = &found
 		}
@@ -170,7 +170,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	durationMs, _ := strconv.ParseInt(c.PostForm("duration_ms"), 10, 64)
 	sleepMs, _ := strconv.ParseInt(c.PostForm("sleep_duration_ms"), 10, 64)
 
-	config := app.SandboxModeConfig{
+	config := app.SandboxModeJobConfig{
 		CreatedByID:     createdByIDFromGinContext(c),
 		JobType:         jobType,
 		Operation:       c.PostForm("operation"),
@@ -197,9 +197,9 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	}
 
 	// Re-read the saved config to get the full record
-	var saved app.SandboxModeConfig
+	var saved app.SandboxModeJobConfig
 	s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeConfig{JobType: jobType}).
+		Where(app.SandboxModeJobConfig{JobType: jobType}).
 		First(&saved)
 
 	// Return re-rendered row (open state so user sees feedback)
@@ -221,7 +221,7 @@ func (s *service) SandboxModeDisableAllSignals(c *gin.Context) {
 
 func (s *service) SandboxModeDisableAllRunnerJobs(c *gin.Context) {
 	if res := s.db.WithContext(c.Request.Context()).
-		Model(&app.SandboxModeConfig{}).
+		Model(&app.SandboxModeJobConfig{}).
 		Where("enabled = ?", true).
 		Update("enabled", false); res.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
@@ -243,7 +243,7 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 	createdBy := createdByIDFromGinContext(c)
 
 	for _, fc := range flow.Configs {
-		config := app.SandboxModeConfig{
+		config := app.SandboxModeJobConfig{
 			CreatedByID:    createdBy,
 			JobType:        fc.JobType,
 			Enabled:        fc.Enabled,
@@ -273,8 +273,8 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
-func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeConfig, error) {
-	var configs []app.SandboxModeConfig
+func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeJobConfig, error) {
+	var configs []app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).Order("job_type asc").Find(&configs); res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox configs: %w", res.Error)
 	}
@@ -289,10 +289,10 @@ func (s *service) getSandboxSignalConfigs(ctx context.Context) ([]app.SandboxMod
 	return configs, nil
 }
 
-func (s *service) getSandboxStackConfig(ctx context.Context) (*app.SandboxModeConfig, error) {
-	var cfg app.SandboxModeConfig
+func (s *service) getSandboxStackConfig(ctx context.Context) (*app.SandboxModeJobConfig, error) {
+	var cfg app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{JobType: "sandbox-terraform"}).
+		Where(app.SandboxModeJobConfig{JobType: "sandbox-terraform"}).
 		First(&cfg); res.Error != nil {
 		return nil, res.Error
 	}

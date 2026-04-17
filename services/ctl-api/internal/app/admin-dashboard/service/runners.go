@@ -85,7 +85,7 @@ func (s *service) getSandboxRunnerViews(ctx context.Context) ([]views.SandboxRun
 		}
 
 		// Get sandbox configs for this runner
-		var configs []app.SandboxModeConfig
+		var configs []app.SandboxModeJobConfig
 		if res := s.db.WithContext(ctx).
 			Where("job_type != ''").
 			Order("job_type").

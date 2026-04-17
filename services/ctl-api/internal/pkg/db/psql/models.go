@@ -132,7 +132,7 @@ func AllModels() []any {
 		&app.TerraformWorkspaceStateJSON{},
 		&app.OCIArtifact{},
 		&app.HelmRelease{},
-		&app.SandboxModeConfig{},
+		&app.SandboxModeJobConfig{},
 		&app.SandboxModeSignalConfig{},
 
 		// queues

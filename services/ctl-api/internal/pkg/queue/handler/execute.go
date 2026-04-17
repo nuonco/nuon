@@ -113,8 +113,6 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 }
 
 // runSignalExecute calls the user-provided signal Execute in a panic-safe boundary.
-// If a sandbox signal config exists for this signal type, it executes the sandbox
-// behavior instead of the real signal.
 func (h *handler) runSignalExecute(ctx workflow.Context) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -122,36 +120,5 @@ func (h *handler) runSignalExecute(ctx workflow.Context) (retErr error) {
 		}
 	}()
 
-	// Check for sandbox signal config override
-	sandboxCfg, err := activities.AwaitGetSandboxSignalConfigBySignalType(ctx, string(h.sig.Type()))
-	if err == nil && sandboxCfg != nil {
-		return h.executeSandboxSignal(ctx, sandboxCfg)
-	}
-
 	return h.sig.Execute(ctx)
-}
-
-// executeSandboxSignal runs sandbox behavior based on the signal config instead
-// of the real signal execution.
-func (h *handler) executeSandboxSignal(ctx workflow.Context, cfg *app.SandboxModeSignalConfig) error {
-	if cfg.DeadlockSleep > 0 {
-		// Real sleep (blocks the goroutine, simulating deadlock)
-		time.Sleep(cfg.DeadlockSleep)
-	}
-
-	if cfg.WorkflowSleep > 0 {
-		if err := workflow.Sleep(ctx, cfg.WorkflowSleep); err != nil {
-			return err
-		}
-	}
-
-	if cfg.Panic {
-		panic("sandbox: panic requested via signal config")
-	}
-
-	if cfg.Error != "" {
-		return errors.New(cfg.Error)
-	}
-
-	return nil
 }

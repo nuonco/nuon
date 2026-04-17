@@ -11,7 +11,7 @@ import (
 
 func (s *service) AdminDisableAllSandboxConfigs(ctx *gin.Context) {
 	if res := s.db.WithContext(ctx).
-		Model(&app.SandboxModeConfig{}).
+		Model(&app.SandboxModeJobConfig{}).
 		Where("enabled = ?", true).
 		Update("enabled", false); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to disable all sandbox configs: %w", res.Error))

@@ -13,8 +13,8 @@ func (s *service) AdminDeleteSandboxConfig(ctx *gin.Context) {
 	configID := ctx.Param("config_id")
 
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{ID: configID}).
-		Delete(&app.SandboxModeConfig{}); res.Error != nil {
+		Where(app.SandboxModeJobConfig{ID: configID}).
+		Delete(&app.SandboxModeJobConfig{}); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to delete sandbox config: %w", res.Error))
 		return
 	}

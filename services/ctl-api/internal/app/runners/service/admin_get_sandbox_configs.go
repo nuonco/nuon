@@ -22,8 +22,8 @@ func (s *service) AdminGetSandboxConfigs(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, configs)
 }
 
-func (s *service) getSandboxConfigs(ctx context.Context, runnerID string) ([]app.SandboxModeConfig, error) {
-	var configs []app.SandboxModeConfig
+func (s *service) getSandboxConfigs(ctx context.Context, runnerID string) ([]app.SandboxModeJobConfig, error) {
+	var configs []app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
 		Where("job_type != ''").
 		Order("job_type asc").

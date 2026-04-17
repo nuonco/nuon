@@ -19,7 +19,7 @@ type RunnerDetailView struct {
 	ProcessOnline bool
 
 	// Existing configs keyed by job type
-	Configs map[string]*app.SandboxModeConfig
+	Configs map[string]*app.SandboxModeJobConfig
 }
 
 var sandboxJobTypes = []string{
@@ -207,7 +207,7 @@ templ RunnerDetail(v RunnerDetailView) {
 	}
 }
 
-templ configRow(runnerID string, jobType string, cfg *app.SandboxModeConfig) {
+templ configRow(runnerID string, jobType string, cfg *app.SandboxModeJobConfig) {
 	<div id={ "config-" + jobType } class="border border-border/50 rounded p-3 hover:border-border transition-colors">
 		<div class="flex items-center gap-4">
 			<!-- Job type label -->

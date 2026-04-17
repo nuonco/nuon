@@ -15,9 +15,9 @@ const ActivePageSandboxMode ActivePage = "sandbox-mode"
 
 type SandboxModeData struct {
 	ActiveTab         string
-	RunnerJobConfigs  []app.SandboxModeConfig
+	RunnerJobConfigs  []app.SandboxModeJobConfig
 	SignalConfigs     []app.SandboxModeSignalConfig
-	StackConfig       *app.SandboxModeConfig
+	StackConfig       *app.SandboxModeJobConfig
 	AllSignalTypes    []string
 	AllRunnerJobTypes []string
 	Templates         []templates.Template
@@ -127,7 +127,7 @@ templ SandboxModeTemplatesTab(flowTemplates []templates.FlowTemplate) {
 // Runner Jobs Tab
 // ===========================================================================
 
-templ SandboxModeRunnerJobsTable(configs []app.SandboxModeConfig, allJobTypes []string, search string, allTemplates []templates.Template) {
+templ SandboxModeRunnerJobsTable(configs []app.SandboxModeJobConfig, allJobTypes []string, search string, allTemplates []templates.Template) {
 	@card.Card() {
 		@card.Header() {
 			<div class="flex items-center justify-between">
@@ -179,7 +179,7 @@ templ SandboxModeRunnerJobsTable(configs []app.SandboxModeConfig, allJobTypes []
 	}
 }
 
-templ runnerJobCompactRow(jobType string, cfg *app.SandboxModeConfig) {
+templ runnerJobCompactRow(jobType string, cfg *app.SandboxModeJobConfig) {
 	<div class="flex items-center justify-between px-4 py-3">
 		<div class="flex items-center gap-3">
 			<span class="font-mono text-sm">{ jobType }</span>
@@ -216,7 +216,7 @@ templ runnerJobCompactRow(jobType string, cfg *app.SandboxModeConfig) {
 // Builder Panel
 // ===========================================================================
 
-templ SandboxModeBuilder(jobType string, cfg *app.SandboxModeConfig, allTemplates []templates.Template, allJobTypes []string) {
+templ SandboxModeBuilder(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template, allJobTypes []string) {
 	<div class="mb-6 rounded-lg border border-cyan/30 bg-card p-5">
 		<div class="flex items-center justify-between mb-4">
 			<span class="text-sm font-semibold text-foreground">
@@ -391,7 +391,7 @@ templ SandboxModeBuilder(jobType string, cfg *app.SandboxModeConfig, allTemplate
 
 // Legacy row components kept for backward compatibility with existing save handlers.
 
-templ runnerJobRowInner(jobType string, cfg *app.SandboxModeConfig, allTemplates []templates.Template, saved bool) {
+templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template, saved bool) {
 	<details class="group" id={ "rj-" + jobType } if saved { open }>
 		<summary class="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
 			<div class="flex items-center gap-3">
@@ -542,11 +542,11 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeConfig, allTemplates
 	</details>
 }
 
-templ runnerJobRow(jobType string, cfg *app.SandboxModeConfig, allTemplates []templates.Template) {
+templ runnerJobRow(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template) {
 	@runnerJobRowInner(jobType, cfg, allTemplates, false)
 }
 
-templ RunnerJobRowSaved(jobType string, cfg *app.SandboxModeConfig, allTemplates []templates.Template) {
+templ RunnerJobRowSaved(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template) {
 	@runnerJobRowInner(jobType, cfg, allTemplates, true)
 }
 
@@ -717,7 +717,7 @@ templ SignalRowSaved(signalType string, cfg *app.SandboxModeSignalConfig) {
 // Stacks Tab
 // ===========================================================================
 
-templ SandboxModeStacksTable(cfg *app.SandboxModeConfig, allTemplates []templates.Template) {
+templ SandboxModeStacksTable(cfg *app.SandboxModeJobConfig, allTemplates []templates.Template) {
 	@card.Card() {
 		@card.Header() {
 			@card.Title() { Sandbox stack }
@@ -766,7 +766,7 @@ func filterTemplates(allTemplates []templates.Template, jobType string, category
 	return result
 }
 
-func findRunnerJobConfig(configs []app.SandboxModeConfig, jobType string) *app.SandboxModeConfig {
+func findRunnerJobConfig(configs []app.SandboxModeJobConfig, jobType string) *app.SandboxModeJobConfig {
 	for i := range configs {
 		if configs[i].JobType == jobType {
 			return &configs[i]
@@ -810,7 +810,7 @@ func signalToggleVals(cfg *app.SandboxModeSignalConfig) string {
 	)
 }
 
-func rjPreset(cfg *app.SandboxModeConfig) string {
+func rjPreset(cfg *app.SandboxModeJobConfig) string {
 	return "default"
 }
 
@@ -828,14 +828,14 @@ func safeError(cfg *app.SandboxModeSignalConfig) string {
 	return cfg.Error
 }
 
-func safeDurationMs(cfg *app.SandboxModeConfig) string {
+func safeDurationMs(cfg *app.SandboxModeJobConfig) string {
 	if cfg == nil || cfg.Duration == 0 {
 		return ""
 	}
 	return fmt.Sprintf("%d", cfg.Duration.Milliseconds())
 }
 
-func safeSleepMs(cfg *app.SandboxModeConfig) string {
+func safeSleepMs(cfg *app.SandboxModeJobConfig) string {
 	if cfg == nil || cfg.SleepDuration == 0 {
 		return ""
 	}
