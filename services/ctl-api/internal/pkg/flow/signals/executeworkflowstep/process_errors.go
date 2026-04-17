@@ -72,7 +72,8 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			Metadata: map[string]any{
 				"reason":       stepErr.Error(),
 				"auto_retried": true,
-				"retry_index":  step.RetryIndex,
+				"retry_type":   "auto",
+				"retry_idx":    step.RetryIndex,
 				"max_retries":  maxRetries,
 				DirectiveKey:   DirectiveRetry,
 			},

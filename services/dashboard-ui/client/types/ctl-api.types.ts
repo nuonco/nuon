@@ -424,6 +424,69 @@ export type TCompleteYourStackStepRequest =
 export type TCompleteInstallStepRequest =
   components['schemas']['service.CompleteInstallStepRequest']
 
+// sandbox admin types (not swagger-annotated, defined manually)
+export type TAdminSandboxConfig = {
+  id: string
+  runner_id: string
+  job_type: string
+  created_at: string
+  updated_at: string
+  preset: string
+  duration: number
+  fault_rate: number
+  error_message: string
+  fail_at_step: string
+  sleep_duration: number
+  timeout: number
+  trigger_shutdown: boolean
+  log_lines: string[] | null
+  plan_contents: string
+  outputs: any
+}
+
+export type TSandboxRunner = {
+  id: string
+  runner_group_id: string
+  created_at: string
+  updated_at: string
+  status: string
+  status_description: string
+  connected: boolean
+  runner_group?: {
+    org_id: string
+    org?: {
+      name: string
+    }
+  }
+}
+
+export type TSandboxLogTemplate = {
+  key: string
+  name: string
+  lines: string[]
+}
+
+export type TSandboxPlanTemplate = {
+  key: string
+  name: string
+  contents: string
+}
+
+export type TSandboxTemplates = {
+  log_templates: TSandboxLogTemplate[]
+  plan_templates: TSandboxPlanTemplate[]
+}
+
+export type TSandboxJob = {
+  id: string
+  runner_id: string
+  job_type: string
+  status: string
+  status_description: string
+  created_at: string
+  updated_at: string
+}
+
 // auth
 export type TMe = {
   id: string

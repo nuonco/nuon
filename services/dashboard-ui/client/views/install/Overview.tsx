@@ -30,6 +30,7 @@ export const Overview = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/installs`, text: 'Installs' },
           { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
+          { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
         ]}
       />
 

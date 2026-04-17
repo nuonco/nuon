@@ -15,6 +15,14 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
+	l.Info("ensuring queue is active")
+	if err := q.ensureActive(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to ensure queue is active")
+	}
+	if q.stopped {
+		return true, nil
+	}
+
 	l.Info("registering handlers")
 	if err := q.registerHandlers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register handlers")
@@ -30,7 +38,13 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
-	q.lastActivityTime = workflow.Now(ctx)
+	// Restore lastActivityTime from state (survives continue-as-new),
+	// or initialize for the first run.
+	if !q.state.LastActivityTime.IsZero() {
+		q.lastActivityTime = q.state.LastActivityTime
+	} else {
+		q.lastActivityTime = workflow.Now(ctx)
+	}
 
 	l.Info("starting workers")
 	if err := q.startWorkers(ctx); err != nil {

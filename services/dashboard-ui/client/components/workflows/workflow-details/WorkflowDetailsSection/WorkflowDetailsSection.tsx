@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Expand } from '@/components/common/Expand'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -81,10 +80,9 @@ export const WorkflowDetailsSection = ({ workflow, orgId, install }: IWorkflowDe
           </LabeledValue>
         )}
 
-        <AdminDashboardLink
-          path={`/queue-signals?search=${workflow.id}`}
-          label="View in admin panel"
-        />
+        <Link className="text-xs" href={`/${orgId}/installs/${install?.id}/workflows`}>
+          View workflows
+        </Link>
       </div>
 
       {changedInputs.length > 0 && (

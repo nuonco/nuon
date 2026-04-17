@@ -32,9 +32,11 @@ type Signal struct {
 	err   error
 }
 
-var _ qsignal.Signal = (*Signal)(nil)
-var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
-var _ qsignal.SignalWithFetchSteps = (*Signal)(nil)
+var (
+	_ qsignal.Signal                   = (*Signal)(nil)
+	_ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
+	_ qsignal.SignalWithFetchSteps     = (*Signal)(nil)
+)
 
 func (s *Signal) SetWorkflowID(id string) {
 	s.WorkflowID = id
