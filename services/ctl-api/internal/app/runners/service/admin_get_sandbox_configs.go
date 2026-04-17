@@ -25,7 +25,7 @@ func (s *service) AdminGetSandboxConfigs(ctx *gin.Context) {
 func (s *service) getSandboxConfigs(ctx context.Context, runnerID string) ([]app.SandboxModeConfig, error) {
 	var configs []app.SandboxModeConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Where("job_type != ''").
 		Order("job_type asc").
 		Find(&configs); res.Error != nil {
 		return nil, fmt.Errorf("unable to find sandbox configs: %w", res.Error)

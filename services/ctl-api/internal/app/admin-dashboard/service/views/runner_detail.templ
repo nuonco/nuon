@@ -256,8 +256,8 @@ templ configRow(runnerID string, jobType string, cfg *app.SandboxModeConfig) {
 					type="text"
 					name="plan_contents"
 					placeholder="plan output"
-					if cfg != nil && cfg.PlanContents != "" {
-						value={ cfg.PlanContents }
+					if cfg != nil && cfg.PlanMachineContents != "" {
+						value={ cfg.PlanMachineContents }
 					}
 					class="w-32 bg-background border border-border rounded px-2 py-1 text-xs font-mono focus:border-cyan focus:outline-none"
 				/>

@@ -157,7 +157,6 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	faultPct, _ := strconv.ParseFloat(c.PostForm("fault_rate_pct"), 64)
 
 	config := app.SandboxModeConfig{
-		RunnerID:        "",
 		JobType:         jobType,
 		Enabled:         c.PostForm("enabled") == "on",
 		Preset:          c.PostForm("preset"),
@@ -172,7 +171,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "runner_id"}, {Name: "job_type"}, {Name: "deleted_at"}},
+			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
 			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
@@ -184,7 +183,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	// Re-read the saved config to get the full record
 	var saved app.SandboxModeConfig
 	s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeConfig{RunnerID: "", JobType: jobType}).
+		Where(app.SandboxModeConfig{JobType: jobType}).
 		First(&saved)
 
 	// Return re-rendered row (open state so user sees feedback)

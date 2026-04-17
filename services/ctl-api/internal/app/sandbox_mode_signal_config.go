@@ -29,8 +29,6 @@ type SandboxModeSignalConfig struct {
 	Error         string        `json:"error,omitempty"`          // returns error with this message
 }
 
-func (SandboxModeSignalConfig) TableName() string { return "sandbox_signal_configs" }
-
 func (s *SandboxModeSignalConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
 		s.ID = domains.NewSandboxModeSignalConfigID()

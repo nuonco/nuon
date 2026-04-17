@@ -10,10 +10,8 @@ import (
 )
 
 func (s *service) AdminResetSandboxConfigs(ctx *gin.Context) {
-	runnerID := ctx.Param("runner_id")
-
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Where("job_type != ''").
 		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to reset sandbox configs: %w", res.Error))
 		return

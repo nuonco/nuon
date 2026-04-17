@@ -11,11 +11,13 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -78,9 +80,39 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	return nil
 }
 
+func (s *service) setAdminAccountContext() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token, _ := c.Cookie("X-Nuon-Auth")
+		if token == "" {
+			c.Next()
+			return
+		}
+
+		var userToken app.Token
+		res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken)
+		if res.Error != nil {
+			c.Next()
+			return
+		}
+
+		acct, err := s.acctClient.FetchAccount(c, userToken.AccountID)
+		if err != nil {
+			s.l.Warn("admin dashboard: failed to fetch account from token", zap.Error(err))
+			c.Next()
+			return
+		}
+
+		cctx.SetAccountGinContext(c, acct)
+		c.Next()
+	}
+}
+
 func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	// Serve static assets
 	api.Static("/assets", "./internal/app/admin-dashboard/assets")
+
+	// Set admin account context from X-Nuon-Admin-Email header
+	api.Use(s.setAdminAccountContext())
 
 	// Register routes - templ components will be rendered directly in handlers
 	api.GET("/", s.Index)

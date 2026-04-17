@@ -18,9 +18,7 @@ type SandboxModeConfig struct {
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull"`
 	DeletedAt   soft_delete.DeletedAt `json:"-" gorm:"index:idx_sandbox_config_unique,unique"`
 
-	RunnerID string `json:"runner_id,omitzero" gorm:"notnull;index:idx_sandbox_config_unique,unique"`
-	Runner   Runner `json:"-"`
-	JobType  string `json:"job_type,omitzero" gorm:"notnull;index:idx_sandbox_config_unique,unique"`
+	JobType string `json:"job_type,omitzero" gorm:"notnull;index:idx_sandbox_config_unique,unique"`
 
 	Enabled bool `json:"enabled" gorm:"default:true"`
 
@@ -40,13 +38,12 @@ type SandboxModeConfig struct {
 	LogLines []byte `json:"log_lines,omitempty" gorm:"type:jsonb" swaggertype:"string"`
 
 	// Plan contents (for plan-type jobs)
-	PlanContents string `json:"plan_contents,omitempty" gorm:"type:text"`
+	PlanMachineContents string `json:"machine_contents,omitempty" gorm:"type:text"`
+	PlanDisplayContents string `json:"display_contents,omitempty" gorm:"type:text"`
 
 	// Custom outputs
 	Outputs []byte `json:"outputs,omitempty" gorm:"type:jsonb" swaggertype:"string"`
 }
-
-func (SandboxModeConfig) TableName() string { return "sandbox_configs" }
 
 func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {

@@ -57,7 +57,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 	// Load sandbox configs keyed by job type
 	var configs []app.SandboxModeConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Where("job_type != ''").
 		Find(&configs); res.Error == nil {
 		for i := range configs {
 			view.Configs[configs[i].JobType] = &configs[i]
@@ -77,7 +77,7 @@ type dashboardUpsertConfigRequest struct {
 }
 
 func (s *service) RunnerUpsertConfig(c *gin.Context) {
-	runnerID := c.Param("id")
+	_ = c.Param("id")
 
 	var req dashboardUpsertConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -100,19 +100,18 @@ func (s *service) RunnerUpsertConfig(c *gin.Context) {
 	}
 
 	config := app.SandboxModeConfig{
-		RunnerID:     runnerID,
-		JobType:      req.JobType,
-		Duration:     req.Duration,
-		ErrorMessage: errorMessage,
-		PlanContents: req.PlanContents,
+		JobType:             req.JobType,
+		Duration:            req.Duration,
+		ErrorMessage:        errorMessage,
+		PlanMachineContents: req.PlanContents,
 		// Set fault rate to 1.0 when error is enabled so every job fails
 		FaultRate: boolToFaultRate(req.ShouldError),
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "runner_id"}, {Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"duration", "fault_rate", "error_message", "plan_contents", "updated_at"}),
+			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+			DoUpdates: clause.AssignmentColumns([]string{"duration", "fault_rate", "error_message", "machine_contents", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert sandbox config", zap.Error(res.Error))
@@ -124,11 +123,11 @@ func (s *service) RunnerUpsertConfig(c *gin.Context) {
 }
 
 func (s *service) RunnerDeleteConfig(c *gin.Context) {
-	runnerID := c.Param("id")
+	_ = c.Param("id")
 	jobType := c.Param("job_type")
 
 	if res := s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeConfig{RunnerID: runnerID, JobType: jobType}).
+		Where(app.SandboxModeConfig{JobType: jobType}).
 		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		s.l.Error("failed to delete sandbox config", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete config"})
@@ -139,10 +138,10 @@ func (s *service) RunnerDeleteConfig(c *gin.Context) {
 }
 
 func (s *service) RunnerResetConfigs(c *gin.Context) {
-	runnerID := c.Param("id")
+	_ = c.Param("id")
 
 	if res := s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeConfig{RunnerID: runnerID}).
+		Where("job_type != ''").
 		Delete(&app.SandboxModeConfig{}); res.Error != nil {
 		s.l.Error("failed to reset sandbox configs", zap.Error(res.Error))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset configs"})

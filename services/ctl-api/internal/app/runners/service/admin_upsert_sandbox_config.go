@@ -30,8 +30,6 @@ type AdminUpsertSandboxConfigRequest struct {
 }
 
 func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
-	runnerID := ctx.Param("runner_id")
-
 	var req AdminUpsertSandboxConfigRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
@@ -71,26 +69,25 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 	}
 
 	config := app.SandboxModeConfig{
-		RunnerID:        runnerID,
-		JobType:         req.JobType,
-		Enabled:         enabled,
-		Preset:          req.Preset,
-		Duration:        req.Duration,
-		FaultRate:       req.FaultRate,
-		ErrorMessage:    req.ErrorMessage,
-		FailAtStep:      req.FailAtStep,
-		SleepDuration:   req.SleepDuration,
-		Timeout:         req.Timeout,
-		TriggerShutdown: req.TriggerShutdown,
-		LogLines:        logLinesJSON,
-		PlanContents:    req.PlanContents,
-		Outputs:         outputsJSON,
+		JobType:             req.JobType,
+		Enabled:             enabled,
+		Preset:              req.Preset,
+		Duration:            req.Duration,
+		FaultRate:           req.FaultRate,
+		ErrorMessage:        req.ErrorMessage,
+		FailAtStep:          req.FailAtStep,
+		SleepDuration:       req.SleepDuration,
+		Timeout:             req.Timeout,
+		TriggerShutdown:     req.TriggerShutdown,
+		LogLines:            logLinesJSON,
+		PlanMachineContents: req.PlanContents,
+		Outputs:             outputsJSON,
 	}
 
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "runner_id"}, {Name: "job_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "log_lines", "plan_contents", "outputs", "updated_at"}),
+			Columns:   []clause.Column{{Name: "job_type"}, {Name: "deleted_at"}},
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "preset", "duration", "fault_rate", "error_message", "fail_at_step", "sleep_duration", "timeout", "trigger_shutdown", "log_lines", "machine_contents", "outputs", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to upsert sandbox config: %w", res.Error))
