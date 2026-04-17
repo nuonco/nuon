@@ -24,7 +24,7 @@ function HealthCheckGraph({
 }) {
   if (!healthchecks?.length) {
     return (
-      <div className="flex items-center justify-center h-10">
+      <div className="flex items-center justify-center h-10 rounded-md border border-white/5 bg-white/[0.02] dark:border-white/5 dark:bg-white/[0.02]">
         <Text variant="subtext" theme="neutral">
           No health data
         </Text>
@@ -137,7 +137,7 @@ export const ProcessCard = ({
 
       <HealthCheckGraph healthchecks={healthchecks} />
 
-      <div className="flex flex-wrap gap-x-8 gap-y-4">
+      <div className="grid grid-cols-3 gap-x-6 gap-y-4">
         <LabeledValue label="Connectivity">
           <Status
             status={isConnected ? 'connected' : 'not-connected'}

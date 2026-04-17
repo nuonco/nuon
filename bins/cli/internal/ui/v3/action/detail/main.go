@@ -335,7 +335,7 @@ func (m *Model) resize() {
 	m.runsWidth = threeFiffs
 	m.stepsWidth = twoFiffs
 
-	// horizonal margin is just 2 because of the padding of 1
+	// horizontal margin is just 2 because of the padding of 1
 	hMargin := 2
 	m.header.SetWidth(m.width - hMargin)
 	m.footer.SetWidth(m.width - hMargin)

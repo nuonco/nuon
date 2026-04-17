@@ -3,10 +3,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { AdminControls } from './AdminControls'
 
 export const AdminControlsContainer = () => {
-  const { user } = useAuth()
+  const { isNuonEmployee } = useAuth()
   const params = useParams()
-
-  const isNuonEmployee = !!user?.email?.endsWith('@nuon.co')
   const orgId = params?.orgId as string
   const appId = params?.appId as string | undefined
   const installId = params?.installId as string | undefined

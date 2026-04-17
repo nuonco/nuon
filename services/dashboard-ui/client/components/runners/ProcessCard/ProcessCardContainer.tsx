@@ -49,7 +49,10 @@ export const ProcessCardContainer = ({
   })
 
   const isConnected = isLessThan15SecondsOld(heartbeat?.created_at)
-  const configuredVersion = settings?.container_image_tag || '-'
+  const configuredVersion =
+    (process.type === 'mng'
+      ? settings?.binary_version
+      : settings?.container_image_tag) || '-'
   const reportedVersion = heartbeat?.version || process.version || '-'
 
   return (

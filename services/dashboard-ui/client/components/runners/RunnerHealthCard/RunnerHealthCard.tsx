@@ -123,7 +123,7 @@ export const RunnerHealthCardSkeleton = ({
 
 export const RunnerHealthEmptyCard = ({
   title = 'No health check data',
-  caption = 'Runner health check wiil display here once available',
+  caption = 'Runner health check will display here once available',
 }: {
   title?: string
   caption?: string

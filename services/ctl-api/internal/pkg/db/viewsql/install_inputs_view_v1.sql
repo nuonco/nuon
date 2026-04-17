@@ -5,7 +5,7 @@ the values_redacted column maps
 create an view that selects all of the regular inputs PLUS a column `values_redacted`. `values_redacted`
 is a column that makes an hstore out of a subquery.
 
-the subquery maps the name to a string value. the string value depends on wether the name/key is sensitive:
+the subquery maps the name to a string value. the string value depends on whether the name/key is sensitive:
 1. if NOT: we return the actual value of the respective key in the install_inputs value hstore
 2. if YES: we return eight asterisks, aka a redaction.
 
