@@ -16,4 +16,3 @@ type Signal struct {
 func WrapSignal(inner signal.Signal) *Signal {
 	return &Signal{Signal: inner}
 }
-

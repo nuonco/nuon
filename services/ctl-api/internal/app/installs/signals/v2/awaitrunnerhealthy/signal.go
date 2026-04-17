@@ -61,7 +61,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-        // Get the install
+	// Get the install
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
