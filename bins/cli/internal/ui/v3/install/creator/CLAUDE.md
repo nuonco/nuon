@@ -22,4 +22,4 @@ in addition to the dynamically generated fields we need to standard fields.
 1. name
 2. region (us aws regions)
 
-Form submission shoud use the CreateInstall method from nuon-go.
+Form submission should use the CreateInstall method from nuon-go.

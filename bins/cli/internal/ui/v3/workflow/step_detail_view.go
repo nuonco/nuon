@@ -283,7 +283,7 @@ func (m *model) populateStepDetailView(goToTop bool) {
 			sections = append(sections, banner)
 		}
 	} else if step.Approval != nil && step.Approval.Response != nil {
-		// TODO: make this a re-usable component
+		// TODO: make this a reusable component
 		l1 := lipgloss.NewStyle().Bold(true).Render("Plan Approved") + "\n"
 		l1 += "These changes have been approved and changes will be applied."
 		banner := styles.SuccessBanner.

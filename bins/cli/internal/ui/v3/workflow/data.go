@@ -162,7 +162,7 @@ func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStep
 	m.loading = false
 	m.stepApprovalConf = false
 	m.approvingStep = false
-	// after a step is approved, we want to immediately fetch the workflow to get the upated version
+	// after a step is approved, we want to immediately fetch the workflow to get the updated version
 	return m.fetchWorkflowCmd
 }
 

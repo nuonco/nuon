@@ -371,14 +371,14 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 					Metadata:               map[string]any{},
 				},
 			}); err != nil {
-				return refetchStepsInfo, errors.Wrap(err, "unable to mark workflow steps approval deined")
+				return refetchStepsInfo, errors.Wrap(err, "unable to mark workflow steps approval denied")
 			}
 		}
 
 		refetchStepsInfo = true
 		return refetchStepsInfo, nil
 		// update step status to approval denied and somehow figureout how to skip at the top
-		// this is not being used rn dashboardui cant trigger this
+		// this is not being used rn dashboardui can't trigger this
 	case app.WorkflowStepApprovalResponseTypeSkipCurrentAndDependents:
 		l.Debug("handling approval response type: skip current and dependents",
 			zap.String("step_id", step.ID),
@@ -393,7 +393,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 					Metadata:               map[string]any{},
 				},
 			}); err != nil {
-				return refetchStepsInfo, errors.Wrap(err, "unable to mark workflow steps approval deined and update step status")
+				return refetchStepsInfo, errors.Wrap(err, "unable to mark workflow steps approval denied and update step status")
 			}
 		}
 
@@ -546,7 +546,7 @@ func (c *WorkflowConductor[DomainSignal]) getWorkflowStepGroup(ctx workflow.Cont
 
 func (c *WorkflowConductor[DomainSignal]) markDependentStepsAsSkipped(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) error {
 	if err := c.markWorkflowApprovalPlanDenied(ctx, flw, step); err != nil {
-		return errors.Wrap(err, "unable to mark workflow steps approval deined")
+		return errors.Wrap(err, "unable to mark workflow steps approval denied")
 	}
 
 	switch app.WorkflowStepTargetType(step.StepTargetType) {

@@ -57,7 +57,7 @@ export const DeployAllComponentsModal = ({
           Are you sure you want to deploy all components?
         </Text>
         <Text variant="base">
-          This aciton will deploy the latest build of each component to your
+          This action will deploy the latest build of each component to your
           install.
         </Text>
       </div>
