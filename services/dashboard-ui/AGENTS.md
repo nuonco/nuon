@@ -582,9 +582,19 @@ npm run test:e2e:headed # Playwright with visible browser
 
 Smoke tests in `e2e/` that run against a live local or staging environment. Chromium only.
 
+### Prerequisites
+
+- Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
+- An admin account email with access to the admin API
+- Playwright browsers installed: `npx playwright install chromium`
+
 ### Running
 
 ```bash
+# Creates a fresh test org, runs tests, deletes org on teardown
+E2E_EMAIL=you@nuon.co npm run test:e2e
+
+# Use an existing org (skips create/teardown)
 E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
 ```
 
@@ -594,20 +604,27 @@ E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
 |----------|---------|----------|---------|
 | `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
 | `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
+| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no | Public API for org creation |
 | `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
-| `E2E_ORG_ID` | — | yes | Org ID for test navigation |
+| `E2E_ORG_ID` | — | no | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
 
-### How auth works
+### How it works
 
-Global setup (`e2e/global-setup.ts`) calls `POST /v1/general/admin-static-token` on the admin API to generate a short-lived (1h) token, injects it as the `X-Nuon-Auth` cookie, and saves browser state to `e2e/.auth/user.json`. All specs reuse this saved auth state — no login UI involved.
+1. Global setup generates a static token via the admin API (`POST /v1/general/admin-static-token`)
+2. If no `E2E_ORG_ID` is set, creates a fresh org via the public API (`POST /v1/orgs`) — the token user becomes org admin automatically
+3. Injects the token as the `X-Nuon-Auth` cookie and saves browser state to `e2e/.auth/user.json`
+4. Org ID is written to `e2e/.auth/org.json` so fixtures and teardown can read it
+5. Tests run against the org
+6. Global teardown deletes the org via admin API if it was created by setup
 
 ### Structure
 
 ```
 e2e/
 ├── playwright.config.ts    # Config (Chromium, auth state, output dirs)
-├── global-setup.ts         # Token generation + cookie injection
-├── fixtures.ts             # Custom test fixture (orgId from env)
+├── global-setup.ts         # Token gen + org creation + cookie injection
+├── global-teardown.ts      # Org cleanup (if created by setup)
+├── fixtures.ts             # Custom test fixture (orgId from state file)
 ├── env.ts                  # Env var loader with defaults
 ├── specs/                  # Playwright test files
 └── flows/                  # Markdown flow specs (source-of-truth docs)
