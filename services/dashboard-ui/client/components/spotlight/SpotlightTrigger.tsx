@@ -20,8 +20,8 @@ export const SpotlightTrigger = () => {
       <Icon variant="MagnifyingGlassIcon" size={16} className="shrink-0" />
       <span className="flex-1 text-left min-w-0">Search...</span>
       <span className="inline-flex gap-1 items-center shrink-0">
-        <span className="flex items-center justify-center size-5 border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded bg-white dark:bg-dark-grey-900 text-[11px] font-medium shrink-0">
-          {mac ? '⌘' : '⌃'}
+        <span className={`flex items-center justify-center h-5 ${mac ? 'w-5' : 'px-1.5'} border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded bg-white dark:bg-dark-grey-900 text-[11px] font-medium shrink-0`}>
+          {mac ? '⌘' : 'CTRL'}
         </span>
         <span className="flex items-center justify-center size-5 border border-[rgba(158,168,179,0.24)] dark:border-[rgba(158,168,179,0.24)] rounded bg-white dark:bg-dark-grey-900 text-[11px] font-medium shrink-0">
           K
