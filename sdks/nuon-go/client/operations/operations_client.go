@@ -8663,7 +8663,7 @@ Example response:
 
 	{
 	  "api-pagination": true,
-	  "org-dashboard": false,
+	  "org-dashboard": true,
 	  "org-runner": true,
 	  "stratus-layout": true,
 	  "user-managed-features": false
