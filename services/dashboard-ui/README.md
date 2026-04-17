@@ -51,6 +51,7 @@ Playwright smoke tests that run against a live local (or staging) environment. C
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
+- Playwright browsers installed: `npx playwright install chromium`
 
 ### Running
 

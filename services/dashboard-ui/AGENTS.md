@@ -582,6 +582,12 @@ npm run test:e2e:headed # Playwright with visible browser
 
 Smoke tests in `e2e/` that run against a live local or staging environment. Chromium only.
 
+### Prerequisites
+
+- Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
+- An admin account email with access to the admin API
+- Playwright browsers installed: `npx playwright install chromium`
+
 ### Running
 
 ```bash
