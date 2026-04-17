@@ -46,7 +46,7 @@ func (m model) workflowIsApprovable() bool {
 	return generics.SliceContains(m.workflow.Status.Status, approvableStatuses)
 }
 
-// TOOD(fd): write an is-retryable for a workflow step
+// TODO(fd): write an is-retryable for a workflow step
 
 // Actual View Code
 func (m model) actionsOrMessage() string {

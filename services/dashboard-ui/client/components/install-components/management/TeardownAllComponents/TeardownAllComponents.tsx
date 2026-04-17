@@ -57,7 +57,7 @@ export const TeardownAllComponentsModal = ({
           Are you sure you want to teardown all components?
         </Text>
         <Text variant="base">
-          This aciton will remove all running component deployments from your
+          This action will remove all running component deployments from your
           install.
         </Text>
       </div>
