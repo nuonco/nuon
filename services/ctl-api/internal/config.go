@@ -74,6 +74,10 @@ func init() {
 	config.RegisterDefault("webhook_timeout", "5s")
 
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
+	config.RegisterDefault("temporal_max_concurrent_workflow_task_execution_size", 10000)
+	config.RegisterDefault("temporal_max_concurrent_activity_task_pollers", 10)
+	config.RegisterDefault("temporal_max_concurrent_workflow_task_pollers", 10)
+	config.RegisterDefault("temporal_disable_registration_aliasing", false)
 
 	config.RegisterDefault("action_crons_enabled", false)
 
@@ -156,10 +160,14 @@ type Config struct {
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
 	// temporal configuration
-	TemporalHost                          string `config:"temporal_host"  validate:"required"`
-	TemporalStickyWorkflowCacheSize       int    `config:"temporal_sticky_workflow_cache_size"`
-	TemporalDataConverterLargePayloadSize int    `config:"temporal_dataconverter_large_payload_size"`
-	TemporalWorkflowFailurePanic          bool   `config:"temporal_workflow_failure_panic"`
+	TemporalHost                                   string `config:"temporal_host"  validate:"required"`
+	TemporalStickyWorkflowCacheSize                int    `config:"temporal_sticky_workflow_cache_size"`
+	TemporalDataConverterLargePayloadSize          int    `config:"temporal_dataconverter_large_payload_size"`
+	TemporalWorkflowFailurePanic                   bool   `config:"temporal_workflow_failure_panic"`
+	TemporalMaxConcurrentWorkflowTaskExecutionSize int    `config:"temporal_max_concurrent_workflow_task_execution_size"`
+	TemporalMaxConcurrentActivityTaskPollers       int    `config:"temporal_max_concurrent_activity_task_pollers"`
+	TemporalMaxConcurrentWorkflowTaskPollers       int    `config:"temporal_max_concurrent_workflow_task_pollers"`
+	TemporalDisableRegistrationAliasing            bool   `config:"temporal_disable_registration_aliasing"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`

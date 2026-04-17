@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
@@ -67,6 +68,23 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		}
 
 		return err
+	}
+
+	// If sandbox mode, sync configs from API and replace handler
+	if j.isSandbox(job) {
+		j.sandboxCtl.SyncForJob(ctx, string(job.Type), string(job.Operation))
+		l.Info("sandbox mode active, replacing handler with sandbox handler",
+			zap.String("job_type", string(job.Type)),
+			zap.String("operation", string(job.Operation)),
+			zap.String("job_id", job.ID),
+			zap.Bool("sandbox_mode_setting", j.settings.SandboxMode),
+		)
+		handler = sandboxhandler.New(j.sandboxCtl, j.apiClient, j.cfg, j.shutdowner, job, execution)
+	} else {
+		l.Info("sandbox mode NOT active, using real handler",
+			zap.String("job_type", string(job.Type)),
+			zap.Bool("sandbox_mode_setting", j.settings.SandboxMode),
+		)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

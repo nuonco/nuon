@@ -1,4 +1,5 @@
-import { TemporalLink } from '@/components/admin/TemporalLink'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { ApproveAllButton } from '@/components/approvals/ApproveAll'
 import type { TWorkflow } from '@/types'
 import { CancelWorkflowButton } from '../../CancelWorkflow'
@@ -7,12 +8,16 @@ export interface IWorkflowActionButtons {
   workflow: TWorkflow
   canShowApproveAll: boolean
   canShowCancel: boolean
+  isAdminVisible: boolean
+  adminDashboardUrl?: string
 }
 
 export const WorkflowActionButtons = ({
   workflow,
   canShowApproveAll,
   canShowCancel,
+  isAdminVisible,
+  adminDashboardUrl,
 }: IWorkflowActionButtons) => {
   return (
     <div className="flex items-center gap-4">
@@ -24,10 +29,12 @@ export const WorkflowActionButtons = ({
         <CancelWorkflowButton workflow={workflow} />
       )}
 
-      <TemporalLink
-        namespace="installs"
-        href={`/admin/temporal/namespaces/installs/workflows?query=${encodeURIComponent(`\`WorkflowId\` STARTS_WITH "${workflow?.owner_id}-execute-workflow-${workflow?.id}"`)}`}
-      />
+      {isAdminVisible && adminDashboardUrl && workflow?.id && (
+        <Button href={`${adminDashboardUrl}/workflows/${workflow.id}`} target="_blank">
+
+          View in admin panel <Icon variant="ArrowSquareOutIcon" />
+        </Button>
+      )}
     </div>
   )
 }

@@ -91,6 +91,52 @@ templ TemporalWorkflowDetail(namespace, workflowID, temporalUIURL string, wfInfo
 				</div>
 			</div>
 
+			<!-- Execution Stats -->
+			<div class="mb-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Execution
+						}
+					}
+					@card.Content() {
+						<div class="space-y-3">
+							<div class="flex items-center gap-3">
+								<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Status</span>
+								@workflowStatusBadge(wfInfo.Status)
+							</div>
+							if wfInfo.Status == "Failed" || wfInfo.Status == "Timed Out" {
+								@latestExecutionFailures(wfInfo)
+							}
+							if len(wfInfo.UpdateExecutions) > 0 {
+								<div class="flex items-start gap-3">
+									<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Updates</span>
+									<span class="font-mono text-xs">{ fmt.Sprintf("%d", len(wfInfo.UpdateExecutions)) }</span>
+								</div>
+							}
+							if len(wfInfo.Activities) > 0 {
+								<div class="flex items-start gap-3">
+									<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Activities</span>
+									<span class="font-mono text-xs">{ fmt.Sprintf("%d", len(wfInfo.Activities)) }</span>
+								</div>
+							}
+							if len(wfInfo.ChildWorkflows) > 0 {
+								<div class="flex items-start gap-3">
+									<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Child workflows</span>
+									<span class="font-mono text-xs">{ fmt.Sprintf("%d", len(wfInfo.ChildWorkflows)) }</span>
+								</div>
+							}
+							if len(wfInfo.AwaitedSignals) > 0 {
+								<div class="flex items-start gap-3">
+									<span class="text-xs text-muted-foreground uppercase w-32 shrink-0">Awaited signals</span>
+									<span class="font-mono text-xs">{ fmt.Sprintf("%d", len(wfInfo.AwaitedSignals)) }</span>
+								</div>
+							}
+						</div>
+					}
+				}
+			</div>
+
 			<!-- Activities -->
 			@workflowActivitiesCard(wfInfo)
 

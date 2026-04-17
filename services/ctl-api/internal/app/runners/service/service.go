@@ -125,6 +125,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/restart", s.AdminRestartRunners)
 		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
+		// sandbox management
+		runners.GET("/sandbox", s.AdminListSandboxRunners)
+		runners.GET("/sandbox/templates", s.AdminGetSandboxTemplates)
+
 		// runner-specific operations
 		runner := runners.Group("/:runner_id")
 		{
@@ -162,7 +166,30 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			runner.POST("/force-shutdown", s.AdminForceShutDown)
 			runner.POST("/noop-job", s.AdminCreateNoopJob)
 			runner.POST("/health-check-job", s.AdminCreateHealthCheck)
+
+			// sandbox config management
+			runner.GET("/sandbox-configs", s.AdminGetSandboxConfigs)
+			runner.PUT("/sandbox-configs", s.AdminUpsertSandboxConfig)
+			runner.DELETE("/sandbox-configs/:config_id", s.AdminDeleteSandboxConfig)
+			runner.POST("/sandbox-configs/reset", s.AdminResetSandboxConfigs)
+			runner.GET("/sandbox-jobs", s.AdminListSandboxJobs)
 		}
+	}
+
+	// sandbox mode management
+	sandboxMode := api.Group("/v1/sandbox-mode")
+	{
+		signals := sandboxMode.Group("/signals")
+		signals.GET("", s.AdminListSandboxSignalConfigs)
+		signals.GET("/types", s.AdminListSignalTypes)
+		signals.PUT("/:signal_type", s.AdminUpsertSandboxSignalConfig)
+		signals.DELETE("/:signal_type", s.AdminDeleteSandboxSignalConfig)
+		signals.POST("/reset", s.AdminResetSandboxSignalConfigs)
+		signals.POST("/disable-all", s.AdminDisableAllSandboxSignalConfigs)
+
+		runnerJobs := sandboxMode.Group("/runner-jobs")
+		runnerJobs.GET("", s.AdminListAllSandboxConfigs)
+		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
 	}
 
 	// runner groups
@@ -214,6 +241,10 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.GET("/jobs/:job_id/plan", s.GetRunnerJobPlanV2)
 	runners.GET("/jobs/:job_id", s.GetRunnerJobV2)
 	runners.PATCH("/jobs/:job_id", s.UpdateRunnerJobV2)
+
+	// sandbox configs
+	runners.GET("/sandbox-configs", s.GetRunnerSandboxConfigs)
+	runners.GET("/sandbox-config", s.GetRunnerSandboxConfig)
 
 	// runner process lifecycle
 	runners.POST("/processes", s.CreateRunnerProcess)

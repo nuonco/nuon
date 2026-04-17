@@ -10,11 +10,6 @@ import (
 )
 
 func (j *jobLoop) executeInitializeJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	if j.isSandbox(job) {
-		j.execSandboxStep(ctx, job)
-		return nil
-	}
-
 	if err := handler.Initialize(ctx, job, jobExecution); err != nil {
 		return fmt.Errorf("unable to initialize job: %w", err)
 	}

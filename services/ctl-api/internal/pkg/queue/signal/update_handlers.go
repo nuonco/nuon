@@ -18,5 +18,6 @@ func RegisterUpdateHandlers(sig Signal, ctx workflow.Context) error {
 	if su, ok := sig.(SignalWithUpdateHandlers); ok {
 		return su.RegisterUpdateHandlers(ctx)
 	}
+
 	return nil
 }

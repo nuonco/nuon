@@ -13,6 +13,7 @@ import { StatusWithDescription } from '@/components/common/StatusWithDescription
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -125,6 +126,12 @@ export const ActionDetail = () => {
                 />
               </LabeledValue>
             </>
+          ) : null}
+          {action?.id ? (
+            <AdminDashboardLink
+              path={`/queues?owner_id=${action.id}`}
+              label="View in admin panel"
+            />
           ) : null}
           {action?.action_workflow?.configs?.[0]?.triggers?.find(
             (t) => t.type === 'manual'
