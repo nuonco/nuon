@@ -28,14 +28,18 @@ type SandboxPlanTemplate struct {
 
 // SandboxTemplates is the response for the templates endpoint.
 type SandboxTemplates struct {
-	LogTemplates  []SandboxLogTemplate  `json:"log_templates"`
-	PlanTemplates []SandboxPlanTemplate `json:"plan_templates"`
+	LogTemplates         []SandboxLogTemplate  `json:"log_templates"`
+	PlanTemplates        []SandboxPlanTemplate `json:"plan_templates"`
+	PlanDisplayTemplates []SandboxPlanTemplate `json:"plan_display_templates"`
+	StateTemplates       []SandboxPlanTemplate `json:"state_templates"`
 }
 
 func DefaultSandboxTemplates() SandboxTemplates {
 	return SandboxTemplates{
-		LogTemplates:  defaultLogTemplates(),
-		PlanTemplates: defaultPlanTemplates(),
+		LogTemplates:         defaultLogTemplates(),
+		PlanTemplates:        defaultPlanTemplates(),
+		PlanDisplayTemplates: defaultPlanDisplayTemplates(),
+		StateTemplates:       defaultStateTemplates(),
 	}
 }
 
@@ -71,6 +75,44 @@ func defaultPlanTemplates() []SandboxPlanTemplate {
 			Description: t.Description,
 			Category:    categoryFromKey(t.Key),
 			Type:        planType,
+			Contents:    t.Contents,
+		})
+	}
+	return result
+}
+
+func defaultPlanDisplayTemplates() []SandboxPlanTemplate {
+	displayTmpls := templates.PlanDisplayTemplates()
+	result := make([]SandboxPlanTemplate, 0, len(displayTmpls))
+	for _, t := range displayTmpls {
+		planType := t.Key
+		if t.IsNoop {
+			planType = "noop"
+		}
+		result = append(result, SandboxPlanTemplate{
+			Key:         t.Key,
+			Description: t.Description,
+			Category:    categoryFromKey(t.Key),
+			Type:        planType,
+			Contents:    t.Contents,
+		})
+	}
+	return result
+}
+
+func defaultStateTemplates() []SandboxPlanTemplate {
+	stateTmpls := templates.StateTemplates()
+	result := make([]SandboxPlanTemplate, 0, len(stateTmpls))
+	for _, t := range stateTmpls {
+		stateType := t.Key
+		if t.IsNoop {
+			stateType = "noop"
+		}
+		result = append(result, SandboxPlanTemplate{
+			Key:         t.Key,
+			Description: t.Description,
+			Category:    categoryFromKey(t.Key),
+			Type:        stateType,
 			Contents:    t.Contents,
 		})
 	}

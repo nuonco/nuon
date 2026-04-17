@@ -16,6 +16,8 @@ func AllTemplates() []Template {
 	var all []Template
 	all = append(all, LogTemplates()...)
 	all = append(all, PlanTemplates()...)
+	all = append(all, PlanDisplayTemplates()...)
+	all = append(all, StateTemplates()...)
 	all = append(all, OutputTemplates()...)
 	return all
 }
@@ -25,9 +27,19 @@ func LogTemplates() []Template {
 	return logTemplates()
 }
 
-// PlanTemplates returns all plan templates.
+// PlanTemplates returns all plan templates (machine-readable JSON).
 func PlanTemplates() []Template {
 	return planTemplates()
+}
+
+// PlanDisplayTemplates returns all human-readable plan display templates.
+func PlanDisplayTemplates() []Template {
+	return planDisplayTemplates()
+}
+
+// StateTemplates returns all terraform state JSON templates.
+func StateTemplates() []Template {
+	return stateTemplates()
 }
 
 // OutputTemplates returns all output templates.
@@ -72,12 +84,14 @@ type FlowTemplate struct {
 
 // FlowConfig defines one runner job config within a flow template.
 type FlowConfig struct {
-	JobType        string `json:"job_type"`
-	LogTemplate    string `json:"log_template,omitempty"`    // key into LogTemplates()
-	PlanTemplate   string `json:"plan_template,omitempty"`   // key into PlanTemplates()
-	OutputTemplate string `json:"output_template,omitempty"` // key into OutputTemplates()
-	DurationMs     int64  `json:"duration_ms"`
-	Enabled        bool   `json:"enabled"`
+	JobType             string `json:"job_type"`
+	LogTemplate         string `json:"log_template,omitempty"`          // key into LogTemplates()
+	PlanTemplate        string `json:"plan_template,omitempty"`         // key into PlanTemplates()
+	PlanDisplayTemplate string `json:"plan_display_template,omitempty"` // key into PlanDisplayTemplates()
+	StateTemplate       string `json:"state_template,omitempty"`        // key into StateTemplates()
+	OutputTemplate      string `json:"output_template,omitempty"`       // key into OutputTemplates()
+	DurationMs          int64  `json:"duration_ms"`
+	Enabled             bool   `json:"enabled"`
 }
 
 // FlowTemplates returns all pre-built flow templates.
