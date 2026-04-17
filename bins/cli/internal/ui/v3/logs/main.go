@@ -57,7 +57,7 @@ type model struct {
 
 	// we want the SelectedLog to be updated when the cursor changes to allow the users to
 	// open the sidebar and continue to scroll logs which would change the log on display in the sidebar.
-	// cursor      int // cursor for the selected table (perhaps this shoudl move into the table model and can be sent up via a message)
+	// cursor      int // cursor for the selected table (perhaps this should move into the table model and can be sent up via a message)
 	selectedLog *models.AppOtelLogRecord
 
 	searchEnabled bool
