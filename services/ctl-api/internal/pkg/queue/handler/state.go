@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -59,15 +58,9 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	if sig == nil {
 		panic("signal was nil")
 	}
-
-	h.queueSignal = queueSignal
 	h.sig = sig
 
-	if queueSignal.OrgID != nil {
-		if org, err := activities.AwaitGetOrgByIDByOrgID(ctx, *queueSignal.OrgID); err == nil && org != nil && org.SandboxMode {
-			h.sig = sandboxmode.WrapSignal(sig)
-		}
-	}
+	h.queueSignal = queueSignal
 
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
@@ -87,3 +80,4 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	return nil
 }
+

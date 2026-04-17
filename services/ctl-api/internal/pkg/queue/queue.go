@@ -27,8 +27,9 @@ type QueueRef struct {
 
 // QueueState is the data that is passed between continue-as-news
 type QueueState struct {
-	QueueRefs []QueueRef
-	Paused    bool
+	QueueRefs        []QueueRef
+	Paused           bool
+	LastActivityTime time.Time
 }
 
 // @temporal-gen-v2 workflow
@@ -62,6 +63,7 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 	}
 	if !finished {
 		req.State = q.state
+		req.State.LastActivityTime = q.lastActivityTime
 		// Clear the log stream from context before continue-as-new so the next
 		// run doesn't inherit a stale log stream from a previously executed signal.
 		ctx = cctx.SetLogStreamWorkflowContext(ctx, nil)
