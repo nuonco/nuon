@@ -12,6 +12,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : [["html", { outputFolder: "./.report" }]],
 
   globalSetup: "./global-setup.ts",
+  globalTeardown: "./global-teardown.ts",
 
   use: {
     baseURL: env.baseUrl,
