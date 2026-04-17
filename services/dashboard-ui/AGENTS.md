@@ -563,13 +563,15 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-npm run dev:spa        # Development: esbuild watch + PostCSS + BrowserSync
-npm run build:spa      # Production build (minified)
-npm run build:spa:js   # Build JS only
-npm run build:spa:css  # Build CSS only
-npm run lint:spa       # ESLint for the SPA
-npm run tsc:spa        # TypeScript type check for the SPA
+npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
+npm run build          # Production build (minified)
+npm run build:js       # Build JS only
+npm run build:css      # Build CSS only
+npm run lint           # ESLint for the SPA
+npm run tsc            # TypeScript type check
+npm run dev:ladle      # Ladle component stories
+npm test               # Vitest tests
 ```
 
-**Do NOT run build commands** (`build:spa`, `build:spa:js`, `build:spa:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+**Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
 
