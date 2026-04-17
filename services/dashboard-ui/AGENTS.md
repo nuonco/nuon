@@ -571,7 +571,49 @@ npm run lint           # ESLint for the SPA
 npm run tsc            # TypeScript type check
 npm run dev:ladle      # Ladle component stories
 npm test               # Vitest tests
+npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
+npm run test:e2e:ui    # Playwright interactive UI mode
+npm run test:e2e:headed # Playwright with visible browser
 ```
 
 **Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+
+## E2E Tests (Playwright)
+
+Smoke tests in `e2e/` that run against a live local or staging environment. Chromium only.
+
+### Running
+
+```bash
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+```
+
+### Environment variables
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
+| `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
+| `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
+| `E2E_ORG_ID` | — | yes | Org ID for test navigation |
+
+### How auth works
+
+Global setup (`e2e/global-setup.ts`) calls `POST /v1/general/admin-static-token` on the admin API to generate a short-lived (1h) token, injects it as the `X-Nuon-Auth` cookie, and saves browser state to `e2e/.auth/user.json`. All specs reuse this saved auth state — no login UI involved.
+
+### Structure
+
+```
+e2e/
+├── playwright.config.ts    # Config (Chromium, auth state, output dirs)
+├── global-setup.ts         # Token generation + cookie injection
+├── fixtures.ts             # Custom test fixture (orgId from env)
+├── env.ts                  # Env var loader with defaults
+├── specs/                  # Playwright test files
+└── flows/                  # Markdown flow specs (source-of-truth docs)
+```
+
+### Flow docs
+
+`e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
 

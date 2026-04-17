@@ -38,3 +38,8 @@ analyze.js
 config.yml
 config.json
 .planning/
+
+# playwright e2e
+e2e/.auth/
+e2e/.results/
+e2e/.report/
