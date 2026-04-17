@@ -10,8 +10,8 @@ export const TemporalLinkContainer = ({
   eventLoopId?: string
   href?: string
 }) => {
-  const { user, isLoading } = useAuth()
-  const isVisible = !isLoading && !!user?.email?.endsWith('@nuon.co')
+  const { isAdmin, isLoading } = useAuth()
+  const isVisible = !isLoading && !!isAdmin
   const resolvedHref =
     href ??
     `/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`

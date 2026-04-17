@@ -8,6 +8,7 @@ import { UserDropdown, type IUserDropdown } from './UserDropdown'
 type IUserDropdownContainerProps = Omit<
   IUserDropdown,
   | 'isAdmin'
+  | 'isNuonEmployee'
   | 'apiUrl'
   | 'adminDashboardUrl'
   | 'authServiceUrl'
@@ -23,7 +24,7 @@ type IUserDropdownContainerProps = Omit<
 >
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
-  const { isAdmin, user, isLoading } = useAuth()
+  const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
   const { apiUrl, authServiceUrl, adminDashboardUrl } = useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
@@ -32,6 +33,7 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   return (
     <UserDropdown
       isAdmin={!!isAdmin}
+      isNuonEmployee={!!isNuonEmployee}
       apiUrl={apiUrl}
       adminDashboardUrl={adminDashboardUrl}
       authServiceUrl={authServiceUrl}
