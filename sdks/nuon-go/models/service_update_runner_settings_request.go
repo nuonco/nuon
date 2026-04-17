@@ -24,11 +24,17 @@ type ServiceUpdateRunnerSettingsRequest struct {
 	// Minimum: 86400
 	AwsMaxInstanceLifetime int64 `json:"aws_max_instance_lifetime,omitempty"`
 
+	// binary version
+	BinaryVersion string `json:"binary_version,omitempty"`
+
 	// container image tag
 	ContainerImageTag string `json:"container_image_tag,omitempty"`
 
 	// container image url
 	ContainerImageURL string `json:"container_image_url,omitempty"`
+
+	// container max uptime
+	ContainerMaxUptime int64 `json:"container_max_uptime,omitempty"`
 
 	// JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
 	// e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
@@ -42,6 +48,9 @@ type ServiceUpdateRunnerSettingsRequest struct {
 
 	// runner api url
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
+	// vm max uptime
+	VMMaxUptime int64 `json:"vm_max_uptime,omitempty"`
 }
 
 // Validate validates this service update runner settings request

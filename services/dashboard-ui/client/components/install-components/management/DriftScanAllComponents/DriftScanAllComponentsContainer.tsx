@@ -49,7 +49,7 @@ export const DriftScanAllComponentsModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
-      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      const workflowId = result.data.workflow_id
       if (workflowId) {
         navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
       } else {

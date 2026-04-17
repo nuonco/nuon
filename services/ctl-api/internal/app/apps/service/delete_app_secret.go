@@ -24,7 +24,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/secrets/{secret_id} [DELETE]
 func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
 	secretID := ctx.Param("secret_id")
@@ -35,7 +35,7 @@ func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 // @ID						DeleteAppSecret
@@ -54,7 +54,7 @@ func (s *service) DeleteAppSecretV2(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/secret/{secret_id} [DELETE]
 func (s *service) DeleteAppSecret(ctx *gin.Context) {
 	secretID := ctx.Param("secret_id")
@@ -65,7 +65,7 @@ func (s *service) DeleteAppSecret(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) deleteAppSecret(ctx context.Context, secretID string) error {

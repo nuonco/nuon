@@ -1,55 +1,48 @@
-# Dashboard UI Mock Generation Scripts
-
-These scripts solve the circular reference issue with `msw-auto-mock` when generating mocks from the Nuon OpenAPI specification.
+# Dashboard UI Scripts
 
 ## Scripts
 
-### `clean-openapi-spec.js`
-Downloads and cleans the OpenAPI spec by removing circular references that cause `msw-auto-mock` to hang.
+### `generate-api-types.js`
+Generates TypeScript types from the Nuon OpenAPI spec into `client/types/nuon-oapi-v3.d.ts` using `openapi-typescript`. Runs automatically before `dev` and `tsc`.
 
-### `generate-mocks-with-clean-spec.js`
-Orchestrates the full process: cleaning the spec and generating mocks.
+### `clean-openapi-spec.js`
+Downloads the OpenAPI spec and removes circular `$ref` chains that break `msw-auto-mock`. Outputs a cleaned spec to `scripts/cleaned-openapi-spec.json`.
+
+### `hash-assets.js`
+Post-build step that content-hashes JS and CSS output files, rewrites `index.html` references to point at the hashed filenames in `dist/assets/`, and cleans up unhashed originals. Runs automatically as part of `npm run build`.
+
+### `dev.sh`
+Starts the Go BFF server (`server/`), waits for it to write a port file, then runs the SPA dev process (`npm run dev`) with live reload.
 
 ## Usage
 
-### Production API (Default)
+### Generate API types (production API, default)
 ```bash
-npm run generate-api-mocks
-```
-Uses `https://api.nuon.co` by default.
-
-### Local Development
-```bash
-NUON_API_URL=http://localhost:8081 npm run generate-api-mocks
+npm run generate-api-types
 ```
 
-### Staging Environment
+### Generate API types from local API
 ```bash
-NUON_API_URL=https://api.nuon-stage.co npm run generate-api-mocks
+NUON_API_URL=http://localhost:8081 npm run generate-api-types
 ```
 
-## How It Works
+### Generate API types from a local spec file
+```bash
+NUON_OPENAPI_SPEC_FILE=./path/to/spec.json npm run generate-api-types
+```
 
-1. **Downloads OpenAPI spec** using HTTP/HTTPS based on the URL protocol
-2. **Identifies circular references** like `Account -> Role -> Account`
-3. **Replaces problematic schemas** with simplified versions
-4. **Flattens `allOf` constructs** that break msw-auto-mock
-5. **Generates comprehensive mocks** from the cleaned specification
-6. **Cleans up temporary files**
+### Clean OpenAPI spec (for mock generation)
+```bash
+node scripts/clean-openapi-spec.js
+# or with a local API:
+NUON_API_URL=http://localhost:8081 node scripts/clean-openapi-spec.js
+# or with a local file:
+NUON_OPENAPI_SPEC_FILE=./path/to/spec.json node scripts/clean-openapi-spec.js
+```
 
-## Output
+## Environment Variables
 
-- Creates `test/mock-api-handlers.js` with hundreds of mock endpoints
-- Supports all existing tests without changes
-- Preserves the full API structure while breaking infinite loops
-
-## Troubleshooting
-
-### Network Issues
-The script will show protocol being used (`http:` or `https:`) and response status codes.
-
-### API Endpoint Issues
-Check that your `NUON_API_URL` endpoint serves the OpenAPI spec at `/oapi/v3`.
-
-### Generation Failures
-The script includes detailed error messages for parsing, network, and generation issues.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NUON_API_URL` | `https://api.nuon.co` | API URL to fetch the OpenAPI spec from |
+| `NUON_OPENAPI_SPEC_FILE` | — | Local spec file path (takes precedence over `NUON_API_URL`) |

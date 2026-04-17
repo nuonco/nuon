@@ -36,7 +36,7 @@ import (
 // @Failure						403	{object}	stderr.ErrResponse
 // @Failure						404	{object}	stderr.ErrResponse
 // @Failure						500	{object}	stderr.ErrResponse
-// @Success						202	{boolean}		true
+// @Success				202	{object}	app.EmptyResponse
 // @Router						/v1/workflows/{workflow_id}/cancel [post]
 func (s *service) CancelWorkflow(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -75,7 +75,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
-		ctx.JSON(http.StatusAccepted, true)
+		ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 		return
 	}
 
@@ -120,7 +120,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusAccepted, true)
+	ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 }
 
 // findCancelableStep returns the first in-progress or awaiting-approval step, if any.
@@ -149,7 +149,7 @@ func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 // @Failure						403	{object}	stderr.ErrResponse
 // @Failure						404	{object}	stderr.ErrResponse
 // @Failure						500	{object}	stderr.ErrResponse
-// @Success						202	{boolean}		true
+// @Success				202	{object}	app.EmptyResponse
 // @Router						/v1/install-workflows/{install_workflow_id}/cancel [post]
 // @Deprecated
 func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
@@ -189,7 +189,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
-		ctx.JSON(http.StatusAccepted, true)
+		ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 		return
 	}
 
@@ -233,7 +233,7 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusAccepted, true)
+	ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 }
 
 func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) error {

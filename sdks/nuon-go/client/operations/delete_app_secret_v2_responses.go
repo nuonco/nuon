@@ -77,7 +77,7 @@ DeleteAppSecretV2OK describes a response with status code 200, with default head
 OK
 */
 type DeleteAppSecretV2OK struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this delete app secret v2 o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *DeleteAppSecretV2OK) String() string {
 	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/secrets/{secret_id}][%d] deleteAppSecretV2OK %s", 200, payload)
 }
 
-func (o *DeleteAppSecretV2OK) GetPayload() bool {
+func (o *DeleteAppSecretV2OK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

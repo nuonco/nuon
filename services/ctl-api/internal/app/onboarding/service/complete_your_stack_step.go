@@ -77,16 +77,15 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("example_app_slug is required for example app type"))
 			return
 		}
-		exApp := getExampleAppBySlug(req.ExampleAppSlug)
-		if exApp == nil {
-			ctx.Error(fmt.Errorf("unknown example app slug: %s", req.ExampleAppSlug))
+		if req.CloudProvider == "" {
+			ctx.Error(fmt.Errorf("cloud_provider is required for example app type"))
 			return
 		}
 		onboarding.ExampleAppSlug = &req.ExampleAppSlug
-		onboarding.CloudProvider = &exApp.CloudProvider
-		sig.ExampleRepo = exApp.Repo
-		sig.ExampleDirectory = exApp.Directory
-		sig.ExampleBranch = exApp.Branch
+		onboarding.CloudProvider = &req.CloudProvider
+		sig.ExampleRepo = exampleAppsRepo
+		sig.ExampleDirectory = req.ExampleAppSlug
+		sig.ExampleBranch = exampleAppsBranch
 
 	case app.OnboardingAppTypeCustom:
 		if req.CloudProvider == "" {

@@ -199,7 +199,7 @@ func (m *model) submitForm() tea.Cmd {
 		name := strings.TrimSpace(m.inputs[0].Value())
 		region := awsRegions[m.regionIndex]
 
-		install, _, err := m.api.CreateInstall(m.ctx, m.appID, &models.ServiceCreateInstallRequest{
+		install, err := m.api.CreateInstall(m.ctx, m.appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
 			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
 				Region: region,

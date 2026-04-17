@@ -77,7 +77,7 @@ ReprovisionInstallCreated describes a response with status code 201, with defaul
 Created
 */
 type ReprovisionInstallCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this reprovision install created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *ReprovisionInstallCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/reprovision][%d] reprovisionInstallCreated %s", 201, payload)
 }
 
-func (o *ReprovisionInstallCreated) GetPayload() string {
+func (o *ReprovisionInstallCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *ReprovisionInstallCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

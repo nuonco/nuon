@@ -77,7 +77,7 @@ PhoneHomeCreated describes a response with status code 201, with default header 
 Created
 */
 type PhoneHomeCreated struct {
-	Payload string
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this phone home created response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *PhoneHomeCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/phone-home/{phone_home_id}][%d] phoneHomeCreated %s", 201, payload)
 }
 
-func (o *PhoneHomeCreated) GetPayload() string {
+func (o *PhoneHomeCreated) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

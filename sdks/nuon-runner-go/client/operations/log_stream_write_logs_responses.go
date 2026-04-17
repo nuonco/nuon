@@ -77,7 +77,7 @@ LogStreamWriteLogsCreated describes a response with status code 201, with defaul
 Created
 */
 type LogStreamWriteLogsCreated struct {
-	Payload string
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this log stream write logs created response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *LogStreamWriteLogsCreated) String() string {
 	return fmt.Sprintf("[POST /v1/log-streams/{log_stream_id}/logs][%d] logStreamWriteLogsCreated %s", 201, payload)
 }
 
-func (o *LogStreamWriteLogsCreated) GetPayload() string {
+func (o *LogStreamWriteLogsCreated) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

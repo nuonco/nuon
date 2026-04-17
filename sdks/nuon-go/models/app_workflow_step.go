@@ -79,6 +79,9 @@ type AppWorkflowStep struct {
 	// retried
 	Retried bool `json:"retried,omitempty"`
 
+	// retry index
+	RetryIndex int64 `json:"retry_index,omitempty"`
+
 	// retryable
 	Retryable bool `json:"retryable,omitempty"`
 

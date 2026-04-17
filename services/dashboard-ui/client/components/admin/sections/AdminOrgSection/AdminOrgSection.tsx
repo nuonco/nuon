@@ -21,6 +21,7 @@ import {
   adminEnableOrgDebugMode,
   adminDeprovisionOrg,
   adminForgetOrgInstalls,
+  adminForgetOrg,
 } from '@/lib'
 
 interface IAdminOrgSection {
@@ -164,6 +165,16 @@ export const AdminOrgSection = ({
           requiresInput
           inputText="yesimsure"
           confirmationText="WARNING: This will permanently delete ALL install records for this organization. Any running infrastructure will be orphaned and must be cleaned up manually (e.g. via aws-nuke). This action CANNOT be undone. Only use this when installs are broken beyond repair."
+        />
+        <AdminActionCard
+          title="Forget org"
+          description="Permanently forget this org and all its roles. This cannot be undone."
+          action={() => adminForgetOrg({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          inputText="yesimsure"
+          confirmationText="WARNING: This will permanently delete the organization record and all its roles. Any running infrastructure will be orphaned and must be cleaned up manually. This action CANNOT be undone."
         />
       </AdminActionGroup>
 

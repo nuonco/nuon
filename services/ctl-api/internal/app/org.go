@@ -162,10 +162,9 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	// Set default feature flag values - most features enabled by default
-	// except org-dashboard, install-break-glass, and user-managed-features which remain disabled
+	// except install-break-glass and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureOrgDashboard:       false,
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
 		OrgFeatureQueues:             false,
@@ -177,6 +176,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStratusWorkflow:         true,
 		OrgFeatureDashboardSSE:            true,
 		OrgFeatureAPIPagination:           true,
+		OrgFeatureOrgDashboard:            true,
 		OrgFeatureOrgRunner:               true,
 		OrgFeatureOrgSettings:             true,
 		OrgFeatureOrgSupport:              true,

@@ -88,7 +88,7 @@ func (c *client) UpdateActionWorkflow(ctx context.Context, actionWorkflowID stri
 }
 
 func (c *client) DeleteActionWorkflow(ctx context.Context, actionWorkflowID string) (bool, error) {
-	resp, err := c.genClient.Operations.DeleteActionWorkflow(&operations.DeleteActionWorkflowParams{
+	_, err := c.genClient.Operations.DeleteActionWorkflow(&operations.DeleteActionWorkflowParams{
 		ActionWorkflowID: actionWorkflowID,
 		Context:          ctx,
 	}, c.getOrgIDAuthInfo())
@@ -96,7 +96,7 @@ func (c *client) DeleteActionWorkflow(ctx context.Context, actionWorkflowID stri
 		return false, err
 	}
 
-	return resp.Payload, err
+	return true, nil
 }
 
 func (c *client) GetActionWorkflowConfigs(ctx context.Context, actionWorkflowID string) ([]*models.AppActionWorkflowConfig, error) {
@@ -195,20 +195,12 @@ func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, install
 }
 
 func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
-	resp, err := c.genClient.Operations.CreateInstallActionWorkflowRun(&operations.CreateInstallActionWorkflowRunParams{
+	_, err := c.genClient.Operations.CreateInstallActionWorkflowRun(&operations.CreateInstallActionWorkflowRunParams{
 		InstallID: installID,
 		Req:       req,
 		Context:   ctx,
 	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return err
-	}
-
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return err
 }
 
 func (c *client) GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error) {

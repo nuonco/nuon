@@ -27,7 +27,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/actions/{action_id} [DELETE]
 func (s *service) DeleteAppAction(ctx *gin.Context) {
 	awID := ctx.Param("action_id")
@@ -54,7 +54,7 @@ func (s *service) DeleteAppAction(ctx *gin.Context) {
 		Type: signals.OperationDelete,
 	})
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 // @ID						DeleteActionWorkflow
@@ -72,7 +72,7 @@ func (s *service) DeleteAppAction(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/action-workflows/{action_workflow_id} [DELETE]
 func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 	awID := ctx.Param("action_workflow_id")
@@ -99,7 +99,7 @@ func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 		Type: signals.OperationDelete,
 	})
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) deleteActionWorkflow(ctx context.Context, orgID, awID string) error {

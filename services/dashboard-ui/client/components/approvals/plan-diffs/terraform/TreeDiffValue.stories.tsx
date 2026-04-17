@@ -185,6 +185,43 @@ export const KnownAfterApplyNested = () => (
   />
 )
 
+export const TagsNullToEmpty = () => (
+  <TreeDiffValue
+    before={[
+      {
+        device_name: '/dev/sda1',
+        volume_size: 50,
+        volume_type: 'gp3',
+        encrypted: true,
+        tags: null,
+      },
+      {
+        device_name: '/dev/sdb',
+        volume_size: 100,
+        volume_type: 'gp3',
+        encrypted: true,
+        tags: null,
+      },
+    ]}
+    after={[
+      {
+        device_name: '/dev/sda1',
+        volume_size: 50,
+        volume_type: 'gp3',
+        encrypted: true,
+        tags: {},
+      },
+      {
+        device_name: '/dev/sdb',
+        volume_size: 100,
+        volume_type: 'gp3',
+        encrypted: true,
+        tags: {},
+      },
+    ]}
+  />
+)
+
 export const UnchangedComplexValue = () => (
   <TreeDiffValue
     before={{

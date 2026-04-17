@@ -340,6 +340,7 @@ export type TWorkflowStepApproval =
 export type TWorkflowStepApprovalResponse = { type: string } & any
 export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
+export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']

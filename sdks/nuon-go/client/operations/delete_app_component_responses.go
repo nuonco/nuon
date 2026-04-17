@@ -77,7 +77,7 @@ DeleteAppComponentOK describes a response with status code 200, with default hea
 OK
 */
 type DeleteAppComponentOK struct {
-	Payload bool
+	Payload models.AppEmptyResponse
 }
 
 // IsSuccess returns true when this delete app component o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *DeleteAppComponentOK) String() string {
 	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/components/{component_id}][%d] deleteAppComponentOK %s", 200, payload)
 }
 
-func (o *DeleteAppComponentOK) GetPayload() bool {
+func (o *DeleteAppComponentOK) GetPayload() models.AppEmptyResponse {
 	return o.Payload
 }
 

@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { TWorkflowResponse } from '@/types'
 
 export type TTeardownComponentsBody = {
   error_behavior?: 'continue' | 'abort'
@@ -14,7 +15,7 @@ export const teardownComponents = ({
   orgId: string
   body: TTeardownComponentsBody
 }) =>
-  api<string>({
+  api<TWorkflowResponse>({
     withHeaders: true,
     path: `installs/${installId}/components/teardown-all`,
     method: 'POST',
