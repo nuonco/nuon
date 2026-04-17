@@ -15,6 +15,14 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
+	l.Info("ensuring queue is active")
+	if err := q.ensureActive(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to ensure queue is active")
+	}
+	if q.stopped {
+		return true, nil
+	}
+
 	l.Info("registering handlers")
 	if err := q.registerHandlers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register handlers")

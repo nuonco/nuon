@@ -80,4 +80,3 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	return nil
 }
-
