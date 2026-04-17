@@ -14,6 +14,7 @@ export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {
   hideOrgSettings?: boolean
   isAdmin: boolean
+  isNuonEmployee: boolean
   apiUrl: string
   adminDashboardUrl?: string
   authServiceUrl: string
@@ -32,6 +33,7 @@ export const UserDropdown = ({
   buttonClassName,
   hideOrgSettings,
   isAdmin,
+  isNuonEmployee,
   apiUrl,
   adminDashboardUrl,
   authServiceUrl,
@@ -72,7 +74,7 @@ export const UserDropdown = ({
             Admin
           </Text>
         )}
-        {!hideOrgSettings && isAdmin && (
+        {!hideOrgSettings && isNuonEmployee && (
           <Button
             onClick={() => onAddPanel(<AdminPanel />)}
             isMenuButton
