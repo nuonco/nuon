@@ -14,6 +14,7 @@ import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
@@ -103,6 +104,10 @@ export const InstallComponentDetail = () => {
 
         {component && (
           <div className="flex items-center gap-4">
+            <AdminDashboardLink
+              path={`/queues?owner_id=${installComponent?.id}`}
+              label="View in admin panel"
+            />
             <ManagementDropdown
               component={component}
               currentBuildId={latestDeploy?.build_id}

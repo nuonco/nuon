@@ -1,6 +1,9 @@
 package signal
 
-import "fmt"
+import (
+	"fmt"
+	"runtime/debug"
+)
 
 // SignalErrInit wraps an error that occurred during signal initialization.
 type SignalErrInit struct {
@@ -43,10 +46,19 @@ func (e *SignalErrExecute) Unwrap() error {
 
 // SignalErrPanic wraps a panic that occurred during signal processing.
 type SignalErrPanic struct {
-	Value any
-	Phase string // "init", "validate", or "execute"
+	Value      any
+	Phase      string // "init", "validate", or "execute"
+	StackTrace string
+}
+
+func NewSignalErrPanic(value any, phase string) *SignalErrPanic {
+	return &SignalErrPanic{
+		Value:      value,
+		Phase:      phase,
+		StackTrace: string(debug.Stack()),
+	}
 }
 
 func (e *SignalErrPanic) Error() string {
-	return fmt.Sprintf("signal panicked during %s: %v", e.Phase, e.Value)
+	return fmt.Sprintf("signal panicked during %s: %v\n%s", e.Phase, e.Value, e.StackTrace)
 }

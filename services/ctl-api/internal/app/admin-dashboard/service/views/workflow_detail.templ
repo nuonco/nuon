@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 )
 
-templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
+templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData, generateStepsSignal *app.QueueSignal) {
 	@Layout("Workflow: " + wf.ID, ActivePageWorkflows) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -44,10 +44,10 @@ templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
 					</div>
 				</div>
 
-				<!-- Metadata Grid -->
 				<!-- Quick Links -->
 				<div class="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs">
 					<a href={ templ.URL("/queue-signals?search=" + wf.ID) } class="text-cyan hover:underline">Workflow signal →</a>
+					<a href={ templ.URL(fmt.Sprintf("/queues?owner_id=%s&owner_type=%s&queue_name=install-workflows&redirect=true", wf.OwnerID, wf.OwnerType)) } class="text-cyan hover:underline">Queue →</a>
 				</div>
 
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
@@ -87,6 +87,44 @@ templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData) {
 					</div>
 				</div>
 			</div>
+
+			<!-- Generate Steps Signal -->
+			if generateStepsSignal != nil {
+				<div class="mb-6">
+					@card.Card() {
+						@card.Header() {
+							<div class="flex items-center justify-between">
+								@card.Title() {
+									Generate steps signal
+								}
+								<div class="flex items-center gap-2">
+									@status.StatusAutoSimple(string(generateStepsSignal.Status.Status))
+								</div>
+							</div>
+						}
+						@card.Content() {
+							<div class="flex items-center gap-6 text-xs">
+								<div>
+									<span class="text-muted-foreground uppercase">Signal ID:</span>
+									<a href={ templ.URL(fmt.Sprintf("/queues/%s/signals/%s", generateStepsSignal.QueueID, generateStepsSignal.ID)) } class="font-mono text-cyan hover:underline ml-1">{ generateStepsSignal.ID }</a>
+								</div>
+								<div>
+									<span class="text-muted-foreground uppercase">Queue:</span>
+									<a href={ templ.URL(fmt.Sprintf("/queues/%s", generateStepsSignal.QueueID)) } class="font-mono text-cyan hover:underline ml-1">{ generateStepsSignal.Queue.Name }</a>
+								</div>
+								<div>
+									<span class="text-muted-foreground uppercase">Type:</span>
+									<span class="font-mono ml-1">{ string(generateStepsSignal.Type) }</span>
+								</div>
+								<div>
+									<span class="text-muted-foreground uppercase">Executions:</span>
+									<span class="font-mono ml-1">{ fmt.Sprintf("%d", generateStepsSignal.ExecutionCount) }</span>
+								</div>
+							</div>
+						}
+					}
+				</div>
+			}
 
 			<!-- Status History -->
 			if len(wf.Status.History) > 0 {

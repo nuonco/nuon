@@ -71,6 +71,10 @@ type Client interface {
 	// runner
 	GetRunner(ctx context.Context) (*models.AppRunner, error)
 
+	// sandbox configs
+	GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error)
+	GetSandboxConfig(ctx context.Context, jobType, operation string) (*SandboxConfig, error)
+
 	// authentication
 	RunnerAuthAWS(ctx context.Context, req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSResponse, error)
 	RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunnerAuthAWSIIDRequest) (*models.ServiceRunnerAuthAWSIIDResponse, error)

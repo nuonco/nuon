@@ -59,7 +59,7 @@ func New(params WorkerParams) (*Worker, error) {
 		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
 		Interceptors:                       params.Interceptors,
 		WorkflowPanicPolicy:                panicPolicy,
-		DisableRegistrationAliasing:        true,
+		DisableRegistrationAliasing:        params.Cfg.TemporalDisableRegistrationAliasing,
 	})
 
 	// register activities

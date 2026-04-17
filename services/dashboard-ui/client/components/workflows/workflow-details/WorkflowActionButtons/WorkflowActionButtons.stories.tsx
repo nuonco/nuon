@@ -19,6 +19,8 @@ export const AllButtons = () => (
     workflow={mockWorkflow}
     canShowApproveAll={true}
     canShowCancel={true}
+    isAdminVisible={true}
+    adminDashboardUrl="https://admin.example.com"
   />
 )
 
@@ -27,6 +29,8 @@ export const CancelOnly = () => (
     workflow={mockWorkflow}
     canShowApproveAll={false}
     canShowCancel={true}
+    isAdminVisible={true}
+    adminDashboardUrl="https://admin.example.com"
   />
 )
 
@@ -35,5 +39,6 @@ export const Empty = () => (
     workflow={mockWorkflow}
     canShowApproveAll={false}
     canShowCancel={false}
+    isAdminVisible={false}
   />
 )
