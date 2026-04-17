@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type SandboxModeConfig struct {
+type SandboxModeJobConfig struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull"`
@@ -38,13 +38,9 @@ type SandboxModeConfig struct {
 	OutputTemplate string `json:"output_template,omitempty"`
 }
 
-func (s *SandboxModeConfig) TableName() string {
-	return "sandbox_mode_job_configs"
-}
-
-func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
+func (s *SandboxModeJobConfig) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
-		s.ID = domains.NewSandboxModeConfigID()
+		s.ID = domains.NewSandboxModeJobConfigID()
 	}
 	if s.CreatedByID == "" {
 		s.CreatedByID = createdByIDFromContext(tx.Statement.Context)
@@ -52,10 +48,10 @@ func (s *SandboxModeConfig) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (s *SandboxModeConfig) Indexes(db *gorm.DB) []migrations.Index {
+func (s *SandboxModeJobConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name:        indexes.Name(db, &SandboxModeConfig{}, "job_type_operation"),
+			Name:        indexes.Name(db, &SandboxModeJobConfig{}, "job_type_operation"),
 			Columns:     []string{"job_type", "operation", "deleted_at"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},

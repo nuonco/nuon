@@ -151,28 +151,24 @@ func ApplyPreset(preset ResponsePreset, defaultDuration time.Duration) *JobTypeC
 			Preset:       preset,
 			Duration:     1 * time.Second,
 			ErrorMessage: "sandbox: injected failure",
-	
 		}
 	case PresetFailureTimeout:
 		return &JobTypeConfig{
 			Preset:       preset,
 			Duration:     60 * time.Second,
 			ErrorMessage: "sandbox: simulated timeout",
-	
 		}
 	case PresetFailurePanic:
 		return &JobTypeConfig{
 			Preset:       preset,
 			Duration:     0,
 			ErrorMessage: "sandbox: panic requested via preset",
-	
 		}
 	case PresetPartialFailure:
 		return &JobTypeConfig{
 			Preset:       preset,
 			Duration:     defaultDuration,
 			ErrorMessage: "sandbox: partial failure on last step",
-			FaultRate:    0.5,
 		}
 	default:
 		return &JobTypeConfig{
