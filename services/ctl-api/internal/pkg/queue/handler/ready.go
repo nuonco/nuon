@@ -23,5 +23,7 @@ func (h *handler) readyHandler(ctx workflow.Context, req *ReadyRequest) (*ReadyR
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
-	return &ReadyResponse{}, nil
+	return &ReadyResponse{
+		RunID: workflow.GetInfo(ctx).WorkflowExecution.RunID,
+	}, nil
 }
