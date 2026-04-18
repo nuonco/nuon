@@ -4650,11 +4650,19 @@ export interface components {
       owner_id?: string;
       owner_type?: string;
       plan_only?: boolean;
+      /**
+       * @description ResultDirective is set by the currently executing group signal to communicate
+       * the group outcome back to the flow signal. Values: continue, stop, retry-group,
+       * skip-group, await-approval.
+       */
+      result_directive?: string;
       role?: string;
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       /** @description DEPRECATED: for now we always abort on step errors */
       step_error_behavior?: string;
+      /** @description step groups represent logical groupings of steps within the workflow */
+      step_groups?: components["schemas"]["app.WorkflowStepGroup"][];
       /** @description steps represent each piece of the workflow */
       steps?: components["schemas"]["app.WorkflowStep"][];
       type?: components["schemas"]["app.WorkflowType"];
@@ -4692,6 +4700,8 @@ export interface components {
       finished_at?: string;
       /** @description to group steps which belong to same logical group, eg, plan/apply */
       group_idx?: number;
+      /** @description GroupParallel indicates whether steps in this group should execute in parallel. */
+      group_parallel?: boolean;
       /** @description counter for every retry attempted on a group */
       group_retry_idx?: number;
       id?: string;
@@ -4708,6 +4718,12 @@ export interface components {
       owner_id?: string;
       owner_type?: string;
       policy_validation?: components["schemas"]["app.WorkflowStepPolicyValidation"];
+      /**
+       * @description ResultDirective is set by the execute-workflow-step signal to communicate
+       * the step's outcome directive back to the group signal. Values: continue,
+       * stop, retry, retry-group, skip-group, await-approval.
+       */
+      result_directive?: string;
       retried?: boolean;
       retry_index?: number;
       retryable?: boolean;
@@ -4730,6 +4746,8 @@ export interface components {
       updated_at?: string;
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
+      /** @description WorkflowStepGroupID links this step to its parent WorkflowStepGroup. */
+      workflow_step_group_id?: string;
     };
     "app.WorkflowStepApproval": {
       created_at?: string;
@@ -4756,6 +4774,19 @@ export interface components {
     "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan";
     /** @enum {string} */
     "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
+    "app.WorkflowStepGroup": {
+      created_at?: string;
+      created_by_id?: string;
+      group_idx?: number;
+      id?: string;
+      name?: string;
+      parallel?: boolean;
+      queue_signal?: components["schemas"]["app.QueueSignal"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      steps?: components["schemas"]["app.WorkflowStep"][];
+      updated_at?: string;
+      workflow_id?: string;
+    };
     "app.WorkflowStepPolicyValidation": {
       created_at?: string;
       created_by_id?: string;

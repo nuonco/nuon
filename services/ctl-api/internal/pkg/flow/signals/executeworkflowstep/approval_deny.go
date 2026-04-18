@@ -23,6 +23,11 @@ func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *a
 		}
 	}
 
+	// Write the stop directive so it bubbles up through step-finished → group → flow.
+	if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+		return errors.Wrap(err, "unable to set result directive for denied step")
+	}
+
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalDenied, map[string]any{

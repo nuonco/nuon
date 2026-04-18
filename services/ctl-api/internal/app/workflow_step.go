@@ -76,10 +76,15 @@ type WorkflowStep struct {
 
 	Idx int `json:"idx,omitzero" temporaljson:"idx,omitzero,omitempty"`
 
+	// WorkflowStepGroupID links this step to its parent WorkflowStepGroup.
+	WorkflowStepGroupID string `json:"workflow_step_group_id,omitzero" gorm:"type:text" temporaljson:"workflow_step_group_id,omitzero,omitempty"`
+
 	// to group steps which belong to same logical group, eg, plan/apply
 	GroupIdx int `json:"group_idx,omitzero" temporaljson:"group_idx,omitzero,omitempty"`
 	// counter for every retry attempted on a group
 	GroupRetryIdx int `json:"group_retry_idx" gorm:"default:0" temporaljson:"group_retry_idx,omitzero,omitempty"`
+	// GroupParallel indicates whether steps in this group should execute in parallel.
+	GroupParallel bool `json:"group_parallel,omitzero" gorm:"default:false" temporaljson:"group_parallel,omitzero,omitempty"`
 
 	ExecutionType WorkflowStepExecutionType `json:"execution_type,omitzero" temporaljson:"execution_type"`
 
@@ -114,6 +119,11 @@ type WorkflowStep struct {
 	Skippable  bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
 	Retried    bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
 	RetryIndex int  `json:"retry_index" gorm:"default:0" temporaljson:"retry_index,omitzero,omitempty"`
+
+	// ResultDirective is set by the execute-workflow-step signal to communicate
+	// the step's outcome directive back to the group signal. Values: continue,
+	// stop, retry, retry-group, skip-group, await-approval.
+	ResultDirective string `json:"result_directive,omitzero" gorm:"type:text;default:''" temporaljson:"result_directive,omitzero,omitempty"`
 
 	// Fields that are de-nested at read time using AfterQuery
 	WorkflowID string `json:"workflow_id,omitzero" gorm:"-" temporaljson:"workflow_id,omitzero,omitempty"`

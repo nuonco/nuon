@@ -5,8 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -22,60 +20,24 @@ type SkipStepResponse struct {
 }
 
 func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*SkipStepResponse, error) {
+	// Look up the step to get its group ID for direct group lookup.
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
 	}
 
-	// Steps awaiting approval can be skipped via the approval mechanism
-	if step.Status.Status == app.AwaitingApproval || step.Status.Status == app.Status("awaiting-approval") {
-		if _, err := workflowactivities.AwaitForwardApprovePlan(ctx, workflowactivities.ForwardApprovePlanRequest{
-			StepID:       req.StepID,
-			ResponseType: string(app.WorkflowStepApprovalResponseTypeSkipCurrent),
-		}); err != nil {
-			return nil, fmt.Errorf("unable to forward skip approval for step %s: %w", req.StepID, err)
-		}
-
-		s.resumeRequested = true
-		s.resumeRunType = app.WorkflowRunTypeSkip
-		s.resumeStepID = req.StepID
-		return &SkipStepResponse{
-			WorkflowID: s.WorkflowID,
-			Skippable:  true,
-		}, nil
+	// Forward to the group handler which will mark the step as skipped and
+	// resume its step loop.
+	resp, err := workflowactivities.AwaitForwardSkipStepToGroup(ctx, workflowactivities.ForwardSkipStepToGroupRequest{
+		StepID:      req.StepID,
+		StepGroupID: step.WorkflowStepGroupID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to forward skip-step to group: %w", err)
 	}
 
-	// Only error state steps can be skipped via the direct path
-	if step.Status.Status != app.StatusError {
-		return &SkipStepResponse{
-			WorkflowID: s.WorkflowID,
-			Skippable:  false,
-		}, nil
-	}
-
-	if !step.Skippable {
-		return &SkipStepResponse{
-			WorkflowID: s.WorkflowID,
-			Skippable:  false,
-		}, nil
-	}
-
-	// Mark the errored step as skipped so the conductor advances past it.
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: req.StepID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusUserSkipped,
-			StatusHumanDescription: "Step was skipped by the user.",
-		},
-	}); err != nil {
-		return nil, fmt.Errorf("unable to mark step %s as skipped: %w", req.StepID, err)
-	}
-
-	s.resumeRequested = true
-	s.resumeRunType = app.WorkflowRunTypeSkip
-	s.resumeStepID = req.StepID
 	return &SkipStepResponse{
 		WorkflowID: s.WorkflowID,
-		Skippable:  true,
+		Skippable:  resp.Skippable,
 	}, nil
 }

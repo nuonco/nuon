@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -56,6 +57,10 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	if err != nil {
+		defer func() {
+			h.finished = true
+		}()
+
 		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
@@ -79,7 +84,10 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		return nil, validateErr
+		return nil, temporal.NewNonRetryableApplicationError(
+			"signal failure",
+			validateErr.Error(),
+			validateErr)
 	}
 
 	// record validate completion timestamp

@@ -20,6 +20,8 @@ import (
 // WorkflowConductor.executeFlowStep but as a self-contained signal that fetches
 // its own state from the database.
 func (s *Signal) Execute(ctx workflow.Context) error {
+	defer func() { s.finished = true }()
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get workflow logger")
@@ -152,6 +154,9 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	// Cloned (retry) steps copy QueueSignal from the original, so the embedded
 	// step ID fields (WorkflowStepID, FlowStepID, etc.) may be stale.
 	signal.ApplyStepContext(sig, step.ID, s.WorkflowID)
+
+	// Inject retry count so signals can branch on retry index or group generation.
+	signal.ApplyRetryCount(sig, step.RetryIndex, step.GroupRetryIdx)
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("enqueuing signal to target queue",
