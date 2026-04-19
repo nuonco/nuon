@@ -74,7 +74,7 @@ require (
 	github.com/gin-contrib/size v1.0.1
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-faker/faker/v4 v4.5.0
-	github.com/go-git/go-git/v5 v5.16.2
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-swagger/go-swagger v0.33.0
@@ -85,8 +85,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/hashicorp/go-version v1.7.0
-	github.com/hashicorp/hc-install v0.9.2
+	github.com/hashicorp/go-version v1.8.0
+	github.com/hashicorp/hc-install v0.9.3
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/hashicorp/terraform-exec v0.23.0
 	github.com/hashicorp/terraform-json v0.24.0
@@ -144,7 +144,7 @@ require (
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
 	golang.design/x/clipboard v0.7.1
-	golang.org/x/net v0.47.0
+	golang.org/x/net v0.49.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.74.2
@@ -459,7 +459,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProtonMail/go-crypto v1.1.6 // indirect
+	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
@@ -625,13 +625,13 @@ require (
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
+	golang.org/x/term v0.39.0
+	golang.org/x/text v0.33.0
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.38.0
+	golang.org/x/tools v0.41.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
