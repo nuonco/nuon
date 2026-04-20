@@ -16,6 +16,7 @@ title: 'Install'
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
+| **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults. | **Optional** | - |
 
 ### `aws_account`
 
@@ -29,4 +30,12 @@ title: 'Install'
 |----------|----------|----------|----------|
 | **`project_id`**<br/>string | GCP project ID GCP project where the infrastructure will be deployed | **✅ Required** | `"my-gcp-project"` |
 | **`region`**<br/>string | GCP region GCP region where the infrastructure will be deployed | **✅ Required** | `"us-central1"`, `"europe-west1"` |
+
+### `stack_overrides`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`vpc_nested_template_url`**<br/>string | VPC nested template URL override Per-install override for the VPC nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-vpc.yaml"` |
+| **`runner_nested_template_url`**<br/>string | Runner nested template URL override Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml. | **Optional** | `"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml"` |
+| **`custom_nested_stacks`**<br/>object | Custom nested stack overrides Per-install overrides for custom nested CloudFormation stacks. Entries with the same name as app-level stacks replace them; new names are appended. | **Optional** | - |
 
