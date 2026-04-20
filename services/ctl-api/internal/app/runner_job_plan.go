@@ -29,6 +29,31 @@ type RunnerJobPermissionInfo struct {
 	RoleSelectionTrace []RunnerJobPermissionTraceRecord `json:"role_selection_trace,omitempty"`
 }
 
+type RunnerJobPermissionTrace []RunnerJobPermissionTraceRecord
+
+func (r *RunnerJobPermissionTrace) Scan(value interface{}) error {
+	if value == nil {
+		*r = nil
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot scan %T into RunnerJobPermissionTrace", value)
+	}
+
+	if len(bytes) == 0 {
+		*r = nil
+		return nil
+	}
+
+	return json.Unmarshal(bytes, r)
+}
+
+func (r RunnerJobPermissionTrace) Value() (driver.Value, error) {
+	return json.Marshal(r)
+}
+
 func (r *RunnerJobPermissionInfo) Scan(value interface{}) error {
 	if value == nil {
 		*r = RunnerJobPermissionInfo{}

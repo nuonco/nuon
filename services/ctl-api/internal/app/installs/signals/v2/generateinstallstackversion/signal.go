@@ -2,7 +2,6 @@ package generateinstallstackversion
 
 import (
 	"fmt"
-
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -264,21 +262,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
 
-		// render the template
-		// TODO: NewTemplates now requires Params with Cfg - signals don't have access to config
-		templates := cloudformation.NewTemplates(cloudformation.Params{
-			Cfg: s.cfg,
+		// render the template via activity to avoid blocking the workflow goroutine
+		// (the template rendering fetches nested stack templates over HTTP)
+		renderedTemplate, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
+			Input: *inp,
 		})
-		tmpl, awsChecksum, err := templates.Template(inp)
 		if err != nil {
-			return errors.Wrap(err, "unable to create cloudformation template")
+			return errors.Wrap(err, "unable to render stack template")
 		}
-		checksum = awsChecksum
-
-		tmplByts, err = tmpl.JSON()
-		if err != nil {
-			return errors.Wrap(err, "unable to get cloudformation json")
-		}
+		tmplByts = renderedTemplate.RAWJson
+		checksum = renderedTemplate.Checksum
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
