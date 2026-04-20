@@ -170,7 +170,20 @@ export const InstallRoleDetail = ({
               {installRole.provisioned ? 'Provisioned' : 'Not provisioned'}
             </Status>
           </LabeledValue>
-          <LabeledValue label="ARN">
+          <LabeledValue label="Last used">
+            {installRole.last_used_at ? (
+              <Time
+                variant="subtext"
+                time={installRole.last_used_at}
+                format="relative"
+              />
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                Never
+              </Text>
+            )}
+          </LabeledValue>
+          <LabeledValue label="Cloud ID">
             {installRole.role_id ? (
               <div className="flex items-start gap-1 min-w-0">
                 <Text variant="subtext" family="mono" className="break-all">
