@@ -1,28 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
-import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { InstallIAMRoles, IAMRolesSkeleton } from '@/components/roles/IAMRoles'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { InstallRolesTable } from '@/components/roles/InstallRolesTable'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getLatestInstallRoles } from '@/lib'
 
 export const Roles = () => {
   const { org } = useOrg()
   const { install } = useInstall()
-
-  const { data: roles, isLoading } = useQuery({
-    queryKey: ['install-roles-latest', org?.id, install?.id],
-    queryFn: () =>
-      getLatestInstallRoles({
-        installId: install.id,
-        orgId: org.id,
-      }),
-    enabled: !!org?.id && !!install?.id,
-  })
 
   return (
     <PageSection>
@@ -48,17 +35,7 @@ export const Roles = () => {
         </Text>
       </HeadingGroup>
 
-      {isLoading ? (
-        <IAMRolesSkeleton />
-      ) : roles?.length ? (
-        <InstallIAMRoles installRoles={roles} />
-      ) : (
-        <EmptyState
-          variant="table"
-          emptyTitle="No roles found"
-          emptyMessage="You don't have any roles assigned yet. Contact your administrator to get access to roles."
-        />
-      )}
+      <InstallRolesTable />
     </PageSection>
   )
 }

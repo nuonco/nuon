@@ -79,7 +79,7 @@ export const PanelBase = ({
         >
           <header
             className={cn(
-              'flex items-center justify-between shrink-0 h-18 px-4',
+              'flex items-center justify-between shrink-0 h-18 px-4 md:px-6',
               headerClassName
             )}
           >
