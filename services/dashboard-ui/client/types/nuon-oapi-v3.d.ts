@@ -17856,6 +17856,16 @@ export interface operations {
    */
   GetInstallRoles: {
     parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search query to filter roles by display name */
+        q?: string;
+      };
       path: {
         /** @description install ID */
         install_id: string;
@@ -17906,6 +17916,16 @@ export interface operations {
    */
   GetLatestInstallRoles: {
     parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description search query to filter roles by display name */
+        q?: string;
+      };
       path: {
         /** @description install ID */
         install_id: string;
