@@ -107,6 +107,32 @@ func (ig InputGroup) TOMLComment() string {
 	return fmt.Sprintf("input.group: %s", ig.Group)
 }
 
+// InstallStackOverrides holds per-install overrides for the app-level stack
+// template configuration. Nil fields mean "use the app default".
+type InstallStackOverrides struct {
+	VPCNestedTemplateURL    string              `mapstructure:"vpc_nested_template_url,omitempty" toml:"vpc_nested_template_url,omitempty"`
+	RunnerNestedTemplateURL string              `mapstructure:"runner_nested_template_url,omitempty" toml:"runner_nested_template_url,omitempty"`
+	CustomNestedStacks      []CustomNestedStack `mapstructure:"custom_nested_stacks,omitempty" toml:"custom_nested_stacks,omitempty"`
+}
+
+func (a InstallStackOverrides) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("vpc_nested_template_url").Short("VPC nested template URL override").
+		Long("Per-install override for the VPC nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
+		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-vpc.yaml").
+		Field("runner_nested_template_url").Short("Runner nested template URL override").
+		Long("Per-install override for the runner nested CloudFormation template URL. Overrides the app-level default from stack.toml.").
+		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-runner.yaml").
+		Field("custom_nested_stacks").Short("Custom nested stack overrides").
+		Long("Per-install overrides for custom nested CloudFormation stacks. Entries with the same name as app-level stacks replace them; new names are appended.").
+		Nullable()
+}
+
+// HasOverrides returns true when any override field is set.
+func (s *InstallStackOverrides) HasOverrides() bool {
+	return s != nil && (s.VPCNestedTemplateURL != "" || s.RunnerNestedTemplateURL != "" || len(s.CustomNestedStacks) > 0)
+}
+
 // Install is a flattened configuration type that allows us to define installs for an app.
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
@@ -114,6 +140,8 @@ type Install struct {
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
 	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
+
+	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -133,7 +161,9 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("GCP-specific settings for this install, including project ID and region").
 		Field("inputs").Short("input values").
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
-		Type("array")
+		Type("array").
+		Field("stack_overrides").Short("Stack template overrides").
+		Long("Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults.")
 }
 
 func (i *Install) Parse() error {
@@ -187,6 +217,69 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			diff.WithKey("approval_option"),
 			diff.WithStringDiff(string(upstreamInstall.ApprovalOption), string(i.ApprovalOption)),
 		))
+	}
+
+	if i.StackOverrides.HasOverrides() || upstreamInstall.StackOverrides.HasOverrides() {
+		curr := i.StackOverrides
+		if curr == nil {
+			curr = &InstallStackOverrides{}
+		}
+		upstream := upstreamInstall.StackOverrides
+		if upstream == nil {
+			upstream = &InstallStackOverrides{}
+		}
+
+		var stackDiffs []*diff.Diff
+		if curr.VPCNestedTemplateURL != "" || upstream.VPCNestedTemplateURL != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("vpc_nested_template_url"),
+				diff.WithStringDiff(upstream.VPCNestedTemplateURL, curr.VPCNestedTemplateURL),
+			))
+		}
+		if curr.RunnerNestedTemplateURL != "" || upstream.RunnerNestedTemplateURL != "" {
+			stackDiffs = append(stackDiffs, diff.NewDiff(
+				diff.WithKey("runner_nested_template_url"),
+				diff.WithStringDiff(upstream.RunnerNestedTemplateURL, curr.RunnerNestedTemplateURL),
+			))
+		}
+
+		// Diff custom nested stacks by name.
+		upstreamByName := make(map[string]CustomNestedStack, len(upstream.CustomNestedStacks))
+		for _, s := range upstream.CustomNestedStacks {
+			upstreamByName[s.Name] = s
+		}
+		seen := make(map[string]bool)
+		for _, s := range curr.CustomNestedStacks {
+			seen[s.Name] = true
+			if us, ok := upstreamByName[s.Name]; ok {
+				if s.TemplateURL != us.TemplateURL {
+					stackDiffs = append(stackDiffs, diff.NewDiff(
+						diff.WithKey(s.Name+".template_url"),
+						diff.WithStringDiff(us.TemplateURL, s.TemplateURL),
+					))
+				}
+			} else {
+				stackDiffs = append(stackDiffs, diff.NewDiff(
+					diff.WithKey(s.Name),
+					diff.WithStringDiff("", s.TemplateURL),
+				))
+			}
+		}
+		for _, s := range upstream.CustomNestedStacks {
+			if !seen[s.Name] {
+				stackDiffs = append(stackDiffs, diff.NewDiff(
+					diff.WithKey(s.Name),
+					diff.WithStringDiff(s.TemplateURL, ""),
+				))
+			}
+		}
+
+		if len(stackDiffs) > 0 {
+			diffs = append(diffs, diff.NewDiff(
+				diff.WithKey("stack_overrides"),
+				diff.WithChildren(stackDiffs...),
+			))
+		}
 	}
 
 	if i.AWSAccount != nil {
