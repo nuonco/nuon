@@ -225,14 +225,24 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		ActionWorkflowRunPlan: planResponse.Plan,
 	}
 
+	permissionInfo := operationroles.NewPermissionInfo(planResponse.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:          runnerJob.ID,
 		PlanJSON:       string(planJSON),
 		CompositePlan:  compositePlan,
-		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
+		PermissionInfo: permissionInfo,
 	}); err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
+	}
+
+	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
+		InstallID:     installID,
+		RunnerJobID:   runnerJob.ID,
+		RoleSelection: planResponse.RoleSelection,
+	}); err != nil {
+		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
+		return errors.Wrap(err, "unable to record install role usage")
 	}
 
 	planJSON = nil
