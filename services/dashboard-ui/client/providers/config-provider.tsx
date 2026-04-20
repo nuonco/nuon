@@ -19,6 +19,7 @@ export type TRuntimeConfig = {
   sfTrialEndpoint?: string
   onboardingV2?: boolean
   adminDashboardUrl?: string
+  isDev?: boolean
 }
 
 declare global {
@@ -32,11 +33,14 @@ export const ConfigContext = createContext<TRuntimeConfig | undefined>(
 )
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
-  const config = useMemo(() => {
+  const config = useMemo<TRuntimeConfig>(() => {
     const cfg = window.__NUON_CONFIG__ ?? ({} as TRuntimeConfig)
     document.getElementById('nuon-config')?.remove()
     delete window.__NUON_CONFIG__
-    return cfg
+    const apiUrl = cfg.apiUrl ?? ''
+    const isDev =
+      apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')
+    return { ...cfg, isDev }
   }, [])
 
   return (

@@ -1580,6 +1580,13 @@ export interface paths {
      */
     get: operations["GetLatestInstallRoles"];
   };
+  "/v1/installs/{install_id}/roles/usages": {
+    /**
+     * get install role usages
+     * @description get workflows that used a particular role, filtered by unrendered role name
+     */
+    get: operations["GetInstallRoleUsages"];
+  };
   "/v1/installs/{install_id}/roles/{role_id}": {
     /**
      * update an install role
@@ -3612,6 +3619,21 @@ export interface components {
       };
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
+    };
+    "app.InstallRoleUsage": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_role_id?: string;
+      org_id?: string;
+      role_name?: string;
+      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
+      role_source?: string;
+      runner_job?: components["schemas"]["app.RunnerJob"];
+      runner_job_id?: string;
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_step_id?: string;
     };
     "app.InstallRoles": {
       app_role_config?: components["schemas"]["app.AppAWSIAMRoleConfig"];
@@ -17936,6 +17958,60 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallRoles"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get install role usages
+   * @description get workflows that used a particular role, filtered by unrendered role name
+   */
+  GetInstallRoleUsages: {
+    parameters: {
+      query: {
+        /** @description unrendered role name template */
+        role_name: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRoleUsage"][];
         };
       };
       /** @description Bad Request */
