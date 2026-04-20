@@ -33,6 +33,7 @@ type Signal struct {
 	TriggeredByID           string
 	TriggeredByType         string
 	RunEnvVars              map[string]string
+	Role                    string
 }
 
 var _ signal.Signal = &Signal{}
@@ -123,6 +124,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		TriggeredByID:           s.TriggeredByID,
 		TriggeredByType:         s.TriggeredByType,
 		RunEnvVars:              generics.ToPtrStringMap(s.RunEnvVars),
+		Role:                    s.Role,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")

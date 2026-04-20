@@ -25,12 +25,15 @@ type InstallRoleUsage struct {
 	InstallRole   InstallRoles `json:"-" temporaljson:"install_role,omitzero,omitempty"`
 
 	RunnerJobID string    `json:"runner_job_id,omitzero" gorm:"notnull;default null" temporaljson:"runner_job_id,omitzero,omitempty"`
-	RunnerJob   RunnerJob `json:"-" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob   RunnerJob `json:"runner_job,omitzero" temporaljson:"runner_job,omitzero,omitempty"`
 
 	RoleName   string `json:"role_name,omitzero" temporaljson:"role_name,omitzero,omitempty"`
 	RoleSource string `json:"role_source,omitzero" temporaljson:"role_source,omitzero,omitempty"`
 
 	RoleSelectionTrace RunnerJobPermissionTrace `json:"role_selection_trace,omitzero" gorm:"type:jsonb" temporaljson:"role_selection_trace,omitzero,omitempty"`
+
+	Workflow       *Workflow `json:"workflow,omitzero" gorm:"-"`
+	WorkflowStepID string    `json:"workflow_step_id,omitzero" gorm:"-"`
 }
 
 func (i *InstallRoleUsage) Indexes(db *gorm.DB) []migrations.Index {

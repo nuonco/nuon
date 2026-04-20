@@ -117,6 +117,8 @@ export type TInstallEvent = Omit<
 > & {
   payload: string
 }
+export type TInstallRoles = components['schemas']['app.InstallRoles']
+export type TInstallRoleUsage = components['schemas']['app.InstallRoleUsage']
 export type TInstallInputs = components['schemas']['app.InstallInputs']
 export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
