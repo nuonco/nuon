@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ModalBase, type IModal } from '@/components/surfaces/Modal'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Text } from '@/components/common/Text'
 import { Badge } from '@/components/common/Badge'
 import { Textarea } from '@/components/common/form/Textarea'
@@ -58,7 +58,7 @@ export const PhoneHomeModal = ({
   })()
 
   return (
-    <ModalBase
+    <Modal
       heading="Phone home"
       size="lg"
       primaryActionTrigger={{
@@ -182,7 +182,7 @@ export const PhoneHomeModal = ({
           </div>
         )}
       </div>
-    </ModalBase>
+    </Modal>
   )
 }
 
