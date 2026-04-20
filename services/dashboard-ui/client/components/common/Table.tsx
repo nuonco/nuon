@@ -165,7 +165,7 @@ export function TableBase<TData extends object>({
             )}
           </tbody>
         </table>
-        {pagination?.hasNext || pagination?.offset !== 0 ? (
+        {pagination && (pagination.hasNext || pagination.offset !== 0) ? (
           <div className="flex items-center justify-center w-full border-t py-2">
             <Pagination {...pagination} />
           </div>
