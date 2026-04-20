@@ -1,6 +1,7 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router'
-import { BackLink } from '@/components/common/BackLink'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
 
 export const RouteError = () => {
   const error = useRouteError()
@@ -16,7 +17,13 @@ export const RouteError = () => {
             ? "The page you're looking for doesn't exist or has been moved."
             : 'An unexpected error occurred. Please try again.'
         }
-        action={<BackLink />}
+        action={
+          <Text variant="subtext">
+            <Link href="/" isATag>
+              Back to home
+            </Link>
+          </Text>
+        }
       />
     </div>
   )
