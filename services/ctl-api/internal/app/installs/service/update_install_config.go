@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -89,7 +90,14 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 		updates["runner_nested_template_url"] = *req.RunnerNestedTemplateURL
 	}
 	if req.CustomNestedStacks != nil {
-		updates["custom_nested_stacks"] = req.CustomNestedStacks
+		// Pre-serialize to JSON so the raw map-based update stores a valid
+		// JSON array. Without this, GORM bypasses the serializer:json tag
+		// and the pgx driver may produce a bare object instead of an array.
+		b, err := json.Marshal(req.CustomNestedStacks)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal custom_nested_stacks: %w", err)
+		}
+		updates["custom_nested_stacks"] = string(b)
 	}
 
 	if len(updates) == 0 {
