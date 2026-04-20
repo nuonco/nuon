@@ -66,14 +66,24 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		SandboxRunPlan: planResponse.Plan,
 	}
 
+	permissionInfo := operationroles.NewPermissionInfo(planResponse.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:          runnerJob.ID,
 		PlanJSON:       string(planJSON),
 		CompositePlan:  compositePlan,
-		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
+		PermissionInfo: permissionInfo,
 	}); err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
+		InstallID:     install.ID,
+		RunnerJobID:   runnerJob.ID,
+		RoleSelection: planResponse.RoleSelection,
+	}); err != nil {
+		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "unable to record install role usage")
+		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
 	// queue job

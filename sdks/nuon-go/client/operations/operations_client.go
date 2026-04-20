@@ -498,6 +498,8 @@ type ClientService interface {
 
 	GetInstallReadme(params *GetInstallReadmeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReadmeOK, *GetInstallReadmePartialContent, error)
 
+	GetInstallRoles(params *GetInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRolesOK, error)
+
 	GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerGroupOK, error)
 
 	GetInstallSandboxRun(params *GetInstallSandboxRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunOK, error)
@@ -531,6 +533,8 @@ type ClientService interface {
 	GetLatestAppPoliciesConfig(params *GetLatestAppPoliciesConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestAppPoliciesConfigOK, error)
 
 	GetLatestAppSecretsConfig(params *GetLatestAppSecretsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestAppSecretsConfigOK, error)
+
+	GetLatestInstallRoles(params *GetLatestInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestInstallRolesOK, error)
 
 	GetLatestRunnerHeartBeat(params *GetLatestRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerHeartBeatOK, error)
 
@@ -717,6 +721,8 @@ type ClientService interface {
 	UpdateInstallConfig(params *UpdateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallConfigCreated, error)
 
 	UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallInputsOK, error)
+
+	UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error)
 
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
 
@@ -10373,6 +10379,52 @@ func (a *Client) GetInstallReadme(params *GetInstallReadmeParams, authInfo runti
 }
 
 /*
+GetInstallRoles gets install roles
+
+get all roles for an install
+*/
+func (a *Client) GetInstallRoles(params *GetInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRolesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRoles",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRolesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRoles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallRunnerGroup gets an install s runner group
 
 Return the runner group, including runners and settings for the provided install.
@@ -11151,6 +11203,52 @@ func (a *Client) GetLatestAppSecretsConfig(params *GetLatestAppSecretsConfigPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetLatestAppSecretsConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetLatestInstallRoles gets latest install roles
+
+get install roles for the current app config
+*/
+func (a *Client) GetLatestInstallRoles(params *GetLatestInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestInstallRolesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetLatestInstallRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetLatestInstallRoles",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/roles/latest",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetLatestInstallRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetLatestInstallRolesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetLatestInstallRoles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -15414,6 +15512,52 @@ func (a *Client) UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallInputs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateInstallRole updates an install role
+
+enable or disable an install role
+*/
+func (a *Client) UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateInstallRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateInstallRole",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/roles/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateInstallRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateInstallRoleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateInstallRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

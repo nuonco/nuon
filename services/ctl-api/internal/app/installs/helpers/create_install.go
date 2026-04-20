@@ -60,6 +60,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(1)
 		}).
+		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
+		}).
+		Preload("AppPermissionsConfigs.Roles").
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
@@ -108,11 +112,23 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			Region:    req.GCPAccount.Region,
 		}
 	}
+	if parentApp.AppPermissionsConfig.ID != "" && len(parentApp.AppPermissionsConfig.Roles) > 0 {
+		installRoles := make([]app.InstallRoles, 0)
+
+		for _, role := range parentApp.AppPermissionsConfig.Roles {
+			installRoles = append(installRoles, app.InstallRoles{
+				AppRoleConfigID: role.ID,
+			})
+		}
+
+		install.InstallRoles = installRoles
+	}
+
 	if len(parentApp.AppInputConfigs) > 0 {
 		install.InstallInputs = []app.InstallInputs{
 			{
 				Values:           req.Inputs,
-				AppInputConfigID: parentApp.AppInputConfigs[0].ID,
+				AppInputConfigID: parentApp.AppInputConfig.ID,
 			},
 		}
 	}
