@@ -61,76 +61,76 @@ export const Overview = () => {
         <Text variant="base" weight="strong">
           Inputs config
         </Text>
-          {isLoading ? (
-            <InputsSkeleton />
-          ) : appConfig?.input?.input_groups?.length ? (
-            <AppInputs appConfig={appConfig} />
-          ) : (
-            <EmptyState
-              variant="diagram"
-              emptyTitle="No app inputs configured"
-              emptyMessage="Configure app inputs in your application configuration to see them here."
-            />
-          )}
-        </div>
-
         {isLoading ? (
-          <SandboxSkeleton />
-        ) : appConfig?.sandbox ? (
-          <Card className="h-fit flex flex-col gap-4">
-            <Text weight="strong">Sandbox config</Text>
-            <AppSandbox appConfig={appConfig} />
-          </Card>
+          <InputsSkeleton />
+        ) : appConfig?.input?.input_groups?.length ? (
+          <AppInputs appConfig={appConfig} />
         ) : (
-          <Card className="h-full">
-            <EmptyState
-              variant="diagram"
-              emptyTitle="No sandbox configuration"
-              emptyMessage="Configure a sandbox in your application configuration to see it here."
-            />
-          </Card>
+          <EmptyState
+            variant="diagram"
+            emptyTitle="No app inputs configured"
+            emptyMessage="Configure app inputs in your application configuration to see them here."
+          />
         )}
+      </div>
 
-        <div className="@container">
-          <div className="grid grid-cols-1 @lg:grid-cols-5 gap-6">
-            <div className="@lg:col-span-2">
-              {isLoading ? (
-                <RunnerSkeleton />
-              ) : appConfig?.runner ? (
-                <Card className="h-fit flex flex-col gap-4">
-                  <Text weight="strong">Runner config</Text>
-                  <AppRunner appConfig={appConfig} />
-                </Card>
-              ) : (
-                <Card className="h-full">
-                  <EmptyState
-                    variant="diagram"
-                    emptyTitle="No runner configuration"
-                    emptyMessage="Configure a runner in your application configuration to see it here."
-                  />
-                </Card>
-              )}
-            </div>
-            <div className="@lg:col-span-3">
-              {isLoading ? (
-                <StackSkeleton />
-              ) : appConfig?.stack ? (
-                <Card className="h-fit flex flex-col gap-4">
-                  <Text weight="strong">Stack config</Text>
-                  <AppStack appConfig={appConfig} />
-                </Card>
-              ) : (
-                <Card className="h-full">
-                  <EmptyState
-                    variant="diagram"
-                    emptyTitle="No stack configuration"
-                    emptyMessage="Configure a stack in your application configuration to see it here."
-                  />
-                </Card>
-              )}
-            </div>
+      {isLoading ? (
+        <SandboxSkeleton />
+      ) : appConfig?.sandbox ? (
+        <Card className="h-fit flex flex-col gap-4">
+          <Text weight="strong">Sandbox config</Text>
+          <AppSandbox appConfig={appConfig} />
+        </Card>
+      ) : (
+        <Card className="h-full">
+          <EmptyState
+            variant="diagram"
+            emptyTitle="No sandbox configuration"
+            emptyMessage="Configure a sandbox in your application configuration to see it here."
+          />
+        </Card>
+      )}
+
+      <div className="@container">
+        <div className="grid grid-cols-1 @lg:grid-cols-5 gap-6">
+          <div className="@lg:col-span-2">
+            {isLoading ? (
+              <RunnerSkeleton />
+            ) : appConfig?.runner ? (
+              <Card className="h-fit flex flex-col gap-4">
+                <Text weight="strong">Runner config</Text>
+                <AppRunner appConfig={appConfig} />
+              </Card>
+            ) : (
+              <Card className="h-full">
+                <EmptyState
+                  variant="diagram"
+                  emptyTitle="No runner configuration"
+                  emptyMessage="Configure a runner in your application configuration to see it here."
+                />
+              </Card>
+            )}
+          </div>
+          <div className="@lg:col-span-3">
+            {isLoading ? (
+              <StackSkeleton />
+            ) : appConfig?.stack ? (
+              <Card className="h-fit flex flex-col gap-4">
+                <Text weight="strong">Stack config</Text>
+                <AppStack appConfig={appConfig} />
+              </Card>
+            ) : (
+              <Card className="h-full">
+                <EmptyState
+                  variant="diagram"
+                  emptyTitle="No stack configuration"
+                  emptyMessage="Configure a stack in your application configuration to see it here."
+                />
+              </Card>
+            )}
           </div>
         </div>
+      </div>
 
     </PageSection>
   )

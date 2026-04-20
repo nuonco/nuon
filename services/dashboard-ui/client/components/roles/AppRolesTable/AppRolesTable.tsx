@@ -24,6 +24,9 @@ type TAppRole = {
   permissions_boundary?: string
 }
 
+const panelLinkClass =
+  '!p-0 !h-auto !border-none !rounded-none !bg-transparent hover:!bg-transparent active:!bg-transparent focus:!shadow-none text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600'
+
 const RolePanelHeading = ({ role }: { role: TAppRole }) => (
   <div className="flex flex-col">
     <Text variant="h3">{role.display_name}</Text>
@@ -44,7 +47,7 @@ export const AppRolesTable = ({
     () => [
       {
         accessorKey: 'display_name',
-        header: 'Name',
+        header: 'Role Name',
         cell: ({ row }) => (
           <Panel
             size="3/4"
@@ -52,8 +55,7 @@ export const AppRolesTable = ({
             heading={<RolePanelHeading role={row.original} />}
             triggerButton={{
               variant: 'ghost',
-              className:
-                '!p-0 !border-none !bg-transparent text-primary-600 dark:text-primary-500 hover:text-primary-800 dark:hover:text-primary-400 hover:!bg-transparent',
+              className: panelLinkClass,
               children: row.original.display_name,
             }}
           >
@@ -92,11 +94,10 @@ export const AppRolesTable = ({
             heading={<RolePanelHeading role={row.original} />}
             triggerButton={{
               variant: 'ghost',
-              className:
-                '!p-0 !border-none !bg-transparent text-primary-600 dark:text-primary-500 hover:text-primary-800 dark:hover:text-primary-400 hover:!bg-transparent',
+              className: panelLinkClass,
               children: (
-                <span className="flex items-center gap-1">
-                  View <Icon variant="CaretRightIcon" size={14} />
+                <span className="flex items-center gap-1.5">
+                  View <Icon variant="CaretRightIcon" />
                 </span>
               ),
             }}
