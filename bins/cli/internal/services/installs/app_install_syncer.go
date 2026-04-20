@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -147,10 +148,25 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			Region:    installCfg.GCPAccount.Region,
 		}
 	}
-	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
-		req.InstallConfig = &models.HelpersCreateInstallConfigParams{
-			ApprovalOption: installCfg.ApprovalOption.APIType(),
+	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
+		installCfg.StackOverrides.HasOverrides() {
+		icParams := &models.HelpersCreateInstallConfigParams{}
+		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
+			icParams.ApprovalOption = installCfg.ApprovalOption.APIType()
 		}
+		if installCfg.StackOverrides.HasOverrides() {
+			so := installCfg.StackOverrides
+			if so.VPCNestedTemplateURL != "" {
+				icParams.VpcNestedTemplateURL = so.VPCNestedTemplateURL
+			}
+			if so.RunnerNestedTemplateURL != "" {
+				icParams.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
+			}
+			if len(so.CustomNestedStacks) > 0 {
+				icParams.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
+			}
+		}
+		req.InstallConfig = icParams
 	}
 
 	appInstall, err := s.api.CreateInstall(ctx, s.appID, &req)
@@ -234,20 +250,57 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
-	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
+	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
+		installCfg.StackOverrides.HasOverrides()
+
+	if hasConfigFields {
+		so := installCfg.StackOverrides
+		if so == nil {
+			so = &config.InstallStackOverrides{}
+		}
+
 		if appInstall.InstallConfig == nil {
-			appInstall.InstallConfig, err = s.api.CreateInstallConfig(ctx, appInstall.ID, &models.ServiceCreateInstallConfigRequest{
-				ApprovalOption: installCfg.ApprovalOption.APIType(),
-			})
+			createReq := &models.ServiceCreateInstallConfigRequest{}
+			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
+				createReq.ApprovalOption = installCfg.ApprovalOption.APIType()
+			}
+			if so.VPCNestedTemplateURL != "" {
+				createReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
+			}
+			if so.RunnerNestedTemplateURL != "" {
+				createReq.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
+			}
+			if len(so.CustomNestedStacks) > 0 {
+				createReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
+			}
+			appInstall.InstallConfig, err = s.api.CreateInstallConfig(ctx, appInstall.ID, createReq)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			if appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
-				// Update the install config if the approval option has changed.
-				_, err := s.api.UpdateInstallConfig(ctx, appInstall.ID, appInstall.InstallConfig.ID, &models.ServiceUpdateInstallConfigRequest{
-					ApprovalOption: installCfg.ApprovalOption.APIType(),
-				})
+			updateReq := &models.ServiceUpdateInstallConfigRequest{}
+			needsUpdate := false
+
+			if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown &&
+				appInstall.InstallConfig.ApprovalOption != installCfg.ApprovalOption.APIType() {
+				updateReq.ApprovalOption = installCfg.ApprovalOption.APIType()
+				needsUpdate = true
+			}
+			if so.VPCNestedTemplateURL != appInstall.InstallConfig.VpcNestedTemplateURL {
+				updateReq.VpcNestedTemplateURL = so.VPCNestedTemplateURL
+				needsUpdate = true
+			}
+			if so.RunnerNestedTemplateURL != appInstall.InstallConfig.RunnerNestedTemplateURL {
+				updateReq.RunnerNestedTemplateURL = so.RunnerNestedTemplateURL
+				needsUpdate = true
+			}
+			if !customNestedStacksEqual(so.CustomNestedStacks, appInstall.InstallConfig.CustomNestedStacks) {
+				updateReq.CustomNestedStacks = toAPICustomNestedStacks(so.CustomNestedStacks)
+				needsUpdate = true
+			}
+
+			if needsUpdate {
+				_, err := s.api.UpdateInstallConfig(ctx, appInstall.ID, appInstall.InstallConfig.ID, updateReq)
 				if err != nil {
 					return nil, err
 				}
@@ -374,6 +427,35 @@ func (s *appInstallSyncer) printInstallDiff(diff *diff.Diff) {
 %s
 (added %d, removed %d, changed %d)
 `, installDiffToString(diff, ""), summary.Added, summary.Removed, summary.Changed))
+}
+
+func toAPICustomNestedStacks(stacks []config.CustomNestedStack) []*models.ConfigCustomNestedStack {
+	result := make([]*models.ConfigCustomNestedStack, len(stacks))
+	for i, s := range stacks {
+		result[i] = &models.ConfigCustomNestedStack{
+			Name:        s.Name,
+			TemplateURL: s.TemplateURL,
+			Index:       int64(s.Index),
+			Parameters:  s.Parameters,
+		}
+	}
+	return result
+}
+
+func customNestedStacksEqual(local []config.CustomNestedStack, remote []*models.ConfigCustomNestedStack) bool {
+	if len(local) != len(remote) {
+		return false
+	}
+	for i, l := range local {
+		r := remote[i]
+		if r == nil || l.Name != r.Name || l.TemplateURL != r.TemplateURL || int64(l.Index) != r.Index {
+			return false
+		}
+		if !maps.Equal(l.Parameters, r.Parameters) {
+			return false
+		}
+	}
+	return true
 }
 
 // installDiffToString converts the install diff to a string with color coding
