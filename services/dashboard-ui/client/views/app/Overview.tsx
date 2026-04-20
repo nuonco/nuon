@@ -5,6 +5,7 @@ import { AppSandbox } from '@/components/apps/config/AppSandbox'
 import { AppStack } from '@/components/apps/config/AppStack'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PropertyGridSkeleton } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -37,7 +38,7 @@ export const Overview = () => {
   const isLoading = isLoadingConfigs || isLoadingConfig
 
   return (
-    <>
+    <PageSection>
       <PageTitle title={`Configuration | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -47,11 +48,19 @@ export const Overview = () => {
         ]}
       />
 
-      <PageSection>
-        <div className="flex flex-col gap-4">
-          <Text variant="h3" weight="strong">
-            Inputs config
-          </Text>
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          App overview
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          View your app configuration, inputs, sandbox, runner, and stack settings.
+        </Text>
+      </HeadingGroup>
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          Inputs config
+        </Text>
           {isLoading ? (
             <InputsSkeleton />
           ) : appConfig?.input?.input_groups?.length ? (
@@ -123,8 +132,7 @@ export const Overview = () => {
           </div>
         </div>
 
-      </PageSection>
-    </>
+    </PageSection>
   )
 }
 
