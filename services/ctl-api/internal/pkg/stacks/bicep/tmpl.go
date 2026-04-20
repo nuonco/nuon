@@ -181,144 +181,177 @@ const tmpl = `
           "addressPrefixes": [
             "[parameters('vnetCIDR')]"
           ]
-        },
-        "subnets": [
-          {
-            "name": "[format('{0}-public-subnet-zone1', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('publicSubnet1CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              }
-            }
-          },
-          {
-            "name": "[format('{0}-public-subnet-zone2', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('publicSubnet2CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              }
-            }
-          },
-          {
-            "name": "[format('{0}-public-subnet-zone3', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('publicSubnet3CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              }
-            }
-          },
-          {
-            "name": "[format('{0}-private-runner-subnet', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('runnerSubnetCIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              },
-              "serviceEndpoints": [
-                {
-                  "service": "Microsoft.KeyVault"
-                },
-                {
-                  "service": "Microsoft.ContainerRegistry"
-                }
-              ]
-            }
-          },
-          {
-            "name": "[format('{0}-private-subnet-zone1', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('privateSubnet1CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              },
-              "serviceEndpoints": [
-                {
-                  "service": "Microsoft.KeyVault"
-                },
-                {
-                  "service": "Microsoft.ContainerRegistry"
-                }
-              ]
-            }
-          },
-          {
-            "name": "[format('{0}-private-subnet-zone2', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('privateSubnet2CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              },
-              "serviceEndpoints": [
-                {
-                  "service": "Microsoft.KeyVault"
-                },
-                {
-                  "service": "Microsoft.ContainerRegistry"
-                }
-              ]
-            }
-          },
-          {
-            "name": "[format('{0}-private-subnet-zone3', parameters('nuonInstallID'))]",
-            "properties": {
-              "addressPrefix": "[parameters('privateSubnet3CIDR')]",
-              "privateEndpointNetworkPolicies": "Disabled",
-              "privateLinkServiceNetworkPolicies": "Enabled",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
-              },
-              "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
-              },
-              "serviceEndpoints": [
-                {
-                  "service": "Microsoft.KeyVault"
-                },
-                {
-                  "service": "Microsoft.ContainerRegistry"
-                }
-              ]
-            }
-          }
-        ]
+        }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-public-subnet-zone1', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('publicSubnet1CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-public-subnet-zone2', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('publicSubnet2CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone1', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-public-subnet-zone3', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('publicSubnet3CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone2', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-private-runner-subnet', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('runnerSubnetCIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        },
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.KeyVault"
+          },
+          {
+            "service": "Microsoft.ContainerRegistry"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone3', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-private-subnet-zone1', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('privateSubnet1CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        },
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.KeyVault"
+          },
+          {
+            "service": "Microsoft.ContainerRegistry"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-private-subnet-zone2', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('privateSubnet2CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        },
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.KeyVault"
+          },
+          {
+            "service": "Microsoft.ContainerRegistry"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone1', parameters('nuonInstallID')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}-vnet/{0}-private-subnet-zone3', parameters('nuonInstallID'))]",
+      "properties": {
+        "addressPrefix": "[parameters('privateSubnet3CIDR')]",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPolicies": "Enabled",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]"
+        },
+        "natGateway": {
+          "id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]"
+        },
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.KeyVault"
+          },
+          {
+            "service": "Microsoft.ContainerRegistry"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone2', parameters('nuonInstallID')))]"
       ]
     },
     {
@@ -352,7 +385,8 @@ const tmpl = `
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]"
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone1', parameters('nuonInstallID')))]"
       ]
     },
     {
@@ -480,7 +514,7 @@ const tmpl = `
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]"
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]"
       ]
     },
     {
@@ -634,13 +668,17 @@ const tmpl = `
           {
             "name": "PRIVATE_SUBNET_NAMES_CSV",
             "value": "[join(filter(createArray(format('{0}-private-subnet-zone1', parameters('nuonInstallID')), if(variables('createPrivateSubnet2'), format('{0}-private-subnet-zone2', parameters('nuonInstallID')), ''), if(variables('createPrivateSubnet3'), format('{0}-private-subnet-zone3', parameters('nuonInstallID')), '')), lambda('x', not(empty(lambdaVariables('x'))))), ',')]"
-          }
+          }{{range .AppCfg.SecretsConfig.Secrets}},
+          {
+            "name": "SECRET_{{.Name}}_ID",
+            "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', take(format('{0}', parameters('nuonInstallID')), 24), '{{.Name}}'), '2023-02-01').secretUri]"
+          }{{end}}
         ],
-        "scriptContent": "      #!/bin/bash\n      \n      # Construct the JSON payload with stack outputs\n      #\n      # Including the credentials object for backwards compatibility.\n      # We used to need this when the org runner did the sandbox provision,\n      # but the independent runner obviates the need for this.\n      #\n      # The provision workflow still looks for auth credentials,\n      # because it needs the role ARNs to use for different jobs.\n      # Azure resource groups obviate the need for multiple roles,\n      # so we don't need to return anything.\n\n      # Create arrays for public and private subnets (filtering out empty values)\n      PUBLIC_SUBNETS=(\"$PUBLIC_SUBNET_1_ID\")\n      PUBLIC_SUBNET_NAMES=(\"$PUBLIC_SUBNET_1_NAME\")\n      if [ -n \"$PUBLIC_SUBNET_2_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_2_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PUBLIC_SUBNET_3_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_3_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_3_NAME\")\n      fi\n\n      PRIVATE_SUBNETS=(\"$PRIVATE_SUBNET_1_ID\")\n      PRIVATE_SUBNET_NAMES=(\"$PRIVATE_SUBNET_1_NAME\")\n      if [ -n \"$PRIVATE_SUBNET_2_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_2_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PRIVATE_SUBNET_3_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_3_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_3_NAME\")\n      fi\n\n      PAYLOAD=$(cat << EOF\n{\n  \"request_type\": \"Create\",\n  \"phone_home_type\": \"azure\",\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\"\n}\nEOF\n)\n      \n      # Send the phone home request\n      curl -X POST \\\n        \"{{.CloudFormationStackVersion.PhoneHomeURL}}\" \\\n        -H \"Content-Type: application/json\" \\\n        -H \"Accept: application/json\" \\\n        -d \"$PAYLOAD\" \\\n        --fail \\\n        --silent \\\n        --show-error\n      \n      if [ $? -eq 0 ]; then\n        echo \"Phone home request sent successfully\"\n      else\n        echo \"Failed to send phone home request\"\n        exit 1\n      fi\n    "
+        "scriptContent": "      #!/bin/bash\n      \n      # Construct the JSON payload with stack outputs\n      #\n      # Including the credentials object for backwards compatibility.\n      # We used to need this when the org runner did the sandbox provision,\n      # but the independent runner obviates the need for this.\n      #\n      # The provision workflow still looks for auth credentials,\n      # because it needs the role ARNs to use for different jobs.\n      # Azure resource groups obviate the need for multiple roles,\n      # so we don't need to return anything.\n\n      # Create arrays for public and private subnets (filtering out empty values)\n      PUBLIC_SUBNETS=(\"$PUBLIC_SUBNET_1_ID\")\n      PUBLIC_SUBNET_NAMES=(\"$PUBLIC_SUBNET_1_NAME\")\n      if [ -n \"$PUBLIC_SUBNET_2_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_2_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PUBLIC_SUBNET_3_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_3_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_3_NAME\")\n      fi\n\n      PRIVATE_SUBNETS=(\"$PRIVATE_SUBNET_1_ID\")\n      PRIVATE_SUBNET_NAMES=(\"$PRIVATE_SUBNET_1_NAME\")\n      if [ -n \"$PRIVATE_SUBNET_2_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_2_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PRIVATE_SUBNET_3_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_3_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_3_NAME\")\n      fi\n\n      PAYLOAD=$(cat << EOF\n{\n  \"request_type\": \"Create\",\n  \"phone_home_type\": \"azure\",\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\"{{range .AppCfg.SecretsConfig.Secrets}},\n  \"{{.Name}}_secret_id\": \"$SECRET_{{.Name}}_ID\"{{end}}\n}\nEOF\n)\n      \n      # Send the phone home request\n      curl -X POST \\\n        \"{{.CloudFormationStackVersion.PhoneHomeURL}}\" \\\n        -H \"Content-Type: application/json\" \\\n        -H \"Accept: application/json\" \\\n        -d \"$PAYLOAD\" \\\n        --fail \\\n        --silent \\\n        --show-error\n      \n      if [ $? -eq 0 ]; then\n        echo \"Phone home request sent successfully\"\n      else\n        echo \"Failed to send phone home request\"\n        exit 1\n      fi\n    "
       },
       "dependsOn": [
         "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]"
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone3', parameters('nuonInstallID')))]"
       ]
     },
     {
