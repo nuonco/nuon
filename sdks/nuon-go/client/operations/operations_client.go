@@ -498,6 +498,8 @@ type ClientService interface {
 
 	GetInstallReadme(params *GetInstallReadmeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReadmeOK, *GetInstallReadmePartialContent, error)
 
+	GetInstallRoleUsages(params *GetInstallRoleUsagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRoleUsagesOK, error)
+
 	GetInstallRoles(params *GetInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRolesOK, error)
 
 	GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerGroupOK, error)
@@ -10375,6 +10377,52 @@ func (a *Client) GetInstallReadme(params *GetInstallReadmeParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRoleUsages gets install role usages
+
+get workflows that used a particular role, filtered by unrendered role name
+*/
+func (a *Client) GetInstallRoleUsages(params *GetInstallRoleUsagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRoleUsagesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRoleUsagesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRoleUsages",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/roles/usages",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRoleUsagesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRoleUsagesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRoleUsages: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
