@@ -2,6 +2,7 @@ package stack
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -96,6 +97,13 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		Data:                     generics.ToStringMap(run.Data),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install stack outputs")
+	}
+
+	// update install roles provisioned state from stack outputs
+	if err := activities.AwaitUpdateInstallRolesFromStackOutputs(ctx, activities.UpdateInstallRolesFromStackOutputs{
+		InstallID: install.ID,
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to update install roles from stack outputs", zap.Error(err))
 	}
 
 	// update the runner settings group

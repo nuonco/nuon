@@ -29,6 +29,7 @@ type Signal struct {
 	FlowStepID       string
 	FlowID           string
 	SandboxMode      bool
+	Role             string
 
 	cfg *internal.Config
 }
@@ -119,6 +120,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		InstallID:  install.ID,
 		RunType:    app.SandboxRunTypeDeprovision,
 		WorkflowID: s.FlowID,
+		Role:       s.Role,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create install: %w", err)
