@@ -103,14 +103,16 @@ const tmpl = `
       "metadata": {
         "description": "Force re-run of deployment scripts on each deploy."
       }
-    },
-    "secrets": {
-      "type": "array",
-      "defaultValue": [],
+    }{{range .AppCfg.SecretsConfig.Secrets}}{{if not .AutoGenerate}},
+    "{{.CloudFormationParamName}}": {
+      "type": "secureString",{{if .Default}}
+      "defaultValue": "{{.Default}}",{{else if not .Required}}
+      "defaultValue": "",{{end}}
       "metadata": {
-        "description": "List of secrets to store in Azure Key Vault"
-      }
-    }
+        "description": "{{.Description}}"
+      }{{if .Required}},
+      "minLength": 1{{end}}
+    }{{end}}{{end}}
   },
   "variables": {
     "commonTags": {
@@ -385,29 +387,22 @@ const tmpl = `
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]",
-        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone1', parameters('nuonInstallID')))]"
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone3', parameters('nuonInstallID')))]"
       ]
     },
+{{range .AppCfg.SecretsConfig.Secrets}}
     {
-      "copy": {
-        "name": "keyVaultSecrets",
-        "count": "[length(parameters('secrets'))]"
-      },
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}/{1}', take(format('{0}', parameters('nuonInstallID')), 24), parameters('secrets')[copyIndex()].name)]",
+      "name": "[format('{0}/{{.Name}}', take(format('{0}', parameters('nuonInstallID')), 24))]",{{if and (not .AutoGenerate) (not .Required)}}
+      "condition": "[not(empty(parameters('{{.CloudFormationParamName}}')))]",{{end}}
       "properties": {
-        "value": "[parameters('secrets')[copyIndex()].value]",
-        "contentType": "[if(contains(parameters('secrets')[copyIndex()], 'contentType'), parameters('secrets')[copyIndex()].contentType, null())]",
-        "attributes": {
-          "enabled": "[if(contains(parameters('secrets')[copyIndex()], 'enabled'), parameters('secrets')[copyIndex()].enabled, true())]"
-        }
+        "value": {{if .AutoGenerate}}"[concat(uniqueString(newGuid(), resourceGroup().id), uniqueString(newGuid(), subscription().subscriptionId), uniqueString(newGuid(), parameters('nuonInstallID')))]"{{else}}"[parameters('{{.CloudFormationParamName}}')]"{{end}}
       },
       "dependsOn": [
         "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"
       ]
-    },
+    },{{end}}
     {
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2023-04-01",
@@ -514,7 +509,7 @@ const tmpl = `
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]"
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone3', parameters('nuonInstallID')))]"
       ]
     },
     {
@@ -671,7 +666,7 @@ const tmpl = `
           }{{range .AppCfg.SecretsConfig.Secrets}},
           {
             "name": "SECRET_{{.Name}}_ID",
-            "value": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', take(format('{0}', parameters('nuonInstallID')), 24), '{{.Name}}'), '2023-02-01').secretUri]"
+            "value": {{if and (not .AutoGenerate) (not .Required)}}"[if(not(empty(parameters('{{.CloudFormationParamName}}'))), reference(resourceId('Microsoft.KeyVault/vaults/secrets', take(format('{0}', parameters('nuonInstallID')), 24), '{{.Name}}'), '2023-02-01').secretUri, '')]"{{else}}"[reference(resourceId('Microsoft.KeyVault/vaults/secrets', take(format('{0}', parameters('nuonInstallID')), 24), '{{.Name}}'), '2023-02-01').secretUri]"{{end}}
           }{{end}}
         ],
         "scriptContent": "      #!/bin/bash\n      \n      # Construct the JSON payload with stack outputs\n      #\n      # Including the credentials object for backwards compatibility.\n      # We used to need this when the org runner did the sandbox provision,\n      # but the independent runner obviates the need for this.\n      #\n      # The provision workflow still looks for auth credentials,\n      # because it needs the role ARNs to use for different jobs.\n      # Azure resource groups obviate the need for multiple roles,\n      # so we don't need to return anything.\n\n      # Create arrays for public and private subnets (filtering out empty values)\n      PUBLIC_SUBNETS=(\"$PUBLIC_SUBNET_1_ID\")\n      PUBLIC_SUBNET_NAMES=(\"$PUBLIC_SUBNET_1_NAME\")\n      if [ -n \"$PUBLIC_SUBNET_2_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_2_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PUBLIC_SUBNET_3_ID\" ]; then \n        PUBLIC_SUBNETS+=(\"$PUBLIC_SUBNET_3_ID\")\n        PUBLIC_SUBNET_NAMES+=(\"$PUBLIC_SUBNET_3_NAME\")\n      fi\n\n      PRIVATE_SUBNETS=(\"$PRIVATE_SUBNET_1_ID\")\n      PRIVATE_SUBNET_NAMES=(\"$PRIVATE_SUBNET_1_NAME\")\n      if [ -n \"$PRIVATE_SUBNET_2_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_2_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_2_NAME\")\n      fi\n      if [ -n \"$PRIVATE_SUBNET_3_ID\" ]; then \n        PRIVATE_SUBNETS+=(\"$PRIVATE_SUBNET_3_ID\")\n        PRIVATE_SUBNET_NAMES+=(\"$PRIVATE_SUBNET_3_NAME\")\n      fi\n\n      PAYLOAD=$(cat << EOF\n{\n  \"request_type\": \"Create\",\n  \"phone_home_type\": \"azure\",\n  \"resource_group_id\": \"$RESOURCE_GROUP_ID\",\n  \"resource_group_name\": \"$RESOURCE_GROUP_NAME\",\n  \"resource_group_location\": \"$RESOURCE_GROUP_LOCATION\",\n  \"network_id\": \"$VNET_ID\",\n  \"network_name\": \"$VNET_NAME\",\n  \"key_vault_id\": \"$KEY_VAULT_ID\",\n  \"key_vault_name\": \"$KEY_VAULT_NAME\",\n  \"public_subnet_ids\": \"$PUBLIC_SUBNET_IDS_CSV\",\n  \"public_subnet_names\": \"$PUBLIC_SUBNET_NAMES_CSV\",\n  \"private_subnet_ids\": \"$PRIVATE_SUBNET_IDS_CSV\",\n  \"private_subnet_names\": \"$PRIVATE_SUBNET_NAMES_CSV\",\n  \"subscription_id\": \"$SUBSCRIPTION_ID\",\n  \"subscription_tenant_id\": \"$SUBSCRIPTION_TENANT_ID\"{{range .AppCfg.SecretsConfig.Secrets}},\n  \"{{.Name}}_secret_id\": \"$SECRET_{{.Name}}_ID\"{{end}}\n}\nEOF\n)\n      \n      # Send the phone home request\n      curl -X POST \\\n        \"{{.CloudFormationStackVersion.PhoneHomeURL}}\" \\\n        -H \"Content-Type: application/json\" \\\n        -H \"Accept: application/json\" \\\n        -d \"$PAYLOAD\" \\\n        --fail \\\n        --silent \\\n        --show-error\n      \n      if [ $? -eq 0 ]; then\n        echo \"Phone home request sent successfully\"\n      else\n        echo \"Failed to send phone home request\"\n        exit 1\n      fi\n    "

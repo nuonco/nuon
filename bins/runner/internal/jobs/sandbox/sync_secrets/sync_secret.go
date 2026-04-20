@@ -3,6 +3,7 @@ package terraform
 import (
 	"context"
 	"encoding/base64"
+	"net/url"
 	"strings"
 	"time"
 
@@ -10,6 +11,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
@@ -30,6 +34,8 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 	switch {
 	case secr.GCPSecretName != "":
 		val, ts, _ = p.fetchGCPSecret(ctx, secr)
+	case secr.AzureKeyVaultSecretID != "":
+		val, ts, _ = p.fetchAzureSecret(ctx, secr)
 	default:
 		val, ts, _ = p.fetchAWSSecret(ctx, secr)
 	}
@@ -59,9 +65,12 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 		Timestamp:           ts,
 		Length:              len(val),
 	}
-	if secr.GCPSecretName != "" {
+	switch {
+	case secr.GCPSecretName != "":
 		output.GCPSecretName = secr.GCPSecretName
-	} else {
+	case secr.AzureKeyVaultSecretID != "":
+		output.AzureKeyVaultSecretID = secr.AzureKeyVaultSecretID
+	default:
 		output.ARN = secr.SecretARN
 	}
 
@@ -120,6 +129,49 @@ func (p *handler) fetchGCPSecret(ctx context.Context, secr plantypes.KubernetesS
 	}
 
 	return string(result.Payload.Data), nil, nil
+}
+
+func (p *handler) fetchAzureSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, error) {
+	// Parse the secret URI to extract vault URL and secret name
+	// Format: https://{vault-name}.vault.azure.net/secrets/{secret-name}
+	parsed, err := url.Parse(secr.AzureKeyVaultSecretID)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "unable to parse azure key vault secret URI")
+	}
+
+	vaultURL := parsed.Scheme + "://" + parsed.Host
+	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+	if len(parts) < 2 || parts[0] != "secrets" {
+		return "", nil, errors.Errorf("invalid key vault secret URI path: %s", parsed.Path)
+	}
+	secretName := parts[1]
+
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "unable to create azure credentials")
+	}
+
+	client, err := azsecrets.NewClient(vaultURL, cred, nil)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "unable to create key vault client")
+	}
+
+	resp, err := client.GetSecret(ctx, secretName, "", nil)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "unable to get secret from key vault")
+	}
+
+	val := ""
+	if resp.Value != nil {
+		val = *resp.Value
+	}
+
+	var ts *time.Time
+	if resp.Attributes != nil && resp.Attributes.Updated != nil {
+		ts = resp.Attributes.Updated
+	}
+
+	return val, ts, nil
 }
 
 func (p *handler) upsertSecret(ctx context.Context, secr plantypes.KubernetesSecretSync, val string) error {
