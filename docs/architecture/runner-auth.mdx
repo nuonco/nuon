@@ -1,0 +1,220 @@
+---
+title: Runner Authentication
+icon: "shield-check"
+description: >
+  How runners prove their cloud identity to the Nuon Control Plane
+  without storing credentials.
+---
+
+AWS, GCP, and Azure each provide a way to cryptographically attest the identity
+of a virtual machine and the account it lives in. They do this by signing
+instance metadata with a private key and publishing the corresponding
+certificates publicly, so anyone can verify the signature without any special
+access or trust relationship with the cloud provider or the install's account.
+
+When a runner starts, it fetches this signed credential from the instance
+metadata service and presents it to Nuon. Nuon independently verifies the
+credential directly with the cloud provider, without relying on anything the
+runner claims about itself. On success, Nuon issues a token that the runner uses
+for all subsequent calls: polling for jobs and streaming logs.
+
+## How It Works
+
+Every auth method follows the same three-step pattern:
+
+```
+Runner                       Cloud Provider                   Nuon
+  |                                |                            |
+  |--- request identity ---------->|                            |
+  |<-- signed credential ----------|                            |
+  |                                |                            |
+  |--- request token ------------------------------------------>|
+  |                                |                            |
+  |                                |<-- verify credential ------|
+  |                                |--- response -------------->|
+  |                                |                            |
+  |<-- token -------------------------------------------------- |
+```
+
+The runner sends a signed credential to Nuon, which independently verifies it by
+calling the cloud provider directly rather than trusting what the runner claims.
+It then checks that the identity matches the expected configuration for that
+install, before returning a Nuon auth token. 
+
+## AWS — Instance Identity Document
+
+The Instance Identity Document (IID) is a JSON document that AWS generates for
+every EC2 instance. It is signed by AWS using a region-specific RSA-2048 key and
+available from the instance metadata service (IMDSv2) without any credentials.
+
+**Document**:
+```json
+{
+  "accountId": "123456789012",
+  "instanceId": "i-0a1b2c3d4e5f67890",
+  "instanceType": "t3.medium",
+  "region": "us-east-1",
+  "availabilityZone": "us-east-1a",
+  "privateIp": "10.0.1.42",
+  "pendingTime": "2024-01-15T10:30:00Z",
+  "architecture": "x86_64",
+  "imageId": "ami-0abcdef1234567890"
+}
+```
+
+**Signature**:
+```
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEH
+AaCAJIAEggGpeyJhY2NvdW50SWQiOiAiMTIzNDU2Nzg5MDEyIiwgImluc3Rh
+bmNlSWQiOiAiaS0wYTFiMmMzZDRlNWY2Nzg5MCIsIC4uLn0AAAAAAAAxggEY
+...
+```
+
+### Flow
+
+```
+Runner (EC2)                 IMDSv2                           Nuon
+  |                            |                               |
+  |--- GET /identity --------->|                               |
+  |<-- document + signature ---|                               |
+  |                            |                               |
+  |--- request token------------------------------------------>|
+  |                            |                               |
+  |                            |   verify PKCS7 signature      |
+  |                            |   (regional AWS cert)         |
+  |                            |                               |
+  |                            |   validate account ID         |
+  |                            |   vs install stack            |
+  |                            |                               |
+  |<-- token ------------------------------------------------- |
+```
+
+### What the runner sends
+
+- The raw IID JSON document from IMDSv2
+- The PKCS7 signature from IMDSv2
+- The runner ID
+
+### What Nuon verifies
+
+1. Parses the IID and validates required fields (region, accountId)
+2. Verifies the PKCS7 signature using the embedded AWS regional certificate for
+   the region in the document
+3. Looks up the runner by the provided runner ID
+4. Validates that the account ID in the document matches the AWS account ID
+   recorded in the install's stack outputs
+
+If the instance is in a different AWS account than the install expects,
+authentication fails.
+
+## GCP — Identity Token
+
+GCP instances can fetch a signed identity JWT from the Compute Engine metadata
+service. The token is audience-scoped and signed by Google's JWKS. The runner
+also fetches an OAuth2 access token and constructs a presigned Compute API
+request so Nuon can independently read instance metadata.
+
+### Flow
+
+```
+Runner (GCE)                 Metadata Service                 Nuon
+  |                                |                            |
+  |--- GET identity token -------->|                            |
+  |<-- signed JWT -----------------|                            |
+  |--- GET access token ---------->|                            |
+  |<-- OAuth2 token ---------------|                            |
+  |                                |                            |
+  |--- request token ------------------------------------------>|
+  |                                |                            |
+  |                                |   validate JWT (JWKS)      |
+  |                                |   extract claims           |
+  |                                |                            |
+  |                                |<-- Compute API call -------|
+  |                                |--- instance metadata ----->|
+  |                                |                            |
+  |                                |   cross-validate IDs       |
+  |                                |   validate project +       |
+  |                                |   service account vs       |
+  |                                |   install stack            |
+  |                                |                            |
+  |<-- token -------------------------------------------------- |
+```
+
+### What the runner sends
+
+- The identity JWT from the metadata service
+- A presigned Compute API request (method, URL, Bearer token). The runner builds
+  the request but does not execute it.
+
+### What Nuon verifies
+
+1. Validates the JWT signature using Google's JWKS
+2. Extracts claims: project ID, instance ID, zone, service account
+3. Independently executes the Compute API request to read instance metadata
+4. Cross-validates the instance ID from the JWT against the Compute API response
+5. Reads the runner ID from the instance's custom metadata key
+6. Validates the project ID and service account email against the install's stack outputs
+
+## Azure — Managed Identity
+
+Azure VMs with a user-assigned managed identity can fetch a JWT from the Azure
+Instance Metadata Service. The token contains the identity's tenant,
+subscription, and resource information and is signed by Microsoft's JWKS
+endpoint for the tenant.
+
+### Flow
+
+```
+Runner (Azure VM)            IMDS                             Nuon
+  |                            |                               |
+  |--- GET identity token ---->|                               |
+  |<-- managed identity JWT ---|                               |
+  |                            |                               |
+  |--- request token--- -------------------------------------->|
+  |                            |                               |
+  |                            |   extract tenant ID           |
+  |                            |   fetch JWKS for tenant       |
+  |                            |   validate JWT sig            |
+  |                            |   extract claims              |
+  |                            |                               |
+  |                            |   extract runner ID           |
+  |                            |   from xms_mirid claim        |
+  |                            |                               |
+  |                            |   validate tenant ID +        |
+  |                            |   subscription ID vs          |
+  |                            |   install stack               |
+  |                            |                               |
+  |<-- token ------------------------------------------------- |
+```
+
+### What the runner sends
+
+- The managed identity JWT from the Azure IMDS
+
+### What Nuon verifies
+
+1. Reads the tenant ID from the JWT without verifying it (needed to find the right JWKS endpoint)
+2. Fetches the JWKS for that tenant
+3. Validates the JWT signature and claims
+4. Extracts the runner ID from the managed identity resource ID in the token
+5. Validates the tenant ID and subscription ID against the install's stack outputs
+
+## Token Issuance
+
+All three methods produce the same result: a token scoped to the runner, used
+for all subsequent API calls.
+
+Tokens are not stored by the runner between restarts. The runner
+re-authenticates on every startup.
+
+## Security Properties
+
+- **No stored credentials.** Identity is derived from the runtime environment at 
+  startup.
+- **Server-side verification.** Nuon independently calls the cloud provider
+  (Google JWKS, Azure JWKS) or verifies the credential locally (AWS PKCS7
+  signature with embedded regional cert). It does not trust the runner's
+  self-reported identity.
+- **Install-scoped validation.** Every method validates the credential's cloud
+  identity against the specific install's stack outputs. A runner in the wrong
+  account, project, or tenant cannot authenticate, even with a valid credential.
