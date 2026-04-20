@@ -48,11 +48,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
 	}
 
-	// Phone home Lambda + props (always needed for the provision workflow callback)
-	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp)
-	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
-	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
-
 	paramlabels := map[string]any{}
 
 	// build roles (before custom nested stacks so they can depend on them)
@@ -78,6 +73,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		tmpl.Resources[k] = v
 	}
 	maps.Copy(tmpl.Parameters, customResult.params)
+
+	// Phone home Lambda + props — AFTER custom stacks so we have their output metadata
+	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult)
+	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
+	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
 
 	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
 	// build secrets
