@@ -9,6 +9,7 @@ type IUserDropdownContainerProps = Omit<
   IUserDropdown,
   | 'isAdmin'
   | 'isNuonEmployee'
+  | 'isDev'
   | 'apiUrl'
   | 'adminDashboardUrl'
   | 'authServiceUrl'
@@ -30,10 +31,13 @@ export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } = useNotifications()
 
+  const isDev = apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')
+
   return (
     <UserDropdown
       isAdmin={!!isAdmin}
       isNuonEmployee={!!isNuonEmployee}
+      isDev={isDev}
       apiUrl={apiUrl}
       adminDashboardUrl={adminDashboardUrl}
       authServiceUrl={authServiceUrl}

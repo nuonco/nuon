@@ -86,6 +86,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ComponentID:        generics.FromPtrStr(componentID),
 			FlowID:             "",
 			SandboxMode:        false,
+			Role:               flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, err

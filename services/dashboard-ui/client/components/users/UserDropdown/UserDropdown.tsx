@@ -1,4 +1,5 @@
 import { AdminPanel } from '@/components/admin/AdminPanel'
+import { DevPanel } from '@/components/dev/DevPanel'
 import { Dropdown, type IDropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
@@ -15,6 +16,7 @@ export interface IUserDropdown
   hideOrgSettings?: boolean
   isAdmin: boolean
   isNuonEmployee: boolean
+  isDev: boolean
   apiUrl: string
   adminDashboardUrl?: string
   authServiceUrl: string
@@ -34,6 +36,7 @@ export const UserDropdown = ({
   hideOrgSettings,
   isAdmin,
   isNuonEmployee,
+  isDev,
   apiUrl,
   adminDashboardUrl,
   authServiceUrl,
@@ -80,6 +83,14 @@ export const UserDropdown = ({
             isMenuButton
           >
             Admin controls <Icon variant="Sliders" />
+          </Button>
+        )}
+        {!hideOrgSettings && isDev && (
+          <Button
+            onClick={() => onAddPanel(<DevPanel />)}
+            isMenuButton
+          >
+            Dev tools <Icon variant="Terminal" />
           </Button>
         )}
         {!hideOrgSettings && isAdmin && adminDashboardUrl && (

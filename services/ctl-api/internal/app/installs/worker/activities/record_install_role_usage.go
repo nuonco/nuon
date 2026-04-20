@@ -5,6 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
@@ -18,7 +19,10 @@ type RecordInstallRoleUsageRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) RecordInstallRoleUsage(ctx context.Context, req *RecordInstallRoleUsageRequest) error {
-	if req.RoleSelection == nil || req.RoleSelection.UnrenderedRoleName == "" {
+	if req.RoleSelection == nil {
+		return nil
+	}
+	if req.RoleSelection.UnrenderedRoleName == "" && req.RoleSelection.RoleName == "" {
 		return nil
 	}
 
@@ -41,11 +45,29 @@ func (a *Activities) RecordInstallRoleUsage(ctx context.Context, req *RecordInst
 		return generics.TemporalGormError(res.Error)
 	}
 
+	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
+	var stateMap map[string]any
+	if err == nil && installState != nil {
+		stateMap, _ = installState.AsMap()
+	}
+
 	var matchedRoleID string
 	for _, ir := range installRoles {
-		if ir.AppRoleConfig.Name == req.RoleSelection.UnrenderedRoleName {
+		name := ir.AppRoleConfig.Name
+		if name == "" {
+			continue
+		}
+		if name == req.RoleSelection.UnrenderedRoleName {
 			matchedRoleID = ir.ID
 			break
+		}
+		if stateMap != nil {
+			if rendered, renderErr := render.RenderV2(name, stateMap); renderErr == nil {
+				if rendered == req.RoleSelection.RoleName || rendered == req.RoleSelection.UnrenderedRoleName {
+					matchedRoleID = ir.ID
+					break
+				}
+			}
 		}
 	}
 	if matchedRoleID == "" {

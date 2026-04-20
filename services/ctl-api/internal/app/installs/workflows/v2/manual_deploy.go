@@ -108,6 +108,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
+			Role:               flw.Role,
 		}, flw.PlanOnly)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
@@ -122,6 +123,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
+			Role:               flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")

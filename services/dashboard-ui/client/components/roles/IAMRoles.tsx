@@ -20,6 +20,7 @@ import type {
   TInstallPermissionsRoleStatus,
 } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
+import { InstallRoleUsagesTrigger } from '@/components/roles/InstallRoleUsages'
 import { decodeAsString } from '@/utils/data-utils'
 
 export const IAMRoleBoundaryExpand = ({
@@ -221,9 +222,18 @@ export const InstallIAMRoles = ({
         return (
           <div className="flex flex-col gap-4 pb-8" key={installRole.id}>
             <div className="flex flex-col">
-              <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
-                {role.display_name}
-              </Text>
+              <div className="flex items-center gap-3 flex-wrap">
+                <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
+                  {role.display_name}
+                </Text>
+                {installRole.install_id && role.name ? (
+                  <InstallRoleUsagesTrigger
+                    installId={installRole.install_id}
+                    roleName={role.name}
+                    roleDisplayName={role.display_name}
+                  />
+                ) : null}
+              </div>
               <Text variant="subtext" theme="neutral">
                 {role.description}
               </Text>
