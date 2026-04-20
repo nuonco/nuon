@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build
 
 # --- Build Go server ---
 
-FROM golang:1.25.4-alpine AS build-server
+FROM golang:1.25.8-alpine AS build-server
 
 WORKDIR /src
 
