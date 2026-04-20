@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudformation.CustomResource {
+func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customStacks *customNestedStackResult) *cloudformation.CustomResource {
 	breakGlassRoleArns := make(map[string]interface{})
 	customRoleArns := make(map[string]interface{})
 
@@ -95,10 +95,29 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput) *cloudfor
 		)
 	}
 
-	return &cloudformation.CustomResource{
+	// Always include custom_nested_stacks in the payload (empty map when none configured)
+	customNestedStacksPayload := map[string]any{}
+	if customStacks != nil {
+		for logicalID, info := range customStacks.stackOutputs {
+			outputsMap := map[string]any{}
+			for _, outputKey := range info.OutputKeys {
+				outputsMap[outputKey] = cloudformation.GetAtt(logicalID, "Outputs."+outputKey)
+			}
+			customNestedStacksPayload[info.Name] = map[string]any{
+				"outputs": outputsMap,
+			}
+		}
+	}
+	lambdaprops["custom_nested_stacks"] = customNestedStacksPayload
+
+	resource := &cloudformation.CustomResource{
 		Type:       "AWS::CloudFormation::CustomResource",
 		Properties: lambdaprops,
 	}
+	if customStacks != nil && customStacks.lastLogicalID != "" {
+		resource.AWSCloudFormationDependsOn = []string{customStacks.lastLogicalID}
+	}
+	return resource
 }
 
 func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBuilder) *lambda.Function {

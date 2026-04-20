@@ -1085,6 +1085,165 @@ Resources:
 		"RunnerSubnet param should be wired from first-class VPC stack, not from stack_a")
 }
 
+func TestGetCustomNestedStacks_StackOutputsAndLastLogicalID(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/vpc.yaml", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockVPCTemplateWithOutputsYAML))
+	})
+	mux.HandleFunc("/stack_a.yaml", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockTemplateWithOutputsA))
+	})
+	mux.HandleFunc("/stack_b.yaml", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockTemplateThirdStack))
+	})
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID:    "test-install-id",
+			AppID: "test-app-id",
+			OrgID: "test-org-id",
+		},
+		AppCfg: &app.AppConfig{
+			StackConfig: app.AppStackConfig{
+				VPCNestedTemplateURL: server.URL + "/vpc.yaml",
+				CustomNestedStacks: []config.CustomNestedStack{
+					{Name: "stack_a", TemplateURL: server.URL + "/stack_a.yaml", Index: 0},
+					{Name: "stack_c", TemplateURL: server.URL + "/stack_b.yaml", Index: 1},
+				},
+			},
+		},
+	}
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	require.NoError(t, err)
+
+	// stackOutputs should contain entries for stacks that have outputs
+	require.Contains(t, result.stackOutputs, "StackA")
+	assert.Equal(t, "stack_a", result.stackOutputs["StackA"].Name)
+	assert.ElementsMatch(t, []string{"SharedSubnetID", "StackAOnlyOutput"}, result.stackOutputs["StackA"].OutputKeys)
+
+	require.Contains(t, result.stackOutputs, "StackC")
+	assert.Equal(t, "stack_c", result.stackOutputs["StackC"].Name)
+	assert.ElementsMatch(t, []string{"FinalOutput"}, result.stackOutputs["StackC"].OutputKeys)
+
+	// lastLogicalID should be the last stack processed
+	assert.Equal(t, "StackC", result.lastLogicalID)
+}
+
+func TestGetCustomNestedStacks_EmptyStackOutputs(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := newTestInput("http://localhost", nil)
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
+	require.NoError(t, err)
+	assert.Empty(t, result.stackOutputs)
+	assert.Empty(t, result.lastLogicalID)
+}
+
+func TestGetCustomNestedStacks_NoOutputsTemplate(t *testing.T) {
+	// mockAdditionalTemplateYAML has no Outputs section
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockAdditionalTemplateYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
+		{Name: "k8s_namespaces", TemplateURL: server.URL + "/stack.yaml", Index: 0},
+	})
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	require.NoError(t, err)
+
+	assert.Empty(t, result.stackOutputs, "stacks without outputs should not appear in stackOutputs")
+	assert.Equal(t, "K8SNamespaces", result.lastLogicalID, "lastLogicalID should still be set")
+}
+
+func TestGetRunnerPhoneHomeProps_DependsOnCustomStacks(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := &stacks.TemplateInput{
+		Install: &app.Install{
+			ID:    "test-install-id",
+			AppID: "test-app-id",
+			OrgID: "test-org-id",
+		},
+		AppCfg: &app.AppConfig{},
+		CloudFormationStackVersion: &app.InstallStackVersion{
+			PhoneHomeURL: "https://example.com/phone-home",
+		},
+	}
+
+	t.Run("with custom stacks", func(t *testing.T) {
+		customResult := &customNestedStackResult{
+			lastLogicalID: "EksAccess",
+			stackOutputs: map[string]customNestedStackOutput{
+				"K8SNamespaces": {
+					Name:       "k8s_namespaces",
+					OutputKeys: []string{"NamespaceArn", "ServiceAccountArn"},
+				},
+				"EksAccess": {
+					Name:       "eks_access",
+					OutputKeys: []string{"AccessEntryArn"},
+				},
+			},
+		}
+
+		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
+
+		// DependsOn should reference the last custom stack
+		assert.Equal(t, []string{"EksAccess"}, resource.AWSCloudFormationDependsOn)
+
+		// custom_nested_stacks payload should exist
+		payload, ok := resource.Properties["custom_nested_stacks"]
+		require.True(t, ok, "custom_nested_stacks property should exist")
+
+		payloadMap := payload.(map[string]any)
+		assert.Contains(t, payloadMap, "k8s_namespaces")
+		assert.Contains(t, payloadMap, "eks_access")
+
+		// Verify Fn::GetAtt references
+		nsOutputs := payloadMap["k8s_namespaces"].(map[string]any)["outputs"].(map[string]any)
+		assert.Equal(t, cfn.GetAtt("K8SNamespaces", "Outputs.NamespaceArn"), nsOutputs["NamespaceArn"])
+		assert.Equal(t, cfn.GetAtt("K8SNamespaces", "Outputs.ServiceAccountArn"), nsOutputs["ServiceAccountArn"])
+
+		eksOutputs := payloadMap["eks_access"].(map[string]any)["outputs"].(map[string]any)
+		assert.Equal(t, cfn.GetAtt("EksAccess", "Outputs.AccessEntryArn"), eksOutputs["AccessEntryArn"])
+	})
+
+	t.Run("without custom stacks", func(t *testing.T) {
+		customResult := &customNestedStackResult{
+			stackOutputs: map[string]customNestedStackOutput{},
+		}
+
+		resource := tpl.getRunnerPhoneHomeProps(inp, customResult)
+
+		// No DependsOn when no custom stacks
+		assert.Empty(t, resource.AWSCloudFormationDependsOn)
+
+		// custom_nested_stacks should be present but empty
+		payload, ok := resource.Properties["custom_nested_stacks"]
+		require.True(t, ok, "custom_nested_stacks property should always exist")
+		assert.Empty(t, payload, "custom_nested_stacks should be an empty map when no custom stacks")
+	})
+
+	t.Run("nil custom stacks", func(t *testing.T) {
+		resource := tpl.getRunnerPhoneHomeProps(inp, nil)
+
+		assert.Empty(t, resource.AWSCloudFormationDependsOn)
+
+		// custom_nested_stacks should be present but empty
+		payload, ok := resource.Properties["custom_nested_stacks"]
+		require.True(t, ok, "custom_nested_stacks property should always exist")
+		assert.Empty(t, payload, "custom_nested_stacks should be an empty map when nil custom stacks")
+	})
+}
+
 func TestSanitizeLogicalID(t *testing.T) {
 	tests := []struct {
 		input    string
