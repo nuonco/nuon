@@ -18,10 +18,17 @@ import (
 
 var logicalIDRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
 
+type customNestedStackOutput struct {
+	Name       string   // original stack name from config (e.g., "k8s-namespaces")
+	OutputKeys []string // output names declared by the template
+}
+
 type customNestedStackResult struct {
-	resources   map[string]*nestedcloudformation.Stack
-	params      map[string]cloudformation.Parameter
-	paramGroups []map[string]any
+	resources     map[string]*nestedcloudformation.Stack
+	params        map[string]cloudformation.Parameter
+	paramGroups   []map[string]any
+	stackOutputs  map[string]customNestedStackOutput // logicalID -> output info
+	lastLogicalID string                             // last custom stack logical ID for DependsOn
 }
 
 func sanitizeLogicalID(name string) string {
@@ -32,9 +39,10 @@ func sanitizeLogicalID(name string) string {
 func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuilder, existingResourceKeys map[string]bool) (*customNestedStackResult, error) {
 	if len(inp.AppCfg.StackConfig.CustomNestedStacks) == 0 {
 		return &customNestedStackResult{
-			resources:   map[string]*nestedcloudformation.Stack{},
-			params:      map[string]cloudformation.Parameter{},
-			paramGroups: nil,
+			resources:    map[string]*nestedcloudformation.Stack{},
+			params:       map[string]cloudformation.Parameter{},
+			paramGroups:  nil,
+			stackOutputs: map[string]customNestedStackOutput{},
 		}, nil
 	}
 
@@ -61,8 +69,9 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 	fcOutputs := tpl.extractFirstClassOutputs(firstClassStacks)
 
 	result := &customNestedStackResult{
-		resources: map[string]*nestedcloudformation.Stack{},
-		params:    map[string]cloudformation.Parameter{},
+		resources:    map[string]*nestedcloudformation.Stack{},
+		params:       map[string]cloudformation.Parameter{},
+		stackOutputs: map[string]customNestedStackOutput{},
 	}
 
 	allParamNames := map[string]string{}
@@ -111,7 +120,9 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 			})
 		}
 
+		outputKeys := make([]string, 0, len(templateOutputs))
 		for outputName := range templateOutputs {
+			outputKeys = append(outputKeys, outputName)
 			if _, isFirstClass := fcOutputs[outputName]; !isFirstClass {
 				fcOutputs[outputName] = firstClassOutput{
 					resource:   logicalID,
@@ -119,9 +130,17 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 				}
 			}
 		}
+		if len(outputKeys) > 0 {
+			result.stackOutputs[logicalID] = customNestedStackOutput{
+				Name:       stack.Name,
+				OutputKeys: outputKeys,
+			}
+		}
 
 		prevLogicalID = logicalID
 	}
+
+	result.lastLogicalID = prevLogicalID
 
 	return result, nil
 }
