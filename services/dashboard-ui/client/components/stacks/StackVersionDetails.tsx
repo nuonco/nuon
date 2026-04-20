@@ -125,25 +125,25 @@ const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
 }
 
 const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
-  const reversedRuns = version?.runs ? [...version.runs].reverse() : []
+  const runs = version?.runs ?? []
   return (
     <div className="flex flex-col gap-4">
       <Text variant="base" weight="strong">
         Runs
       </Text>
 
-      {reversedRuns.length ? (
-        reversedRuns.map((run, displayIdx) => {
-          const originalIdx = (version?.runs?.length ?? 0) - 1 - displayIdx
+      {runs.length ? (
+        runs.map((run, idx) => {
+          const ordinalIdx = (version?.runs?.length ?? 0) - 1 - idx
           return (
             <Expand
               key={run?.id}
               id={`run-${run?.id}`}
               className="border rounded-md"
-              isOpen={displayIdx === 0}
+              isOpen={idx === 0}
               heading={
                 <Text variant="base">
-                  {indexToOrdinal(originalIdx)} run &middot;{' '}
+                  {indexToOrdinal(ordinalIdx)} run &middot;{' '}
                   <Time variant="subtext" time={run?.created_at} />
                 </Text>
               }
