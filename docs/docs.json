@@ -260,7 +260,7 @@
       {
         "tab": "Architecture",
         "icon": "sitemap",
-        "pages": ["architecture/byoc", "architecture/platform", "security"]
+        "pages": ["architecture/byoc", "architecture/platform", "architecture/runner-auth", "security"]
       },
       {
         "tab": "Knowledge Base",
