@@ -82,12 +82,9 @@ export const PolicyDetail = () => {
       <div className="flex items-center justify-between">
         <HeadingGroup>
           <BackLink className="mb-4" />
-          <span className="flex items-center gap-3">
-            <Icon variant="ShieldCheck" size={24} />
-            <Text variant="base" weight="strong">
-              {policy?.name}
-            </Text>
-          </span>
+          <Text variant="base" weight="strong">
+            {policy?.name}
+          </Text>
           {policy?.id && <ID>{policy.id}</ID>}
         </HeadingGroup>
       </div>
@@ -140,7 +137,7 @@ export const PolicyDetail = () => {
               </div>
             ) : isAllComponents ? (
               <div className="flex items-center gap-2">
-                <Icon variant="Stack" size={16} />
+                <Icon variant="Cards" size={16} />
                 <Text variant="subtext">All components</Text>
               </div>
             ) : (
@@ -153,7 +150,7 @@ export const PolicyDetail = () => {
                       to={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
                     >
-                      <Icon variant="Cube" size={14} />
+                      <Icon variant="Cards" size={14} />
                       <Text variant="body">{comp}</Text>
                       <Icon
                         variant="ArrowSquareOut"
@@ -166,7 +163,7 @@ export const PolicyDetail = () => {
                       key={comp}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600"
                     >
-                      <Icon variant="Cube" size={14} />
+                      <Icon variant="Cards" size={14} />
                       <Text variant="body">{comp}</Text>
                     </div>
                   )
