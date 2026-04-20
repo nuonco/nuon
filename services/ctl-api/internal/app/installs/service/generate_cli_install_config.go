@@ -79,6 +79,20 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 
 	if installConfig != nil {
 		installCfg.ApprovalOption = config.InstallApprovalOption(installConfig.ApprovalOption)
+
+		so := &config.InstallStackOverrides{}
+		if installConfig.VPCNestedTemplateURL != nil {
+			so.VPCNestedTemplateURL = *installConfig.VPCNestedTemplateURL
+		}
+		if installConfig.RunnerNestedTemplateURL != nil {
+			so.RunnerNestedTemplateURL = *installConfig.RunnerNestedTemplateURL
+		}
+		if len(installConfig.CustomNestedStacks) > 0 {
+			so.CustomNestedStacks = installConfig.CustomNestedStacks
+		}
+		if so.HasOverrides() {
+			installCfg.StackOverrides = so
+		}
 	}
 
 	appInputCfg, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
