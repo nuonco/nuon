@@ -103,7 +103,14 @@ const tmpl = `
       "metadata": {
         "description": "Force re-run of deployment scripts on each deploy."
       }
-    }{{range .AppCfg.SecretsConfig.Secrets}}{{if not .AutoGenerate}},
+    }{{range .AppCfg.SecretsConfig.Secrets}}{{if .AutoGenerate}},
+    "{{.CloudFormationParamName}}": {
+      "type": "secureString",
+      "defaultValue": "[concat(uniqueString(newGuid()), uniqueString(newGuid()), uniqueString(newGuid()), uniqueString(newGuid()), substring(uniqueString(newGuid()), 0, 11))]",
+      "metadata": {
+        "description": "Auto-generated value for {{.Name}}. Do not change."
+      }
+    }{{else}},
     "{{.CloudFormationParamName}}": {
       "type": "secureString",{{if .Default}}
       "defaultValue": "{{.Default}}",{{else if not .Required}}
@@ -397,7 +404,7 @@ const tmpl = `
       "name": "[format('{0}/{{.Name}}', take(format('{0}', parameters('nuonInstallID')), 24))]",{{if and (not .AutoGenerate) (not .Required)}}
       "condition": "[not(empty(parameters('{{.CloudFormationParamName}}')))]",{{end}}
       "properties": {
-        "value": {{if .AutoGenerate}}"[concat(uniqueString(newGuid(), resourceGroup().id), uniqueString(newGuid(), subscription().subscriptionId), uniqueString(newGuid(), parameters('nuonInstallID')))]"{{else}}"[parameters('{{.CloudFormationParamName}}')]"{{end}}
+        "value": "[parameters('{{.CloudFormationParamName}}')]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"
