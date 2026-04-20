@@ -14,6 +14,7 @@ export * from './get-install-drifted-objects'
 export * from './get-available-roles'
 export * from './get-install-app-permissions-config'
 export * from './get-latest-install-roles'
+export * from './get-install-role-usages'
 
 // workflows
 export * from './get-install-workflows'
@@ -31,3 +32,4 @@ export * from './sync-secrets'
 export * from './update-install-config'
 export * from './update-install-inputs'
 export * from './update-install'
+export * from './post-phone-home'

@@ -27,7 +27,7 @@ export const Roles = () => {
       />
       <HeadingGroup>
         <Text variant="base" weight="strong">
-          IAM roles
+          Install roles
         </Text>
         <Text variant="subtext" theme="neutral">
           View the IAM roles that your install uses to access customer AWS
