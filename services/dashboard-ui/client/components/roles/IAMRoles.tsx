@@ -19,6 +19,7 @@ import type {
   TInstallAppPermissionsConfig,
   TInstallPermissionsRoleStatus,
 } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
+import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import { decodeAsString } from '@/utils/data-utils'
 
 const IAMRoleBoundaryExpand = ({
@@ -207,69 +208,66 @@ export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
 }
 
 export const InstallIAMRoles = ({
-  permissionsConfig,
+  installRoles,
 }: {
-  permissionsConfig: TInstallAppPermissionsConfig
+  installRoles: TInstallRole[]
 }) => {
-  const roles = [
-    permissionsConfig.provision_role,
-    permissionsConfig.deprovision_role,
-    permissionsConfig.maintenance_role,
-    ...(permissionsConfig.break_glass_roles ?? []),
-    ...(permissionsConfig.custom_roles ?? []),
-  ].filter(Boolean) as TInstallPermissionsRoleStatus[]
-
   return (
     <div className="flex flex-col divide-y gap-6">
-      {roles.map((role) => (
-        <div className="flex flex-col gap-4 pb-8" key={role.id}>
-          <div className="flex flex-col">
-            <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
-              {role.display_name}
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              {role.description}
-            </Text>
-          </div>
+      {installRoles.map((installRole) => {
+        const role = installRole.app_role_config
+        if (!role) return null
 
-          <Card>
-            <Text weight="strong">Summary</Text>
-            <div className="grid grid-cols-5 gap-6">
-              <LabeledValue label="Created at">
-                <Time variant="subtext" time={role.created_at} format="long-datetime" />
-              </LabeledValue>
-              <LabeledValue label="Name">{role.name}</LabeledValue>
-              <LabeledValue label="Type">
-                <Badge variant="code" size="sm">
-                  {role.type}
-                </Badge>
-              </LabeledValue>
-              <LabeledValue label="Status">
-                <Status status={role.enabled ? 'active' : 'inactive'}>
-                  {role.enabled ? 'Provisioned' : 'Not provisioned'}
-                </Status>
-              </LabeledValue>
-              <LabeledValue label="ARN">
-                {role.enabled && role.arn ? (
-                  <div className="flex items-start gap-1 min-w-0">
-                    <Text variant="subtext" family="mono" className="break-all">
-                      {role.arn}
-                    </Text>
-                    <ClickToCopyButton textToCopy={role.arn} />
-                  </div>
-                ) : (
-                  <Text variant="subtext" theme="neutral">
-                    —
-                  </Text>
-                )}
-              </LabeledValue>
+        return (
+          <div className="flex flex-col gap-4 pb-8" key={installRole.id}>
+            <div className="flex flex-col">
+              <Text variant="h3" weight="strong" level={3} role="heading" id={role?.display_name}>
+                {role.display_name}
+              </Text>
+              <Text variant="subtext" theme="neutral">
+                {role.description}
+              </Text>
             </div>
-          </Card>
 
-          <IAMRolePoliciesCard policies={role.policies} />
-          <IAMRoleBoundaryExpand permissionsBoundary={role.permissions_boundary} />
-        </div>
-      ))}
+            <Card>
+              <Text weight="strong">Summary</Text>
+              <div className="grid grid-cols-5 gap-6">
+                <LabeledValue label="Created at">
+                  <Time variant="subtext" time={role.created_at} format="long-datetime" />
+                </LabeledValue>
+                <LabeledValue label="Name">{role.name}</LabeledValue>
+                <LabeledValue label="Type">
+                  <Badge variant="code" size="sm">
+                    {role.type}
+                  </Badge>
+                </LabeledValue>
+                <LabeledValue label="Status">
+                  <Status status={installRole.provisioned ? 'active' : 'inactive'}>
+                    {installRole.provisioned ? 'Provisioned' : 'Not provisioned'}
+                  </Status>
+                </LabeledValue>
+                <LabeledValue label="ARN">
+                  {installRole.role_id ? (
+                    <div className="flex items-start gap-1 min-w-0">
+                      <Text variant="subtext" family="mono" className="break-all">
+                        {installRole.role_id}
+                      </Text>
+                      <ClickToCopyButton textToCopy={installRole.role_id} />
+                    </div>
+                  ) : (
+                    <Text variant="subtext" theme="neutral">
+                      —
+                    </Text>
+                  )}
+                </LabeledValue>
+              </div>
+            </Card>
+
+            <IAMRolePoliciesCard policies={role.policies} />
+            <IAMRoleBoundaryExpand permissionsBoundary={role.permissions_boundary} />
+          </div>
+        )
+      })}
     </div>
   )
 }

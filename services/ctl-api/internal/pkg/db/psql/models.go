@@ -30,6 +30,8 @@ func AllModels() []any {
 		// installers
 		&app.Installer{},
 		&app.InstallerApp{},
+		&app.InstallRoles{},
+		&app.InstallRoleUsage{},
 		&app.InstallerMetadata{},
 
 		// vcs basics

@@ -8,28 +8,21 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallAppPermissionsConfig } from '@/lib'
+import { getLatestInstallRoles } from '@/lib'
 
 export const Roles = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: config, isLoading } = useQuery({
-    queryKey: ['install-app-permissions-config', org?.id, install?.id],
+  const { data: roles, isLoading } = useQuery({
+    queryKey: ['install-roles-latest', org?.id, install?.id],
     queryFn: () =>
-      getInstallAppPermissionsConfig({
+      getLatestInstallRoles({
         installId: install.id,
         orgId: org.id,
       }),
     enabled: !!org?.id && !!install?.id,
   })
-
-  const hasRoles =
-    config?.provision_role ||
-    config?.deprovision_role ||
-    config?.maintenance_role ||
-    config?.break_glass_roles?.length ||
-    config?.custom_roles?.length
 
   return (
     <PageSection>
@@ -57,8 +50,8 @@ export const Roles = () => {
 
       {isLoading ? (
         <IAMRolesSkeleton />
-      ) : hasRoles ? (
-        <InstallIAMRoles permissionsConfig={config} />
+      ) : roles?.length ? (
+        <InstallIAMRoles installRoles={roles} />
       ) : (
         <EmptyState
           variant="table"
