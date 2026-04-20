@@ -40,7 +40,7 @@ const LogoBase = ({
     : undefined
 
   return (
-    <Link href="/" className="logo-link w-fit overflow-hidden">
+    <Link href="/" isATag className="logo-link w-fit overflow-hidden">
       <span className="sr-only">Nuon</span>
       {variant !== 'dark' ? (
         <LogoLight
