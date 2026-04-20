@@ -67,7 +67,7 @@ export const AppRolesTable = ({
           <Panel
             size="3/4"
             panelKey={row.original.id}
-            childrenClassName="mt-12"
+
             heading={
               <div className="flex flex-col">
                 <Text variant="h3">{row.original.display_name}</Text>

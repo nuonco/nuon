@@ -79,18 +79,20 @@ export function TableBase<TData extends object>({
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 w-full">
-      <div className="flex flex-row flex-wrap items-center justify-between gap-4">
-        {enableSearch ? (
-          <DebouncedSearchInput labelClassName="w-full md:w-fit" className="w-full md:w-fit" placeholder={searchPlaceholder} />
-        ) : null}
-        {filterActions ? (
-          <div
-            className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : 'w-full md:w-fit'}`}
-          >
-            {filterActions}
-          </div>
-        ) : null}
-      </div>
+      {enableSearch || filterActions ? (
+        <div className="flex flex-row flex-wrap items-center justify-between gap-4">
+          {enableSearch ? (
+            <DebouncedSearchInput labelClassName="w-full md:w-fit" className="w-full md:w-fit" placeholder={searchPlaceholder} />
+          ) : null}
+          {filterActions ? (
+            <div
+              className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : 'w-full md:w-fit'}`}
+            >
+              {filterActions}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div
         className={`overflow-x-auto rounded-lg border ${className}`}
       >
