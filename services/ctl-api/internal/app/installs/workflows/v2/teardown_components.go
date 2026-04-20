@@ -133,6 +133,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 			ComponentID:        compID,
 			FlowID:             "",
 			SandboxMode:        false,
+			Role:               flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, err
