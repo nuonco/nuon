@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
+import { ID } from '@/components/common/ID'
 import { type IPagination } from '@/components/common/Pagination'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -24,9 +27,12 @@ export const InstallRolesTable = ({
         accessorKey: 'app_role_config.display_name',
         header: 'Name',
         cell: ({ row }) => (
-          <Text weight="strong">
-            {row.original.app_role_config?.display_name}
-          </Text>
+          <span>
+            <Text variant="body">
+              {row.original.app_role_config?.display_name}
+            </Text>
+            <ID>{row.original.id}</ID>
+          </span>
         ),
       },
       {
@@ -39,15 +45,29 @@ export const InstallRolesTable = ({
         ),
       },
       {
-        accessorKey: 'app_role_config.created_at',
-        header: 'Created',
+        accessorKey: 'provisioned',
+        header: 'Status',
         cell: ({ row }) => (
-          <Time
-            variant="subtext"
-            time={row.original.app_role_config?.created_at}
-            format="relative"
-          />
+          <Status status={row.original.provisioned ? 'active' : 'inactive'}>
+            {row.original.provisioned ? 'Provisioned' : 'Not provisioned'}
+          </Status>
         ),
+      },
+      {
+        accessorKey: 'last_used_at',
+        header: 'Last used',
+        cell: ({ row }) =>
+          row.original.last_used_at ? (
+            <Time
+              variant="subtext"
+              time={row.original.last_used_at}
+              format="relative"
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              Never
+            </Text>
+          ),
       },
       {
         id: 'actions',
@@ -71,7 +91,11 @@ export const InstallRolesTable = ({
             triggerButton={{
               size: 'sm',
               variant: 'ghost',
-              children: 'View details',
+              children: (
+                <>
+                  View <Icon variant="CaretRightIcon" />
+                </>
+              ),
             }}
           >
             <InstallRoleDetail installRole={row.original} />
