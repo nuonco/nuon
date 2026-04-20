@@ -33,6 +33,7 @@ type Signal struct {
 	FlowStepID         string
 	FlowID             string
 	SandboxMode        bool
+	Role               string
 }
 
 func (s *Signal) Type() signal.SignalType {
@@ -97,6 +98,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			BuildID:     componentBuild.ID,
 			Type:        app.InstallDeployTypeApply,
 			WorkflowID:  s.FlowID,
+			Role:        s.Role,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to create install deploy: %w", err)

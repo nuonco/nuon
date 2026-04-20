@@ -9,6 +9,7 @@ export const Default = () => (
     <UserDropdown
       isAdmin={false}
       isNuonEmployee={false}
+      isDev={false}
       apiUrl="https://api.nuon.co"
       authServiceUrl="https://auth.nuon.co"
       notificationsSupported={false}
@@ -29,6 +30,7 @@ export const Admin = () => (
     <UserDropdown
       isAdmin
       isNuonEmployee
+      isDev={false}
       apiUrl="https://api.nuon.co"
       adminDashboardUrl="https://admin.nuon.co"
       authServiceUrl="https://auth.nuon.co"
