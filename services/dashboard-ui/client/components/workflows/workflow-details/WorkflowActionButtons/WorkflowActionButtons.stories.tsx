@@ -17,29 +17,28 @@ const mockWorkflow = {
 export const AllButtons = () => (
   <WorkflowActionButtons
     workflow={mockWorkflow}
-    temporalLinkParams="?query=test"
     canShowApproveAll={true}
     canShowCancel={true}
-    canShowTemporalLink={true}
+    isAdminVisible={true}
+    adminDashboardUrl="https://admin.example.com"
   />
 )
 
 export const CancelOnly = () => (
   <WorkflowActionButtons
     workflow={mockWorkflow}
-    temporalLinkParams=""
     canShowApproveAll={false}
     canShowCancel={true}
-    canShowTemporalLink={false}
+    isAdminVisible={true}
+    adminDashboardUrl="https://admin.example.com"
   />
 )
 
 export const Empty = () => (
   <WorkflowActionButtons
     workflow={mockWorkflow}
-    temporalLinkParams=""
     canShowApproveAll={false}
     canShowCancel={false}
-    canShowTemporalLink={false}
+    isAdminVisible={false}
   />
 )

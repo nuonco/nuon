@@ -191,7 +191,7 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", err.Error()))
 		return fmt.Errorf("build job failed: %w", err)
 	}
 

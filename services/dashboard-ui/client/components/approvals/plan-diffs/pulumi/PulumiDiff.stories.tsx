@@ -1005,6 +1005,98 @@ export const KubernetesAppMigration = () => (
   />
 )
 
+export const RBACArrayNoise = () => (
+  <PulumiDiff
+    plan={{
+      stdout: '',
+      stderr: '',
+      change_summary: { update: 1 },
+      resource_changes: [
+        {
+          urn: 'urn:pulumi:prod::k8s-platform::kubernetes:rbac.authorization.k8s.io/v1:ClusterRole::system-node',
+          type: 'kubernetes:rbac.authorization.k8s.io/v1:ClusterRole',
+          name: 'system-node',
+          action: 'update',
+          diffs: ['rules'],
+          detailed_diff: {
+            'rules[4].verbs[3]': { kind: 'add', inputDiff: true },
+          },
+          old_inputs: {
+            metadata: { name: 'system:node' },
+            rules: [
+              {
+                apiGroups: [''],
+                resources: ['nodes'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: null,
+              },
+              {
+                apiGroups: [''],
+                resources: ['pods'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: null,
+              },
+              {
+                apiGroups: [''],
+                resources: ['services'],
+                verbs: ['get', 'list'],
+                resourceNames: null,
+              },
+              {
+                apiGroups: ['apps'],
+                resources: ['daemonsets'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: null,
+              },
+              {
+                apiGroups: ['coordination.k8s.io'],
+                resources: ['leases'],
+                verbs: ['get', 'create', 'update'],
+                resourceNames: null,
+              },
+            ],
+          },
+          new_inputs: {
+            metadata: { name: 'system:node' },
+            rules: [
+              {
+                apiGroups: [''],
+                resources: ['nodes'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: [],
+              },
+              {
+                apiGroups: [''],
+                resources: ['pods'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: [],
+              },
+              {
+                apiGroups: [''],
+                resources: ['services'],
+                verbs: ['get', 'list'],
+                resourceNames: [],
+              },
+              {
+                apiGroups: ['apps'],
+                resources: ['daemonsets'],
+                verbs: ['get', 'list', 'watch'],
+                resourceNames: [],
+              },
+              {
+                apiGroups: ['coordination.k8s.io'],
+                resources: ['leases'],
+                verbs: ['get', 'create', 'update', 'patch'],
+                resourceNames: [],
+              },
+            ],
+          },
+        },
+      ],
+    }}
+  />
+)
+
 export const WithDiagnostics = () => (
   <PulumiDiff
     plan={{

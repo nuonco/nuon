@@ -28,7 +28,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	string
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/runners/{runner_id}/traces [POST]
 func (s *service) OtelWriteTraces(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
@@ -52,7 +52,7 @@ func (s *service) OtelWriteTraces(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req ptraceotlp.ExportRequest) error {

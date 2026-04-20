@@ -9,26 +9,18 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-const (
-	HeaderInstallWorkflowID = "X-Nuon-Install-Workflow-ID"
-)
-
 // installs
-func (c *client) CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, string, error) {
-	hr := newResponseHeaderReader(&operations.CreateInstallReader{})
-
+func (c *client) CreateInstall(ctx context.Context, appID string, req *models.ServiceCreateInstallRequest) (*models.AppInstall, error) {
 	resp, err := c.genClient.Operations.CreateInstall(&operations.CreateInstallParams{
 		AppID:   appID,
 		Req:     req,
 		Context: ctx,
-	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	installWOrkflowID := hr.GetHeader(HeaderInstallWorkflowID)
-
-	return resp.Payload, installWOrkflowID, nil
+	return resp.Payload, nil
 }
 
 func (c *client) GetAppInstalls(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error) {
@@ -111,20 +103,20 @@ func (c *client) UpdateInstall(ctx context.Context, installID string, req *model
 	return resp.Payload, nil
 }
 
-func (c *client) DeleteInstall(ctx context.Context, installID string) (bool, error) {
+func (c *client) DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.DeleteInstall(&operations.DeleteInstallParams{
 		InstallID: installID,
 		Context:   ctx,
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return resp.IsSuccess(), nil
+	return resp.Payload, nil
 }
 
 func (c *client) ForgetInstall(ctx context.Context, installID string) (bool, error) {
-	resp, err := c.genClient.Operations.ForgetInstall(&operations.ForgetInstallParams{
+	_, err := c.genClient.Operations.ForgetInstall(&operations.ForgetInstallParams{
 		InstallID: installID,
 		Context:   ctx,
 	}, c.getOrgIDAuthInfo())
@@ -132,26 +124,22 @@ func (c *client) ForgetInstall(ctx context.Context, installID string) (bool, err
 		return false, err
 	}
 
-	return resp.IsSuccess(), nil
+	return true, nil
 }
 
-func (c *client) ReprovisionInstall(ctx context.Context, installID string) error {
+func (c *client) ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.ReprovisionInstall(&operations.ReprovisionInstallParams{
 		InstallID: installID,
 		Context:   ctx,
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return resp.Payload, nil
 }
 
-func (c *client) DeprovisionInstall(ctx context.Context, installID string) error {
+func (c *client) DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.DeprovisionInstall(&operations.DeprovisionInstallParams{
 		InstallID: installID,
 		Context:   ctx,
@@ -159,14 +147,10 @@ func (c *client) DeprovisionInstall(ctx context.Context, installID string) error
 		Req: &models.ServiceDeprovisionInstallRequest{},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return resp.Payload, nil
 }
 
 func (c *client) GenerateCLIInstallConfig(ctx context.Context, installID string) ([]byte, error) {

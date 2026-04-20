@@ -77,7 +77,7 @@ DeleteInstallOK describes a response with status code 200, with default header v
 OK
 */
 type DeleteInstallOK struct {
-	Payload bool
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this delete install o k response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *DeleteInstallOK) String() string {
 	return fmt.Sprintf("[DELETE /v1/installs/{install_id}][%d] deleteInstallOK %s", 200, payload)
 }
 
-func (o *DeleteInstallOK) GetPayload() bool {
+func (o *DeleteInstallOK) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *DeleteInstallOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

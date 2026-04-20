@@ -77,7 +77,7 @@ TeardownInstallComponentCreated describes a response with status code 201, with 
 Created
 */
 type TeardownInstallComponentCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this teardown install component created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *TeardownInstallComponentCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/{component_id}/teardown][%d] teardownInstallComponentCreated %s", 201, payload)
 }
 
-func (o *TeardownInstallComponentCreated) GetPayload() string {
+func (o *TeardownInstallComponentCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *TeardownInstallComponentCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

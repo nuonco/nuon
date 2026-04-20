@@ -29,7 +29,7 @@ type SelectionContext struct {
 	EntityRoles EntityOperationRoleMap
 	// App-level rules from DB
 	MatrixRules []*app.AppOperationRoleRule
-	// DefaultRole is the role selected if none of the rules assiciate with the pricipal and operation
+	// DefaultRole is the role selected if none of the rules associate with the principal and operation
 	DefaultRole string
 	// Break Glass role
 	BreakGlassRole string

@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	pkgerrors "github.com/pkg/errors"
 )
 
@@ -35,7 +36,7 @@ import (
 // @Failure						403	{object}	stderr.ErrResponse
 // @Failure						404	{object}	stderr.ErrResponse
 // @Failure						500	{object}	stderr.ErrResponse
-// @Success						202	{boolean}		true
+// @Success				202	{object}	app.EmptyResponse
 // @Router						/v1/workflows/{workflow_id}/cancel [post]
 func (s *service) CancelWorkflow(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -74,32 +75,63 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
-		ctx.JSON(http.StatusAccepted, true)
+		ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 		return
 	}
 
-	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
-		EventLoopRequest: eventloop.EventLoopRequest{
-			ID: wf.OwnerID,
-		},
-		Signal: &signals.Signal{
-			InstallWorkflowID: wf.ID,
-		},
-	})
-	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
-		var notFoundErr *serviceerror.NotFound
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
 
-		if errors.As(err, &notFoundErr) {
-			// Don't throw an error if the temporal workflow is not found
-			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
-		} else {
-			ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
-			return
+	if useQueues {
+		// Find current in-progress step and cancel it via queues
+		step := s.findCancelableStep(wf)
+		if step != nil {
+			if _, err := s.flowsClient.CancelStep(ctx, &flowclient.CancelStepRequest{
+				InstallWorkflowID: wf.ID,
+				StepID:            step.ID,
+			}); err != nil {
+				s.l.Warn("failed to cancel step via queues, workflow already marked cancelled",
+					zap.String("workflow_id", wf.ID),
+					zap.String("step_id", step.ID),
+					zap.Error(err))
+			}
+		}
+	} else {
+		id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
+			EventLoopRequest: eventloop.EventLoopRequest{
+				ID: wf.OwnerID,
+			},
+			Signal: &signals.Signal{
+				InstallWorkflowID: wf.ID,
+			},
+		})
+		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
+		if err != nil {
+			var notFoundErr *serviceerror.NotFound
+			if errors.As(err, &notFoundErr) {
+				s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
+			} else {
+				ctx.Error(fmt.Errorf("unable to cancel workflow: %w", err))
+				return
+			}
 		}
 	}
 
-	ctx.JSON(http.StatusAccepted, true)
+	ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
+}
+
+// findCancelableStep returns the first in-progress or awaiting-approval step, if any.
+func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
+	for i := range wf.Steps {
+		switch wf.Steps[i].Status.Status {
+		case app.StatusInProgress, app.AwaitingApproval, app.Status("awaiting-approval"):
+			return &wf.Steps[i]
+		}
+	}
+	return nil
 }
 
 // TODO: Remove. Deprecated.
@@ -117,7 +149,7 @@ func (s *service) CancelWorkflow(ctx *gin.Context) {
 // @Failure						403	{object}	stderr.ErrResponse
 // @Failure						404	{object}	stderr.ErrResponse
 // @Failure						500	{object}	stderr.ErrResponse
-// @Success						202	{boolean}		true
+// @Success				202	{object}	app.EmptyResponse
 // @Router						/v1/install-workflows/{install_workflow_id}/cancel [post]
 // @Deprecated
 func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
@@ -157,32 +189,51 @@ func (s *service) CancelInstallWorkflow(ctx *gin.Context) {
 		return
 	}
 	if wf.Status.Status == app.StatusPending {
-		ctx.JSON(http.StatusAccepted, true)
+		ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 		return
 	}
 
-	id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
-		EventLoopRequest: eventloop.EventLoopRequest{
-			ID: wf.OwnerID,
-		},
-		Signal: &signals.Signal{
-			InstallWorkflowID: wf.ID,
-		},
-	})
-
-	err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
-		var notFoundErr *serviceerror.NotFound
-		if errors.As(err, &notFoundErr) {
-			// Don't throw an error if the temporal workflow is not found
-			s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
-		} else {
-			ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
-		}
+		ctx.Error(fmt.Errorf("checking features: %w", err))
 		return
 	}
 
-	ctx.JSON(http.StatusAccepted, true)
+	if useQueues {
+		step := s.findCancelableStep(wf)
+		if step != nil {
+			if _, err := s.flowsClient.CancelStep(ctx, &flowclient.CancelStepRequest{
+				InstallWorkflowID: wf.ID,
+				StepID:            step.ID,
+			}); err != nil {
+				s.l.Warn("failed to cancel step via queues, workflow already marked cancelled",
+					zap.String("workflow_id", wf.ID),
+					zap.String("step_id", step.ID),
+					zap.Error(err))
+			}
+		}
+	} else {
+		id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
+			EventLoopRequest: eventloop.EventLoopRequest{
+				ID: wf.OwnerID,
+			},
+			Signal: &signals.Signal{
+				InstallWorkflowID: wf.ID,
+			},
+		})
+		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
+		if err != nil {
+			var notFoundErr *serviceerror.NotFound
+			if errors.As(err, &notFoundErr) {
+				s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
+			} else {
+				ctx.Error(fmt.Errorf("unable to cancel install workflow: %w", err))
+				return
+			}
+		}
+	}
+
+	ctx.JSON(http.StatusAccepted, app.EmptyResponse{})
 }
 
 func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) error {

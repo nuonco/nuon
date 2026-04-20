@@ -32,7 +32,7 @@ func (c *AdminDeleteAccountRequest) Validate(v *validator.Validate) error {
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
-// @Success				201	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/general/admin-delete-account [POST]
 func (s *service) AdminDeleteAccount(ctx *gin.Context) {
 	var req AdminDeleteAccountRequest
@@ -51,7 +51,7 @@ func (s *service) AdminDeleteAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 func (s *service) createAdminDeleteAccount(ctx context.Context, subjectOrEmail string) error {

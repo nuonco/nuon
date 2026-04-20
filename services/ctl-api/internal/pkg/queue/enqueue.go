@@ -1,16 +1,12 @@
 package queue
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handlerworkflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const EnqueueUpdateName string = "enqueue"
@@ -23,12 +19,11 @@ type EnqueueResponse struct {
 }
 
 // EnqueueHandlerInput is the input to the enqueue update handler.
-// OwnerID and OwnerType are optional — when set, the created QueueSignal will have
-// its polymorphic owner association populated automatically (e.g. pointing at a ComponentBuild).
+// The QueueSignal is created in the DB by the client before sending this update,
+// so the handler only needs the IDs to start the handler workflow and queue the ref.
 type EnqueueHandlerInput struct {
-	Signal    signal.Signal `json:"signal"`
-	OwnerID   string        `json:"owner_id,omitempty"`
-	OwnerType string        `json:"owner_type,omitempty"`
+	QueueSignalID string `json:"queue_signal_id"`
+	WorkflowID    string `json:"workflow_id"`
 }
 
 // @temporal-gen-v2 update
@@ -51,34 +46,22 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		return nil, errors.Errorf("unable to queue item, depth of %d reached", w.maxDepth)
 	}
 
-	qSignal, err := activities.AwaitCreateQueueSignal(ctx, &activities.CreateQueueSignalRequest{
-		QueueID:   w.queueID,
-		Signal:    input.Signal,
-		OwnerID:   input.OwnerID,
-		OwnerType: input.OwnerType,
-	}, &workflow.ActivityOptions{
-		StartToCloseTimeout: 10 * time.Second,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create queue signal")
-	}
-
-	handlerworkflow.StartHandler(ctx, qSignal.Workflow.ID, handlerworkflow.HandlerRequest{
+	handlerworkflow.StartHandler(ctx, input.WorkflowID, handlerworkflow.HandlerRequest{
 		QueueID:       w.queueID,
-		QueueSignalID: qSignal.ID,
+		QueueSignalID: input.QueueSignalID,
 	})
 
-	l.Info("queueing signal for processing", zap.String("workflow-id", qSignal.Workflow.ID))
+	l.Info("queueing signal for processing", zap.String("workflow-id", input.WorkflowID))
 	if !w.ch.SendAsync(QueueRef{
-		WorkflowID: qSignal.Workflow.ID,
-		ID:         qSignal.ID,
+		WorkflowID: input.WorkflowID,
+		ID:         input.QueueSignalID,
 	}) {
 		l.Warn("channel full, signal will be picked up on next requeue cycle",
-			zap.String("signal-id", qSignal.ID))
+			zap.String("signal-id", input.QueueSignalID))
 	}
 
 	return &EnqueueResponse{
-		ID:         qSignal.ID,
-		WorkflowID: qSignal.Workflow.ID,
+		ID:         input.QueueSignalID,
+		WorkflowID: input.WorkflowID,
 	}, nil
 }

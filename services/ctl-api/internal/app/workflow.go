@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
 type WorkflowType string
@@ -178,6 +179,11 @@ type Workflow struct {
 
 	PlanOnly bool `json:"plan_only"`
 
+	// GenerateStepsSignal is an optional queue signal that generates workflow steps.
+	// When set, the conductor enqueues this signal and calls its "FetchSteps" update
+	// handler instead of using the hardcoded Generators map.
+	GenerateStepsSignal *signaldb.SignalData `json:"generate_steps_signal,omitempty" gorm:"type:jsonb"`
+
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
@@ -192,6 +198,7 @@ type Workflow struct {
 	InstallDeploys            []InstallDeploy            `json:"install_deploys,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_deploys,omitzero,omitempty"`
 	InstallActionWorkflowRuns []InstallActionWorkflowRun `json:"install_action_workflow_runs,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"install_action_runs,omitzero,omitempty"`
 	AppBranchRuns             []AppBranchRun             `json:"app_branch_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"app_branch_runs,omitzero,omitempty"`
+	WorkflowRuns              []WorkflowRun              `json:"workflow_runs,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"workflow_runs,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 }

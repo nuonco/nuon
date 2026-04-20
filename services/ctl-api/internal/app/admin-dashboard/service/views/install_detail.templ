@@ -213,6 +213,29 @@ templ InstallDetail(
 					}
 				}
 			</div>
+			<!-- Workflows Section -->
+			<div class="mt-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Workflows
+						}
+						@card.Description() {
+							Recent workflows for this install
+						}
+					}
+					@card.Content() {
+						<div
+							id={ "workflows-table-" + install.ID }
+							hx-get={ "/installs/" + install.ID + "/workflows/table" }
+							hx-trigger="load"
+							hx-swap="outerHTML"
+						>
+							<div class="text-sm text-muted-foreground">Loading workflows...</div>
+						</div>
+					}
+				}
+			</div>
 		</div>
 		// Include the copybutton and popover JavaScript
 		@copybutton.Script()

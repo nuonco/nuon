@@ -1,7 +1,9 @@
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -24,7 +26,7 @@ function HealthCheckGraph({
 }) {
   if (!healthchecks?.length) {
     return (
-      <div className="flex items-center justify-center h-10">
+      <div className="flex items-center justify-center h-10 rounded-md border border-white/5 bg-white/[0.02] dark:border-white/5 dark:bg-white/[0.02]">
         <Text variant="subtext" theme="neutral">
           No health data
         </Text>
@@ -95,6 +97,7 @@ interface IProcessCard {
   reportedVersion: string
   healthchecks: TRunnerHealthCheck[]
   managementDropdown?: React.ReactNode
+  adminDashboardUrl?: string
 }
 
 export const ProcessCard = ({
@@ -106,6 +109,7 @@ export const ProcessCard = ({
   reportedVersion,
   healthchecks,
   managementDropdown,
+  adminDashboardUrl,
 }: IProcessCard) => {
   const warnings = process.warnings ?? []
 
@@ -126,7 +130,18 @@ export const ProcessCard = ({
           </div>
           <ID>{process.id}</ID>
         </div>
-        {managementDropdown}
+        <div className="flex items-center gap-2">
+          {adminDashboardUrl && (
+            <Button
+              size="sm"
+              href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
+              target="_blank"
+            >
+              View in admin panel <Icon variant="ArrowSquareOutIcon" />
+            </Button>
+          )}
+          {managementDropdown}
+        </div>
       </div>
 
       {warnings.map((warning, i) => (
@@ -137,7 +152,7 @@ export const ProcessCard = ({
 
       <HealthCheckGraph healthchecks={healthchecks} />
 
-      <div className="flex flex-wrap gap-x-8 gap-y-4">
+      <div className="grid grid-cols-3 gap-x-6 gap-y-4">
         <LabeledValue label="Connectivity">
           <Status
             status={isConnected ? 'connected' : 'not-connected'}

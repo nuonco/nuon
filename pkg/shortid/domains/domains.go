@@ -210,6 +210,10 @@ func NewWorkflowStepApprovalResponseID() string {
 	return shortid.NewNanoID("war")
 }
 
+func NewWorkflowRunID() string {
+	return shortid.NewNanoID("wfr")
+}
+
 func NewInstanceID() string {
 	return shortid.NewNanoID("ins")
 }
@@ -416,4 +420,12 @@ func NewRunnerProcessID() string {
 
 func NewRunnerProcessShutdownID() string {
 	return shortid.NewNanoID("rps")
+}
+
+func NewSandboxModeConfigID() string {
+	return shortid.NewNanoID("sbc")
+}
+
+func NewSandboxModeSignalConfigID() string {
+	return shortid.NewNanoID("ssc")
 }

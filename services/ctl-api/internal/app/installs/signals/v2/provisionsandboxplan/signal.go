@@ -3,6 +3,7 @@ package provisionsandboxplan
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -32,8 +33,49 @@ type Signal struct {
 	cfg *internal.Config
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var (
+	_ signal.Signal                     = &Signal{}
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithNoOpCheck        = (*Signal)(nil)
+	_ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
+	_ signal.SignalWithSkipCleanup      = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+)
+
+func (s *Signal) IsNoOpCheckable() bool          { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool { return true }
+func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) MaxRetries() int                { return 3 }
+
+func (s *Signal) OnSkipped(ctx workflow.Context) error {
+	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)
+	if err != nil {
+		return fmt.Errorf("unable to get workflow steps: %w", err)
+	}
+
+	var groupsToSkip []int
+	for _, step := range steps {
+		if app.WorkflowStepTargetType(step.StepTargetType) == app.WorkflowStepTargetTypeInstallDeploy || app.WorkflowStepTargetType(step.StepTargetType) == app.WorkflowStepTargetTypeInstallDeploys {
+			groupsToSkip = append(groupsToSkip, step.GroupIdx)
+		}
+	}
+
+	for _, step := range steps {
+		if slices.Contains(groupsToSkip, step.GroupIdx) {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusUserSkipped,
+					StatusHumanDescription: "Plan denied and skipped by the user.",
+				},
+			}); err != nil {
+				return fmt.Errorf("unable to update step status: %w", err)
+			}
+		}
+	}
+
+	return nil
+}
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{

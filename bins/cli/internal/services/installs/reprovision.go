@@ -13,7 +13,7 @@ func (s *Service) Reprovision(ctx context.Context, installID string, asJSON bool
 		return ui.PrintError(err)
 	}
 
-	err = s.api.ReprovisionInstall(ctx, installID)
+	_, err = s.api.ReprovisionInstall(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}

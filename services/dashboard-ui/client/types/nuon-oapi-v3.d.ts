@@ -1778,7 +1778,7 @@ export interface paths {
      * ```json
      * {
      *   "api-pagination": true,
-     *   "org-dashboard": false,
+     *   "org-dashboard": true,
      *   "org-runner": true,
      *   "stratus-layout": true,
      *   "user-managed-features": false
@@ -2391,14 +2391,6 @@ export interface paths {
      */
     post: operations["CancelWorkflow"];
   };
-  "/v1/workflows/{workflow_id}/retry": {
-    /**
-     * rerun the workflow steps starting from input step id, can be used to retry a failed step
-     * @deprecated
-     * @description Retry a workflow execution by id.
-     */
-    post: operations["RetryOwnerWorkflowByID"];
-  };
   "/v1/workflows/{workflow_id}/steps": {
     /**
      * get all of the steps for a given workflow
@@ -2441,12 +2433,20 @@ export interface paths {
      */
     get: operations["AwaitWorkflowStep"];
   };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/cancel": {
+    /** cancel an in-progress workflow step */
+    post: operations["CancelWorkflowStep"];
+  };
   "/v1/workflows/{workflow_id}/steps/{step_id}/retry": {
     /**
-     * rerun the workflow steps starting from input step id, can be used to retry a failed step
+     * retry a failed or awaiting-approval workflow step
      * @description Retry a workflow execution by id.
      */
     post: operations["RetryWorkflowStep"];
+  };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/skip": {
+    /** skip a failed workflow step and continue the workflow */
+    post: operations["SkipWorkflowStep"];
   };
 }
 
@@ -2751,6 +2751,7 @@ export interface components {
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
     };
     "app.AppBreakGlassConfig": {
       app_config_id?: string;
@@ -3258,6 +3259,7 @@ export interface components {
       /** @description These fields will be populated from the drifts_view */
       target_type?: string;
     };
+    "app.EmptyResponse": Record<string, never>;
     "app.ExternalImageComponentConfig": {
       aws_ecr_image_config?: components["schemas"]["app.AWSECRImageConfig"];
       azure_acr_image_config?: components["schemas"]["app.AzureACRImageConfig"];
@@ -3434,6 +3436,8 @@ export interface components {
       status?: string;
       status_description?: string;
       updated_at?: string;
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.InstallActionWorkflow": {
@@ -3606,6 +3610,8 @@ export interface components {
       values?: {
         [key: string]: string;
       };
+      /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
+      workflow_id?: string;
     };
     "app.InstallRoles": {
       app_role_config?: components["schemas"]["app.AppAWSIAMRoleConfig"];
@@ -4183,9 +4189,12 @@ export interface components {
       aws_tags?: {
         [key: string]: string;
       };
+      /** @description configuration for managing the runner binary version (for mng mode, not the install runner) */
+      binary_version?: string;
       container_image_tag?: string;
       /** @description configuration for deploying the runner */
       container_image_url?: string;
+      container_max_uptime?: number;
       created_at?: string;
       created_by_id?: string;
       enable_logging?: boolean;
@@ -4228,6 +4237,7 @@ export interface components {
       /** @description configuration for managing the runner server side */
       sandbox_mode?: boolean;
       updated_at?: string;
+      vm_max_uptime?: number;
     };
     /** @enum {string} */
     "app.RunnerGroupType": "install" | "org";
@@ -4598,6 +4608,12 @@ export interface components {
       execution_time?: number;
       finished?: boolean;
       finished_at?: string;
+      /**
+       * @description GenerateStepsSignal is an optional queue signal that generates workflow steps.
+       * When set, the conductor enqueues this signal and calls its "FetchSteps" update
+       * handler instead of using the hardcoded Generators map.
+       */
+      generate_steps_signal?: components["schemas"]["signaldb.SignalData"];
       id?: string;
       install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -4621,7 +4637,28 @@ export interface components {
       steps?: components["schemas"]["app.WorkflowStep"][];
       type?: components["schemas"]["app.WorkflowType"];
       updated_at?: string;
+      workflow_runs?: components["schemas"]["app.WorkflowRun"][];
     };
+    "app.WorkflowResponse": {
+      workflow_id?: string;
+    };
+    "app.WorkflowRun": {
+      created_at?: string;
+      created_by_id?: string;
+      finished_at?: string;
+      id?: string;
+      /** @description StartFromIdx is the step index to start execution from. */
+      start_from_idx?: number;
+      started_at?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      /** @description TriggerStepID is the step that triggered this run (empty for initial runs). */
+      trigger_step_id?: string;
+      type?: components["schemas"]["app.WorkflowRunType"];
+      updated_at?: string;
+      workflow_id?: string;
+    };
+    /** @enum {string} */
+    "app.WorkflowRunType": "initial" | "retry" | "skip" | "resume";
     "app.WorkflowStep": {
       approval?: components["schemas"]["app.WorkflowStepApproval"];
       created_at?: string;
@@ -4650,6 +4687,7 @@ export interface components {
       owner_type?: string;
       policy_validation?: components["schemas"]["app.WorkflowStepPolicyValidation"];
       retried?: boolean;
+      retry_index?: number;
       retryable?: boolean;
       skippable?: boolean;
       started_at?: string;
@@ -5431,6 +5469,9 @@ export interface components {
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CancelWorkflowStepResponse": {
+      workflow_id?: string;
+    };
     "service.CompleteInstallStepRequest": {
       aws_account?: {
         region?: string;
@@ -6028,15 +6069,6 @@ export interface components {
       role?: string;
       skip_components?: boolean;
     };
-    "service.RetryWorkflowByIDRequest": {
-      /** @description Retry indicates whether to retry the current step or not */
-      operation?: string;
-      /** @description StepID is the ID of the step to start the retry from */
-      step_id?: string;
-    };
-    "service.RetryWorkflowByIDResponse": {
-      workflow_id?: string;
-    };
     "service.RetryWorkflowRequest": {
       /** @description Retry indicates whether to retry the current step or not */
       operation?: string;
@@ -6047,9 +6079,9 @@ export interface components {
     "service.RetryWorkflowResponse": {
       workflow_id?: string;
     };
-    "service.RetryWorkflowStepRequest": {
-      /** @description Retry indicates whether to retry the current step or not */
-      operation?: string;
+    "service.RetryWorkflowStepResponse": {
+      retryable?: boolean;
+      workflow_id?: string;
     };
     "service.RunnerCardDetailsResponse": {
       latest_heart_beat?: components["schemas"]["app.RunnerHeartBeat"];
@@ -6061,6 +6093,10 @@ export interface components {
     };
     "service.ShutdownRunnerProcessRequest": {
       shutdown_type: string;
+    };
+    "service.SkipWorkflowStepResponse": {
+      skippable?: boolean;
+      workflow_id?: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -6140,8 +6176,10 @@ export interface components {
     "service.UpdateRunnerSettingsRequest": {
       /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
+      binary_version?: string;
       container_image_tag?: string;
       container_image_url?: string;
+      container_max_uptime?: number;
       /**
        * @description JobGroupParallelism maps job group names to max-in-flight values for parallel job execution.
        * e.g., {"build": 2, "deploy": 1}. Only effective when parallel-runner-jobs feature flag is enabled.
@@ -6152,6 +6190,7 @@ export interface components {
       org_awsiam_role_arn?: string;
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
+      vm_max_uptime?: number;
     };
     "service.UpdateUserJourneyStepRequest": {
       complete?: boolean;
@@ -6753,7 +6792,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7183,7 +7222,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -7683,7 +7722,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -8810,7 +8849,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10053,7 +10092,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -10389,7 +10428,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12032,7 +12071,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12307,7 +12346,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -12763,7 +12802,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14030,7 +14069,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -14500,7 +14539,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -14794,7 +14833,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -15920,7 +15959,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16035,7 +16074,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16419,7 +16458,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -16521,7 +16560,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16910,7 +16949,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -16966,7 +17005,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17186,7 +17225,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17552,7 +17591,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -17665,7 +17704,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -17721,7 +17760,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -18407,7 +18446,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": string;
+          "application/json": components["schemas"]["app.WorkflowResponse"];
         };
       };
       /** @description Bad Request */
@@ -19228,7 +19267,7 @@ export interface operations {
    * ```json
    * {
    *   "api-pagination": true,
-   *   "org-dashboard": false,
+   *   "org-dashboard": true,
    *   "org-runner": true,
    *   "stratus-layout": true,
    *   "user-managed-features": false
@@ -20635,10 +20674,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20693,10 +20732,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20912,10 +20951,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -20965,10 +21004,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -21018,10 +21057,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -21071,10 +21110,10 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Created */
-      201: {
+      /** @description OK */
+      200: {
         content: {
-          "application/json": boolean;
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -23114,64 +23153,7 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: {
-          "application/json": boolean;
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * rerun the workflow steps starting from input step id, can be used to retry a failed step
-   * @deprecated
-   * @description Retry a workflow execution by id.
-   */
-  RetryOwnerWorkflowByID: {
-    parameters: {
-      path: {
-        /** @description workflow ID */
-        workflow_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RetryWorkflowByIDRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */
@@ -23532,8 +23514,57 @@ export interface operations {
       };
     };
   };
+  /** cancel an in-progress workflow step */
+  CancelWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.CancelWorkflowStepResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
-   * rerun the workflow steps starting from input step id, can be used to retry a failed step
+   * retry a failed or awaiting-approval workflow step
    * @description Retry a workflow execution by id.
    */
   RetryWorkflowStep: {
@@ -23545,17 +23576,60 @@ export interface operations {
         step_id: string;
       };
     };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.RetryWorkflowStepRequest"];
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryWorkflowStepResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** skip a failed workflow step and continue the workflow */
+  SkipWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
       };
     };
     responses: {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["service.RetryWorkflowByIDResponse"];
+          "application/json": components["schemas"]["service.SkipWorkflowStepResponse"];
         };
       };
       /** @description Bad Request */

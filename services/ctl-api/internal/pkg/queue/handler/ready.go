@@ -12,7 +12,9 @@ const (
 
 type ReadyRequest struct{}
 
-type ReadyResponse struct{}
+type ReadyResponse struct {
+	RunID string `json:"run_id"`
+}
 
 func (h *handler) readyHandler(ctx workflow.Context, req *ReadyRequest) (*ReadyResponse, error) {
 	if err := workflow.Await(ctx, func() bool {
@@ -21,5 +23,7 @@ func (h *handler) readyHandler(ctx workflow.Context, req *ReadyRequest) (*ReadyR
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
-	return &ReadyResponse{}, nil
+	return &ReadyResponse{
+		RunID: workflow.GetInfo(ctx).WorkflowExecution.RunID,
+	}, nil
 }

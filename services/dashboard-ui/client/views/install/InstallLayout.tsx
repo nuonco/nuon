@@ -1,5 +1,4 @@
 import { Outlet, useParams, useMatch } from 'react-router'
-import { TemporalLink } from '@/components/admin/TemporalLink'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -10,6 +9,7 @@ import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -128,7 +128,6 @@ const InstallTemplate = () => {
               </HeadingGroup>
 
               <div className="flex items-start flex-wrap gap-4 md:gap-8">
-                <TemporalLink namespace="installs" eventLoopId={install?.id} />
                 {isManagedByConfig && (
                   <LabeledValue label="Managed By">
                     <Text variant="subtext">
@@ -146,6 +145,10 @@ const InstallTemplate = () => {
                   </Text>
                 </LabeledValue>
                 <InstallStatusesContainer />
+                <AdminDashboardLink
+                  path={`/queues?owner_id=${install.id}`}
+                  label="View in admin panel"
+                />
                 <InstallManagementDropdown />
               </div>
             </div>

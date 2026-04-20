@@ -25,7 +25,7 @@ type AdminCreateOrgUserRequest struct {
 // @Param					req	body	AdminCreateOrgUserRequest	true	"Input"
 // @Accept					json
 // @Produce				json
-// @Success				201	{string}	ok
+// @Success				201	{object}	app.EmptyResponse
 // @Router					/v1/orgs/{org_id}/admin-add-user [POST]
 func (s *service) CreateOrgUser(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
@@ -48,7 +48,7 @@ func (s *service) CreateOrgUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, "ok")
+	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
 func (s *service) createUserByEmail(ctx context.Context, org *app.Org, email string) error {

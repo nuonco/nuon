@@ -134,6 +134,8 @@ func AllModels() []any {
 		&app.TerraformWorkspaceStateJSON{},
 		&app.OCIArtifact{},
 		&app.HelmRelease{},
+		&app.SandboxModeJobConfig{},
+		&app.SandboxModeSignalConfig{},
 
 		// queues
 		&app.Queue{},
@@ -155,6 +157,7 @@ func AllModels() []any {
 		&app.WorkflowStepApproval{},
 		&app.WorkflowStepApprovalResponse{},
 		&app.WorkflowStepPolicyValidation{},
+		&app.WorkflowRun{},
 		&app.PolicyReport{},
 
 		// internal

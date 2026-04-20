@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -25,7 +26,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/apps/{app_id}/components/{component_id} [DELETE]
 func (s *service) DeleteAppComponent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -52,7 +53,7 @@ func (s *service) DeleteAppComponent(ctx *gin.Context) {
 	s.evClient.Send(ctx, componentID, &signals.Signal{
 		Type: signals.OperationDelete,
 	})
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
 // @ID						DeleteComponent
@@ -70,7 +71,7 @@ func (s *service) DeleteAppComponent(ctx *gin.Context) {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/components/{component_id} [DELETE]
 func (s *service) DeleteComponent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -97,5 +98,5 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 	s.evClient.Send(ctx, componentID, &signals.Signal{
 		Type: signals.OperationDelete,
 	})
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

@@ -345,6 +345,22 @@ Before building a new component, **check `client/components/common/` and other d
 glob pattern: client/components/**/*.stories.tsx
 ```
 
+### Icons
+
+**Use the `Icon` component (`client/components/common/Icon.tsx`) for ALL icons.** Never import from `lucide-react`, `heroicons`, or any other icon package. The project uses `@phosphor-icons/react` via the `Icon` wrapper — all icon usage must go through it.
+
+```tsx
+// ✅ Correct
+import { Icon } from '@/components/common/Icon'
+<Icon variant="MagnifyingGlassIcon" size={16} />
+
+// ❌ Wrong — do not import icons from other packages
+import { Search } from 'lucide-react'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+```
+
+Browse Phosphor icons at https://phosphoricons.com. The variant name is the Phosphor export name (e.g., `MagnifyingGlass` → `MagnifyingGlassIcon`). Custom icons for cloud providers and tools are also available — see the `customIcons` map in `Icon.tsx`.
+
 ### `Tabs` Component — Key Casing
 
 The `Tabs` component renders tab labels by running each object key through `toSentenceCase(camelToWords(key))`. `toSentenceCase` capitalizes the first character and **lowercases everything else**. Always write tab keys in all-lowercase so the rendered label is correct:
@@ -547,13 +563,74 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-npm run dev:spa        # Development: esbuild watch + PostCSS + BrowserSync
-npm run build:spa      # Production build (minified)
-npm run build:spa:js   # Build JS only
-npm run build:spa:css  # Build CSS only
-npm run lint:spa       # ESLint for the SPA
-npm run tsc:spa        # TypeScript type check for the SPA
+npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
+npm run build          # Production build (minified)
+npm run build:js       # Build JS only
+npm run build:css      # Build CSS only
+npm run lint           # ESLint for the SPA
+npm run tsc            # TypeScript type check
+npm run dev:ladle      # Ladle component stories
+npm test               # Vitest tests
+npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
+npm run test:e2e:ui    # Playwright interactive UI mode
+npm run test:e2e:headed # Playwright with visible browser
 ```
 
-**Do NOT run build commands** (`build:spa`, `build:spa:js`, `build:spa:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+**Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
+
+## E2E Tests (Playwright)
+
+Smoke tests in `e2e/` that run against a live local or staging environment. Chromium only.
+
+### Prerequisites
+
+- Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
+- An admin account email with access to the admin API
+- Playwright browsers installed: `npx playwright install chromium`
+
+### Running
+
+```bash
+# Creates a fresh test org, runs tests, deletes org on teardown
+E2E_EMAIL=you@nuon.co npm run test:e2e
+
+# Use an existing org (skips create/teardown)
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+```
+
+### Environment variables
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
+| `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
+| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no | Public API for org creation |
+| `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
+| `E2E_ORG_ID` | — | no | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
+
+### How it works
+
+1. Global setup generates a static token via the admin API (`POST /v1/general/admin-static-token`)
+2. If no `E2E_ORG_ID` is set, creates a fresh org via the public API (`POST /v1/orgs`) — the token user becomes org admin automatically
+3. Injects the token as the `X-Nuon-Auth` cookie and saves browser state to `e2e/.auth/user.json`
+4. Org ID is written to `e2e/.auth/org.json` so fixtures and teardown can read it
+5. Tests run against the org
+6. Global teardown deletes the org via admin API if it was created by setup
+
+### Structure
+
+```
+e2e/
+├── playwright.config.ts    # Config (Chromium, auth state, output dirs)
+├── global-setup.ts         # Token gen + org creation + cookie injection
+├── global-teardown.ts      # Org cleanup (if created by setup)
+├── fixtures.ts             # Custom test fixture (orgId from state file)
+├── env.ts                  # Env var loader with defaults
+├── specs/                  # Playwright test files
+└── flows/                  # Markdown flow specs (source-of-truth docs)
+```
+
+### Flow docs
+
+`e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
 

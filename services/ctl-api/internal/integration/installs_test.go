@@ -52,21 +52,21 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 	fakeReq.Inputs = nil
 
 	s.T().Run("success", func(t *testing.T) {
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, install)
 
 		require.Equal(t, *fakeReq.Name, install.Name)
 	})
 	s.T().Run("missing name", func(t *testing.T) {
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, &models.ServiceCreateInstallRequest{})
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, &models.ServiceCreateInstallRequest{})
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
 	s.T().Run("adding inputs", func(t *testing.T) {
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, s.appID, fakeReq)
 		require.Error(t, err)
 		require.True(t, nuon.IsBadRequest(err))
 		require.Nil(t, install)
@@ -94,7 +94,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
@@ -111,7 +111,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 		fakeReq.AwsAccount.Region = "us-west-2"
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 	})
@@ -123,7 +123,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		fakeReq.AwsAccount.Region = "us-west-2"
 		fakeReq.Inputs = map[string]string{}
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 		require.True(t, nuon.IsBadRequest(err))
@@ -139,7 +139,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 			fakeReq.Inputs[k] = ""
 		}
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.Error(t, err)
 		require.Nil(t, install)
 		require.True(t, nuon.IsBadRequest(err))
@@ -152,7 +152,7 @@ func (s *installsIntegrationTestSuite) TestCreateInstall() {
 		fakeReq.AwsAccount.Region = "us-west-2"
 		fakeReq.Inputs = s.fakeInstallInputsForApp(app.ID)
 
-		install, _, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
+		install, err := s.apiClient.CreateInstall(s.ctx, app.ID, fakeReq)
 		require.NoError(t, err)
 		require.NotNil(t, install)
 
@@ -188,11 +188,13 @@ func (s *installsIntegrationTestSuite) TestReprovisionInstall() {
 	seedInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		err := s.apiClient.ReprovisionInstall(s.ctx, seedInstall.ID)
+		resp, err := s.apiClient.ReprovisionInstall(s.ctx, seedInstall.ID)
 		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.NotEmpty(t, resp.WorkflowID)
 	})
 	s.T().Run("invalid id", func(t *testing.T) {
-		err := s.apiClient.ReprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.ReprovisionInstall(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})
@@ -202,11 +204,13 @@ func (s *installsIntegrationTestSuite) TestDeprovisionInstall() {
 	seedInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		err := s.apiClient.DeprovisionInstall(s.ctx, seedInstall.ID)
+		resp, err := s.apiClient.DeprovisionInstall(s.ctx, seedInstall.ID)
 		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.NotEmpty(t, resp.WorkflowID)
 	})
 	s.T().Run("invalid id", func(t *testing.T) {
-		err := s.apiClient.DeprovisionInstall(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.DeprovisionInstall(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
 		require.True(t, nuon.IsNotFound(err))
 	})
@@ -216,14 +220,14 @@ func (s *installsIntegrationTestSuite) TestDeleteInstall() {
 	seedInstall := s.createInstall(s.appID)
 
 	s.T().Run("success", func(t *testing.T) {
-		deleted, err := s.apiClient.DeleteInstall(s.ctx, seedInstall.ID)
+		resp, err := s.apiClient.DeleteInstall(s.ctx, seedInstall.ID)
 		require.Nil(t, err)
-		require.True(t, deleted)
+		require.NotNil(t, resp)
+		require.NotEmpty(t, resp.WorkflowID)
 	})
 	s.T().Run("invalid id", func(t *testing.T) {
-		deleted, err := s.apiClient.DeleteInstall(s.ctx, generics.GetFakeObj[string]())
+		_, err := s.apiClient.DeleteInstall(s.ctx, generics.GetFakeObj[string]())
 		require.Error(t, err)
-		require.False(t, deleted)
 	})
 }
 

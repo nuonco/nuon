@@ -96,7 +96,7 @@ func (c *client) GetInstallComponentOutputs(ctx context.Context, installID, comp
 	return resp.Payload, nil
 }
 
-func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) error {
+func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.TeardownInstallComponent(&operations.TeardownInstallComponentParams{
 		InstallID:   installID,
 		ComponentID: componentID,
@@ -106,17 +106,13 @@ func (c *client) TeardownInstallComponent(ctx context.Context, installID, compon
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return resp.Payload, nil
 }
 
-func (c *client) TeardownInstallComponents(ctx context.Context, installID string) error {
+func (c *client) TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.TeardownInstallComponents(&operations.TeardownInstallComponentsParams{
 		InstallID: installID,
 		Context:   ctx,
@@ -124,17 +120,13 @@ func (c *client) TeardownInstallComponents(ctx context.Context, installID string
 		Req: &models.ServiceTeardownInstallComponentsRequest{},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return resp.Payload, nil
 }
 
-func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) error {
+func (c *client) DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.DeployInstallComponents(&operations.DeployInstallComponentsParams{
 		InstallID: installID,
 		Context:   ctx,
@@ -144,12 +136,8 @@ func (c *client) DeployInstallComponents(ctx context.Context, installID string, 
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if resp.Payload != "ok" {
-		return statusErr{resp.Payload}
-	}
-
-	return nil
+	return resp.Payload, nil
 }

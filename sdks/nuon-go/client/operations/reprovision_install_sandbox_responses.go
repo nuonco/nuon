@@ -77,7 +77,7 @@ ReprovisionInstallSandboxCreated describes a response with status code 201, with
 Created
 */
 type ReprovisionInstallSandboxCreated struct {
-	Payload string
+	Payload *models.AppWorkflowResponse
 }
 
 // IsSuccess returns true when this reprovision install sandbox created response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *ReprovisionInstallSandboxCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/reprovision-sandbox][%d] reprovisionInstallSandboxCreated %s", 201, payload)
 }
 
-func (o *ReprovisionInstallSandboxCreated) GetPayload() string {
+func (o *ReprovisionInstallSandboxCreated) GetPayload() *models.AppWorkflowResponse {
 	return o.Payload
 }
 
 func (o *ReprovisionInstallSandboxCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppWorkflowResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

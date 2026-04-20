@@ -1,3 +1,5 @@
+export * from './sandbox'
+
 import { api } from '@/lib/api'
 import type { TRunner } from '@/types'
 
@@ -84,3 +86,6 @@ export const adminDeprovisionOrg = ({ orgId, adminEmail }: { orgId: string } & A
 
 export const adminForgetOrgInstalls = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget-installs` })
+
+export const adminForgetOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget` })

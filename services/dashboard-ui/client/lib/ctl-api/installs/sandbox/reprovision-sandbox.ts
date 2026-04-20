@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { TWorkflowResponse } from '@/types'
 
 export type TReprovisionSandboxBody = {
   plan_only: boolean
@@ -14,7 +15,7 @@ export async function reprovisionSandbox({
   installId: string
   orgId: string
 }) {
-  return api<string>({
+  return api<TWorkflowResponse>({
     withHeaders: true,
     body,
     method: 'POST',

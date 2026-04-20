@@ -41,10 +41,11 @@ func (s *Signal) WithParams(params *signal.Params) {
 	s.cfg = params.Cfg
 }
 
-var (
-	_ signal.SignalWithParams      = (*Signal)(nil)
-	_ signal.SignalWithStepContext = (*Signal)(nil)
-)
+var _ signal.SignalWithParams = (*Signal)(nil)
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

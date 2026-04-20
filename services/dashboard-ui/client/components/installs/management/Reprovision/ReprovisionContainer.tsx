@@ -44,7 +44,7 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
-      const workflowId = result?.headers?.['x-nuon-install-workflow-id']
+      const workflowId = result.data.workflow_id
       if (workflowId) {
         navigate(`/${org.id}/installs/${install.id}/workflows/${workflowId}`)
       } else {

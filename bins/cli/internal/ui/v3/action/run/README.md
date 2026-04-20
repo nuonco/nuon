@@ -39,7 +39,7 @@ A TUI to view a specific action run.
                                         ││                                                                                               │││                                   ││ │        │copy-paste -able.             │
                                         ││                                                                                               │││                                   ││ │        │                              │
                                         ││                                                                                               │││                                   ││ │        │We would benefit form a UI to │
-                                        ││                                                                                               │││                                   ││ │        │"use this outout" that copies │
+                                        ││                                                                                               │││                                   ││ │        │"use this output" that copies │
                                         ││                                                                                               │││                                   ││ │        │its address in ".nuon" state. │
                                         ││                                                                                               │││                                   ││ │        └──────────────────────────────┘
                                         ││                                                                                               │││                                   ││ │

@@ -8,8 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeflow"
 	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 // DEPRECATED: This endpoint is deprecated and will be removed in a future release.
@@ -28,7 +28,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{boolean}	true
+// @Success				200	{object}	app.WorkflowResponse
 // @Router					/v1/installs/{install_id} [DELETE]
 func (s *service) DeleteInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -66,14 +66,14 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			InstallWorkflowID: workflow.ID,
-		}); err != nil {
+			WorkflowID: workflow.ID,
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
 			InstallID: install.ID,
-		}); err != nil {
+		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
@@ -89,5 +89,5 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 
 	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, app.WorkflowResponse{WorkflowID: workflow.ID})
 }

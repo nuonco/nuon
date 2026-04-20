@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import type { TWorkflowResponse } from '@/types'
 
 export type TRunAdhocActionBody = {
   command?: string
@@ -18,7 +19,7 @@ export async function runAdhocAction({
   installId: string
   orgId: string
 }) {
-  return api<string>({
+  return api<TWorkflowResponse>({
     withHeaders: true,
     body,
     method: 'POST',
