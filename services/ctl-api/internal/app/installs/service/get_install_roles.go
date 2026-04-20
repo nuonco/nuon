@@ -8,6 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetInstallRoles
@@ -15,6 +17,10 @@ import (
 // @Description			get all roles for an install
 // @Tags					installs
 // @Param					install_id	path	string	true	"install ID"
+// @Param					offset		query	int		false	"offset of results to return"	Default(0)
+// @Param					limit		query	int		false	"limit of results to return"	Default(10)
+// @Param					page		query	int		false	"page number of results to return"	Default(0)
+// @Param					q			query	string	false	"search query to filter roles by display name"
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -34,14 +40,29 @@ func (s *service) GetInstallRoles(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
+	q := ctx.Query("q")
 
 	var roles []app.InstallRoles
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRoleConfig").
-		Where("install_id = ? AND org_id = ?", installID, org.ID).
-		Find(&roles)
+		Where("install_roles.install_id = ? AND install_roles.org_id = ?", installID, org.ID).
+		Order("install_roles.created_at DESC")
+
+	if q != "" {
+		tx = tx.Joins("JOIN app_awsiam_role_configs ON app_awsiam_role_configs.id = install_roles.app_role_config_id").
+			Where("app_awsiam_role_configs.display_name ILIKE ?", "%"+q+"%")
+	}
+
+	res := tx.Find(&roles)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install roles: %w", res.Error))
+		return
+	}
+
+	roles, err = db.HandlePaginatedResponse(ctx, roles)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
 		return
 	}
 
