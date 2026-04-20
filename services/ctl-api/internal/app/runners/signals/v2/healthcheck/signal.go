@@ -54,18 +54,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Check if this is a noop health check
-	noopHealthCheck, err := s.isNoopHealthCheck(ctx)
+	// Fetch the runner once and reuse across noop check + execution.
+	// Avoids a duplicate `Get` activity round-trip (~1s saved per healthcheck).
+	runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
 	if err != nil {
-		return errors.Wrap(err, "unable to check if a noop health check")
+		return errors.Wrap(err, "unable to get runner")
 	}
-	if noopHealthCheck {
+
+	if isNoopHealthCheckStatus(runner.Status) {
 		l.Info("skipping health check - runner in noop status")
 		return nil
 	}
 
 	// Execute the health check
-	newStatus, statusChanged, err := s.executeHealthCheck(ctx)
+	newStatus, statusChanged, err := s.executeHealthCheck(ctx, runner)
 	if err != nil {
 		return errors.Wrap(err, "unable to execute health check")
 	}
@@ -80,41 +82,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) isNoopHealthCheck(ctx workflow.Context) (bool, error) {
-	runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
-	if err != nil {
-		return false, errors.Wrap(err, "unable to get runner")
-	}
-
-	// Skip health check for these statuses
-	noopStatuses := []app.RunnerStatus{
-		app.RunnerStatusPending,
+// isNoopHealthCheckStatus returns true if the runner's current status means
+// the health check should be skipped (e.g. runner is still provisioning).
+func isNoopHealthCheckStatus(status app.RunnerStatus) bool {
+	switch status {
+	case app.RunnerStatusPending,
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusOffline,
-		app.RunnerStatusAwaitingInstallStackRun,
+		app.RunnerStatusAwaitingInstallStackRun:
+		return true
 	}
-
-	for _, status := range noopStatuses {
-		if runner.Status == status {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return false
 }
 
-func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, bool, error) {
+func (s *Signal) executeHealthCheck(ctx workflow.Context, runner *app.Runner) (app.RunnerStatus, bool, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to get logger")
-	}
-
-	runner, err := activities.AwaitGetByRunnerID(ctx, s.RunnerID)
-	if err != nil {
-		return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to get runner")
 	}
 
 	// Determine new status based on heartbeat

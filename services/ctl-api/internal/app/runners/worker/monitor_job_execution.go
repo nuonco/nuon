@@ -51,8 +51,10 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 
 	// poll the job execution, until it's completed
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
+	var pollPeriod time.Duration
 	for {
-		workflow.Sleep(ctx, defaultJobPollPeriod)
+		pollPeriod = nextPollPeriod(pollPeriod)
+		workflow.Sleep(ctx, pollPeriod)
 
 		now := workflow.Now(ctx)
 

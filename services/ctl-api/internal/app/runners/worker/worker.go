@@ -68,7 +68,7 @@ func New(params WorkerParams) (*Worker, error) {
 		Interceptors:                       params.Interceptors,
 		WorkflowPanicPolicy:                panicPolicy,
 
-		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflowTaskExecutionSize,
+		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflows,
 		MaxConcurrentActivityTaskPollers:       params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
 		MaxConcurrentWorkflowTaskPollers:       params.Cfg.TemporalMaxConcurrentWorkflowTaskPollers,
 	})

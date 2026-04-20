@@ -53,22 +53,25 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	q.ready = true
 
-	if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
-		return generics.AnyTrue(q.stopped, q.restarted) || (q.isIdle(ctx) && q.activeWorkers == 0)
-	}); err != nil {
-		return false, err
-	}
+	for {
+		if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
+			return generics.AnyTrue(q.stopped, q.restarted) || (q.isIdle(ctx) && q.activeWorkers == 0)
+		}); err != nil {
+			return false, err
+		}
 
-	if q.restarted {
-		return false, nil
+		if q.restarted {
+			return false, nil
+		}
+		if q.stopped {
+			return true, nil
+		}
+		if q.isIdle(ctx) && q.activeWorkers == 0 {
+			l.Info("queue is idle, terminating workflow")
+			return true, nil
+		}
+		// Condition wasn't met (workers still active). Loop back to wait
+		// again instead of falling through — falling through would cause
+		// Queue() to continue-as-new, killing in-flight worker goroutines.
 	}
-	if q.stopped {
-		return true, nil
-	}
-	if q.isIdle(ctx) && q.activeWorkers == 0 {
-		l.Info("queue is idle, terminating workflow")
-		return true, nil
-	}
-
-	return false, nil
 }
