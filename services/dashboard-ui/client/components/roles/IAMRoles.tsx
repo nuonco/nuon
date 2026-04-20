@@ -22,7 +22,7 @@ import type {
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import { decodeAsString } from '@/utils/data-utils'
 
-const IAMRoleBoundaryExpand = ({
+export const IAMRoleBoundaryExpand = ({
   permissionsBoundary,
 }: {
   permissionsBoundary?: string
@@ -64,14 +64,14 @@ const IAMRoleBoundaryExpand = ({
   </Expand>
 )
 
-type TPolicy = {
+export type TPolicy = {
   id?: string
   name?: string
   managed_policy_name?: string
   contents?: string
 }
 
-const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
+export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
   <Card>
     <HeadingGroup>
       <Text weight="strong">
