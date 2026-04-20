@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -225,12 +224,10 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		ActionWorkflowRunPlan: planResponse.Plan,
 	}
 
-	permissionInfo := operationroles.NewPermissionInfo(planResponse.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:          runnerJob.ID,
-		PlanJSON:       string(planJSON),
-		CompositePlan:  compositePlan,
-		PermissionInfo: permissionInfo,
+		JobID:         runnerJob.ID,
+		PlanJSON:      string(planJSON),
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
