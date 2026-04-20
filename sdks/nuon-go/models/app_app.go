@@ -67,6 +67,9 @@ type AppApp struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// permissions config
+	PermissionsConfig *AppAppPermissionsConfig `json:"permissions_config,omitempty"`
+
 	// queue id
 	QueueID string `json:"queue_id,omitempty"`
 
@@ -105,6 +108,10 @@ func (m *AppApp) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateNotificationsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePermissionsConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -178,6 +185,29 @@ func (m *AppApp) validateNotificationsConfig(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("notifications_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppApp) validatePermissionsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.PermissionsConfig) { // not required
+		return nil
+	}
+
+	if m.PermissionsConfig != nil {
+		if err := m.PermissionsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("permissions_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("permissions_config")
 			}
 
 			return err
@@ -272,6 +302,10 @@ func (m *AppApp) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 		res = append(res, err)
 	}
 
+	if err := m.contextValidatePermissionsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateRunnerConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -340,6 +374,31 @@ func (m *AppApp) contextValidateNotificationsConfig(ctx context.Context, formats
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("notifications_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppApp) contextValidatePermissionsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PermissionsConfig != nil {
+
+		if swag.IsZero(m.PermissionsConfig) { // not required
+			return nil
+		}
+
+		if err := m.PermissionsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("permissions_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("permissions_config")
 			}
 
 			return err

@@ -236,16 +236,26 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		return errors.Wrap(err, "unable to create json from plan")
 	}
 
+	permissionInfo := operationroles.NewPermissionInfo(deployPlan.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:    runnerJob.ID,
 		PlanJSON: string(planJSON),
 		CompositePlan: plantypes.CompositePlan{
 			DeployPlan: deployPlan.Plan,
 		},
-		PermissionInfo: operationroles.NewPermissionInfo(deployPlan.RoleSelection),
+		PermissionInfo: permissionInfo,
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
+		InstallID:     install.ID,
+		RunnerJobID:   runnerJob.ID,
+		RoleSelection: deployPlan.RoleSelection,
+	}); err != nil {
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to record install role usage")
+		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
 	planJSON = nil

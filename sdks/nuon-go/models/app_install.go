@@ -83,6 +83,9 @@ type AppInstall struct {
 	// install number
 	InstallNumber int64 `json:"install_number,omitempty"`
 
+	// InstallRoles is a list of roles associated with that install at given app config ID
+	InstallRoles []*AppInstallRoles `json:"install_roles"`
+
 	// install sandbox runs
 	InstallSandboxRuns []*AppInstallSandboxRun `json:"install_sandbox_runs"`
 
@@ -189,6 +192,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallInputs(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallRoles(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -514,6 +521,36 @@ func (m *AppInstall) validateInstallInputs(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validateInstallRoles(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallRoles) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.InstallRoles); i++ {
+		if swag.IsZero(m.InstallRoles[i]) { // not required
+			continue
+		}
+
+		if m.InstallRoles[i] != nil {
+			if err := m.InstallRoles[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("install_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("install_roles" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validateInstallSandboxRuns(formats strfmt.Registry) error {
 	if swag.IsZero(m.InstallSandboxRuns) { // not required
 		return nil
@@ -748,6 +785,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateInstallInputs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateInstallRoles(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1069,6 +1110,35 @@ func (m *AppInstall) contextValidateInstallInputs(ctx context.Context, formats s
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("install_inputs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateInstallRoles(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.InstallRoles); i++ {
+
+		if m.InstallRoles[i] != nil {
+
+			if swag.IsZero(m.InstallRoles[i]) { // not required
+				return nil
+			}
+
+			if err := m.InstallRoles[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("install_roles" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("install_roles" + "." + strconv.Itoa(i))
 				}
 
 				return err

@@ -245,14 +245,24 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
 
+	permissionInfo := operationroles.NewPermissionInfo(planResponse.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
 		JobID:          runnerJob.ID,
 		PlanJSON:       string(planJSON),
 		CompositePlan:  plantypes.CompositePlan{ActionWorkflowRunPlan: planResponse.Plan},
-		PermissionInfo: operationroles.NewPermissionInfo(planResponse.RoleSelection),
+		PermissionInfo: permissionInfo,
 	}); err != nil {
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
+	}
+
+	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
+		InstallID:     installID,
+		RunnerJobID:   runnerJob.ID,
+		RoleSelection: planResponse.RoleSelection,
+	}); err != nil {
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
+		return errors.Wrap(err, "unable to record install role usage")
 	}
 
 	planJSON = nil
