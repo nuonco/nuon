@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
+import { type IPagination } from '@/components/common/Pagination'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -11,9 +12,11 @@ import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-rol
 export const InstallRolesTable = ({
   roles,
   isLoading,
+  pagination,
 }: {
   roles: TInstallRole[]
   isLoading?: boolean
+  pagination?: Omit<IPagination, 'position'>
 }) => {
   const columns = useMemo<ColumnDef<TInstallRole, unknown>[]>(
     () => [
@@ -54,7 +57,7 @@ export const InstallRolesTable = ({
           <Panel
             size="3/4"
             panelKey={row.original.id}
-            childrenClassName="mt-12"
+
             heading={
               <div className="flex flex-col">
                 <Text variant="h3">
@@ -84,7 +87,8 @@ export const InstallRolesTable = ({
       columns={columns}
       data={roles}
       isLoading={isLoading}
-      enableSearch={false}
+      pagination={pagination}
+      searchPlaceholder="Search role name..."
       emptyMessage="No roles found"
     />
   )
