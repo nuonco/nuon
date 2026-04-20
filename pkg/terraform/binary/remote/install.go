@@ -28,6 +28,9 @@ func (r *remote) getInstaller(lg *log.Logger, dir string) *releases.ExactVersion
 		Product:    product.Terraform,
 		Version:    r.Version,
 		InstallDir: dir,
+		// NOTE: necessary until hc-install is released with a fix
+		// https://github.com/hashicorp/hc-install/issues/370
+		SkipChecksumVerification: true,
 	}
 
 	installer.SetLogger(lg)
