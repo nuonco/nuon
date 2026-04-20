@@ -79,6 +79,12 @@ type queue struct {
 
 	queueID string
 
+	// Stored for logging purposes
+	orgID     string
+	ownerID   string
+	ownerType string
+	name      string
+
 	releaseWindow *ReleaseWindow
 
 	ready     bool

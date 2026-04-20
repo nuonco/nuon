@@ -44,6 +44,20 @@ func (q *queue) startWorkers(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get queue")
 	}
 
+	if queue.OrgID != nil {
+		q.orgID = *queue.OrgID
+	}
+	q.ownerID = queue.OwnerID
+	q.ownerType = queue.OwnerType
+	q.name = queue.Name
+	l = l.With(
+		zap.String("queue_id", q.queueID),
+		zap.String("queue_name", q.name),
+		zap.String("owner_id", q.ownerID),
+		zap.String("owner_type", q.ownerType),
+		zap.String("org_id", q.orgID),
+	)
+
 	q.idleTimeout = time.Duration(queue.IdleTimeout)
 
 	for i := 0; i < queue.MaxInFlight; i++ {
@@ -62,6 +76,13 @@ func (q *queue) worker(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get worker")
 	}
+	l = l.With(
+		zap.String("queue_id", q.queueID),
+		zap.String("queue_name", q.name),
+		zap.String("owner_id", q.ownerID),
+		zap.String("owner_type", q.ownerType),
+		zap.String("org_id", q.orgID),
+	)
 
 	for {
 		// if the queue is paused, wait until it is resumed
