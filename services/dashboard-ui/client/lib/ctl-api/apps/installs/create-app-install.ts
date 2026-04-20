@@ -19,6 +19,14 @@ export type TCreateAppInstallBody = {
   inputs?: Record<string, string>
   install_config?: {
     approval_option: 'prompt' | 'approve-all'
+    vpc_nested_template_url?: string
+    runner_nested_template_url?: string
+    custom_nested_stacks?: Array<{
+      name: string
+      template_url: string
+      index?: number
+      parameters?: Record<string, string>
+    }>
   }
   metadata?: {
     managed_by: 'nuon/dashboard' // 'nuon/cli/config'
