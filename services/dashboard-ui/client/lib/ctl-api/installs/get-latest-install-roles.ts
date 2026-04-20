@@ -1,4 +1,6 @@
 import { api } from '@/lib/api'
+import type { TPaginationParams } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 import type { TInstallPermissionsRoleStatus } from './get-install-app-permissions-config'
 
 export type TInstallRole = {
@@ -15,11 +17,16 @@ export type TInstallRole = {
 export const getLatestInstallRoles = ({
   installId,
   orgId,
+  limit,
+  offset,
+  q,
 }: {
   installId: string
   orgId: string
-}) =>
+  q?: string
+} & TPaginationParams) =>
   api<TInstallRole[]>({
-    path: `installs/${installId}/roles/latest`,
+    path: `installs/${installId}/roles/latest${buildQueryParams({ limit, offset, q })}`,
     orgId,
+    paginated: true,
   })
