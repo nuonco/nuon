@@ -59,11 +59,12 @@ const (
 )
 
 type RoleSelection struct {
-	RoleName string
+	RoleName           string `temporaljson:"role_name"`
+	UnrenderedRoleName string `temporaljson:"unrendered_role_name"`
 	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
-	RoleARN string
-	Source  RoleSelectionSource
-	Trace   []app.RunnerJobPermissionTraceRecord
+	RoleARN string                               `temporaljson:"role_arn"`
+	Source  RoleSelectionSource                  `temporaljson:"source"`
+	Trace   []app.RunnerJobPermissionTraceRecord `temporaljson:"trace"`
 }
 
 type SelectionError struct {
@@ -141,9 +142,10 @@ func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 	}
 
 	return &RoleSelection{
-		RoleName: renderedDefaultRole,
-		Source:   RoleSelectionSourceDefault,
-		RoleARN:  roleARN,
+		RoleName:           renderedDefaultRole,
+		UnrenderedRoleName: ctx.DefaultRole,
+		Source:             RoleSelectionSourceDefault,
+		RoleARN:            roleARN,
 		Trace: []app.RunnerJobPermissionTraceRecord{
 			{
 				RoleName:   renderedDefaultRole,
@@ -205,9 +207,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Selected:   true,
 		})
 		return &RoleSelection{
-			RoleName: renderedRuntimeRole,
-			Source:   RoleSelectionSourceRuntime,
-			Trace:    trace,
+			RoleName:           renderedRuntimeRole,
+			UnrenderedRoleName: ctx.RuntimeRole,
+			Source:             RoleSelectionSourceRuntime,
+			Trace:              trace,
 		}, nil
 	}
 	trace = append(trace, app.RunnerJobPermissionTraceRecord{
@@ -230,9 +233,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Selected:   true,
 		})
 		return &RoleSelection{
-			RoleName: renderedBreakGlassRole,
-			Source:   RoleSelectionSourceBreakGlass,
-			Trace:    trace,
+			RoleName:           renderedBreakGlassRole,
+			UnrenderedRoleName: ctx.BreakGlassRole,
+			Source:             RoleSelectionSourceBreakGlass,
+			Trace:              trace,
 		}, nil
 	}
 	trace = append(trace, app.RunnerJobPermissionTraceRecord{
@@ -256,9 +260,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Selected:   true,
 		})
 		return &RoleSelection{
-			RoleName: renderedEntityRole,
-			Source:   RoleSelectionSourceEntity,
-			Trace:    trace,
+			RoleName:           renderedEntityRole,
+			UnrenderedRoleName: entityRoleName,
+			Source:             RoleSelectionSourceEntity,
+			Trace:              trace,
 		}, nil
 	}
 	trace = append(trace, app.RunnerJobPermissionTraceRecord{
@@ -289,9 +294,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Selected:   true,
 		})
 		return &RoleSelection{
-			RoleName: renderedMatrixRole,
-			Source:   RoleSelectionSourceMatrix,
-			Trace:    trace,
+			RoleName:           renderedMatrixRole,
+			UnrenderedRoleName: matrixRoleName,
+			Source:             RoleSelectionSourceMatrix,
+			Trace:              trace,
 		}, nil
 	}
 	trace = append(trace, app.RunnerJobPermissionTraceRecord{
@@ -308,9 +314,10 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 	})
 
 	return &RoleSelection{
-		RoleName: renderedDefaultRole,
-		Source:   RoleSelectionSourceDefault,
-		Trace:    trace,
+		RoleName:           renderedDefaultRole,
+		UnrenderedRoleName: ctx.DefaultRole,
+		Source:             RoleSelectionSourceDefault,
+		Trace:              trace,
 	}, nil
 }
 

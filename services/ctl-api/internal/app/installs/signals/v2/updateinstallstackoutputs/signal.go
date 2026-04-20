@@ -110,6 +110,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update install stack outputs")
 	}
 
+	// update install roles provisioned state from stack outputs
+	if err := activities.AwaitUpdateInstallRolesFromStackOutputs(ctx, activities.UpdateInstallRolesFromStackOutputs{
+		InstallID: install.ID,
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Warn("unable to update install roles from stack outputs", zap.Error(err))
+	}
+
 	// update the runner settings group
 	runnerIAMRoleARN := ""
 	if installStackOutputs.AWSStackOutputs != nil {
