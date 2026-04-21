@@ -94,6 +94,7 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 			return db.Scopes(scopes.WithDisableViews).Order("created_at desc").Limit(10)
 		}).
 		Preload("RunnerJobs.Plan").
+		Preload("RunnerJobs.InstallRoleUsage").
 		Preload("ActionWorkflowRuns").
 		Preload("LogStream").
 		Preload("OCIArtifact").

@@ -56,6 +56,7 @@ func (s *service) getInstallSandboxRuns(ctx *gin.Context, installID string) ([]a
 		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("runner_jobs_view_v2.created_at DESC")
 		}).
+		Preload("RunnerJobs.InstallRoleUsage").
 		Preload("LogStream").
 		Preload("CreatedBy").
 		Where("install_id = ?", installID).

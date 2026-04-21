@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -129,12 +128,10 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}
 
 	// Deprecated: for now we dual write both the plan json and the composite plan
-	permissionInfo := operationroles.NewPermissionInfo(planResponse.RoleSelection)
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
-		JobID:          runnerJob.ID,
-		PlanJSON:       string(planJSON),
-		CompositePlan:  compositePlan,
-		PermissionInfo: permissionInfo,
+		JobID:         runnerJob.ID,
+		PlanJSON:      string(planJSON),
+		CompositePlan: compositePlan,
 	}); err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to save plan")
 		return fmt.Errorf("unable to get install: %w", err)
