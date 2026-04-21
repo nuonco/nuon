@@ -1,0 +1,30 @@
+---
+title: 'Self Hosting Nuon'
+description: 'Deploy Nuon in your Cloud'
+icon: 'cloud-arrow-up'
+keywords: ['self-hosted Nuon']
+---
+
+In addition to the Nuon BYOC offering, we suport fully self-hosted deployments. This set of guides provide an overview
+and cloud-specific documentation.
+
+## Architecture
+
+![Install Architecture](/images/architecture/byoc-architecture.png)
+
+## Supported Environments
+
+### AWS
+
+AWS is the primary supported target: Nuon runs on EKS with RDS, ECR, Route 53, ACM, and Secrets Manager, provisioned via
+a CloudFormation install stack plus Terraform components.
+
+- [Docs](/guides/self-hosting/aws)
+
+### Azure
+
+Support for deploying Nuon BYOC to Azure is a work in progress. Documentation to follow.
+
+### GCP
+
+Support for deploying Nuonc BYOC to GCP is a work in progress. Documentation to follow.
