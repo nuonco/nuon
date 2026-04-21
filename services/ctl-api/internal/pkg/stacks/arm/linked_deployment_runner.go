@@ -77,6 +77,7 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput) map[st
 				"location":       map[string]any{"value": "[parameters('location')]"},
 				"runnerSubnetId": map[string]any{"value": "[reference('vnetDeployment').outputs.runnerSubnetId.value]"},
 				"customData":     map[string]any{"value": customData},
+				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
 			},
 			"template": t.getDefaultRunnerTemplate(),
 		},
@@ -94,6 +95,7 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 			"location":       map[string]any{"type": "string"},
 			"runnerSubnetId": map[string]any{"type": "string"},
 			"customData":     map[string]any{"type": "string"},
+			"commonTags":     map[string]any{"type": "object"},
 		},
 		"resources": []any{
 			map[string]any{
@@ -101,8 +103,9 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 				"apiVersion": "2023-03-01",
 				"name":       "[format('{0}-vmss', parameters('nuonInstallID'))]",
 				"location":   "[parameters('location')]",
+				"tags":       "[parameters('commonTags')]",
 				"sku": map[string]any{
-					"name":     "Standard_D2as_v5",
+					"name":     "Standard_D2s_v3",
 					"tier":     "Standard",
 					"capacity": 1,
 				},
@@ -134,14 +137,14 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 						"storageProfile": map[string]any{
 							"imageReference": map[string]any{
 								"publisher": "Canonical",
-								"offer":     "ubuntu-24_04-lts",
-								"sku":       "server",
+								"offer":     "0001-com-ubuntu-server-jammy",
+								"sku":       "22_04-lts-gen2",
 								"version":   "latest",
 							},
 							"osDisk": map[string]any{
 								"createOption": "FromImage",
 								"managedDisk": map[string]any{
-									"storageAccountType": "Premium_LRS",
+									"storageAccountType": "Standard_LRS",
 								},
 								"diskSizeGB": 30,
 							},
