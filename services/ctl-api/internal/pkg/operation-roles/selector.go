@@ -62,8 +62,8 @@ type RoleSelection struct {
 	RoleName           string `temporaljson:"role_name"`
 	UnrenderedRoleName string `temporaljson:"unrendered_role_name"`
 	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
-	RoleARN string                               `temporaljson:"role_arn"`
-	Source  RoleSelectionSource                  `temporaljson:"source"`
+	RoleARN string                           `temporaljson:"role_arn"`
+	Source  RoleSelectionSource              `temporaljson:"source"`
 	Trace   []app.InstallRoleSelectionRecord `temporaljson:"trace"`
 }
 
