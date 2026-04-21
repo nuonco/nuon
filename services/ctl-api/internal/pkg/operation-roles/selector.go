@@ -62,14 +62,14 @@ type RoleSelection struct {
 	RoleName           string `temporaljson:"role_name"`
 	UnrenderedRoleName string `temporaljson:"unrendered_role_name"`
 	// RoleArn is arn/id/unique identifier for the role depending on cloud provider
-	RoleARN string                               `temporaljson:"role_arn"`
-	Source  RoleSelectionSource                  `temporaljson:"source"`
-	Trace   []app.RunnerJobPermissionTraceRecord `temporaljson:"trace"`
+	RoleARN string                           `temporaljson:"role_arn"`
+	Source  RoleSelectionSource              `temporaljson:"source"`
+	Trace   []app.InstallRoleSelectionRecord `temporaljson:"trace"`
 }
 
 type SelectionError struct {
 	Err   error
-	Trace []app.RunnerJobPermissionTraceRecord
+	Trace []app.InstallRoleSelectionRecord
 }
 
 func (e *SelectionError) Error() string { return e.Err.Error() }
@@ -146,7 +146,7 @@ func SelectDefaultRole(ctx *SelectionContext) (*RoleSelection, error) {
 		UnrenderedRoleName: ctx.DefaultRole,
 		Source:             RoleSelectionSourceDefault,
 		RoleARN:            roleARN,
-		Trace: []app.RunnerJobPermissionTraceRecord{
+		Trace: []app.InstallRoleSelectionRecord{
 			{
 				RoleName:   renderedDefaultRole,
 				RoleSource: string(RoleSelectionSourceDefault),
@@ -163,11 +163,11 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		return nil, fmt.Errorf("stack outputs are required")
 	}
 
-	var trace []app.RunnerJobPermissionTraceRecord
+	var trace []app.InstallRoleSelectionRecord
 
 	// early exit for azure since architecturally azure uses single tenant<> sub id combination
 	if ctx.StackOutputs.AzureStackOutputs != nil {
-		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		trace = append(trace, app.InstallRoleSelectionRecord{
 			RoleName:   "azure-placeholder-name",
 			RoleSource: string(RoleSelectionSourceDefault),
 			RoleID:     "azure-placeholder-arn",
@@ -200,7 +200,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		if err != nil {
 			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render runtime role name: %w", err)}
 		}
-		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		trace = append(trace, app.InstallRoleSelectionRecord{
 			RoleName:   renderedRuntimeRole,
 			RoleSource: string(RoleSelectionSourceRuntime),
 			Available:  true,
@@ -213,7 +213,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Trace:              trace,
 		}, nil
 	}
-	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+	trace = append(trace, app.InstallRoleSelectionRecord{
 		RoleName:   ctx.RuntimeRole,
 		RoleSource: string(RoleSelectionSourceRuntime),
 		Available:  false,
@@ -226,7 +226,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		if err != nil {
 			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render break glass role name: %w", err)}
 		}
-		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		trace = append(trace, app.InstallRoleSelectionRecord{
 			RoleName:   renderedBreakGlassRole,
 			RoleSource: string(RoleSelectionSourceBreakGlass),
 			Available:  true,
@@ -239,7 +239,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Trace:              trace,
 		}, nil
 	}
-	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+	trace = append(trace, app.InstallRoleSelectionRecord{
 		RoleName:   ctx.BreakGlassRole,
 		RoleSource: string(RoleSelectionSourceBreakGlass),
 		Available:  false,
@@ -253,7 +253,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		if err != nil {
 			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render entity role name: %w", err)}
 		}
-		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		trace = append(trace, app.InstallRoleSelectionRecord{
 			RoleName:   renderedEntityRole,
 			RoleSource: string(RoleSelectionSourceEntity),
 			Available:  true,
@@ -266,7 +266,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Trace:              trace,
 		}, nil
 	}
-	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+	trace = append(trace, app.InstallRoleSelectionRecord{
 		RoleName:   entityRoleName,
 		RoleSource: string(RoleSelectionSourceEntity),
 		Available:  false,
@@ -287,7 +287,7 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 		if err != nil {
 			return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("unable to render matrix role name: %w", err)}
 		}
-		trace = append(trace, app.RunnerJobPermissionTraceRecord{
+		trace = append(trace, app.InstallRoleSelectionRecord{
 			RoleName:   renderedMatrixRole,
 			RoleSource: string(RoleSelectionSourceMatrix),
 			Available:  true,
@@ -300,13 +300,13 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 			Trace:              trace,
 		}, nil
 	}
-	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+	trace = append(trace, app.InstallRoleSelectionRecord{
 		RoleName:   matrixRoleName,
 		RoleSource: string(RoleSelectionSourceMatrix),
 		Available:  false,
 	})
 
-	trace = append(trace, app.RunnerJobPermissionTraceRecord{
+	trace = append(trace, app.InstallRoleSelectionRecord{
 		RoleName:   renderedDefaultRole,
 		RoleSource: string(RoleSelectionSourceDefault),
 		Available:  true,

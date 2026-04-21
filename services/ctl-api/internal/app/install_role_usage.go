@@ -1,6 +1,9 @@
 package app
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,6 +13,39 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
+
+type InstallRoleSelectionRecord struct {
+	RoleName   string `json:"role_name,omitempty"`
+	RoleSource string `json:"role_source,omitempty"`
+	Available  bool   `json:"available,omitempty"`
+	RoleID     string `json:"role_id,omitempty"`
+	Selected   bool   `json:"selected,omitempty"`
+}
+
+type InstallRoleSelectionTrace []InstallRoleSelectionRecord
+
+func (r *InstallRoleSelectionTrace) Scan(value interface{}) error {
+	if value == nil {
+		*r = nil
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot scan %T into RunnerJobPermissionTrace", value)
+	}
+
+	if len(bytes) == 0 {
+		*r = nil
+		return nil
+	}
+
+	return json.Unmarshal(bytes, r)
+}
+
+func (r InstallRoleSelectionTrace) Value() (driver.Value, error) {
+	return json.Marshal(r)
+}
 
 type InstallRoleUsage struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -30,7 +66,7 @@ type InstallRoleUsage struct {
 	RoleName   string `json:"role_name,omitzero" temporaljson:"role_name,omitzero,omitempty"`
 	RoleSource string `json:"role_source,omitzero" temporaljson:"role_source,omitzero,omitempty"`
 
-	RoleSelectionTrace RunnerJobPermissionTrace `json:"role_selection_trace,omitzero" gorm:"type:jsonb" temporaljson:"role_selection_trace,omitzero,omitempty"`
+	RoleSelectionTrace InstallRoleSelectionTrace `json:"role_selection_trace,omitzero" gorm:"type:jsonb" temporaljson:"role_selection_trace,omitzero,omitempty"`
 
 	Workflow       *Workflow `json:"workflow,omitzero" gorm:"-"`
 	WorkflowStepID string    `json:"workflow_step_id,omitzero" gorm:"-"`

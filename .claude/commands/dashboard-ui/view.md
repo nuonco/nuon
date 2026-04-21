@@ -84,6 +84,22 @@ This skill enforces correct route registration, layout-aware provider usage, and
 
    Scrolling, BackToTop, and SubNav sticky are all handled automatically by PageLayout — do not add them manually.
 
+## Redirects
+
+Use a `loader` with `redirect` from `react-router` — never `<Navigate>`:
+
+```tsx
+import { redirect, type RouteObject } from 'react-router'
+
+// ✅ Correct
+{ path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) }
+
+// ❌ Wrong
+{ path: ':orgId/connections', element: <Navigate to=".." replace /> }
+```
+
+See `client/views/install/routes.tsx` for examples.
+
 ## Anti-Patterns
 
 - **Do not** register an install-level route outside `InstallLayout.children` — the view will render without its providers
