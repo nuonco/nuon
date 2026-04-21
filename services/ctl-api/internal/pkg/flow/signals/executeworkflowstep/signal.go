@@ -103,6 +103,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.wasRetriedHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",
+		s.cancelStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
 	return nil
 }
 

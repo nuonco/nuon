@@ -66,6 +66,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Execute the inner signal
 	stepErr := s.executeInnerSignal(ctx, step)
 	if stepErr != nil {
+		// If the context was cancelled, Cancel() already handled status updates.
+		if ctx.Err() != nil {
+			return nil
+		}
 		return s.handleStepError(ctx, l, step, flw, stepErr)
 	}
 

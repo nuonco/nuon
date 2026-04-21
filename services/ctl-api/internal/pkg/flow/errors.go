@@ -7,8 +7,9 @@ import "fmt"
 // why the flow stopped and signals to the execute-flow signal that it should
 // not enter the retry-wait loop.
 type FlowStoppedErr struct {
-	StepID string
-	Reason string // "denied", "skipped-dependents"
+	StepID           string
+	Reason           string // "denied", "skipped-dependents"
+	RetriesExhausted bool
 }
 
 func (e *FlowStoppedErr) Error() string {

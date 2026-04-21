@@ -56,6 +56,7 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	checks := []planCheck{
 		s.noopCheck(ctx, l, step, flw, sig, &noopPlan),
 		s.policyCheck(ctx, l, step, flw, sig),
+		s.autoApprovalCheck(ctx, step, flw),
 		s.planOnlyCheck(ctx, step, flw, &noopPlan),
 	}
 

@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
-	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -54,8 +53,6 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Invoke(jobloop.WithJobLoops(func([]jobloop.JobLoop) {})),
 			// NOTE: we do not include the `operations` job loops here
 			// sandbox control API
-			fx.Provide(sandboxctl.New),
-			fx.Invoke(func(*sandboxctl.Server) {}),
 
 			// start heartbeater, process registrar, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),

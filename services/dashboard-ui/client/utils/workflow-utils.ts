@@ -37,15 +37,19 @@ export function getStepBadge(
 ): TBadgeCfg {
   if (step?.retried) {
     const metadata = step?.status?.metadata
-    if (metadata?.auto_retried) {
-      return { children: 'Automatically retried', theme: 'info' }
+    // For auto-retried steps, fall through to show the actual status (e.g. error)
+    // so the failure reason is visible. The auto_retried metadata is shown elsewhere.
+    if (!metadata?.auto_retried) {
+      return { children: 'Retried', theme: 'info' }
     }
-    return { children: 'Retried', theme: 'info' }
   }
 
   const metadata = step?.status?.metadata
   if (metadata?.is_retry) {
-    const retryIdx = metadata.retry_idx ?? metadata.group_retry_idx ?? 0
+    if (metadata.group_retry_idx != null && metadata.group_retry_idx > 0) {
+      return { children: `Group retry #${metadata.group_retry_idx}`, theme: 'info' }
+    }
+    const retryIdx = metadata.retry_idx ?? 0
     return { children: `Retry #${retryIdx}`, theme: 'info' }
   }
   if (step?.execution_type === 'skipped') {
@@ -161,7 +165,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     }
   }
 
-  if (step?.retryable && step?.retried) {
+  if (step?.retryable && step?.retried && !step?.status?.metadata?.auto_retried) {
     const metadata = step?.status?.metadata
     const retryType = metadata?.retry_type ? `${metadata.retry_type} ` : ''
     return {

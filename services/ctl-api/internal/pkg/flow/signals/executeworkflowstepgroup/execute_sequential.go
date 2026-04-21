@@ -1,6 +1,7 @@
 package executeworkflowstepgroup
 
 import (
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
@@ -38,14 +39,14 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case DirectiveStop:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusNotAttempted)
 			return s.writeWorkflowDirective(ctx, DirectiveStop)
 
 		case DirectiveRetryGroup:
 			return s.writeWorkflowDirective(ctx, DirectiveRetryGroup)
 
 		case DirectiveSkipGroup:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
 			return s.writeWorkflowDirective(ctx, DirectiveSkipGroup)
 
 		case DirectiveAwaitApproval:
