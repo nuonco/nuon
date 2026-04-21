@@ -63,7 +63,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		ID: flw.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "executing step " + step.Name,
 			Metadata:               map[string]any{},
 		},
 	}); err != nil {
@@ -112,7 +112,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			ID: flw.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusSuccess,
-				StatusHumanDescription: "finished executing step " + strconv.Itoa(step.Idx+1),
+				StatusHumanDescription: "finished executing step " + step.Name,
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
 					"status":   "ok",
@@ -278,7 +278,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.AwaitingApproval,
-			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "awaiting approval for " + step.Name,
 			Metadata: map[string]any{
 				"step_idx": step.Idx,
 				"status":   "ok",
@@ -309,7 +309,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.WorkflowStepApprovalStatusApproved,
-				StatusHumanDescription: "approved " + strconv.Itoa(step.Idx+1),
+				StatusHumanDescription: "approved " + step.Name,
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
 					"status":   "ok",
@@ -336,7 +336,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.WorkflowStepApprovalStatusApprovalRetryPlan,
-				StatusHumanDescription: "retrying " + strconv.Itoa(step.Idx),
+				StatusHumanDescription: "retrying " + step.Name,
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
 					"status":   "retrying",
@@ -349,7 +349,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(ctx, activities.UpdateFlowStepTargetStatusRequest{
 			StepID:            step.ID,
 			Status:            app.StatusDiscarded,
-			StatusDescription: "Retrying step " + strconv.Itoa(step.Idx),
+			StatusDescription: "Retrying step " + step.Name,
 		}); err != nil {
 			return refetchStepsInfo, errors.Wrap(err, "unable to update step target status")
 		}
@@ -688,7 +688,7 @@ func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Cont
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusAutoSkipped,
-			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "Noop Plan, automatically skipped " + step.Name,
 			Metadata: map[string]any{
 				"step_idx": step.Idx,
 				"status":   "auto-skipped",
@@ -715,7 +715,7 @@ func (c *WorkflowConductor[DomainSignal]) handleNoopDeployPlan(ctx workflow.Cont
 		ID: nextStep.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusAutoSkipped,
-			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(nextStep.Idx),
+			StatusHumanDescription: "Noop Plan, automatically skipped " + nextStep.Name,
 			Metadata: map[string]any{
 				"step_idx": nextStep.Idx,
 				"status":   "auto-skipped",
@@ -770,7 +770,7 @@ func (c *WorkflowConductor[DomainSignal]) handlePlanOnlyApproval(ctx workflow.Co
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.WorkflowStepApprovalStatusApproved,
-			StatusHumanDescription: "auto-approved (plan-only mode) " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "auto-approved (plan-only mode) " + step.Name,
 			Metadata: map[string]any{
 				"step_idx":  step.Idx,
 				"status":    "auto-approved",
