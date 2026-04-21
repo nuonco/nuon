@@ -8,12 +8,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func (h *Helpers) WriteJobPlan(ctx context.Context, jobID string, byts []byte, cp plantypes.CompositePlan, permissionInfo app.RunnerJobPermissionInfo) error {
+func (h *Helpers) WriteJobPlan(ctx context.Context, jobID string, byts []byte, cp plantypes.CompositePlan) error {
 	plan := app.RunnerJobPlan{
-		RunnerJobID:    jobID,
-		PlanJSON:       string(byts),
-		CompositePlan:  cp,
-		PermissionInfo: permissionInfo,
+		RunnerJobID:   jobID,
+		PlanJSON:      string(byts),
+		CompositePlan: cp,
 	}
 
 	res := h.db.WithContext(ctx).Create(&plan)

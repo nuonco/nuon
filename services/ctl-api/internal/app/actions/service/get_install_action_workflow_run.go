@@ -75,6 +75,7 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		Preload("LogStream").
 		Preload("RunnerJob").
 		Preload("RunnerJob.Plan").
+		Preload("RunnerJob.InstallRoleUsage").
 		Preload("Steps").
 		Where("org_id = ? AND id = ?", orgID, runID).
 		First(&run)
