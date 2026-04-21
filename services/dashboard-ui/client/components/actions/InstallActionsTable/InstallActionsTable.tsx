@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -20,6 +21,7 @@ export type InstallActionRow = {
   actionTrigger: ReactNode
   actionRunDatetime: ReactNode
   actionRunDuration: ReactNode
+  labels: ReactNode
   href: string
 }
 
@@ -77,6 +79,21 @@ export function parseInstallActionsLatestRunsToTableData(
       ) : (
         <Icon variant="Minus" />
       ),
+      labels: (() => {
+        const lbls = actionWithRuns.action_workflow?.labels
+        if (!lbls || Object.keys(lbls).length === 0) return null
+        return (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(lbls)
+              .sort()
+              .map((k) => (
+                <Badge key={k} variant="code" size="sm" theme="neutral">
+                  {k}: {lbls[k]}
+                </Badge>
+              ))}
+          </span>
+        )
+      })(),
       href: `${basePath}/actions/${actionWithRuns.action_workflow_id}`,
     }
   })
@@ -110,6 +127,12 @@ const columns: ColumnDef<InstallActionRow>[] = [
   {
     accessorKey: 'actionTrigger',
     header: 'Recent trigger',
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'labels',
+    header: 'Labels',
     cell: (info) => info.getValue() as ReactNode,
   },
   {

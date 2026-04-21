@@ -137,6 +137,7 @@ func (s *InstallStackOverrides) HasOverrides() bool {
 type Install struct {
 	Name           string                `mapstructure:"name" toml:"name" comment:"install" jsonschema:"required"`
 	ApprovalOption InstallApprovalOption `mapstructure:"approval_option,omitempty" toml:"approval_option,omitempty"`
+	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
 	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`

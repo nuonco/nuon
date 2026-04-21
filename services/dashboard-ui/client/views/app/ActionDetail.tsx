@@ -57,6 +57,17 @@ export const ActionDetail = () => {
             {action?.name}
           </Text>
           {actionId ? <ID>{actionId}</ID> : null}
+          {action?.labels && Object.keys(action.labels).length > 0 ? (
+            <span className="flex flex-wrap gap-1 mt-1">
+              {Object.keys(action.labels)
+                .sort()
+                .map((k) => (
+                  <Badge key={k} variant="code" size="sm" theme="neutral">
+                    {k}: {action.labels[k]}
+                  </Badge>
+                ))}
+            </span>
+          ) : null}
         </HeadingGroup>
 
         {config &&

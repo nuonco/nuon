@@ -26,6 +26,9 @@ type ServiceCreateInstallConfigRequest struct {
 	// custom nested stacks
 	CustomNestedStacks []*ConfigCustomNestedStack `json:"custom_nested_stacks"`
 
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// runner nested template url
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url,omitempty"`
 

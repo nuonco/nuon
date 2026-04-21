@@ -19,6 +19,11 @@ import (
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
 	es, err := h.getInstallStateFromDB(ctx, installID)
 	if err == nil {
+		// Labels are mutable and not persisted in the state snapshot,
+		// so always hydrate them fresh from the database.
+		if err := h.hydrateLabels(ctx, installID, es); err != nil {
+			return nil, errors.Wrap(err, "unable to hydrate labels")
+		}
 		return es, nil
 	}
 
@@ -153,6 +158,7 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.Actions = h.toActions(actions)
 	is.InstallStack = h.toInstallStackState(stack)
 	is.Secrets = secrets
+	is.Labels = map[string]string(install.Labels)
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
 	// the flattened structure
 	is.Install = &state.InstallState{
@@ -401,6 +407,18 @@ func (h *Helpers) toActionWorkflow(act app.InstallActionWorkflow) *state.ActionW
 	}
 
 	return st
+}
+
+// hydrateLabels fetches install labels and populates the Labels field on the
+// state. Called on both the cached and fresh paths so labels are always current.
+func (h *Helpers) hydrateLabels(ctx context.Context, installID string, is *state.State) error {
+	var install app.Install
+	if err := h.db.WithContext(ctx).Select("id", "labels").First(&install, "id = ?", installID).Error; err != nil {
+		return errors.Wrap(err, "unable to get install labels")
+	}
+
+	is.Labels = map[string]string(install.Labels)
+	return nil
 }
 
 func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (*state.State, error) {

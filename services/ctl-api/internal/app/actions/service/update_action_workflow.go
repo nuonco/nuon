@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -78,7 +79,8 @@ func (s *service) UpdateAppAction(ctx *gin.Context) {
 }
 
 type UpdateActionWorkflowRequest struct {
-	Name string `json:"name"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 func (c *UpdateActionWorkflowRequest) Validate(v *validator.Validate) error {
@@ -141,13 +143,15 @@ func (s *service) UpdateActionWorkflow(ctx *gin.Context) {
 
 func (s *service) updateActionWorkflow(ctx context.Context, orgID, awID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
 	aw := app.ActionWorkflow{
-		ID:   awID,
-		Name: req.Name,
+		ID:      awID,
+		Name:    req.Name,
+		Labeled: labels.Labeled{Labels: labels.Labels(req.Labels)},
 	}
 
 	// up[date where org_id = orgID and id = awID]
 	res := s.db.WithContext(ctx).
 		Where("org_id = ? AND id = ?", orgID, awID).
+		Select("name", "labels").
 		Updates(&aw)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to patch action workflow: %w", res.Error)

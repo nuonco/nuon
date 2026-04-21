@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -19,6 +20,7 @@ import (
 // @Param					install_id					path	string	true	"install ID"
 // @Param					types						query	string	false	"component types to filter by"
 // @Param         q					query	string	false	"search query for component name"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Tags					installs
@@ -37,11 +39,12 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	appID := ctx.Param("install_id")
 	types := ctx.Query("types")
 	q := ctx.Query("q")
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	var typesSlice []string
 	if types != "" {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
-	installComponents, err := s.getInstallComponents(ctx, appID, q, typesSlice)
+	installComponents, err := s.getInstallComponents(ctx, appID, q, typesSlice, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -50,10 +53,11 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installComponents)
 }
 
-func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, types []string) ([]app.InstallComponent, error) {
+func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, types []string, lbls labels.Labels) ([]app.InstallComponent, error) {
 	paginatedComponents := []app.InstallComponent{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(labels.WithLabels("components.labels", lbls)).
 		Joins("JOIN components ON components.id = install_components.component_id").
 		Order("created_at DESC")
 

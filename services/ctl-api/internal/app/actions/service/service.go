@@ -57,9 +57,12 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		{
 			actions.POST("", s.CreateAppAction)
 			actions.GET("", s.GetAppActions)
+			actions.GET("/label-keys", s.GetActionLabelKeys)
 			actions.GET("/:action_id", s.GetAppAction)
 			actions.PATCH("/:action_id", s.UpdateAppAction)
 			actions.DELETE("/:action_id", s.DeleteAppAction)
+			actions.POST("/:action_id/labels", s.AddAppActionLabels)
+			actions.DELETE("/:action_id/labels", s.RemoveAppActionLabels)
 			actions.POST("/:action_id/configs", s.CreateAppActionConfig)
 			actions.GET("/:action_id/configs", s.GetAppActionConfigs)
 			actions.GET("/:action_id/latest-config", s.GetAppActionLatestConfig)

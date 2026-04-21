@@ -4,12 +4,14 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export interface IGetActions extends TPaginationParams {
   appId: string
+  labels?: string
   orgId: string
   q?: string
 }
 
 export async function getActions({
   appId,
+  labels,
   orgId,
   limit,
   offset,
@@ -17,7 +19,7 @@ export async function getActions({
 }: IGetActions) {
   return api<TAction[]>({
     orgId,
-    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q })}`,
+    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q, labels })}`,
     paginated: true,
   })
 }

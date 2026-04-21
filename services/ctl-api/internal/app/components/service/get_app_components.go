@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -22,6 +23,7 @@ import (
 // @Param         q                 query	string	false	"search query to filter components by name"
 // @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"
 // @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -54,7 +56,9 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 		}
 	}
 
-	components, err := s.getAppComponents(ctx, appID, q, typesSlice, componentIDsSlice)
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+
+	components, err := s.getAppComponents(ctx, appID, q, typesSlice, componentIDsSlice, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app components: %w", err))
 		return
@@ -63,7 +67,7 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, components)
 }
 
-func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string, componentIDs []string) ([]app.Component, error) {
+func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string, componentIDs []string, lbls labels.Labels) ([]app.Component, error) {
 	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get latest app config")
@@ -72,6 +76,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 	var components []app.Component
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(labels.WithLabels("components.labels", lbls)).
 		Where("id IN ?", []string(appCfg.ComponentIDs)).
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {

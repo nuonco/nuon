@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -45,6 +46,7 @@ type ActionWorkflow struct {
 
 	// metadata
 	Name string `json:"name,omitzero" gorm:"index:idx_action_workflow_app_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	labels.Labeled
 }
 
 func (a *ActionWorkflow) BeforeCreate(tx *gorm.DB) error {
