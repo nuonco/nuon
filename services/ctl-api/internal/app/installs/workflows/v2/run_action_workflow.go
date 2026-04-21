@@ -34,7 +34,7 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 	return sg.installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, false)
 }
 
-func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	sg := newStepGroup()
 
 	installID := flw.OwnerID
@@ -91,10 +91,10 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 	}
 
 	steps = append(steps, step)
-	return steps, nil
+	return sg.Result(steps), nil
 }
 
-func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID string, adhocActionRunID *string, sg *stepGroup, steps []*app.WorkflowStep) ([]*app.WorkflowStep, error) {
+func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID string, adhocActionRunID *string, sg *stepGroup, steps []*app.WorkflowStep) (*app.GenerateStepsResult, error) {
 	actionName := generics.FromPtrStr(flw.Metadata["install_action_workflow_name"])
 	if actionName == "" {
 		actionName = "Adhoc action"
@@ -119,5 +119,5 @@ func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID str
 	}
 
 	steps = append(steps, step)
-	return steps, nil
+	return sg.Result(steps), nil
 }

@@ -153,6 +153,7 @@ func AllModels() []any {
 
 		// install workflows
 		&app.Workflow{},
+		&app.WorkflowStepGroup{},
 		&app.WorkflowStep{},
 		&app.WorkflowStepApproval{},
 		&app.WorkflowStepApprovalResponse{},

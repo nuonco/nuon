@@ -12,7 +12,7 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-type WorkflowStepGenerator func(ctx workflow.Context, uf *app.Workflow) ([]*app.WorkflowStep, error)
+type WorkflowStepGenerator func(ctx workflow.Context, uf *app.Workflow) (*app.GenerateStepsResult, error)
 
 type WorkflowConductor[DomainSignal eventloop.Signal] struct {
 	Cfg        *internal.Config
