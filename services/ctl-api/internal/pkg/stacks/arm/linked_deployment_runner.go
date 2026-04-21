@@ -128,7 +128,7 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 									"publicKeys": []map[string]any{
 										{
 											"path":    "/home/nuonadmin/.ssh/authorized_keys",
-											"keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDNnSz9UjUE3hh8TxnJfY1Xg2n6e6hH0rWk0E9YWnKtLQRP8U7VqEMjlLXWZ9gqkqbfLBDFm5MaRp5MT8cJyUW3VKafMFZIcmIkUmhGW2Y70PJEIFy1jHGYghkmdVnApkm4Zk2iNJMR0FqFz+xm7yKMfjOkHKCf3tfn2zn1Y3S3VRpjPj7i1p5r5VCyVF3NpuZxE1dpfOMO/5SjJGq+C5AOhXM7dcP5HAg4HskmPPpJhfSz0lGi/n0NKTFzKnl1jP3fHY7L6AIjy0ePj+vNqEBhzpSK0VZMJW+X6kfT5USMd6BSh1Rp7R0m2yfivFCfFB3Gl+E9coHtjCR63ZJFRs3p7aiFSpq8fXwqb/v5bVip6Y3etfSnTGAP9/VxVnXIljCO1vJaRpPqw2gE9OnXYwJ6X2fxFLi0rkxT1kXvwr+JOhM14rDYSJA2iz11BvztjnD6wxIPFkTxaBmPK2c6/J6h5XJLN8TuZHGBKrT5MQbPPAWCIwH9T0aSD5VTb0=",
+											"keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDmwMWT2029b4Oem5zSKRVDCBcjoVTfsUXlbGdfGeq8tzTPwqQLGqqVJDSkVb7kIjpbRv7fpB9tJERenhixW4SmYogfMlkvOy9sw+v46chmmgDmqy5Tv7MZB5SCwGVKYHv4EcwACM+GkA5jWO9poMwQM2FIEe4QAI/YaIchGf5HlfyjB/Yh7TZkuCdQ4GdTr3zwfa4DRjFThVDIobtKLjOri0u/Hcux1gduuh1gMYqTQ6oZvAGYAgWnQOiZ7rTrQvei8+SZRwFJohXPFmLjBaqmKMHs1+fu50PBA38Jp+Eey2ghvsab0HNG0eQ0icjhmHEkJZOEZ8R2/WufAON3NtapBVlOB+aCpeeRcO9wusf5kFEr3ytoRf/p8wf397efpCvYLfw9bMmxfnyzMEb1+SoFk8xLaYeyFbJDpvBvg0+m+vmwdKhquikJVII7/r0GCkaW4e3L43aBEiBip6UTFoYep/cpeN1qq8oTrUV8kMH1rPAIpZCls0LWrJJ2OqvcYJnQYWfHZ/uT/r7B6Fu8IOlyDSdwXzy3+NGaUROPj9UWT1wtWr0xyJFdE9N82noGzhmhRlhi1tYefNt/eszG2qlVg507vKIyvmfkR5VOxA51m9fw/Cgfck/KLy3XJWoXbri2eSraHomN9jEjOCerFFvtEKXViGsl4Xj0Z3B7y3ZA9Q== nuon-azure-vm-dummy@nuon.co",
 										},
 									},
 								},
