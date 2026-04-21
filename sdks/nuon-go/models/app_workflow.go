@@ -81,6 +81,11 @@ type AppWorkflow struct {
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
 
+	// ResultDirective is set by the currently executing group signal to communicate
+	// the group outcome back to the flow signal. Values: continue, stop, retry-group,
+	// skip-group, await-approval.
+	ResultDirective string `json:"result_directive,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 

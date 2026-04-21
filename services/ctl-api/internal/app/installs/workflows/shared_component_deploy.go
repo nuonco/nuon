@@ -28,7 +28,9 @@ func WithExecutionType(executionType app.WorkflowStepExecutionType) WorkflowStep
 }
 
 type stepGroup struct {
-	idx int
+	idx          int
+	groups       []*app.WorkflowStepGroup
+	currentGroup *app.WorkflowStepGroup
 }
 
 func newStepGroup() *stepGroup {
@@ -37,6 +39,19 @@ func newStepGroup() *stepGroup {
 
 func (s *stepGroup) nextGroup() {
 	s.idx++
+	g := &app.WorkflowStepGroup{
+		GroupIdx: s.idx,
+		Status:   app.CompositeStatus{Status: app.StatusPending},
+	}
+	s.groups = append(s.groups, g)
+	s.currentGroup = g
+}
+
+func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
+	return &app.GenerateStepsResult{
+		Steps:  steps,
+		Groups: s.groups,
+	}
 }
 
 func (s *stepGroup) installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {

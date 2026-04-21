@@ -49,8 +49,6 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 	switch resp.Type {
 	case app.WorkflowStepApprovalResponseTypeApprove:
 		return s.handleApproveResponse(ctx, l, step, flw)
-	case app.WorkflowStepApprovalResponseTypeRetryPlan:
-		return s.handleRetryResponse(ctx, l, step, flw)
 	case app.WorkflowStepApprovalResponseTypeSkipCurrent:
 		return s.handleSkipResponse(ctx, l, step, flw)
 	case app.WorkflowStepApprovalResponseTypeSkipCurrentAndDependents:

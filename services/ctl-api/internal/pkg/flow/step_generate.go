@@ -36,14 +36,14 @@ func generateStepsViaGeneratorMap(ctx workflow.Context, flw *app.Workflow, gener
 		return nil, errors.Errorf("no workflow step generator registered for workflow type %s", flw.Type)
 	}
 
-	steps, err := gen(ctx, flw)
+	result, err := gen(ctx, flw)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
 	}
 
-	steps, err = workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
+	steps, err := workflowsflow.AwaitGenerateWorkflowSteps(ctx, &workflowsflow.GenerateWorkflowStepsRequest{
 		WorkflowID: flw.ID,
-		Steps:      steps,
+		Steps:      result.Steps,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create steps for workflow")
