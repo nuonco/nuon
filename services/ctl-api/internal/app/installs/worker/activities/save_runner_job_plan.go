@@ -5,13 +5,11 @@ import (
 	"fmt"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type SaveRunnerJobPlanRequest struct {
-	JobID          string                  `validate:"required"`
-	CompositePlan  plantypes.CompositePlan `validate:"required"`
-	PermissionInfo app.RunnerJobPermissionInfo
+	JobID         string                  `validate:"required"`
+	CompositePlan plantypes.CompositePlan `validate:"required"`
 	// Deprecated: but kept for backward compatibility
 	PlanJSON string `validate:"required"`
 }
@@ -23,7 +21,6 @@ func (a *Activities) SaveRunnerJobPlan(ctx context.Context, req *SaveRunnerJobPl
 		req.JobID,
 		[]byte(req.PlanJSON),
 		req.CompositePlan,
-		req.PermissionInfo,
 	); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}

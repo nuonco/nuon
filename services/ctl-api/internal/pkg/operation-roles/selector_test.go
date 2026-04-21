@@ -353,7 +353,7 @@ func TestSelectRole(t *testing.T) {
 		expectedRoleName string
 		expectedRoleARN  string
 		expectedSource   RoleSelectionSource
-		expectedTrace    []app.RunnerJobPermissionTraceRecord
+		expectedTrace    []app.InstallRoleSelectionRecord
 		expectError      bool
 		errorContains    string
 	}{
@@ -384,7 +384,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceRuntime,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "emergency-access", RoleSource: "runtime", Available: true, Selected: true},
 			},
 			expectError: false,
@@ -410,7 +410,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceEntity,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "1234-custom-db-role", RoleSource: "entity", Available: true, Selected: true},
@@ -436,7 +436,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -461,7 +461,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-provision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -487,7 +487,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-provision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-provision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -513,7 +513,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-deprovision",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-deprovision",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -539,7 +539,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -601,7 +601,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "test-install-maintenance",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/test-install-maintenance",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -628,7 +628,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceMatrix,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "", RoleSource: "breakglass", Available: false},
 				{RoleName: "", RoleSource: "entity", Available: false},
@@ -658,7 +658,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
 			},
 			expectError: false,
@@ -688,7 +688,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
 			},
 			expectError: false,
@@ -711,7 +711,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
@@ -737,7 +737,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
@@ -763,7 +763,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
@@ -787,7 +787,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
@@ -811,7 +811,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "1234-custom-db-role",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/custom-db",
 			expectedSource:   RoleSelectionSourceRuntime,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "1234-custom-db-role", RoleSource: "runtime", Available: true, Selected: true},
 			},
 			expectError: false,
@@ -856,7 +856,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "emergency-access",
 			expectedRoleARN:  "arn:aws:iam::123456789012:role/emergency",
 			expectedSource:   RoleSelectionSourceBreakGlass,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "", RoleSource: "runtime", Available: false},
 				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
@@ -884,7 +884,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
 			},
 			expectError: false,
@@ -911,7 +911,7 @@ func TestSelectRole(t *testing.T) {
 			expectedRoleName: "azure-placeholder-name",
 			expectedRoleARN:  "azure-placeholder-arn",
 			expectedSource:   RoleSelectionSourceDefault,
-			expectedTrace: []app.RunnerJobPermissionTraceRecord{
+			expectedTrace: []app.InstallRoleSelectionRecord{
 				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
 			},
 			expectError: false,

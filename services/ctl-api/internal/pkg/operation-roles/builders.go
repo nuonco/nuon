@@ -42,7 +42,7 @@ func GetRoleForDeploy(
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
 		var selErr *SelectionError
-		var failedTrace []app.RunnerJobPermissionTraceRecord
+		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
 			failedTrace = selErr.Trace
 		}
@@ -110,7 +110,7 @@ func GetRoleForSandbox(
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
 		var selErr *SelectionError
-		var failedTrace []app.RunnerJobPermissionTraceRecord
+		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
 			failedTrace = selErr.Trace
 		}
@@ -174,7 +174,7 @@ func GetRoleForAction(
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
 		var selErr *SelectionError
-		var failedTrace []app.RunnerJobPermissionTraceRecord
+		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
 			failedTrace = selErr.Trace
 		}
