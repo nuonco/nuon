@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
@@ -130,6 +131,9 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		zap.Int("warn_count", warnCount),
 		zap.Int("pass_count", passCount),
 	)
+
+	// Write analytics events to ClickHouse (non-blocking — failures don't affect the activity)
+	a.persistPolicyAnalyticsEvents(ctx, l, report, policyResults)
 
 	passedPolicyIDs := make([]string, 0)
 	for _, result := range policyResults {
@@ -302,6 +306,35 @@ func stringPtrToPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func (a *Activities) persistPolicyAnalyticsEvents(ctx context.Context, l *zap.Logger, report *app.PolicyReport, results []policyResult) {
+	if a.chDB == nil || len(results) == 0 {
+		return
+	}
+
+	events := buildPolicyReportEvents(report, results)
+	if err := a.chDB.WithContext(ctx).Create(&events).Error; err != nil {
+		l.Warn("failed to write policy analytics to clickhouse", zap.Error(err))
+	}
+}
+
+func buildPolicyReportEvents(report *app.PolicyReport, results []policyResult) []app.PolicyReportEvent {
+	events := make([]app.PolicyReportEvent, 0, len(results))
+	for _, pr := range results {
+		events = append(events, app.PolicyReportEvent{
+			ReportID:    report.ID,
+			OrgID:       report.OrgID,
+			AppID:       report.AppID,
+			InstallID:   generics.FromPtrStr(report.InstallID),
+			ComponentID: generics.FromPtrStr(report.ComponentID),
+			PolicyID:    pr.PolicyID,
+			OwnerType:   string(report.OwnerType),
+			EvaluatedAt: report.EvaluatedAt,
+			Outcome:     pr.Status,
+		})
+	}
+	return events
 }
 
 func toInternalResults(results []policyResult) []helpers.PolicyResultInternal {
