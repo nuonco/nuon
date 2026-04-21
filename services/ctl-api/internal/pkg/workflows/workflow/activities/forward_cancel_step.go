@@ -23,12 +23,14 @@ type ForwardCancelStepResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) ForwardCancelStep(ctx context.Context, req ForwardCancelStepRequest) (*ForwardCancelStepResponse, error) {
-	// Find the step's handler workflow via the queue_signals table
+	// Find the step's handler workflow via the queue_signals table.
+	// Filter by signal type to avoid matching the inner signal (same OwnerID/OwnerType).
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
 		Where(app.QueueSignal{
 			OwnerID:   req.StepID,
 			OwnerType: (&app.WorkflowStep{}).TableName(),
+			Type:      "execute-workflow-step",
 		}).
 		Order("created_at DESC").
 		First(&qs)

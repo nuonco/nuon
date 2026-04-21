@@ -14,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
@@ -90,5 +90,5 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	return steps, nil
+	return sg.Result(steps), nil
 }

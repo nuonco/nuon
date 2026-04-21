@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 )
 
-func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 
@@ -142,5 +142,5 @@ func Provision(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, er
 		steps = append(steps, lifecycleSteps...)
 	}
 
-	return steps, nil
+	return sg.Result(steps), nil
 }

@@ -118,16 +118,27 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		return
 	}
 
-	// If queues are enabled, send approve-plan update to reactively unblock the step
+	// If queues are enabled, reactively unblock the step via the appropriate update.
 	useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if useQueues {
-		if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
-			InstallWorkflowID:  workflowID,
-			StepID:             stepID,
-			ApprovalResponseID: wfsaResponse.ID,
-			ResponseType:       req.ResponseType,
-		}); err != nil {
-			s.l.Warn("failed to send approve-plan update", zap.Error(err))
+		if req.ResponseType == app.WorkflowStepApprovalResponseTypeRetryPlan {
+			// Retry is handled by the step-group (which clones and re-dispatches),
+			// not by the approval flow inside the step signal.
+			if _, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+				InstallWorkflowID: workflowID,
+				StepID:            stepID,
+			}); err != nil {
+				s.l.Warn("failed to send retry-step update for approval retry", zap.Error(err))
+			}
+		} else {
+			if err := s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
+				InstallWorkflowID:  workflowID,
+				StepID:             stepID,
+				ApprovalResponseID: wfsaResponse.ID,
+				ResponseType:       req.ResponseType,
+			}); err != nil {
+				s.l.Warn("failed to send approve-plan update", zap.Error(err))
+			}
 		}
 	}
 

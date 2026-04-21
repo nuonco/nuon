@@ -14,6 +14,8 @@ import (
 )
 
 type ContinueAsNewErr struct {
+	// StartFromStepIdx is the index to resume from. In the legacy conductor path
+	// this is a step index; in the execute-flow signal path this is a group position.
 	StartFromStepIdx int
 }
 

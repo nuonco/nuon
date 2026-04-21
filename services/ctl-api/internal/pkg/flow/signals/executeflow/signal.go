@@ -1,6 +1,8 @@
 package executeflow
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -11,7 +13,7 @@ import (
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-const SignalType qsignal.SignalType = "execute-flow"
+const SignalType qsignal.SignalType = "execute-workflow"
 
 type Signal struct {
 	// WorkflowID is the ID of the workflow to execute.
@@ -32,14 +34,17 @@ type Signal struct {
 
 	// Cancel state — set by "cancel-step" update handler.
 	cancelRequested bool
+
+	// Pause state — set by "pause-workflow" update handler. When true, the
+	// flow will pause after the current group completes.
+	pauseRequested bool
 }
 
 var _ qsignal.Signal = (*Signal)(nil)
 var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
 
-func (s *Signal) Type() qsignal.SignalType {
-	return SignalType
-}
+func (s *Signal) Type() qsignal.SignalType  { return SignalType }
+func (s *Signal) SleepAfter() time.Duration { return time.Second }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowID == "" {
@@ -56,11 +61,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 	if s.OwnerType == "" {
 		s.OwnerType = flw.OwnerType
-	}
-
-	// The workflow must have a GenerateStepsSignal set.
-	if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
-		return s.failWorkflow(ctx, errors.Errorf("workflow %s has no generate-steps signal", s.WorkflowID))
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
@@ -123,6 +123,26 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.cancelStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
-	return workflow.SetUpdateHandlerWithOptions(ctx, "poll-next-step",
-		s.pollNextStepHandler, workflow.UpdateHandlerOptions{})
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-group",
+		s.cancelGroupHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-workflow",
+		s.cancelWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "poll-next-step",
+		s.pollNextStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "retry-group",
+		s.retryGroupHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "pause-workflow",
+		s.pauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	return workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
+		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{})
 }

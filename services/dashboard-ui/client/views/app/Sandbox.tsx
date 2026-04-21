@@ -49,6 +49,9 @@ export const Sandbox = () => {
           <Text variant="base" weight="strong">
             Sandbox
           </Text>
+          <Text variant="subtext" theme="neutral">
+            Test builds in an isolated environment before deploying to installs.
+          </Text>
         </HeadingGroup>
         <BuildSandboxButton variant="primary" />
       </div>

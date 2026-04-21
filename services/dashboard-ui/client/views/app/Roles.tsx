@@ -27,7 +27,7 @@ export const Roles = () => {
           App roles
         </Text>
         <Text variant="subtext" theme="neutral">
-          View the IAM roles that your app uses to access customer AWS resources.
+          View the IAM roles that your app uses to access customer cloud resources.
         </Text>
       </HeadingGroup>
 

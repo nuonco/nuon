@@ -169,6 +169,24 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 	return a.updateStatus(ctx, &obj, req.Status, getter)
 }
 
+// @temporal-gen-v2 activity
+func (a *Activities) PkgStatusUpdateFlowStepGroupStatus(ctx context.Context, req UpdateStatusRequest) error {
+	obj := app.WorkflowStepGroup{
+		ID: req.ID,
+	}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.WorkflowStepGroup
+		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+
+		return obj.Status, nil
+	}
+
+	return a.updateStatus(ctx, &obj, req.Status, getter)
+}
+
 type UpdateBuildStatusV2 struct {
 	BuildID           string                   `validate:"required"`
 	Status            app.ComponentBuildStatus `validate:"required"`
