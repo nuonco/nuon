@@ -3,7 +3,8 @@ import type { TWorkflow } from '@/types'
 
 export const useWorkflowMetrics = (workflow: TWorkflow | undefined) => {
   return useMemo(() => {
-    const workflowSteps = workflow?.steps?.filter((s) => s?.execution_type !== 'hidden') || []
+    const workflowSteps =
+      workflow?.steps?.filter((s) => s?.execution_type !== 'hidden' && !s?.retried) || []
     
     const hasApprovals = workflowSteps.some(
       (step) => step?.execution_type === 'approval'
