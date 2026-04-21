@@ -13,10 +13,12 @@ import { RemoveConnectionModal } from './RemoveConnection'
 
 interface IRemoveConnection {
   vcs_connection: TVCSConnection
+  onRemoveSuccess?: () => void
 }
 
 export const RemoveConnectionModalContainer = ({
   vcs_connection,
+  onRemoveSuccess,
   ...props
 }: IRemoveConnection & Omit<IModal, 'onSubmit'>) => {
   const { removeModal } = useSurfaces()
@@ -38,6 +40,7 @@ export const RemoveConnectionModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
+      onRemoveSuccess?.()
     },
     onError: () => {
       addToast(
@@ -61,10 +64,11 @@ export const RemoveConnectionModalContainer = ({
 
 export const RemoveConnectionButton = ({
   vcs_connection,
+  onRemoveSuccess,
   ...props
 }: IRemoveConnection & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RemoveConnectionModalContainer vcs_connection={vcs_connection} />
+  const modal = <RemoveConnectionModalContainer vcs_connection={vcs_connection} onRemoveSuccess={onRemoveSuccess} />
 
   return (
     <Button

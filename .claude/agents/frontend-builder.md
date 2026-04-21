@@ -47,6 +47,12 @@ The dashboard-ui is a **Go BFF + React SPA**:
 - Types: `client/types/ctl-api.types.ts` (never import from `nuon-oapi-v3.d.ts` directly)
 - Providers: `client/providers/`
 
+## Views vs Components (Strict Separation)
+
+- **`views/`** contains **only**: page-level view components (route content), layout components (providers/breadcrumbs/tab nav), and route orchestration.
+- **`views/`** must **never** contain: modals, tables, reusable sub-components, action buttons, or any component meant to be consumed by a view.
+- All feature components belong in `client/components/[domain]/`. If a `components/[domain]/` directory doesn't exist yet, create it.
+
 ## API Integration
 
 `client/lib/api.ts` returns `T` directly — **not `{ data: T }`**. It throws `TAPIError` on failure.
@@ -111,7 +117,7 @@ const { mutate: cancel, isPending } = useMutation({
     cancelWorkflow({ workflowId, orgId }),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['workflows'] })
-    removeModal(props.modalId)
+    removeModal(modalId)
   },
   onError: (err: TAPIError) => {
     showErrorToast(err.error)
@@ -153,14 +159,78 @@ PageLayout handles scrolling and BackToTop automatically — views never manage 
 | `PageLayout` | Top-level wrapper. Auto-renders scroll container + BackToTop. | `variant`, `hideBreadcrumbs` |
 | `PageContent` | Sets flex direction. | `variant` (`column` default, `row` for SubNav layouts) |
 | `PageSection` | Content block with padding/gap. | `flush` (removes padding/gap) |
+| `PageHeader` | Page heading area above content. | Standard div props |
+| `SubNav` | Secondary nav sidebar. Sticky on desktop. | `basePath`, `links` |
 
 **Do NOT**: add `isScrollable`, `CONTAINER_ID`, `<BackToTop />`, or `className="!p-0 !gap-0"` to views.
+
+## Routing
+
+Route files live in `client/views/` mirroring the URL hierarchy. Org-level routes go in `client/views/org/routes.tsx`, install-level in `client/views/install/routes.tsx`.
+
+### Redirects
+
+Use a `loader` with `redirect` — never `<Navigate>`:
+
+```tsx
+import { redirect, type RouteObject } from 'react-router'
+
+// ✅ Correct
+{ path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) }
+
+// ❌ Wrong
+{ path: ':orgId/connections', element: <Navigate to=".." replace /> }
+```
+
+See `client/views/install/routes.tsx` for examples.
 
 ## Component Patterns
 
 ### Always Check Existing Components First
 
-Before building a new component, check `client/components/common/` and other domain directories. Read the component's TypeScript interface before using it to avoid guessing props.
+Before building a new component, check `client/components/common/` and other domain directories. **Read the component's `.stories.tsx` file** before using it — stories show correct prop usage and edge cases more reliably than inferring from the TypeScript interface.
+
+### Container / Component Pattern
+
+Feature components use a **container/component split**:
+
+```
+client/components/[domain]/MyComponent/
+├── MyComponent.tsx              ← Pure presentational (props in, JSX out). No hooks.
+├── MyComponentContainer.tsx     ← Data-fetching wrapper (useQuery, useOrg, etc.)
+├── MyComponent.stories.tsx      ← Ladle stories (required)
+└── index.ts                     ← Barrel: exports container as primary name
+```
+
+**`index.ts`** pattern:
+```typescript
+export { MyComponentContainer as MyComponent } from './MyComponentContainer'
+export { MyComponent as MyComponentComponent } from './MyComponent'
+```
+
+**When to use**: any component that calls context hooks or TanStack Query. Simple primitives (Button, Badge) stay as flat files.
+
+**Never** have both a flat `MyComponent.tsx` and a `MyComponent/` directory at the same level — the flat file shadows the directory's `index.ts`.
+
+### Ladle Stories (Required)
+
+Every component directory must have a `.stories.tsx`. Written for **Ladle v5** — not Storybook.
+
+```tsx
+// ✅ Correct — plain function exports
+export default { title: 'Domain/MyComponent' }
+import { MyComponent } from './MyComponent'
+export const Default = () => <MyComponent items={mockItems} />
+export const Empty = () => <MyComponent items={[]} />
+
+// ❌ Wrong — Storybook StoryObj syntax breaks Ladle
+export const Default: StoryObj = { render: () => <MyComponent /> }
+```
+
+- Stories render the **presentational component**, not the container
+- Ladle provides a `MemoryRouter` globally — never add another one
+- Mock context providers in the story when needed; never change the component to avoid needing them
+- **Modal stories**: use `ModalStory` from `@/components/__stories__/helpers`
 
 ### Modal and Panel Pattern
 
@@ -183,7 +253,7 @@ export const DeleteModal = ({ item, ...props }: IDeleteModal) => {
 
   return (
     <Modal
-      heading="Delete Item"
+      heading="Delete item"
       primaryActionTrigger={{
         children: isPending ? 'Deleting...' : 'Delete',
         disabled: isPending,
@@ -205,27 +275,109 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 ```
 
 Rules:
-- Always `{...props}` spread onto `Modal`/`Panel` — never destructure `modalId`, `isVisible`, `onClose` manually
+- Always `{...props}` spread onto `Modal`/`Panel`
 - Create the modal instance before `addModal`: `const modal = <MyModal />` then `addModal(modal)`
+- Close modals on success via `removeModal(props.modalId)`
 
-### TypeScript Conventions
+### Icons
+
+**Use the `Icon` component for ALL icons** — never import from `lucide-react`, `heroicons`, or any other package.
+
+```tsx
+// ✅ Correct
+import { Icon } from '@/components/common/Icon'
+<Icon variant="MagnifyingGlassIcon" size={16} />
+
+// ❌ Wrong
+import { Search } from 'lucide-react'
+```
+
+Browse icons at https://phosphoricons.com. Custom cloud provider icons are in the `customIcons` map in `Icon.tsx`.
+
+### Links & Navigation
+
+**Never import `Link` from `react-router` directly.** Use the common components instead:
+
+- For inline text links: `Link` from `@/components/common/Link` (uses `href`, not `to`)
+- For navigation buttons (icon buttons, ghost nav actions): `Button` with `href` and `variant="ghost"`
+
+```tsx
+// ✅ Correct — text link
+import { Link } from '@/components/common/Link'
+<Link href={`/${org.id}/connections/vcs/${id}`}>View</Link>
+
+// ✅ Correct — nav button
+import { Button } from '@/components/common/Button'
+<Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
+  <Icon variant="ArrowRight" size={16} />
+</Button>
+
+// ❌ Wrong
+import { Link } from 'react-router'
+<Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
+```
+
+### Tabs Component — Key Casing
+
+Tab keys are run through `toSentenceCase(camelToWords(key))` which lowercases everything after the first character. Always write tab keys in all-lowercase:
+
+```tsx
+// ✅ Correct
+<Tabs tabs={{ 'create your own app': <CustomTab />, 'demo using a sample app': <DemoTab /> }} />
+
+// ❌ Wrong — title case keys render incorrectly
+<Tabs tabs={{ 'Create Your Own App': <CustomTab /> }} />
+```
+
+## TypeScript Conventions
 
 - **`T` prefix** for data/API types: `TApp`, `TInstall`, `TRunner`
 - **`I` prefix** for component prop interfaces: `IModal`, `IButton`
 - Import types from `@/types/ctl-api.types` — never from `nuon-oapi-v3.d.ts`
 
+## Text & Copy Style
+
+**Always use sentence case, never title case** — headings, buttons, labels, tab labels, empty states, tooltips.
+
+- ✅ "Create your org" / "Connect a cloud account"
+- ❌ "Create Your Org" / "Connect A Cloud Account"
+
+Exceptions: proper nouns (AWS, Nuon, Terraform) and acronyms.
+
+## Dates, Times & Durations
+
+**Always use [Luxon](https://moment.github.io/luxon/)** — never raw `Date` objects or manual millisecond math.
+
+- **`<Time>`** — renders timestamps. `format="relative"` shows "2 hours ago" with a tooltip. Add `shouldTick` to enable auto-updating every 30s for live-refreshing timestamps (opt-in, off by default).
+- **`<Duration>`** — renders durations. Pass `beginTime` and optionally `endTime`.
+
+```tsx
+// ✅ Correct
+<Time variant="subtext" time={item.created_at} format="relative" />
+<Time variant="subtext" time={status.checked_at} format="relative" shouldTick />
+<Duration variant="subtext" beginTime={process.started_at} durationUnits={['hours', 'minutes']} />
+
+// ❌ Wrong
+const diffMs = Date.now() - new Date(dateStr).getTime()
+```
+
 ## Key Scripts
 
 ```bash
-npm run dev:spa        # Development server
-npm run build:spa      # Production build
-npm run lint:spa       # ESLint
-npm run tsc:spa        # TypeScript type check
+npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
+npm run build          # Production build (minified)
+npm run lint           # ESLint for the SPA
+npm run dev:ladle      # Ladle component stories
+npm test               # Vitest tests
+npx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
+npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
 ```
+
+**Do NOT run** `build`, `build:js`, or `build:css` unless explicitly asked — a dev process handles builds automatically.
 
 ## Constraints
 
 - **Never modify backend code** (`services/ctl-api`). Document any needed API changes instead.
 - **No code in `src/`** — all new work goes in `client/`.
-- **Follow existing patterns**: check `client/components/` before building new components.
-- **No unnecessary comments**: let clear naming document the code.
+- **No unnecessary comments** — let clear naming document the code.
+- **No new dependencies** without checking `package.json` first — always use existing project libraries.
