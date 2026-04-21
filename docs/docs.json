@@ -186,6 +186,7 @@
             "group": "Getting Started",
             "pages": [
               "guides/byoc",
+              "guides/self-hosting/index",
               "guides/app-install-life-cycle",
               "guides/ai-and-apps",
               "guides/using-variables"
@@ -217,19 +218,11 @@
           },
           {
             "group": "Support Customer Infrastructure",
-            "pages": [
-              "guides/custom-nested-stacks",
-              "guides/runner-management-mode"
-            ]
+            "pages": ["guides/custom-nested-stacks", "guides/runner-management-mode"]
           },
           {
             "group": "Continuous Delivery",
-            "pages": [
-              "guides/configuring-policies",
-              "guides/actions",
-              "guides/operation-roles",
-              "guides/using-readmes"
-            ]
+            "pages": ["guides/configuring-policies", "guides/actions", "guides/operation-roles", "guides/using-readmes"]
           },
           {
             "group": "Customer Experience",
@@ -242,18 +235,11 @@
           },
           {
             "group": "Admin",
-            "pages": [
-              "guides/team-management",
-              "guides/custom-domains"
-            ]
+            "pages": ["guides/team-management", "guides/custom-domains"]
           },
           {
             "group": "Integrations",
-            "pages": [
-              "guides/notifications",
-              "guides/github-actions",
-              "guides/cli-extensions"
-            ]
+            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
           }
         ]
       },

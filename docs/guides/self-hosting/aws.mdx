@@ -1,0 +1,81 @@
+---
+title: 'Self Hosting Nuon: AWS'
+description: 'Deploy Nuon in your AWS account'
+icon: 'cloud-arrow-up'
+keywords: ['self-hosted Nuon', 'Install Nuon', 'AWS Deployment']
+---
+
+## Dependency Overview
+
+The `ctl-api` and `dashboard-ui` services depend on a handful of managed resources you'll provision in your cloud
+account before deploying Nuon.
+
+### Temporal
+
+Nuon uses Temporal to orchestrate long-running workflows: component builds, install provisioning, and deployment
+actions. The `ctl-api` connects to Temporal to schedule and drive these workflows. This guide assumes you have an
+existing temporal deployment already.
+
+We suggest using the official [temporal helm chart](https://github.com/temporalio/helm-charts/).
+
+### Clickhouse
+
+Clickhouse is the log and event store behind the Nuon dashboard: workflow logs, deployment history, and OTel traces
+stream into it from `ctl-api` and are served back to the UI for inspection. This guide is not concerned with configuring
+and operating clickhouse itself.
+
+We use the [`Altinity/clickhouse-operator`](https://github.com/Altinity/clickhouse-operator/) to deploy a 3-node CH
+Keeper cluster and a 2 node ClickHouse Cluster. The `ctl-api` expects a cluster since we leverage several features such
+as `ReplicatedMergeTree` tables.
+
+### RDS
+
+Two Postgres databases are required: one for `ctl-api`'s application state (orgs, apps, installs, builds) and one
+backing Temporal's persistence layer.
+
+Our [BYOC Nuon terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/rds_cluster_nuon) is
+a useful reference.
+
+### ECR
+
+`ctl-api` builds customer components into OCI artifacts and pushes them to an ECR registry in the management account,
+where runners later pull them during install deployments.
+
+### IAM Roles
+
+The `ctl-api` deployment relies on an IAM role (attached to the service account) with specific permissions which we
+enumerate here.
+
+The [BYOC Nuon terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon/src/components/management) is a
+useful reference.
+
+#### ECR
+
+A management IAM role is used by `ctl-api` to push to ECR and assume cross-account roles into customer AWS accounts,
+while service-account roles (IRSA) grant the `ctl-api` and `dashboard-ui` pods scoped access to AWS APIs.
+
+#### RDS
+
+The `ctl-api` uses RDS IAM auth to connect to the db, as opposed to a `DATABASE_URI` with credentials baked in.
+
+#### S3
+
+The blob storage requires the `ctl-api` to be able to read and write from an S3 bucket.
+
+## Deploying Nuon
+
+We maintain helm charts for Nuon at [`nuonco/charts`](https://github.com/nuonco/charts). These can be deployed with helm
+into an existing EKS cluster.
+
+<!-- prettier-ignore-start --!>
+> [!NOTE]
+> Our helm configs make heavy use of annotations for nodepool selection because we use
+> Karpenter. We recommend deploying to an EKS cluster with Karpenter installed or EKS Auto Mode.
+<!-- prettier-ignore-start --!>
+
+Please refer to the charts to deploy the following two services:
+
+- [`ctl-api`](https://github.com/nuonco/charts/tree/main/charts/ctl-api)
+- [`dashboard-ui`](https://github.com/nuonco/charts/tree/main/charts/dashboard-ui)
+
+Note: `dashboard-ui` depends on `ctl-api`.
