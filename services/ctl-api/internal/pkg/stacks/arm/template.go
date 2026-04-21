@@ -88,9 +88,6 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Parameters[k] = v
 	}
 
-	// Key Vault (inline resource, depends on VNet for service endpoints)
-	tmpl.Resources = append(tmpl.Resources, t.getKeyVaultResource(inp))
-
 	// Runner linked deployment (or use default inline)
 	if !t.cfg.UseLocalRunners {
 		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp)
@@ -180,6 +177,6 @@ func (t *Templates) addStandardOutputs(tmpl *ARMTemplate) {
 	}
 	tmpl.Outputs["keyVaultUri"] = ARMOutput{
 		Type:  "string",
-		Value: "[reference(resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))).vaultUri]",
+		Value: "[format('https://{0}.vault.azure.net/', take(format('{0}', parameters('nuonInstallID')), 24))]",
 	}
 }

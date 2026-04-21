@@ -11,7 +11,6 @@ func (t *Templates) getKeyVaultRoleAssignment() map[string]any {
 		"scope":      "[resourceId('Microsoft.KeyVault/vaults', " + kvName + ")]",
 		"dependsOn": []string{
 			"runnerDeployment",
-			"[resourceId('Microsoft.KeyVault/vaults', " + kvName + ")]",
 		},
 		"properties": map[string]any{
 			"roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
