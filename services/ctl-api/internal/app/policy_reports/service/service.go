@@ -17,6 +17,7 @@ type Params struct {
 
 	V             *validator.Validate
 	DB            *gorm.DB `name:"psql"`
+	CHDB          *gorm.DB `name:"ch"`
 	MW            metrics.Writer
 	L             *zap.Logger
 	Cfg           *internal.Config
@@ -25,11 +26,12 @@ type Params struct {
 
 type service struct {
 	api.RouteRegister
-	v   *validator.Validate
-	db  *gorm.DB
-	mw  metrics.Writer
-	l   *zap.Logger
-	cfg *internal.Config
+	v    *validator.Validate
+	db   *gorm.DB
+	chDB *gorm.DB
+	mw   metrics.Writer
+	l    *zap.Logger
+	cfg  *internal.Config
 }
 
 var _ api.Service = (*service)(nil)
@@ -41,6 +43,13 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		policyReports.GET("/:report_id", s.GetPolicyReport)
 		policyReports.GET("/:report_id/export", s.ExportPolicyReport)
 	}
+
+	analytics := ge.Group("/v1/apps/:app_id/policy-analytics")
+	{
+		analytics.GET("/summary", s.GetPolicyAnalyticsSummary)
+		analytics.GET("/timeseries", s.GetPolicyAnalyticsTimeseries)
+	}
+
 	return nil
 }
 
@@ -65,10 +74,11 @@ func New(params Params) *service {
 		RouteRegister: api.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		v:   params.V,
-		db:  params.DB,
-		mw:  params.MW,
-		l:   params.L,
-		cfg: params.Cfg,
+		v:    params.V,
+		db:   params.DB,
+		chDB: params.CHDB,
+		mw:   params.MW,
+		l:    params.L,
+		cfg:  params.Cfg,
 	}
 }
