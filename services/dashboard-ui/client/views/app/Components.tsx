@@ -26,6 +26,9 @@ export const Components = () => {
         <Text variant="base" weight="strong">
           App components
         </Text>
+        <Text variant="subtext" theme="neutral">
+          Manage the components that make up your application.
+        </Text>
       </HeadingGroup>
       <div className="flex flex-auto">
         <ComponentsTable />
