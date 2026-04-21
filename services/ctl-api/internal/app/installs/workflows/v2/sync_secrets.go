@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func SyncSecrets(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	sg := newStepGroup()
 
@@ -67,5 +67,5 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, 
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	return steps, nil
+	return sg.Result(steps), nil
 }

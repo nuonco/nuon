@@ -36,6 +36,23 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 			// Paused at approval - update run status and wait for resume
 			s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 		} else {
+			// FlowStoppedErr is a terminal state — not retryable
+			if _, ok := runErr.(*flow.FlowStoppedErr); ok {
+				s.updateRunStatus(ctx, run.ID, app.StatusError)
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusError,
+						StatusHumanDescription: "workflow stopped",
+						Metadata: map[string]any{
+							"error_message": runErr.Error(),
+							"stopped":       true,
+						},
+					},
+				})
+				return runErr
+			}
+
 			// Actual execution error
 			s.updateRunStatus(ctx, run.ID, app.StatusError)
 
@@ -95,9 +112,14 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 			continue
 		}
 
-		// ApprovalPauseErr means we stopped at an approval - return nil to enter wait loop
+		// ApprovalPauseErr means we stopped at an approval or pause - return nil to enter wait loop
 		if _, ok := err.(*flow.ApprovalPauseErr); ok {
 			return nil
+		}
+
+		// FlowStoppedErr means the workflow was stopped (denied/skipped) — not a retryable error
+		if _, ok := err.(*flow.FlowStoppedErr); ok {
+			return err
 		}
 
 		// Actual failure
@@ -106,9 +128,11 @@ func (s *Signal) executeRun(ctx workflow.Context, run *app.WorkflowRun) error {
 	}
 }
 
-// handle is the inlined equivalent of WorkflowConductor.Handle(). It manages
-// the full lifecycle of a flow execution: generate steps, execute steps, update status.
-func (s *Signal) handle(ctx workflow.Context, startFromStepIdx int) error {
+// handle manages the full lifecycle of a flow execution: generate steps, then
+// dispatch groups sequentially. Each group is dispatched as an execute-workflow-step-group
+// signal. After each group, the flow checks the workflow's ResultDirective and the
+// pause state.
+func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil
@@ -138,83 +162,173 @@ func (s *Signal) handle(ctx workflow.Context, startFromStepIdx int) error {
 		}
 	}()
 
-	if startFromStepIdx == 0 {
+	if startFromGroupIdx == 0 {
 		if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, s.WorkflowID); err != nil {
 			return err
 		}
 	}
 
-	// Generate steps
-	l.Debug("generating steps for workflow")
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: s.WorkflowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "generating steps for workflow",
-		},
-	}); err != nil {
-		return err
-	}
-
 	cfg := s.stepConfig()
-	flw, err = flow.GenerateSteps(ctx, cfg, flw, nil)
-	if err != nil {
+
+	// Generate steps if the workflow doesn't already have them.
+	// Steps may be pre-created (e.g. by tests or by a previous run that was
+	// ContinueAsNew'd) — in that case, skip generation.
+	if len(flw.Steps) == 0 {
+		l.Debug("generating steps for workflow")
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
-				StatusHumanDescription: "error while generating steps",
-				Metadata: map[string]any{
-					"error_message": err.Error(),
-				},
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: "generating steps for workflow",
 			},
 		}); err != nil {
 			return err
 		}
 
-		return errors.Wrap(err, "unable to generate workflow steps")
-	}
-
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: s.WorkflowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "successfully generated all steps",
-		},
-	}); err != nil {
-		return err
-	}
-
-	// Execute steps
-	l.Debug("executing steps for workflow")
-	err = flow.ExecuteStepsViaChildWorkflow(ctx, cfg, flw, startFromStepIdx)
-	if err != nil {
-		if _, ok := err.(*flow.ContinueAsNewErr); ok {
-			return err
+		if flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil {
+			return errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
 		}
-	}
 
-	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
-		l.Error("unable to update finished at", zap.Error(err))
-	}
+		flw, err = flow.GenerateSteps(ctx, cfg, flw, nil)
+		if err != nil {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "error while generating steps",
+					Metadata: map[string]any{
+						"error_message": err.Error(),
+					},
+				},
+			})
 
-	if err != nil {
-		status := app.CompositeStatus{
-			Status:                 app.StatusError,
-			StatusHumanDescription: "error while executing steps",
-			Metadata: map[string]any{
-				"error_message": err.Error(),
-			},
+			return errors.Wrap(err, "unable to generate workflow steps")
 		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID:     s.WorkflowID,
-			Status: status,
+			ID: s.WorkflowID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: "successfully generated all steps",
+			},
 		}); err != nil {
 			return err
 		}
+	} else {
+		l.Debug("steps already exist, skipping generation", zap.Int("step_count", len(flw.Steps)))
+	}
 
-		return errors.Wrap(err, "unable to execute workflow steps")
+	// Load step groups for the workflow.
+	// If groups exist (new path), iterate over them. Otherwise fall back to
+	// collecting group indices from steps (backward compat for in-flight workflows).
+	stepGroups, _ := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+
+	var groups []app.WorkflowStepGroup
+	if len(stepGroups) > 0 {
+		groups = stepGroups
+	} else {
+		// Backward compat: build synthetic group objects from step GroupIdx values.
+		groupIdxs := collectGroupIndices(flw.Steps)
+		for _, gIdx := range groupIdxs {
+			groups = append(groups, app.WorkflowStepGroup{
+				GroupIdx: gIdx,
+				Parallel: isGroupParallel(flw.Steps, gIdx),
+			})
+		}
+	}
+
+	// Execute groups
+	l.Debug("executing groups for workflow", zap.Int("group_count", len(groups)))
+
+	for gi := startFromGroupIdx; gi < len(groups); gi++ {
+		group := &groups[gi]
+
+		l.Debug("dispatching group", zap.Int("group_idx", group.GroupIdx), zap.Int("group_position", gi), zap.String("step_group_id", group.ID), zap.Bool("parallel", group.Parallel))
+
+		directive, err := s.executeGroup(ctx, group, flw)
+		if err != nil {
+			if errors.Is(ctx.Err(), workflow.ErrCanceled) {
+				return err
+			}
+
+			// Update flow status on error
+			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
+				l.Error("unable to update finished at", zap.Error(err))
+			}
+
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "error while executing group",
+					Metadata: map[string]any{
+						"error_message": err.Error(),
+						"group_idx":     group.GroupIdx,
+					},
+				},
+			})
+
+			return errors.Wrapf(err, "group %d failed", group.GroupIdx)
+		}
+
+		l.Debug("group completed", zap.Int("group_idx", group.GroupIdx), zap.String("directive", directive))
+
+		switch directive {
+		case "continue", "":
+			// Check if pause was requested
+			if s.pauseRequested {
+				return &flow.ApprovalPauseErr{StepID: "paused"}
+			}
+
+		case "stop":
+			s.markRemainingGroupStepsNotAttempted(ctx, l, groups, gi)
+			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
+				l.Error("unable to update finished at", zap.Error(err))
+			}
+			return flow.NewFlowStoppedErr("", "group returned stop directive")
+
+		case "await-approval":
+			return flow.NewApprovalPauseErr("")
+
+		case "retry-group":
+			// Clone the group and re-dispatch the same group position.
+			if err := s.cloneGroupForRetry(ctx, group.GroupIdx); err != nil {
+				return errors.Wrap(err, "unable to clone group for retry")
+			}
+			// Re-fetch groups
+			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+			if len(stepGroups) > 0 {
+				groups = stepGroups
+			} else {
+				flw, err = workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+				if err != nil {
+					return errors.Wrap(err, "unable to re-fetch workflow after retry-group")
+				}
+				groupIdxs := collectGroupIndices(flw.Steps)
+				groups = groups[:0]
+				for _, gIdx := range groupIdxs {
+					groups = append(groups, app.WorkflowStepGroup{
+						GroupIdx: gIdx,
+						Parallel: isGroupParallel(flw.Steps, gIdx),
+					})
+				}
+			}
+			gi-- // Retry the same group position
+			continue
+
+		case "skip-group":
+			continue
+		}
+
+		// ContinueAsNew every 5 groups to bound workflow history
+		if (gi+1-startFromGroupIdx) > 0 && (gi+1-startFromGroupIdx)%5 == 0 {
+			return &flow.ContinueAsNewErr{StartFromStepIdx: gi + 1}
+		}
+	}
+
+	// All groups done
+	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
+		l.Error("unable to update finished at", zap.Error(err))
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -228,6 +342,119 @@ func (s *Signal) handle(ctx workflow.Context, startFromStepIdx int) error {
 	}
 
 	return nil
+}
+
+// isGroupParallel returns true if any step in the group has GroupParallel=true.
+func isGroupParallel(steps []app.WorkflowStep, groupIdx int) bool {
+	for _, step := range steps {
+		if step.GroupIdx == groupIdx && step.GroupParallel {
+			return true
+		}
+	}
+	return false
+}
+
+// collectGroupIndices extracts sorted unique GroupIdx values from steps.
+func collectGroupIndices(steps []app.WorkflowStep) []int {
+	seen := make(map[int]bool)
+	var groups []int
+	for _, step := range steps {
+		if !seen[step.GroupIdx] {
+			seen[step.GroupIdx] = true
+			groups = append(groups, step.GroupIdx)
+		}
+	}
+	// Steps are already ordered by Idx, so groups come out in order
+	return groups
+}
+
+// findGroupPositionForStep returns the position (index into groupIdxs) of the
+// group that contains the given step. Returns 0 if the step is not found.
+func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) int {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		return 0
+	}
+
+	// Find the step's GroupIdx
+	stepGroupIdx := -1
+	for _, step := range steps {
+		if step.ID == stepID {
+			stepGroupIdx = step.GroupIdx
+			break
+		}
+	}
+	if stepGroupIdx == -1 {
+		return 0
+	}
+
+	// Find the position of that GroupIdx in the ordered group list
+	groupIdxs := collectGroupIndices(steps)
+	for i, gIdx := range groupIdxs {
+		if gIdx == stepGroupIdx {
+			return i
+		}
+	}
+	return 0
+}
+
+// markRemainingGroupStepsNotAttempted marks all non-terminal steps in groups
+// after the given group index as not-attempted. This is called when a group
+// returns a "stop" directive (e.g. plan denied) so that future groups' steps
+// reflect that they were never executed.
+func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *zap.Logger, groups []app.WorkflowStepGroup, currentGroupPosition int) {
+	if currentGroupPosition+1 >= len(groups) {
+		return
+	}
+
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		l.Warn("unable to fetch steps to mark as not-attempted", zap.Error(err))
+		return
+	}
+
+	// Build set of group indices that come after the current group.
+	futureGroupIdxs := make(map[int]bool)
+	for i := currentGroupPosition + 1; i < len(groups); i++ {
+		futureGroupIdxs[groups[i].GroupIdx] = true
+	}
+
+	for _, step := range steps {
+		if !futureGroupIdxs[step.GroupIdx] {
+			continue
+		}
+		if isStepTerminal(step.Status.Status) {
+			continue
+		}
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusNotAttempted,
+				Metadata: map[string]any{
+					"reason": "workflow stopped before group was reached",
+				},
+			},
+		}); err != nil {
+			l.Warn("failed to mark step as not-attempted", zap.String("step_id", step.ID), zap.Error(err))
+		}
+	}
+}
+
+// isStepTerminal returns true if the step status is a terminal state.
+func isStepTerminal(status app.Status) bool {
+	switch status {
+	case app.StatusSuccess, app.StatusAutoSkipped, app.StatusUserSkipped,
+		app.StatusDiscarded, app.StatusCancelled, app.StatusError,
+		app.StatusNotAttempted,
+		app.WorkflowStepApprovalStatusApproved, app.WorkflowStepApprovalStatusApprovalDenied,
+		app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
+		return true
+	}
+	return false
 }
 
 // stepConfig returns the StepConfig for this signal.

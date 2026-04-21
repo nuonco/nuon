@@ -17,7 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	sg := newStepGroup()
 
@@ -172,5 +172,5 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflow
 		steps = append(steps, dependencyDeploySteps...)
 	}
 
-	return steps, nil
+	return sg.Result(steps), nil
 }

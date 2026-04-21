@@ -1,0 +1,31 @@
+package seed
+
+import (
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+)
+
+type Params struct {
+	fx.In
+
+	L          *zap.Logger
+	DB         *gorm.DB `name:"psql"`
+	AcctClient *account.Client
+}
+
+type Seeder struct {
+	DB          *gorm.DB
+	L           *zap.Logger
+	AcctHelpers *account.Client
+}
+
+func New(params Params) *Seeder {
+	return &Seeder{
+		DB:          params.DB,
+		L:           params.L,
+		AcctHelpers: params.AcctClient,
+	}
+}
