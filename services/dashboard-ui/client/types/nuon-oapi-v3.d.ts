@@ -3650,6 +3650,7 @@ export interface components {
       enabled?: boolean;
       id?: string;
       install_id?: string;
+      last_used_at?: string;
       org_id?: string;
       provisioned?: boolean;
       /** @description cloud specific role identifier */

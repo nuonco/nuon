@@ -8,6 +8,7 @@ import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
+import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TRunnerHeartbeat, TWorkflow, TWorkflowStepApproval } from '@/types'
@@ -61,6 +62,8 @@ export const OrgStatusBar = ({
         )}
         {org.name}
       </Text>
+
+      <VCSConnectionsStatusIndicator />
 
       {runner && (
         <ContextTooltip
