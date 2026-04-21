@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { useOrg } from '@/hooks/use-org'
 import { checkVCSConnectionStatus } from '@/lib/ctl-api/vcs-connections'
 import type { TVCSConnection } from '@/types'
 import { getStatusTheme } from '@/utils/vcs-connection-utils'
 import { VCSConnectionItem } from './VCSConnections'
-import { VCSManagementDropdown } from '../management/VCSManagementDropdown'
 
 const VCSConnectionWithStatus = ({
   vcs_connection,
@@ -31,11 +31,14 @@ const VCSConnectionWithStatus = ({
         statusTheme={getStatusTheme(data?.status)}
         isLoadingStatus={isLoading}
       />
-      <span className="self-end">
-        <Tooltip tipContent="More" position="left">
-          <VCSManagementDropdown vcs_connection={vcs_connection} />
-        </Tooltip>
-      </span>
+      <Button
+        href={`/${org?.id}/connections/vcs/${vcs_connection.id}`}
+        variant="ghost"
+        size="xs"
+        className="self-end"
+      >
+        <Icon variant="ArrowRight" size={16} />
+      </Button>
     </Text>
   )
 }
