@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -155,11 +156,12 @@ export const RepositoriesSection = ({
                 </div>
               ))
             ) : (
-              <Text variant="subtext" theme="neutral">
-                {isFiltering
-                  ? 'No repositories match your filters.'
-                  : 'No repositories accessible'}
-              </Text>
+              <EmptyState
+                variant="search"
+                size="sm"
+                emptyTitle={isFiltering ? 'No results' : 'No repositories'}
+                emptyMessage={isFiltering ? 'Try adjusting your search or filters.' : 'No repositories found for this connection.'}
+              />
             )}
           </div>
         </>
