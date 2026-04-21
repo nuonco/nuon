@@ -189,8 +189,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	// Sandbox mode routes
 	api.GET("/sandbox-mode", s.SandboxMode)
 	api.GET("/sandbox-mode/runner-jobs/table", s.SandboxModeRunnerJobsTable)
+	api.GET("/sandbox-mode/runner-jobs/rows", s.SandboxModeRunnerJobsRows)
 	api.GET("/sandbox-mode/builder", s.SandboxModeBuilder)
 	api.GET("/sandbox-mode/signals/table", s.SandboxModeSignalsTable)
+	api.GET("/sandbox-mode/signals/rows", s.SandboxModeSignalRows)
 	api.GET("/sandbox-mode/stacks/table", s.SandboxModeStacksTable)
 	api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
 	api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
