@@ -105,7 +105,7 @@ fi
 		"location":   "[parameters('location')]",
 		"tags":       "[variables('commonTags')]",
 		"kind":       "AzureCLI",
-		"dependsOn":  []string{"vnetDeployment", "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"},
+		"dependsOn":  []string{"vnetDeployment"},
 		"properties": map[string]any{
 			"forceUpdateTag":       "[parameters('deployTimestamp')]",
 			"azCliVersion":         "2.40.0",

@@ -2,7 +2,7 @@ package arm
 
 func (t *Templates) getKeyVaultRoleAssignment() map[string]any {
 	principalId := "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"
-	kvName := "[take(format('{0}', parameters('nuonInstallID')), 24)]"
+	kvName := "take(format('{0}', parameters('nuonInstallID')), 24)"
 
 	return map[string]any{
 		"type":       "Microsoft.Authorization/roleAssignments",
