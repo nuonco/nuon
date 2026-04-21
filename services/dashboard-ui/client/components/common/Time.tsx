@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { DateTime, type DateTimeFormatOptions } from 'luxon'
 import { Text, type IText } from './Text'
 import { Tooltip, type ITooltip } from './Tooltip'
@@ -42,14 +43,24 @@ export interface ITime extends Omit<IText, 'role'> {
   time?: string
   seconds?: number
   tooltipProps?: ITooltip
+  shouldTick?: boolean
 }
 
 export const Time = ({
   format = 'short-datetime',
   time,
   seconds,
+  shouldTick = false,
   ...props
 }: ITime) => {
+  const [, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!shouldTick) return
+    const id = setInterval(() => setTick((t) => t + 1), 30_000)
+    return () => clearInterval(id)
+  }, [shouldTick])
+
   let datetime: DateTime
 
   if (typeof seconds === 'number') {
@@ -62,8 +73,11 @@ export const Time = ({
 
   const getFormattedTime = () => {
     switch (format) {
-      case 'relative':
+      case 'relative': {
+        const diffSeconds = Math.abs(DateTime.now().diff(datetime, 'seconds').seconds)
+        if (diffSeconds < 10) return 'just now'
         return datetime.toRelative()
+      }
 
       case 'long-datetime':
         return datetime.toLocaleString(LONG_DATETIME_FORMAT)
