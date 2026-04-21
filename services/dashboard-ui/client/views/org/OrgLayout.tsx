@@ -15,6 +15,7 @@ import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { useSpotlight } from '@/hooks/use-spotlight'
+import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
 
 const SpotlightListener = () => {
   useSpotlight()
@@ -39,6 +40,7 @@ export const OrgLayout = () => {
                     <WorkflowApprovalsProvider>
                       <SurfacesProvider>
                       <SpotlightListener />
+                      <VCSConnectionSuccess />
                       <MainLayout
                         versions={{
                           api: {
