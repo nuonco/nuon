@@ -26,7 +26,7 @@ type SleepAfter interface {
 	SleepAfter() time.Duration
 }
 
-const DefaultSleepAfter time.Duration = 0
+const DefaultSleepAfter = 1 * time.Minute
 
 // Raw is a signal envelope for enqueueing without importing the concrete signal
 // package. The queue handler deserializes into the real registered type via the

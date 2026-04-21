@@ -45,12 +45,6 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 // by workflow cancellation. Errors are swallowed because after-phase
 // hooks must never block or fail the signal execution.
 func (h *handler) runAfterPhaseSafe(ctx workflow.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) {
-	// Skip the activity round-trip if no registered hook would handle this event.
-	// This avoids ~1s of Temporal orchestration overhead per signal phase.
-	if !hookPhaseMayRun(event.Phase) {
-		return
-	}
-
 	// use a disconnected context so cancellation doesn't prevent hook delivery
 	dctx, _ := workflow.NewDisconnectedContext(ctx)
 
@@ -63,12 +57,6 @@ func (h *handler) runAfterPhaseSafe(ctx workflow.Context, event signal.SignalPha
 // runBeforePhase runs before-phase hooks and returns the decision.
 // If hook execution fails, it returns an allow decision (fail-open).
 func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseEvent) signal.BeforePhaseDecision {
-	// Skip the activity round-trip if no registered hook would handle this event.
-	// This avoids ~1s of Temporal orchestration overhead per signal phase.
-	if !hookPhaseMayRun(event.Phase) {
-		return signal.AllowPhaseDecision()
-	}
-
 	resp, err := signal.AwaitRunSignalLifecycleBeforePhase(ctx, &signal.RunSignalLifecycleBeforePhaseRequest{
 		Event: event,
 	})
@@ -82,17 +70,6 @@ func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseE
 		Reason:   resp.Reason,
 		Metadata: resp.Metadata,
 	}
-}
-
-// hookPhaseMayRun returns true when at least one registered lifecycle hook
-// could plausibly fire for the given phase. Today the only registered hook
-// is WebhookSignalLifecycleHook, which explicitly skips the validate phase
-// in its Supports() method, so calling the activity for validate only incurs
-// Temporal overhead with no work done.
-//
-// If a future hook needs to run in validate phase, update this check.
-func hookPhaseMayRun(phase signal.SignalPhase) bool {
-	return phase != signal.SignalPhaseValidate
 }
 
 // outcomeFromError builds a SignalPhaseOutcome from an error and duration.

@@ -16,22 +16,9 @@ import (
 )
 
 const (
-	initialPollPeriod time.Duration = 500 * time.Millisecond
-	maxPollPeriod     time.Duration = 10 * time.Second
+	defaultJobPollPeriod       time.Duration = time.Second * 1
+	defaultAvailablePollPeriod time.Duration = time.Second * 1
 )
-
-// nextPollPeriod doubles the current poll period, capped at maxPollPeriod.
-// Pass zero to get the initial period.
-func nextPollPeriod(current time.Duration) time.Duration {
-	if current <= 0 {
-		return initialPollPeriod
-	}
-	next := current * 2
-	if next > maxPollPeriod {
-		return maxPollPeriod
-	}
-	return next
-}
 
 // this function is the most core part of the runner job system, it's responsible for a.) marking a job as available and
 // then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
@@ -79,10 +66,8 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 
 	// TODO(jm): move this into a separate function
 	if job.Group != app.RunnerJobGroupOperations {
-		var pollPeriod time.Duration
 		for runnerStatus != app.RunnerStatusActive {
-			pollPeriod = nextPollPeriod(pollPeriod)
-			workflow.Sleep(ctx, pollPeriod)
+			workflow.Sleep(ctx, defaultAvailablePollPeriod)
 			// NOTE - first pass through this loop will have garbage data for the runner status
 			etags["runner_status"] = string(runnerStatus)
 
@@ -142,10 +127,8 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	}
 
 	// poll until the job is picked up, and an execution exists
-	var pickupPollPeriod time.Duration
 	for !jobExecutionFound {
-		pickupPollPeriod = nextPollPeriod(pickupPollPeriod)
-		workflow.Sleep(ctx, pickupPollPeriod)
+		workflow.Sleep(ctx, defaultAvailablePollPeriod)
 
 		now := workflow.Now(ctx)
 		if now.After(overallTimeout) {

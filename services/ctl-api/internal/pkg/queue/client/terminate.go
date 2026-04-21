@@ -9,40 +9,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// Terminate performs full teardown of a queue:
-//  1. Cancels any non-terminal queue signals (sends cancel update to their handler
-//     workflows, which exits them and marks DB rows cancelled).
-//  2. Stops and deletes the emitters (cancels their Temporal workflows).
-//  3. Stops the queue workflow.
-//  4. Soft-deletes the queue record.
-//
-// Order is important: cancelling signals first ensures handler workflows can exit
-// cleanly via the cancel update before the queue workflow is stopped. Without
-// this step, handler workflows would be left orphaned in Temporal waiting for
-// `execute` updates that never come.
+// Terminate stops all emitters (cancelling their Temporal workflows), deletes the emitter
+// records, stops the queue workflow, and soft-deletes the queue record.
 func (c *Client) Terminate(ctx context.Context, queueID string) error {
-	// Cancel non-terminal signals first so their handler workflows exit cleanly.
-	var pendingSignals []app.QueueSignal
-	if res := c.db.WithContext(ctx).
-		Where("queue_id = ?", queueID).
-		Where("status->>'status' NOT IN (?, ?, ?)", app.StatusSuccess, app.StatusError, app.StatusCancelled).
-		Find(&pendingSignals); res.Error != nil {
-		c.l.Warn("unable to load pending queue signals for cancellation during terminate",
-			zap.String("queue-id", queueID), zap.Error(res.Error))
-	}
-
-	for _, qs := range pendingSignals {
-		if _, err := c.CancelSignal(ctx, qs.ID); err != nil {
-			c.l.Warn("unable to cancel queue signal during terminate",
-				zap.String("queue-id", queueID),
-				zap.String("queue-signal-id", qs.ID),
-				zap.Error(err))
-			// Best effort: ensure DB status is cancelled even if the update failed,
-			// so AwaitSignal callers don't block forever.
-			c.updateQueueSignalStatus(ctx, qs.ID, app.StatusCancelled)
-		}
-	}
-
 	var emitters []app.QueueEmitter
 	if res := c.db.WithContext(ctx).Where("queue_id = ?", queueID).Find(&emitters); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to get emitters for queue")
@@ -75,9 +44,6 @@ func (c *Client) Terminate(ctx context.Context, queueID string) error {
 		return errors.Wrap(res.Error, "unable to soft-delete queue")
 	}
 
-	c.l.Debug("queue terminated",
-		zap.String("queue-id", queueID),
-		zap.Int("cancelled-signals", len(pendingSignals)),
-		zap.Int("stopped-emitters", len(emitters)))
+	c.l.Debug("queue terminated", zap.String("queue-id", queueID))
 	return nil
 }
