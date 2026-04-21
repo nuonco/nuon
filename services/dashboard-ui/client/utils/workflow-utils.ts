@@ -36,7 +36,17 @@ export function getStepBadge(
   isApprovalPrompt?: boolean
 ): TBadgeCfg {
   if (step?.retried) {
+    const metadata = step?.status?.metadata
+    if (metadata?.auto_retried) {
+      return { children: 'Automatically retried', theme: 'info' }
+    }
     return { children: 'Retried', theme: 'info' }
+  }
+
+  const metadata = step?.status?.metadata
+  if (metadata?.is_retry) {
+    const retryIdx = metadata.retry_idx ?? metadata.group_retry_idx ?? 0
+    return { children: `Retry #${retryIdx}`, theme: 'info' }
   }
   if (step?.execution_type === 'skipped') {
     return { children: 'Skipped' }

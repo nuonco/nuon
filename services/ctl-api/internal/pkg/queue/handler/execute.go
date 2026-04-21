@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -97,7 +98,10 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		return nil, execErr
+		return nil, temporal.NewNonRetryableApplicationError(
+			"signal failure",
+			execErr.Error(),
+			execErr)
 	}
 
 	// persist success status to DB

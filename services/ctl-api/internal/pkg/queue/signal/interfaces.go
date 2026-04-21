@@ -21,6 +21,13 @@ type CloneStepDef struct {
 	ExecutionType string // maps to app.WorkflowStepExecutionType (string to avoid importing app)
 }
 
+// SignalWithRetryCount is implemented by signals that need to know their retry
+// index at execution time. When a step is executed, the conductor calls
+// SetRetryCount with the step's RetryIndex and GroupRetryIdx before Execute().
+type SignalWithRetryCount interface {
+	SetRetryCount(retryIndex, groupRetryIndex int)
+}
+
 // SignalWithCloneSteps is implemented by signals whose steps require prerequisite
 // steps when retried. For example, an apply signal may return a plan step + apply step
 // so that retrying an apply re-runs the plan first.
@@ -42,6 +49,18 @@ const DefaultMaxRetries = 10
 // a step error and triggers a retry if the retry budget hasn't been exhausted.
 type SignalWithAutoRetry interface {
 	AutoRetry() bool
+}
+
+// SignalWithRetryGroup is implemented by signals whose steps should retry as an
+// entire group. When a retry is triggered for a step whose signal returns
+// RetryGroup() == true, ALL steps sharing the same GroupIdx are cloned and
+// re-executed, not just the individual step.
+//
+// Mutually exclusive with parallel group execution — when a group has
+// Parallel=true, RetryGroup is not supported and individual step retries
+// are used instead.
+type SignalWithRetryGroup interface {
+	RetryGroup() bool
 }
 
 // ---------------------------------------------------------------------------

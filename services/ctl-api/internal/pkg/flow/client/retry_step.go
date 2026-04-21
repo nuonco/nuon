@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // RetryStepRequest is the input for retrying a workflow step.
@@ -22,33 +25,50 @@ type RetryStepResponse struct {
 }
 
 // RetryStep sends a "retry-step" update to the execute-flow handler workflow
-// for the given install workflow. The handler workflow stays alive while
-// retryable, so the update wakes it to retry the failed step.
+// for the given install workflow. Uses update-with-start so the handler is
+// restarted if it has already terminated.
 func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetryStepResponse, error) {
 	qs, err := c.findQueueSignalByOwner(ctx, req.InstallWorkflowID, "install_workflows", executeflow.SignalType)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "retry-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{
-				executeflow.RetryStepRequest{
-					StepID: req.StepID,
+	startOp := c.tClient.NewWithStartWorkflowOperation(
+		tclient.StartWorkflowOptions{
+			ID:                       qs.Workflow.ID,
+			TaskQueue:                "api",
+			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+			RetryPolicy: &temporal.RetryPolicy{
+				MaximumAttempts: 0,
+			},
+		},
+		"Handler",
+		handler.HandlerRequest{
+			QueueID:       qs.QueueID,
+			QueueSignalID: qs.ID,
+		},
+	)
+
+	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
+		tclient.UpdateWithStartWorkflowOptions{
+			UpdateOptions: tclient.UpdateWorkflowOptions{
+				WorkflowID:   qs.Workflow.ID,
+				UpdateName:   "retry-step",
+				WaitForStage: tclient.WorkflowUpdateStageAccepted,
+				Args: []any{
+					executeflow.RetryStepRequest{
+						StepID: req.StepID,
+					},
 				},
 			},
+			StartWorkflowOperation: startOp,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send retry-step update: %w", err)
 	}
 
-	var resp RetryStepResponse
-	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("unable to get retry-step response: %w", err)
-	}
-
-	return &resp, nil
+	return &RetryStepResponse{
+		WorkflowID: qs.Workflow.ID,
+		Retryable:  true,
+	}, nil
 }

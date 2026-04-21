@@ -8,9 +8,9 @@ package flow
 //  1. Idempotency check — if steps already exist for this workflow, return them.
 //  2. Enqueue the generate-steps signal to the target queue (e.g. install-signals).
 //  3. Send the "FetchSteps" update to the signal's handler workflow.
-//  4. Receive the generated []*app.WorkflowStep.
+//  4. Receive the generated GenerateStepsResult (steps + groups).
 //  5. Assign IDs, inject step context (stepID + flowID) into each signal.
-//  6. Persist steps to DB via the CreateFlowSteps activity.
+//  6. Persist groups and steps to DB.
 
 import (
 	"go.temporal.io/sdk/workflow"
@@ -26,7 +26,7 @@ import (
 )
 
 // generateStepsViaSignal enqueues the workflow's GenerateStepsSignal, fetches the
-// generated steps, then persists them directly — no child workflow needed.
+// generated steps and groups, then persists them directly — no child workflow needed.
 func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (*app.Workflow, error) {
 	// 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
 	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
@@ -56,43 +56,78 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		return nil, errors.Wrap(err, "unable to enqueue generate-steps signal")
 	}
 
-	// 4. Send "FetchSteps" update and receive the generated steps.
-	steps, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
+	// 4. Send "FetchSteps" update and receive the generated result.
+	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
 		QueueSignalID: enqueueResp.QueueSignalID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch steps from generate-steps signal")
 	}
 
-	// 5. Pre-generate step IDs and inject step context into signals.
+	steps := result.Steps
+	groups := result.Groups
+
+	// 5. Pre-generate group IDs and build GroupIdx→GroupID map.
+	groupIDByIdx := make(map[int]string)
+	if len(groups) > 0 {
+		for _, g := range groups {
+			g.ID = domains.NewWorkflowStepGroupID()
+			g.WorkflowID = flw.ID
+			groupIDByIdx[g.GroupIdx] = g.ID
+		}
+
+		// Persist groups to DB.
+		groupsReq := activities.CreateFlowStepGroupsRequest{
+			Groups: make([]activities.CreateFlowStepGroup, 0, len(groups)),
+		}
+		for _, g := range groups {
+			groupsReq.Groups = append(groupsReq.Groups, activities.CreateFlowStepGroup{
+				ID:         g.ID,
+				WorkflowID: flw.ID,
+				GroupIdx:   g.GroupIdx,
+				Parallel:   g.Parallel,
+				Name:       g.Name,
+				Status:     g.Status,
+			})
+		}
+		if _, err := activities.AwaitPkgWorkflowsFlowCreateFlowStepGroups(ctx, groupsReq); err != nil {
+			return nil, errors.Wrap(err, "unable to persist workflow step groups")
+		}
+	}
+
+	// 6. Pre-generate step IDs and inject step context into signals.
 	for _, step := range steps {
 		step.ID = domains.NewWorkflowStepID()
+		if groupID, ok := groupIDByIdx[step.GroupIdx]; ok {
+			step.WorkflowStepGroupID = groupID
+		}
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 			signal.ApplyStepContext(step.QueueSignal.Signal, step.ID, flw.ID)
 		}
 	}
 
-	// 6. Persist steps to DB.
+	// 7. Persist steps to DB.
 	stepsReq := activities.CreateFlowStepsRequest{
 		Steps: make([]activities.CreateFlowStep, 0, len(steps)),
 	}
 	for idx, step := range steps {
 		step.Idx = idx * 100
 		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
-			ID:            step.ID,
-			FlowID:        flw.ID,
-			OwnerID:       flw.OwnerID,
-			OwnerType:     flw.OwnerType,
-			Status:        step.Status,
-			Name:          step.Name,
-			Signal:        step.Signal,
-			QueueSignal:   step.QueueSignal,
-			Idx:           step.Idx,
-			ExecutionType: step.ExecutionType,
-			Metadata:      step.Metadata,
-			Retryable:     step.Retryable,
-			Skippable:     step.Skippable,
-			GroupIdx:      step.GroupIdx,
+			ID:                  step.ID,
+			FlowID:              flw.ID,
+			OwnerID:             flw.OwnerID,
+			OwnerType:           flw.OwnerType,
+			Status:              step.Status,
+			Name:                step.Name,
+			Signal:              step.Signal,
+			QueueSignal:         step.QueueSignal,
+			Idx:                 step.Idx,
+			ExecutionType:       step.ExecutionType,
+			Metadata:            step.Metadata,
+			Retryable:           step.Retryable,
+			Skippable:           step.Skippable,
+			GroupIdx:            step.GroupIdx,
+			WorkflowStepGroupID: step.WorkflowStepGroupID,
 		})
 	}
 
@@ -104,6 +139,11 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 	flw.Steps = make([]app.WorkflowStep, len(resp))
 	for i, step := range resp {
 		flw.Steps[i] = *step
+	}
+
+	flw.StepGroups = make([]app.WorkflowStepGroup, len(groups))
+	for i, g := range groups {
+		flw.StepGroups[i] = *g
 	}
 
 	return flw, nil

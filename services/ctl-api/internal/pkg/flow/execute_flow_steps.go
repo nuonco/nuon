@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -54,21 +53,21 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context,
 			if err == nil {
 				if directive := readStepDirective(steps, step.ID); directive != "" {
 					switch directive {
-					case flowutil.DirectiveAwaitApproval:
+					case DirectiveAwaitApproval:
 						return NewApprovalPauseErr(step.ID)
-					case flowutil.DirectiveSkipGroup:
+					case DirectiveSkipGroup:
 						i = findNextGroupStart(steps, step.GroupIdx, i)
 						continue
-					case flowutil.DirectiveStop:
+					case DirectiveStop:
 						if err := c.cancelFutureSteps(ctx, flw, i, "workflow step was denied"); err != nil {
 							return errors.Wrap(err, "unable to cancel future steps")
 						}
 						return ErrNotApproved
-					case flowutil.DirectiveRetry:
+					case DirectiveRetry:
 						// Clone was already created by step workflow; re-fetch picked it up.
 						// Don't advance i - the loop will pick up the clone at the next iteration.
 						continue
-					case flowutil.DirectiveContinue:
+					case DirectiveContinue:
 						// Normal success, fall through to batch check
 					}
 				}
@@ -124,7 +123,7 @@ func readStepDirective(steps []app.WorkflowStep, stepID string) string {
 	for _, s := range steps {
 		if s.ID == stepID {
 			if s.Status.Metadata != nil {
-				if d, ok := s.Status.Metadata[flowutil.DirectiveKey]; ok {
+				if d, ok := s.Status.Metadata[DirectiveKey]; ok {
 					if ds, ok := d.(string); ok {
 						return ds
 					}

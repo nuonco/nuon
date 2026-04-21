@@ -147,6 +147,12 @@ const (
 	// StepErrorBehaviorContinue StepErrorBehavior = "continue"
 )
 
+// GenerateStepsResult holds the output of a workflow step generator.
+type GenerateStepsResult struct {
+	Steps  []*WorkflowStep      `json:"steps"`
+	Groups []*WorkflowStepGroup `json:"groups"`
+}
+
 // TODO(jm): make install workflows a top level concept called a "workflow", and they belong to either an app or an
 // install.
 //
@@ -184,9 +190,17 @@ type Workflow struct {
 	// handler instead of using the hardcoded Generators map.
 	GenerateStepsSignal *signaldb.SignalData `json:"generate_steps_signal,omitempty" gorm:"type:jsonb"`
 
+	// ResultDirective is set by the currently executing group signal to communicate
+	// the group outcome back to the flow signal. Values: continue, stop, retry-group,
+	// skip-group, await-approval.
+	ResultDirective string `json:"result_directive,omitzero" gorm:"type:text;default:''" temporaljson:"result_directive,omitzero,omitempty"`
+
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 	Finished   bool      `json:"finished,omitzero" gorm:"-" temporaljson:"finished,omitzero,omitempty"`
+
+	// step groups represent logical groupings of steps within the workflow
+	StepGroups []WorkflowStepGroup `json:"step_groups,omitzero" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"step_groups,omitzero,omitempty"`
 
 	// steps represent each piece of the workflow
 	Steps []WorkflowStep `json:"steps,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
