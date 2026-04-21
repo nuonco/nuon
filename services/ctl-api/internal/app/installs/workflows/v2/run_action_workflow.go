@@ -26,6 +26,7 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 			TriggeredByID:           triggeredByID,
 			TriggeredByType:         string(app.ActionWorkflowTriggerTypeManual),
 			RunEnvVars:              runEnvVars,
+			Role:                    role,
 		},
 	}
 
@@ -107,6 +108,7 @@ func handleAdhocActionRun(ctx workflow.Context, flw *app.Workflow, installID str
 	sig := &actionworkflowrun.Signal{
 		InstallID:        installID,
 		AdhocActionRunID: run.ID,
+		Role:             flw.Role,
 	}
 
 	sg.nextGroup()

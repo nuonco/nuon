@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewGetInstallRolesParams creates a new GetInstallRolesParams object,
@@ -67,6 +68,32 @@ type GetInstallRolesParams struct {
 	*/
 	InstallID string
 
+	/* Limit.
+
+	   limit of results to return
+
+	   Default: 10
+	*/
+	Limit *int64
+
+	/* Offset.
+
+	   offset of results to return
+	*/
+	Offset *int64
+
+	/* Page.
+
+	   page number of results to return
+	*/
+	Page *int64
+
+	/* Q.
+
+	   search query to filter roles by display name
+	*/
+	Q *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -84,7 +111,24 @@ func (o *GetInstallRolesParams) WithDefaults() *GetInstallRolesParams {
 //
 // All values with no default are reset to their zero value.
 func (o *GetInstallRolesParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		limitDefault = int64(10)
+
+		offsetDefault = int64(0)
+
+		pageDefault = int64(0)
+	)
+
+	val := GetInstallRolesParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Page:   &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get install roles params
@@ -131,6 +175,50 @@ func (o *GetInstallRolesParams) SetInstallID(installID string) {
 	o.InstallID = installID
 }
 
+// WithLimit adds the limit to the get install roles params
+func (o *GetInstallRolesParams) WithLimit(limit *int64) *GetInstallRolesParams {
+	o.SetLimit(limit)
+	return o
+}
+
+// SetLimit adds the limit to the get install roles params
+func (o *GetInstallRolesParams) SetLimit(limit *int64) {
+	o.Limit = limit
+}
+
+// WithOffset adds the offset to the get install roles params
+func (o *GetInstallRolesParams) WithOffset(offset *int64) *GetInstallRolesParams {
+	o.SetOffset(offset)
+	return o
+}
+
+// SetOffset adds the offset to the get install roles params
+func (o *GetInstallRolesParams) SetOffset(offset *int64) {
+	o.Offset = offset
+}
+
+// WithPage adds the page to the get install roles params
+func (o *GetInstallRolesParams) WithPage(page *int64) *GetInstallRolesParams {
+	o.SetPage(page)
+	return o
+}
+
+// SetPage adds the page to the get install roles params
+func (o *GetInstallRolesParams) SetPage(page *int64) {
+	o.Page = page
+}
+
+// WithQ adds the q to the get install roles params
+func (o *GetInstallRolesParams) WithQ(q *string) *GetInstallRolesParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the get install roles params
+func (o *GetInstallRolesParams) SetQ(q *string) {
+	o.Q = q
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetInstallRolesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -142,6 +230,74 @@ func (o *GetInstallRolesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
 		return err
+	}
+
+	if o.Limit != nil {
+
+		// query param limit
+		var qrLimit int64
+
+		if o.Limit != nil {
+			qrLimit = *o.Limit
+		}
+		qLimit := swag.FormatInt64(qrLimit)
+		if qLimit != "" {
+
+			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Offset != nil {
+
+		// query param offset
+		var qrOffset int64
+
+		if o.Offset != nil {
+			qrOffset = *o.Offset
+		}
+		qOffset := swag.FormatInt64(qrOffset)
+		if qOffset != "" {
+
+			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Page != nil {
+
+		// query param page
+		var qrPage int64
+
+		if o.Page != nil {
+			qrPage = *o.Page
+		}
+		qPage := swag.FormatInt64(qrPage)
+		if qPage != "" {
+
+			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(res) > 0 {

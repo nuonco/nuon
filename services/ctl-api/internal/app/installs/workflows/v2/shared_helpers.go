@@ -87,6 +87,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 					"COMPONENT_ID":   comp.ID,
 					"COMPONENT_NAME": comp.Name,
 				},
+				Role: flw.Role,
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
@@ -123,6 +124,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 					"INSTALL_WORKFLOW_TYPE": string(flw.Type),
 					"INSTALL_WORKFLOW_ID":   flw.ID,
 				},
+				Role: flw.Role,
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
@@ -179,6 +181,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
 				InstallComponentID: installComponentID,
 				ComponentID:        comp.ID,
+				Role:               flw.Role,
 			}, flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
@@ -193,6 +196,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 				InstallComponentID: installComponentID,
 				ComponentID:        comp.ID,
+				Role:               flw.Role,
 			}, flw.PlanOnly, WithSkippable(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
