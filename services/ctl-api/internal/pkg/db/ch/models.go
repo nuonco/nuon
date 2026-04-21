@@ -17,6 +17,8 @@ func AllModels() []any {
 
 		&app.CHTableSize{},
 
+		&app.PolicyReportEvent{},
+
 		// noted but not migrated
 		// &app.LatestRunnerHeartBeat{},
 	}
