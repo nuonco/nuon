@@ -3,20 +3,21 @@ import fs from "node:fs";
 
 const ORG_STATE_PATH = "e2e/.auth/org.json";
 
-function getOrgId(): string {
-  const state = JSON.parse(fs.readFileSync(ORG_STATE_PATH, "utf-8")) as {
-    orgId: string;
-  };
-  return state.orgId;
+function getOrgState(): { orgId: string; appConfig?: string } {
+  return JSON.parse(fs.readFileSync(ORG_STATE_PATH, "utf-8"));
 }
 
 type Fixtures = {
   orgId: string;
+  appConfig: string | undefined;
 };
 
 export const test = base.extend<Fixtures>({
   orgId: async ({}, use) => {
-    await use(getOrgId());
+    await use(getOrgState().orgId);
+  },
+  appConfig: async ({}, use) => {
+    await use(getOrgState().appConfig);
   },
 });
 
