@@ -65,6 +65,19 @@ func (s *service) SandboxModeRunnerJobsTable(c *gin.Context) {
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
+func (s *service) SandboxModeRunnerJobsRows(c *gin.Context) {
+	ctx := c.Request.Context()
+	search := c.Query("search")
+	configs, err := s.getSandboxRunnerJobConfigs(ctx)
+	if err != nil {
+		s.l.Error("failed to get runner job configs", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	component := views.SandboxModeRunnerJobsRows(configs, sandboxmode.AllRunnerJobTypes(), search)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
 func (s *service) SandboxModeBuilder(c *gin.Context) {
 	jobType := c.Query("job_type")
 
@@ -92,6 +105,19 @@ func (s *service) SandboxModeSignalsTable(c *gin.Context) {
 		return
 	}
 	component := views.SandboxModeSignalsTable(configs, signals.AllSignalTypes(), search)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) SandboxModeSignalRows(c *gin.Context) {
+	ctx := c.Request.Context()
+	search := c.Query("search")
+	configs, err := s.getSandboxSignalConfigs(ctx)
+	if err != nil {
+		s.l.Error("failed to get signal configs", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	component := views.SandboxModeSignalRows(configs, signals.AllSignalTypes(), search)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
