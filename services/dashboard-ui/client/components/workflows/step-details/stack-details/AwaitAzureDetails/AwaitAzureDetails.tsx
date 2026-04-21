@@ -22,7 +22,8 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
   const overridableSecrets = customerSecrets?.filter((s) => !s.required && !!s.default)
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
-    const cmd = `az keyvault secret set --vault-name ${vaultName} --name ${secret.name} --value "<your-secret-value>"`
+    const kvName = secret.name.replaceAll('_', '-')
+    const cmd = `az keyvault secret set --vault-name ${vaultName} --name ${kvName} --value "<your-secret-value>"`
     return (
       <Card key={secret.name}>
         <span className="flex justify-between items-center">

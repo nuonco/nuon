@@ -17,7 +17,9 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput) map[string]a
 		envName := fmt.Sprintf("SECRET_%s_ID", secret.Name)
 		// Construct the Key Vault secret URI from the vault name and secret name.
 		// Secrets are customer pre-created; we reference them by convention.
-		envValue := fmt.Sprintf("[format('https://{0}.vault.azure.net/secrets/%s', take(format('{0}', parameters('nuonInstallID')), 24))]", secret.Name)
+		// Azure Key Vault secret names only allow alphanumeric characters and hyphens.
+		kvSecretName := strings.ReplaceAll(secret.Name, "_", "-")
+		envValue := fmt.Sprintf("[format('https://{0}.vault.azure.net/secrets/%s', take(format('{0}', parameters('nuonInstallID')), 24))]", kvSecretName)
 		secretEnvVars = append(secretEnvVars, map[string]any{"name": envName, "value": envValue})
 		secretPayloadFields = append(secretPayloadFields, fmt.Sprintf(`  "%s_secret_id": "$%s"`, secret.Name, envName))
 	}
