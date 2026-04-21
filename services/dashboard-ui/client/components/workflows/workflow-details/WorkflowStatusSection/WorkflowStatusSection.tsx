@@ -14,13 +14,18 @@ export const WorkflowStatusSection = ({ workflow }: IWorkflowStatusSection) => {
       <Text
         variant="h3"
         weight="stronger"
-        className="inline-flex gap-2"
+        className="inline-flex gap-2 max-w-[600px]"
         theme={getStatusTheme(workflow.status.status) as any}
-      >
-        <Status status={workflow.status.status} variant="timeline" />
-        {toSentenceCase(
+        title={toSentenceCase(
           workflow.status.status_human_description || workflow.status.status
         )}
+      >
+        <Status status={workflow.status.status} variant="timeline" />
+        <span className="truncate">
+          {toSentenceCase(
+            workflow.status.status_human_description || workflow.status.status
+          )}
+        </span>
       </Text>
 
       <Text variant="h3" weight="stronger">
