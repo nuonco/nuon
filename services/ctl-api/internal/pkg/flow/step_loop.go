@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -37,19 +36,19 @@ func ExecuteStepsViaChildWorkflow(ctx workflow.Context, cfg StepConfig, flw *app
 		if err == nil {
 			if directive := readStepDirective(steps, step.ID); directive != "" {
 				switch directive {
-				case flowutil.DirectiveAwaitApproval:
+				case DirectiveAwaitApproval:
 					return NewApprovalPauseErr(step.ID)
-				case flowutil.DirectiveSkipGroup:
+				case DirectiveSkipGroup:
 					i = findNextGroupStart(steps, step.GroupIdx, i)
 					continue
-				case flowutil.DirectiveStop:
+				case DirectiveStop:
 					if err := CancelFutureSteps(ctx, flw, i, "workflow step was denied"); err != nil {
 						return errors.Wrap(err, "unable to cancel future steps")
 					}
 					return ErrNotApproved
-				case flowutil.DirectiveRetry:
+				case DirectiveRetry:
 					continue
-				case flowutil.DirectiveContinue:
+				case DirectiveContinue:
 					// Normal success, fall through to batch check
 				}
 			}

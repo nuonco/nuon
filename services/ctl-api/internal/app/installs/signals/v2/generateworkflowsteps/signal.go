@@ -26,10 +26,10 @@ type Signal struct {
 	WorkflowID string `json:"workflow_id"`
 	OwnerType  string `json:"owner_type"`
 
-	// steps is populated by Execute and read by the FetchSteps handler.
-	steps []*app.WorkflowStep
-	done  bool
-	err   error
+	// result is populated by Execute and read by the FetchSteps handler.
+	result *app.GenerateStepsResult
+	done   bool
+	err    error
 }
 
 var (
@@ -83,14 +83,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.err
 	}
 
-	steps, err := gen(ctx, flw)
+	result, err := gen(ctx, flw)
 	if err != nil {
 		s.err = errors.Wrapf(err, "unable to generate steps for workflow %s", flw.ID)
 		s.done = true
 		return s.err
 	}
 
-	s.steps = steps
+	s.result = result
 	s.done = true
 
 	// Wait for the FetchSteps update to be called so the conductor can
@@ -100,7 +100,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	return workflow.SetUpdateHandlerWithOptions(ctx, "FetchSteps",
-		func(ctx workflow.Context) ([]*app.WorkflowStep, error) {
+		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			// Block until Execute has finished generating steps.
 			if err := workflow.Await(ctx, func() bool { return s.done }); err != nil {
 				return nil, err
@@ -108,7 +108,7 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 			if s.err != nil {
 				return nil, s.err
 			}
-			return s.steps, nil
+			return s.result, nil
 		},
 		workflow.UpdateHandlerOptions{},
 	)

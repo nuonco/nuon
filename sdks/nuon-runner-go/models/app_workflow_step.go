@@ -46,6 +46,9 @@ type AppWorkflowStep struct {
 	// to group steps which belong to same logical group, eg, plan/apply
 	GroupIdx int64 `json:"group_idx,omitempty"`
 
+	// GroupParallel indicates whether steps in this group should execute in parallel.
+	GroupParallel bool `json:"group_parallel,omitempty"`
+
 	// counter for every retry attempted on a group
 	GroupRetryIdx int64 `json:"group_retry_idx,omitempty"`
 
@@ -75,6 +78,11 @@ type AppWorkflowStep struct {
 
 	// policy validation
 	PolicyValidation *AppWorkflowStepPolicyValidation `json:"policy_validation,omitempty"`
+
+	// ResultDirective is set by the execute-workflow-step signal to communicate
+	// the step's outcome directive back to the group signal. Values: continue,
+	// stop, retry, retry-group, skip-group, await-approval.
+	ResultDirective string `json:"result_directive,omitempty"`
 
 	// retried
 	Retried bool `json:"retried,omitempty"`

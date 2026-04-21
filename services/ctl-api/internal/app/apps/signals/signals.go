@@ -27,7 +27,7 @@ const (
 	OperationUpdateSandbox    eventloop.SignalType = "update_sandbox"
 	OperationSyncCustomStacks eventloop.SignalType = "sync_custom_stacks"
 	OperationBuildSandbox     eventloop.SignalType = "build_sandbox"
-	OperationExecuteFlow      eventloop.SignalType = "execute-flow"
+	OperationExecuteFlow      eventloop.SignalType = "execute-workflow"
 )
 
 type Signal struct {

@@ -1,6 +1,8 @@
 package executeworkflowstep
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -54,6 +56,16 @@ type Signal struct {
 	// read during Cancel. Safe because Temporal workflows are single-threaded.
 	innerQueueSignalID string
 
+	// finished is set when Execute() completes (success or error). The
+	// step-finished update handler blocks until this is true, then returns the
+	// step's final status and directive.
+	finished bool
+
+	// retried is set by the "was-retried" update handler when the step-group
+	// decides to retry this step. It unblocks waitForApprovalResponse so the
+	// step can exit cleanly.
+	retried bool
+
 	// approved is set by the "approve-plan" update handler to reactively unblock
 	// approval waiting instead of polling.
 	approved bool
@@ -83,8 +95,18 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.approvePlanHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "step-finished",
+		s.stepFinishedHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "was-retried",
+		s.wasRetriedHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
 	return nil
 }
+
+func (s *Signal) SleepAfter() time.Duration { return 500 * time.Millisecond }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -110,39 +132,48 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 // Cancel propagates cancellation to the inner signal if one is currently executing.
+// The inner signal's Cancel() method is responsible for updating the underlying
+// resource (e.g. stack run) status to cancelled.
 func (s *Signal) Cancel(ctx workflow.Context) error {
-	if s.innerQueueSignalID == "" {
-		return nil
-	}
-
 	cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
 	defer cancelCtxCancel()
 
-	// Cancel the inner signal (e.g. the actual step signal on install-signals queue)
-	_, err := client.AwaitCancelSignal(cancelCtx, s.innerQueueSignalID)
-	if err != nil {
-		l, _ := log.WorkflowLogger(cancelCtx)
-		if l != nil {
+	l, _ := log.WorkflowLogger(cancelCtx)
+
+	if s.innerQueueSignalID != "" {
+		// Cancel the inner signal — this propagates to the actual step signal
+		// (e.g. sandbox plan, deploy) which should update its resource status.
+		_, err := client.AwaitCancelSignal(cancelCtx, s.innerQueueSignalID)
+		if err != nil && l != nil {
 			l.Warn("failed to cancel inner signal",
+				zap.String("step_id", s.StepID),
 				zap.String("inner_queue_signal_id", s.innerQueueSignalID),
 				zap.Error(err))
 		}
 	}
 
 	// Mark the step as cancelled
-	statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 		ID: s.StepID,
 		Status: app.CompositeStatus{
 			Status: app.StatusCancelled,
 		},
-	})
+	}); err != nil && l != nil {
+		l.Warn("failed to mark step as cancelled",
+			zap.String("step_id", s.StepID),
+			zap.Error(err))
+	}
 
 	// Update the step target status to cancelled
-	activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
 		StepID:            s.StepID,
 		Status:            app.StatusCancelled,
 		StatusDescription: "Cancelled",
-	})
+	}); err != nil && l != nil {
+		l.Warn("failed to update step target status on cancel",
+			zap.String("step_id", s.StepID),
+			zap.Error(err))
+	}
 
-	return err
+	return nil
 }

@@ -22,7 +22,7 @@ type FetchStepsRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 // @heartbeat-timeout 10s
-func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) ([]*app.WorkflowStep, error) {
+func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.GenerateStepsResult, error) {
 	q, err := c.getQueueSignal(ctx, req.QueueSignalID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue signal")
@@ -46,7 +46,7 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) ([]*app.
 		activity.RecordHeartbeat(ctx, runID)
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) ([]*app.WorkflowStep, error) {
+	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*app.GenerateStepsResult, error) {
 		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
 			RunID:        runID,
@@ -61,8 +61,8 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) ([]*app.
 			)
 		}
 
-		var steps []*app.WorkflowStep
-		if err := rawResp.Get(ctx, &steps); err != nil {
+		var result app.GenerateStepsResult
+		if err := rawResp.Get(ctx, &result); err != nil {
 			return nil, temporal.NewNonRetryableApplicationError(
 				fmt.Sprintf("FetchSteps result failed for signal %s: %s", req.QueueSignalID, err),
 				"FETCH_STEPS_FAILED",
@@ -70,7 +70,7 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) ([]*app.
 			)
 		}
 
-		return steps, nil
+		return &result, nil
 	})
 }
 

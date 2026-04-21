@@ -12,9 +12,15 @@ import (
 
 // CreateStepRetryResponse is the response from the "create-step-retry" update handler.
 type CreateStepRetryResponse struct {
+	// Directive is the result directive written to the step: "retry" for a
+	// single-step clone, "retry-group" when the group should be retried.
+	Directive string `json:"directive"`
 	NewStepID string `json:"new_step_id"`
 }
 
+// createStepRetryHandler marks the step as discarded and determines the retry
+// directive. The actual cloning is handled by the group which has the right
+// context (WorkflowStepGroupID, etc.).
 func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryResponse, error) {
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
 	if err != nil {
@@ -24,47 +30,43 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 		return nil, errors.New("step is not retryable")
 	}
 
-	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get workflow")
+	sig := stepSignal(step)
+
+	// Determine the directive based on signal capabilities.
+	directive := DirectiveRetry
+	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
+		directive = DirectiveRetryGroup
 	}
 
-	maxRetries := signal.DefaultMaxRetries
-	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
-		if mr, ok := step.QueueSignal.Signal.(signal.SignalWithMaxRetries); ok {
-			maxRetries = mr.MaxRetries()
-		}
+	// Mark original step as retried.
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, activities.UpdateFlowStepRetriedRequest{
+		StepID: step.ID,
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to mark step as retried")
 	}
 
-	// Mark original step as discarded
+	// Mark original step as discarded.
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusDiscarded,
-			StatusHumanDescription: "Step was discarded and retried by the user.",
+			StatusHumanDescription: "Step was discarded and retried.",
 			Metadata: map[string]any{
-				"retry_type":  "manual",
-				"retry_idx":   step.RetryIndex,
-				"max_retries": maxRetries,
+				"retry_type": "manual",
+				"directive":  directive,
 			},
 		},
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to mark step as discarded")
 	}
 
-	// Clone the step
-	if err := s.cloneWorkflowStep(ctx, step, flw); err != nil {
-		return nil, errors.Wrap(err, "unable to clone step for retry")
+	// Write the directive on the step.
+	if err := setResultDirective(ctx, step.ID, directive); err != nil {
+		return nil, errors.Wrap(err, "unable to set result directive")
 	}
 
-	// Fetch updated steps to find new step ID
-	steps, err := activities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, activities.GetFlowStepsRequest{
-		FlowID: flw.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get flow steps")
-	}
+	// Unblock waitForApprovalResponse if the step is waiting for approval.
+	s.retried = true
 
-	newStep := steps[len(steps)-1]
-	return &CreateStepRetryResponse{NewStepID: newStep.ID}, nil
+	return &CreateStepRetryResponse{Directive: directive}, nil
 }

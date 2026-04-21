@@ -15,8 +15,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
-	return teardownComponents(ctx, flw, newStepGroup())
+func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
+	sg := newStepGroup()
+	steps, err := teardownComponents(ctx, flw, sg)
+	if err != nil {
+		return nil, err
+	}
+	return sg.Result(steps), nil
 }
 
 func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup) ([]*app.WorkflowStep, error) {
