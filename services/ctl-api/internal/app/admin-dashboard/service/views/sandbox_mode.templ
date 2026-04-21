@@ -205,21 +205,25 @@ templ SandboxModeRunnerJobsTable(configs []app.SandboxModeJobConfig, allJobTypes
 					Name: "search", Type: input.TypeSearch,
 					Placeholder: "Search runner job types...", Value: search,
 					Attributes: templ.Attributes{
-						"hx-get":      "/sandbox-mode/runner-jobs/table",
+						"hx-get":      "/sandbox-mode/runner-jobs/rows",
 						"hx-trigger":  "keyup changed delay:300ms",
-						"hx-target":   "#runner-jobs-tab",
+						"hx-target":   "#runner-jobs-rows",
 						"hx-swap":     "innerHTML",
 						"hx-include":  "[name='search']",
 					},
 				})
 			</div>
-			<div class="divide-y divide-border">
-				for _, jt := range allJobTypes {
-					if search == "" || strings.Contains(jt, strings.ToLower(search)) {
-						@runnerJobCompactRow(jt, findRunnerJobConfig(configs, jt))
-					}
-				}
+			<div id="runner-jobs-rows" class="divide-y divide-border">
+				@SandboxModeRunnerJobsRows(configs, allJobTypes, search)
 			</div>
+		}
+	}
+}
+
+templ SandboxModeRunnerJobsRows(configs []app.SandboxModeJobConfig, allJobTypes []string, search string) {
+	for _, jt := range allJobTypes {
+		if search == "" || strings.Contains(jt, strings.ToLower(search)) {
+			@runnerJobCompactRow(jt, findRunnerJobConfig(configs, jt))
 		}
 	}
 }
@@ -703,20 +707,24 @@ templ SandboxModeSignalsTable(configs []app.SandboxModeSignalConfig, allTypes []
 					Name: "search", Type: input.TypeSearch,
 					Placeholder: "Search signal types...", Value: search,
 					Attributes: templ.Attributes{
-						"hx-get": "/sandbox-mode/signals/table",
+						"hx-get": "/sandbox-mode/signals/rows",
 						"hx-trigger": "keyup changed delay:300ms",
-						"hx-target": "#signals-tab", "hx-swap": "innerHTML",
+						"hx-target": "#signals-rows", "hx-swap": "innerHTML",
 						"hx-include": "[name='search']",
 					},
 				})
 			</div>
-			<div class="divide-y divide-border">
-				for _, st := range allTypes {
-					if search == "" || strings.Contains(st, strings.ToLower(search)) {
-						@signalRow(st, findSignalConfig(configs, st))
-					}
-				}
+			<div id="signals-rows" class="divide-y divide-border">
+				@SandboxModeSignalRows(configs, allTypes, search)
 			</div>
+		}
+	}
+}
+
+templ SandboxModeSignalRows(configs []app.SandboxModeSignalConfig, allTypes []string, search string) {
+	for _, st := range allTypes {
+		if search == "" || strings.Contains(st, strings.ToLower(search)) {
+			@signalRow(st, findSignalConfig(configs, st))
 		}
 	}
 }
