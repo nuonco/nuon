@@ -102,7 +102,11 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		zap.String("directive", directive))
 
 	if directive == "" {
-		directive = DirectiveContinue
+		if resp.Status == app.StatusError {
+			directive = DirectiveStop
+		} else {
+			directive = DirectiveContinue
+		}
 	}
 
 	return StepResult{Directive: directive}

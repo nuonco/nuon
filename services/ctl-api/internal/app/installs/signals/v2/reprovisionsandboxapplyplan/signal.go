@@ -38,11 +38,12 @@ var (
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 )
 
-func (s *Signal) MaxRetries() int { return 3 }
-
-// func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) MaxRetries() int  { return 3 }
+func (s *Signal) AutoRetry() bool  { return true }
+func (s *Signal) RetryGroup() bool { return true }
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
 		Operation: "sandbox-reprovision",

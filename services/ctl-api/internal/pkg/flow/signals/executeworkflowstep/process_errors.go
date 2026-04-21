@@ -30,27 +30,33 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		maxRetries = mr.MaxRetries()
 	}
 
-	nextRetryIndex := step.RetryIndex + 1
+	// Determine the directive based on signal capabilities. For retry-group
+	// signals the retry counter is GroupRetryIdx (reset per group clone);
+	// for plain retry it is the step-level RetryIndex.
+	directive := DirectiveRetry
+	retryIndex := step.RetryIndex
+	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
+		directive = DirectiveRetryGroup
+		retryIndex = step.GroupRetryIdx
+	}
+
+	nextRetryIndex := retryIndex + 1
 	if nextRetryIndex > maxRetries {
 		l.Warn("max retries exhausted",
 			zap.String("step_id", step.ID),
+			zap.String("directive", directive),
 			zap.Int("max_retries", maxRetries),
-			zap.Int("retry_index", step.RetryIndex))
+			zap.Int("retry_index", retryIndex))
 
+		// Exhausted: stop the workflow (or retry-group has no more budget).
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 			return errors.Wrap(err, "unable to set result directive")
 		}
 		return s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"retries_exhausted": true,
 			"max_retries":       maxRetries,
-			"retry_index":       step.RetryIndex,
+			"retry_index":       retryIndex,
 		})
-	}
-
-	// Determine the directive based on signal capabilities.
-	directive := DirectiveRetry
-	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
-		directive = DirectiveRetryGroup
 	}
 
 	l.Debug("auto-retry: writing directive",
@@ -73,7 +79,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				"reason":       stepErr.Error(),
 				"auto_retried": true,
 				"retry_type":   "auto",
-				"retry_idx":    step.RetryIndex,
+				"retry_idx":    retryIndex,
 				"max_retries":  maxRetries,
 				DirectiveKey:   directive,
 			},

@@ -77,9 +77,31 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		}
 	}
 
+	// Always clone from the original generation (generation 0) to avoid
+	// compound CloneSteps expansion. Derivative steps from later generations
+	// may themselves implement CloneSteps, which would create duplicates.
+	var stepsToClone []app.WorkflowStep
+	for _, step := range steps {
+		if step.RetryIndex == 0 && step.GroupRetryIdx == 0 {
+			stepsToClone = append(stepsToClone, step)
+		}
+	}
+
+	// Enforce per-step max retries at the group level. The group retry count
+	// is bounded by the minimum MaxRetries across all signals in the group
+	// (including signals produced by CloneSteps). For example, if plan has
+	// MaxRetries=3 and apply has MaxRetries=5, the group stops after 3.
+	groupMaxRetries := groupMaxRetriesForSteps(stepsToClone)
+	if newGroupRetryIdx > groupMaxRetries {
+		l.Warn("group retry exceeds per-step max retries",
+			zap.Int("new_group_retry_idx", newGroupRetryIdx),
+			zap.Int("group_max_retries", groupMaxRetries))
+		return fmt.Errorf("group retry %d exceeds max retries %d", newGroupRetryIdx, groupMaxRetries)
+	}
+
 	// Clone each step
-	cloneSteps := make([]activities.CreateFlowStep, 0, len(steps))
-	for i, step := range steps {
+	cloneSteps := make([]activities.CreateFlowStep, 0, len(stepsToClone))
+	for i, step := range stepsToClone {
 		// Check if the signal defines custom clone steps
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 			if cs, ok := step.QueueSignal.Signal.(signal.SignalWithCloneSteps); ok {
@@ -89,7 +111,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 						FlowID:      s.WorkflowID,
 						OwnerID:     step.OwnerID,
 						OwnerType:   step.OwnerType,
-						Name:        fmt.Sprintf("%s (retry %d)", def.Name, newGroupRetryIdx),
+						Name:        def.Name,
 						QueueSignal: &signaldb.SignalData{Signal: def.Signal},
 						Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
 							"is_retry":        true,
@@ -116,7 +138,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 			FlowID:      s.WorkflowID,
 			OwnerID:     step.OwnerID,
 			OwnerType:   step.OwnerType,
-			Name:        fmt.Sprintf("%s (retry %d)", step.Name, newGroupRetryIdx),
+			Name:        step.Name,
 			Signal:      step.Signal,
 			QueueSignal: step.QueueSignal,
 			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
@@ -145,4 +167,42 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 	}
 
 	return nil
+}
+
+// groupMaxRetriesForSteps returns the minimum MaxRetries across all signals
+// in the given steps, including signals produced by CloneSteps. Falls back to
+// signal.DefaultMaxRetries for signals that don't implement SignalWithMaxRetries.
+func groupMaxRetriesForSteps(steps []app.WorkflowStep) int {
+	minRetries := signal.DefaultMaxRetries
+
+	for _, step := range steps {
+		if step.QueueSignal == nil || step.QueueSignal.Signal == nil {
+			continue
+		}
+		sig := step.QueueSignal.Signal
+
+		// Check the step's own signal.
+		checkMax(sig, &minRetries)
+
+		// If the signal produces clone steps, check those signals too.
+		if cs, ok := sig.(signal.SignalWithCloneSteps); ok {
+			for _, def := range cs.CloneSteps(step.Name) {
+				if def.Signal != nil {
+					checkMax(def.Signal, &minRetries)
+				}
+			}
+		}
+	}
+
+	return minRetries
+}
+
+func checkMax(sig signal.Signal, minRetries *int) {
+	mr, ok := sig.(signal.SignalWithMaxRetries)
+	if !ok {
+		return
+	}
+	if v := mr.MaxRetries(); v < *minRetries {
+		*minRetries = v
+	}
 }
