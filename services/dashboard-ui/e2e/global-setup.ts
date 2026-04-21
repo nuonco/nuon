@@ -1,6 +1,8 @@
 import { chromium, type FullConfig } from "@playwright/test";
+import { execSync } from "node:child_process";
 import { env } from "./env";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const AUTH_STATE_PATH = "e2e/.auth/user.json";
@@ -40,6 +42,40 @@ async function apiFetch(
     throw new Error(`Public API ${apiPath} failed (${res.status}): ${body}`);
   }
   return res;
+}
+
+function seedApp(token: string, orgId: string, configName: string) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "e2e-app-config-"));
+  try {
+    execSync(
+      `git clone --depth 1 --filter=blob:none --sparse https://github.com/nuonco/example-app-configs.git .`,
+      { cwd: tmpDir, stdio: "inherit" },
+    );
+    execSync(`git sparse-checkout set ${configName}`, {
+      cwd: tmpDir,
+      stdio: "inherit",
+    });
+
+    const cliEnv = {
+      ...process.env,
+      NUON_API_TOKEN: token,
+      NUON_API_URL: env.publicApiUrl,
+      NUON_ORG_ID: orgId,
+      NUON_NO_TTY: "true",
+    };
+
+    execSync(`nuon apps create --name ${configName}`, {
+      env: cliEnv,
+      stdio: "inherit",
+    });
+    execSync(`nuon apps sync ${path.join(tmpDir, configName)} || true`, {
+      env: cliEnv,
+      stdio: "inherit",
+      shell: "/bin/sh",
+    });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 export default async function globalSetup(_config: FullConfig) {
@@ -82,10 +118,14 @@ export default async function globalSetup(_config: FullConfig) {
     createdOrg = true;
   }
 
+  if (createdOrg) {
+    seedApp(api_token, orgId, env.appConfig);
+  }
+
   fs.mkdirSync(path.dirname(ORG_STATE_PATH), { recursive: true });
   fs.writeFileSync(
     ORG_STATE_PATH,
-    JSON.stringify({ orgId, createdOrg }),
+    JSON.stringify({ orgId, createdOrg, appConfig: env.appConfig }),
   );
 
   const baseUrl = new URL(env.baseUrl);
