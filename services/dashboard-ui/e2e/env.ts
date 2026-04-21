@@ -12,4 +12,5 @@ export const env = {
     return required("E2E_EMAIL");
   },
   orgId: process.env.E2E_ORG_ID,
+  appConfig: process.env.E2E_APP_CONFIG ?? "httpbin",
 };
