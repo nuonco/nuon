@@ -336,7 +336,9 @@ export interface TUserJourney {
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
-export type TWorkflowStep = components['schemas']['app.WorkflowStep']
+export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
+  log_stream?: { id: string; open?: boolean }
+}
 export type TWorkflowStepApproval =
   components['schemas']['app.WorkflowStepApproval']
 export type TWorkflowStepApprovalResponse = { type: string } & any

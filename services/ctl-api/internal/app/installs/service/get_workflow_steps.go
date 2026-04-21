@@ -87,5 +87,11 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
 	}
 
+	stepPtrs := make([]*app.WorkflowStep, len(steps))
+	for i := range steps {
+		stepPtrs[i] = &steps[i]
+	}
+	s.loadStepLogStreams(ctx, stepPtrs)
+
 	return steps, nil
 }
