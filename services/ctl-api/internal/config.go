@@ -75,6 +75,7 @@ func init() {
 
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
 	config.RegisterDefault("temporal_disable_registration_aliasing", false)
+	config.RegisterDefault("temporal_sticky_workflow_cache_size", 40000)
 
 	config.RegisterDefault("action_crons_enabled", false)
 
@@ -334,10 +335,6 @@ func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
 		return nil, fmt.Errorf("unable to load config: %w", err)
-	}
-
-	if cfg.TemporalStickyWorkflowCacheSize == 0 {
-		cfg.TemporalStickyWorkflowCacheSize = 40000
 	}
 
 	v := validator.New()
