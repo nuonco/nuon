@@ -1,13 +1,13 @@
 import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PageSection } from '@/components/layout/PageSection'
@@ -82,111 +82,94 @@ export const PolicyDetail = () => {
       <div className="flex items-center justify-between">
         <HeadingGroup>
           <BackLink className="mb-4" />
-          <span className="flex items-center gap-3">
-            <Icon variant="ShieldCheck" size={24} />
-            <Text variant="base" weight="strong">
-              {policy?.name}
-            </Text>
-          </span>
+          <Text variant="base" weight="strong">
+            {policy?.name}
+          </Text>
           {policy?.id && <ID>{policy.id}</ID>}
         </HeadingGroup>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-start gap-10">
         {policy?.type && (
-          <Badge theme="default" size="md">
-            {formatPolicyType(policy.type)}
-          </Badge>
+          <LabeledValue label="Type">
+            <Text variant="subtext">{formatPolicyType(policy.type)}</Text>
+          </LabeledValue>
         )}
         {policy?.engine && (
-          <Badge theme={policy.engine === 'kyverno' ? 'brand' : 'info'} size="md">
-            {policy.engine.toUpperCase()}
-          </Badge>
+          <LabeledValue label="Engine">
+            <Text variant="subtext">{policy.engine}</Text>
+          </LabeledValue>
         )}
         {policy?.created_at && (
-          <Text variant="subtext" className="flex items-center gap-1">
-            Created <Time time={policy.created_at} format="relative" />
-          </Text>
+          <LabeledValue label="Created">
+            <Time variant="subtext" time={policy.created_at} format="relative" />
+          </LabeledValue>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card className="!p-0 overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
-              <Text weight="strong" variant="body">
-                Policy Definition
-              </Text>
+          <Card className="!p-5 !gap-4">
+            <div className="flex items-center justify-between">
+              <Text weight="strong">Policy Definition</Text>
               <ClickToCopyButton
                 textToCopy={policy?.contents ?? ''}
                 className="w-fit"
               />
             </div>
-            <div className="p-4">
-              <CodeBlock
-                language={getCodeLanguage(policy?.engine ?? '')}
-                className="max-h-[600px]"
-                showLineNumbers
-              >
-                {policy?.contents ?? ''}
-              </CodeBlock>
-            </div>
+            <CodeBlock
+              language={getCodeLanguage(policy?.engine ?? '')}
+              showLineNumbers
+              className="!max-h-none"
+            >
+              {policy?.contents ?? ''}
+            </CodeBlock>
           </Card>
         </div>
 
         <div className="lg:col-span-1">
-          <Card className="!p-0 overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
-              <Text weight="strong" variant="body">
-                Applicable Components
-              </Text>
-            </div>
-            <div className="p-4">
-              {isSandboxPolicy ? (
-                <div className="flex items-center gap-2 text-grey-600 dark:text-grey-400">
-                  <Icon variant="ShippingContainer" size={16} />
-                  <Text variant="body" className="italic">
-                    Sandbox
-                  </Text>
-                </div>
-              ) : isAllComponents ? (
-                <div className="flex items-center gap-2 text-grey-600 dark:text-grey-400">
-                  <Icon variant="Stack" size={16} />
-                  <Text variant="body" className="italic">
-                    All components
-                  </Text>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {policyComponents.map((comp) => {
-                    const componentId = componentNameToId[comp]
-                    return componentId ? (
-                      <Link
-                        key={comp}
-                        to={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
-                        className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
-                      >
-                        <Icon variant="Cube" size={14} />
-                        <Text variant="body">{comp}</Text>
-                        <Icon
-                          variant="ArrowSquareOut"
-                          size={12}
-                          className="ml-auto text-grey-400"
-                        />
-                      </Link>
-                    ) : (
-                      <div
-                        key={comp}
-                        className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600"
-                      >
-                        <Icon variant="Cube" size={14} />
-                        <Text variant="body">{comp}</Text>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+          <Card className="!p-5 !gap-4">
+            <Text weight="strong">Applicable Components</Text>
+            {isSandboxPolicy ? (
+              <div className="flex items-center gap-2">
+                <Icon variant="ShippingContainer" size={16} />
+                <Text variant="subtext">Sandbox</Text>
+              </div>
+            ) : isAllComponents ? (
+              <div className="flex items-center gap-2">
+                <Icon variant="Cards" size={16} />
+                <Text variant="subtext">All components</Text>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {policyComponents.map((comp) => {
+                  const componentId = componentNameToId[comp]
+                  return componentId ? (
+                    <Link
+                      key={comp}
+                      to={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
+                      className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
+                    >
+                      <Icon variant="Cards" size={14} />
+                      <Text variant="body">{comp}</Text>
+                      <Icon
+                        variant="ArrowSquareOut"
+                        size={12}
+                        className="ml-auto text-grey-400"
+                      />
+                    </Link>
+                  ) : (
+                    <div
+                      key={comp}
+                      className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600"
+                    >
+                      <Icon variant="Cards" size={14} />
+                      <Text variant="body">{comp}</Text>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </Card>
         </div>
       </div>

@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -41,6 +43,15 @@ export const Readme = () => {
           { path: `/${org?.id}/apps/${app?.id}/readme`, text: 'README' },
         ]}
       />
+
+      <HeadingGroup>
+        <Text variant="base" weight="strong">
+          README
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Documentation provided with your app configuration.
+        </Text>
+      </HeadingGroup>
 
       {isLoading ? (
         <ReadmeSkeleton />
