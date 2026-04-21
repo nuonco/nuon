@@ -1,13 +1,14 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
@@ -36,7 +37,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 	if !runner.Status.IsHealthy() {
 		l.Warn("runner is not healthy, not attempting")
 		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
-		return errors.New("runner is not healthy")
+		return pkgerrors.New("runner is not healthy")
 	}
 
 	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{
@@ -54,7 +55,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		RunnerID:  sreq.ID,
 		Threshold: runnerJob.CreatedAt.Add(-time.Minute * 5),
 	}); err != nil {
-		return errors.Wrap(err, "unable to flush orphaned jobs")
+		return pkgerrors.Wrap(err, "unable to flush orphaned jobs")
 	}
 
 	// Bail out if the job was already marked as cancelled
@@ -63,8 +64,16 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return nil
 	}
 
-	activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})
+	// On CAN resume the job is already in-progress; skip StartedAt so we don't
+	// overwrite the real start time with the rotation time.
+	if runnerJob.Status != app.RunnerJobStatusInProgress {
+		activities.AwaitUpdateJobStartedAt(ctx, activities.UpdateJobStartedAtRequest{JobID: sreq.JobID, StartedAt: workflow.Now(ctx)})
+	}
+	var continuing bool
 	defer func() {
+		if continuing {
+			return
+		}
 		// NOTE(fd): wrapped this in a func so the time is set correctly
 		activities.AwaitUpdateJobFinishedAt(ctx, activities.UpdateJobFinishedAtRequest{JobID: sreq.JobID, FinishedAt: workflow.Now(ctx)})
 	}()
@@ -108,9 +117,24 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
 		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
-		retry, started, err := w.startJobExecution(ctx, runnerJob)
-		if err != nil {
-			return err
+
+		var started, retry bool
+		var err error
+
+		// On CAN resume the job is already running on a runner; re-entering the
+		// Available-handoff phase would flip the runner protocol mid-execution.
+		if runnerJob.Status == app.RunnerJobStatusInProgress {
+			started = true
+			retry = true
+		} else {
+			retry, started, err = w.startJobExecution(ctx, runnerJob)
+			if errors.Is(err, errContinueAsNew) {
+				continuing = true
+				return workflow.NewContinueAsNewError(ctx, (*Workflows).ProcessJob, sreq)
+			}
+			if err != nil {
+				return err
+			}
 		}
 		// if the job was not started, we _only_ continue if this was a retryable state
 		if !started {
@@ -122,6 +146,10 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 		// job was started, and the execution
 		retry, err = w.monitorJobExecution(ctx, runnerJob)
+		if errors.Is(err, errContinueAsNew) {
+			continuing = true
+			return workflow.NewContinueAsNewError(ctx, (*Workflows).ProcessJob, sreq)
+		}
 		if err != nil {
 			return err
 		}
