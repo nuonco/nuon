@@ -45,6 +45,9 @@ export const Policies = () => {
         <Text variant="base" weight="strong">
           App policies
         </Text>
+        <Text variant="subtext" theme="neutral">
+          Define validation rules that run against builds and deploys.
+        </Text>
       </HeadingGroup>
 
       <div className="flex flex-auto">

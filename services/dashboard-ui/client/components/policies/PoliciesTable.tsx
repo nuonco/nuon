@@ -1,8 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import type { TAppPolicyConfig } from '@/types'
@@ -10,6 +10,7 @@ import type { TAppPolicyConfig } from '@/types'
 type TPolicyRow = {
   id: string
   name: string
+  nameHref: string
   type: string
   engine: string
   components: string[]
@@ -40,11 +41,16 @@ function formatPolicyType(type: string): string {
     .join(' ')
 }
 
-function parsePolicyToTableData(policies: TAppPolicyConfig[]): TPolicyRow[] {
+function parsePolicyToTableData(
+  policies: TAppPolicyConfig[],
+  orgId: string,
+  appId: string,
+): TPolicyRow[] {
   return policies.map((policy) => ({
     id: policy.id || '',
     name:
       policy.name || extractPolicyName(policy.contents || '', policy.engine || ''),
+    nameHref: `/${orgId}/apps/${appId}/policies/${policy.id}`,
     type: policy.type || '',
     engine: policy.engine || '',
     components: policy.components || [],
@@ -59,7 +65,11 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     header: 'Policy Name',
     cell: (info) => (
       <span>
-        <Text variant="body">{info.getValue() as string}</Text>
+        <Text variant="body">
+          <Link href={info.row.original.nameHref}>
+            {info.getValue() as string}
+          </Link>
+        </Text>
         <ID>{info.row.original.id}</ID>
       </span>
     ),
@@ -69,20 +79,15 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     accessorKey: 'type',
     header: 'Type',
     cell: (info) => (
-      <Badge theme="default" size="sm">
-        {formatPolicyType(info.getValue() as string)}
-      </Badge>
+      <Text variant="subtext">{formatPolicyType(info.getValue() as string)}</Text>
     ),
   },
   {
     accessorKey: 'engine',
     header: 'Engine',
     cell: (info) => (
-      <Badge
-        theme={info.getValue() === 'kyverno' ? 'brand' : 'info'}
-        size="sm"
-      >
-        {(info.getValue() as string).toUpperCase()}
+      <Badge variant="code" theme="neutral">
+        {info.getValue() as string}
       </Badge>
     ),
   },
@@ -93,27 +98,19 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
       const components = info.getValue() as string[]
       const isSandbox = info.row.original.type === 'sandbox'
       if (isSandbox) {
-        return (
-          <Text variant="subtext" className="italic">
-            Sandbox
-          </Text>
-        )
+        return <Text variant="subtext">Sandbox</Text>
       }
       const isAllComponents =
         !components ||
         components.length === 0 ||
         (components.length === 1 && components[0] === '*')
       if (isAllComponents) {
-        return (
-          <Text variant="subtext" className="italic">
-            All components
-          </Text>
-        )
+        return <Text variant="subtext">All components</Text>
       }
       return (
         <div className="flex flex-wrap gap-1">
           {components.slice(0, 3).map((comp) => (
-            <Badge key={comp} theme="neutral" size="sm">
+            <Badge key={comp} theme="neutral">
               {comp}
             </Badge>
           ))}
@@ -142,20 +139,18 @@ export const PoliciesTable = ({
   orgId: string
   appId: string
 }) => {
-  const data = parsePolicyToTableData(policies)
+  const data = parsePolicyToTableData(policies, orgId, appId)
 
   const columns: ColumnDef<TPolicyRow>[] = policiesTableColumns.map((col) => {
     if (col.id === 'actions') {
       return {
         ...col,
         cell: (info) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            href={`/${orgId}/apps/${appId}/policies/${info.row.original.id}`}
-          >
-            View <Icon variant="CaretRightIcon" />
-          </Button>
+          <Text>
+            <Link href={`/${orgId}/apps/${appId}/policies/${info.row.original.id}`}>
+              View <Icon variant="CaretRightIcon" />
+            </Link>
+          </Text>
         ),
       }
     }

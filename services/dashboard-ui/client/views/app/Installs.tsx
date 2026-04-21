@@ -26,6 +26,9 @@ export const Installs = () => {
         <Text variant="base" weight="strong">
           App installs
         </Text>
+        <Text variant="subtext" theme="neutral">
+          View and manage deployments of your app into customer cloud accounts.
+        </Text>
       </HeadingGroup>
       <AppInstallsTable appId={app?.id} />
     </PageSection>

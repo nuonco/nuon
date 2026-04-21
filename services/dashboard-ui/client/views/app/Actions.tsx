@@ -26,6 +26,9 @@ export const Actions = () => {
         <Text variant="base" weight="strong">
           App actions
         </Text>
+        <Text variant="subtext" theme="neutral">
+          Configure and run day-2 operations on your installs.
+        </Text>
       </HeadingGroup>
       <ActionsTable />
     </PageSection>
