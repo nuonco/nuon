@@ -30,7 +30,7 @@ export const WorkflowContext = createContext<WorkflowContextValue | undefined>(u
 export const WorkflowProvider = ({
   children,
   workflowId,
-  pollInterval = 10000,
+  pollInterval = 4000,
   shouldPoll = false,
 }: {
   children: ReactNode

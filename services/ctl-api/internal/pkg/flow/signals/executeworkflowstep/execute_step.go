@@ -1,8 +1,6 @@
 package executeworkflowstep
 
 import (
-	"strconv"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -58,7 +56,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		ID: flw.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "executing step " + step.Name,
 			Metadata:               map[string]any{},
 		},
 	}); err != nil {
@@ -95,7 +93,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ID: flw.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "finished executing step " + strconv.Itoa(step.Idx+1),
+				StatusHumanDescription: "finished executing step " + step.Name,
 				Metadata: map[string]any{
 					"step_idx": step.Idx,
 					"status":   "ok",
