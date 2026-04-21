@@ -122,25 +122,21 @@ export const StepDetailPanelButton = ({
 
   const workflowStatus = workflow?.status?.status
   const workflowBlocked = workflowStatus === 'cancelled' || workflowStatus === 'error'
+  const suppressAutoOpen = planOnly || workflow?.type === 'drift_run' || workflow?.type === 'drift_run_reprovision_sandbox'
 
   useEffect(() => {
-    if (step.id && step.id === searchParams?.get('panel')) {
+    if (!suppressAutoOpen && step.id && step.id === searchParams?.get('panel')) {
       handleAddPanel()
-      return
     }
   }, [])
 
   useEffect(() => {
     if (autoOpened.current || !workflow) return
-    if (
-      !workflowBlocked &&
-      (isPendingApproval || isPendingAwaitStack) &&
-      panels.length === 0
-    ) {
+    if (!workflowBlocked && !suppressAutoOpen && (isPendingApproval || isPendingAwaitStack) && panels.length === 0) {
       autoOpened.current = true
       handleAddPanel()
     }
-  }, [workflow?.id, workflowBlocked, isPendingApproval, isPendingAwaitStack])
+  }, [workflow?.id, workflowBlocked, suppressAutoOpen, isPendingApproval, isPendingAwaitStack])
 
   return (
     <Button

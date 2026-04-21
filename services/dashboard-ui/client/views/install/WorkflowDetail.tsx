@@ -57,8 +57,6 @@ const WorkflowDetailContent = () => {
           <WorkflowSteps
             approvalPrompt={workflow?.approval_option === 'prompt'}
             planOnly={workflow?.plan_only}
-            workflowId={workflowId!}
-            shouldPoll
           />
         ) : (
           <WorkflowStepsSkeleton />
