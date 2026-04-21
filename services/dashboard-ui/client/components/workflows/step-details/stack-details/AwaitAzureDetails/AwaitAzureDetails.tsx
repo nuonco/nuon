@@ -5,14 +5,18 @@ import { Divider } from '@/components/common/Divider'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import type { TAppSecretConfig } from '@/types'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAzureDetails extends IStackDetails {
   installId: string
   azureLocation?: string
+  secrets?: TAppSecretConfig[]
 }
 
-export const AwaitAzureDetails = ({ stack, installId, azureLocation }: IAwaitAzureDetails) => {
+export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: IAwaitAzureDetails) => {
+  const vaultName = installId.slice(0, 24)
+
   return (
     <>
       <div className="flex flex-col gap-4">
@@ -75,6 +79,41 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation }: IAwaitAzu
           `}</Code>
         </Card>
       </div>
+
+      {secrets && secrets.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Create secrets in the Key Vault
+          </Text>
+          <Text variant="subtext">
+            After the stack is deployed, create the following secrets in the Key
+            Vault. The secret names must match exactly.
+          </Text>
+          {secrets.map((secret) => {
+            const cmd = `az keyvault secret set --vault-name ${vaultName} --name ${secret.name} --value "<your-secret-value>"`
+            return (
+              <Card key={secret.name}>
+                <span className="flex justify-between items-center">
+                  <Text>
+                    {secret.display_name || secret.name}
+                    {secret.required && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </Text>
+                  <ClickToCopyButton
+                    className="w-fit self-end"
+                    textToCopy={cmd}
+                  />
+                </span>
+                {secret.description && (
+                  <Text variant="subtext">{secret.description}</Text>
+                )}
+                <Code>{cmd}</Code>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       <Divider dividerWord="or" />
 

@@ -106,6 +106,13 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	// Phone home deployment script
 	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp))
 
+	// VMSS role assignments at resource-group scope (depends on runner VMSS)
+	if !t.cfg.UseLocalRunners {
+		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
+		// Key Vault Secrets User role for the runner VMSS identity
+		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
+	}
+
 	// Custom role subscription-level deployment (depends on runner VMSS)
 	if !t.cfg.UseLocalRunners {
 		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
@@ -170,5 +177,9 @@ func (t *Templates) addStandardOutputs(tmpl *ARMTemplate) {
 	tmpl.Outputs["keyVaultId"] = ARMOutput{
 		Type:  "string",
 		Value: "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
+	}
+	tmpl.Outputs["keyVaultUri"] = ARMOutput{
+		Type:  "string",
+		Value: "[reference(resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))).vaultUri]",
 	}
 }

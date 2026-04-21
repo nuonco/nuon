@@ -72,6 +72,7 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 		"privateSubnet3CIDR": map[string]any{"value": "10.128.134.0/24"},
 		"nuonInstallID":      map[string]any{"value": installID},
 		"location":           map[string]any{"value": location},
+		"commonTags":         map[string]any{"value": "[variables('commonTags')]"},
 	}
 
 	deployment := map[string]any{
@@ -100,6 +101,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-natgw-pip', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"sku":        map[string]any{"name": "Standard"},
 			"properties": map[string]any{
 				"publicIPAllocationMethod": "Static",
@@ -111,6 +113,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-natgw', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"sku":        map[string]any{"name": "Standard"},
 			"properties": map[string]any{
 				"publicIpAddresses": []any{
@@ -118,6 +121,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 						"id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
 					},
 				},
+				"idleTimeoutInMinutes": 4,
 			},
 			"dependsOn": []string{
 				"[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
@@ -129,6 +133,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-public-nsg', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"properties": map[string]any{
 				"securityRules": []any{
 					map[string]any{
@@ -154,6 +159,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-private-nsg', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"properties": map[string]any{
 				"securityRules": []any{},
 			},
@@ -164,6 +170,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-private-routetable', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"properties": map[string]any{
 				"disableBgpRoutePropagation": false,
 			},
@@ -175,6 +182,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"apiVersion": "2023-04-01",
 			"name":       "[format('{0}-vnet', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
 			"properties": map[string]any{
 				"addressSpace": map[string]any{
 					"addressPrefixes": []string{"[parameters('vnetCIDR')]"},
@@ -198,16 +206,25 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
 		"parameters": map[string]any{
-			"nuonInstallID":      map[string]any{"type": "string"},
-			"location":           map[string]any{"type": "string"},
-			"vnetCIDR":           map[string]any{"type": "string", "defaultValue": "10.128.0.0/16"},
-			"publicSubnet1CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.0/26"},
-			"publicSubnet2CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.64/26"},
-			"publicSubnet3CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.128/26"},
-			"runnerSubnetCIDR":   map[string]any{"type": "string", "defaultValue": "10.128.128.0/24"},
-			"privateSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.130.0/24"},
-			"privateSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.132.0/24"},
-			"privateSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.134.0/24"},
+			"nuonInstallID": map[string]any{"type": "string"},
+			"location":      map[string]any{"type": "string"},
+			"commonTags":    map[string]any{"type": "object"},
+			"vnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/16",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for this VNet."}},
+			"publicSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet."}},
+			"publicSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.64/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the second zone (optional)."}},
+			"publicSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.128/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the third zone (optional)."}},
+			"runnerSubnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.128.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the dedicated private subnet for the runner."}},
+			"privateSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.130.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet."}},
+			"privateSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.132.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the second zone (optional)."}},
+			"privateSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.134.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the third zone (optional)."}},
 		},
 		"variables": map[string]any{
 			"createPublicSubnet2":  "[not(empty(parameters('publicSubnet2CIDR')))]",

@@ -17,12 +17,12 @@ func (t *Templates) getKeyVaultResource(inp *stacks.TemplateInput) map[string]an
 			"enabledForDeployment":         true,
 			"enabledForTemplateDeployment": true,
 			"enabledForDiskEncryption":     true,
+			"enableRbacAuthorization":      true,
 			"tenantId":                     "[subscription().tenantId]",
 			"sku": map[string]any{
 				"name":   "standard",
 				"family": "A",
 			},
-			"accessPolicies": []any{},
 			"networkAcls": map[string]any{
 				"defaultAction": "Deny",
 				"bypass":        "AzureServices",

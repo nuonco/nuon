@@ -344,6 +344,10 @@ export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
 export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
 
+// app secrets
+export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']
+export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
+
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']
 export type TInstallStackVersion =
