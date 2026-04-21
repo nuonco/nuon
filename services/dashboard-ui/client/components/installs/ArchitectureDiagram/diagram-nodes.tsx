@@ -306,7 +306,7 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
         className="rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center justify-between cursor-default overflow-hidden"
         style={{ width: role.width, height: 48 }}
       >
-        <Text variant="label" weight="strong" className="truncate">
+        <Text variant="label" weight="strong" className="truncate min-w-0" title={role.name}>
           {role.name}
         </Text>
         <Status
