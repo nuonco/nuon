@@ -6,7 +6,7 @@ import { RepositoriesSection } from './RepositoriesSection'
 import type { TVCSConnectionReposResponse } from '@/types'
 
 const mockRepos: TVCSConnectionReposResponse = {
-  total_count: 3,
+  total_count: 6,
   repositories: [
     {
       id: 1,
@@ -38,6 +38,36 @@ const mockRepos: TVCSConnectionReposResponse = {
       default_branch: 'develop',
       updated_at: new Date(Date.now() - 7200000).toISOString(),
     },
+    {
+      id: 4,
+      full_name: 'nuonco/private-fork',
+      html_url: 'https://github.com/nuonco/private-fork',
+      description: 'A private fork',
+      private: true,
+      fork: true,
+      default_branch: 'main',
+      updated_at: new Date(Date.now() - 172800000).toISOString(),
+    },
+    {
+      id: 5,
+      full_name: 'nuonco/infra-modules',
+      html_url: 'https://github.com/nuonco/infra-modules',
+      description: 'Shared Terraform infrastructure modules',
+      private: true,
+      fork: false,
+      default_branch: 'main',
+      updated_at: new Date(Date.now() - 43200000).toISOString(),
+    },
+    {
+      id: 6,
+      full_name: 'nuonco/docs',
+      html_url: 'https://github.com/nuonco/docs',
+      description: null,
+      private: false,
+      fork: false,
+      default_branch: 'main',
+      updated_at: new Date(Date.now() - 604800000).toISOString(),
+    },
   ],
 } as TVCSConnectionReposResponse
 
@@ -58,5 +88,15 @@ export const Error = () => (
   <RepositoriesSection
     isLoading={false}
     error={{ error: 'Failed to load repositories. Check your GitHub connection.' }}
+  />
+)
+
+export const SingleRepo = () => (
+  <RepositoriesSection
+    repos={{
+      total_count: 1,
+      repositories: [mockRepos.repositories![0]],
+    } as TVCSConnectionReposResponse}
+    isLoading={false}
   />
 )

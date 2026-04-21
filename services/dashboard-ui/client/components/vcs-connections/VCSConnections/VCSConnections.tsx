@@ -1,11 +1,9 @@
 import { Status } from '@/components/common/Status'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import type { TVCSConnection } from '@/types'
 import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
-import { VCSManagementDropdown } from '../management/VCSManagementDropdown'
 import { VCSAccountLink } from '../VCSAccountLink'
 
 interface IVCSConnectionItem {
@@ -57,11 +55,6 @@ export const VCSConnections = ({
               statusTheme={statusMap[vcs?.id]?.theme}
               isLoadingStatus={statusMap[vcs?.id]?.isLoading}
             />
-            <span className="self-end">
-              <Tooltip tipContent="More" position="left">
-                <VCSManagementDropdown vcs_connection={vcs} />
-              </Tooltip>
-            </span>
           </Text>
         ))}
     </>

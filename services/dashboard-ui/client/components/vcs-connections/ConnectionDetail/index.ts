@@ -1,0 +1,4 @@
+export { ConnectionDetailContainer as ConnectionDetail } from './ConnectionDetailContainer'
+export { ConnectionDetail as ConnectionDetailComponent } from './ConnectionDetail'
+export { GitHubAccountSection } from './GitHubAccountSection'
+export { RepositoriesSection } from './RepositoriesSection'

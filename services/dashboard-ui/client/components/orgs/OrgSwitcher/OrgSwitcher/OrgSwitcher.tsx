@@ -11,7 +11,8 @@ import { OrgSummary } from '../OrgSummary'
 import { OrgsNavContainer as OrgsNav } from '../OrgsNavContainer'
 import type { TOrg } from '@/types'
 
-interface IOrgSwitcher extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {
+interface IOrgSwitcher
+  extends Omit<IDropdown, 'buttonText' | 'children' | 'id'> {
   org: TOrg
   isSidebarOpen: boolean
 }
@@ -52,7 +53,11 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
             <Text variant="subtext" weight="strong">
               GitHub connections
             </Text>
-            <ConnectGithubButton />
+            <ConnectGithubButton
+              className="flex items-center gap-2 w-fit !border-transparent !p-2 !pl-1"
+              isIconFirst
+              size="sm"
+            />
           </div>
           <div className="flex flex-col gap-2">
             <VCSConnections vcsConnections={org?.vcs_connections} />

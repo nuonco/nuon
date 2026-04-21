@@ -277,6 +277,23 @@ export const InputTypes = () => {
   )
 }
 
+export const LiveRelativeTime = () => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between p-3 border rounded">
+      <Text variant="subtext" theme="neutral">Static (no tick):</Text>
+      <Time format="relative" time={new Date(Date.now() - 5000).toISOString()} />
+    </div>
+    <div className="flex items-center justify-between p-3 border rounded">
+      <Text variant="subtext" theme="neutral">Live (shouldTick — updates every 30s):</Text>
+      <Time format="relative" shouldTick time={new Date(Date.now() - 5000).toISOString()} />
+    </div>
+    <div className="flex items-center justify-between p-3 border rounded">
+      <Text variant="subtext" theme="neutral">Just now (within 10s):</Text>
+      <Time format="relative" shouldTick time={new Date().toISOString()} />
+    </div>
+  </div>
+)
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">
