@@ -41,13 +41,17 @@ export const InstallRolesTable = ({
                 <Text variant="subtext" theme="neutral" weight="normal">
                   {row.original.app_role_config?.description}
                 </Text>
-                <ID>{row.original.id}</ID>
               </div>
             }
             triggerButton={{
               variant: 'ghost',
               className: panelLinkClass,
-              children: row.original.app_role_config?.display_name,
+              children: (
+                <span className="flex flex-col items-start">
+                  {row.original.app_role_config?.display_name}
+                  <ID>{row.original.id}</ID>
+                </span>
+              ),
             }}
           >
             <InstallRoleDetail installRole={row.original} />
