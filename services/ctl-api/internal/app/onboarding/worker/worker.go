@@ -49,9 +49,12 @@ func New(params WorkerParams) (*Worker, error) {
 		panicPolicy = worker.FailWorkflow
 	}
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
-		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalMaxConcurrentActivities,
-		Interceptors:                       params.Interceptors,
-		WorkflowPanicPolicy:                panicPolicy,
+		MaxConcurrentActivityExecutionSize:     params.Cfg.TemporalMaxConcurrentActivities,
+		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflowTaskExecutionSize,
+		MaxConcurrentActivityTaskPollers:       params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
+		MaxConcurrentWorkflowTaskPollers:       params.Cfg.TemporalMaxConcurrentWorkflowTaskPollers,
+		Interceptors:                           params.Interceptors,
+		WorkflowPanicPolicy:                    panicPolicy,
 	})
 
 	// Register onboarding-specific activities
