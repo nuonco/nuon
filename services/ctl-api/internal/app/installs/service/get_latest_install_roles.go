@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -74,6 +75,40 @@ func (s *service) GetLatestInstallRoles(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
 		return
+	}
+
+	if len(roles) > 0 {
+		roleIDs := make([]string, len(roles))
+		for i := range roles {
+			roleIDs[i] = roles[i].ID
+		}
+
+		type lastUsedRow struct {
+			InstallRoleID string
+			MaxCreatedAt  time.Time
+		}
+		var lastUsed []lastUsedRow
+		res = s.db.WithContext(ctx).
+			Model(&app.InstallRoleUsage{}).
+			Select("install_role_id, MAX(created_at) AS max_created_at").
+			Where(&app.InstallRoleUsage{OrgID: org.ID}).
+			Where("install_role_id IN ?", roleIDs).
+			Group("install_role_id").
+			Find(&lastUsed)
+		if res.Error != nil {
+			ctx.Error(fmt.Errorf("unable to get install role last used: %w", res.Error))
+			return
+		}
+
+		lastUsedByID := make(map[string]time.Time, len(lastUsed))
+		for _, r := range lastUsed {
+			lastUsedByID[r.InstallRoleID] = r.MaxCreatedAt
+		}
+		for i := range roles {
+			if t, ok := lastUsedByID[roles[i].ID]; ok {
+				roles[i].LastUsedAt = &t
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, roles)

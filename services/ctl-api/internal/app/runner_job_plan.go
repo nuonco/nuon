@@ -1,9 +1,6 @@
 package app
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -14,68 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
-
-type RunnerJobPermissionTraceRecord struct {
-	RoleName   string `json:"role_name,omitempty"`
-	RoleSource string `json:"role_source,omitempty"`
-	Available  bool   `json:"available,omitempty"`
-	RoleID     string `json:"role_id,omitempty"`
-	Selected   bool   `json:"selected,omitempty"`
-}
-
-type RunnerJobPermissionInfo struct {
-	Role               string                           `json:"role,omitempty"`
-	RoleSource         string                           `json:"role_source,omitempty"`
-	RoleSelectionTrace []RunnerJobPermissionTraceRecord `json:"role_selection_trace,omitempty"`
-}
-
-type RunnerJobPermissionTrace []RunnerJobPermissionTraceRecord
-
-func (r *RunnerJobPermissionTrace) Scan(value interface{}) error {
-	if value == nil {
-		*r = nil
-		return nil
-	}
-
-	bytes, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("cannot scan %T into RunnerJobPermissionTrace", value)
-	}
-
-	if len(bytes) == 0 {
-		*r = nil
-		return nil
-	}
-
-	return json.Unmarshal(bytes, r)
-}
-
-func (r RunnerJobPermissionTrace) Value() (driver.Value, error) {
-	return json.Marshal(r)
-}
-
-func (r *RunnerJobPermissionInfo) Scan(value interface{}) error {
-	if value == nil {
-		*r = RunnerJobPermissionInfo{}
-		return nil
-	}
-
-	bytes, ok := value.([]byte)
-	if !ok {
-		return fmt.Errorf("cannot scan %T into RunnnerJobPermissionInfo", value)
-	}
-
-	if len(bytes) == 0 {
-		*r = RunnerJobPermissionInfo{}
-		return nil
-	}
-
-	return json.Unmarshal(bytes, r)
-}
-
-func (r RunnerJobPermissionInfo) Value() (driver.Value, error) {
-	return json.Marshal(r)
-}
 
 type RunnerJobPlan struct {
 	ID          string  `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
@@ -90,8 +25,6 @@ type RunnerJobPlan struct {
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
-
-	PermissionInfo RunnerJobPermissionInfo `json:"permission_info,omitzero" gorm:"type:jsonb" temporaljson:"permission_info"`
 
 	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
 	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
