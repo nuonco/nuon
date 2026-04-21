@@ -93,9 +93,18 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		})
 	}
 
-	// Clone each step
-	cloneSteps := make([]workflowactivities.CreateFlowStep, 0, len(groupSteps))
-	for i, step := range groupSteps {
+	// Only clone primary steps (no retries) to avoid duplicates.
+	var primarySteps []app.WorkflowStep
+	for _, step := range groupSteps {
+		if step.RetryIndex > 0 || step.GroupRetryIdx > 0 {
+			continue
+		}
+		primarySteps = append(primarySteps, step)
+	}
+
+	// Clone each primary step
+	cloneSteps := make([]workflowactivities.CreateFlowStep, 0, len(primarySteps))
+	for i, step := range primarySteps {
 		var qs *signaldb.SignalData
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
 			qs = &signaldb.SignalData{Signal: step.QueueSignal.Signal}
@@ -105,7 +114,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			FlowID:              s.WorkflowID,
 			OwnerID:             step.OwnerID,
 			OwnerType:           step.OwnerType,
-			Name:                fmt.Sprintf("%s (retry %d)", step.Name, newGroupRetryIdx),
+			Name:                step.Name,
 			Signal:              step.Signal,
 			QueueSignal:         qs,
 			Status:              app.NewCompositeTemporalStatus(ctx, app.StatusPending),

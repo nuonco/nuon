@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -67,7 +66,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 			ID: step.ID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusDiscarded,
-				StatusHumanDescription: "Group was retried.",
+				StatusHumanDescription: "Group automatically retried.",
 				Metadata: map[string]any{
 					"reason": "group retry",
 				},
@@ -77,14 +76,15 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		}
 	}
 
-	// Always clone from the original generation (generation 0) to avoid
-	// compound CloneSteps expansion. Derivative steps from later generations
-	// may themselves implement CloneSteps, which would create duplicates.
+	// Only clone primary steps — filter out any step that is a retry clone
+	// (RetryIndex > 0 from auto-retry, or GroupRetryIdx > 0 from group retry).
+	// This gives us exactly the original set of steps from generation 0.
 	var stepsToClone []app.WorkflowStep
 	for _, step := range steps {
-		if step.RetryIndex == 0 && step.GroupRetryIdx == 0 {
-			stepsToClone = append(stepsToClone, step)
+		if step.RetryIndex > 0 || step.GroupRetryIdx > 0 {
+			continue
 		}
+		stepsToClone = append(stepsToClone, step)
 	}
 
 	// Enforce per-step max retries at the group level. The group retry count
@@ -99,41 +99,11 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		return fmt.Errorf("group retry %d exceeds max retries %d", newGroupRetryIdx, groupMaxRetries)
 	}
 
-	// Clone each step
+	// Clone each step. Always simple-clone from gen 0 — CloneSteps expansion
+	// was already applied during initial workflow creation, so the gen 0 steps
+	// already represent the full set (e.g. plan + apply as separate steps).
 	cloneSteps := make([]activities.CreateFlowStep, 0, len(stepsToClone))
 	for i, step := range stepsToClone {
-		// Check if the signal defines custom clone steps
-		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
-			if cs, ok := step.QueueSignal.Signal.(signal.SignalWithCloneSteps); ok {
-				defs := cs.CloneSteps(step.Name)
-				for j, def := range defs {
-					cloneSteps = append(cloneSteps, activities.CreateFlowStep{
-						FlowID:      s.WorkflowID,
-						OwnerID:     step.OwnerID,
-						OwnerType:   step.OwnerType,
-						Name:        def.Name,
-						QueueSignal: &signaldb.SignalData{Signal: def.Signal},
-						Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
-							"is_retry":        true,
-							"retry_idx":       0,
-							"group_retry_idx": newGroupRetryIdx,
-						}),
-						Idx:            maxIdx + 100 + (i * 10) + j,
-						ExecutionType:  app.WorkflowStepExecutionType(def.ExecutionType),
-						Metadata:       step.Metadata,
-						Retryable:      step.Retryable,
-						Skippable:      step.Skippable,
-						GroupIdx:       step.GroupIdx,
-						GroupRetryIdx:  newGroupRetryIdx,
-						StepTargetType: step.StepTargetType,
-						RetryIndex:     0,
-					})
-				}
-				continue
-			}
-		}
-
-		// Simple clone
 		cloneSteps = append(cloneSteps, activities.CreateFlowStep{
 			FlowID:      s.WorkflowID,
 			OwnerID:     step.OwnerID,
