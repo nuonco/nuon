@@ -21,7 +21,7 @@ import (
 // 2. Cloning the repo and parsing the intermediate config
 // 3. Building all components in the config
 // 4. Deploying to install groups in order
-func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	// Extract metadata from workflow
 	appBranchID := generics.FromPtrStr(flw.Metadata["app_branch_id"])
 	if appBranchID == "" {
@@ -105,5 +105,5 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep,
 		steps = append(steps, step)
 	}
 
-	return steps, nil
+	return sg.Result(steps), nil
 }

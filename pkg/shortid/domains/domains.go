@@ -202,6 +202,10 @@ func NewWorkflowStepID() string {
 	return shortid.NewNanoID("iws")
 }
 
+func NewWorkflowStepGroupID() string {
+	return shortid.NewNanoID("wsg")
+}
+
 func NewWorkflowStepApprovalID() string {
 	return shortid.NewNanoID("waa")
 }

@@ -39,7 +39,7 @@ const (
 	OperationGenerateState               eventloop.SignalType = "generate-state"
 
 	// the following will be sent to a different namespace
-	OperationExecuteFlow eventloop.SignalType = "execute-flow"
+	OperationExecuteFlow eventloop.SignalType = "execute-workflow"
 	OperationRerunFlow   eventloop.SignalType = "rerun-flow"
 
 	// sync images

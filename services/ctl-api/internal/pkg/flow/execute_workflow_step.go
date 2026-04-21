@@ -17,7 +17,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/flowutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
@@ -81,7 +80,7 @@ func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, 
 				Metadata: map[string]any{
 					"reason": stepErr.Error(),
 				},
-				StatusHumanDescription: flowutil.StepHumanDescription(stepErr),
+				StatusHumanDescription: StepHumanDescription(stepErr),
 			},
 		}); err != nil {
 			return refetchStepsInfo, errors.Wrap(err, "unable to mark step as error")
@@ -446,13 +445,16 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{
 		Steps: []activities.CreateFlowStep{
 			{
-				FlowID:         flw.ID,
-				OwnerID:        flw.OwnerID,
-				OwnerType:      flw.OwnerType,
-				Name:           getCloneStepName(step.Name),
-				Signal:         step.Signal,
-				QueueSignal:    step.QueueSignal,
-				Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+				FlowID:      flw.ID,
+				OwnerID:     flw.OwnerID,
+				OwnerType:   flw.OwnerType,
+				Name:        getCloneStepName(step.Name),
+				Signal:      step.Signal,
+				QueueSignal: step.QueueSignal,
+				Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
+					"is_retry":  true,
+					"retry_idx": newRetryIndex,
+				}),
 				Idx:            step.Idx,
 				ExecutionType:  step.ExecutionType,
 				Metadata:       step.Metadata,
@@ -476,12 +478,15 @@ func (c *WorkflowConductor[DomainSignal]) createCloneSteps(ctx workflow.Context,
 	steps := make([]activities.CreateFlowStep, 0, len(defs))
 	for i, def := range defs {
 		steps = append(steps, activities.CreateFlowStep{
-			FlowID:         flw.ID,
-			OwnerID:        flw.OwnerID,
-			OwnerType:      flw.OwnerType,
-			Name:           getCloneStepName(def.Name),
-			QueueSignal:    &signaldb.SignalData{Signal: def.Signal},
-			Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+			FlowID:      flw.ID,
+			OwnerID:     flw.OwnerID,
+			OwnerType:   flw.OwnerType,
+			Name:        getCloneStepName(def.Name),
+			QueueSignal: &signaldb.SignalData{Signal: def.Signal},
+			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
+				"is_retry":  true,
+				"retry_idx": retryIndex,
+			}),
 			Idx:            step.Idx + i,
 			ExecutionType:  app.WorkflowStepExecutionType(def.ExecutionType),
 			Metadata:       step.Metadata,
