@@ -252,6 +252,8 @@ type RunnerJob struct {
 	Executions []RunnerJobExecution `json:"executions,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"executions,omitzero,omitempty"`
 	Plan       RunnerJobPlan        `json:"json" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"plan,omitzero,omitempty"`
 
+	InstallRoleUsage *InstallRoleUsage `json:"install_role_usage,omitzero" gorm:"foreignKey:RunnerJobID;references:ID"`
+
 	StartedAt  time.Time `json:"started_at,omitzero" gorm:"default:null" temporaljson:"started_at,omitzero,omitempty"`
 	FinishedAt time.Time `json:"finished_at,omitzero" gorm:"default:null" temporaljson:"finished_at,omitzero,omitempty"`
 

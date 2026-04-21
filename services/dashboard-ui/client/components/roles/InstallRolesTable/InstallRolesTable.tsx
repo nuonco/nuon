@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
+import { ID } from '@/components/common/ID'
 import { type IPagination } from '@/components/common/Pagination'
+import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -39,6 +41,7 @@ export const InstallRolesTable = ({
                 <Text variant="subtext" theme="neutral" weight="normal">
                   {row.original.app_role_config?.description}
                 </Text>
+                <ID>{row.original.id}</ID>
               </div>
             }
             triggerButton={{
@@ -61,15 +64,29 @@ export const InstallRolesTable = ({
         ),
       },
       {
-        accessorKey: 'app_role_config.created_at',
-        header: 'Created',
+        accessorKey: 'provisioned',
+        header: 'Status',
         cell: ({ row }) => (
-          <Time
-            variant="subtext"
-            time={row.original.app_role_config?.created_at}
-            format="relative"
-          />
+          <Status status={row.original.provisioned ? 'active' : 'inactive'}>
+            {row.original.provisioned ? 'Provisioned' : 'Not provisioned'}
+          </Status>
         ),
+      },
+      {
+        accessorKey: 'last_used_at',
+        header: 'Last used',
+        cell: ({ row }) =>
+          row.original.last_used_at ? (
+            <Time
+              variant="subtext"
+              time={row.original.last_used_at}
+              format="relative"
+            />
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              Never
+            </Text>
+          ),
       },
       {
         id: 'actions',

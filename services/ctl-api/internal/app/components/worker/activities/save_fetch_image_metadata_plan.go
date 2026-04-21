@@ -66,7 +66,7 @@ func (a *Activities) SaveFetchImageMetadataPlan(ctx context.Context, req *SaveFe
 		FetchImageMetadataPlan: plan,
 	}
 
-	if err := a.runnersHelpers.WriteJobPlan(ctx, req.JobID, planJSON, compositePlan, app.RunnerJobPermissionInfo{}); err != nil {
+	if err := a.runnersHelpers.WriteJobPlan(ctx, req.JobID, planJSON, compositePlan); err != nil {
 		return fmt.Errorf("unable to write job plan: %w", err)
 	}
 

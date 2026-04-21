@@ -27,7 +27,7 @@ func (f *Features) OrgHasFeature(ctx context.Context, orgID string, feature app.
 func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (bool, error) {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	var org app.Org
