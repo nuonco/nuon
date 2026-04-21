@@ -19,7 +19,7 @@ export const VCSConnectionSuccessModal = ({
   return (
     <Modal
       heading={
-        <div>
+        <div className="flex flex-col">
           <Text
             flex
             className="gap-2"
