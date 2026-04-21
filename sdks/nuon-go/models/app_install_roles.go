@@ -40,6 +40,9 @@ type AppInstallRoles struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
+	// last used at
+	LastUsedAt string `json:"last_used_at,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

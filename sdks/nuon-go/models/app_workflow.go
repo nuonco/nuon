@@ -98,6 +98,9 @@ type AppWorkflow struct {
 	// DEPRECATED: for now we always abort on step errors
 	StepErrorBehavior string `json:"step_error_behavior,omitempty"`
 
+	// step groups represent logical groupings of steps within the workflow
+	StepGroups []*AppWorkflowStepGroup `json:"step_groups"`
+
 	// steps represent each piece of the workflow
 	Steps []*AppWorkflowStep `json:"steps"`
 
@@ -144,6 +147,10 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStepGroups(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -360,6 +367,36 @@ func (m *AppWorkflow) validateStatus(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppWorkflow) validateStepGroups(formats strfmt.Registry) error {
+	if swag.IsZero(m.StepGroups) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.StepGroups); i++ {
+		if swag.IsZero(m.StepGroups[i]) { // not required
+			continue
+		}
+
+		if m.StepGroups[i] != nil {
+			if err := m.StepGroups[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("step_groups" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("step_groups" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppWorkflow) validateSteps(formats strfmt.Registry) error {
 	if swag.IsZero(m.Steps) { // not required
 		return nil
@@ -474,6 +511,10 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStepGroups(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -683,6 +724,35 @@ func (m *AppWorkflow) contextValidateStatus(ctx context.Context, formats strfmt.
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppWorkflow) contextValidateStepGroups(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.StepGroups); i++ {
+
+		if m.StepGroups[i] != nil {
+
+			if swag.IsZero(m.StepGroups[i]) { // not required
+				return nil
+			}
+
+			if err := m.StepGroups[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("step_groups" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("step_groups" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
