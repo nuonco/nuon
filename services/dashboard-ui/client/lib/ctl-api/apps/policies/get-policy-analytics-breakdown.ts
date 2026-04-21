@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
 import type { TPolicyAnalyticsBreakdown } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getPolicyAnalyticsBreakdown = ({
   appId,
@@ -19,16 +20,8 @@ export const getPolicyAnalyticsBreakdown = ({
   limit?: number
   installId?: string
   policyId?: string
-}) => {
-  const params = new URLSearchParams()
-  params.set('dimension', dimension)
-  if (start) params.set('start', start)
-  if (end) params.set('end', end)
-  if (limit) params.set('limit', String(limit))
-  if (installId) params.set('install_id', installId)
-  if (policyId) params.set('policy_id', policyId)
-  return api<TPolicyAnalyticsBreakdown>({
-    path: `apps/${appId}/policy-analytics/breakdown?${params.toString()}`,
+}) =>
+  api<TPolicyAnalyticsBreakdown>({
+    path: `apps/${appId}/policy-analytics/breakdown${buildQueryParams({ dimension, start, end, limit, install_id: installId, policy_id: policyId })}`,
     orgId,
   })
-}

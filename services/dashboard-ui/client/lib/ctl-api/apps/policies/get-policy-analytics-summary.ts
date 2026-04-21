@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
 import type { TPolicyAnalyticsSummary } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getPolicyAnalyticsSummary = ({
   appId,
@@ -15,15 +16,8 @@ export const getPolicyAnalyticsSummary = ({
   end?: string
   installId?: string
   policyId?: string
-}) => {
-  const params = new URLSearchParams()
-  if (start) params.set('start', start)
-  if (end) params.set('end', end)
-  if (installId) params.set('install_id', installId)
-  if (policyId) params.set('policy_id', policyId)
-  const qs = params.toString()
-  return api<TPolicyAnalyticsSummary>({
-    path: `apps/${appId}/policy-analytics/summary${qs ? `?${qs}` : ''}`,
+}) =>
+  api<TPolicyAnalyticsSummary>({
+    path: `apps/${appId}/policy-analytics/summary${buildQueryParams({ start, end, install_id: installId, policy_id: policyId })}`,
     orgId,
   })
-}
