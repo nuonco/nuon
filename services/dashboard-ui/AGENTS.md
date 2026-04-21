@@ -174,6 +174,22 @@ Example route structure:
 │       └── (logs tab)
 ```
 
+### Redirects
+
+Use a `loader` with `redirect` from `react-router` — never `<Navigate>`:
+
+```tsx
+import { redirect, type RouteObject } from 'react-router'
+
+// ✅ Correct
+{ path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) }
+
+// ❌ Wrong
+{ path: ':orgId/connections', element: <Navigate to=".." replace /> }
+```
+
+See `client/views/install/routes.tsx` for more examples.
+
 ## API Integration (`client/lib/api.ts`)
 
 ### Return Type Behavior
@@ -568,7 +584,8 @@ npm run build          # Production build (minified)
 npm run build:js       # Build JS only
 npm run build:css      # Build CSS only
 npm run lint           # ESLint for the SPA
-npm run tsc            # TypeScript type check
+npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
+npx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
 npm run dev:ladle      # Ladle component stories
 npm test               # Vitest tests
 npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)

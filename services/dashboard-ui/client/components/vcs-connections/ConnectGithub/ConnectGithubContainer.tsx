@@ -11,7 +11,10 @@ import { useToast } from '@/hooks/use-toast'
 import { createVCSConnection } from '@/lib/ctl-api/vcs-connections'
 import { ConnectGithubModal } from './ConnectGithub'
 
-export const ConnectGithubModalContainer = ({ onSubmit: _onSubmit, ...props }: IModal) => {
+export const ConnectGithubModalContainer = ({
+  onSubmit: _onSubmit,
+  ...props
+}: IModal) => {
   const { githubAppName } = useConfig()
   const { org, refresh: refreshOrg } = useOrg()
   const { removeModal } = useSurfaces()
@@ -54,10 +57,13 @@ export const ConnectGithubModalContainer = ({ onSubmit: _onSubmit, ...props }: I
   )
 }
 
-interface IConnectGithubButton extends IButtonAsButton {}
+interface IConnectGithubButton extends IButtonAsButton {
+  isIconFirst?: boolean
+}
 
 export const ConnectGithubButton = ({
   children = 'Add',
+  isIconFirst = false,
   ...props
 }: IConnectGithubButton) => {
   const { addModal } = useSurfaces()
@@ -68,12 +74,11 @@ export const ConnectGithubButton = ({
       onClick={() => {
         addModal(modal)
       }}
-      className="flex items-center gap-2 w-fit !border-transparent !p-2 !pl-1"
-      size="sm"
       {...props}
     >
-      <Icon variant="Plus" />
+      {isIconFirst ? <Icon variant="Plus" /> : null}
       {children}
+      {!isIconFirst ? <Icon variant="Plus" /> : null}
     </Button>
   )
 }
