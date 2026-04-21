@@ -53,6 +53,15 @@ templ SandboxMode(data SandboxModeData) {
 				</div>
 			}
 		</div>
+
+		<!-- Side drawer for builder panel -->
+		<div id="builder-drawer" style="position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.2s ease, visibility 0s 0.2s;">
+			<div id="builder-drawer-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.5);" onclick="window.__closeDrawer()"></div>
+			<div id="builder-drawer-panel" style="position:absolute;right:0;top:0;height:100%;width:100%;max-width:36rem;background:var(--background);border-left:1px solid var(--border);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6);transform:translateX(100%);transition:transform 0.2s ease-out;overflow-y:auto;">
+				<div id="builder-panel" style="padding:1.75rem;"></div>
+			</div>
+		</div>
+		@drawerScript()
 	}
 }
 
@@ -60,15 +69,52 @@ templ sandboxModeStyles() {
 	<style>
 		.tgl { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
 		.tgl input { opacity: 0; width: 0; height: 0; }
-		.tgl-s { position: absolute; cursor: pointer; inset: 0; background: hsl(var(--muted-foreground) / 0.3); border: 1px solid hsl(var(--border)); border-radius: 22px; transition: all 0.2s; }
-		.tgl-s::before { content: ""; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px; background: hsl(var(--foreground) / 0.7); border-radius: 50%; transition: all 0.2s; }
+		.tgl-s { position: absolute; cursor: pointer; inset: 0; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); border-radius: 22px; transition: all 0.2s; }
+		.tgl-s::before { content: ""; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: all 0.2s; }
 		.tgl input:checked + .tgl-s { background: hsl(var(--cyan)); border-color: hsl(var(--cyan)); }
 		.tgl input:checked + .tgl-s::before { transform: translateX(18px); background: white; }
 		details > summary { list-style: none; }
 		details > summary::-webkit-details-marker { display: none; }
 		details > summary .chv { transition: transform 0.15s ease; }
 		details[open] > summary .chv { transform: rotate(90deg); }
+		#builder-drawer.open { opacity: 1 !important; pointer-events: auto !important; visibility: visible !important; transition: opacity 0.2s ease, visibility 0s 0s !important; }
+		#builder-drawer.open #builder-drawer-panel { transform: translateX(0) !important; }
+
+		/* Drawer form utilities (not in compiled Tailwind) */
+		.drawer-form { display: flex; flex-direction: column; gap: 1.5rem; }
+		.drawer-section { display: flex; flex-direction: column; gap: 0.75rem; }
+		.drawer-section-header { display: flex; flex-direction: column; gap: 0.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.25rem; }
+		.drawer-section-title { font-size: 0.8125rem; font-weight: 600; color: var(--foreground); }
+		.drawer-section-hint { font-size: 0.6875rem; color: var(--muted-foreground); line-height: 1.4; }
+		.drawer-field { display: flex; flex-direction: column; gap: 0.375rem; }
+		.drawer-field > label { font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); }
+		.drawer-field-hint { font-size: 0.6875rem; color: var(--muted-foreground); opacity: 0.7; margin-top: 0.125rem; }
+		.drawer-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+		.drawer-input-number { height: 2.25rem; width: 7rem; font-size: 0.875rem; }
+		.drawer-checks { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; }
+		.drawer-checks label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; cursor: pointer; }
+		.drawer-checks .check-hint { font-size: 0.6875rem; color: var(--muted-foreground); opacity: 0.7; display: block; margin-top: 0.125rem; }
 	</style>
+}
+
+templ drawerScript() {
+	<script>
+		window.__openDrawer = function() {
+			document.getElementById('builder-drawer').classList.add('open');
+			document.body.style.overflow = 'hidden';
+		};
+		window.__closeDrawer = function() {
+			var d = document.getElementById('builder-drawer');
+			d.classList.remove('open');
+			document.body.style.overflow = '';
+			setTimeout(function(){ document.getElementById('builder-panel').innerHTML = ''; }, 200);
+		};
+		document.addEventListener('htmx:afterSwap', function(e) {
+			if (e.detail.target.id === 'builder-panel' && e.detail.target.innerHTML.trim() !== '') {
+				window.__openDrawer();
+			}
+		});
+	</script>
 }
 
 templ sandboxTab(href string, label string, isActive bool) {
@@ -154,7 +200,6 @@ templ SandboxModeRunnerJobsTable(configs []app.SandboxModeJobConfig, allJobTypes
 			</div>
 		}
 		@card.Content() {
-			<div id="builder-panel"></div>
 			<div class="mb-5">
 				@input.Input(input.Props{
 					Name: "search", Type: input.TypeSearch,
@@ -180,26 +225,29 @@ templ SandboxModeRunnerJobsTable(configs []app.SandboxModeJobConfig, allJobTypes
 }
 
 templ runnerJobCompactRow(jobType string, cfg *app.SandboxModeJobConfig) {
-	<div class="flex items-center justify-between px-4 py-3">
-		<div class="flex items-center gap-3">
+	<div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;">
+		<div style="display:flex;align-items:center;gap:0.75rem;">
 			<span class="font-mono text-sm">{ jobType }</span>
-			if cfg != nil && cfg.Operation != "" {
-				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) { { cfg.Operation } }
-			}
-			if cfg != nil && cfg.Enabled {
-				@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { enabled }
-			} else {
-				@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) { disabled }
-			}
-			if cfg != nil && cfg.Duration > 0 {
-				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) { { safeDurationMs(cfg) + "ms" } }
-			}
-			if cfg != nil && cfg.ShouldError {
-				@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { error }
-			}
-			if cfg != nil && cfg.TriggerShutdown {
-				@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { shutdown }
-			}
+			<div style="display:flex;align-items:center;gap:0.375rem;">
+				if cfg != nil && cfg.Operation != "" {
+					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) { { cfg.Operation } }
+				}
+				if cfg != nil && cfg.Enabled {
+					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { enabled }
+				}
+				if cfg != nil && cfg.Duration > 0 {
+					@badge.Badge(badge.Props{Variant: badge.VariantOutline}) { { safeDurationMs(cfg) + "ms" } }
+				}
+				if cfg != nil && cfg.ShouldError {
+					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { error }
+				}
+				if cfg != nil && cfg.Panic {
+					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { panic }
+				}
+				if cfg != nil && cfg.TriggerShutdown {
+					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { shutdown }
+				}
+			</div>
 		</div>
 		@button.Button(button.Props{
 			Variant: button.VariantOutline, Size: button.SizeSm,
@@ -217,214 +265,244 @@ templ runnerJobCompactRow(jobType string, cfg *app.SandboxModeJobConfig) {
 // ===========================================================================
 
 templ SandboxModeBuilder(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template, allJobTypes []string) {
-	<div class="mb-6 rounded-lg border border-cyan/30 bg-card p-5">
-		<div class="flex items-center justify-between mb-4">
-			<span class="text-sm font-semibold text-foreground">
+	<!-- Drawer header -->
+	<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:1rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);">
+		<div>
+			<h2 style="font-size:1rem;font-weight:600;color:var(--foreground);margin:0;">
 				if jobType != "" {
 					Configure: { jobType }
 				} else {
 					Configure runner job
 				}
-			</span>
-			<button type="button" class="text-xs text-muted-foreground hover:text-foreground transition-colors" onclick="this.closest('#builder-panel').querySelector('.builder-form')?.remove(); this.closest('div.mb-6')?.remove();">Cancel</button>
+			</h2>
+			<p style="font-size:0.75rem;color:var(--muted-foreground);margin:0.375rem 0 0;">Set timing, templates, and failure modes.</p>
 		</div>
-		<form
-			class="builder-form space-y-4"
-			if jobType != "" {
-				hx-put={ "/sandbox-mode/runner-jobs/" + jobType }
-			} else {
-				hx-put="/sandbox-mode/runner-jobs/__new__"
-			}
-			hx-target="#runner-jobs-tab"
-			hx-swap="innerHTML"
+		<button type="button" style="padding:0.375rem;border-radius:0.375rem;color:var(--muted-foreground);background:none;border:none;cursor:pointer;"
+			onclick="window.__closeDrawer()"
 		>
-			<!-- Job type selector -->
-			<div class="flex flex-col gap-1.5">
-				<span class="text-xs font-medium text-muted-foreground">Job type</span>
-				<select
-					name="job_type"
-					class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground font-mono"
-					hx-get="/sandbox-mode/builder"
-					hx-trigger="change"
-					hx-target="#builder-panel"
-					hx-swap="innerHTML"
-					hx-include="[name='job_type']"
-				>
-					<option value="">Select a job type...</option>
-					for _, jt := range allJobTypes {
-						<option value={ jt } if jt == jobType { selected }>{ jt }</option>
+			<svg style="width:1.25rem;height:1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+		</button>
+	</div>
+
+	<!-- Drawer body -->
+	<form
+		class="drawer-form"
+		if jobType != "" {
+			hx-put={ "/sandbox-mode/runner-jobs/" + jobType }
+		} else {
+			hx-put="/sandbox-mode/runner-jobs/__new__"
+		}
+		hx-target="#runner-jobs-tab"
+		hx-swap="innerHTML"
+		hx-on::after-request="window.__closeDrawer()"
+	>
+		<div class="drawer-section">
+			<div class="drawer-section-header">
+				<div class="drawer-section-title">Job &amp; operation</div>
+				<div class="drawer-section-hint">Select which runner job type to configure, and optionally scope to a specific operation.</div>
+			</div>
+			<div class="drawer-grid-2">
+				<div class="drawer-field">
+					<label>Job type</label>
+					<select
+						name="job_type"
+						class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground font-mono"
+						hx-get="/sandbox-mode/builder"
+						hx-trigger="change"
+						hx-target="#builder-panel"
+						hx-swap="innerHTML"
+						hx-include="[name='job_type']"
+					>
+						<option value="">Select a job type...</option>
+						for _, jt := range allJobTypes {
+							<option value={ jt } if jt == jobType { selected }>{ jt }</option>
+						}
+					</select>
+				</div>
+				<div class="drawer-field">
+					<label>Operation scope</label>
+					<select name="operation" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground font-mono">
+						<option value="">All operations</option>
+						for _, op := range allOperationTypes() {
+							<option value={ op } if cfg != nil && cfg.Operation == op { selected }>{ op }</option>
+						}
+					</select>
+					<span class="drawer-field-hint">Leave as "All" to apply to every operation</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="drawer-section">
+			<div class="drawer-section-header">
+				<div class="drawer-section-title">Timing</div>
+				<div class="drawer-section-hint">How long the simulated job runs and optional delay before it starts.</div>
+			</div>
+			<div class="drawer-grid-2">
+				<div class="drawer-field">
+					<label>Duration</label>
+					<div class="flex items-center gap-2">
+						@input.Input(input.Props{
+							Name: "duration_ms", Type: input.TypeNumber,
+							Value: safeDurationMs(cfg), Placeholder: "5000",
+							Class: "drawer-input-number",
+							Attributes: templ.Attributes{"min": "0"},
+						})
+						<span class="text-xs text-muted-foreground">ms</span>
+					</div>
+					@durationBadgesRow("duration_ms", msBadges())
+				</div>
+				<div class="drawer-field">
+					<label>Startup delay</label>
+					<div class="flex items-center gap-2">
+						@input.Input(input.Props{
+							Name: "sleep_duration_ms", Type: input.TypeNumber,
+							Value: safeSleepMs(cfg), Placeholder: "0",
+							Class: "drawer-input-number",
+							Attributes: templ.Attributes{"min": "0"},
+						})
+						<span class="text-xs text-muted-foreground">ms</span>
+					</div>
+					@durationBadgesRow("sleep_duration_ms", msBadges())
+				</div>
+			</div>
+		</div>
+
+		<div class="drawer-section">
+			<div class="drawer-section-header">
+				<div class="drawer-section-title">Output templates</div>
+				<div class="drawer-section-hint">Control what the job emits for logs, plans, state, and output. "None" means the job produces nothing for that category.</div>
+			</div>
+			<div class="drawer-field">
+				<label>Log template</label>
+				<select name="log_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+					<option value="">Default</option>
+					for _, tpl := range filterTemplates(allTemplates, jobType, "logs") {
+						<option value={ tpl.Key } if cfg != nil && cfg.LogTemplate == tpl.Key { selected }>
+							{ tpl.Key }
+							if tpl.IsNoop {
+								 (noop)
+							}
+						</option>
 					}
 				</select>
 			</div>
-
-			<!-- Operation selector -->
-			<div class="flex flex-col gap-1.5">
-				<span class="text-xs font-medium text-muted-foreground">Operation</span>
-				<select name="operation" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground font-mono">
-					<option value="">Any operation (default)</option>
-					for _, op := range allOperationTypes() {
-						<option value={ op } if cfg != nil && cfg.Operation == op { selected }>{ op }</option>
-					}
-				</select>
-			</div>
-
-			<div class="grid grid-cols-2 gap-4">
-				<!-- Duration & Sleep -->
-				<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-3">
-					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Timing</span>
-					<div class="space-y-1.5">
-						<span class="text-xs font-medium text-muted-foreground">Duration</span>
-						<div class="flex items-center gap-1.5">
-							@input.Input(input.Props{
-								Name: "duration_ms", Type: input.TypeNumber,
-								Value: safeDurationMs(cfg), Placeholder: "5000",
-								Class: "h-7 text-sm w-20",
-								Attributes: templ.Attributes{"min": "0"},
-							})
-							<span class="text-[11px] text-muted-foreground">ms</span>
-						</div>
-						@durationBadgesRow("duration_ms", msBadges())
-					</div>
-					<div class="space-y-1.5">
-						<span class="text-xs font-medium text-muted-foreground">Sleep</span>
-						<div class="flex items-center gap-1.5">
-							@input.Input(input.Props{
-								Name: "sleep_duration_ms", Type: input.TypeNumber,
-								Value: safeSleepMs(cfg), Placeholder: "0",
-								Class: "h-7 text-sm w-20",
-								Attributes: templ.Attributes{"min": "0"},
-							})
-							<span class="text-[11px] text-muted-foreground">ms</span>
-						</div>
-						@durationBadgesRow("sleep_duration_ms", msBadges())
-					</div>
+			<div class="drawer-grid-2">
+				<div class="drawer-field">
+					<label>Plan</label>
+					<select name="plan_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+						<option value="">None</option>
+						for _, tpl := range filterTemplates(allTemplates, jobType, "plans") {
+							<option value={ tpl.Key } if cfg != nil && cfg.PlanTemplate == tpl.Key { selected }>
+								{ tpl.Key }
+								if tpl.IsNoop {
+									 (noop)
+								}
+							</option>
+						}
+					</select>
 				</div>
-
-				<!-- Templates -->
-				<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-3">
-					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Templates</span>
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-muted-foreground">Log template</span>
-						<select name="log_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-							<option value="">None (default logs)</option>
-							for _, tpl := range filterTemplates(allTemplates, jobType, "logs") {
-								<option value={ tpl.Key } if cfg != nil && cfg.LogTemplate == tpl.Key { selected }>
-									{ tpl.Key }
-									if tpl.IsNoop {
-										 (noop)
-									}
-								</option>
-							}
-						</select>
-					</div>
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-muted-foreground">Plan template</span>
-						<select name="plan_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-							<option value="">None (no plan)</option>
-							for _, tpl := range filterTemplates(allTemplates, jobType, "plans") {
-								<option value={ tpl.Key } if cfg != nil && cfg.PlanTemplate == tpl.Key { selected }>
-									{ tpl.Key }
-									if tpl.IsNoop {
-										 (noop)
-									}
-								</option>
-							}
-						</select>
-					</div>
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-muted-foreground">Plan display template</span>
-						<select name="plan_display_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-							<option value="">None (no plan display)</option>
-							for _, tpl := range filterTemplates(allTemplates, jobType, "plan_displays") {
-								<option value={ tpl.Key } if cfg != nil && cfg.PlanDisplayTemplate == tpl.Key { selected }>
-									{ tpl.Key }
-									if tpl.IsNoop {
-										 (noop)
-									}
-								</option>
-							}
-						</select>
-					</div>
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-muted-foreground">State template</span>
-						<select name="state_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-							<option value="">None (no state)</option>
-							for _, tpl := range filterTemplates(allTemplates, jobType, "states") {
-								<option value={ tpl.Key } if cfg != nil && cfg.StateTemplate == tpl.Key { selected }>
-									{ tpl.Key }
-									if tpl.IsNoop {
-										 (noop)
-									}
-								</option>
-							}
-						</select>
-					</div>
-					<div class="space-y-2">
-						<span class="text-xs font-medium text-muted-foreground">Output template</span>
-						<select name="output_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-							<option value="">None (no outputs)</option>
-							for _, tpl := range filterTemplates(allTemplates, jobType, "outputs") {
-								<option value={ tpl.Key } if cfg != nil && cfg.OutputTemplate == tpl.Key { selected }>{ tpl.Key }</option>
-							}
-						</select>
-					</div>
+				<div class="drawer-field">
+					<label>Plan display</label>
+					<select name="plan_display_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+						<option value="">None</option>
+						for _, tpl := range filterTemplates(allTemplates, jobType, "plan_displays") {
+							<option value={ tpl.Key } if cfg != nil && cfg.PlanDisplayTemplate == tpl.Key { selected }>
+								{ tpl.Key }
+								if tpl.IsNoop {
+									 (noop)
+								}
+							</option>
+						}
+					</select>
 				</div>
 			</div>
-
-			<!-- Failure modes -->
-			<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-3">
-				<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
-				<div class="flex items-center gap-6">
-					<label class="flex items-center gap-2 text-sm cursor-pointer">
-						<input type="checkbox" name="should_error"
-							if cfg != nil && cfg.ShouldError { checked }
-							class="rounded border-border"
-						/>
-						<span class="text-xs">Error</span>
-					</label>
-					<label class="flex items-center gap-2 text-sm cursor-pointer">
-						<input type="checkbox" name="panic"
-							if cfg != nil && cfg.Panic { checked }
-							class="rounded border-border"
-						/>
-						<span class="text-xs">Panic</span>
-					</label>
-					<label class="flex items-center gap-2 text-sm cursor-pointer">
-						<input type="checkbox" name="trigger_shutdown"
-							if cfg != nil && cfg.TriggerShutdown { checked }
-							class="rounded border-border"
-						/>
-						<span class="text-xs">Shutdown runner</span>
-					</label>
+			<div class="drawer-grid-2">
+				<div class="drawer-field">
+					<label>State</label>
+					<select name="state_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+						<option value="">None</option>
+						for _, tpl := range filterTemplates(allTemplates, jobType, "states") {
+							<option value={ tpl.Key } if cfg != nil && cfg.StateTemplate == tpl.Key { selected }>
+								{ tpl.Key }
+								if tpl.IsNoop {
+									 (noop)
+								}
+							</option>
+						}
+					</select>
+				</div>
+				<div class="drawer-field">
+					<label>Output</label>
+					<select name="output_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+						<option value="">None</option>
+						for _, tpl := range filterTemplates(allTemplates, jobType, "outputs") {
+							<option value={ tpl.Key } if cfg != nil && cfg.OutputTemplate == tpl.Key { selected }>{ tpl.Key }</option>
+						}
+					</select>
 				</div>
 			</div>
+		</div>
 
-			<!-- Footer -->
-			<div class="flex items-center justify-between pt-1">
-				<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
+		<div class="drawer-section">
+			<div class="drawer-section-header">
+				<div class="drawer-section-title">Failure simulation</div>
+				<div class="drawer-section-hint">Force the job to fail in specific ways for testing error handling.</div>
+			</div>
+			<div class="drawer-checks">
+				<label>
+					<input type="checkbox" name="should_error"
+						if cfg != nil && cfg.ShouldError { checked }
+						class="rounded border-border"
+					/>
+					Return error
+				</label>
+				<label>
+					<input type="checkbox" name="panic"
+						if cfg != nil && cfg.Panic { checked }
+						class="rounded border-border"
+					/>
+					Panic
+				</label>
+				<label>
+					<input type="checkbox" name="trigger_shutdown"
+						if cfg != nil && cfg.TriggerShutdown { checked }
+						class="rounded border-border"
+					/>
+					Shutdown runner
+				</label>
+			</div>
+		</div>
+
+		<!-- Sticky footer -->
+		<div style="position:sticky;bottom:0;background:var(--background);padding:1rem 1.75rem 0.75rem;margin:0 -1.75rem;border-top:1px solid var(--border);">
+			<div class="flex items-center justify-end gap-3">
+				<label class="flex items-center gap-3 text-sm font-medium cursor-pointer mr-auto">
 					<span class="tgl">
 						<input type="checkbox" name="enabled" if cfg != nil && cfg.Enabled { checked }/>
 						<span class="tgl-s"></span>
 					</span>
 					Enabled
 				</label>
-				<div class="flex items-center gap-2">
-					<button type="button" class="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md transition-colors" onclick="this.closest('#builder-panel').querySelector('.builder-form')?.remove(); this.closest('div.mb-6')?.remove();">Cancel</button>
-					@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
-				</div>
+				<button type="button" style="padding:0.5rem 1rem;font-size:0.875rem;color:var(--muted-foreground);background:none;border:none;cursor:pointer;"
+					onclick="window.__closeDrawer()"
+				>Cancel</button>
+				@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
 			</div>
-		</form>
-	</div>
+		</div>
+	</form>
 }
 
 // Legacy row components kept for backward compatibility with existing save handlers.
 
 templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTemplates []templates.Template, saved bool) {
 	<details class="group" id={ "rj-" + jobType } if saved { open }>
-		<summary class="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+		<summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors">
 			<div class="flex items-center gap-3">
 				<svg class="chv w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"></path></svg>
 				<span class="font-mono text-sm">{ jobType }</span>
+				if cfg != nil && cfg.Enabled {
+					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { enabled }
+				}
 				if cfg != nil && cfg.ShouldError {
 					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { error }
 				}
@@ -435,61 +513,60 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTempla
 					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { saved }
 				}
 			</div>
-			<label class="tgl" onclick="event.stopPropagation()">
-				<input type="checkbox"
-					if cfg != nil && cfg.Enabled { checked }
-				/>
-				<span class="tgl-s"></span>
-			</label>
 		</summary>
 
-		<div class="px-4 pb-5 pt-2 ml-11">
+		<div style="margin:0 1rem 1rem;border-radius:0.5rem;border:1px solid var(--border);background:var(--card);padding:1.5rem;">
 			<form
 				hx-put={ "/sandbox-mode/runner-jobs/" + jobType }
 				hx-target={ "#rj-" + jobType }
 				hx-swap="outerHTML"
-				class="max-w-4xl space-y-4"
+				class="drawer-form"
 			>
-				<div class="grid grid-cols-2 gap-4">
-					<!-- Total duration -->
-					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total duration</span>
-						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-							<span class="text-xs font-medium text-muted-foreground">Duration</span>
-							<p class="text-[10px] text-muted-foreground/70">The execute step will mimic output for this long</p>
-							<div class="flex items-center gap-1.5">
+				<div class="drawer-section">
+					<div class="drawer-section-header">
+						<div class="drawer-section-title">Timing</div>
+						<div class="drawer-section-hint">How long the simulated job runs and optional delay before it starts.</div>
+					</div>
+					<div class="drawer-grid-2">
+						<div class="drawer-field">
+							<label>Duration</label>
+							<div class="flex items-center gap-2">
 								@input.Input(input.Props{
 									Name: "duration_ms", Type: input.TypeNumber,
 									Value: safeDurationMs(cfg), Placeholder: "5000",
-									Class: "h-7 text-sm w-20",
+									Class: "drawer-input-number",
 									Attributes: templ.Attributes{"min": "0"},
 								})
-								<span class="text-[11px] text-muted-foreground">ms</span>
+								<span class="text-xs text-muted-foreground">ms</span>
 							</div>
 							@durationBadgesRow("duration_ms", msBadges())
 						</div>
-						<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-							<span class="text-xs font-medium text-muted-foreground">Sleep</span>
-							<div class="flex items-center gap-1.5">
+						<div class="drawer-field">
+							<label>Startup delay</label>
+							<div class="flex items-center gap-2">
 								@input.Input(input.Props{
 									Name: "sleep_duration_ms", Type: input.TypeNumber,
 									Value: safeSleepMs(cfg), Placeholder: "0",
-									Class: "h-7 text-sm w-20",
+									Class: "drawer-input-number",
 									Attributes: templ.Attributes{"min": "0"},
 								})
-								<span class="text-[11px] text-muted-foreground">ms</span>
+								<span class="text-xs text-muted-foreground">ms</span>
 							</div>
 							@durationBadgesRow("sleep_duration_ms", msBadges())
 						</div>
 					</div>
+				</div>
 
-					<!-- Templates -->
-					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Templates</span>
-						<div class="space-y-2">
-							<span class="text-xs font-medium text-muted-foreground">Log template</span>
-							<select name="log_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-								<option value="">None (default logs)</option>
+				<div class="drawer-section">
+					<div class="drawer-section-header">
+						<div class="drawer-section-title">Output templates</div>
+						<div class="drawer-section-hint">Control what the job emits. "None" means no output for that category.</div>
+					</div>
+					<div class="drawer-grid-2">
+						<div class="drawer-field">
+							<label>Log template</label>
+							<select name="log_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">Default</option>
 								for _, tpl := range filterTemplates(allTemplates, jobType, "logs") {
 									<option value={ tpl.Key } if cfg != nil && cfg.LogTemplate == tpl.Key { selected }>
 										{ tpl.Key }
@@ -500,10 +577,10 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTempla
 								}
 							</select>
 						</div>
-						<div class="space-y-2">
-							<span class="text-xs font-medium text-muted-foreground">Plan template</span>
-							<select name="plan_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-								<option value="">None (no plan)</option>
+						<div class="drawer-field">
+							<label>Plan</label>
+							<select name="plan_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None</option>
 								for _, tpl := range filterTemplates(allTemplates, jobType, "plans") {
 									<option value={ tpl.Key } if cfg != nil && cfg.PlanTemplate == tpl.Key { selected }>
 										{ tpl.Key }
@@ -514,19 +591,10 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTempla
 								}
 							</select>
 						</div>
-						<div class="space-y-2">
-							<span class="text-xs font-medium text-muted-foreground">Output template</span>
-							<select name="output_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-								<option value="">None (no outputs)</option>
-								for _, tpl := range filterTemplates(allTemplates, jobType, "outputs") {
-									<option value={ tpl.Key } if cfg != nil && cfg.OutputTemplate == tpl.Key { selected }>{ tpl.Key }</option>
-								}
-							</select>
-						</div>
-						<div class="space-y-2">
-							<span class="text-xs font-medium text-muted-foreground">Plan display template</span>
-							<select name="plan_display_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-								<option value="">None (no plan display)</option>
+						<div class="drawer-field">
+							<label>Plan display</label>
+							<select name="plan_display_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None</option>
 								for _, tpl := range filterTemplates(allTemplates, jobType, "plan_displays") {
 									<option value={ tpl.Key } if cfg != nil && cfg.PlanDisplayTemplate == tpl.Key { selected }>
 										{ tpl.Key }
@@ -537,10 +605,10 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTempla
 								}
 							</select>
 						</div>
-						<div class="space-y-2">
-							<span class="text-xs font-medium text-muted-foreground">State template</span>
-							<select name="state_template" class="w-full h-8 px-2.5 text-sm bg-background border border-border rounded-md text-foreground">
-								<option value="">None (no state)</option>
+						<div class="drawer-field">
+							<label>State</label>
+							<select name="state_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None</option>
 								for _, tpl := range filterTemplates(allTemplates, jobType, "states") {
 									<option value={ tpl.Key } if cfg != nil && cfg.StateTemplate == tpl.Key { selected }>
 										{ tpl.Key }
@@ -551,46 +619,50 @@ templ runnerJobRowInner(jobType string, cfg *app.SandboxModeJobConfig, allTempla
 								}
 							</select>
 						</div>
+						<div class="drawer-field">
+							<label>Output</label>
+							<select name="output_template" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-md text-foreground">
+								<option value="">None</option>
+								for _, tpl := range filterTemplates(allTemplates, jobType, "outputs") {
+									<option value={ tpl.Key } if cfg != nil && cfg.OutputTemplate == tpl.Key { selected }>{ tpl.Key }</option>
+								}
+							</select>
+						</div>
 					</div>
 				</div>
 
-				<!-- Failure modes -->
-				<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-					<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
-					<div class="flex items-center gap-6">
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="should_error"
-								if cfg != nil && cfg.ShouldError { checked }
-								class="rounded border-border"
-							/>
-							<span class="text-xs">Error</span>
+				<div class="drawer-section">
+					<div class="drawer-section-header">
+						<div class="drawer-section-title">Failure simulation</div>
+						<div class="drawer-section-hint">Force the job to fail for testing error handling.</div>
+					</div>
+					<div class="drawer-checks">
+						<label>
+							<input type="checkbox" name="should_error" if cfg != nil && cfg.ShouldError { checked } class="rounded border-border"/>
+							Return error
 						</label>
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="panic"
-								if cfg != nil && cfg.Panic { checked }
-								class="rounded border-border"
-							/>
-							<span class="text-xs">Panic</span>
+						<label>
+							<input type="checkbox" name="panic" if cfg != nil && cfg.Panic { checked } class="rounded border-border"/>
+							Panic
 						</label>
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="trigger_shutdown"
-								if cfg != nil && cfg.TriggerShutdown { checked }
-								class="rounded border-border"
-							/>
-							<span class="text-xs">Shutdown runner</span>
+						<label>
+							<input type="checkbox" name="trigger_shutdown" if cfg != nil && cfg.TriggerShutdown { checked } class="rounded border-border"/>
+							Shutdown runner
 						</label>
 					</div>
 				</div>
 
-				<!-- Footer -->
-				<div class="flex items-center justify-between pt-1">
-					<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
+				<div style="display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;padding-top:1rem;border-top:1px solid var(--border);">
+					<label class="flex items-center gap-3 text-sm font-medium cursor-pointer mr-auto">
 						<span class="tgl">
 							<input type="checkbox" name="enabled" if cfg != nil && cfg.Enabled { checked }/>
 							<span class="tgl-s"></span>
 						</span>
 						Enabled
 					</label>
+					<button type="button" style="padding:0.5rem 1rem;font-size:0.875rem;color:var(--muted-foreground);background:none;border:none;cursor:pointer;"
+						onclick="this.closest('details').removeAttribute('open');"
+					>Cancel</button>
 					@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
 				</div>
 			</form>
@@ -651,10 +723,13 @@ templ SandboxModeSignalsTable(configs []app.SandboxModeSignalConfig, allTypes []
 
 templ signalRowInner(signalType string, cfg *app.SandboxModeSignalConfig, saved bool) {
 	<details class="group" id={ "signal-" + signalType } if saved { open }>
-		<summary class="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-muted/40 transition-colors">
+		<summary class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors">
 			<div class="flex items-center gap-3">
 				<svg class="chv w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"></path></svg>
 				<span class="font-mono text-sm">{ signalType }</span>
+				if cfg != nil && cfg.Enabled {
+					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { enabled }
+				}
 				if cfg != nil && cfg.Panic {
 					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { panic }
 				}
@@ -662,90 +737,85 @@ templ signalRowInner(signalType string, cfg *app.SandboxModeSignalConfig, saved 
 					@badge.Badge(badge.Props{Variant: badge.VariantDestructive}) { error }
 				}
 				if cfg != nil && (cfg.DeadlockSleep > 0 || cfg.WorkflowSleep > 0) {
-					@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) { sleeping }
+					@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) { sleep }
 				}
 				if saved {
 					@badge.Badge(badge.Props{Variant: badge.VariantDefault}) { saved }
 				}
 			</div>
-			<label class="tgl" onclick="event.stopPropagation()">
-				<input type="checkbox"
-					if cfg != nil && cfg.Enabled { checked }
-					hx-put={ "/sandbox-mode/signals/" + signalType }
-					hx-target={ "#signal-" + signalType }
-					hx-swap="outerHTML"
-					hx-vals={ signalToggleVals(cfg) }
-					hx-trigger="change"
-				/>
-				<span class="tgl-s"></span>
-			</label>
 		</summary>
 
-		<div class="px-4 pb-5 pt-2 ml-11">
+		<div style="margin:0 1rem 1rem;border-radius:0.5rem;border:1px solid var(--border);background:var(--card);padding:1.5rem;">
 			<form
 				hx-put={ "/sandbox-mode/signals/" + signalType }
 				hx-target={ "#signal-" + signalType }
 				hx-swap="outerHTML"
-				class="max-w-3xl"
+				class="drawer-form"
 			>
-				<div class="grid grid-cols-2 gap-4">
-					<!-- Failure modes -->
-					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Failure modes</span>
-						<label class="flex items-center gap-2 text-sm cursor-pointer">
-							<input type="checkbox" name="panic"
-								if cfg != nil && cfg.Panic { checked }
-								class="rounded border-border"
-							/>
-							Panic
-						</label>
-						<label class="flex flex-col gap-1.5">
-							<span class="text-xs font-medium text-muted-foreground">Error message</span>
+				<div class="drawer-section">
+					<div class="drawer-section-header">
+						<div class="drawer-section-title">Failure simulation</div>
+						<div class="drawer-section-hint">Force this signal handler to fail with a panic or return a specific error message.</div>
+					</div>
+					<div class="drawer-grid-2">
+						<div class="drawer-field">
+							<label>Error message</label>
 							@input.Input(input.Props{
 								Name: "error", Value: safeError(cfg),
-								Placeholder: "Return this error",
-								Class: "h-8 text-sm",
+								Placeholder: "Leave empty for no error",
+								Class: "h-9 text-sm",
 							})
-						</label>
-					</div>
-
-					<!-- Mimic sleeping -->
-					<div class="rounded-lg border border-border bg-card p-4 space-y-4">
-						<span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Mimic sleeping</span>
-						<div class="grid grid-cols-2 gap-3">
-							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Deadlock</span>
-								<div class="flex items-center gap-1.5">
-									@input.Input(input.Props{
-										Name: "deadlock_sleep_seconds", Type: input.TypeNumber,
-										Value: safeDeadlockSleep(cfg), Placeholder: "0.5",
-										Class: "h-7 text-sm w-16",
-										Attributes: templ.Attributes{"step": "0.5", "min": "0"},
-									})
-									<span class="text-[11px] text-muted-foreground">sec</span>
-								</div>
-								@durationBadgesRow("deadlock_sleep_seconds", secBadges())
-							</div>
-							<div class="rounded-md border border-border/60 bg-muted/10 p-3 space-y-1.5">
-								<span class="text-xs font-medium text-muted-foreground">Workflow</span>
-								<div class="flex items-center gap-1.5">
-									@input.Input(input.Props{
-										Name: "workflow_sleep_seconds", Type: input.TypeNumber,
-										Value: safeWorkflowSleep(cfg), Placeholder: "0.5",
-										Class: "h-7 text-sm w-16",
-										Attributes: templ.Attributes{"step": "0.5", "min": "0"},
-									})
-									<span class="text-[11px] text-muted-foreground">sec</span>
-								</div>
-								@durationBadgesRow("workflow_sleep_seconds", secBadges())
+							<span class="drawer-field-hint">Signal will return this as its error</span>
+						</div>
+						<div class="drawer-field">
+							<label>Panic</label>
+							<div class="drawer-checks" style="padding-top:0.375rem;">
+								<label>
+									<input type="checkbox" name="panic" if cfg != nil && cfg.Panic { checked } class="rounded border-border"/>
+									Trigger panic in handler
+								</label>
 							</div>
 						</div>
 					</div>
 				</div>
 
-				<!-- Footer -->
-				<div class="flex items-center justify-between mt-4">
-					<label class="flex items-center gap-3 text-sm font-medium cursor-pointer">
+				<div class="drawer-section">
+					<div class="drawer-section-header">
+						<div class="drawer-section-title">Sleep delays</div>
+						<div class="drawer-section-hint">Introduce artificial delays to simulate slow signal processing or deadlocks.</div>
+					</div>
+					<div class="drawer-grid-2">
+						<div class="drawer-field">
+							<label>Deadlock sleep</label>
+							<div class="flex items-center gap-2">
+								@input.Input(input.Props{
+									Name: "deadlock_sleep_seconds", Type: input.TypeNumber,
+									Value: safeDeadlockSleep(cfg), Placeholder: "0",
+									Class: "drawer-input-number",
+									Attributes: templ.Attributes{"step": "0.5", "min": "0"},
+								})
+								<span class="text-xs text-muted-foreground">sec</span>
+							</div>
+							@durationBadgesRow("deadlock_sleep_seconds", secBadges())
+						</div>
+						<div class="drawer-field">
+							<label>Workflow sleep</label>
+							<div class="flex items-center gap-2">
+								@input.Input(input.Props{
+									Name: "workflow_sleep_seconds", Type: input.TypeNumber,
+									Value: safeWorkflowSleep(cfg), Placeholder: "0",
+									Class: "drawer-input-number",
+									Attributes: templ.Attributes{"step": "0.5", "min": "0"},
+								})
+								<span class="text-xs text-muted-foreground">sec</span>
+							</div>
+							@durationBadgesRow("workflow_sleep_seconds", secBadges())
+						</div>
+					</div>
+				</div>
+
+				<div style="display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;padding-top:1rem;border-top:1px solid var(--border);">
+					<label class="flex items-center gap-3 text-sm font-medium cursor-pointer mr-auto">
 						<span class="tgl">
 							<input type="checkbox" name="enabled"
 								if cfg != nil && cfg.Enabled { checked }
@@ -754,6 +824,9 @@ templ signalRowInner(signalType string, cfg *app.SandboxModeSignalConfig, saved 
 						</span>
 						Enabled
 					</label>
+					<button type="button" style="padding:0.5rem 1rem;font-size:0.875rem;color:var(--muted-foreground);background:none;border:none;cursor:pointer;"
+						onclick="this.closest('details').removeAttribute('open');"
+					>Cancel</button>
 					@button.Button(button.Props{Type: button.TypeSubmit, Size: button.SizeSm}) { Save }
 				</div>
 			</form>
