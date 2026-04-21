@@ -36,6 +36,10 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.String("step_id", step.ID),
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", step.RetryIndex))
+
+		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+			return errors.Wrap(err, "unable to set result directive")
+		}
 		return s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"retries_exhausted": true,
 			"max_retries":       maxRetries,
