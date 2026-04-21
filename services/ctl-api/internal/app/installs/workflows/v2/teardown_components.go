@@ -15,7 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
-func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
@@ -34,7 +34,12 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) ([]*app.Workflo
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	return teardownComponents(ctx, flw, newStepGroup(), appCfg, awData)
+	sg := newStepGroup()
+	steps, err := teardownComponents(ctx, flw, sg, appCfg, awData)
+	if err != nil {
+		return nil, err
+	}
+	return sg.Result(steps), nil
 }
 
 func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {

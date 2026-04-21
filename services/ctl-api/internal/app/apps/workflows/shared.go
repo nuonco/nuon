@@ -28,7 +28,9 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 
 // stepGroup tracks the current group index for workflow steps
 type stepGroup struct {
-	idx int
+	idx          int
+	groups       []*app.WorkflowStepGroup
+	currentGroup *app.WorkflowStepGroup
 }
 
 // newStepGroup creates a new step group starting at index 0
@@ -39,6 +41,23 @@ func newStepGroup() *stepGroup {
 // nextGroup increments the group index for sequential execution
 func (s *stepGroup) nextGroup() {
 	s.idx++
+	g := &app.WorkflowStepGroup{
+		GroupIdx: s.idx,
+		Status:   app.CompositeStatus{Status: app.StatusPending},
+	}
+	s.groups = append(s.groups, g)
+	s.currentGroup = g
+}
+
+func (s *stepGroup) Groups() []*app.WorkflowStepGroup {
+	return s.groups
+}
+
+func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
+	return &app.GenerateStepsResult{
+		Steps:  steps,
+		Groups: s.groups,
+	}
 }
 
 // appBranchSignalStep creates a WorkflowStep from an app branch signal

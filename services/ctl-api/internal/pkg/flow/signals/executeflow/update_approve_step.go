@@ -1,6 +1,8 @@
 package executeflow
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -20,21 +22,24 @@ type ApproveStepResponse struct {
 }
 
 func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest) (*ApproveStepResponse, error) {
-	// Forward the approval to the step's handler workflow via activity.
-	// The step's "approve-plan" handler sets s.approved = true to unblock the step.
-	_, err := workflowactivities.AwaitForwardApprovePlan(ctx, workflowactivities.ForwardApprovePlanRequest{
+	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
+	}
+
+	if _, err := workflowactivities.AwaitForwardApproveStepToGroup(ctx, workflowactivities.ForwardApproveStepToGroupRequest{
 		StepID:             req.StepID,
+		StepGroupID:        step.WorkflowStepGroupID,
 		ApprovalResponseID: req.ApprovalResponseID,
 		ResponseType:       req.ResponseType,
-	})
-	if err != nil {
-		return nil, err
+	}); err != nil {
+		return nil, fmt.Errorf("unable to forward approve-step to group: %w", err)
 	}
 
 	// Wake up the parent execute loop to continue after approval.
-	// The step workflow will have written a directive indicating what to do next.
 	s.resumeRequested = true
 	s.resumeRunType = app.WorkflowRunTypeResume
 	s.resumeStepID = req.StepID
+	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
 	return &ApproveStepResponse{WorkflowID: s.WorkflowID}, nil
 }

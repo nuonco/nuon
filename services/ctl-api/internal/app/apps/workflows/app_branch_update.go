@@ -5,7 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) ([]*app.WorkflowStep, error) {
+func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	// flow step definition goes here
 	return nil, nil
 }

@@ -45,3 +45,10 @@ func ApplyStepContext(sig Signal, stepID, flowID string) {
 		sc.SetStepContext(stepID, flowID)
 	}
 }
+
+// ApplyRetryCount sets the retry count on signals that implement SignalWithRetryCount.
+func ApplyRetryCount(sig Signal, retryIndex, groupRetryIndex int) {
+	if rc, ok := sig.(SignalWithRetryCount); ok {
+		rc.SetRetryCount(retryIndex, groupRetryIndex)
+	}
+}

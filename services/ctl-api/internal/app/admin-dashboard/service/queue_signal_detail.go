@@ -606,10 +606,16 @@ func (s *service) formatPayloads(payloads *commonpb.Payloads) string {
 // by each signal type. Derived from the RegisterUpdateHandlers implementations.
 func updateHandlersForSignalType(signalType string) []string {
 	switch signalType {
-	case "execute-flow":
-		return []string{"retry-step", "approve-step", "skip-step", "cancel-step", "is-retryable", "poll-next-step"}
+	case "execute-workflow":
+		return []string{
+			"retry-step", "approve-step", "is-retryable", "skip-step",
+			"cancel-step", "cancel-group", "cancel-workflow", "poll-next-step",
+			"retry-group", "pause-workflow", "unpause-workflow",
+		}
 	case "execute-workflow-step":
-		return []string{"is-retryable", "create-step-retry", "approve-plan"}
+		return []string{"is-retryable", "create-step-retry", "approve-plan", "step-finished", "was-retried"}
+	case "execute-workflow-step-group":
+		return []string{"cancel-group", "retry-step", "cancel-step", "approve-step", "skip-step", "group-finished"}
 	default:
 		return nil
 	}
