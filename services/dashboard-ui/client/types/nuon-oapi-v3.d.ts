@@ -3620,6 +3620,13 @@ export interface components {
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
     };
+    "app.InstallRoleSelectionRecord": {
+      available?: boolean;
+      role_id?: string;
+      role_name?: string;
+      role_source?: string;
+      selected?: boolean;
+    };
     "app.InstallRoleUsage": {
       created_at?: string;
       created_by_id?: string;
@@ -3627,7 +3634,7 @@ export interface components {
       install_role_id?: string;
       org_id?: string;
       role_name?: string;
-      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
+      role_selection_trace?: components["schemas"]["app.InstallRoleSelectionRecord"][];
       role_source?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
       runner_job_id?: string;
@@ -4302,6 +4309,7 @@ export interface components {
       finished_at?: string;
       group?: components["schemas"]["app.RunnerJobGroup"];
       id?: string;
+      install_role_usage?: components["schemas"]["app.InstallRoleUsage"];
       json?: components["schemas"]["app.RunnerJobPlan"];
       log_stream_id?: string;
       max_executions?: number;
@@ -4381,25 +4389,12 @@ export interface components {
     "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
-    "app.RunnerJobPermissionInfo": {
-      role?: string;
-      role_selection_trace?: components["schemas"]["app.RunnerJobPermissionTraceRecord"][];
-      role_source?: string;
-    };
-    "app.RunnerJobPermissionTraceRecord": {
-      available?: boolean;
-      role_id?: string;
-      role_name?: string;
-      role_source?: string;
-      selected?: boolean;
-    };
     "app.RunnerJobPlan": {
       composite_plan?: components["schemas"]["plantypes.CompositePlan"];
       created_at?: string;
       created_by_id?: string;
       id?: string;
       org_id?: string;
-      permission_info?: components["schemas"]["app.RunnerJobPermissionInfo"];
       plan_json?: string;
       runner_job_id?: string;
       updated_at?: string;

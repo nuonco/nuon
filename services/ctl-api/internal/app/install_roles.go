@@ -33,6 +33,8 @@ type InstallRoles struct {
 
 	// cloud specific role identifier
 	RoleID string `json:"role_id,omitzero" temporaljson:"role_id,omitzero,omitempty"`
+
+	LastUsedAt *time.Time `json:"last_used_at,omitzero" gorm:"-" temporaljson:"last_used_at,omitzero,omitempty"`
 }
 
 func (i *InstallRoles) Indexes(db *gorm.DB) []migrations.Index {

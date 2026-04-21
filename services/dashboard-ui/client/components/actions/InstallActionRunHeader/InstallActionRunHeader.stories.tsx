@@ -17,7 +17,7 @@ const mockRun = {
   config: { timeout: 300000000000 },
   status_v2: { status: 'succeeded', status_human_description: 'Completed successfully' },
   run_env_vars: { COMPONENT_NAME: 'web-app', COMPONENT_ID: 'comp-1' },
-  runner_job: { id: 'job-1', json: { permission_info: { role: 'arn:aws:iam::role/deploy' } } },
+  runner_job: { id: 'job-1', install_role_usage: { role_name: 'arn:aws:iam::role/deploy' } },
 } as any
 
 const mockWorkflow = {

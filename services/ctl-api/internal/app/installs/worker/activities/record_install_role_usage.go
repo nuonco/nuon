@@ -79,7 +79,7 @@ func (a *Activities) RecordInstallRoleUsage(ctx context.Context, req *RecordInst
 		RunnerJobID:        req.RunnerJobID,
 		RoleName:           req.RoleSelection.RoleName,
 		RoleSource:         string(req.RoleSelection.Source),
-		RoleSelectionTrace: app.RunnerJobPermissionTrace(req.RoleSelection.Trace),
+		RoleSelectionTrace: app.InstallRoleSelectionTrace(req.RoleSelection.Trace),
 	}
 
 	if err := a.db.WithContext(ctx).Create(&usage).Error; err != nil {
