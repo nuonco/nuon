@@ -27,7 +27,7 @@ export type TAppSandboxBuild = {
   status?: string
   status_description?: string
   status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
-  log_stream?: { id: string; open?: boolean }
+  log_stream?: { id?: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
 }
@@ -336,13 +336,19 @@ export interface TUserJourney {
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
-export type TWorkflowStep = components['schemas']['app.WorkflowStep']
+export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
+  log_stream?: { id?: string; open?: boolean }
+}
 export type TWorkflowStepApproval =
   components['schemas']['app.WorkflowStepApproval']
 export type TWorkflowStepApprovalResponse = { type: string } & any
 export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
 export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
+
+// app secrets
+export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']
+export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']

@@ -1482,6 +1482,10 @@ github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v1.3.0 h1:L7G3d
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v1.3.0/go.mod h1:Ms6gYEy0+A2knfKrwdatsggTXYA2+ICKug8w7STorFw=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0 h1:Dd+RhdJn0OTtVGaeDLZpcumkIVCtA/3/Fo42+eoYvVM=
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.2.0/go.mod h1:5kakwfW5CjC9KK+Q4wjXAg+ShuIm2mBMua0ZFj2C8PE=
+github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0 h1:/g8S6wk65vfC6m3FIxJ+i5QDyN9JWwXI8Hb0Img10hU=
+github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0/go.mod h1:gpl+q95AzZlKVI3xSoseF9QPrypk0hQqBiJYeB/cR/I=
+github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/internal v1.2.0 h1:nCYfgcSyHZXJI8J0IWE5MsCGlb2xp9fJiXyxWgmOFg4=
+github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/internal v1.2.0/go.mod h1:ucUjca2JtSZboY8IoUqyQyuuXvwbMBVwFOm0vdQPNhA=
 github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c h1:udKWzYgxTojEKWjV8V+WSxDXJ4NFATAsZjh8iIbsQIg=
 github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
 github.com/AzureAD/microsoft-authentication-extensions-for-go/cache v0.1.1 h1:WJTmL004Abzc5wDB5VtZG2PJk5ndYDgVacGqfirKxjM=
