@@ -83,7 +83,7 @@ export type TStepButtonsCfg = {
 export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
   return {
-    retry: status === 'error' && !!step?.retryable && !step?.retried,
+    retry: status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto',
     cancel: status === 'in-progress' || status === 'approval-awaiting',
     approval: status === 'approval-awaiting',
   }
@@ -103,6 +103,13 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
 
   if (status === 'error') {
     const metadata = step?.status?.metadata
+    if (metadata?.retries_exhausted) {
+      return {
+        copy: `Step encountered an error: ${status_human_description}`,
+        theme: 'error',
+        title: `Step ${step?.name} failed after ${metadata.max_retries} retries`,
+      }
+    }
     const retryInfo =
       metadata?.retry_type
         ? ` (${metadata.retry_type} retry ${metadata.retry_idx ?? ''}/${metadata.max_retries ?? ''})`
