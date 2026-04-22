@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/runnerstatussignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
 )
@@ -22,14 +21,10 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			return AwaitCreated(ctx, input)
 		},
 		sigs.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitProvision(ctx, input, &workflow.ChildWorkflowOptions{
-				WorkflowID: runnerstatussignals.ProvisionID(input.ID),
-			})
+			return AwaitProvision(ctx, input)
 		},
 		sigs.OperationReprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitReprovision(ctx, input, &workflow.ChildWorkflowOptions{
-				WorkflowID: runnerstatussignals.ReprovisionID(input.ID),
-			})
+			return AwaitReprovision(ctx, input)
 		},
 		sigs.OperationDeprovision: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitDeprovision(ctx, input)

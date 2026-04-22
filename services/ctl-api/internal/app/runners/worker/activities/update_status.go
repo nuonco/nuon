@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/runnerstatussignals"
 )
 
 type UpdateStatusRequest struct {
@@ -32,8 +30,6 @@ func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) 
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("no runner found: %s %w", req.RunnerID, gorm.ErrRecordNotFound)
 	}
-
-	a.helpers.SignalOrgProvisionForRunner(ctx, zap.NewNop(), req.RunnerID, runnerstatussignals.ReasonStatusChanged)
 
 	return nil
 }
