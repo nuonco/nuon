@@ -26,7 +26,7 @@ func (s *Signal) handlePlanOnlyApproval(ctx workflow.Context, step *app.Workflow
 	targetStatus := app.WorkflowStepApprovalStatusApproved
 
 	if noopPlan {
-		statusDescription = "No drift detected "
+		statusDescription = "No drift detected"
 		targetStatus = app.WorkflowStepNoDrift
 	} else {
 		statusDescription = "Drift detected"

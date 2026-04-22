@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -52,9 +51,9 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		zap.Int("step_count", len(steps)),
 		zap.Int("new_group_retry_idx", newGroupRetryIdx))
 
-	// Mark ALL steps in the group as retried and discarded (including terminal
-	// ones like StatusSuccess) so the dashboard clearly shows which generation
-	// is active.
+	// Mark ALL steps in the group as retried. Keep the existing status so
+	// errors still show correctly in the dashboard — just set the retried
+	// boolean and add group_retry metadata.
 	for _, step := range steps {
 		if step.Status.Status == app.StatusDiscarded {
 			continue
@@ -62,18 +61,6 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		_ = activities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, activities.UpdateFlowStepRetriedRequest{
 			StepID: step.ID,
 		})
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status:                 app.StatusDiscarded,
-				StatusHumanDescription: "Group automatically retried.",
-				Metadata: map[string]any{
-					"reason": "group retry",
-				},
-			},
-		}); err != nil {
-			l.Warn("failed to mark step as discarded", zap.String("step_id", step.ID), zap.Error(err))
-		}
 	}
 
 	// Only clone primary steps — filter out any step that is a retry clone

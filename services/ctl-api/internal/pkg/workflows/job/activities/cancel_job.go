@@ -19,10 +19,14 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		ID: req.ID,
 	}
 
+	jobStatusV2 := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobStatusCancelled))
+	jobStatusV2.StatusHumanDescription = "cancelled"
+
 	res := a.db.WithContext(ctx).
 		Model(&runnerJob).
-		Updates(app.RunnerJob{
-			Status: app.RunnerJobStatusCancelled,
+		Updates(map[string]any{
+			"status":    app.RunnerJobStatusCancelled,
+			"status_v2": jobStatusV2,
 		})
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to cancel runner job")
@@ -43,10 +47,14 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 			continue
 		}
 
+		execStatusV2 := app.NewCompositeStatus(ctx, app.Status(app.RunnerJobExecutionStatusCancelled))
+		execStatusV2.StatusHumanDescription = "cancelled"
+
 		res = a.db.WithContext(ctx).
 			Model(execution).
-			Updates(app.RunnerJobExecution{
-				Status: app.RunnerJobExecutionStatusCancelled,
+			Updates(map[string]any{
+				"status":    app.RunnerJobExecutionStatusCancelled,
+				"status_v2": execStatusV2,
 			})
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to cancel job execution")

@@ -37,17 +37,21 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 			s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 		} else {
 			// FlowStoppedErr is a terminal state — not retryable
-			if _, ok := runErr.(*flow.FlowStoppedErr); ok {
+			if stoppedErr, ok := runErr.(*flow.FlowStoppedErr); ok {
 				s.updateRunStatus(ctx, run.ID, app.StatusError)
+				metadata := map[string]any{
+					"error_message": runErr.Error(),
+					"stopped":       true,
+				}
+				if stoppedErr.RetriesExhausted {
+					metadata["retries_exhausted"] = true
+				}
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: s.WorkflowID,
 					Status: app.CompositeStatus{
 						Status:                 app.StatusError,
 						StatusHumanDescription: "workflow stopped",
-						Metadata: map[string]any{
-							"error_message": runErr.Error(),
-							"stopped":       true,
-						},
+						Metadata:               metadata,
 					},
 				})
 				return runErr
@@ -285,7 +289,9 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
-			return flow.NewFlowStoppedErr("", "group returned stop directive")
+			stoppedErr := flow.NewFlowStoppedErr("", "group returned stop directive")
+			stoppedErr.RetriesExhausted = s.checkGroupRetriesExhausted(ctx, group)
+			return stoppedErr
 
 		case "await-approval":
 			return flow.NewApprovalPauseErr("")
@@ -400,9 +406,9 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 	return 0
 }
 
-// markRemainingGroupStepsNotAttempted marks all non-terminal steps in groups
-// after the given group index as not-attempted. This is called when a group
-// returns a "stop" directive (e.g. plan denied) so that future groups' steps
+// markRemainingGroupStepsNotAttempted marks all remaining groups and their
+// non-terminal steps as not-attempted. This is called when a group returns a
+// "stop" directive (e.g. plan denied) so that future groups and their steps
 // reflect that they were never executed.
 func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *zap.Logger, groups []app.WorkflowStepGroup, currentGroupPosition int) {
 	if currentGroupPosition+1 >= len(groups) {
@@ -421,6 +427,23 @@ func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *za
 	futureGroupIdxs := make(map[int]bool)
 	for i := currentGroupPosition + 1; i < len(groups); i++ {
 		futureGroupIdxs[groups[i].GroupIdx] = true
+
+		// Mark the group object itself as not-attempted.
+		if groups[i].ID != "" {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: groups[i].ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusNotAttempted,
+					Metadata: map[string]any{
+						"reason": "workflow stopped before group was reached",
+					},
+				},
+			}); err != nil {
+				l.Warn("failed to mark group as not-attempted",
+					zap.String("step_group_id", groups[i].ID),
+					zap.Error(err))
+			}
+		}
 	}
 
 	for _, step := range steps {
@@ -518,4 +541,25 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 		return false
 	}
 	return resp.Retryable
+}
+
+// checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
+// metadata, indicating the stop was caused by retry exhaustion.
+func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.WorkflowStepGroup) bool {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		return false
+	}
+	for _, step := range steps {
+		if step.GroupIdx == group.GroupIdx && step.Status.Status == app.StatusError {
+			if v, ok := step.Status.Metadata["retries_exhausted"]; ok {
+				if b, ok := v.(bool); ok && b {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

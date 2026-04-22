@@ -32,8 +32,13 @@ type Signal struct {
 	resumeStepID    string
 	resumeStartIdx  int
 
-	// Cancel state — set by "cancel-step" update handler.
+	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
+
+	// activeGroupQueueSignalID is the queue signal ID of the currently
+	// executing group. Set by executeGroup, used by cancelWorkflowHandler
+	// to actively cancel the running group.
+	activeGroupQueueSignalID string
 
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.

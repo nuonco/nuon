@@ -46,6 +46,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				"error_message": execErr.Error(),
 			},
 		})
+	} else if s.lastDirective == DirectiveStop {
+		s.updateGroupStatus(ctx, app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: "group stopped",
+			Metadata: map[string]any{
+				"directive": DirectiveStop,
+			},
+		})
 	} else {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusSuccess,
@@ -177,8 +185,10 @@ func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep
 	return nil, false
 }
 
-// cancelRemainingSteps marks all non-terminal steps after the given step as not-attempted.
-func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string) {
+// cancelRemainingSteps marks all non-terminal steps after the given step with
+// the provided status. Use StatusNotAttempted for stop directives and
+// StatusDiscarded for skip-group directives.
+func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status) {
 	pastTrigger := false
 	for _, step := range steps {
 		if step.ID == afterStepID {
@@ -191,7 +201,7 @@ func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
-				Status: app.StatusNotAttempted,
+				Status: status,
 				Metadata: map[string]any{
 					"reason": fmt.Sprintf("group step %s triggered stop", afterStepID),
 				},

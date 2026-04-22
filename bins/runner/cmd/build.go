@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sync"
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
-	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -57,8 +56,6 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 			fx.Invoke(jobloop.WithOperationsJobLoops(func([]jobloop.JobLoop) {})),
 
 			// sandbox control API
-			fx.Provide(sandboxctl.New),
-			fx.Invoke(func(*sandboxctl.Server) {}),
 
 			// registry, heartbeater, and shutdown poller
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
