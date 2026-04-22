@@ -2398,6 +2398,20 @@ export interface paths {
      */
     post: operations["CancelWorkflow"];
   };
+  "/v1/workflows/{workflow_id}/step-groups": {
+    /**
+     * get all step groups for a workflow
+     * @description Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
+     */
+    get: operations["GetWorkflowStepGroups"];
+  };
+  "/v1/workflows/{workflow_id}/step-groups/{step_group_id}": {
+    /**
+     * get a workflow step group
+     * @description Get a single workflow step group by ID, including its nested steps.
+     */
+    get: operations["GetWorkflowStepGroup"];
+  };
   "/v1/workflows/{workflow_id}/steps": {
     /**
      * get all of the steps for a given workflow
@@ -23275,6 +23289,108 @@ export interface operations {
       202: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all step groups for a workflow
+   * @description Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
+   */
+  GetWorkflowStepGroups: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepGroup"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a workflow step group
+   * @description Get a single workflow step group by ID, including its nested steps.
+   */
+  GetWorkflowStepGroup: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step group ID */
+        step_group_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepGroup"];
         };
       };
       /** @description Bad Request */

@@ -106,6 +106,10 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 	steps := make([]*app.WorkflowStep, 0)
 	installActions := filterActionWorkflowsByTrigger(awData, triggerTyp, "", appCfg)
 
+	if len(installActions) == 0 {
+		return steps, nil
+	}
+
 	sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
