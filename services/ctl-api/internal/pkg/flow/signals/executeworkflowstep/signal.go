@@ -133,4 +133,3 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 	return nil
 }
-
