@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"errors"
 	"fmt"
 	"maps"
 	"time"
@@ -19,22 +18,7 @@ import (
 const (
 	defaultJobPollPeriod       time.Duration = time.Second * 1
 	defaultAvailablePollPeriod time.Duration = time.Second * 1
-
-	// historyLengthCANThreshold bounds events per ProcessJob run. At ~15 events/s
-	// from the poll loops, this gives ~100s per generation — small enough that
-	// replay stays fast (no busyworkflow lock contention), large enough that
-	// CAN overhead is negligible.
-	historyLengthCANThreshold = 1500
 )
-
-// errContinueAsNew signals from the polling loops that the workflow should
-// rotate via ContinueAsNew. The caller (ProcessJob) owns the rotation so the
-// inner loops don't need to carry the original signal input.
-var errContinueAsNew = errors.New("continue-as-new threshold reached")
-
-func shouldContinueAsNew(ctx workflow.Context) bool {
-	return workflow.GetInfo(ctx).GetCurrentHistoryLength() >= historyLengthCANThreshold
-}
 
 // this function is the most core part of the runner job system, it's responsible for a.) marking a job as available and
 // then b.) waiting until it is picked up by a runner (ie: an execution exists) and then c.) finished.
@@ -83,9 +67,6 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 	// TODO(jm): move this into a separate function
 	if job.Group != app.RunnerJobGroupOperations {
 		for runnerStatus != app.RunnerStatusActive {
-			if shouldContinueAsNew(ctx) {
-				return false, false, errContinueAsNew
-			}
 			workflow.Sleep(ctx, defaultAvailablePollPeriod)
 			// NOTE - first pass through this loop will have garbage data for the runner status
 			etags["runner_status"] = string(runnerStatus)
@@ -147,9 +128,6 @@ func (w *Workflows) startJobExecution(ctx workflow.Context, job *app.RunnerJob) 
 
 	// poll until the job is picked up, and an execution exists
 	for !jobExecutionFound {
-		if shouldContinueAsNew(ctx) {
-			return false, false, errContinueAsNew
-		}
 		workflow.Sleep(ctx, defaultAvailablePollPeriod)
 
 		now := workflow.Now(ctx)
