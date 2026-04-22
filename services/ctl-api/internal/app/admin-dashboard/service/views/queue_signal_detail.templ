@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 )
 
-templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo, attrs *catalog.SignalTypeInfo) {
+templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL string, wfInfo *WorkflowInfo, attrs *catalog.SignalTypeInfo, signalsAhead []app.QueueSignal) {
 	@Layout("Signal: " + signal.ID, ActivePageQueues) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -91,6 +91,44 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 							@timelineConnector(computeDuration(signal))
 							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
 						</div>
+					}
+				}
+			</div>
+
+			<!-- Signals Ahead -->
+			<div class="mb-6">
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							Signals ahead
+						}
+						if len(signalsAhead) > 0 {
+							@card.Description() {
+								{ fmt.Sprintf("%d non-terminal signal(s) ahead in queue", len(signalsAhead)) }
+							}
+						}
+					}
+					@card.Content() {
+						if len(signalsAhead) == 0 {
+							<p class="text-sm text-muted-foreground">No signals ahead of this one.</p>
+						} else {
+							<div class="space-y-2">
+								for _, sig := range signalsAhead {
+									<div class="flex items-center gap-3 p-3 border border-border rounded">
+										<a href={ templ.URL("/queues/" + q.ID + "/signals/" + sig.ID) } class="text-cyan hover:underline font-mono text-xs flex-1 truncate">
+											{ sig.ID }
+										</a>
+										@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+											{ string(sig.Type) }
+										}
+										@signalStatusBadge(sig.Status)
+										<span class="text-xs text-muted-foreground whitespace-nowrap">
+											{ sig.CreatedAt.Format("2006-01-02 15:04:05") }
+										</span>
+									</div>
+								}
+							</div>
+						}
 					}
 				}
 			</div>

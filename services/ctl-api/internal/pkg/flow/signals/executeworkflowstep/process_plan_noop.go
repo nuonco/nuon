@@ -31,6 +31,10 @@ func (s *Signal) runNoopCheck(ctx workflow.Context, l *zap.Logger, step *app.Wor
 			return false, errors.Wrap(err, "failed to handle noop plan")
 		}
 		if !flw.PlanOnly {
+			// Write skip-group directive so the rest of the group (e.g. apply) is skipped.
+			if err := setResultDirective(ctx, step.ID, DirectiveSkipGroup); err != nil {
+				return false, errors.Wrap(err, "unable to set skip-group directive for noop plan")
+			}
 			return true, nil
 		}
 	}

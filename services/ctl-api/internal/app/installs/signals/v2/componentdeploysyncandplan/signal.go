@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -33,6 +34,8 @@ type Signal struct {
 	FlowID             string
 	SandboxMode        bool
 	Role               string
+
+	runnerJobID string
 }
 
 func (s *Signal) Type() signal.SignalType {
@@ -50,10 +53,20 @@ var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
 var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool { return true }
 func (s *Signal) AutoRetry() bool                { return true }
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
+}
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -254,6 +267,7 @@ func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDep
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	// create the plan request
 	runPlan, err := plan.AwaitCreateSyncPlan(ctx, &plan.CreateSyncPlanRequest{
@@ -372,6 +386,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{
 		InstallDeployID: installDeploy.ID,
