@@ -4794,6 +4794,7 @@ export interface components {
       name?: string;
       parallel?: boolean;
       queue_signal?: components["schemas"]["app.QueueSignal"];
+      result_directive?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.WorkflowStep"][];
       updated_at?: string;

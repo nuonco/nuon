@@ -1,6 +1,7 @@
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { WorkflowActionButtons } from '../WorkflowActionButtons'
@@ -21,7 +22,9 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
   return (
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
       <div className="flex flex-col gap-4">
-        <BackLink />
+        <BackLink>
+          <Icon variant="CaretLeft" weight="bold" /> All workflows
+        </BackLink>
         <HeadingGroup>
           <Text
             flex

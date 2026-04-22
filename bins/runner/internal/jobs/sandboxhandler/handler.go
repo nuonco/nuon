@@ -242,6 +242,14 @@ BREAK:
 		zap.Duration("duration", duration),
 	)
 
+	if cfg.ErrorMessage != "" {
+		l.Info("sandbox: error message set for job, returning error",
+			zap.String("job_type", string(job.Type)),
+			zap.String("error_message", cfg.ErrorMessage),
+		)
+		return errors.New(cfg.ErrorMessage)
+	}
+
 	return nil
 }
 
@@ -250,6 +258,26 @@ func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return err
+	}
+
+	// Check sandbox config failure modes before executing
+	cfg := h.sandboxCfg
+	if cfg != nil {
+		if cfg.ErrorMessage != "" {
+			l.Info("sandbox: error message set for action workflow, returning error",
+				zap.String("job_type", string(job.Type)),
+				zap.String("error_message", cfg.ErrorMessage),
+			)
+			return errors.New(cfg.ErrorMessage)
+		}
+
+		if cfg.TriggerShutdown {
+			l.Error("sandbox: trigger_shutdown enabled for action workflow",
+				zap.String("job_type", string(job.Type)),
+			)
+			h.shutdowner.Shutdown()
+			return errors.New("sandbox: shutdown triggered for job type " + string(job.Type))
+		}
 	}
 
 	l.Info("fetching actions job plan")

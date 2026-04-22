@@ -25,8 +25,9 @@ type WorkflowStepGroup struct {
 	GroupIdx int  `json:"group_idx" temporaljson:"group_idx,omitzero,omitempty"`
 	Parallel bool `json:"parallel,omitzero" gorm:"default:false" temporaljson:"parallel,omitzero,omitempty"`
 
-	Status CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
-	Name   string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	Status          CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
+	Name            string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+	ResultDirective string          `json:"result_directive,omitzero" gorm:"type:text;default:''" temporaljson:"result_directive,omitzero,omitempty"`
 
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
