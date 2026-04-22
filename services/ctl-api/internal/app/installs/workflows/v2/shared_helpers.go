@@ -3,6 +3,7 @@ package v2
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -151,7 +152,14 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		components[ccc.ComponentID] = ccc.Component
 	}
 
-	for _, compID := range componentIDs {
+	for i, compID := range componentIDs {
+		// Yield to the Temporal scheduler periodically to avoid deadlock detection
+		// when generating steps for many components (TMPRL1101).
+		// Sleep(0) is a no-op; a real timer is needed to force a yield.
+		if i%5 == 0 && i > 0 {
+			_ = workflow.Sleep(ctx, time.Millisecond)
+		}
+
 		sg.nextGroup()
 		comp, has := components[compID]
 		if !has {
@@ -265,6 +273,9 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 	}
 	steps = append(steps, deploySteps...)
 	if !flw.PlanOnly {
+		// Yield after processing all component deploy steps to avoid deadlock detection (TMPRL1101).
+		_ = workflow.Sleep(ctx, time.Millisecond)
+
 		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg, appCfg, awData)
 		if err != nil {
 			return nil, err

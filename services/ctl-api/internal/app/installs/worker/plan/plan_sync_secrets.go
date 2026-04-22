@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -92,6 +93,17 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 				},
 			},
 		}
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		azureOutputs := stack.InstallStackOutputs.AzureStackOutputs
+		cloudAuth = &CloudAuth{
+			Azure: &azurecredentials.Config{
+				ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
+					SubscriptionID:       azureOutputs.SubscriptionID,
+					SubscriptionTenantID: azureOutputs.SubscriptionTenantID,
+				},
+				UseDefault: true,
+			},
+		}
 	case stack.InstallStackOutputs.GCPStackOutputs != nil:
 		gcpOutputs := stack.InstallStackOutputs.GCPStackOutputs
 		if gcpOutputs.ProvisionSAEmail == "" {
@@ -116,6 +128,7 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 	plan := &plantypes.SyncSecretsPlan{
 		ClusterInfo:       clusterInfo,
 		AWSAuth:           cloudAuth.AWS,
+		AzureAuth:         cloudAuth.Azure,
 		GCPAuth:           cloudAuth.GCP,
 		KubernetesSecrets: secrets,
 	}
@@ -152,6 +165,16 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 			return plantypes.KubernetesSecretSync{}, false, nil
 		}
 		sync.GCPSecretName = generics.FromPtrStr(val)
+	case stack.AzureStackOutputs != nil:
+		key := fmt.Sprintf("%s_secret_id", cfg.Name)
+		val, ok := stack.Data[key]
+		if !ok || val == nil || generics.FromPtrStr(val) == "" {
+			if cfg.Required {
+				return plantypes.KubernetesSecretSync{}, false, fmt.Errorf("secret id not found in stack output: %s", key)
+			}
+			return plantypes.KubernetesSecretSync{}, false, nil
+		}
+		sync.AzureKeyVaultSecretID = generics.FromPtrStr(val)
 	default:
 		key := fmt.Sprintf("%s_arn", cfg.Name)
 		val, ok := stack.Data[key]

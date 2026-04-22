@@ -72,6 +72,7 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 		"privateSubnet3CIDR": map[string]any{"value": "10.128.134.0/24"},
 		"nuonInstallID":      map[string]any{"value": installID},
 		"location":           map[string]any{"value": location},
+		"commonTags":         map[string]any{"value": "[variables('commonTags')]"},
 	}
 
 	deployment := map[string]any{
@@ -92,20 +93,138 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 }
 
 func (t *Templates) getDefaultVNetTemplate() map[string]any {
+	// Core networking resources (Public IP, NAT Gateway, NSGs, Route Table, VNet).
+	resources := []any{
+		// Public IP for NAT Gateway
+		map[string]any{
+			"type":       "Microsoft.Network/publicIPAddresses",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-natgw-pip', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"sku":        map[string]any{"name": "Standard"},
+			"properties": map[string]any{
+				"publicIPAllocationMethod": "Static",
+			},
+		},
+		// NAT Gateway
+		map[string]any{
+			"type":       "Microsoft.Network/natGateways",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-natgw', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"sku":        map[string]any{"name": "Standard"},
+			"properties": map[string]any{
+				"publicIpAddresses": []any{
+					map[string]any{
+						"id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
+					},
+				},
+				"idleTimeoutInMinutes": 4,
+			},
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
+			},
+		},
+		// Public NSG
+		map[string]any{
+			"type":       "Microsoft.Network/networkSecurityGroups",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-public-nsg', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"properties": map[string]any{
+				"securityRules": []any{
+					map[string]any{
+						"name": "Allow-All-Inbound",
+						"properties": map[string]any{
+							"description":              "Allow all inbound traffic from any source",
+							"protocol":                 "*",
+							"sourcePortRange":          "*",
+							"destinationPortRange":     "*",
+							"sourceAddressPrefix":      "*",
+							"destinationAddressPrefix": "*",
+							"access":                   "Allow",
+							"priority":                 200,
+							"direction":                "Inbound",
+						},
+					},
+				},
+			},
+		},
+		// Private NSG
+		map[string]any{
+			"type":       "Microsoft.Network/networkSecurityGroups",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-private-nsg', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"properties": map[string]any{
+				"securityRules": []any{},
+			},
+		},
+		// Route Table
+		map[string]any{
+			"type":       "Microsoft.Network/routeTables",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-private-routetable', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"properties": map[string]any{
+				"disableBgpRoutePropagation": false,
+			},
+		},
+		// VNet — subnets are declared as standalone child resources below so
+		// that ARM does not delete externally-created subnets on re-deploy.
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet', parameters('nuonInstallID'))]",
+			"location":   "[parameters('location')]",
+			"tags":       "[parameters('commonTags')]",
+			"properties": map[string]any{
+				"addressSpace": map[string]any{
+					"addressPrefixes": []string{"[parameters('vnetCIDR')]"},
+				},
+			},
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
+				"[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
+				"[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
+			},
+		},
+	}
+
+	// Standalone subnet resources — each depends on the VNet and relevant
+	// NSG/NAT resources. Because they are separate resources (not inline on
+	// the VNet), ARM will not attempt to remove subnets that are not declared
+	// in the template (e.g. subnets created by an AKS AGIC addon).
+	resources = append(resources, t.buildDefaultSubnetResources()...)
+
 	return map[string]any{
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
 		"parameters": map[string]any{
-			"nuonInstallID":      map[string]any{"type": "string"},
-			"location":           map[string]any{"type": "string"},
-			"vnetCIDR":           map[string]any{"type": "string", "defaultValue": "10.128.0.0/16"},
-			"publicSubnet1CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.0/26"},
-			"publicSubnet2CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.64/26"},
-			"publicSubnet3CIDR":  map[string]any{"type": "string", "defaultValue": "10.128.0.128/26"},
-			"runnerSubnetCIDR":   map[string]any{"type": "string", "defaultValue": "10.128.128.0/24"},
-			"privateSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.130.0/24"},
-			"privateSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.132.0/24"},
-			"privateSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.134.0/24"},
+			"nuonInstallID": map[string]any{"type": "string"},
+			"location":      map[string]any{"type": "string"},
+			"commonTags":    map[string]any{"type": "object"},
+			"vnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/16",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for this VNet."}},
+			"publicSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.0/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet."}},
+			"publicSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.64/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the second zone (optional)."}},
+			"publicSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.0.128/26",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the public subnet in the third zone (optional)."}},
+			"runnerSubnetCIDR": map[string]any{"type": "string", "defaultValue": "10.128.128.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the dedicated private subnet for the runner."}},
+			"privateSubnet1CIDR": map[string]any{"type": "string", "defaultValue": "10.128.130.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet."}},
+			"privateSubnet2CIDR": map[string]any{"type": "string", "defaultValue": "10.128.132.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the second zone (optional)."}},
+			"privateSubnet3CIDR": map[string]any{"type": "string", "defaultValue": "10.128.134.0/24",
+				"metadata": map[string]any{"description": "IP range (CIDR notation) for the private subnet in the third zone (optional)."}},
 		},
 		"variables": map[string]any{
 			"createPublicSubnet2":  "[not(empty(parameters('publicSubnet2CIDR')))]",
@@ -113,211 +232,144 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 			"createPrivateSubnet2": "[not(empty(parameters('privateSubnet2CIDR')))]",
 			"createPrivateSubnet3": "[not(empty(parameters('privateSubnet3CIDR')))]",
 		},
-		"resources": []any{
-			// Public IP for NAT Gateway
-			map[string]any{
-				"type":       "Microsoft.Network/publicIPAddresses",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-natgw-pip', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"sku":        map[string]any{"name": "Standard"},
-				"properties": map[string]any{
-					"publicIPAllocationMethod": "Static",
-				},
-			},
-			// NAT Gateway
-			map[string]any{
-				"type":       "Microsoft.Network/natGateways",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-natgw', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"sku":        map[string]any{"name": "Standard"},
-				"properties": map[string]any{
-					"publicIpAddresses": []any{
-						map[string]any{
-							"id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
-						},
-					},
-				},
-				"dependsOn": []string{
-					"[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-natgw-pip', parameters('nuonInstallID')))]",
-				},
-			},
-			// Public NSG
-			map[string]any{
-				"type":       "Microsoft.Network/networkSecurityGroups",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-public-nsg', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"properties": map[string]any{
-					"securityRules": []any{
-						map[string]any{
-							"name": "Allow-All-Inbound",
-							"properties": map[string]any{
-								"description":              "Allow all inbound traffic from any source",
-								"protocol":                 "*",
-								"sourcePortRange":          "*",
-								"destinationPortRange":     "*",
-								"sourceAddressPrefix":      "*",
-								"destinationAddressPrefix": "*",
-								"access":                   "Allow",
-								"priority":                 200,
-								"direction":                "Inbound",
-							},
-						},
-					},
-				},
-			},
-			// Private NSG
-			map[string]any{
-				"type":       "Microsoft.Network/networkSecurityGroups",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-private-nsg', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"properties": map[string]any{
-					"securityRules": []any{},
-				},
-			},
-			// Route Table
-			map[string]any{
-				"type":       "Microsoft.Network/routeTables",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-private-routetable', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"properties": map[string]any{
-					"disableBgpRoutePropagation": false,
-				},
-			},
-			// VNet with subnets
-			map[string]any{
-				"type":       "Microsoft.Network/virtualNetworks",
-				"apiVersion": "2023-04-01",
-				"name":       "[format('{0}-vnet', parameters('nuonInstallID'))]",
-				"location":   "[parameters('location')]",
-				"properties": map[string]any{
-					"addressSpace": map[string]any{
-						"addressPrefixes": []string{"[parameters('vnetCIDR')]"},
-					},
-					"subnets": t.buildDefaultSubnets(),
-				},
-				"dependsOn": []string{
-					"[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
-					"[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
-					"[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
-			},
-		},
-		"outputs": buildDefaultVNetOutputs(),
+		"resources": resources,
+		"outputs":   buildDefaultVNetOutputs(),
 	}
 }
 
-func (t *Templates) buildDefaultSubnets() []map[string]any {
+// buildDefaultSubnetResources returns subnets as standalone ARM child resources
+// (Microsoft.Network/virtualNetworks/subnets) rather than inline VNet properties.
+// This prevents ARM from deleting subnets that exist in Azure but are not declared
+// in the template (e.g. an ingress-subnet created by an AKS AGIC addon).
+func (t *Templates) buildDefaultSubnetResources() []any {
 	serviceEndpoints := []map[string]any{
 		{"service": "Microsoft.KeyVault"},
 		{"service": "Microsoft.ContainerRegistry"},
 	}
 
-	return []map[string]any{
-		{
-			"name": "[format('{0}-public-subnet-zone1', parameters('nuonInstallID'))]",
+	vnetDep := []string{
+		"[resourceId('Microsoft.Network/virtualNetworks', format('{0}-vnet', parameters('nuonInstallID')))]",
+	}
+
+	publicNSG := map[string]any{
+		"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
+	}
+	privateNSG := map[string]any{
+		"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
+	}
+	natGW := map[string]any{
+		"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
+	}
+
+	return []any{
+		// Public subnets
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-public-subnet-zone1', parameters('nuonInstallID'))]",
+			"dependsOn":  vnetDep,
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('publicSubnet1CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
+				"networkSecurityGroup":              publicNSG,
+				"natGateway":                        natGW,
 			},
 		},
-		{
-			"name": "[format('{0}-public-subnet-zone2', parameters('nuonInstallID'))]",
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-public-subnet-zone2', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone1', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('publicSubnet2CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
+				"networkSecurityGroup":              publicNSG,
+				"natGateway":                        natGW,
 			},
 		},
-		{
-			"name": "[format('{0}-public-subnet-zone3', parameters('nuonInstallID'))]",
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-public-subnet-zone3', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone2', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('publicSubnet3CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-public-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
+				"networkSecurityGroup":              publicNSG,
+				"natGateway":                        natGW,
 			},
 		},
-		{
-			"name": "[format('{0}-private-runner-subnet', parameters('nuonInstallID'))]",
+		// Runner subnet
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-private-runner-subnet', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-public-subnet-zone3', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('runnerSubnetCIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
-				"serviceEndpoints": serviceEndpoints,
+				"networkSecurityGroup":              privateNSG,
+				"natGateway":                        natGW,
+				"serviceEndpoints":                  serviceEndpoints,
 			},
 		},
-		{
-			"name": "[format('{0}-private-subnet-zone1', parameters('nuonInstallID'))]",
+		// Private subnets
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-private-subnet-zone1', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-runner-subnet', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('privateSubnet1CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
-				"serviceEndpoints": serviceEndpoints,
+				"networkSecurityGroup":              privateNSG,
+				"natGateway":                        natGW,
+				"serviceEndpoints":                  serviceEndpoints,
 			},
 		},
-		{
-			"name": "[format('{0}-private-subnet-zone2', parameters('nuonInstallID'))]",
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-private-subnet-zone2', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone1', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('privateSubnet2CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
-				"serviceEndpoints": serviceEndpoints,
+				"networkSecurityGroup":              privateNSG,
+				"natGateway":                        natGW,
+				"serviceEndpoints":                  serviceEndpoints,
 			},
 		},
-		{
-			"name": "[format('{0}-private-subnet-zone3', parameters('nuonInstallID'))]",
+		map[string]any{
+			"type":       "Microsoft.Network/virtualNetworks/subnets",
+			"apiVersion": "2023-04-01",
+			"name":       "[format('{0}-vnet/{0}-private-subnet-zone3', parameters('nuonInstallID'))]",
+			"dependsOn": []string{
+				"[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}-vnet', parameters('nuonInstallID')), format('{0}-private-subnet-zone2', parameters('nuonInstallID')))]",
+			},
 			"properties": map[string]any{
 				"addressPrefix":                     "[parameters('privateSubnet3CIDR')]",
 				"privateEndpointNetworkPolicies":    "Disabled",
 				"privateLinkServiceNetworkPolicies": "Enabled",
-				"networkSecurityGroup": map[string]any{
-					"id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-private-nsg', parameters('nuonInstallID')))]",
-				},
-				"natGateway": map[string]any{
-					"id": "[resourceId('Microsoft.Network/natGateways', format('{0}-natgw', parameters('nuonInstallID')))]",
-				},
-				"serviceEndpoints": serviceEndpoints,
+				"networkSecurityGroup":              privateNSG,
+				"natGateway":                        natGW,
+				"serviceEndpoints":                  serviceEndpoints,
 			},
 		},
 	}

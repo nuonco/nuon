@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -229,24 +228,17 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 			inp.RunnerInitScriptURL = DefaultAzureRunnerInitScript
 		}
 
-		if cfg.StackConfig.HasAzureCustomization() {
-			inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
-			inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
+		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
 
-			renderedTemplate, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
-				Input: *inp,
-			})
-			if err != nil {
-				return errors.Wrap(err, "unable to create ARM template")
-			}
-			tmplByts = renderedTemplate.RAWJson
-			checksum = renderedTemplate.Checksum
-		} else {
-			tmplByts, checksum, err = bicep.Render(inp)
-			if err != nil {
-				return errors.Wrap(err, "unable to render bicep template")
-			}
+		renderedTemplate, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
+			Input: *inp,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create ARM template")
 		}
+		tmplByts = renderedTemplate.RAWJson
+		checksum = renderedTemplate.Checksum
 	}
 
 	// Upload stack template to cloud storage.
