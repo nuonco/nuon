@@ -20,6 +20,9 @@ type OutputsSecretSyncOutput struct {
 	// arn
 	Arn string `json:"arn,omitempty"`
 
+	// azure key vault secret id
+	AzureKeyVaultSecretID string `json:"azure_key_vault_secret_id,omitempty"`
+
 	// exists
 	Exists bool `json:"exists,omitempty"`
 
