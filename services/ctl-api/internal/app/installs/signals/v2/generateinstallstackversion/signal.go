@@ -15,7 +15,6 @@ import (
 	stackoverrides "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/bicep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -279,24 +278,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			inp.RunnerInitScriptURL = DefaultAzureRunnerInitScript
 		}
 
-		if cfg.StackConfig.HasAzureCustomization() {
-			inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
-			inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
+		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
 
-			armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
-				Input: *inp,
-			})
-			if err != nil {
-				return errors.Wrap(err, "unable to create ARM template")
-			}
-			tmplByts = armResult.RAWJson
-			checksum = armResult.Checksum
-		} else {
-			tmplByts, checksum, err = bicep.Render(inp)
-			if err != nil {
-				return errors.Wrap(err, "unable to render bicep template")
-			}
+		armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
+			Input: *inp,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create ARM template")
 		}
+		tmplByts = armResult.RAWJson
+		checksum = armResult.Checksum
 	}
 
 	// AWS and Azure converge here, after template generation is complete.

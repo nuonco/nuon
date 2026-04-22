@@ -8,9 +8,10 @@ import (
 )
 
 type KubernetesSecretSync struct {
-	SecretARN     string `json:"secret_arn"`
-	GCPSecretName string `json:"gcp_secret_name"` // projects/{project}/secrets/{id}/versions/latest
-	SecretName    string `json:"secret_name"`     // the name of the secret from the config
+	SecretARN             string `json:"secret_arn"`
+	GCPSecretName         string `json:"gcp_secret_name"`           // projects/{project}/secrets/{id}/versions/latest
+	AzureKeyVaultSecretID string `json:"azure_key_vault_secret_id"` // https://{vault-name}.vault.azure.net/secrets/{secret-name}
+	SecretName            string `json:"secret_name"`               // the name of the secret from the config
 
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
