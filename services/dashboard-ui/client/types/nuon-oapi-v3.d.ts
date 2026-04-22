@@ -4721,6 +4721,8 @@ export interface components {
       links?: {
         [key: string]: unknown;
       };
+      /** @description LogStream is the log stream associated with this workflow step (when step_target_type is install_workflow_steps). */
+      log_stream?: components["schemas"]["app.LogStream"];
       metadata?: {
         [key: string]: string;
       };
@@ -5058,6 +5060,7 @@ export interface components {
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
+      azure_key_vault_secret_id?: string;
       exists?: boolean;
       gcp_secret_name?: string;
       kubernetes_key?: string;
@@ -5253,6 +5256,8 @@ export interface components {
       plan_display_contents?: string;
     };
     "plantypes.KubernetesSecretSync": {
+      /** @description https://{vault-name}.vault.azure.net/secrets/{secret-name} */
+      azure_key_vault_secret_id?: string;
       /**
        * @description NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
        * updating the runner job and save time.
