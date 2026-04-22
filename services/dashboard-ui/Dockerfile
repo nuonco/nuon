@@ -1,10 +1,10 @@
-FROM alpine:3.21 AS openapi-spec
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
 # --- Node deps + SPA source ---
 
-FROM node:20-alpine AS deps
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/node:20-alpine AS deps
 
 WORKDIR /src
 
@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build
 
 # --- Build Go server ---
 
-FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25.8-alpine AS build-server
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25.8-alpine AS build-server
 
 WORKDIR /src
 
@@ -73,7 +73,7 @@ RUN go build -o /dashboard-server ./services/dashboard-ui/server
 
 # --- Final image ---
 
-FROM alpine:3.21 AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:3.21 AS final
 
 RUN apk add --no-cache ca-certificates
 
