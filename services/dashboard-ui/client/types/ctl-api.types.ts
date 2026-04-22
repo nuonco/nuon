@@ -27,7 +27,7 @@ export type TAppSandboxBuild = {
   status?: string
   status_description?: string
   status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
-  log_stream?: { id: string; open?: boolean }
+  log_stream?: { id?: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
 }
@@ -337,7 +337,7 @@ export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
 export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
-  log_stream?: { id: string; open?: boolean }
+  log_stream?: { id?: string; open?: boolean }
 }
 export type TWorkflowStepApproval =
   components['schemas']['app.WorkflowStepApproval']
