@@ -4,32 +4,26 @@ description: "Let your customers install and manage your app themselves."
 icon: "users"
 ---
 
-The Customer Portal is Nuon's hosted web app where your customers install, monitor, and manage their own installs. Each vendor org gets a branded portal at `https://<your-org-name>.customers.nuon.co`.
+The Customer Portal is a customizable web app you can white-label for your customers to install, monitor, and manage their own installs.
 
-## Why use the Customer Portal
-
-The portal shifts install management from a vendor-operated workflow to a customer self-service workflow:
-
-- **Shorter time to value.** Customers install in minutes without waiting on the vendor.
-- **Scales with your pipeline.** Vendors can serve more customers without linearly growing support headcount.
-- **Branded experience.** The portal lives under your subdomain and carries your branding.
-- **Customer retains control.** Customers approve provisioning, update inputs, and manage their install on their terms.
+The portal lives under your subdomain and carries your branding.
 
 ## What customers can do
 
 From the portal, customers can:
 
 - Browse the catalog of apps you publish to them
-- Install an app into their own cloud account
+- Install an app into their own cloud account via CloudFormation / Azure Resource Group / GCP link
 - Supply any `user_configurable` [inputs](/concepts/app-inputs) during install
 - Approve provisioning and subsequent changes
-- Watch health checks and install status
+- Monitor audit logs, health checks and install status
+- See stack, sandbox, components, roles and policies
 
 Vendors control which apps a customer sees, which inputs they can edit, and which approval style applies — one-click "approve all" versus step-by-step review.
 
-## What the vendor still controls
+## The vendor view
 
-Installs created through the portal are first-class installs. Vendors see them in the [web app](/concepts/web-app) and can reach them via [CLI](/concepts/cli) and [API](/concepts/api) the same way as vendor-created installs.
+Vendors see customer-portal-created installs in the [dashboard](/concepts/dashboard) like a regular install.
 
 ## Setting up the portal
 

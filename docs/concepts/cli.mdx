@@ -95,11 +95,19 @@ nuon installs teardown-components -i <install-id>
 
 ### Manage workflows and approvals
 
-Install lifecycle events run as [workflows](/concepts/workflows). The CLI ships with a full-screen TUI for monitoring and interacting with them:
+Install lifecycle events run as [workflows](/concepts/workflows). The CLI has an optional TUI that you can start with:
+
+```bash
+nuon installs workflows
+```
+
+Or you can jump right into a specific install with:
 
 ```bash
 nuon installs workflows watch -i <install-id>
 ```
+
+![Workflow TUI](/images/changelog/032-workflow-tui.png)
 
 Or run the steps individually:
 

@@ -168,7 +168,7 @@
                 "expanded": true,
                 "pages": [
                   "concepts/cli",
-                  "concepts/web-app",
+                  "concepts/dashboard",
                   "concepts/customer-portal",
                   "concepts/api"
                 ]
