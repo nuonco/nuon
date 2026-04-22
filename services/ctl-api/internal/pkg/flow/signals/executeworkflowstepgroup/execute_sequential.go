@@ -17,7 +17,7 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 
 		step, found := s.nextExecutableStep(steps)
 		if !found {
-			return s.writeWorkflowDirective(ctx, DirectiveContinue)
+			return s.writeStepGroupDirective(ctx, DirectiveContinue)
 		}
 
 		result := s.executeSingleStep(ctx, l, step)
@@ -39,18 +39,18 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case DirectiveStop:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusNotAttempted)
-			return s.writeWorkflowDirective(ctx, DirectiveStop)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
+			return s.writeStepGroupDirective(ctx, DirectiveStop)
 
 		case DirectiveRetryGroup:
-			return s.writeWorkflowDirective(ctx, DirectiveRetryGroup)
+			return s.writeStepGroupDirective(ctx, DirectiveRetryGroup)
 
 		case DirectiveSkipGroup:
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
-			return s.writeWorkflowDirective(ctx, DirectiveSkipGroup)
+			return s.writeStepGroupDirective(ctx, DirectiveSkipGroup)
 
 		case DirectiveAwaitApproval:
-			return s.writeWorkflowDirective(ctx, DirectiveAwaitApproval)
+			return s.writeStepGroupDirective(ctx, DirectiveAwaitApproval)
 
 		default:
 			continue
