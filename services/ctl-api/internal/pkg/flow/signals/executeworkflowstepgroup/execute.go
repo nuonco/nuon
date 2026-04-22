@@ -85,7 +85,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	}
 
 	if len(steps) == 0 {
-		return s.writeWorkflowDirective(ctx, DirectiveContinue)
+		return s.writeStepGroupDirective(ctx, DirectiveContinue)
 	}
 
 	l.Debug("dispatching steps in parallel",
@@ -122,17 +122,17 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 
 	if firstErr != nil {
 		if ctx.Err() != nil {
-			return s.writeWorkflowDirective(ctx, DirectiveStop)
+			return s.writeStepGroupDirective(ctx, DirectiveStop)
 		}
 		return firstErr
 	}
 
 	if hasStop {
-		return s.writeWorkflowDirective(ctx, DirectiveStop)
+		return s.writeStepGroupDirective(ctx, DirectiveStop)
 	}
 
 	if hasRetryGroup {
-		return s.writeWorkflowDirective(ctx, DirectiveRetryGroup)
+		return s.writeStepGroupDirective(ctx, DirectiveRetryGroup)
 	}
 
 	return s.writeWorkflowDirective(ctx, DirectiveContinue)
@@ -234,6 +234,6 @@ func (s *Signal) handleCancellation(ctx workflow.Context, l *zap.Logger, step *a
 		client.AwaitCancelSignal(cancelCtx, qsID)
 	}
 
-	s.writeWorkflowDirective(cancelCtx, DirectiveStop)
+	s.writeStepGroupDirective(cancelCtx, DirectiveStop)
 	return errors.New("group cancelled")
 }

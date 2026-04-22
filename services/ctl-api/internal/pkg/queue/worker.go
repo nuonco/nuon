@@ -30,6 +30,15 @@ func (q *queue) isIdle(ctx workflow.Context) bool {
 	if q.lastActivityTime.IsZero() || q.paused {
 		return false
 	}
+
+	queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, q.queueID)
+	if err != nil {
+		return false
+	}
+	if len(queueSignals) > 0 {
+		return false
+	}
+
 	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
 }
 
@@ -43,8 +52,6 @@ func (q *queue) startWorkers(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
 	}
-
-	q.idleTimeout = time.Duration(queue.IdleTimeout)
 
 	for i := 0; i < queue.MaxInFlight; i++ {
 		workflow.Go(ctx, func(gCtx workflow.Context) {
@@ -64,35 +71,6 @@ func (q *queue) worker(ctx workflow.Context) error {
 	}
 
 	for {
-		// if the queue is paused, wait until it is resumed
-		if q.paused {
-			if err := workflow.Await(ctx, func() bool {
-				return !q.paused || q.stopped || q.restarted
-			}); err != nil {
-				return err
-			}
-		}
-
-		// check release window
-		if q.releaseWindow != nil {
-			now := workflow.Now(ctx)
-			if !q.releaseWindow.IsOpen(now) {
-				nextOpen := q.releaseWindow.NextOpenTime(now)
-				sleepDuration := nextOpen.Sub(now)
-				if sleepDuration > 0 {
-					l.Info("queue is outside release window, sleeping", zap.Duration("duration", sleepDuration))
-					// We use Await with timeout instead of Sleep so we can be woken up by stop/restart/pause
-					if _, err := workflow.AwaitWithTimeout(ctx, sleepDuration, func() bool {
-						return q.stopped || q.restarted || q.paused
-					}); err != nil {
-						return err
-					}
-					// loop again to check conditions
-					continue
-				}
-			}
-		}
-
 		if q.stopped {
 			return nil
 		}
