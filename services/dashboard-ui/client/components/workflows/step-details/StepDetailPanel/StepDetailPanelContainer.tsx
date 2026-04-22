@@ -14,6 +14,7 @@ import { DeployStepDetails } from '../deploy-details/DeployStepDetails'
 import { SandboxRunStepDetails } from '../sandbox-run-details/SandboxRunStepDetails'
 import { StackStepDetails } from '../stack-details/StackStepDetails'
 import { RunnerStepDetails } from '../RunnerStepDetails'
+import { SyncSecretsStepDetails } from '../SyncSecretsStepDetails'
 import { StepDetailPanel } from './StepDetailPanel'
 
 type TPanelSize = IPanel['size']
@@ -22,7 +23,8 @@ function getStepPanelSize(step: TWorkflowStep): TPanelSize {
   if (
     step?.step_target_type === 'install_deploys' ||
     step?.step_target_type === 'install_sandbox_runs' ||
-    step?.step_target_type === 'install_action_workflow_runs'
+    step?.step_target_type === 'install_action_workflow_runs' ||
+    step?.step_target_type === 'install_workflow_steps'
   ) {
     return '3/4'
   }
@@ -35,6 +37,7 @@ function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_sandbox_runs') return <SandboxRunStepDetails />
   if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
   if (step.step_target_type === 'runners') return <RunnerStepDetails />
+  if (step.step_target_type === 'install_workflow_steps') return <SyncSecretsStepDetails />
 }
 
 export interface IStepDetailPanelContainer extends IPanel {

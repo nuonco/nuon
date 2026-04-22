@@ -100,5 +100,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, orgID, workflowID, stepID st
 		return nil, errors.Wrap(res.Error, "unable to get workflow step")
 	}
 
+	s.loadStepLogStreams(ctx, []*app.WorkflowStep{&installWorkflowStep})
+
 	return &installWorkflowStep, nil
 }
