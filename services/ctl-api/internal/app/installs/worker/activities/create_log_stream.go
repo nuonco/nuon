@@ -38,6 +38,11 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 		typ = "install_action_workflow_runs"
 	}
 
+	if req.StepID != "" && id == "" {
+		id = req.StepID
+		typ = "install_workflow_steps"
+	}
+
 	ls := app.LogStream{
 		OwnerType:         typ,
 		OwnerID:           id,

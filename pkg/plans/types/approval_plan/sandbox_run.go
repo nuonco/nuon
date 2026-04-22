@@ -2,7 +2,7 @@ package approvalplan
 
 type SandboxRunApprovalPlan struct {
 	// in case of sandbox it'll be terraform style plan
-	planJSON []byte `json:"plan_json"`
+	planJSON []byte
 }
 
 func NewSandboxRunApprovalPlan(planJSON []byte) *SandboxRunApprovalPlan {
