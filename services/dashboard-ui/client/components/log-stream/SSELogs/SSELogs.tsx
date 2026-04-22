@@ -1,5 +1,6 @@
 import { useEffect, useRef, memo } from 'react'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -80,6 +81,33 @@ export const SSELogs = ({
             </Text>
           </div>
         </div>
+
+        {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
+          <EmptyState
+            variant="search"
+            emptyTitle="Filters are hiding logs"
+            emptyMessage={`${filters.filterStats.totalCount} log(s) are hidden by the current filters.`}
+            action={
+              <Button size="sm" onClick={filters.handleResetAll}>
+                Reset filters
+              </Button>
+            }
+          />
+        ) : null}
+
+        {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isStreamOpen ? (
+          <EmptyState
+            emptyTitle="Waiting for logs"
+            emptyMessage="Logs will appear here once they start coming in."
+          />
+        ) : null}
+
+        {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isStreamOpen ? (
+          <EmptyState
+            emptyTitle="No logs available"
+            emptyMessage=""
+          />
+        ) : null}
 
         <div className="flex flex-col divide-y">
           {!filteredLogs?.length && isLoading ? (
