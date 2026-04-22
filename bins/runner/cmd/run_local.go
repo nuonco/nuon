@@ -40,12 +40,9 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	// Use different ports for org (9090) and install (9091) runners
 	arg := args[0]
 	healthPort := 9090
-	sandboxCtlPort := "9095"
 	if arg == "install" {
 		healthPort = 9091
-		sandboxCtlPort = "9096"
 	}
-	os.Setenv("SANDBOX_CONTROL_PORT", sandboxCtlPort)
 
 	go func() {
 		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

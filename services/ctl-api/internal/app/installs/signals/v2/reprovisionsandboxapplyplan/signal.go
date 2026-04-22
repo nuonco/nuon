@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -29,7 +30,8 @@ type Signal struct {
 	FlowStepID       string
 	SandboxMode      bool
 
-	cfg *internal.Config
+	cfg         *internal.Config
+	runnerJobID string
 }
 
 var (
@@ -38,11 +40,22 @@ var (
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
 )
 
 func (s *Signal) MaxRetries() int  { return 3 }
 func (s *Signal) AutoRetry() bool  { return true }
 func (s *Signal) RetryGroup() bool { return true }
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
+}
+
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
 		Operation: "sandbox-reprovision",
@@ -190,6 +203,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	l.Info("creating sandbox run plan")
 	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
