@@ -161,6 +161,10 @@
             ]
           },
           {
+            "group": "How To Install Your App",
+            "pages": ["concepts/cli", "concepts/control-plane", "concepts/config-files", "concepts/portal", "concepts/api"]
+          },
+          {
             "group": "Support Customer Infrastructure",
             "pages": ["concepts/installs", "concepts/stacks", "concepts/operation-roles"]
           },

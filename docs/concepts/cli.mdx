@@ -1,0 +1,36 @@
+---
+title: "CLI"
+description: "Use one of our simple CLI commands to create your first install"
+---
+One of the first ways to create an install is to use our CLI command.
+
+```bash
+nuon installs create
+```
+
+To modify this command and make it work for any app, simply run
+
+```bash
+nuon installs create --help
+```
+
+This shows all the flags you can use. The most common are:
+
+`--name` - The name you want to give this install  
+`--region` - The region to provision this install in  
+`--inputs` - The app input values for the install
+
+For simpler apps, your command will look something like this
+
+```bash
+nuon installs create --name httpbin --region us-east-1
+```
+
+For more complex apps, and those that require more inputs
+
+```bash
+nuon installs create \
+  --name uptime-monitor \
+  --region us-east-1 \
+  --inputs '{"healthcheck_interval_seconds":"10"}'
+```
