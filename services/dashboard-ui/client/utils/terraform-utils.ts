@@ -39,6 +39,32 @@ export function deepEqual(a: any, b: any): boolean {
   return false
 }
 
+function isEmptyCollection(val: any): boolean {
+  if (val == null) return true
+  if (Array.isArray(val)) return val.length === 0
+  if (typeof val === 'object') return Object.keys(val).length === 0
+  return false
+}
+
+export function semanticEqual(a: any, b: any): boolean {
+  if (a === b) return true
+  if (isEmptyCollection(a) && isEmptyCollection(b)) return true
+  if (a == null || b == null) return false
+  if (typeof a !== typeof b) return false
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false
+    return a.every((item, index) => semanticEqual(item, b[index]))
+  }
+
+  if (typeof a === 'object') {
+    const allKeys = new Set([...Object.keys(a), ...Object.keys(b)])
+    return [...allKeys].every((key) => semanticEqual(a[key], b[key]))
+  }
+
+  return false
+}
+
 const PREFIX_MAP = {
   '+': 'added',
   '-': 'removed',
@@ -176,16 +202,28 @@ export function generateDiffLines(
         innerLines.push(...sub)
       } else {
         anyChanged = true
-        innerLines.push(...generateDiffLines(before[i], after[i], indent + 1, maxDepth))
+        innerLines.push(
+          ...generateDiffLines(before[i], after[i], indent + 1, maxDepth)
+        )
       }
     }
 
     const bracketPrefix = anyChanged ? '~' : ' '
     const bracketType = anyChanged ? 'changed' : 'unchanged'
     return [
-      { indent, prefix: bracketPrefix as DiffLine['prefix'], type: bracketType as DiffLine['type'], text: '[' },
+      {
+        indent,
+        prefix: bracketPrefix as DiffLine['prefix'],
+        type: bracketType as DiffLine['type'],
+        text: '[',
+      },
       ...innerLines,
-      { indent, prefix: bracketPrefix as DiffLine['prefix'], type: bracketType as DiffLine['type'], text: ']' },
+      {
+        indent,
+        prefix: bracketPrefix as DiffLine['prefix'],
+        type: bracketType as DiffLine['type'],
+        text: ']',
+      },
     ]
   }
 
@@ -542,6 +580,10 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
         rd.change.after,
         rd.change.after_unknown
       )
+
+      if (semanticEqual(rd.change.before, mergedAfter)) {
+        continue
+      }
 
       if (isReplaceActions(rd.change.actions)) {
         incrementSummary(driftSummary, 'replace')

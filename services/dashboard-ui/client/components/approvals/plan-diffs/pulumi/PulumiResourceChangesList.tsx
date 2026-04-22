@@ -4,7 +4,7 @@ import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
 import type { TPulumiChangeAction } from '@/types'
 import { cn } from '@/utils/classnames'
-import { deepEqual, isComplex, isStringJson } from '@/utils/terraform-utils'
+import { isComplex, isStringJson, semanticEqual } from '@/utils/terraform-utils'
 import { TreeDiffValue } from '../terraform/TreeDiffValue'
 import {
   PULUMI_ACTION_BADGE_THEME,
@@ -120,7 +120,7 @@ function InputsDiffBody({
   const keyValues = allKeys.map((key) => {
     const before = oldInputs?.[key] ?? null
     const after = newInputs?.[key] ?? null
-    const changed = !deepEqual(before, after)
+    const changed = !semanticEqual(before, after)
     return { key, before, after, changed }
   })
 
@@ -218,8 +218,7 @@ export function PulumiResourceChangesList({
           const borderColor = getPulumiActionBorderColor(action)
 
           const hasDiffs =
-            change.detailed_diff &&
-            Object.keys(change.detailed_diff).length > 0
+            change.detailed_diff && Object.keys(change.detailed_diff).length > 0
           const hasInputChanges = change.old_inputs || change.new_inputs
 
           return (
@@ -253,9 +252,7 @@ export function PulumiResourceChangesList({
 
                     <div className="flex items-center pr-4 self-center">
                       <Badge
-                        theme={
-                          PULUMI_ACTION_BADGE_THEME[action] || 'neutral'
-                        }
+                        theme={PULUMI_ACTION_BADGE_THEME[action] || 'neutral'}
                         size="sm"
                       >
                         {change.action}
