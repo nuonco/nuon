@@ -61,6 +61,10 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	}
 
 	for _, check := range checks {
+		if s.canceled {
+			return nil
+		}
+
 		if !check.shouldRun() {
 			continue
 		}

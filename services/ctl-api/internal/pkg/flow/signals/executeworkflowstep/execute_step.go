@@ -73,6 +73,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.handleStepError(ctx, l, step, flw, stepErr)
 	}
 
+	if s.canceled {
+		return nil
+	}
+
 	// Refetch the step after signal execution to gather new state (e.g. step target ID)
 	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
@@ -107,6 +111,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to update flow status after step")
 		}
 
+		return nil
+	}
+
+	if s.canceled {
 		return nil
 	}
 
