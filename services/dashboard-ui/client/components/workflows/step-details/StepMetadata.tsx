@@ -70,19 +70,6 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         </div>
       )}
 
-      {!step.status?.metadata?.retry_type &&
-        step.status?.metadata?.group_retry_idx != null &&
-        (step.status.metadata.group_retry_idx as number) > 0 && (
-          <div className="flex flex-col gap-1 border rounded-md p-4">
-            <Text variant="label" theme="neutral">
-              Group retry info
-            </Text>
-            <Text variant="subtext">
-              Group retry attempt: {step.status.metadata.group_retry_idx as number}
-            </Text>
-          </div>
-        )}
-
       <Expand
         className="border rounded-md"
         id="step-json"
