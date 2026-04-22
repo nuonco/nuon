@@ -39,13 +39,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Update group status based on outcome.
 	if execErr != nil {
-		s.updateGroupStatus(ctx, app.CompositeStatus{
-			Status:                 app.StatusError,
-			StatusHumanDescription: "group execution failed",
-			Metadata: map[string]any{
-				"error_message": execErr.Error(),
-			},
-		})
+		if s.cancelRequested {
+			s.updateGroupStatus(ctx, app.CompositeStatus{
+				Status:                 app.StatusCancelled,
+				StatusHumanDescription: "group cancelled",
+			})
+		} else {
+			s.updateGroupStatus(ctx, app.CompositeStatus{
+				Status:                 app.StatusError,
+				StatusHumanDescription: "group execution failed",
+				Metadata: map[string]any{
+					"error_message": execErr.Error(),
+				},
+			})
+		}
 	} else if s.lastDirective == DirectiveStop {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusError,
@@ -186,8 +193,8 @@ func (s *Signal) nextExecutableStep(steps []app.WorkflowStep) (*app.WorkflowStep
 }
 
 // cancelRemainingSteps marks all non-terminal steps after the given step with
-// the provided status. Use StatusNotAttempted for stop directives and
-// StatusDiscarded for skip-group directives.
+// the provided status. Use StatusDiscarded for both stop and skip-group
+// directives.
 func (s *Signal) cancelRemainingSteps(ctx workflow.Context, l *zap.Logger, steps []app.WorkflowStep, afterStepID string, status app.Status) {
 	pastTrigger := false
 	for _, step := range steps {

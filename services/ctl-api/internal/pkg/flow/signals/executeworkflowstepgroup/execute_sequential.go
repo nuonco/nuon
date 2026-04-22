@@ -39,7 +39,7 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case DirectiveStop:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusNotAttempted)
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
 			return s.writeStepGroupDirective(ctx, DirectiveStop)
 
 		case DirectiveRetryGroup:

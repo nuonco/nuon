@@ -81,11 +81,15 @@ type queue struct {
 
 	releaseWindow *ReleaseWindow
 
-	ready     bool
-	stopped   bool
-	restarted bool
-	paused    bool
-	maxDepth  int
+	ready       bool
+	stopped     bool
+	restarted   bool
+	paused      bool
+	maxDepth    int
+	maxInFlight int
+
+	// sem limits the number of concurrently processing signals to maxInFlight.
+	sem workflow.Semaphore
 
 	// idleTimeout is how long the queue can be idle before terminating.
 	// Loaded from the queue's DB record, falling back to config default.

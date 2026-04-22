@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
 
 const (
@@ -31,50 +30,40 @@ func (q *queue) isIdle(ctx workflow.Context) bool {
 		return false
 	}
 
-	queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, q.queueID)
-	if err != nil {
-		return false
-	}
-	if len(queueSignals) > 0 {
-		return false
-	}
+	//queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, q.queueID)
+	//if err != nil {
+		//return false
+	//}
+	//if len(queueSignals) > 0 {
+		//return false
+	//}
 
 	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
 }
 
-func (q *queue) startWorkers(ctx workflow.Context) error {
+func (q *queue) startDispatcher(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	queue, err := activities.AwaitGetQueueByQueueID(ctx, q.queueID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get queue")
-	}
-
-	for i := 0; i < queue.MaxInFlight; i++ {
-		workflow.Go(ctx, func(gCtx workflow.Context) {
-			if err := q.worker(gCtx); err != nil {
-				l.Error("error from worker", zap.Error(err))
-			}
-		})
-	}
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		if err := q.dispatcher(gCtx); err != nil {
+			l.Error("error from dispatcher", zap.Error(err))
+		}
+	})
 
 	return nil
 }
 
-func (q *queue) worker(ctx workflow.Context) error {
+func (q *queue) dispatcher(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to get worker")
+		return errors.Wrap(err, "unable to get logger")
 	}
 
 	for {
-		if q.stopped {
-			return nil
-		}
-		if q.restarted {
+		if q.stopped || q.restarted {
 			return nil
 		}
 
@@ -88,14 +77,40 @@ func (q *queue) worker(ctx workflow.Context) error {
 			continue
 		}
 
+		// Wait until not paused before dispatching.
+		if q.paused {
+			if err := workflow.Await(ctx, func() bool {
+				return !q.paused || q.stopped || q.restarted
+			}); err != nil {
+				return err
+			}
+			if q.stopped || q.restarted {
+				return nil
+			}
+		}
+
+		// Acquire semaphore permit — blocks if at MaxInFlight.
+		if err := q.sem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+
+		// Increment activeWorkers in the dispatcher (before workflow.Go) to
+		// prevent the main coroutine from observing activeWorkers == 0 and
+		// triggering continue-as-new before the goroutine starts.
 		q.activeWorkers++
 		q.lastActivityTime = workflow.Now(ctx)
 
-		if err := q.handleQueueSignal(ctx, obj); err != nil {
-			l.Error("error handling workflow signal", zap.Error(err))
-		}
+		ref := obj
+		workflow.Go(ctx, func(gCtx workflow.Context) {
+			defer func() {
+				q.sem.Release(1)
+				q.activeWorkers--
+				q.lastActivityTime = workflow.Now(gCtx)
+			}()
 
-		q.activeWorkers--
-		q.lastActivityTime = workflow.Now(ctx)
+			if err := q.handleQueueSignal(gCtx, ref); err != nil {
+				l.Error("error handling workflow signal", zap.Error(err))
+			}
+		})
 	}
 }

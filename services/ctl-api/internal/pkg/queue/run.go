@@ -51,17 +51,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
-	// Restore lastActivityTime from state (survives continue-as-new),
-	// or initialize for the first run.
-	if !q.state.LastActivityTime.IsZero() {
-		q.lastActivityTime = q.state.LastActivityTime
-	} else {
-		q.lastActivityTime = workflow.Now(ctx)
-	}
-
-	l.Info("starting workers")
-	if err := q.startWorkers(ctx); err != nil {
-		return false, errors.Wrap(err, "unable to start workers")
+	l.Info("starting dispatcher")
+	if err := q.startDispatcher(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
 	if err := q.setStatusTimestamp(ctx, l, "ready_at"); err != nil {
