@@ -111,6 +111,9 @@ type WorkflowStep struct {
 	Approval         *WorkflowStepApproval         `gorm:"foreignKey:InstallWorkflowStepID" json:"approval,omitzero" temporaljson:"approval,omitzero,omitempty"`
 	PolicyValidation *WorkflowStepPolicyValidation `gorm:"foreignKey:InstallWorkflowStepID" json:"policy_validation,omitzero" temporaljson:"policy_validation,omitzero,omitempty"`
 
+	// LogStream is the log stream associated with this workflow step (when step_target_type is install_workflow_steps).
+	LogStream *LogStream `gorm:"-" json:"log_stream,omitempty" temporaljson:"log_stream,omitzero,omitempty"`
+
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`

@@ -336,13 +336,19 @@ export interface TUserJourney {
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
-export type TWorkflowStep = components['schemas']['app.WorkflowStep']
+export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
+  log_stream?: { id: string; open?: boolean }
+}
 export type TWorkflowStepApproval =
   components['schemas']['app.WorkflowStepApproval']
 export type TWorkflowStepApprovalResponse = { type: string } & any
 export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
 export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
+
+// app secrets
+export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']
+export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
 
 // app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']
