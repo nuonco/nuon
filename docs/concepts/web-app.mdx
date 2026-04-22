@@ -1,0 +1,24 @@
+---
+title: "Web app"
+description: "What you can do for installs in the Nuon web app at app.nuon.co."
+icon: "browser"
+---
+
+The Nuon web app at [app.nuon.co](https://app.nuon.co) is the primary surface for vendor-driven install management. It is the interface most teams start with before automating through the [CLI](/concepts/cli) or [API](/concepts/api).
+
+## What the web app lets you do
+
+From inside an app, you can:
+
+- **Create an install.** Fill in the app's inputs and generate the stack link to share with the customer.
+- **Share the stack link.** The link deploys a [Stack](/concepts/stacks) (CloudFormation on AWS, Bicep on Azure) into the customer's cloud account, which creates the runner.
+- **Monitor workflows.** Watch provision, deploy, maintenance, and deprovision workflows step by step.
+- **Review and approve changes.** See diffs and plans for each step, then approve, reject, or retry.
+- **Redeploy components.** Roll a new build of any component to one install, a set of installs, or every install at once.
+- **Update inputs after provision.** Change inputs on a live install; the web app triggers the workflows needed to propagate the change.
+- **Run actions.** Trigger on-demand scripts defined in the app — health checks, remediations, break-glass operations.
+- **Reprovision or deprovision.** Update the sandbox in place, or tear the install down.
+
+## When to use the web app
+
+Use it for interactive work: exploring, debugging, reviewing diffs, and handling exceptions. For scripted or scheduled workflows, reach for the [CLI](/concepts/cli) or [API](/concepts/api) instead.

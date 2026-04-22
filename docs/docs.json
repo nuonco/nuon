@@ -161,20 +161,29 @@
             ]
           },
           {
-            "group": "How To Install Your App",
-            "pages": ["concepts/cli", "concepts/control-plane", "concepts/config-files", "concepts/portal", "concepts/api"]
-          },
-          {
-            "group": "Support Customer Infrastructure",
-            "pages": ["concepts/installs", "concepts/stacks", "concepts/operation-roles"]
+            "group": "Customer Configuration and Customization",
+            "pages": [
+              {
+                "group": "Create installs",
+                "pages": [
+                  "concepts/cli",
+                  "concepts/web-app",
+                  "concepts/customer-portal",
+                  "concepts/api"
+                ]
+              },
+              {
+                "group": "Customer specific components",
+                "pages": [
+                  "concepts/stacks",
+                  "concepts/operation-roles"
+                ]
+              }
+            ]
           },
           {
             "group": "Continuous Delivery",
             "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
-          },
-          {
-            "group": "Customer Experience",
-            "pages": ["concepts/customer-portal"]
           },
           {
             "group": "Reference",
@@ -320,6 +329,10 @@
     {
       "source": "/runner-architecture",
       "destination": "/architecture/platform"
+    },
+    {
+      "source": "/concepts/installs",
+      "destination": "/guides/app-install-life-cycle"
     }
   ]
 }
