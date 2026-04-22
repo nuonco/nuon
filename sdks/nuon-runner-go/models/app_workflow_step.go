@@ -121,9 +121,6 @@ type AppWorkflowStep struct {
 
 	// Fields that are de-nested at read time using AfterQuery
 	WorkflowID string `json:"workflow_id,omitempty"`
-
-	// WorkflowStepGroupID links this step to its parent WorkflowStepGroup.
-	WorkflowStepGroupID string `json:"workflow_step_group_id,omitempty"`
 }
 
 // Validate validates this app workflow step
