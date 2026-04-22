@@ -212,6 +212,20 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
     setJobOutputOnly((prev) => !prev)
   }
 
+  const isFiltered =
+    jobOutputOnly ||
+    searchQuery.trim() !== '' ||
+    selectedSeverities.size !== DEFAULT_SELECTED_SEVERITIES.size ||
+    [...DEFAULT_SELECTED_SEVERITIES].some(s => !selectedSeverities.has(s)) ||
+    selectedServices.size !== availableServices.size
+
+  const handleResetAll = () => {
+    setSelectedSeverities(new Set(DEFAULT_SELECTED_SEVERITIES))
+    setSelectedServices(new Set(DEFAULT_SELECTED_SERVICES))
+    setJobOutputOnly(false)
+    setSearchQuery('')
+  }
+
   return {
     // Severity filter
     selectedSeverities,
@@ -237,6 +251,10 @@ export const useLogFilters = <T extends TOTELLog>(logs: T[] | null) => {
     handleSearchChange,
     handleSortToggle,
     handleSortChange,
+
+    // Reset
+    isFiltered,
+    handleResetAll,
 
     // Stats
     filterStats: {
