@@ -91,7 +91,8 @@ export const ECSServiceUpdate = () => (
             containerDefinitions: [
               {
                 name: 'api',
-                image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v1.8.3',
+                image:
+                  '123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v1.8.3',
               },
             ],
           },
@@ -99,7 +100,8 @@ export const ECSServiceUpdate = () => (
             containerDefinitions: [
               {
                 name: 'api',
-                image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v1.9.0',
+                image:
+                  '123456789012.dkr.ecr.us-east-1.amazonaws.com/api:v1.9.0',
               },
             ],
           },
@@ -139,7 +141,11 @@ export const DatabaseReplace = () => (
     plan={{
       stdout: '',
       stderr: '',
-      change_summary: { 'create-replacement': 1, 'delete-replaced': 1, replace: 1 },
+      change_summary: {
+        'create-replacement': 1,
+        'delete-replaced': 1,
+        replace: 1,
+      },
       resource_changes: [
         {
           urn: 'urn:pulumi:prod::database::aws:rds/instance:Instance::primary-db',
@@ -212,9 +218,24 @@ export const MixedInfraChanges = () => (
           },
           new_inputs: {
             ingress: [
-              { fromPort: 443, toPort: 443, protocol: 'tcp', cidrBlocks: ['10.0.0.0/8', '172.16.0.0/12'] },
-              { fromPort: 80, toPort: 80, protocol: 'tcp', cidrBlocks: ['10.0.0.0/8'] },
-              { fromPort: 8080, toPort: 8080, protocol: 'tcp', cidrBlocks: ['10.0.0.0/8'] },
+              {
+                fromPort: 443,
+                toPort: 443,
+                protocol: 'tcp',
+                cidrBlocks: ['10.0.0.0/8', '172.16.0.0/12'],
+              },
+              {
+                fromPort: 80,
+                toPort: 80,
+                protocol: 'tcp',
+                cidrBlocks: ['10.0.0.0/8'],
+              },
+              {
+                fromPort: 8080,
+                toPort: 8080,
+                protocol: 'tcp',
+                cidrBlocks: ['10.0.0.0/8'],
+              },
             ],
           },
         },
@@ -274,22 +295,58 @@ export const LargeEKSClusterDeploy = () => (
           detailed_diff: {
             imageId: { kind: 'update', inputDiff: true },
             userData: { kind: 'update', inputDiff: true },
-            'blockDeviceMappings[0].ebs.volumeSize': { kind: 'update', inputDiff: true },
-            'tagSpecifications[0].tags.ami-version': { kind: 'update', inputDiff: true },
+            'blockDeviceMappings[0].ebs.volumeSize': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'tagSpecifications[0].tags.ami-version': {
+              kind: 'update',
+              inputDiff: true,
+            },
           },
           old_inputs: {
             imageId: 'ami-0a1b2c3d4e5f60001',
             userData: 'base64-encoded-old-userdata',
-            blockDeviceMappings: [{ deviceName: '/dev/xvda', ebs: { volumeSize: 100, volumeType: 'gp3', iops: 3000, throughput: 125 } }],
+            blockDeviceMappings: [
+              {
+                deviceName: '/dev/xvda',
+                ebs: {
+                  volumeSize: 100,
+                  volumeType: 'gp3',
+                  iops: 3000,
+                  throughput: 125,
+                },
+              },
+            ],
             instanceType: 'c6i.2xlarge',
-            tagSpecifications: [{ resourceType: 'instance', tags: { 'ami-version': '1.28-2024.01.15', cluster: 'primary' } }],
+            tagSpecifications: [
+              {
+                resourceType: 'instance',
+                tags: { 'ami-version': '1.28-2024.01.15', cluster: 'primary' },
+              },
+            ],
           },
           new_inputs: {
             imageId: 'ami-0f9a8b7c6d5e40002',
             userData: 'base64-encoded-new-userdata',
-            blockDeviceMappings: [{ deviceName: '/dev/xvda', ebs: { volumeSize: 200, volumeType: 'gp3', iops: 3000, throughput: 125 } }],
+            blockDeviceMappings: [
+              {
+                deviceName: '/dev/xvda',
+                ebs: {
+                  volumeSize: 200,
+                  volumeType: 'gp3',
+                  iops: 3000,
+                  throughput: 125,
+                },
+              },
+            ],
             instanceType: 'c6i.2xlarge',
-            tagSpecifications: [{ resourceType: 'instance', tags: { 'ami-version': '1.29-2024.06.20', cluster: 'primary' } }],
+            tagSpecifications: [
+              {
+                resourceType: 'instance',
+                tags: { 'ami-version': '1.29-2024.06.20', cluster: 'primary' },
+              },
+            ],
           },
         },
         {
@@ -327,8 +384,14 @@ export const LargeEKSClusterDeploy = () => (
           detailed_diff: {
             imageId: { kind: 'update', inputDiff: true },
           },
-          old_inputs: { imageId: 'ami-gpu-old-0001', instanceType: 'g5.2xlarge' },
-          new_inputs: { imageId: 'ami-gpu-new-0002', instanceType: 'g5.2xlarge' },
+          old_inputs: {
+            imageId: 'ami-gpu-old-0001',
+            instanceType: 'g5.2xlarge',
+          },
+          new_inputs: {
+            imageId: 'ami-gpu-new-0002',
+            instanceType: 'g5.2xlarge',
+          },
         },
         {
           urn: 'urn:pulumi:prod::k8s-platform::aws:eks/nodeGroup:NodeGroup::workers-gpu',
@@ -340,8 +403,12 @@ export const LargeEKSClusterDeploy = () => (
             'scalingConfig.desiredSize': { kind: 'update', inputDiff: true },
             'scalingConfig.maxSize': { kind: 'update', inputDiff: true },
           },
-          old_inputs: { scalingConfig: { desiredSize: 2, minSize: 0, maxSize: 4 } },
-          new_inputs: { scalingConfig: { desiredSize: 4, minSize: 0, maxSize: 8 } },
+          old_inputs: {
+            scalingConfig: { desiredSize: 2, minSize: 0, maxSize: 4 },
+          },
+          new_inputs: {
+            scalingConfig: { desiredSize: 4, minSize: 0, maxSize: 8 },
+          },
         },
         {
           urn: 'urn:pulumi:prod::k8s-platform::aws:ec2/getAmi:getAmi::eks-optimized-ami',
@@ -389,9 +456,19 @@ export const LargeEKSClusterDeploy = () => (
             version: 'v0.35.0',
             namespace: 'karpenter',
             values: {
-              settings: { clusterName: 'primary', clusterEndpoint: 'https://ABCDEF1234.gr7.us-east-1.eks.amazonaws.com', interruptionQueue: 'primary-karpenter-interruption' },
+              settings: {
+                clusterName: 'primary',
+                clusterEndpoint:
+                  'https://ABCDEF1234.gr7.us-east-1.eks.amazonaws.com',
+                interruptionQueue: 'primary-karpenter-interruption',
+              },
               replicas: 2,
-              controller: { resources: { requests: { cpu: '1', memory: '1Gi' }, limits: { cpu: '2', memory: '2Gi' } } },
+              controller: {
+                resources: {
+                  requests: { cpu: '1', memory: '1Gi' },
+                  limits: { cpu: '2', memory: '2Gi' },
+                },
+              },
             },
           },
         },
@@ -401,7 +478,10 @@ export const LargeEKSClusterDeploy = () => (
           name: 'karpenter-ns',
           action: 'create',
           new_inputs: {
-            metadata: { name: 'karpenter', labels: { 'app.kubernetes.io/managed-by': 'pulumi' } },
+            metadata: {
+              name: 'karpenter',
+              labels: { 'app.kubernetes.io/managed-by': 'pulumi' },
+            },
           },
         },
         {
@@ -413,7 +493,22 @@ export const LargeEKSClusterDeploy = () => (
             name: 'primary-karpenter-controller',
             assumeRolePolicy: JSON.stringify({
               Version: '2012-10-17',
-              Statement: [{ Effect: 'Allow', Principal: { Federated: 'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234' }, Action: 'sts:AssumeRoleWithWebIdentity', Condition: { StringEquals: { 'oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234:sub': 'system:serviceaccount:karpenter:karpenter' } } }],
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Principal: {
+                    Federated:
+                      'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234',
+                  },
+                  Action: 'sts:AssumeRoleWithWebIdentity',
+                  Condition: {
+                    StringEquals: {
+                      'oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234:sub':
+                        'system:serviceaccount:karpenter:karpenter',
+                    },
+                  },
+                },
+              ],
             }),
             tags: { Environment: 'prod', Service: 'karpenter' },
           },
@@ -425,7 +520,8 @@ export const LargeEKSClusterDeploy = () => (
           action: 'create',
           new_inputs: {
             role: 'primary-karpenter-controller',
-            policyArn: 'arn:aws:iam::123456789012:policy/KarpenterControllerPolicy',
+            policyArn:
+              'arn:aws:iam::123456789012:policy/KarpenterControllerPolicy',
           },
         },
         {
@@ -446,10 +542,21 @@ export const LargeEKSClusterDeploy = () => (
           name: 'karpenter-interruption-policy',
           action: 'create',
           new_inputs: {
-            queueUrl: 'https://sqs.us-east-1.amazonaws.com/123456789012/primary-karpenter-interruption',
+            queueUrl:
+              'https://sqs.us-east-1.amazonaws.com/123456789012/primary-karpenter-interruption',
             policy: JSON.stringify({
               Version: '2012-10-17',
-              Statement: [{ Effect: 'Allow', Principal: { Service: ['events.amazonaws.com', 'sqs.amazonaws.com'] }, Action: 'sqs:SendMessage', Resource: 'arn:aws:sqs:us-east-1:123456789012:primary-karpenter-interruption' }],
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Principal: {
+                    Service: ['events.amazonaws.com', 'sqs.amazonaws.com'],
+                  },
+                  Action: 'sqs:SendMessage',
+                  Resource:
+                    'arn:aws:sqs:us-east-1:123456789012:primary-karpenter-interruption',
+                },
+              ],
             }),
           },
         },
@@ -460,7 +567,10 @@ export const LargeEKSClusterDeploy = () => (
           action: 'create',
           new_inputs: {
             name: 'primary-karpenter-spot-interruption',
-            eventPattern: JSON.stringify({ source: ['aws.ec2'], 'detail-type': ['EC2 Spot Instance Interruption Warning'] }),
+            eventPattern: JSON.stringify({
+              source: ['aws.ec2'],
+              'detail-type': ['EC2 Spot Instance Interruption Warning'],
+            }),
             tags: { Environment: 'prod' },
           },
         },
@@ -481,7 +591,10 @@ export const LargeEKSClusterDeploy = () => (
           action: 'create',
           new_inputs: {
             name: 'primary-karpenter-instance-rebalance',
-            eventPattern: JSON.stringify({ source: ['aws.ec2'], 'detail-type': ['EC2 Instance Rebalance Recommendation'] }),
+            eventPattern: JSON.stringify({
+              source: ['aws.ec2'],
+              'detail-type': ['EC2 Instance Rebalance Recommendation'],
+            }),
             tags: { Environment: 'prod' },
           },
         },
@@ -509,9 +622,14 @@ export const LargeEKSClusterDeploy = () => (
           new_inputs: {
             chart: 'metrics-server',
             version: '3.12.0',
-            repositoryOpts: { repo: 'https://kubernetes-sigs.github.io/metrics-server/' },
+            repositoryOpts: {
+              repo: 'https://kubernetes-sigs.github.io/metrics-server/',
+            },
             namespace: 'kube-system',
-            values: { replicas: 2, resources: { requests: { cpu: '100m', memory: '200Mi' } } },
+            values: {
+              replicas: 2,
+              resources: { requests: { cpu: '100m', memory: '200Mi' } },
+            },
           },
         },
         {
@@ -527,7 +645,10 @@ export const LargeEKSClusterDeploy = () => (
             values: {
               autoDiscovery: { clusterName: 'primary' },
               awsRegion: 'us-east-1',
-              extraArgs: { 'balance-similar-node-groups': true, 'skip-nodes-with-system-pods': false },
+              extraArgs: {
+                'balance-similar-node-groups': true,
+                'skip-nodes-with-system-pods': false,
+              },
             },
           },
         },
@@ -543,7 +664,14 @@ export const LargeEKSClusterDeploy = () => (
             namespace: 'kube-system',
             values: {
               clusterName: 'primary',
-              serviceAccount: { create: true, name: 'aws-load-balancer-controller', annotations: { 'eks.amazonaws.com/role-arn': 'arn:aws:iam::123456789012:role/primary-alb-controller' } },
+              serviceAccount: {
+                create: true,
+                name: 'aws-load-balancer-controller',
+                annotations: {
+                  'eks.amazonaws.com/role-arn':
+                    'arn:aws:iam::123456789012:role/primary-alb-controller',
+                },
+              },
               vpcId: 'vpc-0abc123def456789',
               region: 'us-east-1',
             },
@@ -558,7 +686,16 @@ export const LargeEKSClusterDeploy = () => (
             name: 'primary-alb-controller',
             assumeRolePolicy: JSON.stringify({
               Version: '2012-10-17',
-              Statement: [{ Effect: 'Allow', Principal: { Federated: 'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234' }, Action: 'sts:AssumeRoleWithWebIdentity' }],
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Principal: {
+                    Federated:
+                      'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234',
+                  },
+                  Action: 'sts:AssumeRoleWithWebIdentity',
+                },
+              ],
             }),
             tags: { Environment: 'prod', Service: 'alb-controller' },
           },
@@ -571,7 +708,9 @@ export const LargeEKSClusterDeploy = () => (
           new_inputs: {
             chart: 'external-dns',
             version: '1.14.3',
-            repositoryOpts: { repo: 'https://kubernetes-sigs.github.io/external-dns/' },
+            repositoryOpts: {
+              repo: 'https://kubernetes-sigs.github.io/external-dns/',
+            },
             namespace: 'kube-system',
             values: {
               provider: 'aws',
@@ -579,7 +718,12 @@ export const LargeEKSClusterDeploy = () => (
               policy: 'sync',
               registry: 'txt',
               txtOwnerId: 'primary-cluster',
-              serviceAccount: { annotations: { 'eks.amazonaws.com/role-arn': 'arn:aws:iam::123456789012:role/primary-external-dns' } },
+              serviceAccount: {
+                annotations: {
+                  'eks.amazonaws.com/role-arn':
+                    'arn:aws:iam::123456789012:role/primary-external-dns',
+                },
+              },
             },
           },
         },
@@ -617,7 +761,16 @@ export const KubernetesAppMigration = () => (
     plan={{
       stdout: '',
       stderr: '',
-      change_summary: { create: 12, update: 5, delete: 3, replace: 2, 'create-replacement': 2, 'delete-replaced': 2, same: 8, read: 2 },
+      change_summary: {
+        create: 12,
+        update: 5,
+        delete: 3,
+        replace: 2,
+        'create-replacement': 2,
+        'delete-replaced': 2,
+        same: 8,
+        read: 2,
+      },
       resource_changes: [
         {
           urn: 'urn:pulumi:prod::order-service::kubernetes:core/v1:Namespace::order-service-ns',
@@ -632,13 +785,31 @@ export const KubernetesAppMigration = () => (
           action: 'update',
           diffs: ['spec'],
           detailed_diff: {
-            'spec.template.spec.containers[0].image': { kind: 'update', inputDiff: true },
-            'spec.template.spec.containers[0].resources.requests.memory': { kind: 'update', inputDiff: true },
-            'spec.template.spec.containers[0].resources.limits.memory': { kind: 'update', inputDiff: true },
-            'spec.template.spec.containers[0].env[3].value': { kind: 'update', inputDiff: true },
-            'spec.template.spec.containers[0].env[4]': { kind: 'add', inputDiff: true },
+            'spec.template.spec.containers[0].image': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'spec.template.spec.containers[0].resources.requests.memory': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'spec.template.spec.containers[0].resources.limits.memory': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'spec.template.spec.containers[0].env[3].value': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'spec.template.spec.containers[0].env[4]': {
+              kind: 'add',
+              inputDiff: true,
+            },
             'spec.replicas': { kind: 'update', inputDiff: true },
-            'spec.template.metadata.annotations.configHash': { kind: 'update', inputDiff: true },
+            'spec.template.metadata.annotations.configHash': {
+              kind: 'update',
+              inputDiff: true,
+            },
           },
           old_inputs: {
             metadata: { name: 'order-api', namespace: 'order-service' },
@@ -646,17 +817,37 @@ export const KubernetesAppMigration = () => (
               replicas: 3,
               template: {
                 spec: {
-                  containers: [{
-                    name: 'order-api',
-                    image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-api:v2.14.0',
-                    resources: { requests: { cpu: '500m', memory: '512Mi' }, limits: { cpu: '1000m', memory: '1Gi' } },
-                    env: [
-                      { name: 'DATABASE_URL', valueFrom: { secretKeyRef: { name: 'order-db-credentials', key: 'url' } } },
-                      { name: 'REDIS_URL', value: 'redis://order-cache.internal:6379' },
-                      { name: 'LOG_LEVEL', value: 'info' },
-                      { name: 'FEATURE_FLAGS_ENDPOINT', value: 'http://flagsmith.internal:8000/api/v1' },
-                    ],
-                  }],
+                  containers: [
+                    {
+                      name: 'order-api',
+                      image:
+                        '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-api:v2.14.0',
+                      resources: {
+                        requests: { cpu: '500m', memory: '512Mi' },
+                        limits: { cpu: '1000m', memory: '1Gi' },
+                      },
+                      env: [
+                        {
+                          name: 'DATABASE_URL',
+                          valueFrom: {
+                            secretKeyRef: {
+                              name: 'order-db-credentials',
+                              key: 'url',
+                            },
+                          },
+                        },
+                        {
+                          name: 'REDIS_URL',
+                          value: 'redis://order-cache.internal:6379',
+                        },
+                        { name: 'LOG_LEVEL', value: 'info' },
+                        {
+                          name: 'FEATURE_FLAGS_ENDPOINT',
+                          value: 'http://flagsmith.internal:8000/api/v1',
+                        },
+                      ],
+                    },
+                  ],
                 },
               },
             },
@@ -667,18 +858,41 @@ export const KubernetesAppMigration = () => (
               replicas: 5,
               template: {
                 spec: {
-                  containers: [{
-                    name: 'order-api',
-                    image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-api:v3.0.0',
-                    resources: { requests: { cpu: '500m', memory: '1Gi' }, limits: { cpu: '1000m', memory: '2Gi' } },
-                    env: [
-                      { name: 'DATABASE_URL', valueFrom: { secretKeyRef: { name: 'order-db-credentials', key: 'url' } } },
-                      { name: 'REDIS_URL', value: 'redis://order-cache.internal:6379' },
-                      { name: 'LOG_LEVEL', value: 'info' },
-                      { name: 'FEATURE_FLAGS_ENDPOINT', value: 'http://flagsmith.internal:8100/api/v2' },
-                      { name: 'OTEL_EXPORTER_OTLP_ENDPOINT', value: 'http://otel-collector.monitoring:4317' },
-                    ],
-                  }],
+                  containers: [
+                    {
+                      name: 'order-api',
+                      image:
+                        '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-api:v3.0.0',
+                      resources: {
+                        requests: { cpu: '500m', memory: '1Gi' },
+                        limits: { cpu: '1000m', memory: '2Gi' },
+                      },
+                      env: [
+                        {
+                          name: 'DATABASE_URL',
+                          valueFrom: {
+                            secretKeyRef: {
+                              name: 'order-db-credentials',
+                              key: 'url',
+                            },
+                          },
+                        },
+                        {
+                          name: 'REDIS_URL',
+                          value: 'redis://order-cache.internal:6379',
+                        },
+                        { name: 'LOG_LEVEL', value: 'info' },
+                        {
+                          name: 'FEATURE_FLAGS_ENDPOINT',
+                          value: 'http://flagsmith.internal:8100/api/v2',
+                        },
+                        {
+                          name: 'OTEL_EXPORTER_OTLP_ENDPOINT',
+                          value: 'http://otel-collector.monitoring:4317',
+                        },
+                      ],
+                    },
+                  ],
                 },
               },
             },
@@ -691,15 +905,49 @@ export const KubernetesAppMigration = () => (
           action: 'update',
           diffs: ['spec'],
           detailed_diff: {
-            'spec.template.spec.containers[0].image': { kind: 'update', inputDiff: true },
-            'spec.template.spec.containers[0].args[0]': { kind: 'update', inputDiff: true },
+            'spec.template.spec.containers[0].image': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'spec.template.spec.containers[0].args[0]': {
+              kind: 'update',
+              inputDiff: true,
+            },
             'spec.replicas': { kind: 'update', inputDiff: true },
           },
           old_inputs: {
-            spec: { replicas: 2, template: { spec: { containers: [{ name: 'order-worker', image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-worker:v2.14.0', args: ['--concurrency=10'] }] } } },
+            spec: {
+              replicas: 2,
+              template: {
+                spec: {
+                  containers: [
+                    {
+                      name: 'order-worker',
+                      image:
+                        '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-worker:v2.14.0',
+                      args: ['--concurrency=10'],
+                    },
+                  ],
+                },
+              },
+            },
           },
           new_inputs: {
-            spec: { replicas: 4, template: { spec: { containers: [{ name: 'order-worker', image: '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-worker:v3.0.0', args: ['--concurrency=20'] }] } } },
+            spec: {
+              replicas: 4,
+              template: {
+                spec: {
+                  containers: [
+                    {
+                      name: 'order-worker',
+                      image:
+                        '123456789012.dkr.ecr.us-east-1.amazonaws.com/order-worker:v3.0.0',
+                      args: ['--concurrency=20'],
+                    },
+                  ],
+                },
+              },
+            },
           },
         },
         {
@@ -720,8 +968,22 @@ export const KubernetesAppMigration = () => (
             'data.OTEL_SERVICE_NAME': { kind: 'add', inputDiff: true },
             'data.OTEL_TRACES_SAMPLER_ARG': { kind: 'add', inputDiff: true },
           },
-          old_inputs: { data: { MAX_CONNECTIONS: '100', CACHE_TTL: '300', RATE_LIMIT: '1000' } },
-          new_inputs: { data: { MAX_CONNECTIONS: '200', CACHE_TTL: '600', RATE_LIMIT: '1000', OTEL_SERVICE_NAME: 'order-api', OTEL_TRACES_SAMPLER_ARG: '0.1' } },
+          old_inputs: {
+            data: {
+              MAX_CONNECTIONS: '100',
+              CACHE_TTL: '300',
+              RATE_LIMIT: '1000',
+            },
+          },
+          new_inputs: {
+            data: {
+              MAX_CONNECTIONS: '200',
+              CACHE_TTL: '600',
+              RATE_LIMIT: '1000',
+              OTEL_SERVICE_NAME: 'order-api',
+              OTEL_TRACES_SAMPLER_ARG: '0.1',
+            },
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:rds/instance:Instance::order-db',
@@ -734,22 +996,49 @@ export const KubernetesAppMigration = () => (
             engineVersion: { kind: 'update', inputDiff: true },
             performanceInsightsEnabled: { kind: 'add', inputDiff: true },
           },
-          old_inputs: { identifier: 'order-db-prod', instanceClass: 'db.r6g.large', engineVersion: '15.4', engine: 'postgres', allocatedStorage: 200, multiAz: true },
-          new_inputs: { identifier: 'order-db-prod', instanceClass: 'db.r6g.xlarge', engineVersion: '16.1', engine: 'postgres', allocatedStorage: 200, multiAz: true, performanceInsightsEnabled: true },
+          old_inputs: {
+            identifier: 'order-db-prod',
+            instanceClass: 'db.r6g.large',
+            engineVersion: '15.4',
+            engine: 'postgres',
+            allocatedStorage: 200,
+            multiAz: true,
+          },
+          new_inputs: {
+            identifier: 'order-db-prod',
+            instanceClass: 'db.r6g.xlarge',
+            engineVersion: '16.1',
+            engine: 'postgres',
+            allocatedStorage: 200,
+            multiAz: true,
+            performanceInsightsEnabled: true,
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:rds/instance:Instance::order-db-replacement',
           type: 'aws:rds/instance:Instance',
           name: 'order-db-replacement',
           action: 'create-replacement',
-          new_inputs: { identifier: 'order-db-prod', instanceClass: 'db.r6g.xlarge', engineVersion: '16.1', engine: 'postgres', allocatedStorage: 200, multiAz: true, performanceInsightsEnabled: true },
+          new_inputs: {
+            identifier: 'order-db-prod',
+            instanceClass: 'db.r6g.xlarge',
+            engineVersion: '16.1',
+            engine: 'postgres',
+            allocatedStorage: 200,
+            multiAz: true,
+            performanceInsightsEnabled: true,
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:rds/instance:Instance::order-db-old',
           type: 'aws:rds/instance:Instance',
           name: 'order-db-old',
           action: 'delete-replaced',
-          old_inputs: { identifier: 'order-db-prod', instanceClass: 'db.r6g.large', engineVersion: '15.4' },
+          old_inputs: {
+            identifier: 'order-db-prod',
+            instanceClass: 'db.r6g.large',
+            engineVersion: '15.4',
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:elasticache/replicationGroup:ReplicationGroup::order-cache',
@@ -761,22 +1050,41 @@ export const KubernetesAppMigration = () => (
             engineVersion: { kind: 'update', inputDiff: true },
             nodeType: { kind: 'update', inputDiff: true },
           },
-          old_inputs: { replicationGroupId: 'order-cache-prod', engineVersion: '7.0', nodeType: 'cache.r6g.large', numCacheClusters: 3 },
-          new_inputs: { replicationGroupId: 'order-cache-prod', engineVersion: '7.1', nodeType: 'cache.r7g.large', numCacheClusters: 3 },
+          old_inputs: {
+            replicationGroupId: 'order-cache-prod',
+            engineVersion: '7.0',
+            nodeType: 'cache.r6g.large',
+            numCacheClusters: 3,
+          },
+          new_inputs: {
+            replicationGroupId: 'order-cache-prod',
+            engineVersion: '7.1',
+            nodeType: 'cache.r7g.large',
+            numCacheClusters: 3,
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:elasticache/replicationGroup:ReplicationGroup::order-cache-replacement',
           type: 'aws:elasticache/replicationGroup:ReplicationGroup',
           name: 'order-cache-replacement',
           action: 'create-replacement',
-          new_inputs: { replicationGroupId: 'order-cache-prod', engineVersion: '7.1', nodeType: 'cache.r7g.large', numCacheClusters: 3 },
+          new_inputs: {
+            replicationGroupId: 'order-cache-prod',
+            engineVersion: '7.1',
+            nodeType: 'cache.r7g.large',
+            numCacheClusters: 3,
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:elasticache/replicationGroup:ReplicationGroup::order-cache-old',
           type: 'aws:elasticache/replicationGroup:ReplicationGroup',
           name: 'order-cache-old',
           action: 'delete-replaced',
-          old_inputs: { replicationGroupId: 'order-cache-prod', engineVersion: '7.0', nodeType: 'cache.r6g.large' },
+          old_inputs: {
+            replicationGroupId: 'order-cache-prod',
+            engineVersion: '7.0',
+            nodeType: 'cache.r6g.large',
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::kubernetes:autoscaling/v2:HorizontalPodAutoscaler::order-api-hpa',
@@ -789,10 +1097,41 @@ export const KubernetesAppMigration = () => (
             'spec.metrics[1]': { kind: 'add', inputDiff: true },
           },
           old_inputs: {
-            spec: { minReplicas: 3, maxReplicas: 10, metrics: [{ type: 'Resource', resource: { name: 'cpu', target: { type: 'Utilization', averageUtilization: 70 } } }] },
+            spec: {
+              minReplicas: 3,
+              maxReplicas: 10,
+              metrics: [
+                {
+                  type: 'Resource',
+                  resource: {
+                    name: 'cpu',
+                    target: { type: 'Utilization', averageUtilization: 70 },
+                  },
+                },
+              ],
+            },
           },
           new_inputs: {
-            spec: { minReplicas: 5, maxReplicas: 20, metrics: [{ type: 'Resource', resource: { name: 'cpu', target: { type: 'Utilization', averageUtilization: 70 } } }, { type: 'Resource', resource: { name: 'memory', target: { type: 'Utilization', averageUtilization: 80 } } }] },
+            spec: {
+              minReplicas: 5,
+              maxReplicas: 20,
+              metrics: [
+                {
+                  type: 'Resource',
+                  resource: {
+                    name: 'cpu',
+                    target: { type: 'Utilization', averageUtilization: 70 },
+                  },
+                },
+                {
+                  type: 'Resource',
+                  resource: {
+                    name: 'memory',
+                    target: { type: 'Utilization', averageUtilization: 80 },
+                  },
+                },
+              ],
+            },
           },
         },
         {
@@ -805,8 +1144,29 @@ export const KubernetesAppMigration = () => (
             spec: {
               podSelector: { matchLabels: { app: 'order-api' } },
               policyTypes: ['Ingress', 'Egress'],
-              ingress: [{ from: [{ namespaceSelector: { matchLabels: { 'kubernetes.io/metadata.name': 'ingress-nginx' } } }], ports: [{ port: 8080, protocol: 'TCP' }] }],
-              egress: [{ to: [{ namespaceSelector: {} }], ports: [{ port: 5432, protocol: 'TCP' }, { port: 6379, protocol: 'TCP' }] }],
+              ingress: [
+                {
+                  from: [
+                    {
+                      namespaceSelector: {
+                        matchLabels: {
+                          'kubernetes.io/metadata.name': 'ingress-nginx',
+                        },
+                      },
+                    },
+                  ],
+                  ports: [{ port: 8080, protocol: 'TCP' }],
+                },
+              ],
+              egress: [
+                {
+                  to: [{ namespaceSelector: {} }],
+                  ports: [
+                    { port: 5432, protocol: 'TCP' },
+                    { port: 6379, protocol: 'TCP' },
+                  ],
+                },
+              ],
             },
           },
         },
@@ -817,7 +1177,10 @@ export const KubernetesAppMigration = () => (
           action: 'create',
           new_inputs: {
             metadata: { name: 'order-api-pdb', namespace: 'order-service' },
-            spec: { minAvailable: '50%', selector: { matchLabels: { app: 'order-api' } } },
+            spec: {
+              minAvailable: '50%',
+              selector: { matchLabels: { app: 'order-api' } },
+            },
           },
         },
         {
@@ -826,8 +1189,17 @@ export const KubernetesAppMigration = () => (
           name: 'order-api-monitor',
           action: 'create',
           new_inputs: {
-            metadata: { name: 'order-api-monitor', namespace: 'order-service', labels: { release: 'prometheus' } },
-            spec: { selector: { matchLabels: { app: 'order-api' } }, endpoints: [{ port: 'metrics', interval: '15s', path: '/metrics' }] },
+            metadata: {
+              name: 'order-api-monitor',
+              namespace: 'order-service',
+              labels: { release: 'prometheus' },
+            },
+            spec: {
+              selector: { matchLabels: { app: 'order-api' } },
+              endpoints: [
+                { port: 'metrics', interval: '15s', path: '/metrics' },
+              ],
+            },
           },
         },
         {
@@ -838,13 +1210,29 @@ export const KubernetesAppMigration = () => (
           new_inputs: {
             metadata: { name: 'order-api-alerts', namespace: 'order-service' },
             spec: {
-              groups: [{
-                name: 'order-api.rules',
-                rules: [
-                  { alert: 'OrderAPIHighErrorRate', expr: 'rate(http_requests_total{service="order-api",code=~"5.."}[5m]) / rate(http_requests_total{service="order-api"}[5m]) > 0.05', for: '5m', labels: { severity: 'critical' }, annotations: { summary: 'Order API error rate above 5%' } },
-                  { alert: 'OrderAPIHighLatency', expr: 'histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service="order-api"}[5m])) > 2', for: '10m', labels: { severity: 'warning' }, annotations: { summary: 'Order API p99 latency above 2s' } },
-                ],
-              }],
+              groups: [
+                {
+                  name: 'order-api.rules',
+                  rules: [
+                    {
+                      alert: 'OrderAPIHighErrorRate',
+                      expr: 'rate(http_requests_total{service="order-api",code=~"5.."}[5m]) / rate(http_requests_total{service="order-api"}[5m]) > 0.05',
+                      for: '5m',
+                      labels: { severity: 'critical' },
+                      annotations: { summary: 'Order API error rate above 5%' },
+                    },
+                    {
+                      alert: 'OrderAPIHighLatency',
+                      expr: 'histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service="order-api"}[5m])) > 2',
+                      for: '10m',
+                      labels: { severity: 'warning' },
+                      annotations: {
+                        summary: 'Order API p99 latency above 2s',
+                      },
+                    },
+                  ],
+                },
+              ],
             },
           },
         },
@@ -925,21 +1313,35 @@ export const KubernetesAppMigration = () => (
           type: 'kubernetes:core/v1:Secret',
           name: 'order-legacy-api-key',
           action: 'delete',
-          old_inputs: { metadata: { name: 'order-legacy-api-key', namespace: 'order-service' } },
+          old_inputs: {
+            metadata: {
+              name: 'order-legacy-api-key',
+              namespace: 'order-service',
+            },
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:cloudwatch/metricAlarm:MetricAlarm::order-legacy-alarm',
           type: 'aws:cloudwatch/metricAlarm:MetricAlarm',
           name: 'order-legacy-alarm',
           action: 'delete',
-          old_inputs: { alarmName: 'order-legacy-health', metricName: 'HealthCheckStatus', namespace: 'AWS/Route53' },
+          old_inputs: {
+            alarmName: 'order-legacy-health',
+            metricName: 'HealthCheckStatus',
+            namespace: 'AWS/Route53',
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::aws:route53/record:Record::order-legacy-dns',
           type: 'aws:route53/record:Record',
           name: 'order-legacy-dns',
           action: 'delete',
-          old_inputs: { name: 'order-legacy.prod.acme.io', type: 'CNAME', ttl: 300, records: ['order-api-legacy.prod.internal'] },
+          old_inputs: {
+            name: 'order-legacy.prod.acme.io',
+            type: 'CNAME',
+            ttl: 300,
+            records: ['order-api-legacy.prod.internal'],
+          },
         },
         {
           urn: 'urn:pulumi:prod::order-service::kubernetes:core/v1:ServiceAccount::order-api-sa',
@@ -950,7 +1352,10 @@ export const KubernetesAppMigration = () => (
             metadata: {
               name: 'order-api',
               namespace: 'order-service',
-              annotations: { 'eks.amazonaws.com/role-arn': 'arn:aws:iam::123456789012:role/order-api-irsa' },
+              annotations: {
+                'eks.amazonaws.com/role-arn':
+                  'arn:aws:iam::123456789012:role/order-api-irsa',
+              },
             },
           },
         },
@@ -963,7 +1368,22 @@ export const KubernetesAppMigration = () => (
             name: 'order-api-irsa',
             assumeRolePolicy: JSON.stringify({
               Version: '2012-10-17',
-              Statement: [{ Effect: 'Allow', Principal: { Federated: 'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234' }, Action: 'sts:AssumeRoleWithWebIdentity', Condition: { StringEquals: { 'oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234:sub': 'system:serviceaccount:order-service:order-api' } } }],
+              Statement: [
+                {
+                  Effect: 'Allow',
+                  Principal: {
+                    Federated:
+                      'arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234',
+                  },
+                  Action: 'sts:AssumeRoleWithWebIdentity',
+                  Condition: {
+                    StringEquals: {
+                      'oidc.eks.us-east-1.amazonaws.com/id/ABCDEF1234:sub':
+                        'system:serviceaccount:order-service:order-api',
+                    },
+                  },
+                },
+              ],
             }),
             tags: { Environment: 'prod', Service: 'order-api' },
           },
@@ -1000,6 +1420,144 @@ export const KubernetesAppMigration = () => (
         'warning: aws:elasticache/replicationGroup:ReplicationGroup (order-cache): upgrading nodeType from cache.r6g.large to cache.r7g.large requires replacement. Existing connections will be dropped.',
         'warning: policy-violation: resource kubernetes:apps/v1:Deployment (order-api) exceeds recommended memory limit of 1Gi. Current limit: 2Gi. Ensure adequate cluster capacity.',
         'error: preview-only: resource aws:iam/role:Role (order-api-irsa) references OIDC provider that may not exist yet. Verify EKS OIDC provider is configured.',
+      ],
+    }}
+  />
+)
+
+export const AzureCosmeticUpdates = () => (
+  <PulumiDiff
+    plan={{
+      stdout: '',
+      stderr: '',
+      change_summary: { same: 5, update: 3 },
+      resource_changes: [
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:containerregistry:Registry::acr',
+          type: 'azure-native:containerregistry:Registry',
+          name: 'acr',
+          action: 'update',
+          diffs: ['tags'],
+          detailed_diff: {
+            tags: { kind: 'update', inputDiff: true },
+          },
+          old_inputs: {
+            registryName: 'myregistry',
+            sku: { name: 'Premium' },
+            location: 'centralindia',
+            tags: null,
+          },
+          new_inputs: {
+            registryName: 'myregistry',
+            sku: { name: 'Premium' },
+            location: 'centralindia',
+            tags: {},
+          },
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:network:Zone::public-zone',
+          type: 'azure-native:network:Zone',
+          name: 'public-zone',
+          action: 'update',
+          diffs: ['tags'],
+          detailed_diff: {
+            tags: { kind: 'update', inputDiff: true },
+          },
+          old_inputs: {
+            zoneName: 'byoc-azure.nuon.co',
+            resourceGroupName: 'my-rg',
+            tags: null,
+          },
+          new_inputs: {
+            zoneName: 'byoc-azure.nuon.co',
+            resourceGroupName: 'my-rg',
+            tags: {},
+          },
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:containerservice:ManagedCluster::aks',
+          type: 'azure-native:containerservice:ManagedCluster',
+          name: 'aks',
+          action: 'update',
+          diffs: ['tags', 'agentPoolProfiles', 'identity'],
+          detailed_diff: {
+            tags: { kind: 'update', inputDiff: true },
+            'agentPoolProfiles[0].availabilityZones': {
+              kind: 'update',
+              inputDiff: true,
+            },
+            'identity.userAssignedIdentities': {
+              kind: 'update',
+              inputDiff: true,
+            },
+          },
+          old_inputs: {
+            resourceName: 'my-aks',
+            kubernetesVersion: '1.33',
+            location: 'centralindia',
+            agentPoolProfiles: [
+              {
+                name: 'agents',
+                count: 1,
+                vmSize: 'Standard_D2s_v3',
+                availabilityZones: null,
+              },
+            ],
+            identity: {
+              type: 'SystemAssigned',
+              userAssignedIdentities: null,
+            },
+            tags: null,
+          },
+          new_inputs: {
+            resourceName: 'my-aks',
+            kubernetesVersion: '1.33',
+            location: 'centralindia',
+            agentPoolProfiles: [
+              {
+                name: 'agents',
+                count: 1,
+                vmSize: 'Standard_D2s_v3',
+                availabilityZones: [],
+              },
+            ],
+            identity: {
+              type: 'SystemAssigned',
+              userAssignedIdentities: {},
+            },
+            tags: {},
+          },
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:network:VirtualNetwork::vnet',
+          type: 'azure-native:network:VirtualNetwork',
+          name: 'vnet',
+          action: 'same',
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:network:Subnet::private-subnet',
+          type: 'azure-native:network:Subnet',
+          name: 'private-subnet',
+          action: 'same',
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:compute:SshPublicKey::ssh-key',
+          type: 'azure-native:compute:SshPublicKey',
+          name: 'ssh-key',
+          action: 'same',
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::azure-native:authorization:RoleAssignment::acr-pull',
+          type: 'azure-native:authorization:RoleAssignment',
+          name: 'acr-pull',
+          action: 'same',
+        },
+        {
+          urn: 'urn:pulumi:prod::infra::random:index:RandomPet::ssh-key-name',
+          type: 'random:index:RandomPet',
+          name: 'ssh-key-name',
+          action: 'same',
+        },
       ],
     }}
   />
