@@ -1,6 +1,34 @@
 ---
 title: "Config Files"
-description: "Config Files"
+description: "Create a config file and generate an install with a CLI command"
 ---
 
-Hi
+First, create an install config file by running
+
+```bash
+mkdir -p installs
+```
+
+```bash
+touch installs/<install-name>.toml
+```
+
+If you have any questions about which specific inputs go into a config file, reference our [configuration files docs](/configuration-files#install-config).
+
+![Install config example](../images/concepts/config-files/install-config-example.png)
+
+Once a config file exists, generate new installs using our CLI command
+
+```bash
+nuon installs sync -a Acme -d installs/acme.toml
+```
+
+![CLI commands](../images/concepts/config-files/cli-commands.png)
+
+You'll then be presented with a selection prompt asking whether you would like to create the install.
+
+![Selection prompt](../images/concepts/config-files/selection-prompt.png)
+
+Once you select "yes," you'll be directed to your install in the browser, and a completion message will appear in your terminal.
+
+![Completion message](../images/concepts/config-files/completion-message.png)
