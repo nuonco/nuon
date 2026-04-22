@@ -77,19 +77,14 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		}
 	}
 
-	// Mark all existing steps as discarded
+	// Mark all existing steps as retried. Keep the existing status so
+	// errors still show correctly in the dashboard.
 	for _, step := range groupSteps {
 		if step.Status.Status == app.StatusDiscarded {
 			continue
 		}
-		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusDiscarded,
-				Metadata: map[string]any{
-					"reason": "group retry",
-				},
-			},
+		_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, workflowactivities.UpdateFlowStepRetriedRequest{
+			StepID: step.ID,
 		})
 	}
 
@@ -111,13 +106,17 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		}
 
 		cloneSteps = append(cloneSteps, workflowactivities.CreateFlowStep{
-			FlowID:              s.WorkflowID,
-			OwnerID:             step.OwnerID,
-			OwnerType:           step.OwnerType,
-			Name:                step.Name,
-			Signal:              step.Signal,
-			QueueSignal:         qs,
-			Status:              app.NewCompositeTemporalStatus(ctx, app.StatusPending),
+			FlowID:      s.WorkflowID,
+			OwnerID:     step.OwnerID,
+			OwnerType:   step.OwnerType,
+			Name:        step.Name,
+			Signal:      step.Signal,
+			QueueSignal: qs,
+			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
+				"is_retry":        true,
+				"retry_idx":       0,
+				"group_retry_idx": newGroupRetryIdx,
+			}),
 			Idx:                 maxIdx + 100 + i,
 			ExecutionType:       step.ExecutionType,
 			Metadata:            step.Metadata,

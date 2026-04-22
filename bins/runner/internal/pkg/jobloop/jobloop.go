@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
-	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 	"github.com/nuonco/nuon/pkg/metrics"
 )
 
@@ -50,7 +49,6 @@ type jobLoop struct {
 	mw         metrics.Writer
 	shutdowner fx.Shutdowner
 
-	sandboxCtl       *sandboxctl.Server
 	processRegistrar *process.Registrar
 
 	// for healthcheck
@@ -76,7 +74,6 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		cfg:              params.Cfg,
 		mw:               params.MW,
 		shutdowner:       params.Shutdowner,
-		sandboxCtl:       params.SandboxCtl,
 		processRegistrar: params.ProcessRegistrar,
 	}
 

@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -30,7 +31,8 @@ type Signal struct {
 	SandboxMode      bool
 	Role             string
 
-	cfg *internal.Config
+	cfg         *internal.Config
+	runnerJobID string
 }
 
 var _ signal.Signal = &Signal{}
@@ -39,6 +41,7 @@ var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
 var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
 var _ signal.SignalWithSkipCleanup = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool { return true }
@@ -71,6 +74,15 @@ func (s *Signal) OnSkipped(ctx workflow.Context) error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
 	return nil
 }
 
@@ -203,6 +215,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	planResponse, err := plan.AwaitCreateSandboxRunPlan(ctx, &plan.CreateSandboxRunPlanRequest{
 		RunID:      installRun.ID,

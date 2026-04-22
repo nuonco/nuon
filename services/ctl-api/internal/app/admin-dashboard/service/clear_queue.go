@@ -1,0 +1,33 @@
+package service
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+)
+
+func (s *service) ClearQueue(c *gin.Context) {
+	queueID := c.Param("id")
+
+	var q app.Queue
+	res := s.db.WithContext(c.Request.Context()).
+		Where("id = ?", queueID).
+		First(&q)
+
+	if res.Error != nil {
+		s.l.Error("failed to fetch queue", zap.Error(res.Error))
+		c.JSON(http.StatusNotFound, gin.H{"error": "Queue not found"})
+		return
+	}
+
+	if err := s.queueClient.ClearQueue(c.Request.Context(), q.ID); err != nil {
+		s.l.Error("failed to clear queue", zap.Error(err), zap.String("queue_id", queueID))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear queue"})
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/queues/"+queueID)
+}

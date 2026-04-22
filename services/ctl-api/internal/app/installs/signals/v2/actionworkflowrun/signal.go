@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -33,11 +34,23 @@ type Signal struct {
 	TriggeredByType         string
 	RunEnvVars              map[string]string
 	Role                    string
+
+	runnerJobID string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
+}
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
@@ -238,6 +251,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to create runner job")
 	}
+	s.runnerJobID = runnerJob.ID
 
 	// save runner job plan
 	planJSON, err := json.Marshal(planResponse.Plan)
