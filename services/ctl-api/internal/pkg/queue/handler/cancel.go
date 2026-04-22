@@ -27,12 +27,14 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		return nil, ErrAlreadyExecuted
 	}
 
+	if l, logErr := log.WorkflowLogger(ctx); logErr == nil {
+		l.Info("signal-callback for cancel", zap.String("queue-signal-id", h.queueSignalID))
+	}
+
 	start := workflow.Now(ctx)
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseCancel)
 
 	h.canceled = true
-	h.finished = true
-	h.stopped = true
 
 	// cancel executing context if mid-execute
 	if h.executingCtx != nil {
@@ -66,6 +68,9 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		Status:   signal.SignalStatusCancelled,
 		Duration: dur,
 	})
+
+	h.finished = true
+	h.stopped = true
 
 	return &CancelResponse{}, nil
 }

@@ -88,22 +88,18 @@ func (a *Activities) ForwardCancelStepToGroup(ctx context.Context, req ForwardCa
 		StepID string `json:"step_id"`
 	}
 
-	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
+	_, err = a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
 		tclient.UpdateWorkflowOptions{
 			WorkflowID:   qs.Workflow.ID,
 			UpdateName:   "cancel-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+			WaitForStage: tclient.WorkflowUpdateStageAccepted,
 			Args:         []any{cancelStepArg{StepID: req.StepID}},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send cancel-step to group: %w", err)
 	}
 
-	var resp ForwardCancelStepToGroupResponse
-	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("cancel-step failed on group: %w", err)
-	}
-	return &resp, nil
+	return &ForwardCancelStepToGroupResponse{}, nil
 }
 
 // ForwardApproveStepToGroupRequest is the input for forwarding an approve-step to the group.

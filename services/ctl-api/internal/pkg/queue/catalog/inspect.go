@@ -13,6 +13,7 @@ type SignalTypeInfo struct {
 	Namespace        string
 	AutoRetry        bool
 	MaxRetries       int
+	MaxAutoRetries   int
 	HasCloneSteps    bool
 	HasNoOpCheck     bool
 	HasPolicyEval    bool
@@ -21,6 +22,7 @@ type SignalTypeInfo struct {
 	HasOnRetry       bool
 	HasOnSkip        bool
 	HasOnDeny        bool
+	SkipGroup        bool
 	HasFetchSteps    bool
 	HasQueue         bool
 	Queue            string
@@ -83,6 +85,10 @@ func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 	if mr, ok := sig.(signal.SignalWithMaxRetries); ok {
 		info.MaxRetries = safeCall(func() int { return mr.MaxRetries() })
 	}
+	info.MaxAutoRetries = info.MaxRetries
+	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
+		info.MaxAutoRetries = safeCall(func() int { return mar.MaxAutoRetries() })
+	}
 	if _, ok := sig.(signal.SignalWithCloneSteps); ok {
 		info.HasCloneSteps = true
 	}
@@ -106,6 +112,9 @@ func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 	}
 	if _, ok := sig.(signal.SignalWithOnDeny); ok {
 		info.HasOnDeny = true
+	}
+	if sg, ok := sig.(signal.SignalWithSkipGroup); ok {
+		info.SkipGroup = safeCall(func() bool { return sg.SkipGroup() })
 	}
 	if _, ok := sig.(signal.SignalWithFetchSteps); ok {
 		info.HasFetchSteps = true

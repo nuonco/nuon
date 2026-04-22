@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -30,6 +31,8 @@ type Signal struct {
 	FlowStepID            string
 	InstallWorkflowStepID string
 	SandboxMode           bool
+
+	runnerJobID string
 }
 
 func (s *Signal) Type() signal.SignalType {
@@ -45,6 +48,7 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithCloneSteps = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 	return []signal.CloneStepDef{
@@ -67,6 +71,15 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 			ExecutionType: "system",
 		},
 	}
+}
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
@@ -186,6 +199,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	// NOTE(jm): this is probably going to need to be refactored
 	deployPlan, err := plan.AwaitCreateDeployPlan(ctx, &plan.CreateDeployPlanRequest{

@@ -37,6 +37,7 @@ type SignalWithCloneSteps interface {
 
 // SignalWithMaxRetries is implemented by signals that declare a custom maximum retry count.
 // If not implemented, the default max retry count (DefaultMaxRetries) is used.
+// This is the global ceiling for retries — when exhausted, no more retries of any kind.
 type SignalWithMaxRetries interface {
 	MaxRetries() int
 }
@@ -49,6 +50,15 @@ const DefaultMaxRetries = 10
 // a step error and triggers a retry if the retry budget hasn't been exhausted.
 type SignalWithAutoRetry interface {
 	AutoRetry() bool
+}
+
+// SignalWithMaxAutoRetries is implemented by signals that want a separate limit
+// for automatic retries (as opposed to user-initiated manual retries).
+// When auto-retries are exhausted the step is marked as failed, but the user
+// can still manually retry up to MaxRetries().
+// If not implemented, all retries up to MaxRetries() are automatic.
+type SignalWithMaxAutoRetries interface {
+	MaxAutoRetries() int
 }
 
 // SignalWithRetryGroup is implemented by signals whose steps should retry as an
@@ -121,6 +131,14 @@ type SignalWithOnSkip interface {
 // Signals can implement this to perform cleanup when approval is denied.
 type SignalWithOnDeny interface {
 	OnDeny(ctx workflow.Context) error
+}
+
+// SignalWithSkipGroup is implemented by signals that want a "skip" approval
+// response to skip the entire remaining group (DirectiveSkipGroup). When not
+// implemented or when SkipGroup() returns false, a skip response only skips
+// the current step and continues to the next step in the group (DirectiveContinue).
+type SignalWithSkipGroup interface {
+	SkipGroup() bool
 }
 
 // ---------------------------------------------------------------------------

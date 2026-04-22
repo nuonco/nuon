@@ -157,12 +157,13 @@ func (s *service) SandboxModeUpsertSignalConfig(c *gin.Context) {
 		WorkflowSleep: time.Duration(workflowSec * float64(time.Second)),
 		Panic:         c.PostForm("panic") == "on" || c.PostForm("panic") == "true",
 		Error:         c.PostForm("error"),
+		ValidateError: c.PostForm("validate_error"),
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "signal_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "deadlock_sleep", "workflow_sleep", "panic", "error", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "deadlock_sleep", "workflow_sleep", "panic", "error", "validate_error", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert signal config", zap.Error(res.Error))
