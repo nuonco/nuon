@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 // handleStepError marks the step as errored and checks for auto-retry.
@@ -30,6 +29,12 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		maxRetries = mr.MaxRetries()
 	}
 
+	// Determine max auto-retries. Defaults to maxRetries when not implemented.
+	maxAutoRetries := maxRetries
+	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
+		maxAutoRetries = mar.MaxAutoRetries()
+	}
+
 	// Determine the directive based on signal capabilities. For retry-group
 	// signals the retry counter is GroupRetryIdx (reset per group clone);
 	// for plain retry it is the step-level RetryIndex.
@@ -41,6 +46,8 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	}
 
 	nextRetryIndex := retryIndex + 1
+
+	// Check the global ceiling first — no more retries of any kind.
 	if nextRetryIndex > maxRetries {
 		l.Warn("max retries exhausted",
 			zap.String("step_id", step.ID),
@@ -48,7 +55,6 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
 
-		// Exhausted: stop the workflow (or retry-group has no more budget).
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 			return errors.Wrap(err, "unable to set result directive")
 		}
@@ -59,22 +65,37 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		})
 	}
 
+	// Check auto-retry budget — user can still manually retry up to maxRetries.
+	if nextRetryIndex > maxAutoRetries {
+		l.Warn("auto retries exhausted",
+			zap.String("step_id", step.ID),
+			zap.Int("max_auto_retries", maxAutoRetries),
+			zap.Int("max_retries", maxRetries),
+			zap.Int("retry_index", retryIndex))
+
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"auto_retries_exhausted": true,
+			"max_auto_retries":       maxAutoRetries,
+			"max_retries":            maxRetries,
+			"retry_index":            retryIndex,
+		})
+	}
+
 	l.Debug("auto-retry: writing directive",
 		zap.String("step_id", step.ID),
 		zap.String("directive", directive),
 		zap.Int("retry_index", nextRetryIndex),
 		zap.Int("max_retries", maxRetries))
 
-	// Mark step as retried and record auto-retry metadata.
-	_ = activities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, activities.UpdateFlowStepRetriedRequest{
-		StepID: step.ID,
-	})
-
+	// Record auto-retry metadata on the error status. We intentionally do NOT
+	// set retried=true here — the dashboard uses that flag to hide the error,
+	// and we want the error to remain visible. The auto_retried metadata field
+	// is sufficient to indicate this step was automatically retried.
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusError,
-			StatusHumanDescription: "Automatically retried.",
+			StatusHumanDescription: stepHumanDescription(stepErr),
 			Metadata: map[string]any{
 				"reason":       stepErr.Error(),
 				"auto_retried": true,

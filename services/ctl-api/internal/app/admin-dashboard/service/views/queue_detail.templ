@@ -45,6 +45,15 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 									Restart Queue
 								}
 							</form>
+							<form method="POST" action={ templ.URL("/queues/" + q.ID + "/clear") } onsubmit="return confirm('Are you sure you want to cancel all in-flight signals in this queue?');" style="display:inline;">
+								@button.Button(button.Props{
+									Variant: button.VariantDestructive,
+									Size:    button.SizeSm,
+									Type:    button.TypeSubmit,
+								}) {
+									Clear Queue
+								}
+							</form>
 							if temporalUIURL != "" {
 								<a href={ templ.URL(temporalUIURL + "/namespaces/" + q.Workflow.Namespace + "/workflows/" + q.Workflow.ID) } target="_blank" rel="noopener noreferrer">
 									@button.Button(button.Props{

@@ -1,10 +1,14 @@
 package sandboxmode
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"errors"
+
+	"go.temporal.io/sdk/workflow"
+)
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	if cfg := s.fetchConfig(ctx); cfg != nil {
-		return s.applyConfig(ctx, cfg)
+	if cfg := s.fetchConfig(ctx); cfg != nil && cfg.ValidateError != "" {
+		return errors.New(cfg.ValidateError)
 	}
 
 	return s.Signal.Validate(ctx)

@@ -35,6 +35,14 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 		return
 	}
 
+	// Fetch the 10 signals created right before this one in the same queue.
+	var signalsAhead []app.QueueSignal
+	s.db.WithContext(ctx).
+		Where("queue_id = ? AND created_at < ? AND id != ?", signal.QueueID, signal.CreatedAt, signal.ID).
+		Order("created_at DESC").
+		Limit(10).
+		Find(&signalsAhead)
+
 	var q app.Queue
 	s.db.WithContext(ctx).
 		Where("id = ?", queueID).
@@ -50,7 +58,7 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 
 	attrs := signalAttributesForType(signal.Type)
 
-	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo, attrs)
+	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo, attrs, signalsAhead)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
