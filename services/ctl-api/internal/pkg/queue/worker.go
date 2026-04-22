@@ -32,10 +32,10 @@ func (q *queue) isIdle(ctx workflow.Context) bool {
 
 	//queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, q.queueID)
 	//if err != nil {
-		//return false
+	//return false
 	//}
 	//if len(queueSignals) > 0 {
-		//return false
+	//return false
 	//}
 
 	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
