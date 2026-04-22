@@ -142,6 +142,29 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 				}
 			</div>
 
+			<!-- Status Timestamps -->
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Status Timestamps
+					}
+					@card.Description() {
+						Queue lifecycle timestamps from the workflow
+					}
+				}
+				@card.Content() {
+					<div class="grid grid-cols-5 gap-4">
+						@queueTimestamp("Ready At", q.Metadata, "ready_at")
+						@queueTimestamp("Restarted At", q.Metadata, "restarted_at")
+						@queueTimestamp("Stopped At", q.Metadata, "stopped_at")
+						@queueTimestamp("Idled At", q.Metadata, "idled_at")
+						@queueTimestamp("Finished At", q.Metadata, "finished_at")
+					</div>
+				}
+			}
+
+			<div class="mt-6"></div>
+
 			<!-- Emitters Section -->
 			@card.Card() {
 				@card.Header() {
@@ -234,6 +257,23 @@ templ renderSignalsTableInline(signals []app.QueueSignal, queueID string) {
 			}
 		}
 	}
+}
+
+templ queueTimestamp(label string, metadata map[string]*string, key string) {
+	<div>
+		<div class="text-xs text-muted-foreground uppercase mb-1">{ label }</div>
+		<div class="font-mono text-xs text-foreground">
+			if metadata != nil {
+				if v, ok := metadata[key]; ok && v != nil {
+					{ *v }
+				} else {
+					<span class="text-muted-foreground">—</span>
+				}
+			} else {
+				<span class="text-muted-foreground">—</span>
+			}
+		</div>
+	</div>
 }
 
 templ signalStatusBadge(status app.CompositeStatus) {

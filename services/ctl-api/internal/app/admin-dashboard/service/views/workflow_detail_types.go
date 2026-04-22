@@ -11,6 +11,12 @@ type StepDetailData struct {
 	StepTarget      *StepTargetData
 }
 
+// GroupDetailData holds a step group and its enriched steps for the workflow detail view.
+type GroupDetailData struct {
+	Group *app.WorkflowStepGroup
+	Steps []StepDetailData
+}
+
 // StepTargetData holds the loaded step target with its log stream.
 type StepTargetData struct {
 	ID          string

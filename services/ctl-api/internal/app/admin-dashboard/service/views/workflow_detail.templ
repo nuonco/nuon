@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/status"
 )
 
-templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData, generateStepsSignal *app.QueueSignal) {
+templ WorkflowDetail(wf *app.Workflow, groupDetails []GroupDetailData, generateStepsSignal *app.QueueSignal) {
 	@Layout("Workflow: " + wf.ID, ActivePageWorkflows) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -142,32 +142,82 @@ templ WorkflowDetail(wf *app.Workflow, stepDetails []StepDetailData, generateSte
 				</div>
 			}
 
-			<!-- Steps -->
-			<div class="mb-6">
-				@card.Card() {
-					@card.Header() {
-						<div class="flex items-center justify-between">
+			<!-- Step Groups -->
+			<div class="mb-6 space-y-4">
+				if len(groupDetails) == 0 {
+					@card.Card() {
+						@card.Header() {
 							@card.Title() {
-								Steps ({ fmt.Sprintf("%d", len(stepDetails)) })
+								Steps
 							}
-						</div>
-					}
-					@card.Content() {
-						if len(stepDetails) == 0 {
-							<div class="text-sm text-muted-foreground">No steps recorded.</div>
-						} else {
-							<div class="space-y-2">
-								for i, sd := range stepDetails {
-									@stepRow(i, sd)
-								}
-							</div>
 						}
+						@card.Content() {
+							<div class="text-sm text-muted-foreground">No steps recorded.</div>
+						}
+					}
+				} else {
+					for _, gd := range groupDetails {
+						@stepGroupCard(gd)
 					}
 				}
 			</div>
 		</div>
 		@copybutton.Script()
 	}
+}
+
+templ stepGroupCard(gd GroupDetailData) {
+	{{ group := gd.Group }}
+	<details class="rounded-lg border border-border" open>
+		<summary class="flex items-center gap-3 py-3 px-4 cursor-pointer list-none select-none hover:bg-muted/30">
+			<div class="flex items-center gap-2">
+				<span class="font-mono text-xs text-muted-foreground">g{ fmt.Sprintf("%d", group.GroupIdx) }</span>
+				<span class="font-medium text-sm">
+					if group.Name != "" {
+						{ group.Name }
+					} else {
+						Group { fmt.Sprintf("%d", group.GroupIdx) }
+					}
+				</span>
+			</div>
+			if group.Parallel {
+				@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+					parallel
+				}
+			} else {
+				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+					sequential
+				}
+			}
+			if string(group.Status.Status) != "" {
+				@status.StatusAutoSimple(string(group.Status.Status))
+			}
+			if group.ResultDirective != "" {
+				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+					{ group.ResultDirective }
+				}
+			}
+			if group.ID != "" {
+				<a href={ templ.URL("/queue-signals?search=" + group.ID) } class="text-cyan hover:underline text-xs ml-auto" onclick="event.stopPropagation()">signal →</a>
+			}
+			<span class="text-xs text-muted-foreground mr-2">
+				{ fmt.Sprintf("%d", len(gd.Steps)) } steps
+			</span>
+			<div class="text-muted-foreground shrink-0">
+				<span class="group-open:hidden">▸</span>
+				<span class="hidden group-open:inline">▾</span>
+			</div>
+		</summary>
+		<div class="border-t border-border px-4 py-3 space-y-2">
+			if len(gd.Steps) == 0 {
+				<div class="text-xs text-muted-foreground">No steps in this group.</div>
+			} else {
+				for i, sd := range gd.Steps {
+					@stepRow(i, sd)
+				}
+			}
+		</div>
+	</details>
 }
 
 templ stepRow(idx int, sd StepDetailData) {

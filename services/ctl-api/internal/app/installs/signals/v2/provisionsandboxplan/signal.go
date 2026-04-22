@@ -48,7 +48,8 @@ var (
 func (s *Signal) IsNoOpCheckable() bool          { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool { return true }
 func (s *Signal) AutoRetry() bool                { return true }
-func (s *Signal) MaxRetries() int                { return 3 }
+func (s *Signal) MaxRetries() int                { return 10 }
+func (s *Signal) MaxAutoRetries() int            { return 3 }
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)
