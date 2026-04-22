@@ -18,7 +18,6 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/sandboxctl"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -32,7 +31,7 @@ const (
 // Handler is a universal sandbox job handler that replaces the real handler
 // when sandbox mode is active. It implements the jobs.JobHandler interface.
 type Handler struct {
-	sandboxCtl *sandboxctl.Server
+	sandboxCfg *Config
 	apiClient  nuonrunner.Client
 	cfg        *internal.Config
 	shutdowner fx.Shutdowner
@@ -42,7 +41,7 @@ type Handler struct {
 }
 
 func New(
-	sandboxCtl *sandboxctl.Server,
+	sandboxCfg *Config,
 	apiClient nuonrunner.Client,
 	cfg *internal.Config,
 	shutdowner fx.Shutdowner,
@@ -50,7 +49,7 @@ func New(
 	execution *models.AppRunnerJobExecution,
 ) *Handler {
 	return &Handler{
-		sandboxCtl: sandboxCtl,
+		sandboxCfg: sandboxCfg,
 		apiClient:  apiClient,
 		cfg:        cfg,
 		shutdowner: shutdowner,
@@ -127,8 +126,8 @@ func (h *Handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	l, _ := pkgctx.Logger(ctx)
 
-	state := h.sandboxCtl.GetState()
-	if state == nil {
+	cfg := h.sandboxCfg
+	if cfg == nil {
 		if l != nil {
 			l.Info("sandbox: in handler step", zap.String("step", stepName))
 		}
@@ -136,8 +135,6 @@ func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 	}
 
 	jobType := string(h.job.Type)
-	operation := string(h.job.Operation)
-	cfg := state.GetConfigForOperation(jobType, operation)
 
 	if cfg.FailAtStep != "" && cfg.FailAtStep == stepName {
 		if l != nil {
@@ -146,7 +143,6 @@ func (h *Handler) execStepForStep(ctx context.Context, stepName string) error {
 				zap.String("job_type", jobType),
 			)
 		}
-		state.RecordResult(false)
 		msg := cfg.ErrorMessage
 		if msg == "" {
 			msg = fmt.Sprintf("sandbox: failure injected at step %s", stepName)
@@ -168,24 +164,22 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 	}
 
 	jobType := string(job.Type)
-	operation := string(job.Operation)
+	cfg := h.sandboxCfg
 	duration := h.cfg.SandboxJobDuration
-	var cfg sandboxctl.JobTypeConfig
 
-	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg = state.GetConfigForOperation(jobType, operation)
+	if cfg != nil {
 		l.Info("sandbox-handler: config loaded",
 			zap.String("job_type", jobType),
 			zap.Duration("duration", cfg.Duration),
 			zap.Bool("has_error", cfg.ErrorMessage != ""),
 			zap.Int("log_lines", len(cfg.LogLines)),
 		)
-		duration = cfg.Duration
+		if cfg.Duration > 0 {
+			duration = cfg.Duration
+		}
 
 		if cfg.ErrorMessage != "" {
-			if state := h.sandboxCtl.GetState(); state != nil {
-				state.RecordResult(false)
-			}
+			l.Info("error message is set, exiting early")
 			return errors.New(cfg.ErrorMessage)
 		}
 
@@ -206,36 +200,38 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 				return ctx.Err()
 			}
 		}
+
+		if cfg.Timeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
+			defer cancel()
+		}
 	}
 
-	if cfg.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
-		defer cancel()
-	}
-
-	stepDuration := duration / totalSteps
-
-	timeout := time.NewTimer(stepDuration)
+	l.Info("duration loaded from config",
+		zap.Duration("duration", duration),
+		zap.String("duration_human", duration.String()),
+	)
+	timeout := time.NewTimer(duration)
 	ticker := time.NewTicker(logPeriod)
 	defer ticker.Stop()
 	defer timeout.Stop()
 
 	logLineIdx := 0
-	hasCustomLogs := len(cfg.LogLines) > 0
+	hasCustomLogs := cfg != nil && len(cfg.LogLines) > 0
 
 	for {
 		select {
 		case <-ctx.Done():
-			if state := h.sandboxCtl.GetState(); state != nil {
-				state.RecordResult(false)
-			}
 			return fmt.Errorf("sandbox: job timed out for %s", jobType)
 		case <-ticker.C:
 			if hasCustomLogs && logLineIdx < len(cfg.LogLines) {
 				l.Info(cfg.LogLines[logLineIdx])
 				logLineIdx++
+			} else {
+				l.Info("fake log output")
 			}
+
 		case <-timeout.C:
 			goto BREAK
 		}
@@ -245,10 +241,6 @@ BREAK:
 		zap.String("job_type", jobType),
 		zap.Duration("duration", duration),
 	)
-
-	if state := h.sandboxCtl.GetState(); state != nil {
-		state.RecordResult(true)
-	}
 
 	return nil
 }
@@ -325,12 +317,8 @@ func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 
 // sandboxOutputs returns the outputs map for a sandbox job.
 func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, error) {
-	// Check for API-driven outputs from sandbox config
-	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg := state.GetConfigForOperation(string(h.job.Type), string(h.job.Operation))
-		if cfg.Outputs != nil && len(cfg.Outputs) > 0 {
-			return cfg.Outputs, nil
-		}
+	if h.sandboxCfg != nil && len(h.sandboxCfg.Outputs) > 0 {
+		return h.sandboxCfg.Outputs, nil
 	}
 
 	plan, err := h.getSandboxModePlan(ctx)
@@ -347,22 +335,18 @@ func (h *Handler) sandboxOutputs(ctx context.Context) (map[string]interface{}, e
 
 // writeSandboxResults writes plan contents and execution results for sandbox jobs.
 func (h *Handler) writeSandboxResults(ctx context.Context) error {
-	// Check for API-driven plan contents from sandbox config
-	if state := h.sandboxCtl.GetState(); state != nil {
-		cfg := state.GetConfigForOperation(string(h.job.Type), string(h.job.Operation))
-		if cfg.PlanContents != "" {
-			req := &models.ServiceCreateRunnerJobExecutionResultRequest{
-				ContentsCompressed: compress(cfg.PlanContents),
-				Success:            true,
-			}
-			if cfg.PlanDisplayContents != "" {
-				req.ContentsDisplayCompressed = compress(cfg.PlanDisplayContents)
-			}
-			if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, req); err != nil {
-				return cockerrors.Wrap(err, "unable to write sandbox config plan contents")
-			}
-			return nil
+	if h.sandboxCfg != nil && h.sandboxCfg.PlanContents != "" {
+		req := &models.ServiceCreateRunnerJobExecutionResultRequest{
+			ContentsCompressed: compress(h.sandboxCfg.PlanContents),
+			Success:            true,
 		}
+		if h.sandboxCfg.PlanDisplayContents != "" {
+			req.ContentsDisplayCompressed = compress(h.sandboxCfg.PlanDisplayContents)
+		}
+		if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.job.ID, h.execution.ID, req); err != nil {
+			return cockerrors.Wrap(err, "unable to write sandbox config plan contents")
+		}
+		return nil
 	}
 
 	// Fall back to plan-based sandbox mode outputs
