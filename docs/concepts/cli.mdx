@@ -23,14 +23,20 @@ This shows all the flags you can use. The most common are:
 For simpler apps, your command will look something like this
 
 ```bash
-nuon installs create --name httpbin --region us-east-1
+nuon installs create --name acme corp --region us-east-1
 ```
 
 For more complex apps, and those that require more inputs
 
 ```bash
 nuon installs create \
-  --name uptime-monitor \
+  --name acme corp \
   --region us-east-1 \
-  --inputs '{"healthcheck_interval_seconds":"10"}'
+  --inputs=healthcheck_interval_seconds=10
 ```
+
+After the command runs, a list will drop-down of all your available apps
+
+![CLI app selection](../images/concepts/cli/app-selection.png)
+
+Once you've selected an app, hit enter, and you'll be redirected to the install page in the browser.
