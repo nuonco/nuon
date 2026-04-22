@@ -32,6 +32,8 @@ const mockFilters: TLogFiltersProps = {
   sortStats: { direction: 'desc', isNewestFirst: true, isOldestFirst: false },
   severityStats: { selectedCount: 4, totalCount: 4 },
   serviceStats: { selectedCount: 2, totalCount: 2, isAllSelected: false },
+  isFiltered: false,
+  handleResetAll: noop,
 }
 
 const mockContextLive = {
