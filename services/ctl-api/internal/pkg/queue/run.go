@@ -4,6 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -34,15 +35,21 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	}
 
 	l.Info("requeuing any remaining signals")
-	if err := q.requeueSignals(ctx); err != nil {
+	requeued, err := q.requeueSignals(ctx)
+	if err != nil {
 		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
 	// Restore lastActivityTime from state (survives continue-as-new),
 	// or initialize for the first run.
-	if !q.state.LastActivityTime.IsZero() {
+	// If we just requeued pending signals, treat that as activity so we dont exit immediately using inherited
+	// from previous run.
+	switch {
+	case requeued > 0:
+		q.lastActivityTime = workflow.Now(ctx)
+	case !q.state.LastActivityTime.IsZero():
 		q.lastActivityTime = q.state.LastActivityTime
-	} else {
+	default:
 		q.lastActivityTime = workflow.Now(ctx)
 	}
 
@@ -53,22 +60,31 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	q.ready = true
 
-	if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
-		return generics.AnyTrue(q.stopped, q.restarted) || (q.isIdle(ctx) && q.activeWorkers == 0)
-	}); err != nil {
-		return false, err
-	}
+	for {
+		if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
+			return generics.AnyTrue(q.stopped, q.restarted, q.shouldContinueAsNew(ctx)) ||
+				(q.isIdle(ctx) && q.activeWorkers == 0)
+		}); err != nil {
+			return false, err
+		}
 
-	if q.restarted {
-		return false, nil
-	}
-	if q.stopped {
-		return true, nil
-	}
-	if q.isIdle(ctx) && q.activeWorkers == 0 {
-		l.Info("queue is idle, terminating workflow")
-		return true, nil
-	}
+		if q.restarted {
+			return false, nil
+		}
+		if q.stopped {
+			return true, nil
+		}
+		if q.isIdle(ctx) && q.activeWorkers == 0 {
+			l.Info("queue is idle, terminating workflow")
+			return true, nil
+		}
 
-	return false, nil
+		if q.shouldContinueAsNew(ctx) {
+			l.Info("workflow history growing large, continuing as new",
+				zap.Int("history_length", workflow.GetInfo(ctx).GetCurrentHistoryLength()),
+				zap.Bool("server_suggested", workflow.GetInfo(ctx).GetContinueAsNewSuggested()),
+			)
+			return false, nil
+		}
+	}
 }

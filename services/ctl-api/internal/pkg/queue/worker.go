@@ -14,6 +14,8 @@ import (
 const (
 	queueReceiveTimeout     time.Duration = time.Minute * 1
 	defaultQueueIdleTimeout time.Duration = time.Minute * 10
+
+	historyLengthCANThreshold = 10000 // temporal's hard limit is 50k
 )
 
 func (q *queue) getIdleTimeout() time.Duration {
@@ -31,6 +33,17 @@ func (q *queue) isIdle(ctx workflow.Context) bool {
 		return false
 	}
 	return workflow.Now(ctx).Sub(q.lastActivityTime) >= q.getIdleTimeout()
+}
+
+func (q *queue) shouldContinueAsNew(ctx workflow.Context) bool {
+	info := workflow.GetInfo(ctx)
+	if info == nil {
+		return false
+	}
+	if info.GetContinueAsNewSuggested() {
+		return true
+	}
+	return info.GetCurrentHistoryLength() >= historyLengthCANThreshold
 }
 
 func (q *queue) startWorkers(ctx workflow.Context) error {
