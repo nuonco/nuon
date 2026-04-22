@@ -9,13 +9,14 @@ import (
 
 // IsRetryableResponse is the response from the "is-retryable" update handler.
 type IsRetryableResponse struct {
-	Retryable  bool   `json:"retryable"`
-	Skippable  bool   `json:"skippable"`
-	AutoRetry  bool   `json:"auto_retry"`
-	MaxRetries int    `json:"max_retries"`
-	RetryGroup bool   `json:"retry_group"`
-	RetryIndex int    `json:"retry_index"`
-	StepID     string `json:"step_id"`
+	Retryable      bool   `json:"retryable"`
+	Skippable      bool   `json:"skippable"`
+	AutoRetry      bool   `json:"auto_retry"`
+	MaxRetries     int    `json:"max_retries"`
+	MaxAutoRetries int    `json:"max_auto_retries"`
+	RetryGroup     bool   `json:"retry_group"`
+	RetryIndex     int    `json:"retry_index"`
+	StepID         string `json:"step_id"`
 }
 
 func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse, error) {
@@ -40,6 +41,10 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		}
 		if mr, ok := sig.(signal.SignalWithMaxRetries); ok {
 			resp.MaxRetries = mr.MaxRetries()
+		}
+		resp.MaxAutoRetries = resp.MaxRetries
+		if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
+			resp.MaxAutoRetries = mar.MaxAutoRetries()
 		}
 		if rg, ok := sig.(signal.SignalWithRetryGroup); ok {
 			resp.RetryGroup = rg.RetryGroup()

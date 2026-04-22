@@ -57,6 +57,10 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
 	}
 
+	// Track the active group so cancel-workflow can propagate.
+	s.activeGroupQueueSignalID = enqueueResp.QueueSignalID
+	defer func() { s.activeGroupQueueSignalID = "" }()
+
 	// Wait for the group signal to finish using the framework's built-in
 	// finished handler. This avoids the custom group-finished handler which
 	// may not be registered yet when the update arrives.

@@ -5,14 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 const SignalType signal.SignalType = "execute-workflow-step"
@@ -70,15 +65,19 @@ type Signal struct {
 	// approval waiting instead of polling.
 	approved bool
 
+	canceled bool
+
 	// approvalResponseID and approvalResponseType are set by the "approve-plan"
 	// update handler to pass the response through without re-fetching from DB.
 	approvalResponseID   string
 	approvalResponseType string
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
-var _ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+var (
+	_ signal.Signal                   = (*Signal)(nil)
+	_ signal.SignalWithCancel         = (*Signal)(nil)
+	_ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+)
 
 // RegisterUpdateHandlers registers step-level update handlers on the handler workflow.
 // Called by the handler framework after initializeState(), before Execute().
@@ -101,6 +100,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "was-retried",
 		s.wasRetriedHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",
+		s.cancelStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
 	return nil
@@ -128,52 +131,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.TargetQueueName == "" {
 		return errors.New("target_queue_name is required")
 	}
-	return nil
-}
-
-// Cancel propagates cancellation to the inner signal if one is currently executing.
-// The inner signal's Cancel() method is responsible for updating the underlying
-// resource (e.g. stack run) status to cancelled.
-func (s *Signal) Cancel(ctx workflow.Context) error {
-	cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
-	defer cancelCtxCancel()
-
-	l, _ := log.WorkflowLogger(cancelCtx)
-
-	if s.innerQueueSignalID != "" {
-		// Cancel the inner signal — this propagates to the actual step signal
-		// (e.g. sandbox plan, deploy) which should update its resource status.
-		_, err := client.AwaitCancelSignal(cancelCtx, s.innerQueueSignalID)
-		if err != nil && l != nil {
-			l.Warn("failed to cancel inner signal",
-				zap.String("step_id", s.StepID),
-				zap.String("inner_queue_signal_id", s.innerQueueSignalID),
-				zap.Error(err))
-		}
-	}
-
-	// Mark the step as cancelled
-	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(cancelCtx, statusactivities.UpdateStatusRequest{
-		ID: s.StepID,
-		Status: app.CompositeStatus{
-			Status: app.StatusCancelled,
-		},
-	}); err != nil && l != nil {
-		l.Warn("failed to mark step as cancelled",
-			zap.String("step_id", s.StepID),
-			zap.Error(err))
-	}
-
-	// Update the step target status to cancelled
-	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepTargetStatus(cancelCtx, activities.UpdateFlowStepTargetStatusRequest{
-		StepID:            s.StepID,
-		Status:            app.StatusCancelled,
-		StatusDescription: "Cancelled",
-	}); err != nil && l != nil {
-		l.Warn("failed to update step target status on cancel",
-			zap.String("step_id", s.StepID),
-			zap.Error(err))
-	}
-
 	return nil
 }
