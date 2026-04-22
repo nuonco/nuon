@@ -3,9 +3,14 @@ package activities
 import (
 	"context"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
+	"go.temporal.io/sdk/activity"
 )
 
 type CancelJobRequest struct {
@@ -51,7 +56,17 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to cancel job execution")
 		}
+	}
 
+	l := activity.GetLogger(ctx)
+	if err := a.tClient.SignalWorkflowInNamespace(ctx,
+		signals.TemporalNamespace,
+		processjobsignals.WorkflowID(req.ID),
+		"",
+		processjobsignals.SignalName,
+		processjobsignals.WakeUp{Reason: processjobsignals.ReasonJobStatusChanged},
+	); err != nil {
+		l.Debug("processjob cancel signal skipped", zap.Error(err))
 	}
 
 	return nil

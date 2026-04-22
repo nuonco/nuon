@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -66,6 +67,8 @@ func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, run
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner job execution status: %w", res.Error)
 	}
+
+	s.helpers.SignalProcessJob(ctx, s.l, runnerJobID, processjobsignals.ReasonJobExecutionStatusChg)
 
 	return &jobExecution, nil
 }

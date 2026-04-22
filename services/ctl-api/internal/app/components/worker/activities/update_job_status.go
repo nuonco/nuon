@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 )
 
 type UpdateJobStatusRequest struct {
@@ -30,6 +32,8 @@ func (a *Activities) UpdateJobStatus(ctx context.Context, req *UpdateJobStatusRe
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("no job found: %s %w", req.JobID, gorm.ErrRecordNotFound)
 	}
+
+	a.runnersHelpers.SignalProcessJob(ctx, zap.NewNop(), req.JobID, processjobsignals.ReasonJobStatusChanged)
 
 	return nil
 }

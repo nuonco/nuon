@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -86,8 +87,9 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
-
 	}
+
+	s.helpers.SignalProcessJob(ctx, s.l, runnerJobID, processjobsignals.ReasonJobStatusChanged)
 
 	return &runnerJob, nil
 }

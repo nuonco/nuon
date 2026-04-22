@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"gorm.io/gorm"
 
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -24,6 +25,7 @@ type Params struct {
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
 	FeaturesClient *features.Features
+	TClient        temporalclient.Client
 }
 
 type Helpers struct {
@@ -35,6 +37,7 @@ type Helpers struct {
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
 	featuresClient *features.Features
+	tClient        temporalclient.Client
 }
 
 func New(params Params) *Helpers {
@@ -47,5 +50,6 @@ func New(params Params) *Helpers {
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
 		featuresClient: params.FeaturesClient,
+		tClient:        params.TClient,
 	}
 }

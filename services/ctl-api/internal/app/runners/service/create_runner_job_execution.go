@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -64,6 +65,9 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 		ctx.Error(errors.Wrap(err, "unable to update runner job status to in progress"))
 		return
 	}
+
+	// Wake ProcessJob so it sees the new execution row immediately.
+	s.helpers.SignalProcessJob(ctx, s.l, runnerJobID, processjobsignals.ReasonJobExecutionCreated)
 
 	ctx.JSON(http.StatusCreated, execution)
 }

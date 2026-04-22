@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -15,14 +16,46 @@ func (w *Workflows) updateStatus(ctx workflow.Context, runnerID string, status a
 		Status:            status,
 		StatusDescription: statusDescription,
 	})
-	if err == nil {
+
+	l := workflow.GetLogger(ctx)
+	if err != nil {
+		l.Error("unable to update runner status",
+			zap.String("runner-id", runnerID),
+			zap.Error(err))
 		return
 	}
 
+	w.signalActiveJobsForRunner(ctx, runnerID, processjobsignals.ReasonRunnerStatusChanged)
+}
+
+// signalActiveJobsForRunner fetches the IDs of all queued/in-progress jobs for
+// this runner and sends the ProcessJob wake-up signal to each. Errors are
+// logged but never propagated — this is best-effort.
+func (w *Workflows) signalActiveJobsForRunner(ctx workflow.Context, runnerID, reason string) {
 	l := workflow.GetLogger(ctx)
-	l.Error("unable to update runner status",
-		zap.String("runner-id", runnerID),
-		zap.Error(err))
+
+	jobIDs, err := activities.AwaitGetActiveJobIDsForRunner(ctx, runnerID)
+	if err != nil {
+		l.Error("unable to fetch active job IDs for runner status signal",
+			zap.String("runner-id", runnerID),
+			zap.Error(err))
+		return
+	}
+
+	for _, jobID := range jobIDs {
+		wakeup := processjobsignals.WakeUp{Reason: reason}
+		if err := workflow.SignalExternalWorkflow(ctx,
+			processjobsignals.WorkflowID(jobID),
+			"",
+			processjobsignals.SignalName,
+			wakeup,
+		).Get(ctx, nil); err != nil {
+			l.Debug("processjob signal skipped",
+				zap.String("job-id", jobID),
+				zap.String("runner-id", runnerID),
+				zap.Error(err))
+		}
+	}
 }
 
 func (w *Workflows) updateJobStatus(ctx workflow.Context, jobID string, status app.RunnerJobStatus, statusDescription string) {

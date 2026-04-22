@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -60,6 +61,14 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID); err != nil {
 			s.l.Warn("unable to maybe enqueue initial health check", zap.String("process_id", req.ProcessID), zap.Error(err))
 		}
+	}
+
+	// If AliveTime is short, the runner recently restarted. Wake any in-progress
+	// ProcessJob workflows so they detect the restart and cancel in-flight
+	// executions. The threshold mirrors the maxAliveTime check in
+	// monitorJobExecution (1 minute).
+	if req.AliveTime < time.Minute {
+		s.helpers.SignalProcessJobsForRunner(ctx, s.l, runnerID, processjobsignals.ReasonRunnerRestarted)
 	}
 
 	runner, err := s.heartbeatGetRunner(ctx, runnerID)

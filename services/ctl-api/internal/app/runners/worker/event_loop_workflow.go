@@ -5,6 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/processjobsignals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/loop"
 )
@@ -36,7 +37,9 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 			return AwaitDeprovision(ctx, input)
 		},
 		signals.OperationProcessJob: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitProcessJob(ctx, input)
+			return AwaitProcessJob(ctx, input, &workflow.ChildWorkflowOptions{
+				WorkflowID: processjobsignals.WorkflowID(input.JobID),
+			})
 		},
 		signals.OperationUpdateVersion: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitUpdateVersion(ctx, input)
