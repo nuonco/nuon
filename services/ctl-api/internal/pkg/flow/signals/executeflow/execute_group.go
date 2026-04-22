@@ -13,8 +13,9 @@ import (
 
 // executeGroup enqueues an execute-workflow-step-group signal and awaits its
 // completion via the framework's built-in finished handler. Returns the group's
-// directive by reading the workflow's ResultDirective from the DB after the
-// signal finishes.
+// directive by reading the step group's ResultDirective from the DB after the
+// signal finishes. Falls back to reading the workflow's ResultDirective for
+// backward compatibility with synthetic groups that have no ID.
 func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup, flw *app.Workflow) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	cfg := s.stepConfig()
@@ -74,11 +75,19 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		return "", errors.Wrapf(err, "group signal failed for group %d", group.GroupIdx)
 	}
 
-	// Read the directive from the workflow after the group finishes.
+	// Read the directive from the step group after the group finishes.
+	// Falls back to reading from the workflow for synthetic groups.
+	if group.ID != "" {
+		updatedGroup, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroupByID(ctx, group.ID)
+		if err != nil {
+			return "", errors.Wrap(err, "unable to re-fetch step group after group")
+		}
+		return updatedGroup.ResultDirective, nil
+	}
+
 	updatedFlw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, flw.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to re-fetch workflow after group")
 	}
-
 	return updatedFlw.ResultDirective, nil
 }

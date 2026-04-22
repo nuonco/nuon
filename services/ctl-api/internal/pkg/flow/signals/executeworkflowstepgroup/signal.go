@@ -200,10 +200,23 @@ func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error)
 	return groupSteps, nil
 }
 
+// writeStepGroupDirective writes the group's result directive to the step group's
+// own ResultDirective field when a StepGroupID is set. Falls back to writing to
+// the workflow's ResultDirective for backward compatibility with synthetic groups.
+func (s *Signal) writeStepGroupDirective(ctx workflow.Context, directive string) error {
+	s.lastDirective = directive
+	if s.StepGroupID != "" {
+		return activities.AwaitPkgWorkflowsFlowUpdateFlowStepGroupResultDirective(ctx, activities.UpdateFlowStepGroupResultDirectiveRequest{
+			StepGroupID: s.StepGroupID,
+			Directive:   directive,
+		})
+	}
+	return s.writeWorkflowDirective(ctx, directive)
+}
+
 // writeWorkflowDirective writes the group's result directive to the workflow's
 // ResultDirective field so the flow signal can read it.
 func (s *Signal) writeWorkflowDirective(ctx workflow.Context, directive string) error {
-	s.lastDirective = directive
 	return activities.AwaitPkgWorkflowsFlowUpdateFlowResultDirective(ctx, activities.UpdateFlowResultDirectiveRequest{
 		FlowID:    s.WorkflowID,
 		Directive: directive,
