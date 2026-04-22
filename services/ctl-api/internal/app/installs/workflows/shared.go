@@ -304,12 +304,16 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 		awcMap[awc.ActionWorkflowID] = awc
 	}
 
-	sg.nextGroup() // lifecycleSteps
-
+	groupCreated := false
 	for _, installAction := range installActions {
 		if _, ok := awcMap[installAction.ActionWorkflowID]; !ok {
 			// skip actions that are not part of current app config
 			continue
+		}
+
+		if !groupCreated {
+			sg.nextGroup() // lifecycleSteps
+			groupCreated = true
 		}
 
 		sig := &signals.Signal{
