@@ -27,6 +27,10 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		return nil, ErrAlreadyExecuted
 	}
 
+	if l, logErr := log.WorkflowLogger(ctx); logErr == nil {
+		l.Warn("signal cancel callback failed", zap.Error(err))
+	}
+
 	start := workflow.Now(ctx)
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseCancel)
 
