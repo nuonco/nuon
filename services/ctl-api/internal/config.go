@@ -85,7 +85,7 @@ func init() {
 
 	// queue idle timeout: how long a queue workflow stays alive with no activity before terminating
 	// short for local dev; prod overrides via config
-	config.RegisterDefault("queue_idle_timeout", "1m")
+	config.RegisterDefault("queue_idle_timeout", "10m")
 
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config

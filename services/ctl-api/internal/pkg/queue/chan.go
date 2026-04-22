@@ -15,6 +15,8 @@ func (q *queue) setupChannels(ctx workflow.Context) error {
 
 	q.ch = workflow.NewNamedBufferedChannel(ctx, "work-queue", queue.MaxDepth)
 	q.maxDepth = queue.MaxDepth
+	q.maxInFlight = queue.MaxInFlight
+	q.sem = workflow.NewSemaphore(ctx, int64(queue.MaxInFlight))
 
 	return nil
 }
