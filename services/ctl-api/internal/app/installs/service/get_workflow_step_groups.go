@@ -56,6 +56,8 @@ func (s *service) getWorkflowStepGroups(ctx *gin.Context, orgID, workflowID stri
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_retry_idx, idx, created_at asc")
 		}).
+		Preload("Steps.Approval").
+		Preload("Steps.Approval.Response").
 		Order("group_idx asc").
 		Find(&groups)
 	if res.Error != nil {
