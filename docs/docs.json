@@ -165,6 +165,7 @@
             "pages": [
               {
                 "group": "Create installs",
+                "expanded": true,
                 "pages": [
                   "concepts/cli",
                   "concepts/web-app",
@@ -174,6 +175,7 @@
               },
               {
                 "group": "Customer specific components",
+                "expanded": true,
                 "pages": [
                   "concepts/stacks",
                   "concepts/operation-roles"
