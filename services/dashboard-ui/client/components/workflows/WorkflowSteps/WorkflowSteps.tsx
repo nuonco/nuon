@@ -56,7 +56,8 @@ export const WorkflowSteps = ({
                   <PolicyCountsBadge step={step} />
 
                   {(step.execution_type === 'system' && !step.step_target_type) ||
-                  step.status.status === 'pending' ? null : (
+                  step.status.status === 'pending' ||
+                  step.status.status === 'not-attempted' ? null : (
                     <StepDetailPanelButton
                       approvalPrompt={approvalPrompt}
                       step={step}
