@@ -5,9 +5,10 @@ import "time"
 type SyncSecretsOutput map[string]SecretSyncOutput
 
 type SecretSyncOutput struct {
-	Name          string `mapstructure:"name" json:"name,omitempty"`
-	ARN           string `mapstructure:"arn" json:"arn,omitempty"`
-	GCPSecretName string `mapstructure:"gcp_secret_name" json:"gcp_secret_name,omitempty"`
+	Name                  string `mapstructure:"name" json:"name,omitempty"`
+	ARN                   string `mapstructure:"arn" json:"arn,omitempty"`
+	GCPSecretName         string `mapstructure:"gcp_secret_name" json:"gcp_secret_name,omitempty"`
+	AzureKeyVaultSecretID string `mapstructure:"azure_key_vault_secret_id" json:"azure_key_vault_secret_id,omitempty"`
 
 	KubernetesNamespace string `mapstructure:"kubernetes_namespace" json:"kubernetes_namespace,omitempty"`
 	KubernetesName      string `mapstructure:"kubernetes_name" json:"kubernetes_name,omitempty"`

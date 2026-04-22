@@ -77,6 +77,7 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput) map[st
 				"location":       map[string]any{"value": "[parameters('location')]"},
 				"runnerSubnetId": map[string]any{"value": "[reference('vnetDeployment').outputs.runnerSubnetId.value]"},
 				"customData":     map[string]any{"value": customData},
+				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
 			},
 			"template": t.getDefaultRunnerTemplate(),
 		},
@@ -94,6 +95,7 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 			"location":       map[string]any{"type": "string"},
 			"runnerSubnetId": map[string]any{"type": "string"},
 			"customData":     map[string]any{"type": "string"},
+			"commonTags":     map[string]any{"type": "object"},
 		},
 		"resources": []any{
 			map[string]any{
@@ -101,8 +103,9 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 				"apiVersion": "2023-03-01",
 				"name":       "[format('{0}-vmss', parameters('nuonInstallID'))]",
 				"location":   "[parameters('location')]",
+				"tags":       "[parameters('commonTags')]",
 				"sku": map[string]any{
-					"name":     "Standard_D2as_v5",
+					"name":     "Standard_D2s_v3",
 					"tier":     "Standard",
 					"capacity": 1,
 				},
@@ -116,16 +119,16 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 					},
 					"virtualMachineProfile": map[string]any{
 						"osProfile": map[string]any{
-							"computerNamePrefix": "[take(parameters('nuonInstallID'), 9)]",
-							"adminUsername":      "nuonadmin",
+							"computerNamePrefix": "[parameters('nuonInstallID')]",
+							"adminUsername":      "nuon",
 							"customData":         "[base64(parameters('customData'))]",
 							"linuxConfiguration": map[string]any{
 								"disablePasswordAuthentication": true,
 								"ssh": map[string]any{
 									"publicKeys": []map[string]any{
 										{
-											"path":    "/home/nuonadmin/.ssh/authorized_keys",
-											"keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDNnSz9UjUE3hh8TxnJfY1Xg2n6e6hH0rWk0E9YWnKtLQRP8U7VqEMjlLXWZ9gqkqbfLBDFm5MaRp5MT8cJyUW3VKafMFZIcmIkUmhGW2Y70PJEIFy1jHGYghkmdVnApkm4Zk2iNJMR0FqFz+xm7yKMfjOkHKCf3tfn2zn1Y3S3VRpjPj7i1p5r5VCyVF3NpuZxE1dpfOMO/5SjJGq+C5AOhXM7dcP5HAg4HskmPPpJhfSz0lGi/n0NKTFzKnl1jP3fHY7L6AIjy0ePj+vNqEBhzpSK0VZMJW+X6kfT5USMd6BSh1Rp7R0m2yfivFCfFB3Gl+E9coHtjCR63ZJFRs3p7aiFSpq8fXwqb/v5bVip6Y3etfSnTGAP9/VxVnXIljCO1vJaRpPqw2gE9OnXYwJ6X2fxFLi0rkxT1kXvwr+JOhM14rDYSJA2iz11BvztjnD6wxIPFkTxaBmPK2c6/J6h5XJLN8TuZHGBKrT5MQbPPAWCIwH9T0aSD5VTb0=",
+											"path":    "/home/nuon/.ssh/authorized_keys",
+											"keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDmwMWT2029b4Oem5zSKRVDCBcjoVTfsUXlbGdfGeq8tzTPwqQLGqqVJDSkVb7kIjpbRv7fpB9tJERenhixW4SmYogfMlkvOy9sw+v46chmmgDmqy5Tv7MZB5SCwGVKYHv4EcwACM+GkA5jWO9poMwQM2FIEe4QAI/YaIchGf5HlfyjB/Yh7TZkuCdQ4GdTr3zwfa4DRjFThVDIobtKLjOri0u/Hcux1gduuh1gMYqTQ6oZvAGYAgWnQOiZ7rTrQvei8+SZRwFJohXPFmLjBaqmKMHs1+fu50PBA38Jp+Eey2ghvsab0HNG0eQ0icjhmHEkJZOEZ8R2/WufAON3NtapBVlOB+aCpeeRcO9wusf5kFEr3ytoRf/p8wf397efpCvYLfw9bMmxfnyzMEb1+SoFk8xLaYeyFbJDpvBvg0+m+vmwdKhquikJVII7/r0GCkaW4e3L43aBEiBip6UTFoYep/cpeN1qq8oTrUV8kMH1rPAIpZCls0LWrJJ2OqvcYJnQYWfHZ/uT/r7B6Fu8IOlyDSdwXzy3+NGaUROPj9UWT1wtWr0xyJFdE9N82noGzhmhRlhi1tYefNt/eszG2qlVg507vKIyvmfkR5VOxA51m9fw/Cgfck/KLy3XJWoXbri2eSraHomN9jEjOCerFFvtEKXViGsl4Xj0Z3B7y3ZA9Q== nuon-azure-vm-dummy@nuon.co",
 										},
 									},
 								},
@@ -134,14 +137,14 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 						"storageProfile": map[string]any{
 							"imageReference": map[string]any{
 								"publisher": "Canonical",
-								"offer":     "ubuntu-24_04-lts",
-								"sku":       "server",
+								"offer":     "0001-com-ubuntu-server-jammy",
+								"sku":       "22_04-lts-gen2",
 								"version":   "latest",
 							},
 							"osDisk": map[string]any{
 								"createOption": "FromImage",
 								"managedDisk": map[string]any{
-									"storageAccountType": "Premium_LRS",
+									"storageAccountType": "Standard_LRS",
 								},
 								"diskSizeGB": 30,
 							},
@@ -234,9 +237,22 @@ ARM_USE_MSI=true
 HOST_IP=$(curl -s https://checkip.amazonaws.com)
 EOF
 
-# Install the runner binary on the host for mng mode using install.sh
-# Uses CONTAINER_IMAGE_TAG (semver) as the version, with automatic latest.txt fallback
+# Determine runner binary version from public-settings endpoint
 RUNNER_BINARY_VERSION="${CONTAINER_IMAGE_TAG:-latest}"
+echo "determining runner binary version"
+echo "> $RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings"
+for i in $(seq 1 30); do
+  runner_binary_version=$(curl -s "$RUNNER_API_URL/v1/runners/$RUNNER_ID/public-settings" | jq -r '.binary_version // empty')
+  if [ -n "$runner_binary_version" ] && [ "$runner_binary_version" != "null" ]; then
+    RUNNER_BINARY_VERSION="$runner_binary_version"
+    echo "determined runner binary version: $RUNNER_BINARY_VERSION"
+    break
+  fi
+  echo "attempt $i/30: failed to determine runner binary version, retrying in 2s"
+  sleep 2
+done
+
+# Install the runner binary on the host for mng mode using install.sh
 mkdir -p /opt/nuon/runner/bin
 curl -fsSL https://nuon-artifacts.s3.us-west-2.amazonaws.com/runner/install.sh > /tmp/install-runner.sh
 chmod +x /tmp/install-runner.sh
