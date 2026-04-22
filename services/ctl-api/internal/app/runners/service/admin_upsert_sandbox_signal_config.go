@@ -18,6 +18,7 @@ type AdminUpsertSandboxSignalConfigRequest struct {
 	WorkflowSleep time.Duration `json:"workflow_sleep"`
 	Panic         bool          `json:"panic"`
 	Error         string        `json:"error"`
+	ValidateError string        `json:"validate_error"`
 }
 
 func (s *service) AdminUpsertSandboxSignalConfig(ctx *gin.Context) {
@@ -45,12 +46,13 @@ func (s *service) AdminUpsertSandboxSignalConfig(ctx *gin.Context) {
 		WorkflowSleep: req.WorkflowSleep,
 		Panic:         req.Panic,
 		Error:         req.Error,
+		ValidateError: req.ValidateError,
 	}
 
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "signal_type"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "deadlock_sleep", "workflow_sleep", "panic", "error", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "deadlock_sleep", "workflow_sleep", "panic", "error", "validate_error", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to upsert sandbox signal config: %w", res.Error))

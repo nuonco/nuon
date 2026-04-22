@@ -27,13 +27,28 @@ const SignalType signal.SignalType = "await-install-stack-version-run"
 type Signal struct {
 	InstallStackID string
 	WorkflowStepID string
+
+	versionID string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool { return true }
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.versionID != "" {
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+			ID:     s.versionID,
+			Status: app.NewCompositeTemporalStatus(cancelCtx, app.StatusCancelled),
+		})
+	}
+	return nil
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -77,6 +92,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get install version")
 	}
+	s.versionID = version.ID
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {

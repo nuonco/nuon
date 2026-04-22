@@ -66,7 +66,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Execute the inner signal
 	stepErr := s.executeInnerSignal(ctx, step)
 	if stepErr != nil {
+		// If the context was cancelled, Cancel() already handled status updates.
+		if ctx.Err() != nil {
+			return nil
+		}
 		return s.handleStepError(ctx, l, step, flw, stepErr)
+	}
+
+	if s.canceled {
+		return nil
 	}
 
 	// Refetch the step after signal execution to gather new state (e.g. step target ID)
@@ -103,6 +111,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to update flow status after step")
 		}
 
+		return nil
+	}
+
+	if s.canceled {
 		return nil
 	}
 
