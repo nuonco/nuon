@@ -7,7 +7,7 @@ import (
 )
 
 type TerraformApprovalPlan struct {
-	planJSON []byte `json:"plan_json"`
+	planJSON []byte
 }
 
 func NewTerraformApprovalPlan(planJSON []byte) *TerraformApprovalPlan {
