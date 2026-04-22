@@ -98,6 +98,8 @@ func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.
 		Preload("StepGroups.Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_retry_idx, idx, created_at asc")
 		}).
+		Preload("StepGroups.Steps.Approval").
+		Preload("StepGroups.Steps.Approval.Response").
 		Where("id = ? AND org_id = ?", workflowID, orgID).
 		First(&installWorkflow)
 	if res.Error != nil {
