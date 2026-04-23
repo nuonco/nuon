@@ -64,6 +64,11 @@ type AppWorkflowStep struct {
 	// links
 	Links map[string]any `json:"links,omitempty"`
 
+	// LogStream is the log stream associated with this workflow step (when step_target_type is install_workflow_steps).
+	LogStream struct {
+		AppLogStream
+	} `json:"log_stream,omitempty"`
+
 	// metadata
 	Metadata map[string]string `json:"metadata,omitempty"`
 
@@ -121,6 +126,9 @@ type AppWorkflowStep struct {
 
 	// Fields that are de-nested at read time using AfterQuery
 	WorkflowID string `json:"workflow_id,omitempty"`
+
+	// WorkflowStepGroupID links this step to its parent WorkflowStepGroup.
+	WorkflowStepGroupID string `json:"workflow_step_group_id,omitempty"`
 }
 
 // Validate validates this app workflow step
@@ -136,6 +144,10 @@ func (m *AppWorkflowStep) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateExecutionType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLogStream(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -220,6 +232,14 @@ func (m *AppWorkflowStep) validateExecutionType(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppWorkflowStep) validateLogStream(formats strfmt.Registry) error {
+	if swag.IsZero(m.LogStream) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *AppWorkflowStep) validatePolicyValidation(formats strfmt.Registry) error {
 	if swag.IsZero(m.PolicyValidation) { // not required
 		return nil
@@ -279,6 +299,10 @@ func (m *AppWorkflowStep) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateExecutionType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLogStream(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -364,6 +388,11 @@ func (m *AppWorkflowStep) contextValidateExecutionType(ctx context.Context, form
 
 		return err
 	}
+
+	return nil
+}
+
+func (m *AppWorkflowStep) contextValidateLogStream(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

@@ -17,6 +17,22 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
+// executionFailureDescription returns the runner-reported error from the
+// execution's StatusV2.StatusHumanDescription when present, falling back to a
+// generic label (e.g. "failed") when the runner didn't report one.
+func executionFailureDescription(ctx workflow.Context, jobExecutionID, fallback string) string {
+	execution, err := activities.AwaitGetJobExecution(ctx, activities.GetJobExecutionRequest{
+		JobExecutionID: jobExecutionID,
+	})
+	if err != nil || execution == nil {
+		return fallback
+	}
+	if desc := execution.StatusV2.StatusHumanDescription; desc != "" {
+		return desc
+	}
+	return fallback
+}
+
 func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
@@ -187,17 +203,17 @@ func (w *Workflows) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob
 			return true, nil
 		case app.RunnerJobExecutionStatusFailed:
 			l.Info("job execution failed")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "failed")
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "failed"))
 			tags["status"] = "execution_failed"
 			return true, nil
 		case app.RunnerJobExecutionStatusTimedOut:
 			l.Info("job execution timed out")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "execution timed out")
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "execution timed out"))
 			tags["status"] = "execution_timed_out"
 			return true, nil
 		case app.RunnerJobExecutionStatusNotAttempted:
 			l.Info("job execution not attempted")
-			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "execution not attempted")
+			w.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "execution not attempted"))
 			tags["status"] = "execution_not_attempted"
 			return true, nil
 		default:

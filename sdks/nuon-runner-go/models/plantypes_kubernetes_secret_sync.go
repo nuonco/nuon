@@ -17,6 +17,9 @@ import (
 // swagger:model plantypes.KubernetesSecretSync
 type PlantypesKubernetesSecretSync struct {
 
+	// https://{vault-name}.vault.azure.net/secrets/{secret-name}
+	AzureKeyVaultSecretID string `json:"azure_key_vault_secret_id,omitempty"`
+
 	// NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
 	// updating the runner job and save time.
 	Format string `json:"format,omitempty"`
