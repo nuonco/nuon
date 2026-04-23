@@ -75,6 +75,9 @@ export const Policies = () => {
         <Text variant="base" weight="strong">
           Policy reports
         </Text>
+        <Text theme="neutral">
+          View policy compliance reports for this install.
+        </Text>
       </HeadingGroup>
 
       <div className="flex flex-auto">

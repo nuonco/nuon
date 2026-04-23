@@ -8,6 +8,7 @@ export type TBannerTheme = TTheme
 
 interface IBanner extends HTMLAttributes<HTMLDivElement> {
   theme?: TBannerTheme
+  onDismiss?: () => void
 }
 
 const ICONS: Record<TBannerTheme, React.ReactNode> = {
@@ -39,6 +40,7 @@ export const Banner = ({
   className,
   children,
   theme = 'default',
+  onDismiss,
   ...props
 }: IBanner) => {
   return (
@@ -46,6 +48,7 @@ export const Banner = ({
       className={cn(
         'flex gap-4 h-fit w-full p-4 border rounded-lg',
         THEME_CLASSES[theme],
+        onDismiss && 'group',
         className
       )}
       {...props}
@@ -58,6 +61,16 @@ export const Banner = ({
           children
         )}
       </div>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="self-start shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          aria-label="Dismiss"
+        >
+          <Icon variant="X" size={16} />
+        </button>
+      )}
     </div>
   )
 }

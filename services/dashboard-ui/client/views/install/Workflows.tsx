@@ -69,6 +69,9 @@ export const Workflows = () => {
           <Text variant="base" weight="strong">
             Workflow history
           </Text>
+          <Text theme="neutral">
+            View past and active workflows for this install.
+          </Text>
         </HeadingGroup>
 
         <div className="flex items-center gap-4">

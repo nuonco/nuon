@@ -80,9 +80,6 @@ export const WorkflowDetailsSection = ({ workflow, orgId, install }: IWorkflowDe
           </LabeledValue>
         )}
 
-        <Link className="text-xs" href={`/${orgId}/installs/${install?.id}/workflows`}>
-          View workflows
-        </Link>
       </div>
 
       {changedInputs.length > 0 && (
