@@ -14,6 +14,7 @@ type SignalTypeInfo struct {
 	AutoRetry        bool
 	MaxRetries       int
 	MaxAutoRetries   int
+	HasMaxAutoRetries bool
 	HasCloneSteps    bool
 	HasNoOpCheck     bool
 	HasPolicyEval    bool
@@ -86,8 +87,8 @@ func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 		info.MaxRetries = safeCall(func() int { return mr.MaxRetries() })
 	}
 	info.MaxAutoRetries = info.MaxRetries
-	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
-		info.MaxAutoRetries = safeCall(func() int { return mar.MaxAutoRetries() })
+	if _, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
+		info.HasMaxAutoRetries = true
 	}
 	if _, ok := sig.(signal.SignalWithCloneSteps); ok {
 		info.HasCloneSteps = true
