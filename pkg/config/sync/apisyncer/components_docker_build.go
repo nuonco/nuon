@@ -22,9 +22,11 @@ func (s *syncer) createDockerBuildComponentConfig(ctx context.Context, resource,
 		EnvVars:        map[string]string{},
 		BuildTimeout:   obj.BuildTimeout,
 		DeployTimeout:  obj.DeployTimeout,
-		MaxAutoRetries: obj.MaxAutoRetries,
 	}
 
+	if obj.MaxAutoRetries != nil {
+		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
+	}
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}
