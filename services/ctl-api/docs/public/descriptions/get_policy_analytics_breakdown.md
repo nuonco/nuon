@@ -1,0 +1,1 @@
+Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.

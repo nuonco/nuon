@@ -48,6 +48,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	{
 		analytics.GET("/summary", s.GetPolicyAnalyticsSummary)
 		analytics.GET("/timeseries", s.GetPolicyAnalyticsTimeseries)
+		analytics.GET("/breakdown", s.GetPolicyAnalyticsBreakdown)
 	}
 
 	return nil
