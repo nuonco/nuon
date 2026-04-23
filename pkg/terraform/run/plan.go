@@ -88,6 +88,18 @@ func (r *run) getPlanPipeline() (*pipeline.Pipeline, error) {
 		CallbackFn: callbackmappers.Noop,
 	})
 
+	if r.prePlanHook != nil {
+		hook := r.prePlanHook
+		ws := r.Workspace
+		pipe.AddStep(&pipeline.Step{
+			Name: "pre-plan hook",
+			ExecFn: execmappers.MapInitLog(func(ctx context.Context, log hclog.Logger) error {
+				return hook(ctx, log, ws)
+			}),
+			CallbackFn: callbackmappers.Noop,
+		})
+	}
+
 	pipe.AddStep(&pipeline.Step{
 		Name:       "plan",
 		ExecFn:     execmappers.MapBytesLog(r.Workspace.Plan),
