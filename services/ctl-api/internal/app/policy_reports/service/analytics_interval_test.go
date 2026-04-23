@@ -14,7 +14,10 @@ func TestIntervalForRange(t *testing.T) {
 		wantLabel string
 		wantExpr  string
 	}{
-		{"1 hour", time.Hour, "hour", "toStartOfHour(evaluated_at)"},
+		{"1 hour", time.Hour, "15m", "toStartOfInterval(evaluated_at, INTERVAL 15 MINUTE)"},
+		{"3 hours", 3 * time.Hour, "15m", "toStartOfInterval(evaluated_at, INTERVAL 15 MINUTE)"},
+		{"4 hours", 4 * time.Hour, "30m", "toStartOfInterval(evaluated_at, INTERVAL 30 MINUTE)"},
+		{"6 hours", 6 * time.Hour, "30m", "toStartOfInterval(evaluated_at, INTERVAL 30 MINUTE)"},
 		{"exactly 24h", 24 * time.Hour, "hour", "toStartOfHour(evaluated_at)"},
 		{"25 hours", 25 * time.Hour, "6h", "toStartOfInterval(evaluated_at, INTERVAL 6 HOUR)"},
 		{"exactly 7 days", 7 * 24 * time.Hour, "6h", "toStartOfInterval(evaluated_at, INTERVAL 6 HOUR)"},
