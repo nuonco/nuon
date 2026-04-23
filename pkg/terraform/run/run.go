@@ -34,12 +34,19 @@ type Run interface {
 
 var _ Run = (*run)(nil)
 
+// PrePlanHook runs after `terraform init` and before `terraform plan`. Use it
+// to mutate state (e.g. `terraform state mv`) in a controlled way before the
+// planner evaluates `for_each` keys.
+type PrePlanHook func(ctx context.Context, log hclog.Logger, w workspace.Workspace) error
+
 type run struct {
 	v *validator.Validate
 
 	Workspace      workspace.Workspace `validate:"required"`
 	Log            hclog.Logger        `validate:"required"`
 	OutputSettings *OutputSettings     `validate:"required"`
+
+	prePlanHook PrePlanHook
 }
 
 type runOption func(*run) error
@@ -83,6 +90,16 @@ func WithWorkspace(w workspace.Workspace) runOption {
 func WithLogger(l hclog.Logger) runOption {
 	return func(r *run) error {
 		r.Log = l
+		return nil
+	}
+}
+
+// WithPrePlanHook registers a callback that runs after init and before plan.
+// Intended for deterministic state migrations (e.g. `terraform state mv`) that
+// must happen before the planner evaluates `for_each` keys.
+func WithPrePlanHook(h PrePlanHook) runOption {
+	return func(r *run) error {
+		r.prePlanHook = h
 		return nil
 	}
 }
