@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -60,7 +62,9 @@ func (s *service) findAppPoliciesConfigs(ctx *gin.Context, orgID, appID string) 
 		Scopes(scopes.WithOffsetPagination).
 		Where("org_id = ?", orgID).
 		Where("app_id = ?", appID).
-		Preload("Policies").
+		Preload("Policies", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC, id ASC")
+		}).
 		Order("created_at DESC").
 		Find(&configs)
 	if res.Error != nil {
