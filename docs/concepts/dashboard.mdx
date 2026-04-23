@@ -11,7 +11,7 @@ Once you've connected your app, you can manage installs from the [Dashboard](htt
 ![Create install modal](/images/concepts/dashboard/create-install.png)
 
 - **Create an install:** Fill in the install's inputs and generate the stack link to share with the customer.
-- **Share the stack link:** The link deploys a [Stack](/concepts/stacks) (CloudFormation on AWS, Bicep on Azure) into the customer's cloud account, which creates the runner.
+- **Share the stack link:** The link deploys a [Stack](/concepts/stacks) (CloudFormation on AWS, Azure Resource Manager (Bicep) on Azure, Terraform on GCP) into the customer's cloud account, which creates the runner.
 - **Monitor workflows:** Monitor install progress from sandbox creation to component deploys, everything that makes up your app.
 - **Review and approve changes:** See diffs and plans for each step, then approve, reject, or retry.
 - **Redeploy components:** Rebuild any component that has failed and needs updating for the install to succeed.

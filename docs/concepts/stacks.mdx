@@ -7,7 +7,8 @@ description: "Stacks are cloud-native templates that bootstrap an install in a c
 A Stack is the first thing deployed into a customer's cloud account when an install is created. It is a cloud-native infrastructure template that provisions the foundational resources needed to run the install.
 
 - On **AWS**, this is a CloudFormation stack.
-- On **Azure**, this is a Bicep deployment.
+- On **Azure**, we use Azure Resource Manager (Bicep).
+- For **GCP**, we use Terraform.
 
 ## What does a Stack create?
 

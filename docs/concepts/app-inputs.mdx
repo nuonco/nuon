@@ -35,7 +35,7 @@ sensitive    = false
 ```
 
 ### Customer facing inputs
-A customer facing input is a parameters that can be tweaked by customer via stack inputs (AWS Cloudformation, Azure Bicep) during install creation or
+A customer facing input is a parameters that can be tweaked by customer via stack inputs (AWS CloudFormation, Azure Resource Manager (Bicep), GCP Terraform) during install creation or
 any time after that.
 
 To mark an input as customer facing mark the parameter `user_configurable = true` in the app input config. Example:
