@@ -72,6 +72,14 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return app.RunnerJobStatus(""), errors.Wrap(err, "unable to get job")
 	}
 
+	if generics.SliceContains(job.Status, failureStatuses) {
+		msg := "job did not succeed"
+		if job.StatusDescription != "" {
+			msg = fmt.Sprintf("job did not succeed: %s", job.StatusDescription)
+		}
+		return job.Status, temporal.NewNonRetryableApplicationError(msg, "api", fmt.Errorf("job failed with status %s: %s", job.Status, job.StatusDescription))
+	}
+
 	return job.Status, nil
 }
 
