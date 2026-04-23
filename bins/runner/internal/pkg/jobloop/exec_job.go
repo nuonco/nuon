@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -63,8 +64,9 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			zap.String("type", string(job.Type)),
 			zap.Error(err),
 		)
-		if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed); err != nil {
-			j.errRecorder.Record("no handler found", err)
+		description := fmt.Sprintf("no valid job handler for job type %s: %s", job.Type, err.Error())
+		if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed, description); updateErr != nil {
+			j.errRecorder.Record("no handler found", updateErr)
 		}
 
 		return err
