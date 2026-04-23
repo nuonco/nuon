@@ -62,6 +62,12 @@ GetOrgInstallsParams contains all the parameters to send to the API endpoint
 */
 type GetOrgInstallsParams struct {
 
+	/* Labels.
+
+	   label filter (key:value,key:value)
+	*/
+	Labels *string
+
 	/* Limit.
 
 	   limit of results to return
@@ -158,6 +164,17 @@ func (o *GetOrgInstallsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithLabels adds the labels to the get org installs params
+func (o *GetOrgInstallsParams) WithLabels(labels *string) *GetOrgInstallsParams {
+	o.SetLabels(labels)
+	return o
+}
+
+// SetLabels adds the labels to the get org installs params
+func (o *GetOrgInstallsParams) SetLabels(labels *string) {
+	o.Labels = labels
+}
+
 // WithLimit adds the limit to the get org installs params
 func (o *GetOrgInstallsParams) WithLimit(limit *int64) *GetOrgInstallsParams {
 	o.SetLimit(limit)
@@ -209,6 +226,23 @@ func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 	var res []error
+
+	if o.Labels != nil {
+
+		// query param labels
+		var qrLabels string
+
+		if o.Labels != nil {
+			qrLabels = *o.Labels
+		}
+		qLabels := qrLabels
+		if qLabels != "" {
+
+			if err := r.SetQueryParam("labels", qLabels); err != nil {
+				return err
+			}
+		}
+	}
 
 	if o.Limit != nil {
 

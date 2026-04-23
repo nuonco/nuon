@@ -75,7 +75,8 @@ func (s *service) CreateAppAction(ctx *gin.Context) {
 }
 
 type CreateAppActionWorkflowRequest struct {
-	Name string `json:"name"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 func (c *CreateAppActionWorkflowRequest) Validate(v *validator.Validate) error {
@@ -142,8 +143,9 @@ func (s *service) CreateAppActionWorkflow(ctx *gin.Context) {
 
 func (s *service) createActionWorkflow(ctx *gin.Context, orgID, appID string, req *CreateAppActionWorkflowRequest) (*app.ActionWorkflow, error) {
 	return s.actionsHelpers.CreateAction(ctx, &helpers.CreateActionParams{
-		AppID: appID,
-		OrgID: orgID,
-		Name:  req.Name,
+		AppID:  appID,
+		OrgID:  orgID,
+		Name:   req.Name,
+		Labels: req.Labels,
 	})
 }

@@ -14,6 +14,7 @@ import (
 type ActionConfig struct {
 	Name     string                 `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Timeout  string                 `mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
+	Labels   map[string]string      `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	Triggers []*ActionTriggerConfig `mapstructure:"triggers" toml:"triggers" jsonschema:"required"`
 	Steps    []*ActionStepConfig    `mapstructure:"steps" toml:"steps" jsonschema:"required"`
 

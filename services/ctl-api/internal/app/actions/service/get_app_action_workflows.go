@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -19,6 +20,7 @@ import (
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q 						query	string	false	"search query to filter action workflows by name"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -43,6 +45,7 @@ func (s *service) GetAppActions(ctx *gin.Context) {
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param         q 						query	string	false	"search query to filter action workflows by name"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -67,6 +70,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	}
 
 	q := ctx.Query("q")
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
 	_, err = s.findApp(ctx, org.ID, appID)
 	if err != nil {
@@ -74,7 +78,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -83,10 +87,11 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, actionWorkflows)
 }
 
-func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string) ([]*app.ActionWorkflow, error) {
+func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
 		}).

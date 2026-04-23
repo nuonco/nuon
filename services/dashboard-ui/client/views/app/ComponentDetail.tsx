@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
 import { BackLink } from '@/components/common/BackLink'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
@@ -90,6 +91,17 @@ export const ComponentDetail = () => {
             </Text>
           </span>
           {component?.id ? <ID>{component.id}</ID> : null}
+          {component?.labels && Object.keys(component.labels).length > 0 ? (
+            <span className="flex flex-wrap gap-1 mt-1">
+              {Object.keys(component.labels)
+                .sort()
+                .map((k) => (
+                  <Badge key={k} variant="code" size="sm" theme="neutral">
+                    {k}: {component.labels[k]}
+                  </Badge>
+                ))}
+            </span>
+          ) : null}
         </HeadingGroup>
 
         {component ? (

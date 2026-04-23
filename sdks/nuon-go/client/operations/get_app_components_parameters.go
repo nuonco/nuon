@@ -74,6 +74,12 @@ type GetAppComponentsParams struct {
 	*/
 	ComponentIds *string
 
+	/* Labels.
+
+	   label filter (key:value,key:value)
+	*/
+	Labels *string
+
 	/* Limit.
 
 	   limit of results to return
@@ -198,6 +204,17 @@ func (o *GetAppComponentsParams) SetComponentIds(componentIds *string) {
 	o.ComponentIds = componentIds
 }
 
+// WithLabels adds the labels to the get app components params
+func (o *GetAppComponentsParams) WithLabels(labels *string) *GetAppComponentsParams {
+	o.SetLabels(labels)
+	return o
+}
+
+// SetLabels adds the labels to the get app components params
+func (o *GetAppComponentsParams) SetLabels(labels *string) {
+	o.Labels = labels
+}
+
 // WithLimit adds the limit to the get app components params
 func (o *GetAppComponentsParams) WithLimit(limit *int64) *GetAppComponentsParams {
 	o.SetLimit(limit)
@@ -278,6 +295,23 @@ func (o *GetAppComponentsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if qComponentIds != "" {
 
 			if err := r.SetQueryParam("component_ids", qComponentIds); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Labels != nil {
+
+		// query param labels
+		var qrLabels string
+
+		if o.Labels != nil {
+			qrLabels = *o.Labels
+		}
+		qLabels := qrLabels
+		if qLabels != "" {
+
+			if err := r.SetQueryParam("labels", qLabels); err != nil {
 				return err
 			}
 		}

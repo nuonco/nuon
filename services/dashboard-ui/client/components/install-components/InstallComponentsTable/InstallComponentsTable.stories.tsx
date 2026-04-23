@@ -15,6 +15,7 @@ const mockRows: InstallComponentRow[] = [
     href: '/org1/installs/inst1/components/comp-abc123',
     action: <div />,
     dependencies: <Text variant="subtext">-</Text>,
+    labels: <Text variant="subtext">tier: application</Text>,
   },
   {
     componentId: 'comp-def456',
@@ -25,6 +26,7 @@ const mockRows: InstallComponentRow[] = [
     href: '/org1/installs/inst1/components/comp-def456',
     action: <div />,
     dependencies: <Text variant="subtext">-</Text>,
+    labels: null,
   },
 ]
 

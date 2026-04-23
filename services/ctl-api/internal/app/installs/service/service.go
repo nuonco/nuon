@@ -68,6 +68,7 @@ var _ api.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)
+	ge.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
 	ge.POST("/v1/installs", s.CreateInstallV2)
 
 	// get / create installs for an app
@@ -87,6 +88,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("", s.GetInstall)
 		installs.PATCH("", s.UpdateInstall)
 		installs.DELETE("", s.DeleteInstall)
+		installs.POST("/labels", s.AddInstallLabels)
+		installs.DELETE("/labels", s.RemoveInstallLabels)
 		installs.POST("/reprovision", s.ReprovisionInstall)
 		installs.POST("/deprovision", s.DeprovisionInstall)
 		installs.POST("/forget", s.ForgetInstall)

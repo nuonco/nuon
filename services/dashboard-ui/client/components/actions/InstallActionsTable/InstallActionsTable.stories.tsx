@@ -12,6 +12,7 @@ const mockRows: InstallActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionTrigger: <span className="text-sm">post-deploy-component</span>,
   actionRunDatetime: <span className="text-sm">2 hours ago</span>,
   actionRunDuration: <span className="text-sm">1m 30s</span>,
+  labels: i === 0 ? <span className="text-xs font-mono">category: setup</span> : null,
   href: `/org-1/installs/install-1/actions/action-${i + 1}`,
 }))
 

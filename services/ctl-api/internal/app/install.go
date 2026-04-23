@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -26,6 +27,7 @@ type Install struct {
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 	Metadata    pgtype.Hstore         `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	labels.Labeled
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
@@ -103,14 +105,14 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v6"
+	return "v7"
 }
 
 func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &Install{}, 6),
-			SQL:           viewsql.InstallsViewV6,
+			Name:          views.DefaultViewName(db, &Install{}, 7),
+			SQL:           viewsql.InstallsViewV7,
 			AlwaysReapply: true,
 		},
 		{

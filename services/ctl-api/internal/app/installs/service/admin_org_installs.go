@@ -26,7 +26,7 @@ type AdminGetOrgRequest struct {
 func (s *service) AdminGetOrgInstalls(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	installs, err := s.getOrgInstalls(ctx, orgID, "")
+	installs, err := s.getOrgInstalls(ctx, orgID, "", nil)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org installs: %w", err))
 		return

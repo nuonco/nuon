@@ -7,6 +7,7 @@ import { ActionsTable, ActionsTableSkeleton, type TActionRow } from './ActionsTa
 const mockRows: TActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionId: `action-${i + 1}`,
   actionName: `deploy-step-${i + 1}`,
+  labels: i === 0 ? <span className="text-xs font-mono">category: setup</span> : null,
   actionTriggers: <span className="text-sm">post-deploy-component</span>,
   actionSteps: (
     <ol className="flex flex-col gap-1 list-decimal">
