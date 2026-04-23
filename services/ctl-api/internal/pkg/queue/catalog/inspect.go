@@ -9,28 +9,27 @@ import (
 
 // SignalTypeInfo describes the capabilities and attributes of a registered signal type.
 type SignalTypeInfo struct {
-	Type             signal.SignalType
-	Namespace        string
-	AutoRetry        bool
-	MaxRetries       int
-	MaxAutoRetries   int
+	Type              signal.SignalType
+	Namespace         string
+	AutoRetry         bool
+	MaxRetries        int
 	HasMaxAutoRetries bool
-	HasCloneSteps    bool
-	HasNoOpCheck     bool
-	HasPolicyEval    bool
-	HasSkipCleanup   bool
-	HasOnApprove     bool
-	HasOnRetry       bool
-	HasOnSkip        bool
-	HasOnDeny        bool
-	SkipGroup        bool
-	HasFetchSteps    bool
-	HasQueue         bool
-	Queue            string
-	IsParallelizable bool
-	HasStepContext   bool
-	HasLifecycle     bool
-	Operation        string
+	HasCloneSteps     bool
+	HasNoOpCheck      bool
+	HasPolicyEval     bool
+	HasSkipCleanup    bool
+	HasOnApprove      bool
+	HasOnRetry        bool
+	HasOnSkip         bool
+	HasOnDeny         bool
+	SkipGroup         bool
+	HasFetchSteps     bool
+	HasQueue          bool
+	Queue             string
+	IsParallelizable  bool
+	HasStepContext    bool
+	HasLifecycle      bool
+	Operation         string
 }
 
 // deriveNamespace extracts a namespace from a signal type string.
@@ -86,7 +85,6 @@ func inspect(typ signal.SignalType, sig signal.Signal) SignalTypeInfo {
 	if mr, ok := sig.(signal.SignalWithMaxRetries); ok {
 		info.MaxRetries = safeCall(func() int { return mr.MaxRetries() })
 	}
-	info.MaxAutoRetries = info.MaxRetries
 	if _, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
 		info.HasMaxAutoRetries = true
 	}
