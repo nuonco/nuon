@@ -605,6 +605,27 @@ export interface paths {
      */
     get: operations["GetAppPoliciesConfig"];
   };
+  "/v1/apps/{app_id}/policy-analytics/breakdown": {
+    /**
+     * get policy analytics breakdown by dimension
+     * @description Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.
+     */
+    get: operations["GetPolicyAnalyticsBreakdown"];
+  };
+  "/v1/apps/{app_id}/policy-analytics/summary": {
+    /**
+     * get policy analytics summary
+     * @description Returns aggregate policy evaluation counts for an app over a time range, with optional drill-down by install or policy.
+     */
+    get: operations["GetPolicyAnalyticsSummary"];
+  };
+  "/v1/apps/{app_id}/policy-analytics/timeseries": {
+    /**
+     * get policy analytics timeseries
+     * @description Returns policy evaluation counts bucketed over time for charting, with optional grouping by policy, install, or component.
+     */
+    get: operations["GetPolicyAnalyticsTimeseries"];
+  };
   "/v1/apps/{app_id}/policy-config/{policy_config_id}": {
     /**
      * get app policy config
@@ -1888,6 +1909,27 @@ export interface paths {
      * Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
      */
     get: operations["GetOrgFeatures"];
+  };
+  "/v1/policy-reports": {
+    /**
+     * get policy reports
+     * @description Returns policy reports for the current organization.
+     */
+    get: operations["GetPolicyReports"];
+  };
+  "/v1/policy-reports/{report_id}": {
+    /**
+     * get policy report
+     * @description Returns a single policy report by ID.
+     */
+    get: operations["GetPolicyReport"];
+  };
+  "/v1/policy-reports/{report_id}/export": {
+    /**
+     * export policy report
+     * @description Exports a policy report as JSON, SARIF, or PDF.
+     */
+    get: operations["ExportPolicyReport"];
   };
   "/v1/queues": {
     /**
@@ -5528,6 +5570,13 @@ export interface components {
     "service.Branch": {
       name?: string;
     };
+    "service.BreakdownEntry": {
+      denies?: number;
+      evaluations?: number;
+      key?: string;
+      passes?: number;
+      warns?: number;
+    };
     "service.BuildAllComponentsRequest": Record<string, never>;
     "service.CLIConfig": {
       auth_audience?: string;
@@ -6106,6 +6155,29 @@ export interface components {
     "service.PatchInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
     };
+    "service.PolicyAnalyticsBreakdown": {
+      dimension?: string;
+      end?: string;
+      entries?: components["schemas"]["service.BreakdownEntry"][];
+      start?: string;
+    };
+    "service.PolicyAnalyticsSummary": {
+      end?: string;
+      start?: string;
+      total_denies?: number;
+      total_evaluations?: number;
+      total_passes?: number;
+      total_warns?: number;
+      unique_policies?: number;
+      unique_reports?: number;
+    };
+    "service.PolicyAnalyticsTimeseries": {
+      buckets?: components["schemas"]["service.TimeseriesBucket"][];
+      end?: string;
+      group_by?: string[];
+      interval?: string;
+      start?: string;
+    };
     "service.PruneTokensResponse": {
       invalidated_count?: number;
     };
@@ -6158,6 +6230,15 @@ export interface components {
       connected?: boolean;
       latest_heartbeat_timestamp?: number;
     };
+    "service.SeriesPoint": {
+      denies?: number;
+      evaluations?: number;
+      labels?: {
+        [key: string]: string;
+      };
+      passes?: number;
+      warns?: number;
+    };
     "service.ShutdownRunnerProcessRequest": {
       shutdown_type: string;
     };
@@ -6175,6 +6256,14 @@ export interface components {
     "service.TeardownInstallComponentsRequest": {
       plan_only?: boolean;
       role?: string;
+    };
+    "service.TimeseriesBucket": {
+      denies?: number;
+      evaluations?: number;
+      passes?: number;
+      series?: components["schemas"]["service.SeriesPoint"][];
+      time?: string;
+      warns?: number;
     };
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use latest if not provided */
@@ -11481,6 +11570,174 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get policy analytics breakdown by dimension
+   * @description Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.
+   */
+  GetPolicyAnalyticsBreakdown: {
+    parameters: {
+      query: {
+        /** @description dimension to break down by: policy_id, install_id, owner_type */
+        dimension: string;
+        /** @description start time (RFC3339) */
+        start?: string;
+        /** @description end time (RFC3339) */
+        end?: string;
+        /** @description filter by install ID */
+        install_id?: string;
+        /** @description filter by policy ID */
+        policy_id?: string;
+        /** @description max entries to return (default 10) */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PolicyAnalyticsBreakdown"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get policy analytics summary
+   * @description Returns aggregate policy evaluation counts for an app over a time range, with optional drill-down by install or policy.
+   */
+  GetPolicyAnalyticsSummary: {
+    parameters: {
+      query?: {
+        /** @description start time (RFC3339) */
+        start?: string;
+        /** @description end time (RFC3339) */
+        end?: string;
+        /** @description filter by install ID */
+        install_id?: string;
+        /** @description filter by policy ID */
+        policy_id?: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PolicyAnalyticsSummary"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get policy analytics timeseries
+   * @description Returns policy evaluation counts bucketed over time for charting, with optional grouping by policy, install, or component.
+   */
+  GetPolicyAnalyticsTimeseries: {
+    parameters: {
+      query?: {
+        /** @description start time (RFC3339) */
+        start?: string;
+        /** @description end time (RFC3339) */
+        end?: string;
+        /** @description comma-separated dimensions: policy_id, install_id, component_id, owner_type */
+        group_by?: string;
+        /** @description filter by install ID */
+        install_id?: string;
+        /** @description filter by policy ID */
+        policy_id?: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.PolicyAnalyticsTimeseries"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -19958,6 +20215,180 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OrgFeatureInfo"][];
+        };
+      };
+    };
+  };
+  /**
+   * get policy reports
+   * @description Returns policy reports for the current organization.
+   */
+  GetPolicyReports: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description owner type (install_deploys, install_sandbox_runs, component_builds) */
+        owner_type?: string;
+        /** @description owner id */
+        owner_id?: string;
+        /** @description app id */
+        app_id?: string;
+        /** @description install id */
+        install_id?: string;
+        /** @description report status */
+        status?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.PolicyReport"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get policy report
+   * @description Returns a single policy report by ID.
+   */
+  GetPolicyReport: {
+    parameters: {
+      path: {
+        /** @description policy report ID */
+        report_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.PolicyReport"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * export policy report
+   * @description Exports a policy report as JSON, SARIF, or PDF.
+   */
+  ExportPolicyReport: {
+    parameters: {
+      query?: {
+        /** @description export format: json, sarif, pdf (default: json) */
+        format?: string;
+      };
+      path: {
+        /** @description policy report ID */
+        report_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown;
+          "application/pdf": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+          "application/pdf": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+          "application/pdf": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+          "application/pdf": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+          "application/pdf": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+          "application/pdf": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
