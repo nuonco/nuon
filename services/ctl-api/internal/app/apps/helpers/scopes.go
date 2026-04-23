@@ -38,7 +38,9 @@ func PreloadAppConfigPermissionsConfig(db *gorm.DB) *gorm.DB {
 // policies config
 func PreloadAppConfigPolicyConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("PoliciesConfig").
-		Preload("PoliciesConfig.Policies")
+		Preload("PoliciesConfig.Policies", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC, id ASC")
+		})
 }
 
 // input config
