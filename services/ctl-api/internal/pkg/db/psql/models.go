@@ -140,6 +140,7 @@ func AllModels() []any {
 		// queues
 		&app.Queue{},
 		&app.QueueSignal{},
+		&app.QueueSignalCallback{},
 
 		// actions
 		&app.ActionWorkflow{},

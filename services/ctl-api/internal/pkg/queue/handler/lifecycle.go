@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -70,6 +71,17 @@ func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseE
 		Reason:   resp.Reason,
 		Metadata: resp.Metadata,
 	}
+}
+
+// fireCallbacks invokes callbacks for the given event as a best-effort operation.
+// Uses a disconnected context so callbacks don't block or fail the signal.
+func (h *handler) fireCallbacks(ctx workflow.Context, event callback.Event) {
+	dctx, _ := workflow.NewDisconnectedContext(ctx)
+	_ = callback.AwaitInvokeCallbacks(dctx, &callback.InvokeCallbacksRequest{
+		QueueSignalID: h.queueSignalID,
+		QueueID:       h.queueID,
+		Event:         event,
+	})
 }
 
 // outcomeFromError builds a SignalPhaseOutcome from an error and duration.

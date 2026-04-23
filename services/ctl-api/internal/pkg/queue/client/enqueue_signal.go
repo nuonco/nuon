@@ -11,15 +11,22 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
+
+type CallbackRequest struct {
+	Event         callback.Event         `validate:"required"`
+	UpdateHandler signaldb.UpdateHandler `validate:"required"`
+}
 
 type EnqueueSignalRequest struct {
 	QueueID   string        `validate:"required"`
 	Signal    signal.Signal `validate:"required"`
 	OwnerID   string
 	OwnerType string
+	Callbacks []CallbackRequest
 }
 
 // @temporal-gen-v2 activity
@@ -54,6 +61,18 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		return nil, errors.Wrap(res.Error, "unable to create queue signal")
 	}
 
+	// Create callback records for the signal.
+	for _, cbReq := range req.Callbacks {
+		cb := app.QueueSignalCallback{
+			QueueSignalID: queueSignal.ID,
+			Event:         string(cbReq.Event),
+			UpdateHandler: cbReq.UpdateHandler,
+		}
+		if res := c.db.WithContext(ctx).Create(&cb); res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to create queue signal callback")
+		}
+	}
+
 	// Send the enqueue update to the queue workflow. We only wait for the
 	// "accepted" stage so the caller gets the signal ID back immediately.
 	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
@@ -73,6 +92,9 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to call enqueue handler")
 	}
+
+	// Fire on_enqueue callbacks directly since this runs before the handler workflow.
+	c.fireCallbacks(ctx, queueSignal.ID, req.QueueID, callback.OnEnqueue)
 
 	return &queue.EnqueueResponse{
 		ID:         queueSignal.ID,

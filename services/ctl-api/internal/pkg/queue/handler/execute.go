@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -63,6 +64,8 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 		},
 	})
 
+	h.fireCallbacks(ctx, callback.OnExecute)
+
 	err := h.runSignalExecute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
 
@@ -81,6 +84,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 					"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
+			h.fireCallbacks(ctx, callback.OnError)
 			return nil, panicErr
 		}
 
@@ -98,6 +102,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
+		h.fireCallbacks(ctx, callback.OnError)
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
 			execErr.Error(),
@@ -112,6 +117,8 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 			"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 		},
 	})
+
+	h.fireCallbacks(ctx, callback.OnSuccess)
 
 	return nil, nil
 }

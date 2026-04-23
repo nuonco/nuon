@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -98,6 +99,8 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 			"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 		},
 	})
+
+	h.fireCallbacks(ctx, callback.OnValidate)
 
 	return nil, nil
 }
