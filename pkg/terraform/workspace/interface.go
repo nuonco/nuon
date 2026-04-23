@@ -40,6 +40,8 @@ type Workspace interface {
 	Output(context.Context, hclog.Logger) (map[string]tfexec.OutputMeta, error)
 	Show(context.Context, hclog.Logger) (*tfjson.State, error)
 	ShowPlan(context.Context, hclog.Logger) (*tfjson.Plan, error)
+	// StateMv renames a resource address in state without touching infra.
+	StateMv(ctx context.Context, log hclog.Logger, source, destination string) error
 	Validate(context.Context, hclog.Logger) (*tfjson.ValidateOutput, error)
 	// Writes plan to plan.json
 	WriteTFPlan(context.Context, hclog.Logger) ([]byte, error)
