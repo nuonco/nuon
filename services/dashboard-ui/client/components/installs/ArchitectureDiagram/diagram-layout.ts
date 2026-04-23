@@ -33,7 +33,7 @@ const CARD_GAP = 12
 const PAD = 16
 const HEADER = 48
 const COLS = 2
-const ROLE_W = 200
+const ROLE_W = 260
 const ROLE_H = 48
 const ROLE_GAP = 8
 
