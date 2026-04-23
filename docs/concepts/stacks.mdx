@@ -7,7 +7,8 @@ description: "Stacks are cloud-native templates that bootstrap an install in a c
 A Stack is the first thing deployed into a customer's cloud account when an install is created. It is a cloud-native infrastructure template that provisions the foundational resources needed to run the install.
 
 - On **AWS**, this is a CloudFormation stack.
-- On **Azure**, this is a Bicep deployment.
+- On **Azure**, we use Azure Resource Manager (Bicep).
+- For **GCP**, we use Terraform.
 
 ## What does a Stack create?
 
@@ -17,7 +18,7 @@ A Stack provisions:
 - **The [Runner](/concepts/runners)** as a VM with Docker running the Runner binary
 - **IAM roles and permissions** for the Runner to operate
 
-Stacks also support customers bringing their own Kubernetes clusters or other existing infrastructure through [inputs](/concepts/app-configuration#inputs).
+Stacks also support customers bringing their own Kubernetes clusters or other existing infrastructure through [inputs](/concepts/app-inputs).
 
 ## How is a Stack deployed?
 
@@ -35,8 +36,8 @@ The Stack gives the customer full control over the Runner's access. Through the 
 - **Configure IAM roles and policies** to control what the Runner can do
 - **Grant break glass roles** for temporary elevated access during emergencies, which the customer can revoke at any time
 
-This means the customer always has a killswitch. See [Install Access Permissions](/guides/install-access-permissions) and [Break Glass](/config-ref/break-glass) for details.
+This means the customer always has a killswitch. See [Customer-Controlled Runner Shutdown](/guides/runner-kill-switch).
 
 ## Stack Inputs
 
-Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-configuration#secrets) are entered by the customer when deploying the stack template, and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-configuration#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.
+Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-secrets) are entered by the customer when deploying the stack template, and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.

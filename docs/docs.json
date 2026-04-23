@@ -161,16 +161,31 @@
             ]
           },
           {
-            "group": "Support Customer Infrastructure",
-            "pages": ["concepts/installs", "concepts/stacks", "concepts/operation-roles"]
+            "group": "Customer Configuration and Customization",
+            "pages": [
+              {
+                "group": "Create installs",
+                "expanded": true,
+                "pages": [
+                  "concepts/cli",
+                  "concepts/dashboard",
+                  "concepts/customer-portal",
+                  "concepts/api"
+                ]
+              },
+              {
+                "group": "Customer specific components",
+                "expanded": true,
+                "pages": [
+                  "concepts/stacks",
+                  "concepts/operation-roles"
+                ]
+              }
+            ]
           },
           {
             "group": "Continuous Delivery",
             "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
-          },
-          {
-            "group": "Customer Experience",
-            "pages": ["concepts/customer-portal"]
           },
           {
             "group": "Reference",
@@ -316,6 +331,10 @@
     {
       "source": "/runner-architecture",
       "destination": "/architecture/platform"
+    },
+    {
+      "source": "/concepts/installs",
+      "destination": "/guides/app-install-life-cycle"
     }
   ]
 }
