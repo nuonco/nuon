@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -18,6 +19,7 @@ import (
 // @Description.markdown	get_app_installs.md
 // @Param					app_id						path	string	true	"app ID"
 // @Param					q							query	string	false	"search query"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -42,6 +44,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
 	// Validate app belongs to org before fetching installs
 	currentApp, err := s.findAppByNameOrID(ctx, org.ID, appID)
@@ -50,7 +53,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 		return
 	}
 
-	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q)
+	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -72,10 +75,11 @@ func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app
 	return &currentApp, nil
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string, lbls labels.Labels) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination)
+		Scopes(scopes.WithOffsetPagination).
+		Scopes(labels.WithLabels("labels", lbls))
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ?", "%"+q+"%")

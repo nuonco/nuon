@@ -1,8 +1,9 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { getActions } from '@/lib'
+import { getActions, getActionLabelKeys } from '@/lib'
 import { ActionsTable, parseActionsToTableData } from './ActionsTable'
 
 const LIMIT = 20
@@ -20,7 +21,7 @@ export const ActionsTableContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['actions', org?.id, app?.id, offset, searchParams.get('q')],
+    queryKey: ['actions', org?.id, app?.id, offset, searchParams.get('q'), searchParams.get('labels')],
     queryFn: () =>
       getActions({
         orgId: org.id,
@@ -28,6 +29,7 @@ export const ActionsTableContainer = ({
         offset,
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
+        labels: searchParams.get('labels') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -38,6 +40,12 @@ export const ActionsTableContainer = ({
     <ActionsTable
       data={parseActionsToTableData(result?.data ?? [], org.id, app.id)}
       isLoading={isLoading}
+      filterActions={
+        <LabelFilterDropdown
+          queryKey={['action-label-keys', org.id, app.id]}
+          queryFn={() => getActionLabelKeys({ orgId: org.id, appId: app.id })}
+        />
+      }
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,
         offset,

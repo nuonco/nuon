@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -18,6 +19,7 @@ import (
 
 type UpdateInstallConfigRequest struct {
 	ApprovalOption          *app.InstallApprovalOption `json:"approval_option"`
+	Labels                  map[string]string          `json:"labels,omitempty"`
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
@@ -83,6 +85,9 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 	if req.ApprovalOption != nil {
 		updates["approval_option"] = *req.ApprovalOption
 	}
+	if req.Labels != nil {
+		updates["labels"] = labels.Labels(req.Labels)
+	}
 	if req.VPCNestedTemplateURL != nil {
 		updates["vpc_nested_template_url"] = *req.VPCNestedTemplateURL
 	}
@@ -109,10 +114,7 @@ func (s *service) updateInstallConfig(ctx *gin.Context, installID, configID stri
 		return installConfig, nil
 	}
 
-	installConfig := &app.InstallConfig{
-		ID: configID,
-	}
-
+	installConfig := &app.InstallConfig{ID: configID}
 	res := s.db.WithContext(ctx).
 		Model(&installConfig).
 		Updates(updates)

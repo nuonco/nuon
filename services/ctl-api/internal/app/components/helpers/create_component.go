@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -15,6 +16,7 @@ type CreateComponentParams struct {
 	Name         string
 	VarName      string
 	Dependencies []string
+	Labels       map[string]string
 }
 
 func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentParams) (*app.Component, error) {
@@ -22,6 +24,7 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		AppID:             params.AppID,
 		Name:              params.Name,
 		VarName:           params.VarName,
+		Labeled:           labels.Labeled{Labels: labels.Labels(params.Labels)},
 		Status:            "queued",
 		StatusDescription: "waiting for event loop to start for component",
 	}

@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
@@ -96,6 +97,7 @@ type Org struct {
 	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
 	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
 	Tags           pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	labels.Labeled
 
 	// Other relationships as part of the data model
 
@@ -130,6 +132,10 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 
 	if o.Features == nil {
 		o.Features = make(map[string]bool, 0)
+	}
+
+	if o.Labels == nil {
+		o.Labels = make(labels.Labels)
 	}
 
 	actieFeatures := GetFeatures()

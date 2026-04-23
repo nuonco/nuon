@@ -22,7 +22,12 @@ export * from './get-install-workflows'
 // policy reports
 export * from './get-install-policy-reports'
 
+// label keys
+export * from './get-install-label-keys'
+
 // mutations
+export * from './add-install-labels'
+export * from './remove-install-labels'
 export * from './generate-cli-install-config'
 export * from './forget-install'
 export * from './create-install-config'

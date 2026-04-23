@@ -135,6 +135,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
 	api.POST("/runners/:id/configs/reset", s.RunnerResetConfigs)
 
+	// Labels routes
+	api.GET("/labels", s.LabelsPage)
+	api.GET("/labels/table", s.LabelsTable)
+
 	// Global installs routes
 	api.GET("/installs", s.Installs)
 	api.GET("/installs/table", s.InstallsTableGlobal)
@@ -148,6 +152,8 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/installs/:id/activity/table", s.InstallActivityTable)
 	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
 	api.GET("/installs/:id/workflows/table", s.InstallWorkflowsTable)
+	api.POST("/installs/:id/labels", s.AddInstallLabel)
+	api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
 
 	// Workflow routes
 	api.GET("/workflows", s.Workflows)

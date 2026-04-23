@@ -8,6 +8,7 @@ const (
 	ActivePageAccounts ActivePage = "accounts"
 	ActivePageInstalls ActivePage = "installs"
 	ActivePageHealth   ActivePage = "health"
+	ActivePageLabels   ActivePage = "labels"
 )
 
 templ Layout(title string, activePage ActivePage) {
@@ -39,6 +40,7 @@ templ Layout(title string, activePage ActivePage) {
 						<a href="/orgs" class={ navLinkClass(activePage == ActivePageOrgs) }>Organizations</a>
 						<a href="/accounts" class={ navLinkClass(activePage == ActivePageAccounts) }>Accounts</a>
 						<a href="/installs" class={ navLinkClass(activePage == ActivePageInstalls) }>Installs</a>
+						<a href="/labels" class={ navLinkClass(activePage == ActivePageLabels) }>Labels</a>
 						<a href="/sandbox-mode" class={ navLinkClass(activePage == ActivePageSandboxMode) }>Sandbox Mode</a>
 						<a href="/queues" class={ navLinkClass(activePage == ActivePageQueues) }>Queues</a>
 						<a href="/queue-signals" class={ navLinkClass(activePage == ActivePageQueueSignals) }>Signals</a>

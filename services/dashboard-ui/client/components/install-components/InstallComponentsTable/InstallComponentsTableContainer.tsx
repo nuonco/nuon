@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallComponents, getAppConfig } from '@/lib'
+import { getInstallComponents, getAppConfig, getComponentLabelKeys } from '@/lib'
 import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
 
 const LIMIT = 10
@@ -29,6 +30,7 @@ export const InstallComponentsTableContainer = ({
       offset,
       searchParams.get('q'),
       searchParams.get('types'),
+      searchParams.get('labels'),
     ],
     queryFn: () =>
       getInstallComponents({
@@ -38,6 +40,7 @@ export const InstallComponentsTableContainer = ({
         offset,
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
+        labels: searchParams.get('labels') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -87,6 +90,10 @@ export const InstallComponentsTableContainer = ({
       )}
       filterActions={
         <div className="flex items-center gap-3">
+          <LabelFilterDropdown
+            queryKey={['component-label-keys', org.id, install?.app_id]}
+            queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: install.app_id })}
+          />
           <ComponentTypeFilterDropdown />
           <ManageAllDropdown />
         </div>

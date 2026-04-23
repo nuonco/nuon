@@ -68,6 +68,12 @@ type GetActionWorkflowsParams struct {
 	*/
 	AppID string
 
+	/* Labels.
+
+	   label filter (key:value,key:value)
+	*/
+	Labels *string
+
 	/* Limit.
 
 	   limit of results to return
@@ -175,6 +181,17 @@ func (o *GetActionWorkflowsParams) SetAppID(appID string) {
 	o.AppID = appID
 }
 
+// WithLabels adds the labels to the get action workflows params
+func (o *GetActionWorkflowsParams) WithLabels(labels *string) *GetActionWorkflowsParams {
+	o.SetLabels(labels)
+	return o
+}
+
+// SetLabels adds the labels to the get action workflows params
+func (o *GetActionWorkflowsParams) SetLabels(labels *string) {
+	o.Labels = labels
+}
+
 // WithLimit adds the limit to the get action workflows params
 func (o *GetActionWorkflowsParams) WithLimit(limit *int64) *GetActionWorkflowsParams {
 	o.SetLimit(limit)
@@ -230,6 +247,23 @@ func (o *GetActionWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg s
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {
 		return err
+	}
+
+	if o.Labels != nil {
+
+		// query param labels
+		var qrLabels string
+
+		if o.Labels != nil {
+			qrLabels = *o.Labels
+		}
+		qLabels := qrLabels
+		if qLabels != "" {
+
+			if err := r.SetQueryParam("labels", qLabels); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Limit != nil {

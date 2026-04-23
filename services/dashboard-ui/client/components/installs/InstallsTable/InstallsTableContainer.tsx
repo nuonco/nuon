@@ -1,7 +1,8 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getInstalls } from '@/lib'
+import { getInstalls, getInstallLabelKeys } from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
 import { InstallsTable, parseInstallsToTableData } from './InstallsTable'
 
@@ -19,13 +20,14 @@ export const InstallsTableContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['installs', org.id, offset, searchParams.get('q')],
+    queryKey: ['installs', org.id, offset, searchParams.get('q'), searchParams.get('labels')],
     queryFn: () =>
       getInstalls({
         orgId: org.id,
         offset,
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
+        labels: searchParams.get('labels') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -37,10 +39,16 @@ export const InstallsTableContainer = ({
       isLoading={isLoading}
       emptyStateAction={<CreateInstallButton />}
       filterActions={
-        <CreateInstallButton
-          className="!w-full !flex !justify-center md:!w-fit"
-          variant="primary"
-        />
+        <div className="flex items-center gap-3">
+          <LabelFilterDropdown
+            queryKey={['install-label-keys', org.id]}
+            queryFn={() => getInstallLabelKeys({ orgId: org.id })}
+          />
+          <CreateInstallButton
+            className="!w-full !flex !justify-center md:!w-fit"
+            variant="primary"
+          />
+        </div>
       }
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,

@@ -4,6 +4,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export async function getInstallComponents({
   installId,
+  labels,
   limit,
   orgId,
   offset,
@@ -11,13 +12,14 @@ export async function getInstallComponents({
   types,
 }: {
   installId: string
+  labels?: string
   orgId: string
   q?: string
   types?: string
 } & TPaginationParams) {
   return api<TInstallComponent[]>({
     orgId,
-    path: `installs/${installId}/components${buildQueryParams({ limit, offset, q, types })}`,
+    path: `installs/${installId}/components${buildQueryParams({ limit, offset, q, types, labels })}`,
     paginated: true,
   })
 }

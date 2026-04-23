@@ -97,7 +97,8 @@ func (s *syncer) ensureComponent(ctx context.Context, resource string, comp *con
 	}
 
 	_, err = s.apiClient.CreateComponent(ctx, s.appID, &models.ServiceCreateComponentRequest{
-		Name: generics.ToPtr(comp.Name),
+		Name:   generics.ToPtr(comp.Name),
+		Labels: comp.Labels,
 	})
 	if err != nil {
 		return sync.SyncAPIErr{
@@ -119,6 +120,7 @@ func (s *syncer) syncComponent(ctx context.Context, resource string, comp *confi
 		Dependencies: comp.Dependencies,
 		VarName:      comp.VarName,
 		Name:         generics.ToPtr(comp.Name),
+		Labels:       comp.Labels,
 	})
 	if err != nil {
 		return "", sync.SyncAPIErr{
