@@ -8,12 +8,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/policies"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -186,17 +186,24 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 func (p *Planner) getPolicies(cfg *app.AppPoliciesConfig) (map[string]string, error) {
 	obj := make(map[string]string, 0)
 
-	for idx, policy := range cfg.Policies {
+	for _, policy := range cfg.Policies {
 		if policy.Type != config.AppPolicyTypeKubernetesCluster {
 			continue
 		}
 
-		var parseObj map[string]any
-		if err := yaml.Unmarshal([]byte(policy.Contents), &parseObj); err != nil {
-			return nil, errors.Wrap(err, "unable to parse yaml")
+		// The key is consumed as a Terraform `for_each` map key by the sandbox
+		// module via fileset(). Deriving it from the manifest's kind/name keeps
+		// the TF resource address bound to actual K8s object identity, so
+		// reordering or inserting policies never reshuffles existing keys.
+		key, err := policies.ManifestKeyFromYAML(policy.Contents)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to derive key for policy %q", policy.Name)
 		}
 
-		obj[fmt.Sprintf("%d.yaml", idx)] = policy.Contents
+		if _, exists := obj[key]; exists {
+			return nil, fmt.Errorf("duplicate policy manifest key %q (kind/name conflict)", key)
+		}
+		obj[key] = policy.Contents
 	}
 
 	return obj, nil
