@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/processjobupdates"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -64,6 +65,11 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 		ctx.Error(errors.Wrap(err, "unable to update runner job status to in progress"))
 		return
 	}
+
+	s.helpers.UpdateProcessJob(ctx, runnerJobID, processjobupdates.UpdateNameJobExecutionCreated, processjobupdates.JobExecutionCreatedPayload{
+		JobID:          runnerJobID,
+		JobExecutionID: execution.ID,
+	})
 
 	ctx.JSON(http.StatusCreated, execution)
 }

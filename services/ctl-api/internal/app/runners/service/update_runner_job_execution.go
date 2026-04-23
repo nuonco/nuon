@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/processjobupdates"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -48,6 +49,11 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 		return
 	}
+
+	s.helpers.UpdateProcessJob(ctx, runnerJobID, processjobupdates.UpdateNameJobExecutionStatus, processjobupdates.JobExecutionStatusPayload{
+		JobExecutionID: runnerJobExecutionID,
+		Status:         string(req.Status),
+	})
 
 	ctx.JSON(http.StatusOK, jobExecution)
 }

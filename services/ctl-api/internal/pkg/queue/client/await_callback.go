@@ -1,6 +1,8 @@
 package client
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -9,6 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 )
+
+// callbackPollInterval bounds how long a caller waits on a callback before
+// re-reading authoritative signal status from the DB. Covers the window
+// where the handler persists terminal status but the FireWorkflowUpdate
+// activity fails to deliver (worker death after DB write).
+const callbackPollInterval = 5 * time.Minute
 
 // AwaitSignalViaCallback enqueues a signal with a callback target pointing at
 // the caller workflow, registers a local update handler to receive the
@@ -51,10 +59,19 @@ func AwaitSignalViaCallback(ctx workflow.Context, req *EnqueueSignalRequest) err
 		return errors.Wrap(err, "unable to enqueue signal")
 	}
 
-	// Defensive precheck: if the handler already reached terminal status
-	// before the callback landed (unlikely in practice, but cheap insurance),
-	// resolve directly from the DB.
-	if !received {
+	// Wait for the callback, but wake periodically to re-read authoritative
+	// status from the DB. Covers the window where the handler persists a
+	// terminal status but the callback update is never delivered (worker
+	// death between DB write and FireWorkflowUpdate, caller missing the
+	// handler after continue-as-new, etc.).
+	for !received {
+		got, err := workflow.AwaitWithTimeout(ctx, callbackPollInterval, func() bool { return received })
+		if err != nil {
+			return errors.Wrap(err, "await callback interrupted")
+		}
+		if got {
+			break
+		}
 		qs, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, enqueueResp.ID)
 		if err == nil && isTerminalStatus(qs.Status.Status) {
 			if qs.Status.Status == app.StatusError {
@@ -63,10 +80,6 @@ func AwaitSignalViaCallback(ctx workflow.Context, req *EnqueueSignalRequest) err
 			}
 			return nil
 		}
-	}
-
-	if err := workflow.Await(ctx, func() bool { return received }); err != nil {
-		return errors.Wrap(err, "await callback interrupted")
 	}
 
 	if !payload.Success {

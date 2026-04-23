@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/processjobupdates"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -77,6 +78,15 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 
 	s.mw.Incr("heart_beat.incr", tags)
 	s.mw.Timing("heart_beat.alive_time", req.AliveTime, tags)
+
+	// If this heartbeat indicates a fresh process start (alive < 1m), fan
+	// out a runner_restarted update to any in-flight ProcessJob workflows
+	// for this runner so they can react without waiting on a poll.
+	if req.AliveTime < time.Minute {
+		s.helpers.UpdateProcessJobsForRunner(ctx, runnerID, processjobupdates.UpdateNameRunnerRestarted, processjobupdates.RunnerRestartedPayload{
+			RunnerID: runnerID,
+		})
+	}
 
 	ctx.JSON(http.StatusCreated, heartBeat)
 }

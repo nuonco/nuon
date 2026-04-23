@@ -3,8 +3,10 @@ package helpers
 import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
@@ -19,6 +21,8 @@ type Params struct {
 	V              *validator.Validate
 	Cfg            *internal.Config
 	DB             *gorm.DB `name:"psql"`
+	L              *zap.Logger
+	TClient        temporalclient.Client
 	EVClient       eventloop.Client
 	AcctClient     *account.Client
 	QueueClient    *queueclient.Client
@@ -30,6 +34,8 @@ type Helpers struct {
 	v              *validator.Validate
 	cfg            *internal.Config
 	db             *gorm.DB
+	l              *zap.Logger
+	tClient        temporalclient.Client
 	evClient       eventloop.Client
 	acctClient     *account.Client
 	queueClient    *queueclient.Client
@@ -42,6 +48,8 @@ func New(params Params) *Helpers {
 		v:              params.V,
 		cfg:            params.Cfg,
 		db:             params.DB,
+		l:              params.L,
+		tClient:        params.TClient,
 		evClient:       params.EVClient,
 		acctClient:     params.AcctClient,
 		queueClient:    params.QueueClient,

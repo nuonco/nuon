@@ -96,12 +96,12 @@ func (q *queue) fireCallbackIfRegistered(ctx workflow.Context, l *zap.Logger, qs
 		payload.ErrorMessage = signalErr.Error()
 	}
 
-	if err := handleractivities.AwaitFireQueueCallback(ctx, handleractivities.FireQueueCallbackRequest{
-		QueueSignalID: qs.ID,
-		WorkflowID:    qs.CallbackWorkflowID,
-		Namespace:     qs.CallbackNamespace,
-		UpdateName:    qs.CallbackUpdateName,
-		Payload:       payload,
+	if err := handleractivities.AwaitFireWorkflowUpdate(ctx, handleractivities.FireWorkflowUpdateRequest{
+		WorkflowID: qs.CallbackWorkflowID,
+		Namespace:  qs.CallbackNamespace,
+		UpdateName: qs.CallbackUpdateName,
+		UpdateID:   qs.ID + "-callback",
+		Payload:    payload,
 	}); err != nil {
 		l.Warn("failed to fire queue callback",
 			zap.String("queue-signal-id", qs.ID),

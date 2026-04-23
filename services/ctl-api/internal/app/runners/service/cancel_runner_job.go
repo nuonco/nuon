@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/processjobupdates"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -88,6 +89,11 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		}
 
 	}
+
+	s.helpers.UpdateProcessJob(ctx, runnerJobID, processjobupdates.UpdateNameJobStatusChanged, processjobupdates.JobStatusChangedPayload{
+		JobID:  runnerJobID,
+		Status: string(app.RunnerJobStatusCancelled),
+	})
 
 	return &runnerJob, nil
 }

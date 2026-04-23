@@ -63,6 +63,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
+		WorkflowID:               fmt.Sprintf("processjob-%s", s.JobID),
 		WorkflowExecutionTimeout: 70 * time.Minute,
 	})
 

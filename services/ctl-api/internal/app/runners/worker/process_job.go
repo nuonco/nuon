@@ -24,6 +24,13 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return err
 	}
 
+	// Register push-update handlers before any activity call so external
+	// state writers can wake this workflow without racing us.
+	state := &processJobState{}
+	if err := registerProcessJobUpdateHandlers(ctx, state); err != nil {
+		return fmt.Errorf("unable to register process job update handlers: %w", err)
+	}
+
 	l.Info("fetching runner to ensure it is healthy")
 	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
 		RunnerID: sreq.ID,
@@ -108,7 +115,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
 		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
-		retry, started, err := w.startJobExecution(ctx, runnerJob)
+		retry, started, err := w.startJobExecution(ctx, state, runnerJob)
 		if err != nil {
 			return err
 		}
@@ -121,7 +128,7 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		}
 
 		// job was started, and the execution
-		retry, err = w.monitorJobExecution(ctx, runnerJob)
+		retry, err = w.monitorJobExecution(ctx, state, runnerJob)
 		if err != nil {
 			return err
 		}
