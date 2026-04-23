@@ -74,6 +74,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		run.WithOutputSettings(&run.OutputSettings{ // TODO: remove entirely - this is for S3
 			Ignore: true,
 		}),
+		run.WithPrePlanHook(p.migrateLegacyPolicyKeys),
 	)
 	if err != nil {
 		p.writeErrorResult(ctx, "create terraform run", err)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -50,7 +51,9 @@ func (s *service) getLatestAppPoliciesConfig(ctx context.Context, appID string) 
 		Where(app.AppPoliciesConfig{
 			AppID: appID,
 		}).
-		Preload("Policies").
+		Preload("Policies", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at ASC, id ASC")
+		}).
 		Order("created_at desc").
 		Limit(1).
 		First(&appPoliciesCfg)
