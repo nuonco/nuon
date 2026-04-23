@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 )
@@ -32,6 +33,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		Name:         comp.Name,
 		VarName:      comp.VarName,
 		Dependencies: comp.Dependencies,
+		Labels:       comp.Labels,
 	})
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -57,10 +59,12 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 		Name:    comp.Name,
 		VarName: comp.VarName,
 		Type:    app.ComponentType(comp.Type.APIType()),
+		Labeled: labels.Labeled{Labels: labels.Labels(comp.Labels)},
 	}
 
 	res := db.WithContext(ctx).
 		Model(apiComp).
+		Select("name", "var_name", "type", "labels").
 		Updates(updates)
 	if res.Error != nil {
 		return sync.SyncInternalErr{

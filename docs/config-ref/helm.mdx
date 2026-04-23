@@ -15,6 +15,7 @@ title: 'Helm'
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`chart_name`**<br/>string | Helm chart name Name of the Helm chart to deploy. Must match the chart name in the repository or Helm repo | **✅ Required** | `"karpenter-nodepools"`, `"prometheus"`, `"cert-manager"` |
 | **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
+| **`labels`**<br/>object | - | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
 | **`pulumi`**<br/>[PulumiComponentConfig](#pulumi) | pulumi component configuration Configuration for Pulumi deployments. Required when type is 'pulumi' | **Optional** | - |

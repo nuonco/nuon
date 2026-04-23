@@ -88,6 +88,12 @@ func WithAcceptTextCsv(r *runtime.ClientOperation) {
 type ClientService interface {
 	AbandonOnboarding(params *AbandonOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AbandonOnboardingOK, error)
 
+	AddAppActionLabels(params *AddAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAppActionLabelsOK, error)
+
+	AddAppComponentLabels(params *AddAppComponentLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAppComponentLabelsOK, error)
+
+	AddInstallLabels(params *AddInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddInstallLabelsOK, error)
+
 	AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error)
 
 	AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error)
@@ -670,6 +676,12 @@ type ClientService interface {
 
 	PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error)
 
+	RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error)
+
+	RemoveAppComponentLabels(params *RemoveAppComponentLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppComponentLabelsOK, error)
+
+	RemoveInstallLabels(params *RemoveInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveInstallLabelsOK, error)
+
 	RemoveUser(params *RemoveUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveUserCreated, error)
 
 	ReprovisionInstall(params *ReprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallCreated, error)
@@ -794,6 +806,144 @@ func (a *Client) AbandonOnboarding(params *AbandonOnboardingParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for AbandonOnboarding: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AddAppActionLabels adds labels to an action
+
+Merge the provided labels into the action's existing labels. Existing keys are overwritten.
+*/
+func (a *Client) AddAppActionLabels(params *AddAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAppActionLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAddAppActionLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AddAppActionLabels",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/actions/{action_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AddAppActionLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AddAppActionLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AddAppActionLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AddAppComponentLabels adds labels to a component
+
+Merge the provided labels into the component's existing labels. Existing keys are overwritten.
+*/
+func (a *Client) AddAppComponentLabels(params *AddAppComponentLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAppComponentLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAddAppComponentLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AddAppComponentLabels",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AddAppComponentLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AddAppComponentLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AddAppComponentLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AddInstallLabels adds labels to an install
+
+Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+*/
+func (a *Client) AddInstallLabels(params *AddInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddInstallLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAddInstallLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AddInstallLabels",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AddInstallLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AddInstallLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AddInstallLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14336,6 +14486,144 @@ func (a *Client) PruneTokens(params *PruneTokensParams, authInfo runtime.ClientA
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PruneTokens: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RemoveAppActionLabels removes labels from an action
+
+Remove the specified label keys from the action.
+*/
+func (a *Client) RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRemoveAppActionLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RemoveAppActionLabels",
+		Method:             "DELETE",
+		PathPattern:        "/v1/apps/{app_id}/actions/{action_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RemoveAppActionLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RemoveAppActionLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RemoveAppActionLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RemoveAppComponentLabels removes labels from a component
+
+Remove the specified label keys from the component.
+*/
+func (a *Client) RemoveAppComponentLabels(params *RemoveAppComponentLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppComponentLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRemoveAppComponentLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RemoveAppComponentLabels",
+		Method:             "DELETE",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RemoveAppComponentLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RemoveAppComponentLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RemoveAppComponentLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RemoveInstallLabels removes labels from an install
+
+Remove the specified label keys from the install.
+*/
+func (a *Client) RemoveInstallLabels(params *RemoveInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveInstallLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRemoveInstallLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RemoveInstallLabels",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RemoveInstallLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RemoveInstallLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RemoveInstallLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

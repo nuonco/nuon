@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallActionsLatestRuns } from '@/lib'
+import { getInstallActionsLatestRuns, getActionLabelKeys } from '@/lib'
 import { TriggeredByFilter } from '../TriggeredByFilter'
 import {
   InstallActionsTable,
@@ -33,6 +34,7 @@ export const InstallActionsTableContainer = ({
       offset,
       searchParams.get('q'),
       searchParams.get('trigger_types'),
+      searchParams.get('labels'),
     ],
     queryFn: () =>
       getInstallActionsLatestRuns({
@@ -42,6 +44,7 @@ export const InstallActionsTableContainer = ({
         offset,
         q: searchParams.get('q') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
+        labels: searchParams.get('labels') || undefined,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
@@ -59,6 +62,10 @@ export const InstallActionsTableContainer = ({
       )}
       filterActions={
         <div className="flex items-center gap-4">
+          <LabelFilterDropdown
+            queryKey={['action-label-keys', org.id, install?.app_id]}
+            queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
+          />
           <TemporalLink
             namespace="installs"
             eventLoopId={`${install?.id}-action-workflows`}

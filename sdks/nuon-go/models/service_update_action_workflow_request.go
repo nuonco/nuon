@@ -17,6 +17,9 @@ import (
 // swagger:model service.UpdateActionWorkflowRequest
 type ServiceUpdateActionWorkflowRequest struct {
 
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 }

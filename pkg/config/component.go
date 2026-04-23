@@ -64,6 +64,7 @@ type Component struct {
 	// SourceFile is the file path this component was parsed from (set during parsing, not serialized)
 	SourceFile     string                `mapstructure:"-" toml:"-" json:"-" jsonschema:"-" nuonhash:"-"`
 	VarName        string                `mapstructure:"var_name,omitempty" toml:"var_name,omitempty"`
+	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	Dependencies   []string              `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 	OperationRoles []EntityOperationRole `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 

@@ -38,6 +38,9 @@ type AppActionWorkflow struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// labels
+	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
 	// metadata
 	Name string `json:"name,omitempty"`
 
@@ -59,6 +62,10 @@ func (m *AppActionWorkflow) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateConfigs(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLabels(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,6 +109,29 @@ func (m *AppActionWorkflow) validateConfigs(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppActionWorkflow) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if m.Labels != nil {
+		if err := m.Labels.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("labels")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("labels")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppActionWorkflow) validateStatusV2(formats strfmt.Registry) error {
 	if swag.IsZero(m.StatusV2) { // not required
 		return nil
@@ -130,6 +160,10 @@ func (m *AppActionWorkflow) ContextValidate(ctx context.Context, formats strfmt.
 	var res []error
 
 	if err := m.contextValidateConfigs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -167,6 +201,28 @@ func (m *AppActionWorkflow) contextValidateConfigs(ctx context.Context, formats 
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppActionWorkflow) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("labels")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("labels")
+		}
+
+		return err
 	}
 
 	return nil

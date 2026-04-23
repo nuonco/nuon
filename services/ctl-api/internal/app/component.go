@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -139,6 +140,7 @@ type Component struct {
 
 	Name    string `json:"name,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"name,omitzero,omitempty"`
 	VarName string `json:"var_name,omitzero" temporaljson:"var_name,omitzero,omitempty"`
+	labels.Labeled
 
 	AppID string `json:"app_id,omitzero" gorm:"notnull;index:idx_app_component_name,unique" temporaljson:"app_id,omitzero,omitempty"`
 	App   App    `faker:"-" json:"-" temporaljson:"app,omitzero,omitempty"`

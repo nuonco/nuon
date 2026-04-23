@@ -65,6 +65,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		components := apps.Group("/components")
 		{
 			components.GET("", s.GetAppComponents)
+			components.GET("/label-keys", s.GetComponentLabelKeys)
 			components.POST("", s.CreateComponent)
 			components.POST("/build-all", s.BuildAllComponents)
 		}
@@ -80,6 +81,8 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		{
 			comp.PATCH("", s.UpdateAppComponent)
 			comp.DELETE("", s.DeleteAppComponent)
+			comp.POST("/labels", s.AddAppComponentLabels)
+			comp.DELETE("/labels", s.RemoveAppComponentLabels)
 
 			// dependencies
 			comp.GET("/dependencies", s.GetAppComponentDependencies)

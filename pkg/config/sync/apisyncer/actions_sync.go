@@ -27,7 +27,8 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 
 		isNew = true
 		actionWorkflow, err = s.apiClient.CreateActionWorkflow(ctx, s.appID, &models.ServiceCreateAppActionWorkflowRequest{
-			Name: action.Name,
+			Name:   action.Name,
+			Labels: action.Labels,
 		})
 		if err != nil {
 			return "", "", sync.SyncAPIErr{
@@ -39,7 +40,8 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 
 	if !isNew {
 		_, err = s.apiClient.UpdateActionWorkflow(ctx, actionWorkflow.ID, &models.ServiceUpdateActionWorkflowRequest{
-			Name: action.Name,
+			Name:   action.Name,
+			Labels: action.Labels,
 		})
 		if err != nil {
 			return "", "", sync.SyncAPIErr{

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -22,6 +23,7 @@ import (
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param		 			q							query	string	false	"search query for action workflow name"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Tags					actions
 // @Accept					json
 // @Produce					json
@@ -47,6 +49,7 @@ func (s *service) GetInstallActionsLatestRuns(ctx *gin.Context) {
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param		 			q							query	string	false	"search query for action workflow name"
+// @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Tags					actions
 // @Accept					json
 // @Produce					json
@@ -70,12 +73,13 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	triggerTypes := ctx.Query("trigger_types")
 	q := ctx.Query("q")
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	var triggerTypesSlice []string
 	if triggerTypes != "" {
 		triggerTypesSlice = []string{triggerTypes}
 	}
 
-	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice, q)
+	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice, q, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflows: %w", err))
 		return
@@ -84,8 +88,12 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, q string) ([]*app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, q string, lbls labels.Labels) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
+
+	// Always join action_workflows for label filtering; the q filter also needs this join.
+	needsAWJoin := len(lbls) > 0 || q != ""
+
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
@@ -105,10 +113,14 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 			Where("install_action_workflow_runs_latest_view_v1.triggered_by_type IN ?", triggerTypes)
 	}
 
+	if needsAWJoin {
+		tx = tx.Joins("JOIN action_workflows ON install_action_workflows.action_workflow_id = action_workflows.id")
+	}
+	if len(lbls) > 0 {
+		tx = tx.Scopes(labels.WithLabels("action_workflows.labels", lbls))
+	}
 	if q != "" {
-		tx = tx.
-			Joins("JOIN action_workflows ON install_action_workflows.action_workflow_id = action_workflows.id").
-			Where("action_workflows.name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("action_workflows.name ILIKE ?", "%"+q+"%")
 	}
 
 	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, installID)

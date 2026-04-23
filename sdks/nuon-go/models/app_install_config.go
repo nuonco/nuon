@@ -38,6 +38,9 @@ type AppInstallConfig struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
+	// labels
+	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
@@ -60,6 +63,10 @@ func (m *AppInstallConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCustomNestedStacks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLabels(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -120,6 +127,29 @@ func (m *AppInstallConfig) validateCustomNestedStacks(formats strfmt.Registry) e
 	return nil
 }
 
+func (m *AppInstallConfig) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if m.Labels != nil {
+		if err := m.Labels.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("labels")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("labels")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install config based on the context it is used
 func (m *AppInstallConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -129,6 +159,10 @@ func (m *AppInstallConfig) ContextValidate(ctx context.Context, formats strfmt.R
 	}
 
 	if err := m.contextValidateCustomNestedStacks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -184,6 +218,28 @@ func (m *AppInstallConfig) contextValidateCustomNestedStacks(ctx context.Context
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstallConfig) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("labels")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("labels")
+		}
+
+		return err
 	}
 
 	return nil
