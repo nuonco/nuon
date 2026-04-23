@@ -196,7 +196,11 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 				zap.Any("status", job.Status),
 				zap.Any("status_description", job.StatusDescription),
 			)
-			return job.Status, temporal.NewNonRetryableApplicationError("job did not succeed", "api", fmt.Errorf("job failed with status %s", job.Status))
+			msg := "job did not succeed"
+			if job.StatusDescription != "" {
+				msg = fmt.Sprintf("job did not succeed: %s", job.StatusDescription)
+			}
+			return job.Status, temporal.NewNonRetryableApplicationError(msg, "api", fmt.Errorf("job failed with status %s: %s", job.Status, job.StatusDescription))
 		}
 
 		if job.Status == app.RunnerJobStatusQueued {

@@ -21,6 +21,9 @@ type ServiceUpdateRunnerJobExecutionRequest struct {
 
 	// status
 	Status AppRunnerJobExecutionStatus `json:"status,omitempty"`
+
+	// status description
+	StatusDescription string `json:"status_description,omitempty"`
 }
 
 // Validate validates this service update runner job execution request
