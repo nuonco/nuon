@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
 
 const SignalType signal.SignalType = "sync-secrets"
@@ -23,13 +24,25 @@ type Signal struct {
 	InstallID      string
 	WorkflowStepID string
 	SandboxMode    bool
+
+	runnerJobID string
 }
 
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool { return true }
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -121,6 +134,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return fmt.Errorf("unable to create runner job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	planJSON, err := json.Marshal(syncSecretsPlan)
 	if err != nil {

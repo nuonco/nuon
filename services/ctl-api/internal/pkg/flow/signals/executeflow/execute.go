@@ -27,6 +27,10 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 		runErr := s.executeRun(ctx, run)
 
 		if runErr == nil {
+			if s.cancelRequested {
+				return nil
+			}
+
 			// Run completed without error. Check if workflow is fully done
 			// or if we paused at an approval/directive point.
 			if s.isWorkflowComplete(ctx) {
@@ -36,18 +40,26 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 			// Paused at approval - update run status and wait for resume
 			s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 		} else {
+			if s.cancelRequested {
+				return nil
+			}
+
 			// FlowStoppedErr is a terminal state — not retryable
-			if _, ok := runErr.(*flow.FlowStoppedErr); ok {
+			if stoppedErr, ok := runErr.(*flow.FlowStoppedErr); ok {
 				s.updateRunStatus(ctx, run.ID, app.StatusError)
+				metadata := map[string]any{
+					"error_message": runErr.Error(),
+					"stopped":       true,
+				}
+				if stoppedErr.RetriesExhausted {
+					metadata["retries_exhausted"] = true
+				}
 				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 					ID: s.WorkflowID,
 					Status: app.CompositeStatus{
 						Status:                 app.StatusError,
 						StatusHumanDescription: "workflow stopped",
-						Metadata: map[string]any{
-							"error_message": runErr.Error(),
-							"stopped":       true,
-						},
+						Metadata:               metadata,
 					},
 				})
 				return runErr
@@ -82,6 +94,7 @@ func (s *Signal) executeFlow(ctx workflow.Context) error {
 		}
 
 		if s.cancelRequested {
+			s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
 			return runErr
 		}
 
@@ -251,22 +264,36 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				return err
 			}
 
-			// Update flow status on error
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
 
-			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: s.WorkflowID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "error while executing group",
-					Metadata: map[string]any{
-						"error_message": err.Error(),
-						"group_idx":     group.GroupIdx,
+			// If cancellation was requested, preserve the cancelled status
+			// that the cancel handler already set — don't overwrite it with error.
+			if s.cancelRequested {
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusCancelled,
+						StatusHumanDescription: "workflow cancelled",
 					},
-				},
-			})
+				})
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+
+				return nil
+			} else {
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusError,
+						StatusHumanDescription: "error while executing group",
+						Metadata: map[string]any{
+							"error_message": err.Error(),
+							"group_idx":     group.GroupIdx,
+						},
+					},
+				})
+			}
 
 			return errors.Wrapf(err, "group %d failed", group.GroupIdx)
 		}
@@ -281,11 +308,13 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			}
 
 		case "stop":
-			s.markRemainingGroupStepsNotAttempted(ctx, l, groups, gi)
+			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
-			return flow.NewFlowStoppedErr("", "group returned stop directive")
+			stoppedErr := flow.NewFlowStoppedErr("", "group returned stop directive")
+			stoppedErr.RetriesExhausted = s.checkGroupRetriesExhausted(ctx, group)
+			return stoppedErr
 
 		case "await-approval":
 			return flow.NewApprovalPauseErr("")
@@ -400,11 +429,11 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 	return 0
 }
 
-// markRemainingGroupStepsNotAttempted marks all non-terminal steps in groups
-// after the given group index as not-attempted. This is called when a group
-// returns a "stop" directive (e.g. plan denied) so that future groups' steps
-// reflect that they were never executed.
-func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *zap.Logger, groups []app.WorkflowStepGroup, currentGroupPosition int) {
+// markRemainingGroupStepsDiscarded marks all remaining groups and their
+// non-terminal steps as discarded. This is called when a group returns a
+// "stop" directive (e.g. plan denied) so that future groups and their steps
+// reflect that they were discarded due to an earlier stop.
+func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.Logger, groups []app.WorkflowStepGroup, currentGroupPosition int) {
 	if currentGroupPosition+1 >= len(groups) {
 		return
 	}
@@ -421,6 +450,23 @@ func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *za
 	futureGroupIdxs := make(map[int]bool)
 	for i := currentGroupPosition + 1; i < len(groups); i++ {
 		futureGroupIdxs[groups[i].GroupIdx] = true
+
+		// Mark the group object itself as discarded.
+		if groups[i].ID != "" {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: groups[i].ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusDiscarded,
+					Metadata: map[string]any{
+						"reason": "discarded: workflow stopped before group was reached",
+					},
+				},
+			}); err != nil {
+				l.Warn("failed to mark group as discarded",
+					zap.String("step_group_id", groups[i].ID),
+					zap.Error(err))
+			}
+		}
 	}
 
 	for _, step := range steps {
@@ -433,13 +479,13 @@ func (s *Signal) markRemainingGroupStepsNotAttempted(ctx workflow.Context, l *za
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
-				Status: app.StatusNotAttempted,
+				Status: app.StatusDiscarded,
 				Metadata: map[string]any{
-					"reason": "workflow stopped before group was reached",
+					"reason": "discarded: workflow stopped before group was reached",
 				},
 			},
 		}); err != nil {
-			l.Warn("failed to mark step as not-attempted", zap.String("step_id", step.ID), zap.Error(err))
+			l.Warn("failed to mark step as discarded", zap.String("step_id", step.ID), zap.Error(err))
 		}
 	}
 }
@@ -518,4 +564,25 @@ func (s *Signal) checkRetryable(ctx workflow.Context) bool {
 		return false
 	}
 	return resp.Retryable
+}
+
+// checkGroupRetriesExhausted checks if any step in the group has retries_exhausted
+// metadata, indicating the stop was caused by retry exhaustion.
+func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.WorkflowStepGroup) bool {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		return false
+	}
+	for _, step := range steps {
+		if step.GroupIdx == group.GroupIdx && step.Status.Status == app.StatusError {
+			if v, ok := step.Status.Metadata["retries_exhausted"]; ok {
+				if b, ok := v.(bool); ok && b {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

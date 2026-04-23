@@ -2398,6 +2398,20 @@ export interface paths {
      */
     post: operations["CancelWorkflow"];
   };
+  "/v1/workflows/{workflow_id}/step-groups": {
+    /**
+     * get all step groups for a workflow
+     * @description Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
+     */
+    get: operations["GetWorkflowStepGroups"];
+  };
+  "/v1/workflows/{workflow_id}/step-groups/{step_group_id}": {
+    /**
+     * get a workflow step group
+     * @description Get a single workflow step group by ID, including its nested steps.
+     */
+    get: operations["GetWorkflowStepGroup"];
+  };
   "/v1/workflows/{workflow_id}/steps": {
     /**
      * get all of the steps for a given workflow
@@ -4707,6 +4721,8 @@ export interface components {
       links?: {
         [key: string]: unknown;
       };
+      /** @description LogStream is the log stream associated with this workflow step (when step_target_type is install_workflow_steps). */
+      log_stream?: components["schemas"]["app.LogStream"];
       metadata?: {
         [key: string]: string;
       };
@@ -4778,6 +4794,7 @@ export interface components {
       name?: string;
       parallel?: boolean;
       queue_signal?: components["schemas"]["app.QueueSignal"];
+      result_directive?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.WorkflowStep"][];
       updated_at?: string;
@@ -5044,6 +5061,7 @@ export interface components {
     };
     "outputs.SecretSyncOutput": {
       arn?: string;
+      azure_key_vault_secret_id?: string;
       exists?: boolean;
       gcp_secret_name?: string;
       kubernetes_key?: string;
@@ -5239,6 +5257,8 @@ export interface components {
       plan_display_contents?: string;
     };
     "plantypes.KubernetesSecretSync": {
+      /** @description https://{vault-name}.vault.azure.net/secrets/{secret-name} */
+      azure_key_vault_secret_id?: string;
       /**
        * @description NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
        * updating the runner job and save time.
@@ -23275,6 +23295,108 @@ export interface operations {
       202: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all step groups for a workflow
+   * @description Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
+   */
+  GetWorkflowStepGroups: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepGroup"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a workflow step group
+   * @description Get a single workflow step group by ID, including its nested steps.
+   */
+  GetWorkflowStepGroup: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step group ID */
+        step_group_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowStepGroup"];
         };
       };
       /** @description Bad Request */

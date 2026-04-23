@@ -64,6 +64,10 @@ type Signal struct {
 
 	// stepSignalIDs tracks in-flight step signal IDs for cancellation propagation.
 	stepSignalIDs []string
+
+	// lastDirective tracks the last directive written to the workflow.
+	// Used by Execute() to determine the correct group status after execution.
+	lastDirective string
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -194,6 +198,20 @@ func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error)
 		}
 	}
 	return groupSteps, nil
+}
+
+// writeStepGroupDirective writes the group's result directive to the step group's
+// own ResultDirective field when a StepGroupID is set. Falls back to writing to
+// the workflow's ResultDirective for backward compatibility with synthetic groups.
+func (s *Signal) writeStepGroupDirective(ctx workflow.Context, directive string) error {
+	s.lastDirective = directive
+	if s.StepGroupID != "" {
+		return activities.AwaitPkgWorkflowsFlowUpdateFlowStepGroupResultDirective(ctx, activities.UpdateFlowStepGroupResultDirectiveRequest{
+			StepGroupID: s.StepGroupID,
+			Directive:   directive,
+		})
+	}
+	return s.writeWorkflowDirective(ctx, directive)
 }
 
 // writeWorkflowDirective writes the group's result directive to the workflow's
