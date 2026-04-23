@@ -37,15 +37,15 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// max auto retries
-	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
-
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
 	// image url
 	// Required: true
 	ImageURL *string `json:"image_url"`
+
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`

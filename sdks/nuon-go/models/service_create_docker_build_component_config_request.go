@@ -41,15 +41,15 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// max auto retries
-	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
-
 	// dockerfile
 	// Required: true
 	Dockerfile *string `json:"dockerfile"`
 
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
+
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`

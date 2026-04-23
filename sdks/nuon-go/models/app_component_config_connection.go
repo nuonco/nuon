@@ -50,9 +50,6 @@ type AppComponentConfigConnection struct {
 	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// max auto retries
-	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
-
 	// docker build
 	DockerBuild *AppDockerBuildComponentConfig `json:"docker_build,omitempty"`
 
@@ -73,6 +70,9 @@ type AppComponentConfigConnection struct {
 
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
+
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`

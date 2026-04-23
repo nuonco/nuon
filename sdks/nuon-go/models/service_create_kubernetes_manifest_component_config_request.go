@@ -37,9 +37,6 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// max auto retries
-	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
-
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
 
@@ -50,6 +47,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// Inline manifest (mutually exclusive with Kustomize)
 	Manifest string `json:"manifest,omitempty"`
+
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`

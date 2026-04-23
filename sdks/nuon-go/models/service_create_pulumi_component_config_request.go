@@ -42,15 +42,15 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 	// deploy timeout
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
-	// max auto retries
-	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
-
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
 
 	// env vars
 	// Required: true
 	EnvVars map[string]string `json:"env_vars"`
+
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
