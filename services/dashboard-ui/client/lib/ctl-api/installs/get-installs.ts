@@ -7,9 +7,10 @@ export const getInstalls = ({
   offset,
   orgId,
   q,
-}: { orgId: string; q?: string } & TPaginationParams) =>
+  labels,
+}: { orgId: string; q?: string; labels?: string } & TPaginationParams) =>
   api<TInstall[]>({
-    path: `installs${buildQueryParams({ limit, offset, q })}`,
+    path: `installs${buildQueryParams({ limit, offset, q, labels })}`,
     orgId,
     paginated: true,
   })

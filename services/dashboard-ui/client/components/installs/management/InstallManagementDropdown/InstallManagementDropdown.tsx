@@ -9,6 +9,7 @@ import { AuditHistoryButton } from '../AuditHistory'
 import { DeprovisionButton } from '../Deprovision'
 import { DeprovisionStackButton } from '../DeprovisionStack'
 import { EditInputsButton } from '../EditInputs'
+import { EditLabelsButton } from '../EditLabels'
 import { ViewCurrentInputsButton } from '../ViewCurrentInputs'
 import { EditStackOverridesButton } from '../EditStackOverrides'
 import { EnableAutoApproveButton } from '../EnableAutoApprove'
@@ -41,6 +42,7 @@ const InstallManagementDropdownContent = () => {
           Settings
         </Text>
         <EditInputsButton isMenuButton />
+        <EditLabelsButton isMenuButton />
         <ViewCurrentInputsButton isMenuButton />
         <AuditHistoryButton isMenuButton />
         <ViewStateButton isMenuButton />

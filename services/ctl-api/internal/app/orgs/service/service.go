@@ -151,6 +151,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-force-sandbox-mode", s.AdminForceSandboxMode)
 			org.POST("/admin-restart-queues", s.RestartOrgQueues)
 			org.POST("/admin-restart-runners", s.AdminRestartRunners)
+			org.POST("/admin-labels", s.AdminAddOrgLabels)
+			org.DELETE("/admin-labels", s.AdminRemoveOrgLabels)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)
 			org.POST("/admin-add-tags", s.AdminAddTags)
 			org.POST("/admin-remove-tags", s.AdminRemoveTags)

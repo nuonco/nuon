@@ -13,6 +13,7 @@ title: 'Install'
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the install Unique identifier for this install configuration | **✅ Required** | `"production"`, `"staging"`, `"customer-acme"` |
 | **`approval_option`**<br/>string | approval option for the install Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation) | **Optional** | `"approve-all"`, `"prompt"` |
+| **`labels`**<br/>object | - | **Optional** | - |
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |

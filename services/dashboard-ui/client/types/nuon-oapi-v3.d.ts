@@ -166,6 +166,13 @@ export interface paths {
      */
     get: operations["GetAppActionConfig"];
   };
+  "/v1/apps/{app_id}/actions/labels": {
+    /**
+     * get distinct label key:value pairs across all actions for an app
+     * @description Returns all distinct label key:value pairs for actions in the given app.
+     */
+    get: operations["GetActionLabelKeys"];
+  };
   "/v1/apps/{app_id}/actions/{action_id}": {
     /**
      * get an app action workflow by action workflow id
@@ -195,6 +202,18 @@ export interface paths {
      * @description Create an action workflow configuration.
      */
     post: operations["CreateActionConfig"];
+  };
+  "/v1/apps/{app_id}/actions/{action_id}/labels": {
+    /**
+     * add labels to an action
+     * @description Merge the provided labels into the action's existing labels. Existing keys are overwritten.
+     */
+    post: operations["AddAppActionLabels"];
+    /**
+     * remove labels from an action
+     * @description Remove the specified label keys from the action.
+     */
+    delete: operations["RemoveAppActionLabels"];
   };
   "/v1/apps/{app_id}/actions/{action_id}/latest-config": {
     /**
@@ -291,6 +310,13 @@ export interface paths {
      * @description Build all components for an app.
      */
     post: operations["BuildAllComponents"];
+  };
+  "/v1/apps/{app_id}/components/labels": {
+    /**
+     * get distinct label key:value pairs across all components for an app
+     * @description Returns all distinct label key:value pairs for components in the given app.
+     */
+    get: operations["GetComponentLabelKeys"];
   };
   "/v1/apps/{app_id}/components/{component_id}": {
     /**
@@ -411,6 +437,18 @@ export interface paths {
      * @description Returns all components that depend on the provided component.
      */
     get: operations["GetAppComponentDependents"];
+  };
+  "/v1/apps/{app_id}/components/{component_id}/labels": {
+    /**
+     * add labels to a component
+     * @description Merge the provided labels into the component's existing labels. Existing keys are overwritten.
+     */
+    post: operations["AddAppComponentLabels"];
+    /**
+     * remove labels from a component
+     * @description Remove the specified label keys from the component.
+     */
+    delete: operations["RemoveAppComponentLabels"];
   };
   "/v1/apps/{app_id}/config": {
     /**
@@ -1043,6 +1081,13 @@ export interface paths {
      */
     post: operations["CreateInstallV2"];
   };
+  "/v1/installs/labels": {
+    /**
+     * get distinct label key:value pairs across all installs for an org
+     * @description Returns all distinct label key:value pairs for installs in the current org.
+     */
+    get: operations["GetInstallLabelKeys"];
+  };
   "/v1/installs/sandbox-runs/{run_id}": {
     /**
      * get an install sandbox run
@@ -1549,6 +1594,18 @@ export interface paths {
      * @description Returns input values for an install.
      */
     get: operations["GetCurrentInstallInputs"];
+  };
+  "/v1/installs/{install_id}/labels": {
+    /**
+     * add labels to an install
+     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+     */
+    post: operations["AddInstallLabels"];
+    /**
+     * remove labels from an install
+     * @description Remove the specified label keys from the install.
+     */
+    delete: operations["RemoveInstallLabels"];
   };
   "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
     /**
@@ -2582,6 +2639,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       /** @description metadata */
       name?: string;
       /** @description TODO: change to default null after migration & after initial pr */
@@ -3161,6 +3219,7 @@ export interface components {
       created_by_id?: string;
       dependencies?: string[];
       id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       latest_build?: components["schemas"]["app.ComponentBuild"];
       links?: {
         [key: string]: unknown;
@@ -3479,6 +3538,7 @@ export interface components {
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       links?: {
         [key: string]: unknown;
       };
@@ -3600,6 +3660,7 @@ export interface components {
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
       id?: string;
       install_id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       org_id?: string;
       runner_nested_template_url?: string;
       updated_at?: string;
@@ -3971,6 +4032,7 @@ export interface components {
       features?: components["schemas"]["types.StringBoolMap"];
       id?: string;
       install_count?: number;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       links?: {
         [key: string]: unknown;
       };
@@ -5020,6 +5082,9 @@ export interface components {
       project_id?: string;
       region?: string;
     };
+    "github_com_nuonco_nuon_pkg_labels.Labels": {
+      [key: string]: string;
+    };
     "github_com_nuonco_nuon_pkg_types_state.State": {
       actions?: components["schemas"]["state.ActionsState"];
       app?: components["schemas"]["state.AppState"];
@@ -5033,6 +5098,7 @@ export interface components {
       /** @description NOTE: for backwards compatibility, these are remaining in place. */
       install?: components["schemas"]["state.InstallState"];
       install_stack?: components["schemas"]["state.InstallStackState"];
+      labels?: components["schemas"]["state.LabelsState"];
       name?: string;
       org?: components["schemas"]["state.OrgState"];
       runner?: components["schemas"]["state.RunnerState"];
@@ -5051,6 +5117,9 @@ export interface components {
     "helpers.CreateInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      labels?: {
+        [key: string]: string;
+      };
       runner_nested_template_url?: string;
       vpc_nested_template_url?: string;
     };
@@ -5477,6 +5546,21 @@ export interface components {
     };
     /** @enum {string} */
     "refs.RefType": "sandbox" | "install_stack" | "component" | "inputs" | "install_inputs" | "secrets" | "actions";
+    "service.AddActionLabelsRequest": {
+      labels: {
+        [key: string]: string;
+      };
+    };
+    "service.AddComponentLabelsRequest": {
+      labels: {
+        [key: string]: string;
+      };
+    };
+    "service.AddInstallLabelsRequest": {
+      labels: {
+        [key: string]: string;
+      };
+    };
     "service.AppAWSIAMPolicyConfig": {
       contents?: string;
       gcp_permissions?: string[];
@@ -5685,6 +5769,9 @@ export interface components {
       name?: string;
     };
     "service.CreateAppActionWorkflowRequest": {
+      labels?: {
+        [key: string]: string;
+      };
       name?: string;
     };
     "service.CreateAppBranchConfigRequest": {
@@ -5785,6 +5872,9 @@ export interface components {
     };
     "service.CreateComponentRequest": {
       dependencies?: string[];
+      labels?: {
+        [key: string]: string;
+      };
       name: string;
       var_name?: string;
     };
@@ -5879,6 +5969,9 @@ export interface components {
     "service.CreateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      labels?: {
+        [key: string]: string;
+      };
       runner_nested_template_url?: string;
       vpc_nested_template_url?: string;
     };
@@ -6196,6 +6289,15 @@ export interface components {
       readme?: string;
       warnings?: string[];
     };
+    "service.RemoveActionLabelsRequest": {
+      keys: string[];
+    };
+    "service.RemoveComponentLabelsRequest": {
+      keys: string[];
+    };
+    "service.RemoveInstallLabelsRequest": {
+      keys: string[];
+    };
     "service.RemoveOrgUserRequest": {
       user_id?: string;
     };
@@ -6272,6 +6374,9 @@ export interface components {
       force?: boolean;
     };
     "service.UpdateActionWorkflowRequest": {
+      labels?: {
+        [key: string]: string;
+      };
       name?: string;
     };
     "service.UpdateAppBranchRequest": {
@@ -6297,12 +6402,18 @@ export interface components {
     };
     "service.UpdateComponentRequest": {
       dependencies?: string[];
+      labels?: {
+        [key: string]: string;
+      };
       name: string;
       var_name?: string;
     };
     "service.UpdateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      labels?: {
+        [key: string]: string;
+      };
       runner_nested_template_url?: string;
       vpc_nested_template_url?: string;
     };
@@ -6492,6 +6603,22 @@ export interface components {
       populated?: boolean;
       public_domain?: string;
       sandbox?: components["schemas"]["state.SandboxState"];
+    };
+    "state.LabelsState": {
+      actions?: {
+        [key: string]: {
+          [key: string]: string;
+        };
+      };
+      components?: {
+        [key: string]: {
+          [key: string]: string;
+        };
+      };
+      install?: {
+        [key: string]: string;
+      };
+      populated?: boolean;
     };
     "state.OrgState": {
       id?: string;
@@ -7479,6 +7606,8 @@ export interface operations {
       query?: {
         /** @description search query to filter action workflows by name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -7649,6 +7778,8 @@ export interface operations {
       query?: {
         /** @description search query to filter action workflows by name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -7805,6 +7936,28 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get distinct label key:value pairs across all actions for an app
+   * @description Returns all distinct label key:value pairs for actions in the given app.
+   */
+  GetActionLabelKeys: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: string[];
+          };
         };
       };
     };
@@ -8056,6 +8209,122 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.ActionWorkflowConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * add labels to an action
+   * @description Merge the provided labels into the action's existing labels. Existing keys are overwritten.
+   */
+  AddAppActionLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.AddActionLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * remove labels from an action
+   * @description Remove the specified label keys from the action.
+   */
+  RemoveAppActionLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description action ID */
+        action_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RemoveActionLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ActionWorkflow"];
         };
       };
       /** @description Bad Request */
@@ -8825,6 +9094,8 @@ export interface operations {
         types?: string;
         /** @description comma-separated list of component IDs to filter by */
         component_ids?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -8984,6 +9255,28 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get distinct label key:value pairs across all components for an app
+   * @description Returns all distinct label key:value pairs for components in the given app.
+   */
+  GetComponentLabelKeys: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: string[];
+          };
         };
       };
     };
@@ -9997,6 +10290,122 @@ export interface operations {
     };
   };
   /**
+   * add labels to a component
+   * @description Merge the provided labels into the component's existing labels. Existing keys are overwritten.
+   */
+  AddAppComponentLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.AddComponentLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * remove labels from a component
+   * @description Remove the specified label keys from the component.
+   */
+  RemoveAppComponentLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RemoveComponentLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Component"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * @deprecated
    * @description Create an app config, by pushing the contents of a config file.
    *
@@ -10844,6 +11253,8 @@ export interface operations {
       query?: {
         /** @description search query */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -14598,6 +15009,8 @@ export interface operations {
         offset?: number;
         /** @description search query to filter installs by name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -14689,6 +15102,22 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get distinct label key:value pairs across all installs for an org
+   * @description Returns all distinct label key:value pairs for installs in the current org.
+   */
+  GetInstallLabelKeys: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: string[];
+          };
         };
       };
     };
@@ -17858,6 +18287,118 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallInputs"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * add labels to an install
+   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+   */
+  AddInstallLabels: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.AddInstallLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * remove labels from an install
+   * @description Remove the specified label keys from the install.
+   */
+  RemoveInstallLabels: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RemoveInstallLabelsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Install"];
         };
       };
       /** @description Bad Request */

@@ -22,6 +22,9 @@ type ServiceCreateComponentRequest struct {
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// name
 	// Required: true
 	Name *string `json:"name"`

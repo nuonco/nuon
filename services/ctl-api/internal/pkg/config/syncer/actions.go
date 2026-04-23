@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
@@ -33,9 +34,10 @@ func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) 
 	}
 
 	_, err = s.actionsHelpers.CreateAction(ctx, &actionshelpers.CreateActionParams{
-		AppID: s.appID,
-		OrgID: s.orgID,
-		Name:  action.Name,
+		AppID:  s.appID,
+		OrgID:  s.orgID,
+		Name:   action.Name,
+		Labels: action.Labels,
 	})
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -54,6 +56,18 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to get action %s", action.Name),
 			Err:         err,
+		}
+	}
+
+	// Sync labels
+	labelRes := s.db.WithContext(ctx).
+		Model(&actionWorkflow).
+		Select("labels").
+		Updates(app.ActionWorkflow{Labeled: labels.Labeled{Labels: labels.Labels(action.Labels)}})
+	if labelRes.Error != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to update labels for action workflow %s", action.Name),
+			Err:         labelRes.Error,
 		}
 	}
 

@@ -23,6 +23,7 @@ type State struct {
 	Cloud        *CloudAccount      `json:"cloud_account"`
 	InstallStack *InstallStackState `json:"install_stack"`
 	Secrets      *SecretsState      `json:"secrets"`
+	Labels       map[string]string  `json:"labels"`
 
 	// NOTE: for backwards compatibility, these are remaining in place.
 	Install *InstallState `json:"install"`

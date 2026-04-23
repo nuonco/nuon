@@ -1,0 +1,105 @@
+package views
+
+import (
+	"sort"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/popover"
+)
+
+// sortedLabelKeys returns the label keys in sorted order for stable rendering.
+func sortedLabelKeys(labels map[string]string) []string {
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// closePopoverScript returns inline JS to close a popover by its ID.
+func closePopoverScript(popoverID string) string {
+	return "var p = document.querySelector('[data-tui-popover-id=\"" + popoverID + "\"]');" +
+		"if (p) { p.setAttribute('data-tui-popover-open', 'false'); p.style.display = 'none'; }" +
+		"var t = document.querySelector('[data-tui-popover-trigger=\"" + popoverID + "\"]');" +
+		"if (t) t.setAttribute('data-tui-popover-open', 'false');"
+}
+
+templ InstallLabelsSection(install *app.Install) {
+	<div id="install-labels-section" class="mt-4 pt-4 border-t border-border">
+		<div class="flex items-center gap-2 flex-wrap">
+			<span class="text-xs text-muted-foreground uppercase mr-1">Labels</span>
+			for _, k := range sortedLabelKeys(map[string]string(install.Labels)) {
+				@badge.Badge(badge.Props{
+					Variant: badge.VariantOutline,
+					Class:   "gap-1 font-mono text-xs",
+				}) {
+					{ k }:{ install.Labels[k] }
+					<button
+						type="button"
+						class="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+						hx-post={ "/installs/" + install.ID + "/labels/remove/" + k }
+						hx-target="#install-labels-section"
+						hx-swap="outerHTML"
+					>
+						×
+					</button>
+				}
+			}
+			if len(install.Labels) == 0 {
+				<span class="text-xs text-muted-foreground italic">No labels</span>
+			}
+			<!-- Add Label Popover Trigger -->
+			@popover.Trigger(popover.TriggerProps{
+				For: "add-label-popover-" + install.ID,
+			}) {
+				<span class="inline-flex items-center px-2 py-1 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-cyan transition-colors cursor-pointer">
+					+ Add
+				</span>
+			}
+			<!-- Add Label Popover Content -->
+			@popover.Content(popover.ContentProps{
+				ID:        "add-label-popover-" + install.ID,
+				Placement: popover.PlacementBottomEnd,
+				ShowArrow: true,
+			}) {
+				<div class="p-4 w-72">
+					<h3 class="text-sm font-semibold mb-3">Add Label</h3>
+					<form
+						hx-post={ "/installs/" + install.ID + "/labels" }
+						hx-target="#install-labels-section"
+						hx-swap="outerHTML"
+						data-hx-on-htmx-before-request={ closePopoverScript("add-label-popover-" + install.ID) }
+						class="space-y-3"
+					>
+						<div>
+							<label class="text-xs text-muted-foreground block mb-1">Key</label>
+							<input
+								type="text"
+								name="label_key"
+								placeholder="e.g. env"
+								required
+								class="w-full px-3 py-1.5 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-cyan"
+							/>
+						</div>
+						<div>
+							<label class="text-xs text-muted-foreground block mb-1">Value</label>
+							<input
+								type="text"
+								name="label_value"
+								placeholder="e.g. production"
+								class="w-full px-3 py-1.5 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-cyan"
+							/>
+						</div>
+						<button
+							type="submit"
+							class="w-full px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
+						>
+							Add Label
+						</button>
+					</form>
+				</div>
+			}
+		</div>
+	</div>
+}

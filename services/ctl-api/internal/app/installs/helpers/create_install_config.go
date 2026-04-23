@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type CreateInstallConfigParams struct {
 	ApprovalOption          app.InstallApprovalOption  `json:"approval_option"`
+	Labels                  map[string]string          `json:"labels,omitempty"`
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty"`
@@ -58,6 +60,7 @@ func (h *Helpers) CreateInstallConfig(ctx context.Context, installID string, req
 		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
 		CustomNestedStacks:      req.CustomNestedStacks,
+		Labeled:                 labels.Labeled{Labels: labels.Labels(req.Labels)},
 	}
 
 	if err := h.db.WithContext(ctx).Create(installConfig).Error; err != nil {

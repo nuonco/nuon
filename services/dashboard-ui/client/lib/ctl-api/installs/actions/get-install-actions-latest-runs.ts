@@ -4,6 +4,7 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getInstallActionsLatestRuns = ({
   installId,
+  labels,
   limit,
   offset,
   orgId,
@@ -11,12 +12,13 @@ export const getInstallActionsLatestRuns = ({
   trigger_types,
 }: {
   installId: string
+  labels?: string
   orgId: string
   q?: string
   trigger_types?: string
 } & TPaginationParams) =>
   api<TInstallAction[]>({
-    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types })}`,
+    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types, labels })}`,
     orgId,
     paginated: true,
   })
