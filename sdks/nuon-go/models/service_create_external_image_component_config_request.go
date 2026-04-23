@@ -41,6 +41,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
+
 	// gcp gar image config
 	GcpGarImageConfig *ServiceGcpGARImageConfigRequest `json:"gcp_gar_image_config,omitempty"`
 

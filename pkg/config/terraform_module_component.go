@@ -32,6 +32,8 @@ type TerraformModuleComponentConfig struct {
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
+	MaxAutoRetries *int `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+
 	// deprecated
 	Variables []TerraformVariable   `mapstructure:"var,omitempty" toml:"var,omitempty"`
 	EnvVars   []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var,omitempty"`
@@ -68,6 +70,11 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Default("60m").
 		Example("30m").
 		Example("1h").
+		Field("max_auto_retries").Short("maximum automatic retry attempts on deploy failure").
+		Long("Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled)").
+		Default("0").
+		Example("3").
+		Example("5").
 		Field("var").Short("deprecated: use vars map instead").
 		Long("Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead").
 		Field("env_var").Short("deprecated: use env_vars map instead").

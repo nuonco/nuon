@@ -51,6 +51,8 @@ type HelmChartComponentConfig struct {
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
+	MaxAutoRetries *int `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+
 	// deprecated
 	Values []HelmValue `mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
@@ -100,7 +102,12 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 30m. Max: 1h").
 		Default("30m").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("max_auto_retries").Short("maximum automatic retry attempts on deploy failure").
+		Long("Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled)").
+		Default("0").
+		Example("3").
+		Example("5")
 }
 
 type HelmRepoConfig struct {

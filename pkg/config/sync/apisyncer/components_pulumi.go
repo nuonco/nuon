@@ -23,6 +23,7 @@ func (s *syncer) createPulumiComponentConfig(ctx context.Context, resource, comp
 		Version:                  obj.PulumiVersion,
 		BuildTimeout:             obj.BuildTimeout,
 		DeployTimeout:            obj.DeployTimeout,
+		MaxAutoRetries:           obj.MaxAutoRetries,
 	}
 
 	if obj.DriftSchedule != nil {

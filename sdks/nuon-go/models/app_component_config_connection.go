@@ -50,6 +50,9 @@ type AppComponentConfigConnection struct {
 	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries *int `json:"max_auto_retries,omitempty"`
+
 	// docker build
 	DockerBuild *AppDockerBuildComponentConfig `json:"docker_build,omitempty"`
 
