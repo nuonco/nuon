@@ -55,6 +55,7 @@
     "react-router": "^7.13.1",
     "react-syntax-highlighter": "^15.6.1",
     "react-tailwindcss-select": "^1.8.5",
+    "recharts": "^3.8.1",
     "showdown": "^2.1.0",
     "uuid": "^11.1.0",
     "yaml": "^2.7.1"
