@@ -1,19 +1,32 @@
 ---
 title: "Customer Portal"
-description: "How your customers interact with installs in their cloud accounts."
+description: "Let your customers install and manage your app themselves."
 icon: "users"
 ---
 
-Nuon gives you flexibility in how much your customers are involved in managing their installs. You choose the interface and level of control that fits your product.
+The Customer Portal is a customizable web app you can white-label for your customers to install, monitor, and manage their own installs.
 
-## Customer Portal
+The portal lives under your subdomain and carries your branding.
 
-The [Customer Portal](https://customers.nuon.co/) is a hosted, branded web application where your customers can accept installs, deploy the [Stack](/concepts/stacks), approve provisioning, and monitor health checks. Each vendor org gets a portal at `https://<your-org-name>.customers.nuon.co`. See the [Customer Portal guide](/guides/customer-portal) for setup.
+![Branded Customer Portal](/images/concepts/customer-portal/branded-portal.png)
 
-## Your Own Product
+## What customers can do
 
-All Nuon functionality is available through the [Control API](/nuon-api) and [Go SDK](/sdks), so you can build install management directly into your own application. This lets you embed the BYOC experience in your existing product, with full control over the UX. See the [integration guide](/guides/control-plane-integration) for API examples covering the full install lifecycle.
+From the portal, customers can:
 
-## CLI and Dashboard
+- Browse the catalog of apps you publish to them
+- Install an app into their own cloud account via CloudFormation / Azure Resource Group / GCP link
+- Supply any `user_configurable` [inputs](/concepts/app-inputs) during install
+- Approve provisioning and subsequent changes
+- Monitor audit logs, health checks and install status
+- See stack, sandbox, components, roles and policies
 
-Vendors can also manage installs entirely through the [CLI](/cli) and [Dashboard](/dashboard) without exposing any interface to the customer, handling provisioning, approvals, and maintenance on their behalf.
+Vendors control which apps a customer sees, which inputs they can edit, and which approval style applies — one-click "approve all" versus step-by-step review.
+
+## The vendor view
+
+Vendors see customer-portal-created installs in the [dashboard](/concepts/dashboard) like a regular install.
+
+## Setting up the portal
+
+For portal setup, branding, input visibility controls, and branded single-use install links, see the [Customer Portal guide](/guides/customer-portal).
