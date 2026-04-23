@@ -100,7 +100,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 		},
 	})
 
-	h.fireCallbacks(ctx, callback.OnValidate)
+	h.fireCallbacks(ctx, callback.OnValidate, "")
 
 	return nil, nil
 }

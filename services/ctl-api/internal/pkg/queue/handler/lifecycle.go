@@ -75,12 +75,13 @@ func (h *handler) runBeforePhase(ctx workflow.Context, event signal.SignalPhaseE
 
 // fireCallbacks invokes callbacks for the given event as a best-effort operation.
 // Uses a disconnected context so callbacks don't block or fail the signal.
-func (h *handler) fireCallbacks(ctx workflow.Context, event callback.Event) {
+func (h *handler) fireCallbacks(ctx workflow.Context, event callback.Event, errMessage string) {
 	dctx, _ := workflow.NewDisconnectedContext(ctx)
 	_ = callback.AwaitInvokeCallbacks(dctx, &callback.InvokeCallbacksRequest{
 		QueueSignalID: h.queueSignalID,
 		QueueID:       h.queueID,
 		Event:         event,
+		ErrMessage:    errMessage,
 	})
 }
 

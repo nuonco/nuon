@@ -39,6 +39,7 @@ type InvokeCallbacksRequest struct {
 	QueueSignalID string `json:"queue_signal_id" validate:"required"`
 	QueueID       string `json:"queue_id" validate:"required"`
 	Event         Event  `json:"event" validate:"required"`
+	ErrMessage    string `json:"err_message,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -73,6 +74,7 @@ func (a *Activities) InvokeCallbacks(ctx context.Context, req *InvokeCallbacksRe
 		Event:         req.Event,
 		QueueSignalID: req.QueueSignalID,
 		QueueID:       req.QueueID,
+		ErrMessage:    req.ErrMessage,
 	}
 
 	for _, cb := range callbacks {

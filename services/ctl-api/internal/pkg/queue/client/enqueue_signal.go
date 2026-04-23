@@ -16,17 +16,12 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
 
-type CallbackRequest struct {
-	Event         callback.Event         `validate:"required"`
-	UpdateHandler signaldb.UpdateHandler `validate:"required"`
-}
-
 type EnqueueSignalRequest struct {
 	QueueID   string        `validate:"required"`
 	Signal    signal.Signal `validate:"required"`
 	OwnerID   string
 	OwnerType string
-	Callbacks []CallbackRequest
+	Callbacks []callback.CallbackRequest
 }
 
 // @temporal-gen-v2 activity

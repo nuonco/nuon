@@ -64,7 +64,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 		},
 	})
 
-	h.fireCallbacks(ctx, callback.OnExecute)
+	h.fireCallbacks(ctx, callback.OnExecute, "")
 
 	err := h.runSignalExecute(execCtx)
 	dur := workflow.Now(ctx).Sub(start)
@@ -84,7 +84,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 					"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
-			h.fireCallbacks(ctx, callback.OnError)
+			h.fireCallbacks(ctx, callback.OnError, panicErr.Error())
 			return nil, panicErr
 		}
 
@@ -102,7 +102,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		h.fireCallbacks(ctx, callback.OnError)
+		h.fireCallbacks(ctx, callback.OnError, execErr.Error())
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
 			execErr.Error(),
@@ -118,7 +118,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 		},
 	})
 
-	h.fireCallbacks(ctx, callback.OnSuccess)
+	h.fireCallbacks(ctx, callback.OnSuccess, "")
 
 	return nil, nil
 }
