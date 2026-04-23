@@ -72,10 +72,42 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 				zap.String("queue-signal-id", queueSignal.ID),
 				zap.Error(statusErr))
 		}
-		return signalErr
 	}
 
-	return nil
+	q.fireCallbackIfRegistered(ctx, l, queueSignal, signalErr)
+
+	return signalErr
+}
+
+// fireCallbackIfRegistered fires the caller-registered callback (if any) for
+// this queue signal. Non-fatal: the signal status is already persisted to the
+// DB, so a failed callback just means the caller may block slightly longer or
+// fall back to AwaitSignal.
+func (q *queue) fireCallbackIfRegistered(ctx workflow.Context, l *zap.Logger, qs *app.QueueSignal, signalErr error) {
+	if qs.CallbackWorkflowID == "" {
+		return
+	}
+
+	payload := handleractivities.CallbackPayload{
+		QueueSignalID: qs.ID,
+		Success:       signalErr == nil,
+	}
+	if signalErr != nil {
+		payload.ErrorMessage = signalErr.Error()
+	}
+
+	if err := handleractivities.AwaitFireQueueCallback(ctx, handleractivities.FireQueueCallbackRequest{
+		QueueSignalID: qs.ID,
+		WorkflowID:    qs.CallbackWorkflowID,
+		Namespace:     qs.CallbackNamespace,
+		UpdateName:    qs.CallbackUpdateName,
+		Payload:       payload,
+	}); err != nil {
+		l.Warn("failed to fire queue callback",
+			zap.String("queue-signal-id", qs.ID),
+			zap.String("callback-workflow-id", qs.CallbackWorkflowID),
+			zap.Error(err))
+	}
 }
 
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {

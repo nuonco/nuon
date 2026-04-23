@@ -49,18 +49,12 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return w.pollJob(ctx, req)
 	}
 
-	queueSignalID, err := w.queueJob(ctx, req.RunnerID, req.JobID)
+	usedQueue, err := w.queueJob(ctx, req)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to queue job")
 	}
 
-	if queueSignalID != "" {
-		// Queue path: await signal completion via Temporal workflow updates
-		// instead of polling the job status.
-		if _, err := queueclient.AwaitAwaitSignal(ctx, queueSignalID); err != nil {
-			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
-		}
-	} else {
+	if !usedQueue {
 		// Legacy event loop path: poll job status.
 		if _, err := w.pollJob(ctx, req); err != nil {
 			return app.RunnerJobStatus(""), err
@@ -75,12 +69,18 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	return job.Status, nil
 }
 
-// queueJob dispatches the job for execution. Returns the queue signal ID when the
-// queue path is used (non-empty string), or empty string for the legacy event loop path.
-func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) (string, error) {
+// queueJob dispatches the job for execution and, on the queue path, blocks
+// until the queued signal completes via a push-based callback. Returns true
+// when the queue path was used (and signal completion has already been
+// awaited), false when the legacy event loop path was used and the caller
+// must poll job status itself.
+func (j *Workflows) queueJob(ctx workflow.Context, req *ExecuteJobRequest) (bool, error) {
+	runnerID := req.RunnerID
+	jobID := req.JobID
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "expected a log stream in the context to poll job")
+		return false, errors.Wrap(err, "expected a log stream in the context to poll job")
 	}
 
 	// Check if this runner uses queue-based job dispatch (parallel-runner-jobs feature flag).
@@ -91,21 +91,20 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) (stri
 		JobID:    jobID,
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "unable to check runner job group queue")
+		return false, errors.Wrap(err, "unable to check runner job group queue")
 	}
 
 	if queueResp.QueueID != "" {
 		l.Info("queueing job via job-group queue", zap.String("runner-id", runnerID), zap.String("queue-id", queueResp.QueueID))
-		enqueueResp, err := queueclient.AwaitEnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		if err := queueclient.AwaitSignalViaCallback(ctx, &queueclient.EnqueueSignalRequest{
 			QueueID:   queueResp.QueueID,
 			Signal:    &processjobsignal.Signal{RunnerID: runnerID, JobID: jobID},
 			OwnerID:   jobID,
 			OwnerType: "runner_jobs",
-		})
-		if err != nil {
-			return "", errors.Wrap(err, "unable to enqueue job to queue")
+		}); err != nil {
+			return true, errors.Wrap(err, "queue signal failed")
 		}
-		return enqueueResp.ID, nil
+		return true, nil
 	}
 
 	// Legacy path: dispatch through the runner event loop.
@@ -115,7 +114,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) (stri
 		JobID: jobID,
 	})
 
-	return "", nil
+	return false, nil
 }
 
 func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {

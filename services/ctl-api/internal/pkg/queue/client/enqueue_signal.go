@@ -20,6 +20,20 @@ type EnqueueSignalRequest struct {
 	Signal    signal.Signal `validate:"required"`
 	OwnerID   string
 	OwnerType string
+
+	// Optional. When set, the queue handler fires a workflow update to
+	// this target when the signal finishes (success or error). See
+	// AwaitSignalViaCallback for the caller-side helper that registers
+	// itself as the target.
+	Callback *CallbackRef
+}
+
+// CallbackRef identifies a workflow + update handler to notify when a
+// queued signal finishes processing.
+type CallbackRef struct {
+	WorkflowID string
+	Namespace  string
+	UpdateName string
 }
 
 // @temporal-gen-v2 activity
@@ -48,6 +62,12 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
 		},
+	}
+
+	if req.Callback != nil {
+		queueSignal.CallbackWorkflowID = req.Callback.WorkflowID
+		queueSignal.CallbackNamespace = req.Callback.Namespace
+		queueSignal.CallbackUpdateName = req.Callback.UpdateName
 	}
 
 	if res := c.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {

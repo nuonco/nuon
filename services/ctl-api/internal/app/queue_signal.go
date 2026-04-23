@@ -43,6 +43,12 @@ type QueueSignal struct {
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
+
+	// Optional callback target. When set, the queue handler fires a workflow
+	// update to this target when the signal finishes (success or error).
+	CallbackWorkflowID string `json:"callback_workflow_id,omitempty" gorm:"type:text" temporaljson:"callback_workflow_id,omitzero,omitempty"`
+	CallbackNamespace  string `json:"callback_namespace,omitempty" gorm:"type:text" temporaljson:"callback_namespace,omitzero,omitempty"`
+	CallbackUpdateName string `json:"callback_update_name,omitempty" gorm:"type:text" temporaljson:"callback_update_name,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {

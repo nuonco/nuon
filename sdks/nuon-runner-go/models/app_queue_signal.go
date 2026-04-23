@@ -19,6 +19,16 @@ import (
 // swagger:model app.QueueSignal
 type AppQueueSignal struct {
 
+	// callback namespace
+	CallbackNamespace string `json:"callback_namespace,omitempty"`
+
+	// callback update name
+	CallbackUpdateName string `json:"callback_update_name,omitempty"`
+
+	// Optional callback target. When set, the queue handler fires a workflow
+	// update to this target when the signal finishes (success or error).
+	CallbackWorkflowID string `json:"callback_workflow_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 

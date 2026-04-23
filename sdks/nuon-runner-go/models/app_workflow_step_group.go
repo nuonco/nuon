@@ -41,6 +41,9 @@ type AppWorkflowStepGroup struct {
 	// queue signal
 	QueueSignal *AppQueueSignal `json:"queue_signal,omitempty"`
 
+	// result directive
+	ResultDirective string `json:"result_directive,omitempty"`
+
 	// status
 	Status *AppCompositeStatus `json:"status,omitempty"`
 
