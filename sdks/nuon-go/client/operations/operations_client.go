@@ -644,6 +644,10 @@ type ClientService interface {
 
 	GetWorkflowStepApprovalContents(params *GetWorkflowStepApprovalContentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsOK, error)
 
+	GetWorkflowStepGroup(params *GetWorkflowStepGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupOK, error)
+
+	GetWorkflowStepGroups(params *GetWorkflowStepGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsOK, error)
+
 	GetWorkflowSteps(params *GetWorkflowStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsOK, error)
 
 	GetWorkflows(params *GetWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowsOK, error)
@@ -13731,6 +13735,98 @@ func (a *Client) GetWorkflowStepApprovalContents(params *GetWorkflowStepApproval
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalContents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepGroup gets a workflow step group
+
+Get a single workflow step group by ID, including its nested steps.
+*/
+func (a *Client) GetWorkflowStepGroup(params *GetWorkflowStepGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroup",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/{workflow_id}/step-groups/{step_group_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroup: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepGroups gets all step groups for a workflow
+
+Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
+*/
+func (a *Client) GetWorkflowStepGroups(params *GetWorkflowStepGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroups",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/{workflow_id}/step-groups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroups: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
