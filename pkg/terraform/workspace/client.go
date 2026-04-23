@@ -161,4 +161,6 @@ type Terraform interface {
 	// ShowPlanFileRaw reads a given plan file and outputs the plan in a
 	// human-friendly, opaque format.
 	ShowPlanFileRaw(ctx context.Context, planPath string, opts ...tfexec.ShowOption) (string, error)
+	// StateMv represents the terraform state mv subcommand.
+	StateMv(ctx context.Context, source, destination string, opts ...tfexec.StateMvCmdOption) error
 }

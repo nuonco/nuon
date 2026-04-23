@@ -8,11 +8,70 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
+
+func TestGetPoliciesStableKeys(t *testing.T) {
+	p := &Planner{}
+
+	policies := []app.AppPolicyConfig{
+		{
+			Type: config.AppPolicyTypeKubernetesCluster,
+			Contents: `kind: ClusterRole
+metadata:
+  name: kyverno:linkerd:manage
+`,
+		},
+		{
+			Type: config.AppPolicyTypeKubernetesCluster,
+			Contents: `kind: ClusterPolicy
+metadata:
+  name: linkerd-authz-for-restate
+`,
+		},
+	}
+
+	// Run twice with the slice reordered — the resulting map must be identical.
+	first, err := p.getPolicies(&app.AppPoliciesConfig{Policies: policies})
+	require.NoError(t, err)
+
+	reversed := []app.AppPolicyConfig{policies[1], policies[0]}
+	second, err := p.getPolicies(&app.AppPoliciesConfig{Policies: reversed})
+	require.NoError(t, err)
+
+	assert.Equal(t, first, second, "reordering policies must not change the rendered key→content map")
+	assert.Contains(t, first, "clusterrole-kyverno-linkerd-manage.yaml")
+	assert.Contains(t, first, "clusterpolicy-linkerd-authz-for-restate.yaml")
+}
+
+func TestGetPoliciesDuplicateKeyErrors(t *testing.T) {
+	p := &Planner{}
+
+	policies := []app.AppPolicyConfig{
+		{
+			Type: config.AppPolicyTypeKubernetesCluster,
+			Contents: `kind: ClusterRole
+metadata:
+  name: dup
+`,
+		},
+		{
+			Type: config.AppPolicyTypeKubernetesCluster,
+			Contents: `kind: ClusterRole
+metadata:
+  name: dup
+`,
+		},
+	}
+
+	_, err := p.getPolicies(&app.AppPoliciesConfig{Policies: policies})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate policy manifest key")
+}
 
 func TestGetRoleForSandbox(t *testing.T) {
 	p := &Planner{}
