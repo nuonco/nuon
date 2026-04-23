@@ -242,7 +242,7 @@ BREAK:
 		zap.Duration("duration", duration),
 	)
 
-	if cfg.ErrorMessage != "" {
+	if cfg != nil && cfg.ErrorMessage != "" {
 		l.Info("sandbox: error message set for job, returning error",
 			zap.String("job_type", string(job.Type)),
 			zap.String("error_message", cfg.ErrorMessage),

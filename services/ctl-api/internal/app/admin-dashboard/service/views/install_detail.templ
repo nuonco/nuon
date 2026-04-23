@@ -120,6 +120,8 @@ templ InstallDetail(
 						<div class="text-sm font-mono">{ install.UpdatedAt.Format("2006-01-02 15:04") }</div>
 					</div>
 				</div>
+				<!-- Labels -->
+				@InstallLabelsSection(install)
 			</div>
 			<!-- Active Deployments Section -->
 			<div class="mt-6">

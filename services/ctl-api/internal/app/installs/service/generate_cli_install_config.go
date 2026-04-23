@@ -63,7 +63,8 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 
 	installCfg := config.Install{
-		Name: install.Name,
+		Name:   install.Name,
+		Labels: map[string]string(install.Labels),
 	}
 
 	if install.AWSAccount != nil {

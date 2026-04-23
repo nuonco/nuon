@@ -12,6 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
+import { Badge } from '@/components/common/Badge'
 import type { TCloudPlatform, TInstall } from '@/types'
 
 const InstallNameSkeleton = () => (
@@ -60,6 +61,7 @@ export type InstallRow = {
   appHref: string
   appName: string
   installId: string
+  labels: ReactNode
   name: string
   nameHref: string
   region?: ReactNode
@@ -148,6 +150,21 @@ export function parseInstallsToTableData(
         iconSize="20"
       />
     ),
+    labels: (() => {
+      const lbls = install.labels
+      if (!lbls || Object.keys(lbls).length === 0) return null
+      return (
+        <span className="flex flex-wrap gap-1">
+          {Object.keys(lbls)
+            .sort()
+            .map((k) => (
+              <Badge key={k} variant="code" size="sm" theme="neutral">
+                {k}: {lbls[k]}
+              </Badge>
+            ))}
+        </span>
+      )
+    })(),
     activity: <ActivityCell install={install} />,
     action: (
       <div className="hidden md:block">
@@ -201,6 +218,12 @@ const columns: ColumnDef<InstallRow>[] = [
     accessorKey: 'region',
     header: 'Region',
     cell: (info) => <Text>{info.getValue() as string}</Text>,
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'labels',
+    header: 'Labels',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,
@@ -263,6 +286,7 @@ export const InstallsTableSkeleton = () => {
     region: <RegionSkeleton />,
     statuses: <StatusesSkeleton />,
     platform: <PlatformSkeleton />,
+    labels: <Skeleton height="14px" width="100px" />,
     activity: <Skeleton height="14px" width="80px" />,
     action: '',
   }))
@@ -295,6 +319,12 @@ export const InstallsTableSkeleton = () => {
       enableSorting: true,
       accessorKey: 'region',
       header: 'Region',
+      cell: (info) => info.getValue() as ReactNode,
+    },
+    {
+      enableSorting: false,
+      accessorKey: 'labels',
+      header: 'Labels',
       cell: (info) => info.getValue() as ReactNode,
     },
     {

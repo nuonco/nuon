@@ -14,9 +14,10 @@ import (
 )
 
 type CreateComponentRequest struct {
-	Name         string   `json:"name" validate:"required,interpolated_name"`
-	VarName      string   `json:"var_name" validate:"interpolated_name"`
-	Dependencies []string `json:"dependencies"`
+	Name         string            `json:"name" validate:"required,interpolated_name"`
+	VarName      string            `json:"var_name" validate:"interpolated_name"`
+	Dependencies []string          `json:"dependencies"`
+	Labels       map[string]string `json:"labels,omitempty"`
 }
 
 func (c *CreateComponentRequest) Validate(v *validator.Validate) error {
@@ -83,5 +84,6 @@ func (s *service) createComponent(ctx *gin.Context, appID string, req *CreateCom
 		Name:         req.Name,
 		VarName:      req.VarName,
 		Dependencies: req.Dependencies,
+		Labels:       req.Labels,
 	})
 }

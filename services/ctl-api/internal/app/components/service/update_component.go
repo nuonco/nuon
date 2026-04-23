@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -71,7 +72,8 @@ type UpdateComponentRequest struct {
 	Name    string `json:"name" validate:"required,interpolated_name"`
 	VarName string `json:"var_name" validate:"interpolated_name"`
 
-	Dependencies []string `json:"dependencies"`
+	Dependencies []string          `json:"dependencies"`
+	Labels       map[string]string `json:"labels,omitempty"`
 }
 
 func (c *UpdateComponentRequest) Validate(v *validator.Validate) error {
@@ -140,9 +142,11 @@ func (s *service) updateComponent(ctx context.Context, componentID string, req *
 
 	res := s.db.WithContext(ctx).
 		Model(&currentComponent).
+		Select("name", "var_name", "labels").
 		Updates(app.Component{
 			Name:    req.Name,
 			VarName: req.VarName,
+			Labeled: labels.Labeled{Labels: labels.Labels(req.Labels)},
 		})
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get component")

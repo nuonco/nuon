@@ -1,10 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { ManagementDropdownContainer as ManagementDropdown } from '@/components/components/management/ManagementDropdown'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { getComponents } from '@/lib'
+import { getComponents, getComponentLabelKeys } from '@/lib'
 import { ComponentsTable, parseComponentToTableData } from './ComponentsTable'
 
 const LIMIT = 20
@@ -29,6 +30,7 @@ export const ComponentsTableContainer = ({
       offset,
       searchParams.get('q'),
       searchParams.get('types'),
+      searchParams.get('labels'),
     ],
     queryFn: () =>
       getComponents({
@@ -38,6 +40,7 @@ export const ComponentsTableContainer = ({
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
+        labels: searchParams.get('labels') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -49,6 +52,10 @@ export const ComponentsTableContainer = ({
       isLoading={isLoading}
       filterActions={
         <div className="flex items-center gap-3">
+          <LabelFilterDropdown
+            queryKey={['component-label-keys', org.id, app.id]}
+            queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: app.id })}
+          />
           <ComponentTypeFilterDropdown />
           <ManagementDropdown />
         </div>

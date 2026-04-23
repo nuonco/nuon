@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -12,6 +13,7 @@ import { ActionTriggerType } from '../ActionTriggerType'
 export type TActionRow = {
   actionId: string
   actionName: string
+  labels: ReactNode
   actionTriggers: ReactNode
   actionSteps: ReactNode
   href: string
@@ -41,6 +43,21 @@ export function parseActionsToTableData(
             ))}
         </ol>
       ),
+      labels: (() => {
+        const lbls = action.labels
+        if (!lbls || Object.keys(lbls).length === 0) return null
+        return (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(lbls)
+              .sort()
+              .map((k) => (
+                <Badge key={k} variant="code" size="sm" theme="neutral">
+                  {k}: {lbls[k]}
+                </Badge>
+              ))}
+          </span>
+        )
+      })(),
       actionTriggers: (
         <div className="flex flex-wrap gap-2">
           {action?.configs?.at(-1)?.triggers?.map((trigger) => (
@@ -74,6 +91,12 @@ const columns: ColumnDef<TActionRow>[] = [
     enableSorting: true,
   },
   {
+    enableSorting: false,
+    accessorKey: 'labels',
+    header: 'Labels',
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
     accessorKey: 'actionTriggers',
     header: 'Triggers',
     cell: (info) => info.getValue() as ReactNode,
@@ -101,12 +124,14 @@ const columns: ColumnDef<TActionRow>[] = [
 interface IActionsTable {
   data: TActionRow[]
   isLoading: boolean
+  filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
 export const ActionsTable = ({
   data,
   isLoading,
+  filterActions,
   pagination,
 }: IActionsTable) => {
   if (isLoading) {
@@ -127,6 +152,7 @@ export const ActionsTable = ({
           </Link>
         ),
       }}
+      filterActions={filterActions}
       pagination={pagination}
       searchPlaceholder="Search action name..."
     />

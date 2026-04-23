@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -30,6 +31,7 @@ export type InstallComponentRow = {
   href: string
   action: ReactNode
   dependencies: ReactNode
+  labels: ReactNode
 }
 
 export function parseInstallComponentSummaryToTableData(
@@ -91,6 +93,21 @@ export function parseInstallComponentSummaryToTableData(
       dependencies: (
         <InstallComponentDependencies deps={deps?.at(depIndex)?.dependencies} />
       ),
+      labels: (() => {
+        const lbls = component.component?.labels
+        if (!lbls || Object.keys(lbls).length === 0) return null
+        return (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(lbls)
+              .sort()
+              .map((k) => (
+                <Badge key={k} variant="code" size="sm" theme="neutral">
+                  {k}: {lbls[k]}
+                </Badge>
+              ))}
+          </span>
+        )
+      })(),
       href: `/${orgId}/installs/${installId}/components/${component.component_id}`,
       action: (
         <div className="hidden md:block">
@@ -131,6 +148,12 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     cell: (info) => (
       <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
     ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'labels',
+    header: 'Labels',
+    cell: (info) => info.getValue() as ReactNode,
   },
   {
     enableSorting: false,
