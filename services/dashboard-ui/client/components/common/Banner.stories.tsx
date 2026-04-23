@@ -2,6 +2,7 @@ export default {
   title: 'Common/Banner',
 }
 
+import { useState } from 'react'
 import { Banner } from './Banner'
 import { Button } from './Button'
 import { Text } from './Text'
@@ -278,3 +279,90 @@ export const ComplexContent = () => (
     </div>
   </div>
 )
+
+export const Dismissible = () => {
+  const [visible, setVisible] = useState({
+    info: true,
+    warn: true,
+    success: true,
+    neutral: true,
+    brand: true,
+  })
+
+  const reset = () =>
+    setVisible({ info: true, warn: true, success: true, neutral: true, brand: true })
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Dismissible Banners</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Pass{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            onDismiss
+          </code>{' '}
+          to show an X icon on hover. Clicking it dismisses the banner.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {visible.info && (
+          <Banner theme="info" onDismiss={() => setVisible((v) => ({ ...v, info: false }))}>
+            <div className="flex flex-col">
+              <Text weight="strong">Dismissible info banner</Text>
+              <Text variant="subtext" theme="neutral">
+                Hover to reveal the close icon on the right.
+              </Text>
+            </div>
+          </Banner>
+        )}
+        {visible.warn && (
+          <Banner theme="warn" onDismiss={() => setVisible((v) => ({ ...v, warn: false }))}>
+            <div className="flex flex-col">
+              <Text weight="strong">Dismissible warning</Text>
+              <Text variant="subtext" theme="neutral">
+                This warning can be dismissed by the user.
+              </Text>
+            </div>
+          </Banner>
+        )}
+        {visible.success && (
+          <Banner theme="success" onDismiss={() => setVisible((v) => ({ ...v, success: false }))}>
+            <div className="flex flex-col">
+              <Text weight="strong">Deployment succeeded</Text>
+              <Text variant="subtext" theme="neutral">
+                All components deployed. Dismiss when acknowledged.
+              </Text>
+            </div>
+          </Banner>
+        )}
+        {visible.neutral && (
+          <Banner theme="neutral" onDismiss={() => setVisible((v) => ({ ...v, neutral: false }))}>
+            <div className="flex flex-col">
+              <Text weight="strong">Step was skipped</Text>
+              <Text variant="subtext" theme="neutral">
+                This step was skipped during the workflow run.
+              </Text>
+            </div>
+          </Banner>
+        )}
+        {visible.brand && (
+          <Banner theme="brand" onDismiss={() => setVisible((v) => ({ ...v, brand: false }))}>
+            <div className="flex flex-col">
+              <Text weight="strong">Welcome to Nuon</Text>
+              <Text variant="subtext" theme="neutral">
+                Dismiss this onboarding banner when ready.
+              </Text>
+            </div>
+          </Banner>
+        )}
+
+        {Object.values(visible).some((v) => !v) && (
+          <Button variant="secondary" size="sm" onClick={reset}>
+            Reset all banners
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
