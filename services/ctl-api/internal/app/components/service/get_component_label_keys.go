@@ -19,7 +19,7 @@ import (
 // @Security				APIKey
 // @Security				OrgID
 // @Success				200	{object}	map[string][]string
-// @Router					/v1/apps/{app_id}/components/labels [GET]
+// @Router					/v1/apps/{app_id}/components/label-keys [GET]
 func (s *service) GetComponentLabelKeys(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

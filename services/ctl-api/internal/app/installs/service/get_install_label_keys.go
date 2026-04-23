@@ -17,7 +17,7 @@ import (
 // @Security				APIKey
 // @Security				OrgID
 // @Success				200	{object}	map[string][]string
-// @Router					/v1/installs/labels [GET]
+// @Router					/v1/installs/label-keys [GET]
 func (s *service) GetInstallLabelKeys(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

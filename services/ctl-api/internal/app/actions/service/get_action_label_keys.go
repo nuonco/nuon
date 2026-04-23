@@ -19,7 +19,7 @@ import (
 // @Security				APIKey
 // @Security				OrgID
 // @Success				200	{object}	map[string][]string
-// @Router					/v1/apps/{app_id}/actions/labels [GET]
+// @Router					/v1/apps/{app_id}/actions/label-keys [GET]
 func (s *service) GetActionLabelKeys(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
