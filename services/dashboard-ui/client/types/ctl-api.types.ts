@@ -78,6 +78,18 @@ export type TPolicyResult = components['schemas']['app.PolicyResult']
 export type TPolicyViolation = components['schemas']['app.PolicyViolation']
 export type TPolicyInputRef = components['schemas']['app.PolicyInputRef']
 
+// policy analytics
+export type TPolicyAnalyticsSummary =
+  components['schemas']['service.PolicyAnalyticsSummary']
+export type TPolicyAnalyticsTimeseries =
+  components['schemas']['service.PolicyAnalyticsTimeseries']
+export type TTimeseriesBucket =
+  components['schemas']['service.TimeseriesBucket']
+export type TSeriesPoint = components['schemas']['service.SeriesPoint']
+export type TPolicyAnalyticsBreakdown =
+  components['schemas']['service.PolicyAnalyticsBreakdown']
+export type TBreakdownEntry = components['schemas']['service.BreakdownEntry']
+
 // component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =

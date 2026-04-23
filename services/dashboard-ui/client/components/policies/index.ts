@@ -1,4 +1,5 @@
 export * from './PoliciesTable'
+export * from './PolicyAnalytics'
 export * from './PolicyReportPanel'
 export * from './PolicyReportsFilter'
 export * from './PolicyReportsTable'
