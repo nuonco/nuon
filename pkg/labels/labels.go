@@ -122,4 +122,3 @@ func ParseLabelsQuery(raw string) Labels {
 	}
 	return result
 }
-
