@@ -39,7 +39,7 @@ type AppInstallRoleUsage struct {
 	RoleName string `json:"role_name,omitempty"`
 
 	// role selection trace
-	RoleSelectionTrace []*AppRunnerJobPermissionTraceRecord `json:"role_selection_trace"`
+	RoleSelectionTrace []*AppInstallRoleSelectionRecord `json:"role_selection_trace"`
 
 	// role source
 	RoleSource string `json:"role_source,omitempty"`

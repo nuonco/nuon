@@ -53,6 +53,9 @@ type AppRunnerJob struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// install role usage
+	InstallRoleUsage *AppInstallRoleUsage `json:"install_role_usage,omitempty"`
+
 	// json
 	JSON *AppRunnerJobPlan `json:"json,omitempty"`
 
@@ -123,6 +126,10 @@ func (m *AppRunnerJob) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateGroup(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallRoleUsage(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -198,6 +205,29 @@ func (m *AppRunnerJob) validateGroup(formats strfmt.Registry) error {
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJob) validateInstallRoleUsage(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallRoleUsage) { // not required
+		return nil
+	}
+
+	if m.InstallRoleUsage != nil {
+		if err := m.InstallRoleUsage.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("install_role_usage")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("install_role_usage")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -324,6 +354,10 @@ func (m *AppRunnerJob) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateInstallRoleUsage(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateJSON(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -396,6 +430,31 @@ func (m *AppRunnerJob) contextValidateGroup(ctx context.Context, formats strfmt.
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppRunnerJob) contextValidateInstallRoleUsage(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InstallRoleUsage != nil {
+
+		if swag.IsZero(m.InstallRoleUsage) { // not required
+			return nil
+		}
+
+		if err := m.InstallRoleUsage.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("install_role_usage")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("install_role_usage")
+			}
+
+			return err
+		}
 	}
 
 	return nil
