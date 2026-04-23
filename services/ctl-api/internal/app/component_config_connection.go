@@ -59,6 +59,7 @@ type ComponentConfigConnection struct {
 	DriftSchedule                     string                             `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
 	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
+	MaxAutoRetries                    *int                               `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -216,4 +217,11 @@ func (c *ComponentConfigConnection) GetDeployTimeout() *time.Duration {
 		return &d
 	}
 	return nil
+}
+
+func (c *ComponentConfigConnection) GetMaxAutoRetries() int {
+	if c.MaxAutoRetries != nil {
+		return *c.MaxAutoRetries
+	}
+	return 0 // default to disabled
 }
