@@ -18,9 +18,21 @@ import (
 )
 
 func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
+	return j.updateJobExecutionStatusWithDescription(ctx, jobID, jobExecutionID, status, "")
+}
+
+// jobExecutionStatusDescriptionMaxLen caps the error description sent to the API
+// so a long stack trace doesn't bloat the stored status history.
+const jobExecutionStatusDescriptionMaxLen = 2048
+
+func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
+	if len(description) > jobExecutionStatusDescriptionMaxLen {
+		description = description[:jobExecutionStatusDescriptionMaxLen] + "…(truncated)"
+	}
 	fn := func(ctx context.Context) error {
 		if _, err := j.apiClient.UpdateJobExecution(ctx, jobID, jobExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{
-			Status: status,
+			Status:            status,
+			StatusDescription: description,
 		}); err != nil {
 			return fmt.Errorf("unable to update job execution status: %w", err)
 		}
@@ -74,7 +86,8 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 	recovered := pc.Recovered()
 	if recovered != nil {
 		status := models.AppRunnerJobExecutionStatusFailed
-		if updateErr := j.updateJobExecutionStatus(ctx, job.ID, jobExecution.ID, status); updateErr != nil {
+		description := fmt.Sprintf("panic in %s: %s", step.name, recovered.String())
+		if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, jobExecution.ID, status, description); updateErr != nil {
 			j.errRecorder.Record("update_job_execution", updateErr)
 		}
 
@@ -115,7 +128,8 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 
 	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
-	if updateErr := j.updateJobExecutionStatus(ctx, job.ID, jobExecution.ID, status); updateErr != nil {
+	description := fmt.Sprintf("%s: %s", step.name, err.Error())
+	if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, jobExecution.ID, status, description); updateErr != nil {
 		j.errRecorder.Record("update_job_execution", updateErr)
 	}
 

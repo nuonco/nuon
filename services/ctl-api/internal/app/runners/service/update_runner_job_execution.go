@@ -12,7 +12,8 @@ import (
 )
 
 type UpdateRunnerJobExecutionRequest struct {
-	Status app.RunnerJobExecutionStatus `json:"status"`
+	Status            app.RunnerJobExecutionStatus `json:"status"`
+	StatusDescription string                       `json:"status_description,omitempty"`
 }
 
 // @ID						UpdateRunnerJobExecution
@@ -53,6 +54,30 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 }
 
 func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, runnerJobExecutionID string, req UpdateRunnerJobExecutionRequest) (*app.RunnerJobExecution, error) {
+	updates := app.RunnerJobExecution{
+		Status: req.Status,
+	}
+
+	if req.StatusDescription != "" {
+		current := app.RunnerJobExecution{}
+		if err := s.db.WithContext(ctx).
+			Where(&app.RunnerJobExecution{
+				RunnerJobID: runnerJobID,
+				ID:          runnerJobExecutionID,
+			}).
+			First(&current).Error; err != nil {
+			return nil, fmt.Errorf("unable to load current job execution: %w", err)
+		}
+
+		newComposite := app.NewCompositeStatus(ctx, app.Status(req.Status))
+		newComposite.StatusHumanDescription = truncateStatusDescription(req.StatusDescription)
+		newComposite.History = append([]app.CompositeStatus{current.StatusV2}, current.StatusV2.History...)
+		if len(newComposite.History) > 0 {
+			newComposite.History[0].History = nil
+		}
+		updates.StatusV2 = newComposite
+	}
+
 	jobExecution := app.RunnerJobExecution{}
 	res := s.db.WithContext(ctx).
 		Model(&jobExecution).
@@ -60,12 +85,21 @@ func (s *service) updateRunnerJobExecution(ctx context.Context, runnerJobID, run
 			RunnerJobID: runnerJobID,
 			ID:          runnerJobExecutionID,
 		}).
-		Updates(app.RunnerJobExecution{
-			Status: req.Status,
-		})
+		Updates(updates)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to update runner job execution status: %w", res.Error)
 	}
 
 	return &jobExecution, nil
+}
+
+// statusDescriptionMaxLen caps stored status descriptions so a long stack trace
+// doesn't bloat the composite status jsonb column or Temporal history.
+const statusDescriptionMaxLen = 2048
+
+func truncateStatusDescription(s string) string {
+	if len(s) <= statusDescriptionMaxLen {
+		return s
+	}
+	return s[:statusDescriptionMaxLen] + "…(truncated)"
 }
