@@ -17,6 +17,10 @@ func (t timeInterval) BucketExpr(column string) string {
 func intervalForRange(start, end time.Time) timeInterval {
 	d := end.Sub(start)
 	switch {
+	case d <= 3*time.Hour:
+		return timeInterval{"15m", "toStartOfInterval(%s, INTERVAL 15 MINUTE)"}
+	case d <= 6*time.Hour:
+		return timeInterval{"30m", "toStartOfInterval(%s, INTERVAL 30 MINUTE)"}
 	case d <= 24*time.Hour:
 		return timeInterval{"hour", "toStartOfHour(%s)"}
 	case d <= 7*24*time.Hour:
