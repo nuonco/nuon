@@ -24,7 +24,7 @@ func (h *Helpers) EnqueueProcessShutdown(ctx context.Context, process *app.Runne
 		return fmt.Errorf("unable to stop process queue emitters: %w", err)
 	}
 
-        // Enqueue the process_shutdown signal
+	// Enqueue the process_shutdown signal
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   q.ID,
 		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
