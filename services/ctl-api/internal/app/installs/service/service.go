@@ -297,6 +297,15 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		orgs.GET("/admin-get-installs", s.AdminGetOrgInstalls)
 	}
 
+	// install stack version runs
+	installStackVersionRuns := api.Group("/v1/install-stack-version-runs")
+	{
+		installStackVersionRun := installStackVersionRuns.Group("/:install_stack_version_run_id")
+		{
+			installStackVersionRun.POST("/admin-trigger-stack-output-update", s.AdminTriggerInstallStackOutputUpdate)
+		}
+	}
+
 	// temp for hackathon
 	api.POST("/v1/admin-install-workflow-step-approve", s.AdminInstallWorkflowStepApprove)
 
