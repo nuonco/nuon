@@ -4,59 +4,36 @@ import fs from "node:fs";
 
 const ORG_STATE_PATH = "e2e/.auth/org.json";
 
-async function getToken(): Promise<string> {
-  const res = await fetch(`${env.adminApiUrl}/v1/general/seed-user`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Nuon-Admin-Email": env.email,
-    },
-    body: JSON.stringify({}),
-  });
-  const body = await res.text();
-  const firstJson = body.match(/^\{[^}]*\}/);
-  if (!firstJson) throw new Error(`seed-user unexpected response: ${body}`);
-  const { api_token } = JSON.parse(firstJson[0]) as { api_token: string };
-  return api_token;
-}
+let teardownStart = performance.now();
 
-async function deleteApps(token: string, orgId: string) {
-  const listRes = await fetch(`${env.publicApiUrl}/v1/apps`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "X-Nuon-Org-ID": orgId,
-    },
-  });
-  if (!listRes.ok) return;
-
-  const apps = (await listRes.json()) as { id: string }[];
-  for (const app of apps) {
-    const delRes = await fetch(`${env.publicApiUrl}/v1/apps/${app.id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Nuon-Org-ID": orgId,
-      },
-    });
-    if (!delRes.ok) {
-      const body = await delRes.text();
-      console.warn(`Failed to delete app ${app.id}: ${body}`);
-    }
-  }
+function log(message: string) {
+  const elapsed = ((performance.now() - teardownStart) / 1000).toFixed(1);
+  console.log(`[e2e teardown +${elapsed}s] ${message}`);
 }
 
 export default async function globalTeardown(_config: FullConfig) {
-  if (!fs.existsSync(ORG_STATE_PATH)) return;
+  teardownStart = performance.now();
+
+  if (!fs.existsSync(ORG_STATE_PATH)) {
+    log("no org state file found, skipping teardown");
+    return;
+  }
 
   const state = JSON.parse(fs.readFileSync(ORG_STATE_PATH, "utf-8")) as {
     orgId: string;
     createdOrg: boolean;
+    apiToken?: string;
   };
 
-  if (!state.createdOrg) return;
+  if (!state.createdOrg) {
+    log(`org ${state.orgId} was not created by setup, skipping teardown`);
+    return;
+  }
 
-  const token = await getToken();
-  await deleteApps(token, state.orgId);
+  log(`deleting org ${state.orgId} (force)...`);
+
+  // seed-user creates accounts as "seed@nuon.co", not the E2E_EMAIL.
+  const adminEmail = "seed@nuon.co";
 
   const res = await fetch(
     `${env.adminApiUrl}/v1/orgs/${state.orgId}/admin-delete`,
@@ -64,14 +41,18 @@ export default async function globalTeardown(_config: FullConfig) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Nuon-Admin-Email": env.email,
+        "X-Nuon-Admin-Email": adminEmail,
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ force: true }),
     },
   );
 
   if (!res.ok) {
     const body = await res.text();
-    console.warn(`Failed to delete test org ${state.orgId}: ${body}`);
+    log(`failed to delete org ${state.orgId}: ${body}`);
+  } else {
+    log(`org ${state.orgId} deleted`);
   }
+
+  log("teardown complete");
 }
