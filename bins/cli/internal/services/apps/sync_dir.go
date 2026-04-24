@@ -39,6 +39,14 @@ func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version str
 }
 
 func (s *Service) SyncDir(ctx context.Context, dir string, version string) error {
+	return s.syncDir(ctx, dir, version, false)
+}
+
+func (s *Service) SyncDirWithCreate(ctx context.Context, dir string, version string) error {
+	return s.syncDir(ctx, dir, version, true)
+}
+
+func (s *Service) syncDir(ctx context.Context, dir string, version string, create bool) error {
 	ui.PrintLn("syncing directory from " + dir)
 	appName, err := parse.AppNameFromDirName(dir)
 	if err != nil {
@@ -48,8 +56,21 @@ func (s *Service) SyncDir(ctx context.Context, dir string, version string) error
 
 	appID, err := lookup.AppID(ctx, s.api, appName)
 	if err != nil {
-		err = errs.WithUserFacing(err, "error looking up app id")
-		return ui.PrintError(err)
+		if !create {
+			err = errs.WithUserFacing(err, "error looking up app id")
+			return ui.PrintError(err)
+		}
+
+		ui.PrintLn(fmt.Sprintf("app %q not found, creating it", appName))
+		if err := s.Create(ctx, appName, false, true); err != nil {
+			return ui.PrintError(err)
+		}
+
+		appID, err = lookup.AppID(ctx, s.api, appName)
+		if err != nil {
+			err = errs.WithUserFacing(err, "error looking up app id after creation")
+			return ui.PrintError(err)
+		}
 	}
 
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
