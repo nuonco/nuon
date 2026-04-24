@@ -166,7 +166,7 @@ export interface paths {
      */
     get: operations["GetAppActionConfig"];
   };
-  "/v1/apps/{app_id}/actions/labels": {
+  "/v1/apps/{app_id}/actions/label-keys": {
     /**
      * get distinct label key:value pairs across all actions for an app
      * @description Returns all distinct label key:value pairs for actions in the given app.
@@ -311,7 +311,7 @@ export interface paths {
      */
     post: operations["BuildAllComponents"];
   };
-  "/v1/apps/{app_id}/components/labels": {
+  "/v1/apps/{app_id}/components/label-keys": {
     /**
      * get distinct label key:value pairs across all components for an app
      * @description Returns all distinct label key:value pairs for components in the given app.
@@ -1081,7 +1081,7 @@ export interface paths {
      */
     post: operations["CreateInstallV2"];
   };
-  "/v1/installs/labels": {
+  "/v1/installs/label-keys": {
     /**
      * get distinct label key:value pairs across all installs for an org
      * @description Returns all distinct label key:value pairs for installs in the current org.
@@ -5098,7 +5098,9 @@ export interface components {
       /** @description NOTE: for backwards compatibility, these are remaining in place. */
       install?: components["schemas"]["state.InstallState"];
       install_stack?: components["schemas"]["state.InstallStackState"];
-      labels?: components["schemas"]["state.LabelsState"];
+      labels?: {
+        [key: string]: string;
+      };
       name?: string;
       org?: components["schemas"]["state.OrgState"];
       runner?: components["schemas"]["state.RunnerState"];
@@ -6603,22 +6605,6 @@ export interface components {
       populated?: boolean;
       public_domain?: string;
       sandbox?: components["schemas"]["state.SandboxState"];
-    };
-    "state.LabelsState": {
-      actions?: {
-        [key: string]: {
-          [key: string]: string;
-        };
-      };
-      components?: {
-        [key: string]: {
-          [key: string]: string;
-        };
-      };
-      install?: {
-        [key: string]: string;
-      };
-      populated?: boolean;
     };
     "state.OrgState": {
       id?: string;
@@ -15460,6 +15446,8 @@ export interface operations {
         page?: number;
         /** @description search query for action workflow name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
       };
       path: {
         /** @description install ID */
@@ -16025,6 +16013,8 @@ export interface operations {
         page?: number;
         /** @description search query for action workflow name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
       };
       path: {
         /** @description install ID */
@@ -16640,6 +16630,8 @@ export interface operations {
         types?: string;
         /** @description search query for component name */
         q?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
