@@ -114,7 +114,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 	}
 
 	triggerName := string(triggerTyp)
-	sg.nextGroupLabeled(labels.Labels{"name": triggerName, "display_name": strings.ToUpper(triggerName[:1]) + triggerName[1:], "type": "system"})
+	sg.nextGroupLabeled(labels.Labels{"name": triggerName, "display_name": strings.ToUpper(triggerName[:1]) + triggerName[1:], "type": "system", "domain": "action"})
 
 	for _, installAction := range installActions {
 		sig := &executeactionworkflow.Signal{
@@ -172,7 +172,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		if comp.Type.IsImage() {
 			groupType = "system"
 		}
-		sg.nextGroupLabeled(labels.Labels{"name": "deploy-" + comp.Name, "display_name": "Deploy " + comp.Name, "type": groupType})
+		sg.nextGroupLabeled(labels.Labels{"name": "deploy-" + comp.Name, "display_name": "Deploy " + comp.Name, "type": groupType, "domain": "component"})
 
 		// Resolve install component ID
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
@@ -257,7 +257,7 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroupLabeled(labels.Labels{"name": "await-runner-health", "display_name": "Await runner health", "type": "system"})
+	sg.nextGroupLabeled(labels.Labels{"name": "await-runner-health", "display_name": "Await runner health", "type": "system", "domain": "system"})
 
 	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
