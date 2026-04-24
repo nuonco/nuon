@@ -12,7 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
-import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import type { TCloudPlatform, TInstall } from '@/types'
 
 const InstallNameSkeleton = () => (
@@ -158,9 +158,7 @@ export function parseInstallsToTableData(
           {Object.keys(lbls)
             .sort()
             .map((k) => (
-              <Badge key={k} variant="code" size="sm" theme="neutral">
-                {k}: {lbls[k]}
-              </Badge>
+              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} />
             ))}
         </span>
       )

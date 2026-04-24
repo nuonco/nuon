@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Banner } from '@/components/common/Banner'
 import { Status } from '@/components/common/Status'
 import { ActionCard } from '@/components/actions/ActionCard'
@@ -27,6 +28,18 @@ const registry: Record<string, NuonComponent> = {
     mapProps: (attrs) => ({
       children: attrs.children,
       theme: attrs.theme,
+      size: attrs.size,
+      variant: attrs.variant,
+    }),
+  },
+  'nuon-label-badge': {
+    component: LabelBadge,
+    mapProps: (attrs) => ({
+      label: attrs.label,
+      labelKey: attrs.key,
+      labelValue: attrs.value,
+      theme: attrs.theme,
+      keyTheme: attrs['key-theme'],
       size: attrs.size,
       variant: attrs.variant,
     }),

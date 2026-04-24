@@ -1,5 +1,6 @@
 import { Outlet, useParams, useMatch } from 'react-router'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
@@ -113,18 +114,30 @@ const InstallTemplate = () => {
           <PageHeader>
             <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between">
               <HeadingGroup>
-                <Text variant="h3" weight="stronger" level={1}>
-                  {install.name}
-                </Text>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Text variant="h3" weight="stronger" level={1}>
+                    {install.name}
+                  </Text>
+                  {install.labels &&
+                    Object.entries(install.labels).map(([key, value]) => (
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
+                    ))}
+                </div>
                 <ID>{install.id}</ID>
-                <Text variant="subtext" theme="info">
-                  Last updated{' '}
-                  <Time
-                    variant="subtext"
-                    time={install?.updated_at}
-                    format="relative"
+                <div className="flex items-center gap-3">
+                  <Text variant="subtext" theme="info">
+                    Last updated{' '}
+                    <Time
+                      variant="subtext"
+                      time={install?.updated_at}
+                      format="relative"
+                    />
+                  </Text>
+                  <AdminDashboardLink
+                    path={`/queues?owner_id=${install.id}`}
+                    label="View in admin panel"
                   />
-                </Text>
+                </div>
               </HeadingGroup>
 
               <div className="flex items-start flex-wrap gap-4 md:gap-8">
@@ -145,10 +158,6 @@ const InstallTemplate = () => {
                   </Text>
                 </LabeledValue>
                 <InstallStatusesContainer />
-                <AdminDashboardLink
-                  path={`/queues?owner_id=${install.id}`}
-                  label="View in admin panel"
-                />
                 <InstallManagementDropdown />
               </div>
             </div>

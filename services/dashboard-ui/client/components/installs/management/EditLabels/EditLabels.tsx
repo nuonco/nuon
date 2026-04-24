@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { type FormEvent, useRef, useState } from 'react'
 import { Button } from '@/components/common/Button'
+import { Input } from '@/components/common/form/Input'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Banner } from '@/components/common/Banner'
@@ -9,44 +10,49 @@ interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
   labels: Record<string, string>
   isPending: boolean
   error: any
-  onSave: (labels: Record<string, string>) => void
+  onSubmit: (labels: Record<string, string>) => void
 }
 
 export const EditLabelsModal = ({
   labels: initialLabels,
   isPending,
   error,
-  onSave,
+  onSubmit,
   ...props
 }: IEditLabelsModal) => {
-  const [labels, setLabels] = useState<Record<string, string>>({ ...initialLabels })
-  const [newKey, setNewKey] = useState('')
-  const [newValue, setNewValue] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
 
-  const handleAdd = () => {
-    const key = newKey.trim()
-    if (!key) return
-    setLabels((prev) => ({ ...prev, [key]: newValue.trim() }))
-    setNewKey('')
-    setNewValue('')
+  const initialEntries = Object.entries(initialLabels).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )
+  const [rows, setRows] = useState<number[]>(initialEntries.map((_, i) => i))
+  const nextId = useRef(initialEntries.length)
+
+  const initialValues: Record<string, string> = {}
+  initialEntries.forEach(([key, value], i) => {
+    initialValues[`label:${i}:key`] = key
+    initialValues[`label:${i}:value`] = value
+  })
+
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const formDataObj = Object.fromEntries(formData)
+
+    const labels = rows.reduce(
+      (acc, idx) => {
+        const key = (formDataObj[`label:${idx}:key`] as string)?.trim()
+        const value = (formDataObj[`label:${idx}:value`] as string)?.trim()
+        if (key) {
+          acc[key] = value || ''
+        }
+        return acc
+      },
+      {} as Record<string, string>,
+    )
+
+    onSubmit(labels)
   }
-
-  const handleRemove = (key: string) => {
-    setLabels((prev) => {
-      const next = { ...prev }
-      delete next[key]
-      return next
-    })
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAdd()
-    }
-  }
-
-  const sortedKeys = Object.keys(labels).sort()
 
   return (
     <Modal
@@ -64,81 +70,84 @@ export const EditLabelsModal = ({
         ) : (
           'Save labels'
         ),
-        onClick: () => onSave(labels),
+        onClick: () => formRef.current?.requestSubmit(),
         disabled: isPending,
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-4">
+      <form
+        ref={formRef}
+        onSubmit={handleFormSubmit}
+        className="flex flex-col gap-4"
+      >
         {error ? (
           <Banner theme="error">
             {error?.error || 'Unable to update labels'}
           </Banner>
         ) : null}
 
-        {sortedKeys.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {sortedKeys.map((key) => (
-              <div key={key} className="flex items-center gap-2">
-                <Text
-                  variant="body"
-                  className="flex-1 px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded text-sm truncate font-mono"
-                >
-                  {key}: {labels[key]}
-                </Text>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemove(key)}
-                  aria-label={`Remove label ${key}`}
-                >
-                  <Icon variant="X" size={14} />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <Text variant="body" theme="neutral">
-            No labels set.
-          </Text>
-        )}
-
-        <hr />
-
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <Text variant="label" theme="neutral" className="mb-1 block">
-              Key
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Text variant="label" weight="strong">
+              Labels
             </Text>
-            <input
-              type="text"
-              value={newKey}
-              onChange={(e) => setNewKey(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g. env"
-              className="w-full px-3 py-1.5 border rounded-md text-sm bg-transparent border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setRows((r) => [...r, nextId.current++])
+              }}
+            >
+              <Icon variant="Plus" size="16" />
+              Add label
+            </Button>
           </div>
-          <div className="flex-1">
-            <Text variant="label" theme="neutral" className="mb-1 block">
-              Value
-            </Text>
-            <input
-              type="text"
-              value={newValue}
-              onChange={(e) => setNewValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g. production"
-              className="w-full px-3 py-1.5 border rounded-md text-sm bg-transparent border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-          <Button variant="secondary" size="sm" onClick={handleAdd} disabled={!newKey.trim()}>
-            <Icon variant="PlusIcon" size={14} />
-            Add
-          </Button>
+
+          {rows.length === 0 && (
+            <Text variant="subtext">No labels added</Text>
+          )}
+
+          {rows.map((idx) => (
+            <fieldset
+              key={idx}
+              className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2"
+            >
+              <label className="flex flex-col gap-1">
+                <Text variant="label">Key</Text>
+                <Input
+                  name={`label:${idx}:key`}
+                  type="text"
+                  placeholder="e.g. env"
+                  required
+                  defaultValue={initialValues[`label:${idx}:key`] || ''}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <Text variant="label">Value</Text>
+                <Input
+                  name={`label:${idx}:value`}
+                  type="text"
+                  placeholder="e.g. production"
+                  defaultValue={initialValues[`label:${idx}:value`] || ''}
+                />
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRows((r) => r.filter((v) => v !== idx))
+                }}
+                className="mb-1"
+              >
+                <Icon variant="X" size="16" />
+              </Button>
+            </fieldset>
+          ))}
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }
