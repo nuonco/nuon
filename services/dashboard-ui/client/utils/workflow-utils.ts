@@ -105,9 +105,9 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
     const metadata = step?.status?.metadata
     if (metadata?.retries_exhausted) {
       return {
-        copy: `Step encountered an error: ${status_human_description}. This step has exhausted its automatic retry limit — rerun the workflow to try again.`,
+        copy: `This step has used all ${metadata.max_retries ?? ''} retry attempts. No further retries are possible. Rerun the workflow to start fresh.`,
         theme: 'error',
-        title: `Step ${step?.name} failed after ${metadata.max_retries} retries`,
+        title: `Step ${step?.name} failed — retries exhausted (${metadata.retry_index ?? '?'}/${metadata.max_retries ?? '?'})`,
       }
     }
     const retryInfo =
