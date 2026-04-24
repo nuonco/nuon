@@ -5,6 +5,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+function log(message: string) {
+  const elapsed = ((performance.now() - setupStart) / 1000).toFixed(1);
+  console.log(`[e2e setup +${elapsed}s] ${message}`);
+}
+
+let setupStart = performance.now();
+
 const AUTH_STATE_PATH = "e2e/.auth/user.json";
 const ORG_STATE_PATH = "e2e/.auth/org.json";
 
@@ -47,6 +54,7 @@ async function apiFetch(
 function seedApp(token: string, orgId: string, configName: string) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "e2e-app-config-"));
   try {
+    log(`cloning example-app-configs (sparse: ${configName})...`);
     execSync(
       `git clone --depth 1 --filter=blob:none --sparse https://github.com/nuonco/example-app-configs.git .`,
       { cwd: tmpDir, stdio: "inherit" },
@@ -64,25 +72,28 @@ function seedApp(token: string, orgId: string, configName: string) {
       NUON_NO_TTY: "true",
     };
 
+    log(`running: nuon apps create --name ${configName}`);
     execSync(`nuon apps create --name ${configName}`, {
       env: cliEnv,
       stdio: "inherit",
     });
+    log(`running: nuon apps sync ${configName}`);
     execSync(`nuon apps sync ${path.join(tmpDir, configName)} || true`, {
       env: cliEnv,
       stdio: "inherit",
       shell: "/bin/sh",
     });
+    log("app seeded");
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
 export default async function globalSetup(_config: FullConfig) {
-  // seed-user creates the account if it doesn't exist and returns a token.
-  // The admin middleware may append an error to the response body if the
-  // X-Nuon-Admin-Email account doesn't exist yet, resulting in two concatenated
-  // JSON objects. We parse only the first one.
+  setupStart = performance.now();
+  log("starting global setup");
+
+  log("seeding user account...");
   const seedRes = await fetch(
     `${env.adminApiUrl}/v1/general/seed-user`,
     {
@@ -103,12 +114,14 @@ export default async function globalSetup(_config: FullConfig) {
   if (!api_token) {
     throw new Error(`seed-user did not return a token: ${seedBody}`);
   }
+  log("user seeded, token obtained");
 
   let orgId = env.orgId;
   let createdOrg = false;
 
   if (!orgId) {
     const orgName = `e2e-test-${Date.now()}`;
+    log(`creating org: ${orgName}...`);
     const orgRes = await apiFetch(api_token, "/v1/orgs", {
       method: "POST",
       body: JSON.stringify({ name: orgName, use_sandbox_mode: true }),
@@ -116,18 +129,46 @@ export default async function globalSetup(_config: FullConfig) {
     const org = (await orgRes.json()) as { id: string };
     orgId = org.id;
     createdOrg = true;
+    log(`org created: ${orgId}`);
+  } else {
+    log(`using existing org: ${orgId}`);
   }
 
   if (createdOrg) {
+    log(`waiting for org ${orgId} to provision...`);
+    const maxWait = 120_000;
+    const pollInterval = 2_000;
+    const start = Date.now();
+    let orgActive = false;
+    while (Date.now() - start < maxWait) {
+      const orgRes = await apiFetch(api_token, `/v1/orgs/current`, {
+        headers: { "X-Nuon-Org-ID": orgId },
+      });
+      const org = (await orgRes.json()) as { status: string; status_description: string };
+      log(`org status: ${org.status} — ${org.status_description}`);
+      if (org.status === "active") {
+        orgActive = true;
+        break;
+      }
+      if (org.status === "error" || org.status === "failed") {
+        throw new Error(`Org provisioning failed: ${org.status} — ${org.status_description}`);
+      }
+      await new Promise((r) => setTimeout(r, pollInterval));
+    }
+    if (!orgActive) {
+      throw new Error(`Org ${orgId} did not become active within ${maxWait / 1000}s`);
+    }
+
     seedApp(api_token, orgId, env.appConfig);
   }
 
   fs.mkdirSync(path.dirname(ORG_STATE_PATH), { recursive: true });
   fs.writeFileSync(
     ORG_STATE_PATH,
-    JSON.stringify({ orgId, createdOrg, appConfig: env.appConfig }),
+    JSON.stringify({ orgId, createdOrg, appConfig: env.appConfig, apiToken: api_token }),
   );
 
+  log("injecting auth cookie...");
   const baseUrl = new URL(env.baseUrl);
   const browser = await chromium.launch();
   const context = await browser.newContext();
@@ -149,4 +190,5 @@ export default async function globalSetup(_config: FullConfig) {
 
   await context.storageState({ path: AUTH_STATE_PATH });
   await browser.close();
+  log("global setup complete");
 }
