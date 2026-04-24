@@ -34,10 +34,9 @@ func (s *service) AdminTriggerInstallStackOutputUpdate(ctx *gin.Context) {
 		return
 	}
 
-	stackVersion := run.InstallStackVersion
-	s.evClient.Send(ctx, stackVersion.InstallID, &signals.Signal{
-		Type:           signals.OperationUpdateInstallStackOutputs,
-		InstallStackID: stackVersion.InstallStackID,
+	s.evClient.Send(ctx, run.InstallStackVersion.InstallID, &signals.Signal{
+		Type:                  signals.OperationUpdateInstallStackOutputs,
+		InstallStackVersionID: run.InstallStackVersionID,
 	})
 	ctx.JSON(http.StatusOK, true)
 }
