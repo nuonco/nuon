@@ -157,6 +157,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	}
 	appsCmd.AddCommand(unsetCurrentAppCmd)
 
+	var syncCreate bool
 	syncCmd := &cobra.Command{
 		Use:               "sync",
 		Short:             "Sync nuon app directory",
@@ -174,9 +175,13 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
+			if syncCreate {
+				return svc.SyncDirWithCreate(cmd.Context(), dirName, version.Version)
+			}
 			return svc.SyncDir(cmd.Context(), dirName, version.Version)
 		}),
 	}
+	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
 	appsCmd.AddCommand(syncCmd)
 
 	syncDirCmd := &cobra.Command{
