@@ -1129,6 +1129,29 @@ In a group:
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Label badge</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Labels inline: <nuon-label-badge label="env:production"></nuon-label-badge> <nuon-label-badge label="region:us-east-1" theme="info"></nuon-label-badge>
+
+With explicit key/value: <nuon-label-badge key="tier" value="critical" theme="error"></nuon-label-badge>
+
+Custom key theme: <nuon-label-badge label="status:healthy" theme="success" key-theme="info"></nuon-label-badge>
+
+Code variant: <nuon-label-badge label="sha:a1b2c3d" variant="code" theme="info"></nuon-label-badge>
+
+In a group:
+
+<nuon-group gap="2">
+  <nuon-label-badge label="env:production" theme="success"></nuon-label-badge>
+  <nuon-label-badge label="team:platform" theme="brand"></nuon-label-badge>
+  <nuon-label-badge label="region:us-west-2" theme="info"></nuon-label-badge>
+</nuon-group>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Combined example</h4>
       <div className="p-4 border rounded-lg">
         <Markdown

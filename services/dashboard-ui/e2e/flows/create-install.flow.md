@@ -1,6 +1,6 @@
 # Flow: Create install
 
-Opens the create install modal, selects an app, fills out the form, submits, and verifies redirect to the provision workflow page.
+Opens the create install modal, selects an app, fills out the form with auto-approve enabled, submits, and verifies redirect to the provision workflow page.
 
 ## Setup
 - env: E2E_ORG_ID (required)
@@ -14,8 +14,7 @@ Opens the create install modal, selects an app, fills out the form, submits, and
 - expect: visible | heading "Installs"
 
 ### Open create modal
-- action: click | button "Create install"
-- expect: visible | heading "Create install"
+- action: click | button "Create install" first
 - expect: visible | text "Select an app to create an install"
 
 ### App list loads with search
@@ -30,14 +29,18 @@ Opens the create install modal, selects an app, fills out the form, submits, and
 - expect: visible | input "Enter install name"
 
 ### Fill install name
-- action: fill | input "Enter install name" | e2e-test-install
+- action: fill | input "Enter install name" | e2e-test-{timestamp}
 
 ### Select AWS region (if AWS app)
 - action: click | text "Choose AWS region"
-- action: click | text "us-west-2"
+- action: fill | input "Search..." | us-west-2
+- action: click | option "us-west-2"
+
+### Enable auto-approve
+- action: click | text "Auto-approve changes"
 
 ### Submit the form
-- action: click | button "Create install"
+- action: click | button "Create install" last
 - action: wait | networkidle
 
 ### Redirected to provision workflow

@@ -1,11 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from './Badge'
 import { Button } from './Button'
 import { Dropdown } from './Dropdown'
 import { Icon } from './Icon'
 import { Menu } from './Menu'
 import { Text } from './Text'
+import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 
 interface ILabelFilterDropdown {
   queryKey: string[]
@@ -44,12 +44,18 @@ export const LabelFilterDropdown = ({
     )
   }
 
-  const handleOnly = (label: string) => {
-    if (selectedLabels.length === 1 && selectedLabels[0] === label) {
-      setLabelsInUrl([])
+  const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    if (e.target.checked) {
+      setLabelsInUrl(Array.from(new Set([...selectedLabels, value])))
     } else {
-      setLabelsInUrl([label])
+      setLabelsInUrl(selectedLabels.filter((l) => l !== value))
     }
+  }
+
+  const handleOnly = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const value = e.currentTarget.value
+    setLabelsInUrl([value])
   }
 
   const handleReset = () => setLabelsInUrl([])
@@ -73,12 +79,7 @@ export const LabelFilterDropdown = ({
       buttonText={
         <>
           <Icon variant="TagIcon" size="14" />
-          Labels
-          {selectedLabels.length > 0 ? (
-            <Badge size="sm" theme="brand">
-              {selectedLabels.length}
-            </Badge>
-          ) : null}
+          Labels{selectedLabels.length > 0 ? ` (${selectedLabels.length})` : ''}
         </>
       }
     >
@@ -87,42 +88,52 @@ export const LabelFilterDropdown = ({
           Filter by label
         </Text>
 
-        {allOptions.map((label) => {
-          const isSelected =
-            selectedLabels.length === 1 && selectedLabels[0] === label
+        {allOptions.map((label) => (
+          <div className="flex items-center space-x-2" key={label}>
+            <CheckboxInputWithButton
+              buttonProps={{
+                className: '!p-1 flex items-center justify-between group w-full',
+                children: (
+                  <>
+                    <span className="font-semibold text-xs font-mono">
+                      {label}
+                    </span>
+                    <span className="ml-2 text-xs opacity-0 group-hover:opacity-100">
+                      {selectedLabels.length === 1 &&
+                      selectedLabels[0] === label
+                        ? 'Reset'
+                        : 'Only'}
+                    </span>
+                  </>
+                ),
+                type: 'button',
+                variant: 'ghost',
+                value: label,
+                onClick:
+                  selectedLabels.length === 1 && selectedLabels[0] === label
+                    ? handleReset
+                    : handleOnly,
+              }}
+              className="w-full"
+              name={label}
+              onChange={handleToggle}
+              checked={selectedLabels.includes(label)}
+              value={label}
+            />
+          </div>
+        ))}
 
-          return (
-            <Button
-              key={label}
-              className="!p-1 flex items-center justify-between w-full group"
-              type="button"
-              variant="ghost"
-              onClick={() => handleOnly(label)}
-            >
-              <Badge variant="code" size="sm" theme={isSelected ? 'brand' : 'neutral'}>
-                {label}
-              </Badge>
-              <span className="ml-2 text-xs opacity-0 group-hover:opacity-100">
-                {isSelected ? 'Reset' : 'Only'}
-              </span>
-            </Button>
-          )
-        })}
+        <hr />
 
-        {selectedLabels.length > 0 ? (
-          <>
-            <hr />
-            <Button
-              className="w-full !p-1 shrink-0"
-              type="button"
-              onClick={handleReset}
-              size="sm"
-              variant="ghost"
-            >
-              Reset
-            </Button>
-          </>
-        ) : null}
+        <Button
+          className="w-full !p-1 shrink-0"
+          type="button"
+          onClick={handleReset}
+          size="sm"
+          variant="ghost"
+        >
+          Reset
+        </Button>
       </Menu>
     </Dropdown>
   )
