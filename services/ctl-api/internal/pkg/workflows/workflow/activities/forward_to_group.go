@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // getGroupQueueSignal fetches the step group's preloaded QueueSignal to get the
@@ -49,13 +50,11 @@ func (a *Activities) ForwardRetryStepToGroup(ctx context.Context, req ForwardRet
 		StepID string `json:"step_id"`
 	}
 
-	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "retry-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args:         []any{retryStepArg{StepID: req.StepID}},
-		})
+	handle, err := handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "retry-step",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args:         []any{retryStepArg{StepID: req.StepID}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send retry-step to group: %w", err)
 	}
@@ -88,13 +87,11 @@ func (a *Activities) ForwardCancelStepToGroup(ctx context.Context, req ForwardCa
 		StepID string `json:"step_id"`
 	}
 
-	_, err = a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "cancel-step",
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args:         []any{cancelStepArg{StepID: req.StepID}},
-		})
+	_, err = handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "cancel-step",
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		Args:         []any{cancelStepArg{StepID: req.StepID}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send cancel-step to group: %w", err)
 	}
@@ -127,17 +124,15 @@ func (a *Activities) ForwardApproveStepToGroup(ctx context.Context, req ForwardA
 		ResponseType       string `json:"response_type"`
 	}
 
-	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "approve-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{approveStepArg{
-				StepID:             req.StepID,
-				ApprovalResponseID: req.ApprovalResponseID,
-				ResponseType:       req.ResponseType,
-			}},
-		})
+	handle, err := handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "approve-step",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args: []any{approveStepArg{
+			StepID:             req.StepID,
+			ApprovalResponseID: req.ApprovalResponseID,
+			ResponseType:       req.ResponseType,
+		}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send approve-step to group: %w", err)
 	}
@@ -172,13 +167,11 @@ func (a *Activities) ForwardSkipStepToGroup(ctx context.Context, req ForwardSkip
 		StepID string `json:"step_id"`
 	}
 
-	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "skip-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args:         []any{skipStepArg{StepID: req.StepID}},
-		})
+	handle, err := handler.UpdateWithStart(ctx, a.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "skip-step",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args:         []any{skipStepArg{StepID: req.StepID}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send skip-step to group: %w", err)
 	}

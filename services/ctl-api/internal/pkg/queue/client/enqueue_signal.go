@@ -60,7 +60,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		UpdateOptions: tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
 			UpdateName:   queue.EnqueueUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
+			WaitForStage: tclient.WorkflowUpdateStageAdmitted,
 			Args: []any{
 				queue.EnqueueHandlerInput{
 					QueueSignalID: queueSignal.ID,
