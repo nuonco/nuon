@@ -118,6 +118,7 @@ export default async function globalSetup(_config: FullConfig) {
 
   let orgId = env.orgId;
   let createdOrg = false;
+  let seedInstallIds: string[] = [];
 
   if (!orgId) {
     const orgName = `e2e-test-${Date.now()}`;
@@ -130,6 +131,24 @@ export default async function globalSetup(_config: FullConfig) {
     orgId = org.id;
     createdOrg = true;
     log(`org created: ${orgId}`);
+
+    log("adding support users...");
+    const supportRes = await fetch(
+      `${env.adminApiUrl}/v1/orgs/${orgId}/admin-support-users`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Nuon-Admin-Email": "seed@nuon.co",
+        },
+      },
+    );
+    if (!supportRes.ok) {
+      const body = await supportRes.text();
+      log(`warning: failed to add support users: ${body}`);
+    } else {
+      log("support users added");
+    }
   } else {
     log(`using existing org: ${orgId}`);
   }
@@ -160,12 +179,52 @@ export default async function globalSetup(_config: FullConfig) {
     }
 
     seedApp(api_token, orgId, env.appConfig);
+
+    // Create 2 installs for tests that need pre-existing installs (e.g. label filtering)
+    log("listing apps to find seeded app...");
+    const appsRes = await apiFetch(api_token, "/v1/apps", {
+      headers: { "X-Nuon-Org-ID": orgId },
+    });
+    const apps = (await appsRes.json()) as { id: string; name: string; runner_config?: { app_runner_type?: string } }[];
+    const seededApp = apps.find((a) => a.name === env.appConfig);
+    if (seededApp) {
+      log(`found app ${seededApp.id}, creating 2 seed installs...`);
+      const installIds: string[] = [];
+      for (const name of ["e2e-install-alpha", "e2e-install-beta"]) {
+        const body: Record<string, unknown> = {
+          name,
+          install_config: { approval_option: "prompt" },
+          metadata: { managed_by: "nuon/e2e" },
+        };
+        const platform = seededApp.runner_config?.app_runner_type;
+        if (platform === "aws") {
+          body.aws_account = { iam_role_arn: "", region: "us-west-2" };
+        }
+        const installRes = await apiFetch(api_token, `/v1/apps/${seededApp.id}/installs`, {
+          method: "POST",
+          headers: { "X-Nuon-Org-ID": orgId },
+          body: JSON.stringify(body),
+        });
+        const install = (await installRes.json()) as { data: { id: string } };
+        installIds.push(install.data.id);
+        log(`created install: ${name} (${install.data.id})`);
+      }
+      seedInstallIds = installIds;
+    } else {
+      log("warning: could not find seeded app, skipping install creation");
+    }
   }
 
   fs.mkdirSync(path.dirname(ORG_STATE_PATH), { recursive: true });
   fs.writeFileSync(
     ORG_STATE_PATH,
-    JSON.stringify({ orgId, createdOrg, appConfig: env.appConfig, apiToken: api_token }),
+    JSON.stringify({
+      orgId,
+      createdOrg,
+      appConfig: env.appConfig,
+      apiToken: api_token,
+      installIds: seedInstallIds,
+    }),
   );
 
   log("injecting auth cookie...");
