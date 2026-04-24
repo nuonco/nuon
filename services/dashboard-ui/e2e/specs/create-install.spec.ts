@@ -45,12 +45,15 @@ test.describe("Create install", () => {
     const regionCombobox = page.getByRole("combobox").filter({ hasText: "Choose AWS region" });
     if (await regionCombobox.isVisible({ timeout: 2000 }).catch(() => false)) {
       await regionCombobox.click();
-      // The dropdown uses a portal with a search input — type to filter then select
       const searchInput = page.getByPlaceholder("Search...");
       await expect(searchInput).toBeVisible();
       await searchInput.fill("us-west-2");
       await page.getByRole("option", { name: /us-west-2/ }).first().click();
     }
+
+    // Enable auto-approve
+    const autoApprove = page.getByText("Auto-approve changes");
+    await autoApprove.click();
 
     // Submit the form
     await page.getByRole("button", { name: "Create install" }).last().click();

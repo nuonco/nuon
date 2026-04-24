@@ -13,14 +13,14 @@ export const Default = () => (
       labels={{ env: 'production', team: 'platform', region: 'us-east-1' }}
       isPending={false}
       error={null}
-      onSave={noop}
+      onSubmit={noop}
     />
   </ModalStory>
 )
 
 export const Empty = () => (
   <ModalStory>
-    <EditLabelsModal labels={{}} isPending={false} error={null} onSave={noop} />
+    <EditLabelsModal labels={{}} isPending={false} error={null} onSubmit={noop} />
   </ModalStory>
 )
 
@@ -30,7 +30,7 @@ export const Loading = () => (
       labels={{ env: 'staging' }}
       isPending={true}
       error={null}
-      onSave={noop}
+      onSubmit={noop}
     />
   </ModalStory>
 )
@@ -41,7 +41,7 @@ export const WithError = () => (
       labels={{ env: 'staging' }}
       isPending={false}
       error={{ error: 'Something went wrong' }}
-      onSave={noop}
+      onSubmit={noop}
     />
   </ModalStory>
 )
