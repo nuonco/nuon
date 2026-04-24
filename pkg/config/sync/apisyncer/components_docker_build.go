@@ -14,14 +14,14 @@ func (s *syncer) createDockerBuildComponentConfig(ctx context.Context, resource,
 
 	configRequest := &models.ServiceCreateDockerBuildComponentConfigRequest{
 		// DEPRECATED: BuildArgs is not used and was required for Waypoint
-		AppConfigID:    s.appConfigID,
-		Dependencies:   comp.Dependencies,
-		BuildArgs:      []string{},
-		Dockerfile:     generics.ToPtr(obj.Dockerfile),
-		Target:         "",
-		EnvVars:        map[string]string{},
-		BuildTimeout:   obj.BuildTimeout,
-		DeployTimeout:  obj.DeployTimeout,
+		AppConfigID:   s.appConfigID,
+		Dependencies:  comp.Dependencies,
+		BuildArgs:     []string{},
+		Dockerfile:    generics.ToPtr(obj.Dockerfile),
+		Target:        "",
+		EnvVars:       map[string]string{},
+		BuildTimeout:  obj.BuildTimeout,
+		DeployTimeout: obj.DeployTimeout,
 	}
 
 	if obj.MaxAutoRetries != nil {

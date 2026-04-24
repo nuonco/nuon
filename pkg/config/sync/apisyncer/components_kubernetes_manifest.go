@@ -18,10 +18,10 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 		Dependencies: comp.Dependencies,
 		Checksum:     comp.Checksum,
 
-		Namespace:      comp.KubernetesManifest.Namespace,
-		Manifest:       comp.KubernetesManifest.Manifest,
-		BuildTimeout:   comp.KubernetesManifest.BuildTimeout,
-		DeployTimeout:  comp.KubernetesManifest.DeployTimeout,
+		Namespace:     comp.KubernetesManifest.Namespace,
+		Manifest:      comp.KubernetesManifest.Manifest,
+		BuildTimeout:  comp.KubernetesManifest.BuildTimeout,
+		DeployTimeout: comp.KubernetesManifest.DeployTimeout,
 	}
 
 	if comp.KubernetesManifest.MaxAutoRetries != nil {
