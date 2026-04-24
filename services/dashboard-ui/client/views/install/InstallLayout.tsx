@@ -1,5 +1,6 @@
 import { Outlet, useParams, useMatch } from 'react-router'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Icon } from '@/components/common/Icon'
@@ -119,9 +120,7 @@ const InstallTemplate = () => {
                   </Text>
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
-                      <Badge key={key} size="sm" variant="code" theme="neutral">
-                        {key}: {value}
-                      </Badge>
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
                     ))}
                 </div>
                 <ID>{install.id}</ID>

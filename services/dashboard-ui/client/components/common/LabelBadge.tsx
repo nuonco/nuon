@@ -17,7 +17,7 @@ export const LabelBadge = ({
   labelKey,
   labelValue,
   keyTheme = 'neutral',
-  theme = 'success',
+  theme = 'info',
   size = 'lg',
   variant,
   className,
