@@ -151,6 +151,18 @@ export default async function globalSetup(_config: FullConfig) {
     }
   } else {
     log(`using existing org: ${orgId}`);
+
+    log("fetching existing installs...");
+    const installsRes = await apiFetch(api_token, "/v1/installs", {
+      headers: { "X-Nuon-Org-ID": orgId },
+    });
+    const installsBody = (await installsRes.json()) as { data?: { id: string }[]; id?: string }[] | { data: { id: string }[] };
+    if (Array.isArray(installsBody)) {
+      seedInstallIds = installsBody.map((i: any) => i.id).filter(Boolean);
+    } else if (installsBody.data) {
+      seedInstallIds = installsBody.data.map((i) => i.id);
+    }
+    log(`found ${seedInstallIds.length} existing installs`);
   }
 
   if (createdOrg) {
@@ -205,9 +217,9 @@ export default async function globalSetup(_config: FullConfig) {
           headers: { "X-Nuon-Org-ID": orgId },
           body: JSON.stringify(body),
         });
-        const install = (await installRes.json()) as { data: { id: string } };
-        installIds.push(install.data.id);
-        log(`created install: ${name} (${install.data.id})`);
+        const install = (await installRes.json()) as { id: string };
+        installIds.push(install.id);
+        log(`created install: ${name} (${install.id})`);
       }
       seedInstallIds = installIds;
     } else {

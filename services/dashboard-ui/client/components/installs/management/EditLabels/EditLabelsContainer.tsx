@@ -65,7 +65,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
       labels={currentLabels}
       isPending={isPending}
       error={error}
-      onSave={(labels) => mutate(labels)}
+      onSubmit={(labels) => mutate(labels)}
       {...props}
     />
   )
