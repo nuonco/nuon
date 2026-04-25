@@ -1,45 +1,157 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { getWorkflowDetail } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, formatDuration, truncateId } from '@/utils/format'
-import type { TGroupDetailData, TStepDetailData } from '@/types/admin.types'
 
-const StepRow = ({ stepData }: { stepData: TStepDetailData }) => {
+function getStatus(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (typeof s === 'object' && s.status) return String(s.status)
+  return String(s)
+}
+
+function getStatusHistory(s: any): any[] {
+  if (!s || typeof s !== 'object') return []
+  return s.history || []
+}
+
+function formatTime(t: string | undefined): string {
+  if (!t || t === '0001-01-01T00:00:00Z') return '-'
+  return formatDate(t)
+}
+
+function formatDur(ns: number | undefined): string {
+  if (!ns || ns <= 0) return '-'
+  return formatDuration(ns)
+}
+
+// -- Step detail row --
+
+function StepRow({ stepData }: { stepData: any }) {
   const [expanded, setExpanded] = useState(false)
-  const { step, queue_signal_json, step_target } = stepData
+  const step = stepData.step
+  const status = getStatus(step?.status)
+  const statusHistory = getStatusHistory(step?.status)
 
   return (
     <>
-      <tr className="hover:bg-gray-50">
-        <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{step.idx}</td>
-        <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{step.step_target_type}</td>
-        <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500 font-mono">{truncateId(step.step_target_id)}</td>
-        <td className="whitespace-nowrap px-4 py-2 text-sm">
-          <Badge variant="status" status={getStatus(step.status)}>{getStatus(step.status) || '-'}</Badge>
-        </td>
-        <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
-          {step.approval ? JSON.stringify(step.approval) : '-'}
-        </td>
-        <td className="whitespace-nowrap px-4 py-2 text-sm">
-          {queue_signal_json && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-xs text-primary-600 hover:text-primary-800"
-            >
-              {expanded ? 'Hide' : 'Show'} JSON
-            </button>
+      <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+        <td className="text-xs text-gray-500">{step?.idx}</td>
+        <td className="text-xs text-gray-900 max-w-[200px] truncate" title={step?.name}>{step?.name || '-'}</td>
+        <td><Badge variant="status" status={status}>{status || '-'}</Badge></td>
+        <td className="text-xs text-gray-500 font-mono">{step?.execution_type || '-'}</td>
+        <td className="text-xs text-gray-500">{formatTime(step?.started_at)}</td>
+        <td className="text-xs text-gray-500">{formatDur(step?.execution_time)}</td>
+        <td className="text-xs space-x-1">
+          {stepData.step_signal_id && stepData.step_signal_queue_id && (
+            <Link to={`/queues/${stepData.step_signal_queue_id}/signals/${stepData.step_signal_id}`} className="text-primary-600 hover:text-primary-700" onClick={(e) => e.stopPropagation()}>
+              signal
+            </Link>
+          )}
+          {!stepData.step_signal_id && (
+            <Link to={`/queue-signals?search=${step?.id}`} className="text-primary-600 hover:text-primary-700" onClick={(e) => e.stopPropagation()}>
+              search
+            </Link>
           )}
         </td>
+        <td className="text-xs text-gray-400">{expanded ? '▾' : '▸'}</td>
       </tr>
-      {expanded && queue_signal_json && (
+      {expanded && (
         <tr>
-          <td colSpan={6} className="px-4 py-2">
-            <JsonViewer data={queue_signal_json} />
+          <td colSpan={8} className="bg-gray-50 px-4 py-3">
+            <div className="space-y-3 text-xs">
+              {/* IDs */}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div><span className="text-gray-500">Step ID:</span> <span className="font-mono">{step?.id}</span></div>
+                <div><span className="text-gray-500">Group:</span> g{step?.group_idx}r{step?.group_retry_idx}</div>
+                <div><span className="text-gray-500">Target type:</span> {step?.step_target_type || '-'}</div>
+                <div><span className="text-gray-500">Target ID:</span> <span className="font-mono">{truncateId(step?.step_target_id) || '-'}</span></div>
+              </div>
+
+              {/* Step flags */}
+              <div className="flex gap-1">
+                {step?.retryable && <Badge>retryable</Badge>}
+                {step?.skippable && <Badge>skippable</Badge>}
+                {step?.retried && <Badge variant="status" status="warning">retried</Badge>}
+                {step?.result_directive && <Badge>{step.result_directive}</Badge>}
+              </div>
+
+              {/* Step target */}
+              {stepData.step_target && (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Step target</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div><span className="text-gray-500">Type:</span> {stepData.step_target.type}</div>
+                    <div><span className="text-gray-500">ID:</span> <span className="font-mono">{stepData.step_target.id}</span></div>
+                    <div><span className="text-gray-500">Status:</span> {stepData.step_target.status ? <Badge variant="status" status={stepData.step_target.status}>{stepData.step_target.status}</Badge> : '-'}</div>
+                    {stepData.step_target.log_stream_id && (
+                      <div>
+                        <Link to={`/log-streams/${stepData.step_target.log_stream_id}`} className="text-primary-600 hover:text-primary-700">
+                          View logs &rarr;
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Approval */}
+              {step?.approval && (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Approval</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div><span className="text-gray-500">Type:</span> {step.approval.type || '-'}</div>
+                    {step.approval.response && (
+                      <div><span className="text-gray-500">Response:</span> {step.approval.response.type || step.approval.response.response || '-'}</div>
+                    )}
+                    {step.approval.note && (
+                      <div className="col-span-2"><span className="text-gray-500">Note:</span> {step.approval.note}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Status history */}
+              {statusHistory.length > 0 && (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Status history</p>
+                  <div className="space-y-0.5">
+                    {statusHistory.map((h: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Badge variant="status" status={getStatus(h)}>{getStatus(h)}</Badge>
+                        {h.status_human_description && <span className="text-gray-500">{h.status_human_description}</span>}
+                        {h.created_at_ts && <span className="text-gray-400 font-mono">{new Date(h.created_at_ts / 1000000).toISOString()}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata */}
+              {step?.metadata && Object.keys(step.metadata).length > 0 && (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Metadata</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {Object.entries(step.metadata).map(([k, v]) => (
+                      <div key={k}><span className="text-gray-500">{k}:</span> <span className="font-mono">{String(v)}</span></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Queue signal JSON */}
+              {stepData.queue_signal_json && (
+                <div>
+                  <p className="font-semibold text-gray-700 mb-1">Queue signal data</p>
+                  <JsonViewer data={stepData.queue_signal_json} collapsed />
+                </div>
+              )}
+            </div>
           </td>
         </tr>
       )}
@@ -47,40 +159,82 @@ const StepRow = ({ stepData }: { stepData: TStepDetailData }) => {
   )
 }
 
-const StepGroupSection = ({ group }: { group: TGroupDetailData }) => (
-  <div className="rounded-md border border-gray-200 p-3">
-    <div className="flex items-center gap-2 mb-2">
-      <span className="text-xs font-semibold text-gray-700">
-        Group {group.group.group_idx} (retry {group.group.group_retry_idx})
-      </span>
-      <Badge variant="status" status={getStatus(group.group.status)}>{getStatus(group.group.status) || '-'}</Badge>
-    </div>
-    <table className="min-w-full divide-y divide-gray-200">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idx</th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200 bg-white">
-        {group.steps.map((sd) => (
-          <StepRow key={sd.step.id} stepData={sd} />
-        ))}
-      </tbody>
-    </table>
-  </div>
-)
+// -- Step Group section --
 
-function getStatus(status: any): string {
-  if (!status) return ''
-  if (typeof status === 'string') return status
-  if (typeof status === 'object' && status.status) return String(status.status)
-  return String(status)
+function StepGroupSection({ group }: { group: any }) {
+  const [expanded, setExpanded] = useState(true)
+  const g = group.group
+  const status = getStatus(g?.status)
+  const steps = group.steps || []
+  const groupSignal = g?.queue_signal
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
+      >
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-gray-500">g{g?.group_idx}</span>
+          <span className="text-sm font-medium text-gray-900">{g?.name || `Group ${g?.group_idx}`}</span>
+          <Badge>{g?.parallel ? 'parallel' : 'sequential'}</Badge>
+          {status && <Badge variant="status" status={status}>{status}</Badge>}
+          {g?.result_directive && <Badge>{g.result_directive}</Badge>}
+          <span className="text-xs text-gray-400">{steps.length} steps</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {groupSignal && (
+            <Link
+              to={`/queues/${groupSignal.queue_id}/signals/${groupSignal.id}`}
+              className="text-xs text-primary-600 hover:text-primary-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              group signal &rarr;
+            </Link>
+          )}
+          {!groupSignal && g?.id && (
+            <Link
+              to={`/queue-signals?search=${g.id}`}
+              className="text-xs text-primary-600 hover:text-primary-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              search signal
+            </Link>
+          )}
+          <span className="text-gray-400">{expanded ? '▾' : '▸'}</span>
+        </div>
+      </button>
+      {expanded && steps.length > 0 && (
+        <div className="border-t border-gray-200 overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-100">
+            <thead className="bg-gray-50/50">
+              <tr>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase w-10">#</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Exec type</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Started</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Duration</th>
+                <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">Signal</th>
+                <th className="px-4 py-2 w-6"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {steps.map((sd: any) => (
+                <StepRow key={sd.step?.id} stepData={sd} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {expanded && steps.length === 0 && (
+        <div className="border-t border-gray-200 px-4 py-4 text-sm text-gray-500">No steps in this group</div>
+      )}
+    </div>
+  )
 }
+
+// -- Main page --
 
 export const WorkflowDetail = () => {
   const { workflowId } = useParams<{ workflowId: string }>()
@@ -95,141 +249,116 @@ export const WorkflowDetail = () => {
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load workflow'} />
   if (!data) return null
 
-  const workflow = data.workflow
-  const groups: TGroupDetailData[] = data.group_details || []
-  const workflow_info = data.workflow_info || null
-  const wfStatus = getStatus(workflow?.status)
+  const wf = data.workflow
+  const groups = data.group_details || []
+  const genSignal = data.generate_steps_signal
+  const wfStatus = getStatus(wf?.status)
+  const wfStatusHistory = getStatusHistory(wf?.status)
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="page-heading">Workflow detail</h1>
-        <p className="mt-1 text-sm text-gray-500 font-mono">{workflow?.id}</p>
-        <div className="mt-2 flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2">
+          <h1 className="page-heading font-mono text-base">{wf?.id}</h1>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge>{wf?.type}</Badge>
           <Badge variant="status" status={wfStatus}>{wfStatus || '-'}</Badge>
-          <span className="text-gray-500">Type: <span className="font-mono">{workflow?.type}</span></span>
-          <span className="text-gray-500">Created: {formatDate(workflow?.created_at)}</span>
+          {wf?.result_directive && <Badge>{wf.result_directive}</Badge>}
         </div>
-        <div className="mt-1 text-sm text-gray-500">
-          Owner: <span className="font-mono text-xs">{truncateId(workflow?.owner_id)}</span> ({workflow?.owner_type})
-          {workflow?.created_by?.email && (
-            <span className="ml-2">by {workflow.created_by.email}</span>
+        <div className="mt-2 text-sm text-gray-500">
+          Owner: <Link to={`/installs/${wf?.owner_id}`} className="font-mono text-xs text-primary-600 hover:text-primary-700">{wf?.owner_id}</Link>
+          <span className="text-gray-400 ml-1">({wf?.owner_type})</span>
+          {wf?.created_by?.email && (
+            <span className="ml-3">by <Link to={`/accounts/${wf.created_by_id}`} className="text-primary-600 hover:text-primary-700">{wf.created_by.email}</Link></span>
           )}
+        </div>
+        <div className="mt-1 flex gap-3 text-xs">
+          <Link to={`/queue-signals?search=${wf?.id}`} className="text-primary-600 hover:text-primary-700">Workflow signal &rarr;</Link>
         </div>
       </div>
 
-      {/* Step Groups */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Step Groups</h2>
-        <div className="mt-2 space-y-3">
-          {groups.map((group, i) => (
-            <StepGroupSection key={i} group={group} />
-          ))}
-          {groups.length === 0 && (
-            <p className="text-sm text-gray-500">No step groups</p>
-          )}
-        </div>
+      {/* Timeline */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <TimelineCard label="Created" value={formatTime(wf?.created_at)} />
+        <TimelineCard label="Started" value={formatTime(wf?.started_at)} />
+        <TimelineCard label="Finished" value={formatTime(wf?.finished_at)} />
+        <TimelineCard label="Duration" value={formatDur(wf?.execution_time)} />
       </div>
 
-      {/* Workflow Info */}
-      {workflow_info && (
+      {/* Generate steps signal */}
+      {genSignal && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Workflow Info</h2>
-
-          {/* Activities */}
-          {workflow_info.activities && workflow_info.activities.length > 0 && (
-            <div className="mt-3">
-              <h3 className="text-xs font-semibold text-gray-700 mb-1">Activities ({workflow_info.activities.length})</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Attempt</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {workflow_info.activities.map((act, i) => (
-                      <tr key={i}>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-900">{act.name}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs">
-                          <Badge variant="status" status={act.status}>{act.status}</Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">{formatDuration(act.duration)}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">{act.attempt}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <h2 className="text-sm font-semibold text-gray-900">Generate steps signal</h2>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 text-sm">
+            <div>
+              <span className="text-gray-500 text-xs">Signal ID:</span>
+              <Link to={`/queues/${genSignal.queue_id}/signals/${genSignal.id}`} className="ml-1 font-mono text-xs text-primary-600 hover:text-primary-700">
+                {truncateId(genSignal.id)}
+              </Link>
             </div>
-          )}
-
-          {/* Child Workflows */}
-          {workflow_info.child_workflows && workflow_info.child_workflows.length > 0 && (
-            <div className="mt-3">
-              <h3 className="text-xs font-semibold text-gray-700 mb-1">Child Workflows ({workflow_info.child_workflows.length})</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Namespace</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {workflow_info.child_workflows.map((cw, i) => (
-                      <tr key={i}>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-900">{cw.workflow_type}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs">
-                          <Badge variant="status" status={cw.status}>{cw.status}</Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">{cw.namespace}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">{formatDuration(cw.duration)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div>
+              <span className="text-gray-500 text-xs">Queue:</span>
+              <Link to={`/queues/${genSignal.queue_id}`} className="ml-1 font-mono text-xs text-primary-600 hover:text-primary-700">
+                {truncateId(genSignal.queue_id)}
+              </Link>
             </div>
-          )}
-
-          {/* Update Executions */}
-          {workflow_info.update_executions && workflow_info.update_executions.length > 0 && (
-            <div className="mt-3">
-              <h3 className="text-xs font-semibold text-gray-700 mb-1">Update Executions ({workflow_info.update_executions.length})</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Update ID</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {workflow_info.update_executions.map((ue, i) => (
-                      <tr key={i}>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-900">{ue.name}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs">
-                          <Badge variant="status" status={ue.status}>{ue.status}</Badge>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500 font-mono">{truncateId(ue.update_id)}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-gray-500">{formatDuration(ue.duration)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div>
+              <span className="text-gray-500 text-xs">Type:</span>
+              <span className="ml-1 font-mono text-xs">{genSignal.type}</span>
             </div>
-          )}
+            <div>
+              <span className="text-gray-500 text-xs">Status:</span>
+              <Badge variant="status" status={getStatus(genSignal.status)} className="ml-1">{getStatus(genSignal.status)}</Badge>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Workflow status history */}
+      {wfStatusHistory.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Status history</h2>
+          <div className="mt-2 space-y-1">
+            {wfStatusHistory.map((h: any, i: number) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                <Badge variant="status" status={getStatus(h)}>{getStatus(h)}</Badge>
+                {h.status_human_description && <span className="text-gray-600">{h.status_human_description}</span>}
+                {h.created_at_ts > 0 && <span className="text-gray-400 font-mono">{new Date(h.created_at_ts / 1000000).toISOString().replace('T', ' ').slice(0, 19)}</span>}
+                {h.metadata && Object.keys(h.metadata).length > 0 && (
+                  <span className="text-gray-400">{JSON.stringify(h.metadata)}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step Groups */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900 mb-2">Step groups ({groups.length})</h2>
+        {groups.length > 0 ? (
+          <div className="space-y-3">
+            {groups.map((group: any, i: number) => (
+              <StepGroupSection key={group.group?.id || i} group={group} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-500">
+            No steps recorded
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TimelineCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="mt-0.5 text-sm font-mono text-gray-900">{value}</p>
     </div>
   )
 }

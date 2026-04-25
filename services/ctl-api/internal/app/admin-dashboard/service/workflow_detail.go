@@ -48,15 +48,25 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 			}
 		}
 
+		// Load the actual QueueSignal record for this step (for linking)
+		var stepSignal app.QueueSignal
+		if err := s.db.WithContext(ctx).
+			Where(app.QueueSignal{OwnerID: step.ID, OwnerType: (&app.WorkflowStep{}).TableName()}).
+			First(&stepSignal).Error; err == nil {
+			stepDetails[i].StepSignalID = stepSignal.ID
+			stepDetails[i].StepSignalQueueID = stepSignal.QueueID
+		}
+
 		// Load step target
 		if step.StepTargetID != "" {
 			stepDetails[i].StepTarget = s.loadStepTarget(c, step.StepTargetID, step.StepTargetType)
 		}
 	}
 
-	// Load step groups for the workflow
+	// Load step groups for the workflow (with their queue signals)
 	var stepGroups []app.WorkflowStepGroup
 	s.db.WithContext(ctx).
+		Preload("QueueSignal").
 		Where(app.WorkflowStepGroup{WorkflowID: workflowID}).
 		Order("group_idx ASC").
 		Find(&stepGroups)
