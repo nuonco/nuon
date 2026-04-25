@@ -172,6 +172,7 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queues/:id", s.QueueDetail)
 	api.GET("/queues/:id/emitters/table", s.QueueEmittersTable)
 	api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
+	api.GET("/queues/:id/in-flight-signals/table", s.QueueInFlightSignalsTable)
 	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
 	api.POST("/queues/:id/restart", s.RestartQueue)
