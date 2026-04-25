@@ -4,7 +4,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -32,23 +31,12 @@ func (s *stepGroup) nextGroupNamed(name string) {
 }
 
 func (s *stepGroup) nextGroupWithOpts(name string, parallel bool) {
-	s.nextGroupFull(name, parallel, nil)
-}
-
-func (s *stepGroup) nextGroupLabeled(lbls labels.Labels) {
-	s.nextGroupFull("", false, lbls)
-}
-
-func (s *stepGroup) nextGroupFull(name string, parallel bool, lbls labels.Labels) {
 	s.idx++
 	g := &app.WorkflowStepGroup{
 		GroupIdx: s.idx,
 		Parallel: parallel,
 		Name:     name,
 		Status:   app.CompositeStatus{Status: app.StatusPending},
-	}
-	if lbls != nil {
-		g.Labels = lbls
 	}
 	s.groups = append(s.groups, g)
 	s.currentGroup = g
