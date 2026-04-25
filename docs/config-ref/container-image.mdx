@@ -44,6 +44,7 @@ title: 'Container Image'
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating | **Optional** | `"0 2 * * *"` |
 | **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | - |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | - |
+| **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
 
 ### `aws_ecr`
 

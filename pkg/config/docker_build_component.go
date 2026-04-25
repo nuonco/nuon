@@ -16,6 +16,8 @@ type DockerBuildComponentConfig struct {
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
+	MaxAutoRetries *int `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+
 	// NOTE: the following parameters are not supported in the provider
 	// Target	     string		   `mapstructure:"target" toml:"target"`
 	// BuildArgs []string		`mapstructure:"build_args" toml:"build_args"`
@@ -45,7 +47,12 @@ func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Long("Duration string for deploy operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
 		Default("5m").
 		Example("30m").
-		Example("1h")
+		Example("1h").
+		Field("max_auto_retries").Short("maximum automatic retry attempts on deploy failure").
+		Long("Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled)").
+		Default("0").
+		Example("3").
+		Example("5")
 }
 
 func (t *DockerBuildComponentConfig) Validate() error {
