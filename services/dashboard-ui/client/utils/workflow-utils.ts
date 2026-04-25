@@ -35,15 +35,16 @@ export function getStepBadge(
   step: TWorkflowStep,
   isApprovalPrompt?: boolean
 ): TBadgeCfg {
+  const metadata = step?.status?.metadata
+
+  if (metadata?.auto_retried) {
+    return { children: 'Auto-retried', theme: 'info' }
+  }
+
   if (step?.retried) {
-    const metadata = step?.status?.metadata
-    if (metadata?.auto_retried) {
-      return { children: 'Automatically retried', theme: 'info' }
-    }
     return { children: 'Retried', theme: 'info' }
   }
 
-  const metadata = step?.status?.metadata
   if (metadata?.is_retry) {
     const retryIdx = metadata.retry_idx ?? metadata.group_retry_idx ?? 0
     return { children: `Retry #${retryIdx}`, theme: 'info' }
@@ -108,6 +109,20 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
         copy: `This step has used all ${metadata.max_retries ?? ''} retry attempts. No further retries are possible. Rerun the workflow to start fresh.`,
         theme: 'error',
         title: `Step ${step?.name} failed — retries exhausted (${metadata.retry_index ?? '?'}/${metadata.max_retries ?? '?'})`,
+      }
+    }
+    if (metadata?.auto_retried) {
+      return {
+        copy: `Step encountered an error and was automatically retried (attempt ${metadata.retry_idx ?? '?'} of ${metadata.max_retries ?? '?'}).`,
+        theme: 'info',
+        title: `Step ${step?.name} — auto-retried`,
+      }
+    }
+    if (metadata?.auto_retries_exhausted) {
+      return {
+        copy: `Automatic retries are exhausted (${metadata.max_auto_retries ?? '?'} of ${metadata.max_auto_retries ?? '?'}). You can still manually retry this step (${metadata.retry_index ?? '?'} of ${metadata.max_retries ?? '?'} total retries used).`,
+        theme: 'warn',
+        title: `Step ${step?.name} — auto-retries exhausted`,
       }
     }
     const retryInfo =
