@@ -20,7 +20,7 @@ const StepRow = ({ stepData }: { stepData: TStepDetailData }) => {
         <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-900">{step.step_target_type}</td>
         <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500 font-mono">{truncateId(step.step_target_id)}</td>
         <td className="whitespace-nowrap px-4 py-2 text-sm">
-          <Badge variant="status" status={step.status}>{step.status}</Badge>
+          <Badge variant="status" status={getStatus(step.status)}>{getStatus(step.status) || '-'}</Badge>
         </td>
         <td className="whitespace-nowrap px-4 py-2 text-sm text-gray-500">
           {step.approval ? JSON.stringify(step.approval) : '-'}
@@ -53,7 +53,7 @@ const StepGroupSection = ({ group }: { group: TGroupDetailData }) => (
       <span className="text-xs font-semibold text-gray-700">
         Group {group.group.group_idx} (retry {group.group.group_retry_idx})
       </span>
-      <Badge variant="status" status={group.group.status}>{group.group.status}</Badge>
+      <Badge variant="status" status={getStatus(group.group.status)}>{getStatus(group.group.status) || '-'}</Badge>
     </div>
     <table className="min-w-full divide-y divide-gray-200">
       <thead className="bg-gray-50">
@@ -75,59 +75,48 @@ const StepGroupSection = ({ group }: { group: TGroupDetailData }) => (
   </div>
 )
 
+function getStatus(status: any): string {
+  if (!status) return ''
+  if (typeof status === 'string') return status
+  if (typeof status === 'object' && status.status) return String(status.status)
+  return String(status)
+}
+
 export const WorkflowDetail = () => {
-  const { id } = useParams<{ id: string }>()
+  const { workflowId } = useParams<{ workflowId: string }>()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['workflow', id],
-    queryFn: () => getWorkflowDetail(id!),
-    enabled: !!id,
+    queryKey: ['workflow', workflowId],
+    queryFn: () => getWorkflowDetail(workflowId!),
+    enabled: !!workflowId,
   })
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load workflow'} />
   if (!data) return null
 
-  const { workflow, groups = [], workflow_info, temporal_workflow_id, temporal_run_id, temporal_namespace } = data
+  const workflow = data.workflow
+  const groups: TGroupDetailData[] = data.group_details || []
+  const workflow_info = data.workflow_info || null
+  const wfStatus = getStatus(workflow?.status)
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Workflow Detail</h1>
-        <p className="mt-1 text-sm text-gray-500 font-mono">{workflow.id}</p>
+        <h1 className="page-heading">Workflow detail</h1>
+        <p className="mt-1 text-sm text-gray-500 font-mono">{workflow?.id}</p>
         <div className="mt-2 flex items-center gap-3 text-sm">
-          <Badge variant="status" status={workflow.status}>{workflow.status}</Badge>
-          <span className="text-gray-500">Type: {workflow.type}</span>
-          <span className="text-gray-500">Created: {formatDate(workflow.created_at)}</span>
+          <Badge variant="status" status={wfStatus}>{wfStatus || '-'}</Badge>
+          <span className="text-gray-500">Type: <span className="font-mono">{workflow?.type}</span></span>
+          <span className="text-gray-500">Created: {formatDate(workflow?.created_at)}</span>
         </div>
         <div className="mt-1 text-sm text-gray-500">
-          Owner: <span className="font-mono text-xs">{truncateId(workflow.owner_id)}</span> ({workflow.owner_type})
-          {workflow.created_by_id && (
-            <span className="ml-2">Created by: <span className="font-mono text-xs">{truncateId(workflow.created_by_id)}</span></span>
+          Owner: <span className="font-mono text-xs">{truncateId(workflow?.owner_id)}</span> ({workflow?.owner_type})
+          {workflow?.created_by?.email && (
+            <span className="ml-2">by {workflow.created_by.email}</span>
           )}
         </div>
       </div>
-
-      {/* Temporal Info */}
-      {(temporal_workflow_id || temporal_run_id || temporal_namespace) && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Temporal Info</h2>
-          <dl className="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
-            <div>
-              <dt className="text-gray-500">Workflow ID</dt>
-              <dd className="font-mono text-xs text-gray-900 break-all">{temporal_workflow_id || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Run ID</dt>
-              <dd className="font-mono text-xs text-gray-900 break-all">{temporal_run_id || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">Namespace</dt>
-              <dd className="text-gray-900">{temporal_namespace || '-'}</dd>
-            </div>
-          </dl>
-        </div>
-      )}
 
       {/* Step Groups */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">

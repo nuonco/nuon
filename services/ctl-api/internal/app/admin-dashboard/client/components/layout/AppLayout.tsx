@@ -1,68 +1,99 @@
 import { Outlet, Link, useLocation } from 'react-router'
 import cn from 'classnames'
 
-const navItems = [
-  { path: '/', label: 'Home', exact: true },
-  { path: '/orgs', label: 'Orgs' },
-  { path: '/accounts', label: 'Accounts' },
-  { path: '/installs', label: 'Installs' },
-  { path: '/runners', label: 'Runners' },
-  { path: '/queues', label: 'Queues' },
-  { path: '/workflows', label: 'Workflows' },
-  { path: '/queue-signals', label: 'Signals' },
-  { path: '/in-flight-signals', label: 'In-flight' },
-  { path: '/signal-catalog', label: 'Catalog' },
-  { path: '/log-streams', label: 'Logs' },
-  { path: '/labels', label: 'Labels' },
-  { path: '/sandbox-mode', label: 'Sandbox' },
-  { path: '/temporal-workers', label: 'Workers' },
-  { path: '/temporal-workflows', label: 'Temporal' },
+const navGroups = [
+  {
+    items: [
+      { path: '/', label: 'Home', exact: true },
+    ],
+  },
+  {
+    label: 'Resources',
+    items: [
+      { path: '/orgs', label: 'Orgs' },
+      { path: '/accounts', label: 'Accounts' },
+      { path: '/installs', label: 'Installs' },
+      { path: '/runners', label: 'Runners' },
+    ],
+  },
+  {
+    label: 'Queues & signals',
+    items: [
+      { path: '/queues', label: 'Queues' },
+      { path: '/workflows', label: 'Workflows' },
+      { path: '/queue-signals', label: 'Queue signals' },
+      { path: '/in-flight-signals', label: 'In-flight' },
+      { path: '/signal-catalog', label: 'Signal catalog' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { path: '/log-streams', label: 'Log streams' },
+      { path: '/labels', label: 'Labels' },
+      { path: '/sandbox-mode', label: 'Sandbox mode' },
+      { path: '/temporal-workers', label: 'Temporal workers' },
+      { path: '/temporal-workflows', label: 'Temporal workflows' },
+    ],
+  },
 ]
 
 export const AppLayout = () => {
   const location = useLocation()
 
-  const isActive = (item: typeof navItems[number]) => {
+  const isActive = (item: { path: string; exact?: boolean }) => {
     if (item.exact) return location.pathname === item.path
-    return location.pathname.startsWith(item.path)
+    return location.pathname === item.path || location.pathname.startsWith(item.path + '/')
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-gray-900 text-white">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-12 items-center justify-between">
-            <Link to="/" className="text-lg font-bold tracking-tight">
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-56 flex-shrink-0 border-r border-gray-200 bg-white">
+        <div className="sticky top-0 flex h-screen flex-col overflow-y-auto">
+          <div className="flex h-12 items-center px-4 border-b border-gray-200">
+            <Link to="/" className="text-sm font-semibold tracking-tight text-primary-700">
               Nuon Admin
             </Link>
           </div>
+          <nav className="flex-1 px-2 py-3 space-y-4">
+            {navGroups.map((group, gi) => (
+              <div key={gi}>
+                {group.label && (
+                  <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    {group.label}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={cn(
+                        'block rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors duration-100',
+                        isActive(item)
+                          ? 'bg-primary-50 text-primary-700'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
-        <nav className="border-t border-gray-700">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex space-x-1 overflow-x-auto py-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                    isActive(item)
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        <main className="p-6 lg:p-8">
+          <div className="mx-auto max-w-6xl">
+            <Outlet />
           </div>
-        </nav>
-      </header>
-      <main className="flex-1 bg-gray-50">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

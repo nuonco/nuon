@@ -1,8 +1,7 @@
 import { api } from '@/lib/api'
-import type { TWorkflowsResponse, TWorkflowDetailResponse } from '@/types/admin.types'
 
 export const getWorkflows = (params: { search?: string; page?: number }) =>
-  api<TWorkflowsResponse>({ path: 'workflows', params })
+  api<{ workflows: any[]; page: number; total_pages: number }>({ path: 'workflows', params })
 
 export const getWorkflowDetail = (workflowId: string) =>
-  api<TWorkflowDetailResponse>({ path: `workflows/${workflowId}` })
+  api<{ workflow: any; group_details: any[]; generate_steps_signal: any; workflow_info: any }>({ path: `workflows/${workflowId}` })

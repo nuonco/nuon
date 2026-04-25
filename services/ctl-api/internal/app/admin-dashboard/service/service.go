@@ -120,8 +120,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/orgs/:id/status", s.OrgStatus)
 		api.POST("/orgs/:id/tags", s.UpdateOrgTags)
 		api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
-		api.POST("/orgs/:id/support-users/add", s.AddSupportUsers)
-		api.POST("/orgs/:id/migrate-queues", s.MigrateOrgQueues)
+		api.POST("/orgs/:id/labels", s.AddOrgLabels)
+		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
+		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
+		api.POST("/orgs/:id/migrate-queues", s.ProxyMigrateQueues)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
 
 		// Accounts

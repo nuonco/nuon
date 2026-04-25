@@ -18,26 +18,26 @@ import (
 
 func (s *service) SandboxMode(c *gin.Context) {
 	ctx := c.Request.Context()
-	tab := c.Query("tab")
-	if tab == "" {
-		tab = "runner-jobs"
+
+	runnerJobConfigs, err := s.getSandboxRunnerJobConfigs(ctx)
+	if err != nil {
+		s.l.Warn("failed to get runner job configs", zap.Error(err))
+	}
+	if runnerJobConfigs == nil {
+		runnerJobConfigs = []app.SandboxModeJobConfig{}
 	}
 
-	var runnerJobConfigs []app.SandboxModeJobConfig
-	var signalConfigs []app.SandboxModeSignalConfig
-	var stackConfig *app.SandboxModeJobConfig
-
-	switch tab {
-	case "runner-jobs", "templates":
-		runnerJobConfigs, _ = s.getSandboxRunnerJobConfigs(ctx)
-	case "signals":
-		signalConfigs, _ = s.getSandboxSignalConfigs(ctx)
-	case "stacks":
-		stackConfig, _ = s.getSandboxStackConfig(ctx)
+	signalConfigs, err := s.getSandboxSignalConfigs(ctx)
+	if err != nil {
+		s.l.Warn("failed to get signal configs", zap.Error(err))
 	}
+	if signalConfigs == nil {
+		signalConfigs = []app.SandboxModeSignalConfig{}
+	}
+
+	stackConfig, _ := s.getSandboxStackConfig(ctx)
 
 	c.JSON(http.StatusOK, gin.H{
-		"active_tab":           tab,
 		"runner_job_configs":   runnerJobConfigs,
 		"signal_configs":       signalConfigs,
 		"stack_config":         stackConfig,

@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -25,10 +26,12 @@ func (s *service) getOrgSignalsQueueID(ctx context.Context, orgID string) (strin
 }
 
 // enqueueOrgSignal enqueues a v2 signal to the given org queue.
-func (s *service) enqueueOrgSignal(ctx context.Context, queueID string, sig signal.Signal) error {
+func (s *service) enqueueOrgSignal(ctx context.Context, queueID string, sig signal.Signal, orgID string) error {
 	_, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: queueID,
-		Signal:  sig,
+		QueueID:   queueID,
+		Signal:    sig,
+		OwnerID:   orgID,
+		OwnerType: plugins.TableName(s.db, app.Org{}),
 	})
 	return err
 }

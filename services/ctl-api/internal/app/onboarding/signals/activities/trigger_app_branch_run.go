@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -72,7 +73,9 @@ func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranc
 
 	// Enqueue run signal on the branch queue
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: branch.Queue.ID,
+		QueueID:   branch.Queue.ID,
+		OwnerID:   run.ID,
+		OwnerType: plugins.TableName(a.db, app.AppBranchRun{}),
 		Signal: &runsignal.Signal{
 			RunID: run.ID,
 		},

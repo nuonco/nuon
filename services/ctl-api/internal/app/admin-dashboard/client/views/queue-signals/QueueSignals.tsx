@@ -26,21 +26,22 @@ export const QueueSignals = () => {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load signals'} />
 
-  const { signals = [], total_pages = 1 } = data || {}
+  const signals = data?.signals || []
+  const totalPages = data?.total_pages || 1
   const signalTypes = typeOptions?.signal_types || []
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Queue Signals</h1>
+      <h1 className="page-heading">Queue signals</h1>
 
-      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="w-full sm:w-64">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search signals..." />
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by ID, owner, queue..." />
         </div>
         <select
           value={signalType}
           onChange={(e) => { setSignalType(e.target.value); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
         >
           <option value="">All types</option>
           {signalTypes.map((t) => (
@@ -49,46 +50,44 @@ export const QueueSignals = () => {
         </select>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="mt-4 table-card">
+        <table>
+          <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queue</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Owner</th>
+              <th>Queue</th>
+              <th>Status</th>
+              <th>Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200">
             {signals.map((signal) => (
               <tr key={signal.id}>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(signal.id)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Badge>{signal.type}</Badge>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                <td className="text-gray-500 font-mono text-xs">{truncateId(signal.id)}</td>
+                <td><Badge>{signal.type}</Badge></td>
+                <td className="text-gray-500">
                   <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
                   <span className="ml-1 text-xs text-gray-400">({signal.owner_type})</span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(signal.queue_id)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Badge variant="status" status={String(signal.status)}>{String(signal.status)}</Badge>
+                <td className="text-gray-500 font-mono text-xs">{truncateId(signal.queue_id)}</td>
+                <td>
+                  <Badge variant="status" status={String(signal.status?.status || signal.status)}>{String(signal.status?.status || signal.status)}</Badge>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(signal.created_at)}</td>
+                <td className="text-gray-500">{formatDate(signal.created_at)}</td>
               </tr>
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">No signals found</td>
+                <td colSpan={6} className="text-center text-gray-500 py-6">No signals found</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <Pagination page={page} totalPages={total_pages} onPageChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

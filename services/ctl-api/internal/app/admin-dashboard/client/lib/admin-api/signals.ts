@@ -1,17 +1,21 @@
 import { api } from '@/lib/api'
-import type { TQueueSignalsResponse, TInFlightSignalsResponse, TSignalCatalogResponse, TSignalCatalogDetailResponse } from '@/types/admin.types'
+import type { TQueueSignal } from '@/types/admin.types'
 
+// Queue signals (global view)
 export const getQueueSignalsGlobal = (params: { search?: string; signal_type?: string; page?: number }) =>
-  api<TQueueSignalsResponse>({ path: 'queue-signals', params })
+  api<{ signals: TQueueSignal[]; page: number; total_pages: number }>({ path: 'queue-signals/table', params })
 
 export const getQueueSignalTypeOptions = () =>
   api<{ signal_types: string[] }>({ path: 'queue-signals/signal-type-options' })
 
-export const getInFlightSignals = (params: { page?: number }) =>
-  api<TInFlightSignalsResponse>({ path: 'in-flight-signals', params })
+// In-flight signals
+export const getInFlightSignals = () =>
+  api<{ signals: TQueueSignal[] }>({ path: 'in-flight-signals/table' })
 
+// Signal catalog - Go returns { grouped: Record<string, SignalTypeInfo[]>, namespaces: string[] }
 export const getSignalCatalog = () =>
-  api<TSignalCatalogResponse>({ path: 'signal-catalog' })
+  api<{ grouped: Record<string, any[]>; namespaces: string[] }>({ path: 'signal-catalog' })
 
+// Signal catalog detail - Go returns { info: SignalTypeInfo, recent_signals: QueueSignal[] }
 export const getSignalCatalogDetail = (signalType: string) =>
-  api<TSignalCatalogDetailResponse>({ path: `signal-catalog/${encodeURIComponent(signalType)}` })
+  api<{ info: any; recent_signals: TQueueSignal[] }>({ path: `signal-catalog/${encodeURIComponent(signalType)}` })

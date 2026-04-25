@@ -14,17 +14,17 @@ const sections = [
 
 export const Home = () => (
   <div>
-    <h1 className="text-2xl font-bold text-gray-900">Admin dashboard</h1>
-    <p className="mt-1 text-sm text-gray-500">Internal operations dashboard for Nuon platform</p>
-    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <h1 className="page-heading">Admin dashboard</h1>
+    <p className="page-subheading">Internal operations dashboard for the Nuon platform</p>
+    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {sections.map((s) => (
         <Link
           key={s.path}
           to={s.path}
-          className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all duration-150 hover:border-primary-200 hover:shadow-md"
         >
-          <h3 className="text-sm font-semibold text-gray-900">{s.title}</h3>
-          <p className="mt-1 text-xs text-gray-500">{s.description}</p>
+          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-primary-700">{s.title}</h3>
+          <p className="mt-1 text-xs text-gray-500 leading-relaxed">{s.description}</p>
         </Link>
       ))}
     </div>
