@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -41,32 +39,10 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	// Use update-with-start to ensure the handler workflow is alive.
-	startOp := a.tClient.NewWithStartWorkflowOperation(
-		tclient.StartWorkflowOptions{
-			ID:                       qs.Workflow.ID,
-			TaskQueue:                "api",
-			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: 0,
-			},
-		},
-		"Handler",
-		handler.HandlerRequest{
-			QueueID:       qs.QueueID,
-			QueueSignalID: qs.ID,
-		},
-	)
-
-	rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWithStartWorkflowOptions{
-			UpdateOptions: tclient.UpdateWorkflowOptions{
-				WorkflowID:   qs.Workflow.ID,
-				UpdateName:   "create-step-retry",
-				WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			},
-			StartWorkflowOperation: startOp,
-		})
+	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
+		UpdateName:   "create-step-retry",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send create-step-retry update to step %s: %w", req.StepID, err)
 	}

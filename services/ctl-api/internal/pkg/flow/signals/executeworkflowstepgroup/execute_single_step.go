@@ -103,10 +103,36 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 
 	if directive == "" {
 		if resp.Status == app.StatusError {
-			directive = DirectiveStop
-		} else {
-			directive = DirectiveContinue
+			// The step failed without a directive. This happens when auto-retries
+			// are exhausted but manual retries are still available. Fall through
+			// to the "wait for user action" path instead of stopping the workflow.
+			l.Debug("step failed without directive, waiting for user action",
+				zap.String("step_id", step.ID))
+
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "step failed, awaiting retry or skip",
+					Metadata: map[string]any{
+						"error_message":  "step failed after auto-retries exhausted",
+						"awaiting_retry": true,
+						"step_id":        step.ID,
+					},
+				},
+			})
+
+			if awaitErr := s.awaitUserAction(ctx, l); awaitErr != nil {
+				return StepResult{Error: awaitErr}
+			}
+
+			if s.retryGroupRequested {
+				return StepResult{Directive: DirectiveRetryGroup}
+			}
+
+			return StepResult{Directive: DirectiveContinue}
 		}
+		directive = DirectiveContinue
 	}
 
 	return StepResult{Directive: directive}
