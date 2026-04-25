@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // SkipStepRequest is the input for skipping a workflow step.
@@ -29,17 +30,15 @@ func (c *Client) SkipStep(ctx context.Context, req *SkipStepRequest) (*SkipStepR
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "skip-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{
-				executeflow.SkipStepRequest{
-					StepID: req.StepID,
-				},
+	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "skip-step",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args: []any{
+			executeflow.SkipStepRequest{
+				StepID: req.StepID,
 			},
-		})
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send skip-step update: %w", err)
 	}

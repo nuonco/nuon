@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -33,36 +31,15 @@ func (c *Client) RetryStep(ctx context.Context, req *RetryStepRequest) (*RetrySt
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	startOp := c.tClient.NewWithStartWorkflowOperation(
-		tclient.StartWorkflowOptions{
-			ID:                       qs.Workflow.ID,
-			TaskQueue:                "api",
-			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: 0,
+	_, err = handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "retry-step",
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		Args: []any{
+			executeflow.RetryStepRequest{
+				StepID: req.StepID,
 			},
 		},
-		"Handler",
-		handler.HandlerRequest{
-			QueueID:       qs.QueueID,
-			QueueSignalID: qs.ID,
-		},
-	)
-
-	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWithStartWorkflowOptions{
-			UpdateOptions: tclient.UpdateWorkflowOptions{
-				WorkflowID:   qs.Workflow.ID,
-				UpdateName:   "retry-step",
-				WaitForStage: tclient.WorkflowUpdateStageAccepted,
-				Args: []any{
-					executeflow.RetryStepRequest{
-						StepID: req.StepID,
-					},
-				},
-			},
-			StartWorkflowOperation: startOp,
-		})
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send retry-step update: %w", err)
 	}
