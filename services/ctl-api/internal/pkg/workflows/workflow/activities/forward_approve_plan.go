@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // ForwardApprovePlanRequest is the input for forwarding an approval to a step handler workflow.
@@ -46,18 +47,16 @@ func (a *Activities) ForwardApprovePlan(ctx context.Context, req ForwardApproveP
 	}
 
 	// Send the approve-plan update to the step's handler workflow
-	handle, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "approve-plan",
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args: []any{
-				approvePlanArg{
-					ApprovalResponseID: req.ApprovalResponseID,
-					ResponseType:       req.ResponseType,
-				},
+	handle, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
+		UpdateName:   "approve-plan",
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		Args: []any{
+			approvePlanArg{
+				ApprovalResponseID: req.ApprovalResponseID,
+				ResponseType:       req.ResponseType,
 			},
-		})
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send approve-plan update to step %s: %w", req.StepID, err)
 	}

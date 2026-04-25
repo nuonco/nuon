@@ -23,7 +23,6 @@ func AllRunnerJobTypes() []string {
 		"actions-workflow",
 
 		"sandbox-terraform",
-		"sandbox-terraform-plan",
 		"sandbox-sync-secrets",
 
 		"runner-helm",

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // ApprovePlanRequest is the input for approving a plan on a workflow step.
@@ -27,19 +28,17 @@ func (c *Client) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) error
 		return fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "approve-step",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{
-				executeflow.ApproveStepRequest{
-					StepID:             req.StepID,
-					ApprovalResponseID: req.ApprovalResponseID,
-					ResponseType:       string(req.ResponseType),
-				},
+	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "approve-step",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		Args: []any{
+			executeflow.ApproveStepRequest{
+				StepID:             req.StepID,
+				ApprovalResponseID: req.ApprovalResponseID,
+				ResponseType:       string(req.ResponseType),
 			},
-		})
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("unable to send approve-step update: %w", err)
 	}

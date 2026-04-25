@@ -89,9 +89,9 @@ func init() {
 
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
-	config.RegisterDefault("process_install_uptime_threshold", "8h")
+	config.RegisterDefault("process_install_uptime_threshold", "1m")
 	config.RegisterDefault("process_mng_uptime_threshold", "168h")
-	config.RegisterDefault("process_build_uptime_threshold", "8h")
+	config.RegisterDefault("process_build_uptime_threshold", "1m")
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
