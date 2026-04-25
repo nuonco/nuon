@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -16,7 +15,6 @@ type CreateFlowStepGroup struct {
 	Parallel   bool                `json:"parallel"`
 	Name       string              `json:"name"`
 	Status     app.CompositeStatus `json:"status"`
-	Labels     labels.Labels       `json:"labels"`
 }
 
 type CreateFlowStepGroupsRequest struct {
@@ -39,7 +37,6 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowStepGroups(ctx context.Context, r
 			Name:       req.Name,
 			Status:     req.Status,
 		}
-		g.Labels = req.Labels
 		groups = append(groups, &g)
 	}
 
