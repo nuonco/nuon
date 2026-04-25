@@ -47,7 +47,8 @@ export function getStepBadge(
 
   if (metadata?.is_retry) {
     const retryIdx = metadata.retry_idx ?? metadata.group_retry_idx ?? 0
-    return { children: `Retry #${retryIdx}`, theme: 'info' }
+    const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
+    return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
   if (step?.execution_type === 'skipped') {
     return { children: 'Skipped' }

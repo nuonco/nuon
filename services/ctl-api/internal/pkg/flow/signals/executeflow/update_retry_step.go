@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -69,8 +70,9 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 				Signal:      step.Signal,
 				QueueSignal: step.QueueSignal,
 				Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
-					"is_retry":  true,
-					"retry_idx": step.RetryIndex + 1,
+					"is_retry":   true,
+					"retry_idx":  step.RetryIndex + 1,
+					"retry_type": "manual",
 				}),
 				Idx:                 step.Idx + 1,
 				ExecutionType:       step.ExecutionType,
@@ -99,8 +101,36 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		zap.String("step_id", req.StepID),
 		zap.String("step_group_id", group.ID))
 
-	if _, err := s.executeGroup(ctx, group, flw); err != nil {
+	directive, err := s.executeGroup(ctx, group, flw)
+	if err != nil {
 		return nil, fmt.Errorf("unable to re-dispatch group: %w", err)
+	}
+
+	// If the group stopped (e.g. retries exhausted), update the workflow status
+	// so the dashboard shows the terminal state.
+	if directive == "stop" {
+		retriesExhausted := s.checkGroupRetriesExhausted(ctx, group)
+
+		metadata := map[string]any{
+			"stopped": true,
+		}
+		if retriesExhausted {
+			metadata["retries_exhausted"] = true
+		}
+
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.WorkflowID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusError,
+				StatusHumanDescription: "workflow stopped",
+				Metadata:               metadata,
+			},
+		})
+
+		return &RetryStepResponse{
+			WorkflowID: s.WorkflowID,
+			Retryable:  false,
+		}, nil
 	}
 
 	return &RetryStepResponse{

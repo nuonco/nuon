@@ -82,12 +82,9 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
 
   return (
     <div className="flex flex-col gap-2 mt-2">
-      {expanded &&
-        olderSteps.map((step) => (
-          <div key={step?.id} className="flex flex-col gap-4">
-            <StepBanner step={step} planOnly />
-          </div>
-        ))}
+      <div className="flex flex-col gap-4">
+        <StepBanner step={mostRecent} planOnly />
+      </div>
 
       {olderSteps.length > 0 && (
         <Button
@@ -102,9 +99,12 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
         </Button>
       )}
 
-      <div className="flex flex-col gap-4">
-        <StepBanner step={mostRecent} planOnly />
-      </div>
+      {expanded &&
+        olderSteps.map((step) => (
+          <div key={step?.id} className="flex flex-col gap-4">
+            <StepBanner step={step} planOnly />
+          </div>
+        ))}
     </div>
   )
 }
