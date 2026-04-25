@@ -15,6 +15,8 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signalhooks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/hooks"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	stateactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -63,6 +65,10 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(statusactivities.New),
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
+
+	// state-manager
+	fx.Provide(stateactivities.New),
+	fx.Provide(statemanager.NewWorkflows),
 
 	// workflows
 	fx.Provide(job.New),

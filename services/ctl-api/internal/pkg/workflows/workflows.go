@@ -6,6 +6,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueemitter "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 )
@@ -18,6 +19,7 @@ type WorkflowParams struct {
 	QueueWorkflows        *queue.Workflows
 	QueueEmitterWorkflows *queueemitter.Workflows
 	HandlerWorkflows      *handler.Workflows
+	StateManagerWorkflows *statemanager.Workflows
 }
 
 type Workflows struct {
@@ -26,6 +28,7 @@ type Workflows struct {
 	queueWorkflows        *queue.Workflows
 	queueemitterWorkflows *queueemitter.Workflows
 	handlerWorkflows      *handler.Workflows
+	stateManagerWorkflows *statemanager.Workflows
 }
 
 func (w *Workflows) AllWorkflows() []interface{} {
@@ -41,6 +44,7 @@ func (w *Workflows) AllWorkflows() []interface{} {
 	wkflows = append(wkflows, w.queueWorkflows.All()...)
 	wkflows = append(wkflows, w.queueemitterWorkflows.All()...)
 	wkflows = append(wkflows, w.handlerWorkflows.All()...)
+	wkflows = append(wkflows, w.stateManagerWorkflows.All()...)
 
 	return wkflows
 }
@@ -52,5 +56,6 @@ func NewWorkflows(params WorkflowParams) *Workflows {
 		queueWorkflows:        params.QueueWorkflows,
 		queueemitterWorkflows: params.QueueEmitterWorkflows,
 		handlerWorkflows:      params.HandlerWorkflows,
+		stateManagerWorkflows: params.StateManagerWorkflows,
 	}
 }
