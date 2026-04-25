@@ -1,0 +1,26 @@
+import { api } from '@/lib/api'
+import type { TOrg, TOrgsResponse, TOrgDetailResponse } from '@/types/admin.types'
+
+export const getOrgs = (params: { search?: string; tag?: string[]; page?: number }) =>
+  api<TOrgsResponse>({ path: 'orgs', params })
+
+export const getOrgDetail = (id: string) =>
+  api<TOrgDetailResponse>({ path: `orgs/${id}` })
+
+export const getOrgStatus = (id: string) =>
+  api<{ status: string; status_description: string }>({ path: `orgs/${id}/status` })
+
+export const getOrgInstalls = (id: string, params: { page?: number }) =>
+  api<{ installs: any[]; page: number; total_pages: number }>({ path: `orgs/${id}/installs`, params })
+
+export const updateOrgTags = (id: string, tags: string[]) =>
+  api<TOrg>({ path: `orgs/${id}/tags`, method: 'POST', body: { tags } })
+
+export const removeOrgTag = (id: string, tag: string) =>
+  api<TOrg>({ path: `orgs/${id}/tags/remove/${encodeURIComponent(tag)}`, method: 'POST' })
+
+export const addSupportUsers = (id: string, emails: string[]) =>
+  api<{ status: string }>({ path: `orgs/${id}/support-users/add`, method: 'POST', body: { emails } })
+
+export const migrateOrgQueues = (id: string) =>
+  api<{ status: string }>({ path: `orgs/${id}/migrate-queues`, method: 'POST' })

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -80,8 +79,11 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.WorkflowDetail(&wf, groupDetails, generateStepsSignal)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"workflow":              &wf,
+		"group_details":         groupDetails,
+		"generate_steps_signal": generateStepsSignal,
+	})
 }
 
 func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *views.StepTargetData {

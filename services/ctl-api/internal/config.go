@@ -128,6 +128,8 @@ type Config struct {
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
+	AdminDashboardDev      bool   `config:"admin_dashboard_dev"`
+	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`

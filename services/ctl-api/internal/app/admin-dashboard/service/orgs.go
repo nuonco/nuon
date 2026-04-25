@@ -7,13 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const orgsPerPage = 8
@@ -53,8 +51,12 @@ func (s *service) Orgs(c *gin.Context) {
 		allTags = []string{}
 	}
 
-	component := views.Orgs(orgs, allTags, filteredTags, page, totalPages, search)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"orgs":        orgs,
+		"all_tags":    allTags,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getOrgs(ctx context.Context, search string, tagFilters []string, page int) ([]*app.Org, int, error) {

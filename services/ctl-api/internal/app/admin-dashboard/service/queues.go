@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const queuesPerPage = 20
@@ -35,7 +33,7 @@ func (s *service) Queues(c *gin.Context) {
 	}
 
 	if redirect == "true" && len(queues) == 1 {
-		c.Redirect(http.StatusFound, fmt.Sprintf("/queues/%s", queues[0].ID))
+		c.JSON(http.StatusOK, gin.H{"redirect": fmt.Sprintf("/queues/%s", queues[0].ID)})
 		return
 	}
 
@@ -44,8 +42,12 @@ func (s *service) Queues(c *gin.Context) {
 		s.l.Error("failed to get queue namespaces", zap.Error(err))
 	}
 
-	component := views.Queues(queues, ownerID, ownerType, search, queueName, namespace, namespaces, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"queues":      queues,
+		"namespaces":  namespaces,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) QueuesTable(c *gin.Context) {
@@ -64,8 +66,11 @@ func (s *service) QueuesTable(c *gin.Context) {
 		return
 	}
 
-	component := views.QueuesTable(queues, ownerID, ownerType, search, queueName, namespace, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"queues":      queues,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search, queueName, namespace string, page int) ([]app.Queue, int, error) {

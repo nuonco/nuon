@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	commonpb "go.temporal.io/api/common/v1"
 	enumspb "go.temporal.io/api/enums/v1"
@@ -58,8 +57,14 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 
 	attrs := signalAttributesForType(signal.Type)
 
-	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo, attrs, signalsAhead)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signal":          &signal,
+		"queue":           &q,
+		"temporal_ui_url": s.cfg.TemporalUIURL,
+		"workflow_info":   wfInfo,
+		"signal_attrs":    attrs,
+		"signals_ahead":   signalsAhead,
+	})
 }
 
 type scheduledActivity struct {
