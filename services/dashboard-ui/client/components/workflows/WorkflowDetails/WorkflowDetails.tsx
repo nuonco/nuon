@@ -43,7 +43,7 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
               Workflow stopped
             </Text>
             <Text variant="subtext">
-              {metadata?.error_message || 'This workflow was stopped and cannot continue.'}
+              {(metadata?.error_message as string) || 'This workflow was stopped and cannot continue.'}
             </Text>
           </div>
         </Banner>
