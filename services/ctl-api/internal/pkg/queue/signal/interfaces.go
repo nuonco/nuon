@@ -57,8 +57,12 @@ type SignalWithAutoRetry interface {
 // When auto-retries are exhausted the step is marked as failed, but the user
 // can still manually retry up to MaxRetries().
 // If not implemented, all retries up to MaxRetries() are automatic.
+//
+// Accepts workflow.Context so implementations can fetch configuration
+// dynamically (e.g., from the component config) rather than baking values
+// into the signal at step creation time.
 type SignalWithMaxAutoRetries interface {
-	MaxAutoRetries() int
+	MaxAutoRetries(ctx workflow.Context) int
 }
 
 // SignalWithRetryGroup is implemented by signals whose steps should retry as an

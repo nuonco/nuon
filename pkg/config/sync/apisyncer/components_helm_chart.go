@@ -28,6 +28,9 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 		DeployTimeout:            obj.DeployTimeout,
 	}
 
+	if obj.MaxAutoRetries != nil {
+		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
+	}
 	if obj.DriftSchedule != nil {
 		configRequest.DriftSchedule = *obj.DriftSchedule
 	}
