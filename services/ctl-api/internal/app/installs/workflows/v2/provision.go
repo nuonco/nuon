@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
@@ -28,7 +27,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	sg := newStepGroup()
 
-	sg.nextGroupLabeled(labels.Labels{"name": "generate-install-state", "display_name": "Generate install state", "type": "hidden", "domain": "system"})
+	sg.nextGroup() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -37,7 +36,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	sg.nextGroupLabeled(labels.Labels{"name": "provision-runner-service-account", "display_name": "Provision runner service account", "type": "system", "domain": "install-stack"})
+	sg.nextGroup() // provision service account
 
 	step, err = sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &provisionrunner.Signal{
 		InstallID: installID,
@@ -54,7 +53,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	stackID := stack.ID
 
-	sg.nextGroupLabeled(labels.Labels{"name": "provision-install-stack", "display_name": "Provision install stack", "type": "user", "domain": "install-stack"})
+	sg.nextGroup() // install stack
 
 	step, err = sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
 		InstallStackID: stackID,
@@ -81,7 +80,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	sg.nextGroupLabeled(labels.Labels{"name": "await-runner-health", "display_name": "Await runner health", "type": "system", "domain": "system"})
+	sg.nextGroup() // runner health
 	step, err = sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
@@ -120,7 +119,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	sandboxID := sandbox.ID
 
-	sg.nextGroupLabeled(labels.Labels{"name": "provision-sandbox", "display_name": "Provision sandbox", "type": "approval", "domain": "sandbox"})
+	sg.nextGroup() // provision sandbox plan + apply
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &provisionsandboxplan.Signal{
 		InstallSandboxID: sandboxID,
 		Role:             flw.Role,
@@ -146,7 +145,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroupLabeled(labels.Labels{"name": "sync-secrets", "display_name": "Sync secrets", "type": "system", "domain": "sandbox"})
+		sg.nextGroup() // sync secrets
 		step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly, WithSkippable(false))
@@ -161,7 +160,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, lifecycleSteps...)
 
-		sg.nextGroupLabeled(labels.Labels{"name": "provision-sandbox-dns", "display_name": "Provision sandbox DNS", "type": "system", "domain": "sandbox"})
+		sg.nextGroup() // provision sandbox dns
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox dns if enabled", pgtype.Hstore{}, &provisiondns.Signal{
 			InstallID: installID,
 		}, flw.PlanOnly)
