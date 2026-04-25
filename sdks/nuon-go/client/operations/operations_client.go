@@ -79,6 +79,11 @@ func WithAcceptApplicationOctetStream(r *runtime.ClientOperation) {
 	r.ProducesMediaTypes = []string{"application/octet-stream"}
 }
 
+// WithAcceptApplicationPdf sets the Accept header to "application/pdf".
+func WithAcceptApplicationPdf(r *runtime.ClientOperation) {
+	r.ProducesMediaTypes = []string{"application/pdf"}
+}
+
 // WithAcceptTextCsv sets the Accept header to "text/csv".
 func WithAcceptTextCsv(r *runtime.ClientOperation) {
 	r.ProducesMediaTypes = []string{"text/csv"}
@@ -273,6 +278,8 @@ type ClientService interface {
 	DeprovisionInstall(params *DeprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallCreated, error)
 
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
+
+	ExportPolicyReport(params *ExportPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportPolicyReportOK, error)
 
 	FetchRunnerTokenMng(params *FetchRunnerTokenMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*FetchRunnerTokenMngOK, error)
 
@@ -573,6 +580,16 @@ type ClientService interface {
 	GetOrgWorkflows(params *GetOrgWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgWorkflowsOK, error)
 
 	GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgsOK, error)
+
+	GetPolicyAnalyticsBreakdown(params *GetPolicyAnalyticsBreakdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsBreakdownOK, error)
+
+	GetPolicyAnalyticsSummary(params *GetPolicyAnalyticsSummaryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsSummaryOK, error)
+
+	GetPolicyAnalyticsTimeseries(params *GetPolicyAnalyticsTimeseriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsTimeseriesOK, error)
+
+	GetPolicyReport(params *GetPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportOK, error)
+
+	GetPolicyReports(params *GetPolicyReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportsOK, error)
 
 	GetProcessLatestHeartBeat(params *GetProcessLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProcessLatestHeartBeatOK, error)
 
@@ -5139,6 +5156,52 @@ func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeprovisionInstallSandbox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ExportPolicyReport exports policy report
+
+Exports a policy report as JSON, SARIF, or PDF.
+*/
+func (a *Client) ExportPolicyReport(params *ExportPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportPolicyReportOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewExportPolicyReportParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ExportPolicyReport",
+		Method:             "GET",
+		PathPattern:        "/v1/policy-reports/{report_id}/export",
+		ProducesMediaTypes: []string{"application/json", "application/pdf"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ExportPolicyReportReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ExportPolicyReportOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ExportPolicyReport: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12139,6 +12202,236 @@ func (a *Client) GetOrgs(params *GetOrgsParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetOrgs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPolicyAnalyticsBreakdown gets policy analytics breakdown by dimension
+
+Returns policy evaluation counts broken down by a single dimension (policy_id, install_id, or owner_type), sorted by violation count (denies first, then warns). Use this to identify which policies, installs, or lifecycle stages produce the most violations.
+*/
+func (a *Client) GetPolicyAnalyticsBreakdown(params *GetPolicyAnalyticsBreakdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsBreakdownOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPolicyAnalyticsBreakdownParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPolicyAnalyticsBreakdown",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/policy-analytics/breakdown",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPolicyAnalyticsBreakdownReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPolicyAnalyticsBreakdownOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetPolicyAnalyticsBreakdown: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPolicyAnalyticsSummary gets policy analytics summary
+
+Returns aggregate policy evaluation counts for an app over a time range, with optional drill-down by install or policy.
+*/
+func (a *Client) GetPolicyAnalyticsSummary(params *GetPolicyAnalyticsSummaryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsSummaryOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPolicyAnalyticsSummaryParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPolicyAnalyticsSummary",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/policy-analytics/summary",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPolicyAnalyticsSummaryReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPolicyAnalyticsSummaryOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetPolicyAnalyticsSummary: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPolicyAnalyticsTimeseries gets policy analytics timeseries
+
+Returns policy evaluation counts bucketed over time for charting, with optional grouping by policy, install, or component.
+*/
+func (a *Client) GetPolicyAnalyticsTimeseries(params *GetPolicyAnalyticsTimeseriesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyAnalyticsTimeseriesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPolicyAnalyticsTimeseriesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPolicyAnalyticsTimeseries",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/policy-analytics/timeseries",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPolicyAnalyticsTimeseriesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPolicyAnalyticsTimeseriesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetPolicyAnalyticsTimeseries: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPolicyReport gets policy report
+
+Returns a single policy report by ID.
+*/
+func (a *Client) GetPolicyReport(params *GetPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPolicyReportParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPolicyReport",
+		Method:             "GET",
+		PathPattern:        "/v1/policy-reports/{report_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPolicyReportReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPolicyReportOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetPolicyReport: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetPolicyReports gets policy reports
+
+Returns policy reports for the current organization.
+*/
+func (a *Client) GetPolicyReports(params *GetPolicyReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetPolicyReportsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetPolicyReports",
+		Method:             "GET",
+		PathPattern:        "/v1/policy-reports",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetPolicyReportsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetPolicyReportsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetPolicyReports: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

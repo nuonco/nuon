@@ -50,6 +50,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// helm repo config
 	HelmRepoConfig *ServiceHelmRepoConfigRequest `json:"helm_repo_config,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 

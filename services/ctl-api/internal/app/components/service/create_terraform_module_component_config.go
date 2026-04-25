@@ -28,6 +28,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
 	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
 	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -71,6 +72,11 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 	}
 	if c.DeployTimeout != "" {
 		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -233,6 +239,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		Checksum:                       req.Checksum,
 		BuildTimeout:                   req.BuildTimeout,
 		DeployTimeout:                  req.DeployTimeout,
+		MaxAutoRetries:                 req.MaxAutoRetries,
 		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {
