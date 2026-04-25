@@ -172,7 +172,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		if comp.Type.IsImage() {
 			groupType = "system"
 		}
-		sg.nextGroupLabeled(labels.Labels{"name": "deploy-" + comp.Name, "display_name": "Deploy " + comp.Name, "type": groupType, "domain": "component"})
+		sg.nextGroupLabeled(labels.Labels{"name": "deploy-" + comp.Name, "display_name": "Deploy " + comp.Name, "type": groupType, "domain": "component", "component_name": comp.Name})
 
 		// Resolve install component ID
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{

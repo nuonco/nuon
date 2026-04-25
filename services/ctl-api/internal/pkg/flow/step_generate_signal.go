@@ -88,6 +88,7 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 				Parallel:   g.Parallel,
 				Name:       g.Name,
 				Status:     g.Status,
+				Labels:     g.Labels,
 			})
 		}
 		if _, err := activities.AwaitPkgWorkflowsFlowCreateFlowStepGroups(ctx, groupsReq); err != nil {
