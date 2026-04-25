@@ -21,6 +21,15 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
+	// Check if the queue still exists before proceeding.
+	if err := e.ensureQueueActive(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to check queue status")
+	}
+	if e.stopped {
+		l.Info("queue terminated, stopping emitter")
+		return true, nil
+	}
+
 	l.Info("fetching emitter configuration")
 	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
 		EmitterID: e.emitterID,

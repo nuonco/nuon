@@ -15,7 +15,7 @@ import (
 
 const (
 	cronTickerIDTemplate    = "queue-emitter-cron-%s-%s"
-	cronParentRunDuration   = 24 * time.Hour
+	cronParentRunDuration   = 1 * time.Hour
 	cronParentCheckInterval = 5 * time.Minute
 )
 
@@ -38,6 +38,15 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 	for workflow.Now(ctx).Before(runUntil) {
 		if e.stopped {
 			l.Info("emitter stopped")
+			return true, nil
+		}
+
+		// Periodically verify the queue still exists.
+		if err := e.ensureQueueActive(ctx); err != nil {
+			return false, err
+		}
+		if e.stopped {
+			l.Info("emitter stopped - queue terminated")
 			return true, nil
 		}
 
