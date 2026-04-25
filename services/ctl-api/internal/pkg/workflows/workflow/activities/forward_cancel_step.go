@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // ForwardCancelStepRequest is the input for forwarding a cancellation to a step handler workflow.
@@ -39,13 +40,11 @@ func (a *Activities) ForwardCancelStep(ctx context.Context, req ForwardCancelSte
 
 	// Send the cancel-step update to the step signal's handler workflow.
 	// Only wait for accepted — cancellation is fire-and-forget.
-	_, err := a.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "cancel-step",
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args:         []any{&struct{}{}},
-		})
+	_, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
+		UpdateName:   "cancel-step",
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+		Args:         []any{&struct{}{}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send cancel update to step %s: %w", req.StepID, err)
 	}

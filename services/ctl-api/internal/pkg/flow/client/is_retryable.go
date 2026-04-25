@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // IsRetryableRequest is the input for checking step retryability.
@@ -29,12 +30,10 @@ func (c *Client) IsRetryable(ctx context.Context, req *IsRetryableRequest) (*IsR
 		return nil, fmt.Errorf("unable to find step queue signal: %w", err)
 	}
 
-	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "is-retryable",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		})
+	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "is-retryable",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send is-retryable update: %w", err)
 	}
