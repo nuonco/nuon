@@ -71,6 +71,9 @@ type AppComponentConfigConnection struct {
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// Operation roles map: operation type -> role name
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 
