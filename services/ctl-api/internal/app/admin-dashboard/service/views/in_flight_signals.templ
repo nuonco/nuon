@@ -1,0 +1,165 @@
+package views
+
+import (
+	"fmt"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/card"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/copybutton"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/selectbox"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/table"
+	"time"
+)
+
+const ActivePageInFlightSignals ActivePage = "in-flight-signals"
+
+templ InFlightSignals(signals []app.QueueSignal, namespace string, namespaces []string) {
+	@Layout("In-Flight Signals", ActivePageInFlightSignals) {
+		<div class="w-full max-w-7xl mx-auto px-6">
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						In-flight signals
+						@badge.Badge(badge.Props{Variant: badge.VariantDefault, Class: "ml-2"}) {
+							{ fmt.Sprintf("%d", len(signals)) }
+						}
+					}
+					@card.Description() {
+						Signals currently being processed (executing, in-progress, or active)
+					}
+				}
+				@card.Content() {
+					<div class="flex items-end gap-4 mb-6">
+						<div
+							class="w-56"
+							hx-get="/in-flight-signals/table"
+							hx-trigger="change from:[name='namespace']"
+							hx-target="#in-flight-table"
+							hx-swap="outerHTML"
+							hx-include="[name='namespace']"
+						>
+							<label class="text-sm font-medium mb-2 block">Namespace</label>
+							@selectbox.SelectBox(selectbox.Props{
+								Multiple: false,
+							}) {
+								@selectbox.Trigger(selectbox.TriggerProps{
+									Name:     "namespace",
+									Multiple: false,
+								}) {
+									@selectbox.Value(selectbox.ValueProps{
+										Placeholder: "All namespaces",
+										Multiple:    false,
+									})
+								}
+								@selectbox.Content(selectbox.ContentProps{}) {
+									@selectbox.Item(selectbox.ItemProps{
+										Value:    "",
+										Selected: namespace == "",
+										Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+									}) {
+										All namespaces
+									}
+									for _, ns := range namespaces {
+										@selectbox.Item(selectbox.ItemProps{
+											Value:    ns,
+											Selected: namespace == ns,
+											Class:    "hover:bg-cyan/20 dark:hover:bg-cyan/30",
+										}) {
+											{ ns }
+										}
+									}
+								}
+							}
+						</div>
+					</div>
+					@InFlightSignalsTable(signals, namespace)
+				}
+			}
+		</div>
+		@selectbox.Script()
+		@copybutton.Script()
+	}
+}
+
+templ InFlightSignalsTable(signals []app.QueueSignal, namespace string) {
+	<div
+		id="in-flight-table"
+		hx-get="/in-flight-signals/table"
+		hx-trigger="every 5s"
+		hx-swap="outerHTML"
+		hx-include="[name='namespace']"
+	>
+		if len(signals) == 0 {
+			<div class="text-sm text-muted-foreground py-8 text-center">No in-flight signals.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Signal }
+						@table.Head() { Type }
+						@table.Head() { Status }
+						@table.Head() { Owner }
+						@table.Head() { Queue }
+						@table.Head() { Duration }
+						@table.Head() { Updated }
+					}
+				}
+				@table.Body() {
+					for _, sig := range signals {
+						@table.Row() {
+							@table.Cell() {
+								<div class="flex flex-col gap-1">
+									<a href={ templ.URL("/queues/" + sig.QueueID + "/signals/" + sig.ID) } class="text-cyan hover:underline font-mono text-xs">
+										{ sig.ID }
+									</a>
+									<div class="flex items-center gap-1">
+										<span id={ "inflight-id-" + sig.ID } class="font-mono text-xs text-muted-foreground">{ sig.ID }</span>
+										@copybutton.CopyButton(copybutton.Props{
+											TargetID: "inflight-id-" + sig.ID,
+										})
+									</div>
+								</div>
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ string(sig.Type) }
+							}
+							@table.Cell() {
+								@signalStatusBadge(sig.Status)
+							}
+							@table.Cell() {
+								<div class="flex flex-col gap-0.5">
+									@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+										{ sig.OwnerType }
+									}
+									<span class="font-mono text-xs text-muted-foreground">{ sig.OwnerID }</span>
+								</div>
+							}
+							@table.Cell() {
+								<a href={ templ.URL("/queues/" + sig.QueueID) } class="text-cyan hover:underline font-mono text-xs">
+									{ sig.QueueID }
+								</a>
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								{ formatElapsed(sig.UpdatedAt) }
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								{ sig.UpdatedAt.Format("2006-01-02 15:04:05") }
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
+}
+
+func formatElapsed(since time.Time) string {
+	d := time.Since(since)
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
+	}
+	return fmt.Sprintf("%dh %dm", int(d.Hours()), int(d.Minutes())%60)
+}
