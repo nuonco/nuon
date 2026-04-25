@@ -226,6 +226,18 @@ templ OrgHeader(org *app.Org, dashboardURL string) {
 					}) {
 						Add Support Users
 					}
+					@button.Button(button.Props{
+						Variant: button.VariantOutline,
+						Size:    button.SizeSm,
+						Attributes: templ.Attributes{
+							"hx-post":    "/orgs/" + org.ID + "/migrate-queues",
+							"hx-target":  "body",
+							"hx-swap":    "beforeend",
+							"hx-confirm": "Start queue migration for this org? This will create all missing queues and enable the queues feature flag.",
+						},
+					}) {
+						Migrate Org Queues
+					}
 				</div>
 				<!-- Status -->
 				<div class="flex items-center justify-end gap-2">
@@ -284,6 +296,23 @@ templ OrgHeader(org *app.Org, dashboardURL string) {
 					<div>Created: <span class="font-mono">{ org.CreatedAt.Format("2006-01-02 15:04") }</span></div>
 					<div>Updated: <span class="font-mono">{ org.UpdatedAt.Format("2006-01-02 15:04") }</span></div>
 				</div>
+				<!-- Queue Migration Metadata -->
+				if org.StatusV2.Metadata != nil {
+					if _, ok := org.StatusV2.Metadata["queue_migration_started_at"]; ok {
+						<div class="flex items-center justify-end gap-2">
+							<span class="text-xs text-muted-foreground uppercase">Queue Migration:</span>
+							if _, finished := org.StatusV2.Metadata["queue_migration_finished_at"]; finished {
+								@badge.Badge(badge.Props{Variant: badge.VariantDefault, Class: "text-xs"}) {
+									Completed
+								}
+							} else {
+								@badge.Badge(badge.Props{Variant: badge.VariantSecondary, Class: "text-xs"}) {
+									In Progress
+								}
+							}
+						</div>
+					}
+				}
 			</div>
 		</div>
 	</div>
@@ -343,6 +372,32 @@ func buildSupportUsersDescription(successCount, alreadyExistsCount int) string {
 		return fmt.Sprintf("Added %d support users (%d already existed)", successCount, alreadyExistsCount)
 	}
 	return fmt.Sprintf("Added %d support users", successCount)
+}
+
+templ MigrateOrgQueuesToast(success bool, message string) {
+	if success {
+		@toast.Toast(toast.Props{
+			Variant:       toast.VariantSuccess,
+			Title:         "Queue Migration",
+			Description:   message,
+			Position:      toast.PositionBottomRight,
+			Duration:      5000,
+			Dismissible:   true,
+			ShowIndicator: true,
+			Icon:          true,
+		})
+	} else {
+		@toast.Toast(toast.Props{
+			Variant:       toast.VariantError,
+			Title:         "Queue Migration Failed",
+			Description:   message,
+			Position:      toast.PositionBottomRight,
+			Duration:      5000,
+			Dismissible:   true,
+			ShowIndicator: true,
+			Icon:          true,
+		})
+	}
 }
 
 templ MostRecentAppCard(app *app.App, graphDot string) {

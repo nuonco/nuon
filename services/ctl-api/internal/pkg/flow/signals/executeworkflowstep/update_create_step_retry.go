@@ -32,6 +32,21 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 
 	sig := stepSignal(step)
 
+	// Enforce the global retry ceiling — no retries past MaxRetries.
+	maxRetries := signal.DefaultMaxRetries
+	if mr, ok := sig.(signal.SignalWithMaxRetries); ok {
+		maxRetries = mr.MaxRetries()
+	}
+
+	retryIndex := step.RetryIndex
+	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
+		retryIndex = step.GroupRetryIdx
+	}
+
+	if retryIndex >= maxRetries {
+		return nil, errors.Errorf("max retries exhausted (%d/%d)", retryIndex, maxRetries)
+	}
+
 	// Determine the directive based on signal capabilities.
 	directive := DirectiveRetry
 	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {

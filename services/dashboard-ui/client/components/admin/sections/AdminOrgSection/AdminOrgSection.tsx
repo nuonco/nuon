@@ -14,6 +14,7 @@ import {
   adminRestartOrg,
   adminRestartOrgRunners,
   adminRestartOrgQueues,
+  adminMigrateOrgQueues,
   adminRestartRunner,
   adminGracefulRunnerShutdown,
   adminForceRunnerShutdown,
@@ -108,6 +109,14 @@ export const AdminOrgSection = ({
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart all queue workflows for this organization. Continue?"
+        />
+        <AdminActionCard
+          title="Migrate org queues"
+          description="Create all missing queues and enable the queues feature flag"
+          action={() => adminMigrateOrgQueues({ orgId, adminEmail })}
+          variant="warning"
+          requiresConfirmation
+          confirmationText="This will create all missing queues for apps, installs, runners, and components, then enable the queues feature flag. Continue?"
         />
       </AdminActionGroup>
 
