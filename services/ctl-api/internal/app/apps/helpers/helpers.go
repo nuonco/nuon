@@ -56,14 +56,9 @@ func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
 }
 
-// EnsureComponentQueue creates a Temporal queue workflow for the given component if one does not
-// already exist. It is idempotent — safe to call on every sync.
+// EnsureComponentQueue creates a Temporal queue workflow for the given component.
+// Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureComponentQueue(ctx context.Context, componentID string) error {
-	var existing app.Queue
-	if res := h.db.WithContext(ctx).First(&existing, "owner_id = ?", componentID); res.Error == nil {
-		return nil
-	}
-
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     componentID,
 		OwnerType:   plugins.TableName(h.db, app.Component{}),
@@ -72,7 +67,7 @@ func (h *Helpers) EnsureComponentQueue(ctx context.Context, componentID string) 
 		MaxDepth:    50,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to create queue for component %s: %w", componentID, err)
+		return fmt.Errorf("unable to ensure queue for component %s: %w", componentID, err)
 	}
 	return nil
 }

@@ -190,6 +190,10 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
 	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
 
+	// In-flight signals
+	api.GET("/in-flight-signals", s.InFlightSignals)
+	api.GET("/in-flight-signals/table", s.InFlightSignalsTable)
+
 	// Signal catalog
 	api.GET("/signal-catalog", s.SignalCatalog)
 	api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)

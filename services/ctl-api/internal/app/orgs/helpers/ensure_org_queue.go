@@ -10,15 +10,8 @@ import (
 )
 
 // EnsureOrgQueue creates the org-signals queue if it doesn't already exist.
-// If it exists, it restarts the queue workflow to ensure it's running.
+// Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureOrgQueue(ctx context.Context, orgID string) error {
-	var existing app.Queue
-	if res := h.db.WithContext(ctx).
-		Where(app.Queue{OwnerID: orgID, Name: OrgSignalsQueueName}).
-		First(&existing); res.Error == nil {
-		return h.queueClient.Restart(ctx, existing.ID)
-	}
-
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OrgID:       &orgID,
 		OwnerID:     orgID,
@@ -29,8 +22,7 @@ func (h *Helpers) EnsureOrgQueue(ctx context.Context, orgID string) error {
 		MaxDepth:    50,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to create org-signals queue: %w", err)
+		return fmt.Errorf("unable to ensure org-signals queue: %w", err)
 	}
-
 	return nil
 }
