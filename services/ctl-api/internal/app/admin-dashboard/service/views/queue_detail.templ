@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
-templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.QueueSignal, temporalUIURL string) {
+templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.QueueSignal, inFlightSignals []app.QueueSignal, temporalUIURL string) {
 	@Layout("Queue: " + q.ID, ActivePageQueues) {
 		<div class="w-full max-w-7xl mx-auto px-6">
 			<!-- Breadcrumb -->
@@ -142,6 +142,36 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 				}
 			</div>
 
+			<!-- In-Flight Signals -->
+			if len(inFlightSignals) > 0 {
+				@card.Card() {
+					@card.Header() {
+						@card.Title() {
+							<div class="flex items-center gap-2">
+								In-flight signals
+								@badge.Badge(badge.Props{Variant: badge.VariantSecondary}) {
+									{ fmt.Sprintf("%d", len(inFlightSignals)) }
+								}
+							</div>
+						}
+						@card.Description() {
+							Signals currently being processed in this queue
+						}
+					}
+					@card.Content() {
+						<div
+							id="in-flight-signals-table"
+							hx-get={ "/queues/" + q.ID + "/in-flight-signals/table" }
+							hx-trigger="every 5s"
+							hx-swap="outerHTML"
+						>
+							@QueueInFlightSignalsTable(inFlightSignals, q.ID)
+						</div>
+					}
+				}
+				<div class="mt-6"></div>
+			}
+
 			<!-- Status Timestamps -->
 			@card.Card() {
 				@card.Header() {
@@ -257,6 +287,61 @@ templ renderSignalsTableInline(signals []app.QueueSignal, queueID string) {
 			}
 		}
 	}
+}
+
+templ QueueInFlightSignalsTable(signals []app.QueueSignal, queueID string) {
+	<div
+		id="in-flight-signals-table"
+		hx-get={ "/queues/" + queueID + "/in-flight-signals/table" }
+		hx-trigger="every 5s"
+		hx-swap="outerHTML"
+	>
+		if len(signals) == 0 {
+			<div class="text-sm text-muted-foreground py-4 text-center">No in-flight signals.</div>
+		} else {
+			@table.Table() {
+				@table.Header() {
+					@table.Row() {
+						@table.Head() { Signal }
+						@table.Head() { Type }
+						@table.Head() { Status }
+						@table.Head() { Owner }
+						@table.Head() { Duration }
+						@table.Head() { Updated }
+					}
+				}
+				@table.Body() {
+					for _, sig := range signals {
+						@table.Row() {
+							@table.Cell() {
+								<a href={ templ.URL("/queues/" + queueID + "/signals/" + sig.ID) } class="text-cyan hover:underline font-mono text-xs">
+									{ sig.ID }
+								</a>
+							}
+							@table.Cell(table.CellProps{Class: "font-mono text-xs"}) {
+								{ string(sig.Type) }
+							}
+							@table.Cell() {
+								@signalStatusBadge(sig.Status)
+							}
+							@table.Cell() {
+								<div class="flex flex-col gap-0.5">
+									<span class="font-mono text-xs text-muted-foreground">{ sig.OwnerType }</span>
+									<span class="font-mono text-xs text-muted-foreground">{ sig.OwnerID }</span>
+								</div>
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								{ formatElapsed(sig.UpdatedAt) }
+							}
+							@table.Cell(table.CellProps{Class: "text-xs text-muted-foreground whitespace-nowrap"}) {
+								{ sig.UpdatedAt.Format("2006-01-02 15:04:05") }
+							}
+						}
+					}
+				}
+			}
+		}
+	</div>
 }
 
 templ queueTimestamp(label string, metadata map[string]*string, key string) {
