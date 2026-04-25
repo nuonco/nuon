@@ -107,7 +107,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 	}
 
 	// If the group stopped (e.g. retries exhausted), update the workflow status
-	// so the dashboard shows the terminal state.
+	// and mark all remaining steps as not-attempted.
 	if directive == "stop" {
 		retriesExhausted := s.checkGroupRetriesExhausted(ctx, group)
 
@@ -126,6 +126,9 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 				Metadata:               metadata,
 			},
 		})
+
+		// Mark remaining non-terminal steps as not-attempted.
+		s.markRemainingStepsNotAttempted(ctx, l)
 
 		return &RetryStepResponse{
 			WorkflowID: s.WorkflowID,

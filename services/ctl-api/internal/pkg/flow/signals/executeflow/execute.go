@@ -309,6 +309,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case "stop":
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+			s.markRemainingStepsNotAttempted(ctx, l)
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
 				l.Error("unable to update finished at", zap.Error(err))
 			}
@@ -486,6 +487,36 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 			},
 		}); err != nil {
 			l.Warn("failed to mark step as discarded", zap.String("step_id", step.ID), zap.Error(err))
+		}
+	}
+}
+
+// markRemainingStepsNotAttempted marks all non-terminal steps in the workflow
+// as not-attempted. Called when the workflow is stopped (e.g. retries exhausted)
+// so the dashboard clearly shows which steps were never reached.
+func (s *Signal) markRemainingStepsNotAttempted(ctx workflow.Context, l *zap.Logger) {
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		l.Warn("unable to fetch steps to mark as not-attempted", zap.Error(err))
+		return
+	}
+
+	for _, step := range steps {
+		if isStepTerminal(step.Status.Status) {
+			continue
+		}
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status: app.StatusNotAttempted,
+				Metadata: map[string]any{
+					"reason": "workflow stopped before step was reached",
+				},
+			},
+		}); err != nil {
+			l.Warn("failed to mark step as not-attempted", zap.String("step_id", step.ID), zap.Error(err))
 		}
 	}
 }
