@@ -137,6 +137,7 @@ func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, comp *config.Com
 		Checksum:                   comp.Checksum,
 		BuildTimeout:               comp.DockerBuild.BuildTimeout,
 		DeployTimeout:              comp.DockerBuild.DeployTimeout,
+		MaxAutoRetries:             comp.DockerBuild.MaxAutoRetries,
 		OperationRoles:             operationRoles,
 	}
 
@@ -179,6 +180,12 @@ func validateDockerBuildComponent(comp *config.Component) error {
 
 	if comp.DockerBuild.DeployTimeout != "" {
 		if err := validation.ValidateDeployTimeout(comp.DockerBuild.DeployTimeout); err != nil {
+			return err
+		}
+	}
+
+	if comp.DockerBuild.MaxAutoRetries != nil {
+		if err := validation.ValidateMaxAutoRetries(*comp.DockerBuild.MaxAutoRetries); err != nil {
 			return err
 		}
 	}

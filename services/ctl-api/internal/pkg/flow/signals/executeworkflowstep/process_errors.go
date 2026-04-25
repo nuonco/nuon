@@ -32,7 +32,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Determine max auto-retries. Defaults to maxRetries when not implemented.
 	maxAutoRetries := maxRetries
 	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
-		maxAutoRetries = mar.MaxAutoRetries()
+		maxAutoRetries = mar.MaxAutoRetries(ctx)
 	}
 
 	// Determine the directive based on signal capabilities. For retry-group

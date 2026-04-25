@@ -24,6 +24,9 @@ func (s *syncer) createDockerBuildComponentConfig(ctx context.Context, resource,
 		DeployTimeout: obj.DeployTimeout,
 	}
 
+	if obj.MaxAutoRetries != nil {
+		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
+	}
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}

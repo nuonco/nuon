@@ -113,6 +113,9 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, comp *con
 		ComponentDependencyIDs:            pq.StringArray{},
 		References:                        pq.StringArray(references),
 		Checksum:                          comp.Checksum,
+		BuildTimeout:                      comp.KubernetesManifest.BuildTimeout,
+		DeployTimeout:                     comp.KubernetesManifest.DeployTimeout,
+		MaxAutoRetries:                    comp.KubernetesManifest.MaxAutoRetries,
 		OperationRoles:                    operationRoles,
 	}
 

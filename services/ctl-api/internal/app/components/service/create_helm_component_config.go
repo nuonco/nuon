@@ -22,14 +22,15 @@ type CreateHelmComponentConfigRequest struct {
 	basicVCSConfigRequest
 	HelmRepoConfig *HelmRepoConfigRequest `json:"helm_repo_config,omitempty"`
 
-	Values        map[string]*string `json:"values,omitempty" validate:"required"`
-	ValuesFiles   []string           `json:"values_files,omitempty"`
-	ChartName     string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
-	Namespace     string             `json:"namespace,omitempty"`
-	StorageDriver string             `json:"storage_driver,omitempty"`
-	TakeOwnership bool               `json:"take_ownership,omitempty"`
-	BuildTimeout  string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	Values         map[string]*string `json:"values,omitempty" validate:"required"`
+	ValuesFiles    []string           `json:"values_files,omitempty"`
+	ChartName      string             `json:"chart_name,omitempty" validate:"required,dns_rfc1035_label,min=5,max=62"`
+	Namespace      string             `json:"namespace,omitempty"`
+	StorageDriver  string             `json:"storage_driver,omitempty"`
+	TakeOwnership  bool               `json:"take_ownership,omitempty"`
+	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -77,6 +78,11 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 	}
 	if c.DeployTimeout != "" {
 		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -218,6 +224,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		Checksum:               req.Checksum,
 		BuildTimeout:           req.BuildTimeout,
 		DeployTimeout:          req.DeployTimeout,
+		MaxAutoRetries:         req.MaxAutoRetries,
 		OperationRoles:         operationRoles,
 	}
 	if req.DriftSchedule != nil {

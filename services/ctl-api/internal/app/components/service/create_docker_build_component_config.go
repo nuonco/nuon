@@ -20,13 +20,14 @@ import (
 type CreateDockerBuildComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Dockerfile    string             `json:"dockerfile" validate:"required"`
-	Target        string             `json:"target"`
-	BuildArgs     []string           `json:"build_args"`
-	EnvVars       map[string]*string `json:"env_vars"`
-	BuildTimeout  string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
-	AppConfigID   string             `json:"app_config_id"`
+	Dockerfile     string             `json:"dockerfile" validate:"required"`
+	Target         string             `json:"target"`
+	BuildArgs      []string           `json:"build_args"`
+	EnvVars        map[string]*string `json:"env_vars"`
+	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
+	AppConfigID    string             `json:"app_config_id"`
 
 	Dependencies   []string                      `json:"dependencies"`
 	References     []string                      `json:"references"`
@@ -58,6 +59,11 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	}
 	if c.DeployTimeout != "" {
 		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -187,6 +193,7 @@ func (s *service) createDockerBuildComponentConfig(ctx context.Context, cmpID st
 		Checksum:                   req.Checksum,
 		BuildTimeout:               req.BuildTimeout,
 		DeployTimeout:              req.DeployTimeout,
+		MaxAutoRetries:             req.MaxAutoRetries,
 		OperationRoles:             operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {

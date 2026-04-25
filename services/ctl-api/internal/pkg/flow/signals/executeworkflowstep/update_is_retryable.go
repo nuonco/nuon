@@ -44,7 +44,7 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		}
 		resp.MaxAutoRetries = resp.MaxRetries
 		if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
-			resp.MaxAutoRetries = mar.MaxAutoRetries()
+			resp.MaxAutoRetries = mar.MaxAutoRetries(ctx)
 		}
 		if rg, ok := sig.(signal.SignalWithRetryGroup); ok {
 			resp.RetryGroup = rg.RetryGroup()

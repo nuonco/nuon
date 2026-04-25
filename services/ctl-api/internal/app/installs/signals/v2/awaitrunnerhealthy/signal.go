@@ -26,13 +26,16 @@ type Signal struct {
 }
 
 var (
-	_ signal.Signal                = (*Signal)(nil)
-	_ signal.SignalWithParams      = (*Signal)(nil)
-	_ signal.SignalWithStepContext = (*Signal)(nil)
-	_ signal.SignalWithAutoRetry   = (*Signal)(nil)
+	_ signal.Signal                   = (*Signal)(nil)
+	_ signal.SignalWithParams         = (*Signal)(nil)
+	_ signal.SignalWithStepContext    = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry      = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 )
 
 func (s *Signal) AutoRetry() bool { return true }
+
+func (s *Signal) MaxAutoRetries(ctx workflow.Context) int { return 3 }
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.v = params.V

@@ -25,6 +25,9 @@ func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resou
 		DeployTimeout:            obj.DeployTimeout,
 	}
 
+	if obj.MaxAutoRetries != nil {
+		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
+	}
 	if obj.DriftSchedule != nil {
 		configRequest.DriftSchedule = *obj.DriftSchedule
 	}
