@@ -49,7 +49,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
-		QueueName:       cfg.QueueName,
+		QueueName:       cfg.GroupQueueName,
 		Signal:          sig,
 		SignalOwnerID:   signalOwnerID,
 		SignalOwnerType: signalOwnerType,
