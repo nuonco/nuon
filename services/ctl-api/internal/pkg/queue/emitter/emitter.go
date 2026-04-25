@@ -34,6 +34,7 @@ func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) er
 		tClient:   w.tClient,
 		l:         w.l,
 		emitterID: req.EmitterID,
+		queueID:   req.QueueID,
 		state:     req.State,
 	}
 	if e.state == nil {
@@ -62,6 +63,7 @@ type emitterWorkflow struct {
 	l       *zap.Logger
 
 	emitterID string
+	queueID   string
 
 	stopped   bool
 	restarted bool

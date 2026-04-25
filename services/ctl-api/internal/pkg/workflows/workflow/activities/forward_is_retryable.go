@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	enumsv1 "go.temporal.io/api/enums/v1"
-	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
+	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -45,34 +43,11 @@ func (a *Activities) ForwardIsRetryable(ctx context.Context, req ForwardIsRetrya
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	// Use update-with-start to ensure the handler workflow is alive.
-	// If the step signal already terminated, this starts a new handler.
-	startOp := a.tClient.NewWithStartWorkflowOperation(
-		client.StartWorkflowOptions{
-			ID:                       qs.Workflow.ID,
-			TaskQueue:                "api",
-			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
-			RetryPolicy: &temporal.RetryPolicy{
-				MaximumAttempts: 0,
-			},
-		},
-		"Handler",
-		handler.HandlerRequest{
-			QueueID:       qs.QueueID,
-			QueueSignalID: qs.ID,
-		},
-	)
-
 	// Send the is-retryable update via update-with-start.
-	rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		client.UpdateWithStartWorkflowOptions{
-			UpdateOptions: client.UpdateWorkflowOptions{
-				WorkflowID:   qs.Workflow.ID,
-				UpdateName:   "is-retryable",
-				WaitForStage: client.WorkflowUpdateStageCompleted,
-			},
-			StartWorkflowOperation: startOp,
-		})
+	rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
+		UpdateName:   "is-retryable",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to send is-retryable update to step %s: %w", req.StepID, err)
 	}
