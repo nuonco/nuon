@@ -4755,7 +4755,6 @@ export interface components {
       install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
-      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       links?: {
         [key: string]: unknown;
       };
@@ -4824,7 +4823,6 @@ export interface components {
       idx?: number;
       /** @description DEPRECATED: this is the install workflow ID, which is now the workflow ID. */
       install_workflow_id?: string;
-      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       links?: {
         [key: string]: unknown;
       };
@@ -4898,7 +4896,6 @@ export interface components {
       created_by_id?: string;
       group_idx?: number;
       id?: string;
-      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       name?: string;
       parallel?: boolean;
       queue_signal?: components["schemas"]["app.QueueSignal"];
