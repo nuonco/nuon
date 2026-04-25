@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -25,7 +26,9 @@ func (h *Helpers) EnqueueProcessShutdown(ctx context.Context, process *app.Runne
 
 	// Enqueue the process_shutdown signal
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
+		QueueID:   q.ID,
+		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
+		OwnerID:   process.ID,
 		Signal: queuesignal.NewRaw("process_shutdown", map[string]any{
 			"runner_id":  process.RunnerID,
 			"process_id": process.ID,

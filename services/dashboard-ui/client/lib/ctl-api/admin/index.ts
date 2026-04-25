@@ -36,6 +36,9 @@ export const adminRestartOrgRunners = ({ orgId, adminEmail }: { orgId: string } 
 export const adminRestartOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-restart-queues` })
 
+export const adminMigrateOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-migrate-queues` })
+
 export const adminEnableOrgDebugMode = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-debug-mode` })
 

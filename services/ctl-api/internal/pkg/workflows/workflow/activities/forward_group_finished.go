@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -46,31 +44,10 @@ func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupF
 	}
 
 	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
-		startOp := a.tClient.NewWithStartWorkflowOperation(
-			tclient.StartWorkflowOptions{
-				ID:                       qs.Workflow.ID,
-				TaskQueue:                "api",
-				WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
-				RetryPolicy: &temporal.RetryPolicy{
-					MaximumAttempts: 0,
-				},
-			},
-			"Handler",
-			handler.HandlerRequest{
-				QueueID:       qs.QueueID,
-				QueueSignalID: qs.ID,
-			},
-		)
-
-		rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-			tclient.UpdateWithStartWorkflowOptions{
-				UpdateOptions: tclient.UpdateWorkflowOptions{
-					WorkflowID:   qs.Workflow.ID,
-					UpdateName:   "group-finished",
-					WaitForStage: tclient.WorkflowUpdateStageCompleted,
-				},
-				StartWorkflowOperation: startOp,
-			})
+		rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
+			UpdateName:   "group-finished",
+			WaitForStage: tclient.WorkflowUpdateStageCompleted,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("unable to send group-finished update to group %s: %w", req.StepGroupID, err)
 		}
