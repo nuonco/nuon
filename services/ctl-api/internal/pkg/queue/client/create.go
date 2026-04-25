@@ -39,6 +39,19 @@ type CreateQueueRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queue, error) {
+	// Idempotent: if a queue with the same owner + name already exists,
+	// restart its workflow and return the existing record.
+	var existing app.Queue
+	if res := c.db.WithContext(ctx).
+		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
+		First(&existing); res.Error == nil {
+		if err := c.Restart(ctx, existing.ID); err != nil {
+			c.l.Warn("unable to restart existing queue during idempotent create",
+				zap.String("queue-id", existing.ID), zap.Error(err))
+		}
+		return &existing, nil
+	}
+
 	q := app.Queue{
 		OrgID:       req.OrgID,
 		OwnerID:     req.OwnerID,

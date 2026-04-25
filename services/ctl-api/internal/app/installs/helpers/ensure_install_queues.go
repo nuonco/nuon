@@ -9,8 +9,8 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// EnsureInstallQueues creates the three install queues (workflows, signals, workflow-steps)
-// if they don't already exist. If they exist, restarts the queue workflows.
+// EnsureInstallQueues creates the four install queues if they don't already exist.
+// Safe to call multiple times — queueClient.Create is idempotent.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
 	queues := []struct {
 		Name        string
@@ -18,32 +18,22 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 	}{
 		{InstallWorkflowsQueueName, 10},
 		{InstallSignalsQueueName, 20},
+		{InstallWorkflowStepGroupsQueueName, 10},
 		{InstallWorkflowStepsQueueName, 10},
 	}
 
 	ownerType := plugins.TableName(s.db, app.Install{})
 
 	for _, q := range queues {
-		var existing app.Queue
-		if res := s.db.WithContext(ctx).
-			Where(app.Queue{OwnerID: installID, Name: q.Name}).
-			First(&existing); res.Error == nil {
-			if err := s.queueClient.Restart(ctx, existing.ID); err != nil {
-				return fmt.Errorf("unable to restart %s queue: %w", q.Name, err)
-			}
-			continue
-		}
-
-		_, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		if _, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     installID,
 			OwnerType:   ownerType,
 			Namespace:   "installs",
 			Name:        q.Name,
 			MaxInFlight: q.MaxInFlight,
 			MaxDepth:    50,
-		})
-		if err != nil {
-			return fmt.Errorf("unable to create %s queue: %w", q.Name, err)
+		}); err != nil {
+			return fmt.Errorf("unable to ensure %s queue: %w", q.Name, err)
 		}
 	}
 
