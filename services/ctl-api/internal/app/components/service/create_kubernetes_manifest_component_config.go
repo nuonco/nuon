@@ -26,11 +26,12 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	Dependencies []string `json:"dependencies"`
 
 	// Inline manifest (mutually exclusive with Kustomize)
-	Manifest      string  `json:"manifest,omitempty"`
-	Namespace     string  `json:"namespace"`
-	BuildTimeout  string  `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
-	DriftSchedule *string `json:"drift_schedule,omitempty"`
+	Manifest       string  `json:"manifest,omitempty"`
+	Namespace      string  `json:"namespace"`
+	BuildTimeout   string  `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout  string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries *int    `json:"max_auto_retries,omitempty"`
+	DriftSchedule  *string `json:"drift_schedule,omitempty"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
@@ -104,6 +105,11 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 	}
 	if c.DeployTimeout != "" {
 		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -243,6 +249,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 		ComponentDependencyIDs:            pq.StringArray(depIDs),
 		BuildTimeout:                      req.BuildTimeout,
 		DeployTimeout:                     req.DeployTimeout,
+		MaxAutoRetries:                    req.MaxAutoRetries,
 		OperationRoles:                    operationRoles,
 	}
 

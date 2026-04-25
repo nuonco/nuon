@@ -44,6 +44,9 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// Required: true
 	ImageURL *string `json:"image_url"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 

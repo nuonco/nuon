@@ -48,6 +48,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// Inline manifest (mutually exclusive with Kustomize)
 	Manifest string `json:"manifest,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 

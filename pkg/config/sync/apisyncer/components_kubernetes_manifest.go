@@ -24,6 +24,9 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 		DeployTimeout: comp.KubernetesManifest.DeployTimeout,
 	}
 
+	if comp.KubernetesManifest.MaxAutoRetries != nil {
+		configRequest.MaxAutoRetries = int64(*comp.KubernetesManifest.MaxAutoRetries)
+	}
 	if comp.KubernetesManifest.Kustomize != nil {
 		configRequest.Kustomize.Path = comp.KubernetesManifest.Kustomize.Path
 		configRequest.Kustomize.Patches = comp.KubernetesManifest.Kustomize.Patches
