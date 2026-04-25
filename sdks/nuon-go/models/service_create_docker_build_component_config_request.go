@@ -48,6 +48,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// operation roles
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 

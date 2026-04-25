@@ -3282,6 +3282,7 @@ export interface components {
       id?: string;
       job?: components["schemas"]["app.JobComponentConfig"];
       kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
+      max_auto_retries?: number;
       /** @description Operation roles map: operation type -> role name */
       operation_roles?: {
         [key: string]: string;
@@ -5905,6 +5906,7 @@ export interface components {
       env_vars?: {
         [key: string]: string;
       };
+      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };
@@ -5924,6 +5926,7 @@ export interface components {
       deploy_timeout?: string;
       gcp_gar_image_config?: components["schemas"]["service.gcpGARImageConfigRequest"];
       image_url: string;
+      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };
@@ -5942,6 +5945,7 @@ export interface components {
       deploy_timeout?: string;
       drift_schedule?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
+      max_auto_retries?: number;
       namespace?: string;
       operation_roles?: {
         [key: string]: string;
@@ -6038,6 +6042,7 @@ export interface components {
         [key: string]: string;
       };
       image_url: string;
+      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };
@@ -6058,6 +6063,7 @@ export interface components {
       kustomize?: components["schemas"]["service.KustomizeConfigRequest"];
       /** @description Inline manifest (mutually exclusive with Kustomize) */
       manifest?: string;
+      max_auto_retries?: number;
       namespace?: string;
       operation_roles?: {
         [key: string]: string;
@@ -6091,6 +6097,7 @@ export interface components {
       env_vars: {
         [key: string]: string;
       };
+      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };
@@ -6116,6 +6123,7 @@ export interface components {
       env_vars: {
         [key: string]: string;
       };
+      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };

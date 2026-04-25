@@ -163,6 +163,7 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, comp *config
 		Checksum:                       comp.Checksum,
 		BuildTimeout:                   comp.TerraformModule.BuildTimeout,
 		DeployTimeout:                  comp.TerraformModule.DeployTimeout,
+		MaxAutoRetries:                 comp.TerraformModule.MaxAutoRetries,
 		OperationRoles:                 operationRoles,
 		DriftSchedule:                  driftSchedule,
 	}
@@ -217,6 +218,12 @@ func validateTerraformComponent(comp *config.Component) error {
 
 	if comp.TerraformModule.DeployTimeout != "" {
 		if err := validation.ValidateDeployTimeout(comp.TerraformModule.DeployTimeout); err != nil {
+			return err
+		}
+	}
+
+	if comp.TerraformModule.MaxAutoRetries != nil {
+		if err := validation.ValidateMaxAutoRetries(*comp.TerraformModule.MaxAutoRetries); err != nil {
 			return err
 		}
 	}

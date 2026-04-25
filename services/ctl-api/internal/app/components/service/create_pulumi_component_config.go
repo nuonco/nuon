@@ -21,12 +21,13 @@ import (
 type CreatePulumiComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Runtime       string             `json:"runtime" validate:"required"`
-	Version       string             `json:"version"`
-	Config        map[string]*string `json:"config" validate:"required"`
-	EnvVars       map[string]*string `json:"env_vars" validate:"required"`
-	BuildTimeout  string             `json:"build_timeout,omitempty"`
-	DeployTimeout string             `json:"deploy_timeout,omitempty"`
+	Runtime        string             `json:"runtime" validate:"required"`
+	Version        string             `json:"version"`
+	Config         map[string]*string `json:"config" validate:"required"`
+	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
+	BuildTimeout   string             `json:"build_timeout,omitempty"`
+	DeployTimeout  string             `json:"deploy_timeout,omitempty"`
+	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -67,6 +68,11 @@ func (c *CreatePulumiComponentConfigRequest) Validate(v *validator.Validate) err
 	}
 	if c.DeployTimeout != "" {
 		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+			return err
+		}
+	}
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -198,6 +204,7 @@ func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string,
 		Checksum:               req.Checksum,
 		BuildTimeout:           req.BuildTimeout,
 		DeployTimeout:          req.DeployTimeout,
+		MaxAutoRetries:         req.MaxAutoRetries,
 		OperationRoles:         operationRoles,
 	}
 	if req.DriftSchedule != nil {

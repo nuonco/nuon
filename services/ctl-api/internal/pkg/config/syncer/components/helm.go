@@ -166,6 +166,7 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, comp *config.Component,
 		Checksum:               comp.Checksum,
 		BuildTimeout:           comp.HelmChart.BuildTimeout,
 		DeployTimeout:          comp.HelmChart.DeployTimeout,
+		MaxAutoRetries:         comp.HelmChart.MaxAutoRetries,
 		OperationRoles:         operationRoles,
 		DriftSchedule:          driftSchedule,
 	}
@@ -227,6 +228,12 @@ func validateHelmComponent(comp *config.Component) error {
 
 	if comp.HelmChart.DeployTimeout != "" {
 		if err := validation.ValidateDeployTimeout(comp.HelmChart.DeployTimeout); err != nil {
+			return err
+		}
+	}
+
+	if comp.HelmChart.MaxAutoRetries != nil {
+		if err := validation.ValidateMaxAutoRetries(*comp.HelmChart.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
