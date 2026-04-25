@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // PauseWorkflowRequest is the input for pausing a workflow.
@@ -22,12 +23,10 @@ func (c *Client) PauseWorkflow(ctx context.Context, req *PauseWorkflowRequest) e
 		return fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := c.tClient.UpdateWorkflowInNamespace(ctx, qs.Workflow.Namespace,
-		tclient.UpdateWorkflowOptions{
-			WorkflowID:   qs.Workflow.ID,
-			UpdateName:   "pause-workflow",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		})
+	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+		UpdateName:   "pause-workflow",
+		WaitForStage: tclient.WorkflowUpdateStageCompleted,
+	})
 	if err != nil {
 		return fmt.Errorf("unable to send pause-workflow update: %w", err)
 	}

@@ -58,21 +58,17 @@ func (a *actInterceptor) ExecuteActivity(
 
 	resp, err := a.Next.ExecuteActivity(ctx, in)
 	if err != nil {
-		status = "error"
+		tags["status"] = "error"
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			status = "error_not_found"
-		}
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			status = "error_duplicate_key"
+			tags["not_found"] = "true"
 		}
 
 		var vErr validator.ValidationErrors
 		if errors.As(err, &vErr) {
-			status = "error_validation"
+			tags["validation_error"] = "true"
 		}
 
-		tags[status] = status
 		return nil, err
 	}
 
