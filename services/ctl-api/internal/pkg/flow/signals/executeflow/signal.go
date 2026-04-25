@@ -20,6 +20,7 @@ type Signal struct {
 	WorkflowID string `json:"workflow_id"`
 
 	// Conductor configuration — set by the creator when enqueuing.
+	StepGroupQueueName  string `json:"step_group_queue_name"`
 	StepQueueName       string `json:"step_queue_name"`
 	StepTargetQueueName string `json:"step_target_queue_name"`
 	OwnerID             string `json:"owner_id"`
@@ -69,9 +70,12 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
-	if s.StepQueueName == "" || s.StepTargetQueueName == "" {
+	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" {
 		switch s.OwnerType {
 		case "installs":
+			if s.StepGroupQueueName == "" {
+				s.StepGroupQueueName = "install-workflow-step-groups"
+			}
 			if s.StepQueueName == "" {
 				s.StepQueueName = "install-workflow-steps"
 			}

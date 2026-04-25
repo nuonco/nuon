@@ -537,6 +537,7 @@ func isStepTerminal(status app.Status) bool {
 // stepConfig returns the StepConfig for this signal.
 func (s *Signal) stepConfig() flow.StepConfig {
 	return flow.StepConfig{
+		GroupQueueName:  s.StepGroupQueueName,
 		QueueName:       s.StepQueueName,
 		TargetQueueName: s.StepTargetQueueName,
 		OwnerID:         s.OwnerID,
