@@ -46,7 +46,31 @@ func (s *service) QueueDetail(c *gin.Context) {
 		Limit(20).
 		Find(&signals)
 
-	component := views.QueueDetail(&q, status, signals, s.cfg.TemporalUIURL)
+	// Get in-flight signals for this queue
+	var inFlightSignals []app.QueueSignal
+	s.db.WithContext(c.Request.Context()).
+		Where("queue_id = ?", queueID).
+		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
+		Order("updated_at desc").
+		Limit(50).
+		Find(&inFlightSignals)
+
+	component := views.QueueDetail(&q, status, signals, inFlightSignals, s.cfg.TemporalUIURL)
+	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
+	queueID := c.Param("id")
+
+	var signals []app.QueueSignal
+	s.db.WithContext(c.Request.Context()).
+		Where("queue_id = ?", queueID).
+		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
+		Order("updated_at desc").
+		Limit(50).
+		Find(&signals)
+
+	component := views.QueueInFlightSignalsTable(signals, queueID)
 	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 

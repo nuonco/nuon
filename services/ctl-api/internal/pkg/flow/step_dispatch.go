@@ -15,6 +15,7 @@ import (
 // workflow steps. Used by both the execute-flow signal (directly) and the
 // WorkflowConductor (for backward compatibility).
 type StepConfig struct {
+	GroupQueueName  string
 	QueueName       string
 	TargetQueueName string
 	OwnerID         string
