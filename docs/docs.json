@@ -200,11 +200,18 @@
           {
             "group": "Getting Started",
             "pages": [
-              "guides/byoc",
-              "guides/self-hosting/index",
               "guides/app-install-life-cycle",
               "guides/ai-and-apps",
               "guides/using-variables"
+            ]
+          },
+          {
+            "group": "Deployment Options",
+            "pages": [
+              "guides/deployment-options",
+              "guides/nuon-cloud",
+              "guides/byoc",
+              "guides/self-hosted"
             ]
           },
           {
