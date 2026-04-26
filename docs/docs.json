@@ -201,7 +201,15 @@
             "group": "Getting Started",
             "pages": [
               "guides/byoc",
-              "guides/self-hosting/index",
+              {
+                "group": "Self Hosting",
+                "pages": [
+                  "guides/self-hosting/index",
+                  "guides/self-hosting/aws",
+                  "guides/self-hosting/azure",
+                  "guides/self-hosting/gcp"
+                ]
+              },
               "guides/app-install-life-cycle",
               "guides/ai-and-apps",
               "guides/using-variables"
