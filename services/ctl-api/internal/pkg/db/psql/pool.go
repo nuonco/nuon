@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	maxConnections  int32         = 12
 	maxConnIdleTime time.Duration = time.Second * 15
 	maxConnLifetime time.Duration = time.Minute * 5
 
@@ -46,7 +45,7 @@ func (c *database) poolCfg() (*pgxpool.Config, error) {
 	}
 
 	// configure the pool timeouts and size
-	connCfg.MaxConns = maxConnections
+	connCfg.MaxConns = c.MaxConnections
 	connCfg.MaxConnIdleTime = maxConnIdleTime
 	connCfg.MaxConnLifetime = maxConnLifetime
 

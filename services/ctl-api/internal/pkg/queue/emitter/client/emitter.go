@@ -137,7 +137,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	return &em, nil
 }
 
-func (c *Client) GetEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
+func (c *Client) getEmitterByID(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get emitter")
@@ -153,6 +153,8 @@ func (c *Client) getEmitter(ctx context.Context, emitterID string) (*app.QueueEm
 	return &em, nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) GetEmittersByQueueID(ctx context.Context, queueID string) ([]app.QueueEmitter, error) {
 	var emitters []app.QueueEmitter
 	if res := c.db.WithContext(ctx).Where("queue_id = ?", queueID).Find(&emitters); res.Error != nil {
@@ -264,6 +266,8 @@ func (c *Client) EnsureRunning(ctx context.Context, emitterID string) (*emitter.
 	return &resp, nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 2m
 func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {
