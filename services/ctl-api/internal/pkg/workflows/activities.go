@@ -6,6 +6,7 @@ import (
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -33,6 +34,7 @@ type Params struct {
 	HandlerActs               *handleractivities.Activities
 	SignalsActivities         *signalsactivities.Activities
 	SignalLifecycleActivities *signal.SignalLifecycleActivities
+	EmitterClient             *emitterclient.Client
 }
 
 type Activities struct {
@@ -45,6 +47,7 @@ type Activities struct {
 	EmitterActivities         *emitteractivities.Activities
 	HandlerActivities         *handleractivities.Activities
 	QueueClient               *queueclient.Client
+	EmitterClient             *emitterclient.Client
 	SignalLifecycleActivities *signal.SignalLifecycleActivities
 }
 
@@ -59,6 +62,7 @@ func (a *Activities) AllActivities() []any {
 		a.EmitterActivities,
 		a.HandlerActivities,
 		a.QueueClient,
+		a.EmitterClient,
 		a.SignalLifecycleActivities,
 	}
 }
@@ -74,6 +78,7 @@ func NewActivities(params Params) *Activities {
 		EmitterActivities:         params.EmitterActs,
 		HandlerActivities:         params.HandlerActs,
 		QueueClient:               params.QueueClient,
+		EmitterClient:             params.EmitterClient,
 		SignalLifecycleActivities: params.SignalLifecycleActivities,
 	}
 }

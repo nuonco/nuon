@@ -81,6 +81,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/queue_migration"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_runners"
 
 	// runners signals

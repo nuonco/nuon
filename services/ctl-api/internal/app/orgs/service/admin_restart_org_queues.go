@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	orgrestartqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_queues"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -34,36 +34,20 @@ func (s *service) RestartOrgQueues(ctx *gin.Context) {
 		return
 	}
 
-	_, err := s.getOrg(ctx, orgID)
+	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
 		return
 	}
 
-	var queues []app.Queue
-	if res := s.db.WithContext(ctx).Where("org_id = ?", orgID).Find(&queues); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get org queues: %w", res.Error))
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-
-	for _, queue := range queues {
-		if err := s.queueClient.Restart(ctx, queue.ID); err != nil {
-			ctx.Error(fmt.Errorf("unable to restart queue %s: %w", queue.ID, err))
-			return
-		}
-
-		emitters, err := s.emitterClient.GetEmittersByQueueID(ctx, queue.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get emitters for queue %s: %w", queue.ID, err))
-			return
-		}
-
-		for _, emitter := range emitters {
-			if _, err := s.emitterClient.RestartEmitterWorkflow(ctx, emitter.ID); err != nil {
-				ctx.Error(fmt.Errorf("unable to restart emitter %s: %w", emitter.ID, err))
-				return
-			}
-		}
+	if err := s.enqueueOrgSignal(ctx, queueID, &orgrestartqueues.Signal{OrgID: org.ID}); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, true)
