@@ -7,15 +7,15 @@ FROM node:20-alpine AS admin-dashboard-build
 
 WORKDIR /src
 
-COPY --link services/ctl-api/internal/app/admin-dashboard/package.json \
-     services/ctl-api/internal/app/admin-dashboard/package-lock.json \
+COPY --link internal/app/admin-dashboard/package.json \
+     internal/app/admin-dashboard/package-lock.json \
      ./
 
 RUN --mount=type=cache,target=/root/.npm,id=npm-admin-dashboard npm ci
 
-COPY --link services/ctl-api/internal/app/admin-dashboard/client ./client
-COPY --link services/ctl-api/internal/app/admin-dashboard/scripts ./scripts
-COPY --link services/ctl-api/internal/app/admin-dashboard/postcss.config.js ./
+COPY --link internal/app/admin-dashboard/client ./client
+COPY --link internal/app/admin-dashboard/scripts ./scripts
+COPY --link internal/app/admin-dashboard/postcss.config.js ./
 
 RUN npm run build
 
