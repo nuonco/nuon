@@ -1,16 +1,69 @@
 ---
 title: 'Install Nuon BYOC'
-description: 'Run Nuon in your AWS account'
+description: 'Let Nuon Install & Manage Nuon in your AWS account'
 icon: "cloud-arrow-up"
 keywords: ["self-hosted Nuon", "install Nuon", "AWS deployment", "Nuon setup", "BYOC installation"]
 ---
 
-Nuon BYOC allows you to run a stand-alone, single-tenant instance of Nuon in your own AWS account. This gives you full
-control over your data, networking, and compliance requirements.
+Nuon BYOC gives you a single-tenant Nuon control plane running in your own AWS account. Nuon uses its own platform to
+remotely deploy and manage the control plane as an install — the same mechanism you use to deploy software to your
+customers. This means you get automatic upgrades, operational visibility, and lifecycle management,
+while retaining full ownership of your data, networking, and compliance posture.
 
-To get started, [contact sales](https://nuon.co/contact-sales)
+This deployment option is often referred to as Bring Your Own Cloud (BYOC), Cloud-Prem, or Vendor-Managed, Self-Hosted.
 
-## Prerequisites
+Nuon BYOC requires a paid license so to get started, [contact sales](https://nuon.co/contact-sales).
+
+## Architecture
+
+Nuon Cloud manages your BYOC control plane as an install — the same way your control plane will manage installs for your own customers. Upgrades, provisioning, and lifecycle operations are all driven remotely by Nuon.
+
+```mermaid
+flowchart TD
+    subgraph NuonCloud["Nuon Cloud"]
+        NC_CTL["ctl-api"]
+    end
+
+    subgraph CustomerAWS["Your AWS Account"]
+        NR["Nuon Runner"]
+
+        subgraph CP["Control Plane — EKS"]
+            DASH["dashboard-ui"]
+            CTL["ctl-api"]
+            BR["Build Runner"]
+        end
+
+        subgraph Deps["Dependencies"]
+            TMP["Temporal"]
+            CH["ClickHouse"]
+            RDS[("RDS")]
+            ECR[("ECR")]
+            S3[("S3")]
+        end
+    end
+
+    subgraph EndCustomers["Your Customers' Clouds"]
+        R["Nuon Runner"]
+        I["Installs"]
+    end
+
+    NR -->|"polls for jobs"| NC_CTL
+    NR -->|"deploys & manages\ncontrol plane"| CP
+
+    DASH -->|"API calls"| CTL
+    CTL --> TMP
+    CTL --> CH
+    CTL --> RDS
+    CTL --> S3
+    CTL -->|"trigger builds"| BR
+    BR -->|"push OCI artifacts"| ECR
+
+    R -->|"polls for jobs"| CTL
+    R -->|"pull artifacts"| ECR
+    R -->|"deploys"| I
+```
+
+## Requirements
 
 ### AWS Account
 
