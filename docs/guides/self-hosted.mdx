@@ -1,0 +1,51 @@
+---
+title: 'Install Self-Hosted Nuon'
+description: 'Deploy Nuon in your own cloud account'
+icon: 'cloud-arrow-up'
+keywords: ['self-hosted Nuon']
+---
+
+In addition to the Nuon BYOC offering, Nuon supports fully self-hosted deployments. The guides below cover cloud-specific setup.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph CP["Control Plane — EKS"]
+        DASH["dashboard-ui"]
+        CTL["ctl-api"]
+        BR["Build Runner"]
+    end
+
+    subgraph Deps["Dependencies"]
+        TMP["Temporal"]
+        CH["ClickHouse"]
+        RDS[("RDS")]
+        S3[("S3")]
+        ECR[("ECR")]
+    end
+
+    subgraph Customers["Customer Cloud — AWS · Azure · GCP"]
+        R["Nuon Runner"]
+        I["Installs"]
+    end
+
+    DASH -->|"API calls"| CTL
+    CTL --> TMP
+    CTL --> CH
+    CTL --> RDS
+    CTL --> S3
+    CTL -->|"trigger builds"| BR
+    TMP --> RDS
+    BR -->|"push OCI artifacts"| ECR
+
+    R -->|"polls for jobs"| CTL
+    R -->|"pull artifacts"| ECR
+    R -->|"deploys"| I
+```
+
+## Supported Platforms
+
+- [AWS](/guides/self-hosted/aws) — Primary supported platform. Nuon deploys on EKS with RDS, ECR, Route 53, ACM, and Secrets Manager.
+- [Azure](/guides/self-hosted/azure) — Azure AKS support.
+- [GCP](/guides/self-hosted/gcp) — GCP support.
