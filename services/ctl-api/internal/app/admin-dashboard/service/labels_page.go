@@ -33,7 +33,17 @@ func (s *service) LabelsPage(c *gin.Context) {
 		return
 	}
 
+	if results == nil {
+		results = []views.LabelSearchResult{}
+	}
+	if allKeys == nil {
+		allKeys = []string{}
+	}
+
 	orgs := s.getOrgOptions(ctx)
+	if orgs == nil {
+		orgs = []views.OrgOption{}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"results":     results,

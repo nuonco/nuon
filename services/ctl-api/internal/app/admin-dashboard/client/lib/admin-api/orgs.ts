@@ -4,14 +4,8 @@ import type { TOrg, TOrgsResponse, TOrgDetailResponse } from '@/types/admin.type
 export const getOrgs = (params: { search?: string; tag?: string[]; page?: number }) =>
   api<TOrgsResponse>({ path: 'orgs', params })
 
-export const getOrgDetail = (id: string) =>
-  api<TOrgDetailResponse>({ path: `orgs/${id}` })
-
-export const getOrgStatus = (id: string) =>
-  api<{ status: string; status_description: string }>({ path: `orgs/${id}/status` })
-
-export const getOrgInstalls = (id: string, params: { page?: number }) =>
-  api<{ installs: any[]; page: number; total_pages: number }>({ path: `orgs/${id}/installs`, params })
+export const getOrgDetail = (id: string, params?: { page?: number }) =>
+  api<TOrgDetailResponse>({ path: `orgs/${id}`, params })
 
 export const updateOrgTags = (id: string, tags: string[]) =>
   api<TOrg>({ path: `orgs/${id}/tags`, method: 'POST', body: { tags } })

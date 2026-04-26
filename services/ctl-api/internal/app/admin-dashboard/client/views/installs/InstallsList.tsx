@@ -9,6 +9,13 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
 
+function getStatus(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (typeof s === 'object' && s.status) return String(s.status)
+  return String(s)
+}
+
 const CREATOR_TYPE_OPTIONS = [
   { label: 'All', value: '' },
   { label: 'Nuon', value: 'nuon' },
@@ -37,6 +44,7 @@ export const InstallsList = () => {
         show_deleted: showDeleted ? 'true' : undefined,
         page,
       }),
+    refetchInterval: 20000,
   })
 
   if (isLoading) return <LoadingSpinner />
@@ -95,36 +103,53 @@ export const InstallsList = () => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">App</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Runner</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sandbox</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Components</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {installs.map((install) => (
-              <tr key={install.id} className={`hover:bg-gray-50 ${install.deleted_at ? 'opacity-50' : ''}`}>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-800 font-medium">
-                    {install.name || truncateId(install.id)}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(install.id)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Link to={`/orgs/${install.org_id}`} className="text-primary-600 hover:text-primary-800">
-                    {install.org?.name || truncateId(install.org_id)}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-                  {install.app?.name || truncateId(install.app_id)}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Badge variant="status" status={install.status}>{install.status}</Badge>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(install.created_at)}</td>
-              </tr>
-            ))}
+            {installs.map((install) => {
+              const isDeleted = !!install.deleted_at
+              const runnerStatus = getStatus(install.runner_status)
+              const sandboxStatus = getStatus(install.sandbox_status)
+              const componentStatus = getStatus(install.composite_component_status)
+              return (
+                <tr key={install.id} className={`hover:bg-gray-50 ${isDeleted ? 'opacity-50' : ''}`}>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-800 font-medium">
+                        {install.name || truncateId(install.id)}
+                      </Link>
+                      {isDeleted && <Badge variant="status" status="error">Deleted</Badge>}
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(install.id)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <Link to={`/orgs/${install.org_id}`} className="text-primary-600 hover:text-primary-800">
+                      {install.org?.name || truncateId(install.org_id)}
+                    </Link>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {install.app?.name || truncateId(install.app_id)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    {runnerStatus && <Badge variant="status" status={runnerStatus}>{runnerStatus}</Badge>}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    {sandboxStatus && <Badge variant="status" status={sandboxStatus}>{sandboxStatus}</Badge>}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    {componentStatus && <Badge variant="status" status={componentStatus}>{componentStatus}</Badge>}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(install.created_at)}</td>
+                </tr>
+              )
+            })}
             {installs.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">No installs found</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">No installs found</td>
               </tr>
             )}
           </tbody>

@@ -17,7 +17,20 @@ import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
-import { formatDate, truncateId } from '@/utils/format'
+import { formatDate, formatDuration, truncateId } from '@/utils/format'
+
+function getStatus(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (typeof s === 'object' && s.status) return String(s.status)
+  return String(s)
+}
+
+function getStatusDescription(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'object' && s.status_human_description) return String(s.status_human_description)
+  return ''
+}
 
 export const InstallDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -107,26 +120,67 @@ export const InstallDetail = () => {
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load install'} />
   if (!data) return null
 
-  const { install } = data
+  const { install, app_url: appUrl } = data
+  const dashboardUrl = appUrl ? `${appUrl}/${install.org_id}/installs/${install.id}` : null
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">{install.name || truncateId(install.id)}</h1>
-        <p className="mt-1 text-sm text-gray-500 font-mono">{install.id}</p>
-        <div className="mt-2 flex items-center gap-3 text-sm">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-2 text-sm text-gray-500">
+        <Link to="/installs" className="text-primary-600 hover:text-primary-800">Installs</Link>
+        <span>/</span>
+        <span className="text-gray-900">{install.name || truncateId(install.id)}</span>
+      </nav>
+
+      {/* Page Heading */}
+      <div className="page-heading">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">{install.name || truncateId(install.id)}</h1>
           <Badge variant="status" status={install.status}>{install.status}</Badge>
+          {install.status_description && (
+            <span className="text-xs text-gray-500" title={install.status_description}>{install.status_description}</span>
+          )}
+        </div>
+        <p className="mt-1 text-sm text-gray-500 font-mono">{install.id}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
           <span className="text-gray-500">
             Org: <Link to={`/orgs/${install.org_id}`} className="text-primary-600 hover:text-primary-800">{install.org?.name || truncateId(install.org_id)}</Link>
           </span>
           <span className="text-gray-500">
             App: {install.app?.name || truncateId(install.app_id)}
           </span>
+          {install.cloud_platform && (
+            <span className="text-gray-500">
+              Cloud: <Badge>{install.cloud_platform}</Badge>
+            </span>
+          )}
+          {install.runner_type && (
+            <span className="text-gray-500">
+              Runner Type: <Badge>{install.runner_type}</Badge>
+            </span>
+          )}
+          {install.app_config?.version ? (
+            <span className="text-gray-500">Config v{install.app_config.version}</span>
+          ) : null}
+        </div>
+        <div className="mt-1 flex items-center gap-4 text-xs text-gray-400">
+          <span>Created {formatDate(install.created_at)}</span>
+          <span>Updated {formatDate(install.updated_at)}</span>
+        </div>
+        <div className="mt-2 flex items-center gap-3">
+          {dashboardUrl && (
+            <a href={dashboardUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 hover:text-primary-800 underline">
+              View Dashboard
+            </a>
+          )}
+          <Link to={`/queues?search=${install.id}`} className="text-sm text-primary-600 hover:text-primary-800 underline">
+            View Queues
+          </Link>
         </div>
       </div>
 
       {/* Labels */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900">Labels</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           {Object.entries(install.labels || {}).map(([key, value]) => (
@@ -168,13 +222,18 @@ export const InstallDetail = () => {
       </div>
 
       {/* Status Badges */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900">Status</h2>
         <div className="mt-2 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-xs text-gray-500">Runner</p>
             {runnerStatus ? (
-              <Badge variant="status" status={runnerStatus.status}>{runnerStatus.status}</Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant="status" status={runnerStatus.status}>{runnerStatus.status}</Badge>
+                {runnerStatus.description && (
+                  <span className="text-xs text-gray-400" title={runnerStatus.description}>{runnerStatus.description}</span>
+                )}
+              </div>
             ) : (
               <span className="text-xs text-gray-400">Loading...</span>
             )}
@@ -182,7 +241,12 @@ export const InstallDetail = () => {
           <div>
             <p className="text-xs text-gray-500">Sandbox</p>
             {sandboxStatus ? (
-              <Badge variant="status" status={sandboxStatus.status}>{sandboxStatus.status}</Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant="status" status={sandboxStatus.status}>{sandboxStatus.status}</Badge>
+                {sandboxStatus.description && (
+                  <span className="text-xs text-gray-400" title={sandboxStatus.description}>{sandboxStatus.description}</span>
+                )}
+              </div>
             ) : (
               <span className="text-xs text-gray-400">Loading...</span>
             )}
@@ -190,7 +254,12 @@ export const InstallDetail = () => {
           <div>
             <p className="text-xs text-gray-500">Component</p>
             {componentStatus ? (
-              <Badge variant="status" status={componentStatus.status}>{componentStatus.status}</Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant="status" status={componentStatus.status}>{componentStatus.status}</Badge>
+                {componentStatus.description && (
+                  <span className="text-xs text-gray-400" title={componentStatus.description}>{componentStatus.description}</span>
+                )}
+              </div>
             ) : (
               <span className="text-xs text-gray-400">Loading...</span>
             )}
@@ -198,7 +267,12 @@ export const InstallDetail = () => {
           <div>
             <p className="text-xs text-gray-500">Drift</p>
             {driftStatus ? (
-              <Badge variant="status" status={driftStatus.status}>{driftStatus.status}</Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant="status" status={driftStatus.status}>{driftStatus.status}</Badge>
+                {driftStatus.description && (
+                  <span className="text-xs text-gray-400" title={driftStatus.description}>{driftStatus.description}</span>
+                )}
+              </div>
             ) : (
               <span className="text-xs text-gray-400">Loading...</span>
             )}
@@ -207,13 +281,16 @@ export const InstallDetail = () => {
       </div>
 
       {/* Active Deployments */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900">Active Deployments</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Component</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Build ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
               </tr>
@@ -222,15 +299,23 @@ export const InstallDetail = () => {
               {(deploymentsData?.deployments || []).map((dep: any) => (
                 <tr key={dep.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(dep.id)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{dep.component_name || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{dep.install_deploy_type || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{dep.build_id ? truncateId(dep.build_id) : '-'}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Badge variant="status" status={dep.status}>{dep.status}</Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="status" status={dep.status}>{dep.status}</Badge>
+                      {dep.status_description && (
+                        <span className="text-xs text-gray-400" title={dep.status_description}>{dep.status_description}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(dep.created_at)}</td>
                 </tr>
               ))}
               {(!deploymentsData?.deployments || deploymentsData.deployments.length === 0) && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500">No active deployments</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">No active deployments</td>
                 </tr>
               )}
             </tbody>
@@ -238,17 +323,71 @@ export const InstallDetail = () => {
         </div>
       </div>
 
+      {/* Workflows */}
+      <div className="table-card p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Workflows</h2>
+        <div className="mt-2 overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {(workflowsData?.workflows || []).map((wf: any) => {
+                const wfStatus = getStatus(wf.status)
+                const wfStatusDesc = getStatusDescription(wf.status)
+                return (
+                  <tr key={wf.id} className="hover:bg-gray-50">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <Link to={`/workflows/${wf.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                        {truncateId(wf.id)}
+                      </Link>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{wf.type}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="status" status={wfStatus}>{wfStatus}</Badge>
+                        {wfStatusDesc && (
+                          <span className="text-xs text-gray-400" title={wfStatusDesc}>{wfStatusDesc}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDuration(wf.execution_time)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(wf.created_at)}</td>
+                  </tr>
+                )
+              })}
+              {(!workflowsData?.workflows || workflowsData.workflows.length === 0) && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">No workflows</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {workflowsData && (
+          <Pagination page={workflowsPage} totalPages={workflowsData.total_pages} onPageChange={setWorkflowsPage} />
+        )}
+      </div>
+
       {/* Activity */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900">Activity</h2>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            type="text"
+          <select
             value={activityEntityType}
             onChange={(e) => { setActivityEntityType(e.target.value); setActivityPage(1) }}
-            placeholder="Entity type filter..."
             className="block w-48 rounded-md border-0 py-1 px-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
-          />
+          >
+            <option value="">All types</option>
+            <option value="runner_job">Runner Job</option>
+            <option value="workflow">Workflow</option>
+          </select>
           <input
             type="date"
             value={activityStartDate}
@@ -266,24 +405,36 @@ export const InstallDetail = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
-              {(activityData?.entries || []).map((entry) => (
-                <tr key={entry.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{entry.action}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{entry.entity_type}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(entry.entity_id)}</td>
+              {(activityData?.activity_logs || []).map((entry: any, idx: number) => (
+                <tr key={entry.entity_id + '-' + idx}>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <Badge>{entry.entity_type}</Badge>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{entry.entity_name || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-mono">
+                    {entry.entity_type === 'workflow' ? (
+                      <Link to={`/workflows/${entry.entity_id}`} className="text-primary-600 hover:text-primary-800">
+                        {truncateId(entry.entity_id)}
+                      </Link>
+                    ) : (
+                      <span className="text-gray-500">{truncateId(entry.entity_id)}</span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{entry.description || '-'}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(entry.created_at)}</td>
                 </tr>
               ))}
-              {(!activityData?.entries || activityData.entries.length === 0) && (
+              {(!activityData?.activity_logs || activityData.activity_logs.length === 0) && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">No activity</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">No activity</td>
                 </tr>
               )}
             </tbody>
@@ -291,47 +442,6 @@ export const InstallDetail = () => {
         </div>
         {activityData && (
           <Pagination page={activityPage} totalPages={activityData.total_pages} onPageChange={setActivityPage} />
-        )}
-      </div>
-
-      {/* Workflows */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Workflows</h2>
-        <div className="mt-2 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {(workflowsData?.workflows || []).map((wf) => (
-                <tr key={wf.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Link to={`/workflows/${wf.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
-                      {truncateId(wf.id)}
-                    </Link>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{wf.type}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Badge variant="status" status={wf.status}>{wf.status}</Badge>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(wf.created_at)}</td>
-                </tr>
-              ))}
-              {(!workflowsData?.workflows || workflowsData.workflows.length === 0) && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">No workflows</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {workflowsData && (
-          <Pagination page={workflowsPage} totalPages={workflowsData.total_pages} onPageChange={setWorkflowsPage} />
         )}
       </div>
     </div>

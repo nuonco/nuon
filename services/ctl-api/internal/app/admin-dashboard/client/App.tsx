@@ -15,6 +15,7 @@ import { QueuesList } from '@/views/queues/QueuesList'
 import { QueueDetail } from '@/views/queues/QueueDetail'
 import { QueueSignalDetail as QueueSignalDetailView } from '@/views/queues/QueueSignalDetail'
 import { QueueEmitterDetail as QueueEmitterDetailView } from '@/views/queues/QueueEmitterDetail'
+import { SignalGraphView } from '@/views/queues/SignalGraphView'
 import { WorkflowsList } from '@/views/workflows/WorkflowsList'
 import { WorkflowDetail } from '@/views/workflows/WorkflowDetail'
 import { LogStreams } from '@/views/log-streams/LogStreams'
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
       { path: 'queues', element: <QueuesList /> },
       { path: 'queues/:id', element: <QueueDetail /> },
       { path: 'queues/:id/signals/:signalId', element: <QueueSignalDetailView /> },
+      { path: 'queues/:id/signals/:signalId/graph', element: <SignalGraphView /> },
       { path: 'queues/:id/emitters/:emitterId', element: <QueueEmitterDetailView /> },
       { path: 'workflows', element: <WorkflowsList /> },
       { path: 'workflows/:workflowId', element: <WorkflowDetail /> },

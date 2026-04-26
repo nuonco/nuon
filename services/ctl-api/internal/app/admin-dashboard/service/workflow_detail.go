@@ -89,10 +89,20 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		}
 	}
 
+	// Load the execute-workflow signal for this workflow (the signal that triggers execution)
+	var workflowSignal *app.QueueSignal
+	var ws app.QueueSignal
+	if err := s.db.WithContext(ctx).
+		Where("owner_id = ? AND type = ?", wf.ID, "execute-workflow").
+		First(&ws).Error; err == nil {
+		workflowSignal = &ws
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"workflow":              &wf,
 		"group_details":         groupDetails,
 		"generate_steps_signal": generateStepsSignal,
+		"workflow_signal":       workflowSignal,
 	})
 }
 

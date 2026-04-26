@@ -9,6 +9,13 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
 
+function getStatus(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (typeof s === 'object' && s.status) return String(s.status)
+  return String(s)
+}
+
 export const OrgsList = () => {
   const [search, setSearch] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
@@ -17,6 +24,7 @@ export const OrgsList = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['orgs', search, selectedTags, page],
     queryFn: () => getOrgs({ search, tag: selectedTags, page }),
+    refetchInterval: 20000,
   })
 
   const toggleTag = (tag: string) => {
@@ -63,6 +71,7 @@ export const OrgsList = () => {
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apps</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Installs</th>
@@ -78,6 +87,11 @@ export const OrgsList = () => {
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(org.id)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm">
+                  {org.status && (
+                    <Badge variant="status" status={getStatus(org.status)}>{getStatus(org.status)}</Badge>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-sm">
                   <div className="flex flex-wrap gap-1">
                     {(org.tags || []).map((tag) => (
@@ -92,7 +106,7 @@ export const OrgsList = () => {
             ))}
             {orgs.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">No organizations found</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">No organizations found</td>
               </tr>
             )}
           </tbody>

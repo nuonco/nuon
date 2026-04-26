@@ -1,12 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { getOrgDetail, getOrgStatus, getOrgInstalls, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues } from '@/lib/admin-api'
+import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { DotGraph } from '@/components/common/DotGraph'
 import { formatDate, truncateId } from '@/utils/format'
+
+function getStatus(s: any): string {
+  if (!s) return ''
+  if (typeof s === 'string') return s
+  if (typeof s === 'object' && s.status) return String(s.status)
+  return String(s)
+}
 
 export const OrgDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -16,22 +24,10 @@ export const OrgDetail = () => {
   const [labelValue, setLabelValue] = useState('')
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['org', id],
-    queryFn: () => getOrgDetail(id!),
-    enabled: !!id,
-  })
-
-  const { data: statusData } = useQuery({
-    queryKey: ['org-status', id],
-    queryFn: () => getOrgStatus(id!),
+    queryKey: ['org', id, installsPage],
+    queryFn: () => getOrgDetail(id!, { page: installsPage }),
     enabled: !!id,
     refetchInterval: 20000,
-  })
-
-  const { data: installsData } = useQuery({
-    queryKey: ['org-installs', id, installsPage],
-    queryFn: () => getOrgInstalls(id!, { page: installsPage }),
-    enabled: !!id,
   })
 
   const addLabelMutation = useMutation({
@@ -62,8 +58,7 @@ export const OrgDetail = () => {
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load organization'} />
   if (!data) return null
 
-  const { org, support_users = [] } = data
-  const installs = installsData?.installs || []
+  const { org, installs = [], recent_app, graph_dot, app_url, installs_total_pages = 1 } = data
   const orgLabels = org.labels || {}
 
   const handleAddLabel = () => {
@@ -73,17 +68,40 @@ export const OrgDetail = () => {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1 text-sm text-gray-500">
+        <Link to="/orgs" className="text-primary-600 hover:text-primary-700">Orgs</Link>
+        <span>/</span>
+        <span className="text-gray-900 font-medium">{org.name}</span>
+      </nav>
+
       {/* Header */}
       <div>
-        <h1 className="page-heading">{org.name}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="page-heading">{org.name}</h1>
+          {app_url && (
+            <a
+              href={`${app_url}/${org.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              View Dashboard
+            </a>
+          )}
+        </div>
         <p className="mt-1 text-sm text-gray-500 font-mono">{org.id}</p>
         <div className="mt-2 flex items-center gap-2">
-          {statusData && (
-            <Badge variant="status" status={statusData.status}>{statusData.status}</Badge>
+          {org.status && (
+            <Badge variant="status" status={getStatus(org.status)}>{getStatus(org.status)}</Badge>
           )}
-          {statusData?.status_description && (
-            <span className="text-xs text-gray-500">{statusData.status_description}</span>
+          {org.status_description && (
+            <span className="text-xs text-gray-500">{org.status_description}</span>
           )}
+        </div>
+        <div className="mt-2 text-xs text-gray-500 flex gap-4">
+          <span>Created: {formatDate(org.created_at)}</span>
+          <span>Updated: {formatDate(org.updated_at)}</span>
         </div>
       </div>
 
@@ -91,7 +109,7 @@ export const OrgDetail = () => {
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-gray-900">Tags</h2>
         <div className="mt-2 flex flex-wrap gap-2">
-          {(org.tags || []).map((tag) => (
+          {(org.tags || []).map((tag: string) => (
             <Badge key={tag}>{tag}</Badge>
           ))}
           {(org.tags || []).length === 0 && <span className="text-sm text-gray-500">No tags</span>}
@@ -147,44 +165,56 @@ export const OrgDetail = () => {
         </div>
       </div>
 
-      {/* Support Users */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Support users</h2>
-        {support_users.length > 0 ? (
-          <ul className="mt-2 space-y-1">
-            {support_users.map((email) => (
-              <li key={email} className="text-sm text-gray-700">{email}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-gray-500">No support users</p>
-        )}
-        <div className="mt-3">
-          <button
-            onClick={() => supportMutation.mutate()}
-            disabled={supportMutation.isPending}
-            className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-          >
-            {supportMutation.isPending ? 'Adding...' : 'Add support users'}
-          </button>
-          {supportMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Done</span>}
-          {supportMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+      {/* Most Recent App */}
+      {recent_app && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Most Recent App</h2>
+          <div className="mt-2 space-y-1">
+            <p className="text-sm text-gray-900 font-medium">{recent_app.name}</p>
+            <p className="text-xs text-gray-500 font-mono">{recent_app.id}</p>
+            {recent_app.status && (
+              <Badge variant="status" status={getStatus(recent_app.status)}>{getStatus(recent_app.status)}</Badge>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Component Graph */}
+      {graph_dot && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Component dependency graph</h2>
+          <div className="mt-2">
+            <DotGraph dot={graph_dot} height="28rem" />
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-gray-900">Actions</h2>
-        <div className="mt-2">
-          <button
-            onClick={() => migrateMutation.mutate()}
-            disabled={migrateMutation.isPending}
-            className="rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
-          >
-            {migrateMutation.isPending ? 'Migrating...' : 'Migrate queues'}
-          </button>
-          {migrateMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Migration started</span>}
-          {migrateMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+        <div className="mt-2 flex gap-3">
+          <div>
+            <button
+              onClick={() => supportMutation.mutate()}
+              disabled={supportMutation.isPending}
+              className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            >
+              {supportMutation.isPending ? 'Adding...' : 'Add support users'}
+            </button>
+            {supportMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Done</span>}
+            {supportMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => migrateMutation.mutate()}
+              disabled={migrateMutation.isPending}
+              className="rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+            >
+              {migrateMutation.isPending ? 'Migrating...' : 'Migrate queues'}
+            </button>
+            {migrateMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Migration started</span>}
+            {migrateMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+          </div>
         </div>
       </div>
 
@@ -197,32 +227,59 @@ export const OrgDetail = () => {
               <tr>
                 <th>Name</th>
                 <th>ID</th>
-                <th>Status</th>
+                <th>App</th>
+                <th>Runner</th>
+                <th>Sandbox</th>
+                <th>Components</th>
                 <th>Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {installs.map((install: any) => (
-                <tr key={install.id}>
-                  <td>
-                    <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-700 font-medium">
-                      {install.name || truncateId(install.id)}
-                    </Link>
-                  </td>
-                  <td className="text-gray-500 font-mono text-xs">{truncateId(install.id)}</td>
-                  <td><Badge variant="status" status={install.status}>{install.status}</Badge></td>
-                  <td className="text-gray-500">{formatDate(install.created_at)}</td>
-                </tr>
-              ))}
+              {installs.map((install: any) => {
+                const isDeleted = !!install.deleted_at
+                const runnerStatus = getStatus(install.runner_status)
+                const sandboxStatus = getStatus(install.sandbox_status)
+                const componentStatus = getStatus(install.composite_component_status)
+                return (
+                  <tr key={install.id} className={isDeleted ? 'opacity-50' : ''}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-700 font-medium">
+                          {install.name || truncateId(install.id)}
+                        </Link>
+                        {isDeleted && <Badge variant="status" status="error">Deleted</Badge>}
+                      </div>
+                    </td>
+                    <td className="text-gray-500 font-mono text-xs">{truncateId(install.id)}</td>
+                    <td className="text-sm text-gray-700">
+                      {install.app?.name || truncateId(install.app_id || '')}
+                    </td>
+                    <td>
+                      {runnerStatus && (
+                        <Badge variant="status" status={runnerStatus}>{runnerStatus}</Badge>
+                      )}
+                    </td>
+                    <td>
+                      {sandboxStatus && (
+                        <Badge variant="status" status={sandboxStatus}>{sandboxStatus}</Badge>
+                      )}
+                    </td>
+                    <td>
+                      {componentStatus && (
+                        <Badge variant="status" status={componentStatus}>{componentStatus}</Badge>
+                      )}
+                    </td>
+                    <td className="text-gray-500">{formatDate(install.created_at)}</td>
+                  </tr>
+                )
+              })}
               {installs.length === 0 && (
-                <tr><td colSpan={4} className="text-center text-gray-500 py-6">No installs found</td></tr>
+                <tr><td colSpan={7} className="text-center text-gray-500 py-6">No installs found</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        {installsData && (
-          <Pagination page={installsPage} totalPages={installsData.total_pages} onPageChange={setInstallsPage} />
-        )}
+        <Pagination page={installsPage} totalPages={installs_total_pages} onPageChange={setInstallsPage} />
       </div>
     </div>
   )

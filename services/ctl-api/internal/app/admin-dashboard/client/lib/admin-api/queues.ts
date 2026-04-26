@@ -1,11 +1,11 @@
 import { api } from '@/lib/api'
-import type { TQueuesResponse, TQueue, TQueueSignal, TQueueEmitter } from '@/types/admin.types'
+import type { TQueuesResponse, TQueueDetailResponse, TQueue, TQueueSignal, TQueueEmitter } from '@/types/admin.types'
 
 export const getQueues = (params: { search?: string; name?: string; namespace?: string; page?: number }) =>
   api<TQueuesResponse>({ path: 'queues', params })
 
 export const getQueueDetail = (id: string) =>
-  api<{ queue: TQueue; signals: TQueueSignal[]; in_flight_signals: TQueueSignal[] }>({ path: `queues/${id}` })
+  api<TQueueDetailResponse>({ path: `queues/${id}` })
 
 export const getQueueEmitters = (id: string, params: { page?: number }) =>
   api<{ emitters: TQueueEmitter[]; page: number; total_pages: number }>({ path: `queues/${id}/emitters`, params })
@@ -20,7 +20,10 @@ export const getQueueSignalDetail = (queueId: string, signalId: string) =>
   api<{ signal: TQueueSignal; workflow_info: any }>({ path: `queues/${queueId}/signals/${signalId}` })
 
 export const getQueueEmitterDetail = (queueId: string, emitterId: string) =>
-  api<{ emitter: TQueueEmitter }>({ path: `queues/${queueId}/emitters/${emitterId}` })
+  api<{ emitter: TQueueEmitter; queue: TQueue; signals: TQueueSignal[]; temporal_ui_url: string }>({ path: `queues/${queueId}/emitters/${emitterId}` })
+
+export const getSignalGraph = (queueId: string, signalId: string, depth = 1) =>
+  api<{ graph: any; temporal_ui_url: string }>({ path: `queues/${queueId}/signals/${signalId}/graph`, params: { depth } })
 
 export const restartQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/restart`, method: 'POST' })

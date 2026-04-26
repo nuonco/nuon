@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { getQueueSignalsGlobal, getQueueSignalTypeOptions } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
+import { SignalLink } from '@/components/common/SignalLink'
 import { Pagination } from '@/components/common/Pagination'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -65,7 +67,9 @@ export const QueueSignals = () => {
           <tbody className="divide-y divide-gray-200">
             {signals.map((signal) => (
               <tr key={signal.id}>
-                <td className="text-gray-500 font-mono text-xs">{truncateId(signal.id)}</td>
+                <td>
+                  <SignalLink signalId={signal.id} queueId={signal.queue_id} />
+                </td>
                 <td><Badge>{signal.type}</Badge></td>
                 <td className="text-gray-500">
                   <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>

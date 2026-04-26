@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router'
 import { getWorkflowDetail } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
+import { StatusHistory } from '@/components/common/StatusHistory'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, formatDuration, truncateId } from '@/utils/format'
@@ -117,18 +118,10 @@ function StepRow({ stepData }: { stepData: any }) {
               )}
 
               {/* Status history */}
-              {statusHistory.length > 0 && (
+              {step?.status && (
                 <div>
                   <p className="font-semibold text-gray-700 mb-1">Status history</p>
-                  <div className="space-y-0.5">
-                    {statusHistory.map((h: any, i: number) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <Badge variant="status" status={getStatus(h)}>{getStatus(h)}</Badge>
-                        {h.status_human_description && <span className="text-gray-500">{h.status_human_description}</span>}
-                        {h.created_at_ts && <span className="text-gray-400 font-mono">{new Date(h.created_at_ts / 1000000).toISOString()}</span>}
-                      </div>
-                    ))}
-                  </div>
+                  <StatusHistory status={step.status} maxCollapsed={3} />
                 </div>
               )}
 
@@ -252,6 +245,7 @@ export const WorkflowDetail = () => {
   const wf = data.workflow
   const groups = data.group_details || []
   const genSignal = data.generate_steps_signal
+  const wfSignal = data.workflow_signal
   const wfStatus = getStatus(wf?.status)
   const wfStatusHistory = getStatusHistory(wf?.status)
 
@@ -275,7 +269,14 @@ export const WorkflowDetail = () => {
           )}
         </div>
         <div className="mt-1 flex gap-3 text-xs">
-          <Link to={`/queue-signals?search=${wf?.id}`} className="text-primary-600 hover:text-primary-700">Workflow signal &rarr;</Link>
+          {wfSignal ? (
+            <>
+              <Link to={`/queues/${wfSignal.queue_id}/signals/${wfSignal.id}`} className="text-primary-600 hover:text-primary-700">Workflow signal &rarr;</Link>
+              <Link to={`/queues/${wfSignal.queue_id}/signals/${wfSignal.id}/graph`} className="inline-flex items-center rounded bg-primary-50 border border-primary-200 px-1.5 py-0.5 text-[10px] font-medium text-primary-600 hover:bg-primary-100">graph</Link>
+            </>
+          ) : (
+            <Link to={`/queue-signals?search=${wf?.id}`} className="text-primary-600 hover:text-primary-700">Search workflow signals &rarr;</Link>
+          )}
         </div>
       </div>
 
@@ -317,20 +318,11 @@ export const WorkflowDetail = () => {
       )}
 
       {/* Workflow status history */}
-      {wfStatusHistory.length > 0 && (
+      {wf?.status && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-gray-900">Status history</h2>
-          <div className="mt-2 space-y-1">
-            {wfStatusHistory.map((h: any, i: number) => (
-              <div key={i} className="flex items-center gap-2 text-xs">
-                <Badge variant="status" status={getStatus(h)}>{getStatus(h)}</Badge>
-                {h.status_human_description && <span className="text-gray-600">{h.status_human_description}</span>}
-                {h.created_at_ts > 0 && <span className="text-gray-400 font-mono">{new Date(h.created_at_ts / 1000000).toISOString().replace('T', ' ').slice(0, 19)}</span>}
-                {h.metadata && Object.keys(h.metadata).length > 0 && (
-                  <span className="text-gray-400">{JSON.stringify(h.metadata)}</span>
-                )}
-              </div>
-            ))}
+          <div className="mt-2">
+            <StatusHistory status={wf.status} maxCollapsed={5} />
           </div>
         </div>
       )}

@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { useState } from 'react'
-import { getQueueSignalDetail } from '@/lib/admin-api'
+import { getQueueSignalDetail, getSignalGraph } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
+import { StatusHistory } from '@/components/common/StatusHistory'
+import { SignalFlowGraph } from '@/components/common/SignalFlowGraph'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId, formatDuration } from '@/utils/format'
@@ -37,11 +39,20 @@ function timeBetween(a: string, b: string): string {
 
 export const QueueSignalDetail = () => {
   const { id: queueId, signalId } = useParams<{ id: string; signalId: string }>()
+  const [hideReady, setHideReady] = useState(true)
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [showGraph, setShowGraph] = useState(false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['queue-signal', queueId, signalId],
     queryFn: () => getQueueSignalDetail(queueId!, signalId!),
     enabled: !!queueId && !!signalId,
+  })
+
+  const { data: graphData } = useQuery({
+    queryKey: ['signal-graph', queueId, signalId],
+    queryFn: () => getSignalGraph(queueId!, signalId!, 2),
+    enabled: !!queueId && !!signalId && showGraph,
   })
 
   if (isLoading) return <LoadingSpinner />
@@ -78,6 +89,9 @@ export const QueueSignalDetail = () => {
               View in Temporal &rarr;
             </a>
           )}
+          <Link to={`/queues/${queueId}/signals/${signalId}/graph`} className="inline-flex items-center rounded-md bg-primary-50 border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100">
+            View as graph
+          </Link>
           <Link to="/signal-catalog" className="text-xs text-primary-600 hover:text-primary-700">View catalog &rarr;</Link>
         </div>
         <div className="space-y-1 text-xs">
@@ -154,26 +168,26 @@ export const QueueSignalDetail = () => {
         </div>
         {wfInfo && (
           <div className="mt-3 border-t border-gray-200 pt-3 space-y-2 text-xs">
-            <div><span className="text-gray-500 uppercase w-32 inline-block">Status</span> <Badge variant="status" status={wfInfo.Status}>{wfInfo.Status}</Badge></div>
-            {wfInfo.UpdateExecutions?.length > 0 && (
-              <div><span className="text-gray-500 uppercase w-32 inline-block">Updates</span> <span className="font-mono">{wfInfo.UpdateExecutions.length}</span></div>
+            <div><span className="text-gray-500 uppercase w-32 inline-block">Status</span> <Badge variant="status" status={wfInfo.status}>{wfInfo.status}</Badge></div>
+            {wfInfo.update_executions?.length > 0 && (
+              <div><span className="text-gray-500 uppercase w-32 inline-block">Updates</span> <span className="font-mono">{wfInfo.update_executions.length}</span></div>
             )}
-            {wfInfo.Activities?.length > 0 && (
-              <div><span className="text-gray-500 uppercase w-32 inline-block">Activities</span> <span className="font-mono">{wfInfo.Activities.length}</span></div>
+            {wfInfo.activities?.length > 0 && (
+              <div><span className="text-gray-500 uppercase w-32 inline-block">Activities</span> <span className="font-mono">{wfInfo.activities.length}</span></div>
             )}
             {/* Failures */}
-            {(wfInfo.Status === 'Failed' || wfInfo.Status === 'Timed Out') && (
+            {(wfInfo.status === 'Failed' || wfInfo.status === 'Timed Out') && (
               <>
-                {wfInfo.UpdateExecutions?.filter((ue: any) => ue.Failure).map((ue: any, i: number) => (
+                {wfInfo.update_executions?.filter((ue: any) => ue.failure).map((ue: any, i: number) => (
                   <div key={i} className="mt-1">
-                    <Badge variant="status" status="failed">{ue.Name}</Badge>
-                    <pre className="mt-1 text-xs text-red-600 font-mono whitespace-pre-wrap bg-red-50 border border-red-200 rounded p-2">{ue.Failure}</pre>
+                    <Badge variant="status" status="failed">{ue.name}</Badge>
+                    <pre className="mt-1 text-xs text-red-600 font-mono whitespace-pre-wrap bg-red-50 border border-red-200 rounded p-2">{ue.failure}</pre>
                   </div>
                 ))}
-                {wfInfo.OrphanActivities?.filter((a: any) => a.Failure).map((a: any, i: number) => (
+                {wfInfo.orphan_activities?.filter((a: any) => a.failure).map((a: any, i: number) => (
                   <div key={i} className="mt-1">
-                    <Badge variant="status" status="failed">{a.Name}</Badge>
-                    <pre className="mt-1 text-xs text-red-600 font-mono whitespace-pre-wrap bg-red-50 border border-red-200 rounded p-2">{a.Failure}</pre>
+                    <Badge variant="status" status="failed">{a.name}</Badge>
+                    <pre className="mt-1 text-xs text-red-600 font-mono whitespace-pre-wrap bg-red-50 border border-red-200 rounded p-2">{a.failure}</pre>
                   </div>
                 ))}
               </>
@@ -182,112 +196,38 @@ export const QueueSignalDetail = () => {
         )}
       </div>
 
-      {/* Workflow activities */}
-      {wfInfo?.Activities?.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Activities ({wfInfo.Activities.length})</h2>
-          <div className="mt-2 table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th><th>Status</th><th>Duration</th><th>Attempt</th><th>Failure</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {wfInfo.Activities.map((act: any, i: number) => (
-                  <tr key={i}>
-                    <td className="font-mono text-xs">{act.Name}</td>
-                    <td><Badge variant="status" status={act.Status}>{act.Status}</Badge></td>
-                    <td className="font-mono text-xs text-gray-500">{formatDuration(act.Duration)}</td>
-                    <td className="text-xs text-gray-500">{act.Attempt}</td>
-                    <td className="text-xs text-red-500 max-w-[200px] truncate">{act.Failure || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Signal flow graph */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900">Signal flow graph</h2>
+          <button
+            onClick={() => setShowGraph(!showGraph)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium ${showGraph ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            {showGraph ? 'Hide graph' : 'Load graph'}
+          </button>
         </div>
-      )}
+        {showGraph && graphData?.graph && (
+          <div className="mt-3">
+            <SignalFlowGraph graphData={graphData.graph} height="32rem" />
+          </div>
+        )}
+        {showGraph && !graphData?.graph && (
+          <p className="mt-2 text-xs text-gray-500">Loading graph...</p>
+        )}
+      </div>
 
-      {/* Child workflows */}
-      {wfInfo?.ChildWorkflows?.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Child workflows ({wfInfo.ChildWorkflows.length})</h2>
-          <div className="mt-2 table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th><th>Status</th><th>Namespace</th><th>Duration</th><th>Workflow ID</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {wfInfo.ChildWorkflows.map((cw: any, i: number) => (
-                  <tr key={i}>
-                    <td className="font-mono text-xs">{cw.WorkflowType}</td>
-                    <td><Badge variant="status" status={cw.Status}>{cw.Status}</Badge></td>
-                    <td className="text-xs text-gray-500">{cw.Namespace}</td>
-                    <td className="font-mono text-xs text-gray-500">{formatDuration(cw.Duration)}</td>
-                    <td className="font-mono text-xs">
-                      {temporalUIUrl ? (
-                        <a href={`${temporalUIUrl}/namespaces/${cw.Namespace}/workflows/${cw.WorkflowID}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700">{truncateId(cw.WorkflowID)}</a>
-                      ) : truncateId(cw.WorkflowID)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Awaited signals */}
-      {wfInfo?.AwaitedSignals?.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Awaited signals ({wfInfo.AwaitedSignals.length})</h2>
-          <div className="mt-2 table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Signal ID</th><th>Status</th><th>Duration</th><th>Failure</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {wfInfo.AwaitedSignals.map((as: any, i: number) => (
-                  <tr key={i}>
-                    <td className="font-mono text-xs">
-                      {as.QueueSignalID ? (
-                        <Link to={`/queue-signals?search=${as.QueueSignalID}`} className="text-primary-600 hover:text-primary-700">{truncateId(as.QueueSignalID)}</Link>
-                      ) : '-'}
-                    </td>
-                    <td><Badge variant="status" status={as.Status}>{as.Status}</Badge></td>
-                    <td className="font-mono text-xs text-gray-500">{formatDuration(as.Duration)}</td>
-                    <td className="text-xs text-red-500 max-w-[200px] truncate">{as.Failure || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Update executions */}
-      {wfInfo?.UpdateExecutions?.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Update executions ({wfInfo.UpdateExecutions.length})</h2>
-          <div className="mt-2 space-y-2">
-            {wfInfo.UpdateExecutions.map((ue: any, i: number) => (
-              <UpdateExecutionCard key={i} ue={ue} />
-            ))}
-          </div>
-        </div>
+      {/* Execution waterfall */}
+      {wfInfo && (
+        <ExecutionWaterfall wfInfo={wfInfo} temporalUIUrl={temporalUIUrl} hideReady={hideReady} setHideReady={setHideReady} sortOrder={sortOrder} setSortOrder={setSortOrder} />
       )}
 
       {/* Update handlers */}
-      {wfInfo?.UpdateHandlers?.length > 0 && (
+      {wfInfo?.update_handlers?.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-gray-900">Update handlers</h2>
           <div className="mt-2 flex flex-wrap gap-2">
-            {wfInfo.UpdateHandlers.map((h: string) => <Badge key={h}>{h}</Badge>)}
+            {wfInfo.update_handlers.map((h: string) => <Badge key={h}>{h}</Badge>)}
           </div>
         </div>
       )}
@@ -360,13 +300,8 @@ export const QueueSignalDetail = () => {
       {/* Status history */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-gray-900">Status history</h2>
-        <div className="mt-2 space-y-2">
-          {/* Current */}
-          <StatusHistoryEntry h={signal?.status} isCurrent />
-          {/* History */}
-          {statusHistory.map((h: any, i: number) => (
-            <StatusHistoryEntry key={i} h={h} />
-          ))}
+        <div className="mt-2">
+          <StatusHistory status={signal?.status} maxCollapsed={5} />
         </div>
       </div>
     </div>
@@ -432,38 +367,282 @@ function StatusHistoryEntry({ h, isCurrent }: { h: any; isCurrent?: boolean }) {
   )
 }
 
-function UpdateExecutionCard({ ue }: { ue: any }) {
-  const [expanded, setExpanded] = useState(false)
+// -- Execution Waterfall --
+
+function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, sortOrder, setSortOrder }: {
+  wfInfo: any; temporalUIUrl: string;
+  hideReady: boolean; setHideReady: (v: boolean) => void;
+  sortOrder: 'newest' | 'oldest'; setSortOrder: (v: 'newest' | 'oldest') => void;
+}) {
+  const allUpdates: any[] = wfInfo.update_executions || []
+  const orphans = wfInfo.orphan_activities || []
+  const childWfs = wfInfo.child_workflows || []
+  const awaited = wfInfo.awaited_signals || []
+
+  // Filter
+  const HIDE_NAMES = new Set(['ready', 'Ready'])
+  const updates = hideReady ? allUpdates.filter((ue: any) => !HIDE_NAMES.has(ue.name)) : allUpdates
+
+  // Sort
+  const sortedUpdates = [...updates].sort((a, b) => {
+    const ta = new Date(a.started_at).getTime() || 0
+    const tb = new Date(b.started_at).getTime() || 0
+    return sortOrder === 'newest' ? tb - ta : ta - tb
+  })
+
+  const totalItems = allUpdates.length + (orphans.length > 0 ? 1 : 0) + childWfs.length + awaited.length
+  if (totalItems === 0) return null
+
   return (
-    <div className="border border-gray-200 rounded-md">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50">
-        <div className="flex items-center gap-2 text-xs">
-          <Badge variant="status" status={ue.Status}>{ue.Status}</Badge>
-          <span className="font-mono font-medium">{ue.Name}</span>
-          <span className="text-gray-400">{formatDuration(ue.Duration)}</span>
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Execution waterfall</h2>
+          <p className="mt-0.5 text-xs text-gray-500">
+            {updates.length}/{allUpdates.length} update{allUpdates.length !== 1 ? 's' : ''}, {childWfs.length} child workflow{childWfs.length !== 1 ? 's' : ''}, {awaited.length} awaited signal{awaited.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <span className="text-gray-400 text-xs">{expanded ? '▾' : '▸'}</span>
-      </button>
-      {expanded && (
-        <div className="border-t border-gray-200 px-3 py-2 text-xs space-y-2">
-          <div><span className="text-gray-500">Update ID:</span> <span className="font-mono">{ue.UpdateID}</span></div>
-          {ue.Input && <div><span className="text-gray-500">Input:</span> <pre className="mt-0.5 font-mono bg-gray-50 rounded p-2 overflow-x-auto max-h-32">{ue.Input}</pre></div>}
-          {ue.Result && <div><span className="text-gray-500">Result:</span> <pre className="mt-0.5 font-mono bg-gray-50 rounded p-2 overflow-x-auto max-h-32">{ue.Result}</pre></div>}
-          {ue.Failure && <div><span className="text-gray-500">Failure:</span> <pre className="mt-0.5 font-mono text-red-600 bg-red-50 rounded p-2 overflow-x-auto max-h-32">{ue.Failure}</pre></div>}
-          {ue.Activities?.length > 0 && (
-            <div>
-              <p className="text-gray-500 mb-1">Activities ({ue.Activities.length}):</p>
-              {ue.Activities.map((a: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 pl-2">
-                  <Badge variant="status" status={a.Status}>{a.Status}</Badge>
-                  <span className="font-mono">{a.Name}</span>
-                  <span className="text-gray-400">{formatDuration(a.Duration)}</span>
-                </div>
+        <div className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-1 text-gray-600">
+            <input type="checkbox" checked={hideReady} onChange={(e) => setHideReady(e.target.checked)} />
+            Hide "ready" updates
+          </label>
+          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as any)} className="rounded border-gray-300 text-xs py-1 px-2">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-3 relative">
+        {/* Vertical line */}
+        <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
+
+        <div className="space-y-1">
+          {/* Update executions */}
+          {sortedUpdates.map((ue: any, i: number) => (
+            <WaterfallUpdateNode key={`ue-${ue.update_id || i}`} ue={ue} awaited={awaited} childWfs={childWfs} temporalUIUrl={temporalUIUrl} />
+          ))}
+
+          {/* Orphan activities */}
+          {orphans.length > 0 && (
+            <WaterfallSection icon="○" label={`${orphans.length} other activit${orphans.length !== 1 ? 'ies' : 'y'}`} status="">
+              {orphans.map((act: any, i: number) => (
+                <WaterfallActivityRow key={i} act={act} />
               ))}
-            </div>
+            </WaterfallSection>
+          )}
+
+          {/* Standalone child workflows (not nested under an update) */}
+          {childWfs.length > 0 && updates.length === 0 && (
+            <WaterfallSection icon="⑂" label={`${childWfs.length} child workflow${childWfs.length !== 1 ? 's' : ''}`} status="">
+              {childWfs.map((cw: any, i: number) => (
+                <WaterfallChildWorkflow key={i} cw={cw} temporalUIUrl={temporalUIUrl} />
+              ))}
+            </WaterfallSection>
+          )}
+
+          {/* Standalone awaited signals (not nested under an update) */}
+          {awaited.length > 0 && updates.length === 0 && (
+            <WaterfallSection icon="◇" label={`${awaited.length} awaited signal${awaited.length !== 1 ? 's' : ''}`} status="">
+              {awaited.map((as: any, i: number) => (
+                <WaterfallAwaitedSignal key={i} as={as} />
+              ))}
+            </WaterfallSection>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any; awaited: any[]; childWfs: any[]; temporalUIUrl: string }) {
+  const [expanded, setExpanded] = useState(true)
+  const activities = ue.activities || []
+
+  // Find awaited signals that overlap with this update's time range
+  const ueStart = new Date(ue.started_at).getTime()
+  const ueEnd = ue.finished_at ? new Date(ue.finished_at).getTime() : Date.now()
+  const relatedAwaited = awaited.filter((as: any) => {
+    const asStart = new Date(as.started_at).getTime()
+    return asStart >= ueStart && asStart <= ueEnd
+  })
+  const relatedChildWfs = childWfs.filter((cw: any) => {
+    const cwStart = new Date(cw.started_at).getTime()
+    return cwStart >= ueStart && cwStart <= ueEnd
+  })
+
+  const statusColor = ue.status === 'Completed' ? 'bg-green-500' : ue.status === 'Failed' ? 'bg-red-500' : ue.status === 'Running' ? 'bg-primary-500 animate-pulse' : 'bg-gray-400'
+
+  return (
+    <div className="relative pl-7">
+      {/* Dot on the vertical line */}
+      <div className={`absolute left-1.5 top-2.5 w-3 h-3 rounded-full ${statusColor} ring-2 ring-white`} />
+
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 text-left"
+        >
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            <Badge variant="status" status={ue.status}>{ue.status}</Badge>
+            <span className="font-mono font-semibold">{ue.name}</span>
+            <span className="text-gray-400">{formatDuration(ue.duration)}</span>
+            <span className="text-gray-400">{activities.length} activit{activities.length !== 1 ? 'ies' : 'y'}</span>
+            {relatedAwaited.length > 0 && <span className="text-orange-500">{relatedAwaited.length} awaited</span>}
+            {relatedChildWfs.length > 0 && <span className="text-blue-500">{relatedChildWfs.length} child wf</span>}
+            <span className="text-gray-300 font-mono ml-auto">{ue.started_at ? formatDate(ue.started_at) : ''}</span>
+          </div>
+          <span className="text-gray-400 text-xs">{expanded ? '▾' : '▸'}</span>
+        </button>
+
+        {expanded && (
+          <div className="border-t border-gray-200">
+            {/* Update metadata */}
+            {(ue.input || ue.result || ue.failure) && (
+              <div className="px-3 py-2 border-b border-gray-100 text-xs space-y-1 bg-gray-50/50">
+                {ue.failure && (
+                  <pre className="font-mono text-red-600 bg-red-50 border border-red-200 rounded p-2 overflow-x-auto max-h-24 whitespace-pre-wrap">{ue.failure}</pre>
+                )}
+                {ue.input && (
+                  <details className="group">
+                    <summary className="text-gray-500 cursor-pointer hover:text-gray-700">Input</summary>
+                    <pre className="mt-1 font-mono bg-gray-50 rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.input}</pre>
+                  </details>
+                )}
+                {ue.result && (
+                  <details className="group">
+                    <summary className="text-gray-500 cursor-pointer hover:text-gray-700">Result</summary>
+                    <pre className="mt-1 font-mono bg-gray-50 rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.result}</pre>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {/* Activities + awaited signals + child workflows as waterfall items */}
+            <div className="divide-y divide-gray-100">
+              {activities.map((act: any, i: number) => (
+                <WaterfallActivityRow key={`act-${i}`} act={act} />
+              ))}
+              {relatedAwaited.map((as: any, i: number) => (
+                <WaterfallAwaitedSignal key={`as-${i}`} as={as} />
+              ))}
+              {relatedChildWfs.map((cw: any, i: number) => (
+                <WaterfallChildWorkflow key={`cw-${i}`} cw={cw} temporalUIUrl={temporalUIUrl} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function WaterfallActivityRow({ act }: { act: any }) {
+  const [showDetail, setShowDetail] = useState(false)
+  const dot = act.status === 'Completed' ? 'text-green-500' : act.status === 'Failed' ? 'text-red-500' : act.status === 'Running' ? 'text-primary-500' : 'text-gray-400'
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
+        <span className={`${dot} text-[8px]`}>●</span>
+        <span className="font-mono text-gray-900 flex-1 truncate">{act.name}</span>
+        <Badge variant="status" status={act.status}>{act.status}</Badge>
+        <span className="text-gray-400 font-mono w-16 text-right">{formatDuration(act.duration)}</span>
+        {act.attempt > 1 && <span className="text-orange-500">×{act.attempt}</span>}
+      </div>
+      {showDetail && (
+        <div className="px-3 py-2 bg-gray-50 text-[10px] space-y-1 border-t border-gray-100">
+          {act.failure && <pre className="font-mono text-red-600 bg-red-50 rounded p-1.5 whitespace-pre-wrap">{act.failure}</pre>}
+          {act.input && <details><summary className="text-gray-500 cursor-pointer">Input</summary><pre className="mt-0.5 font-mono bg-white rounded p-1.5 overflow-x-auto max-h-20">{act.input}</pre></details>}
+          {act.result && <details><summary className="text-gray-500 cursor-pointer">Result</summary><pre className="mt-0.5 font-mono bg-white rounded p-1.5 overflow-x-auto max-h-20">{act.result}</pre></details>}
+        </div>
       )}
+    </>
+  )
+}
+
+function WaterfallAwaitedSignal({ as: asig }: { as: any }) {
+  const [showDetail, setShowDetail] = useState(false)
+  const signalStatus = asig.signal ? getStatus(asig.signal.status) : asig.status
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-orange-50 cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
+        <span className="text-orange-500 text-[8px]">◇</span>
+        <span className="text-orange-700 font-medium">await signal</span>
+        {asig.queue_signal_id && (
+          <Link to={`/queue-signals?search=${asig.queue_signal_id}`} className="font-mono text-primary-600 hover:text-primary-700" onClick={(e) => e.stopPropagation()}>
+            {truncateId(asig.queue_signal_id)}
+          </Link>
+        )}
+        <Badge variant="status" status={asig.status}>{asig.status}</Badge>
+        <span className="text-gray-400 font-mono ml-auto w-16 text-right">{formatDuration(asig.duration)}</span>
+      </div>
+      {showDetail && asig.signal && (
+        <div className="px-3 py-2 bg-orange-50/50 text-[10px] space-y-1 border-t border-orange-100">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+            <div><span className="text-gray-500">Type:</span> <span className="font-mono">{asig.signal.type}</span></div>
+            <div><span className="text-gray-500">Signal status:</span> <Badge variant="status" status={signalStatus}>{signalStatus}</Badge></div>
+            <div><span className="text-gray-500">Queue:</span> <Link to={`/queues/${asig.signal.queue_id}`} className="font-mono text-primary-600">{truncateId(asig.signal.queue_id)}</Link></div>
+            <div><span className="text-gray-500">Owner:</span> <span className="font-mono">{truncateId(asig.signal.owner_id)}</span></div>
+          </div>
+          {asig.failure && <pre className="font-mono text-red-600 bg-red-50 rounded p-1.5 whitespace-pre-wrap">{asig.failure}</pre>}
+        </div>
+      )}
+    </>
+  )
+}
+
+function WaterfallChildWorkflow({ cw, temporalUIUrl }: { cw: any; temporalUIUrl: string }) {
+  const [showDetail, setShowDetail] = useState(false)
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-blue-50 cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
+        <span className="text-blue-500 text-[8px]">⑂</span>
+        <span className="text-blue-700 font-medium">child workflow</span>
+        <span className="font-mono text-gray-900">{cw.workflow_type}</span>
+        <Badge variant="status" status={cw.status}>{cw.status}</Badge>
+        <span className="text-gray-400 font-mono ml-auto w-16 text-right">{formatDuration(cw.duration)}</span>
+      </div>
+      {showDetail && (
+        <div className="px-3 py-2 bg-blue-50/50 text-[10px] space-y-1 border-t border-blue-100">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+            <div><span className="text-gray-500">Namespace:</span> {cw.namespace}</div>
+            <div><span className="text-gray-500">Workflow ID:</span> <span className="font-mono">{cw.workflow_id}</span></div>
+            <div><span className="text-gray-500">Run ID:</span> <span className="font-mono">{truncateId(cw.run_id)}</span></div>
+            {temporalUIUrl && (
+              <div>
+                <a href={`${temporalUIUrl}/namespaces/${cw.namespace}/workflows/${cw.workflow_id}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700">
+                  View in Temporal &rarr;
+                </a>
+              </div>
+            )}
+          </div>
+          {cw.failure && <pre className="font-mono text-red-600 bg-red-50 rounded p-1.5 whitespace-pre-wrap">{cw.failure}</pre>}
+        </div>
+      )}
+    </>
+  )
+}
+
+function WaterfallSection({ icon, label, status, children }: { icon: string; label: string; status: string; children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(true)
+  return (
+    <div className="relative pl-7">
+      <div className="absolute left-1.5 top-2.5 w-3 h-3 rounded-full bg-gray-300 ring-2 ring-white" />
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 text-left">
+          <div className="flex items-center gap-2 text-xs">
+            <span>{icon}</span>
+            <span className="font-medium text-gray-700">{label}</span>
+            {status && <Badge variant="status" status={status}>{status}</Badge>}
+          </div>
+          <span className="text-gray-400 text-xs">{expanded ? '▾' : '▸'}</span>
+        </button>
+        {expanded && <div className="border-t border-gray-200 divide-y divide-gray-100">{children}</div>}
+      </div>
     </div>
   )
 }

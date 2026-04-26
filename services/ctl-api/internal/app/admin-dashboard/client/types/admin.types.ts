@@ -4,6 +4,7 @@ export type TOrg = {
   id: string
   name: string
   tags: string[] | null
+  labels?: Record<string, string>
   created_at: string
   updated_at: string
   app_count?: number
@@ -16,6 +17,7 @@ export type TOrg = {
 export type TAccount = {
   id: string
   email: string
+  subject: string
   account_type: string
   created_at: string
   updated_at: string
@@ -38,6 +40,14 @@ export type TInstall = {
   app_id: string
   status: string
   status_description: string
+  cloud_platform: string
+  runner_type: string
+  runner_status: string
+  runner_status_description: string
+  sandbox_status: string
+  sandbox_status_description: string
+  composite_component_status: string
+  composite_component_status_description: string
   created_at: string
   updated_at: string
   deleted_at?: number
@@ -54,14 +64,17 @@ export type TApp = {
   id: string
   name: string
   org_id: string
+  status?: string
   created_at: string
   updated_at: string
   config_count?: number
+  org?: TOrg
 }
 
 export type TAppConfig = {
   id: string
   app_id: string
+  version: number
   created_at: string
 }
 
@@ -100,18 +113,55 @@ export type TQueue = {
   name: string
   owner_id: string
   owner_type: string
+  max_depth: number
+  max_in_flight: number
+  idle_timeout: number
+  metadata: Record<string, string> | null
   workflow: any
   created_at: string
+  updated_at: string
   emitters?: TQueueEmitter[]
+}
+
+export type TQueueStatus = {
+  Ready: boolean
+  Stopped: boolean
+  Paused: boolean
+  QueueDepthCount: number
+  InFlightCount: number
+  InFlight: string[]
+}
+
+export type TQueueDetailResponse = {
+  queue: TQueue
+  status: TQueueStatus | null
+  signals: TQueueSignal[]
+  in_flight_signals: TQueueSignal[]
+  temporal_ui_url: string
 }
 
 export type TQueueEmitter = {
   id: string
   queue_id: string
   name: string
+  description: string
+  mode: string
+  cron_schedule: string
+  scheduled_at: string
+  fired: boolean
+  signal_type: string
+  signal_template: any
+  status: any
+  last_emitted_at: string
+  next_emit_at: string
+  emit_count: number
+  workflow: { id: string; namespace: string }
   owner_id: string
   owner_type: string
+  org_id: string
   created_at: string
+  updated_at: string
+  created_by_id: string
 }
 
 export type TQueueSignal = {
@@ -130,9 +180,12 @@ export type TWorkflow = {
   type: string
   owner_id: string
   owner_type: string
-  status: string
+  status: any
   created_at: string
   created_by_id: string
+  started_at: string
+  finished_at: string
+  execution_time: number
   steps?: TWorkflowStep[]
 }
 
@@ -165,12 +218,25 @@ export type TLogStream = {
 }
 
 export type TLogEntry = {
+  id: string
   timestamp: string
   severity_text: string
+  severity_number: number
   body: string
+  service_name: string
+  trace_id: string
+  span_id: string
   scope_name: string
+  scope_version: string
+  resource_schema_url: string
+  scope_schema_url: string
   resource_attributes: Record<string, string>
+  scope_attributes: Record<string, string>
   log_attributes: Record<string, string>
+  runner_job_id: string
+  runner_job_execution_step: string
+  log_stream_id: string
+  org_id: string
 }
 
 export type TSandboxModeJobConfig = {
@@ -194,13 +260,15 @@ export type TSandboxModeSignalConfig = {
 }
 
 export type TAuditLogEntry = {
-  id: string
   entity_type: string
   entity_id: string
-  action: string
+  entity_name: string
   created_at: string
-  account_id: string
-  metadata: any
+  org_id: string | null
+  org_name: string | null
+  app_id: string | null
+  app_name: string | null
+  description: string | null
 }
 
 // Temporal-specific types
@@ -364,8 +432,25 @@ export type TQueueSignalsResponse = {
   signal_types?: string[]
 }
 
+export type TLabelSearchResult = {
+  entity_type: string
+  entity_id: string
+  entity_name: string
+  labels: Record<string, string>
+  detail_url: string
+}
+
+export type TOrgOption = {
+  id: string
+  name: string
+}
+
 export type TLabelsResponse = {
-  labels: Record<string, string[]>
+  results: TLabelSearchResult[]
+  all_keys: string[]
+  orgs: TOrgOption[]
+  page: number
+  total_pages: number
 }
 
 export type TLogStreamLogsResponse = {
@@ -377,20 +462,34 @@ export type TLogStreamLogsResponse = {
 export type TOrgDetailResponse = {
   org: TOrg
   installs: TInstall[]
-  component_graph?: string
-  support_users: string[]
+  recent_app: TApp | null
+  graph_dot: string
+  app_url: string
   page: number
-  total_pages: number
+  installs_total_pages: number
 }
 
 export type TAccountDetailResponse = {
   account: TAccount
   apps: TApp[]
   installs: TInstall[]
+  audit_logs: TAuditLogEntry[]
+  start_date: string
+  end_date: string
+  page: number
+  installs_total_pages: number
+  audit_logs_total_pages: number
 }
 
 export type TInstallDetailResponse = {
   install: TInstall
+  active_deployments: any[]
+  activity_logs: TAuditLogEntry[]
+  start_date: string
+  end_date: string
+  app_url: string
+  page: number
+  activity_total_pages: number
 }
 
 export type TWorkflowDetailResponse = {
@@ -433,7 +532,8 @@ export type TRunnersResponse = {
 }
 
 export type TInstallActivityResponse = {
-  entries: TAuditLogEntry[]
+  activity_logs: TAuditLogEntry[]
+  audit_logs: TAuditLogEntry[]
   page: number
   total_pages: number
 }
