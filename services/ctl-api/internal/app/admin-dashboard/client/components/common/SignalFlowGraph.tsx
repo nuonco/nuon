@@ -16,16 +16,16 @@ import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 import { getSignalGraph } from '@/lib/admin-api'
 
-const NODE_W = 260
-const NODE_H = 70
+const NODE_W = 280
+const NODE_H = 90
 
 function doLayout(nodes: Node[], edges: Edge[]) {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 60 })
   nodes.forEach((n) => {
-    const w = n.type === 'signalNode' ? NODE_W : NODE_W - 20
-    const h = n.type === 'signalNode' ? NODE_H : NODE_H - 10
+    const w = n.type === 'signalNode' ? NODE_W : NODE_W - 30
+    const h = n.type === 'signalNode' ? NODE_H : 60
     g.setNode(n.id, { width: w, height: h })
   })
   edges.forEach((e) => g.setEdge(e.source, e.target))
@@ -33,8 +33,8 @@ function doLayout(nodes: Node[], edges: Edge[]) {
   return {
     nodes: nodes.map((n) => {
       const p = g.node(n.id)
-      const w = n.type === 'signalNode' ? NODE_W : NODE_W - 20
-      const h = n.type === 'signalNode' ? NODE_H : NODE_H - 10
+      const w = n.type === 'signalNode' ? NODE_W : NODE_W - 30
+      const h = n.type === 'signalNode' ? NODE_H : 60
       return { ...n, position: { x: p.x - w / 2, y: p.y - h / 2 } }
     }),
     edges,
@@ -58,10 +58,8 @@ function statusColor(s: string): string {
 }
 
 const SKIP_NAMES = new Set(['ready', 'Ready'])
-function isNoisyUpdate(ue: any) { return SKIP_NAMES.has(ue.name) }
 
-// Build nodes/edges from a single graph node (non-recursive - children handled by expand)
-function buildSingleLevel(graphNode: any, parentId: string | null, parentEdgeLabel: string | null, seen: Set<string>): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(graphNode: any, parentId: string | null, label: string | null, expandedSet: Set<string>, seen: Set<string>): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = []
   const edges: Edge[] = []
   if (!graphNode?.signal) return { nodes, edges }
@@ -73,13 +71,10 @@ function buildSingleLevel(graphNode: any, parentId: string | null, parentEdgeLab
   if (seen.has(id)) return { nodes, edges }
   seen.add(id)
 
-  const updates = (wfInfo?.update_executions || []).filter((ue: any) => !isNoisyUpdate(ue))
+  const updates = (wfInfo?.update_executions || []).filter((ue: any) => !SKIP_NAMES.has(ue.name))
   const awaited = wfInfo?.awaited_signals || []
-  const childWfs = wfInfo?.child_workflows || []
-
-  // Does this node have children that can be expanded?
-  const hasChildren = (graphNode.children?.length > 0) || awaited.length > 0
-  const isExpanded = graphNode._expanded
+  const isExpanded = expandedSet.has(id)
+  const hasWfInfo = !!wfInfo
 
   nodes.push({
     id,
@@ -91,9 +86,8 @@ function buildSingleLevel(graphNode: any, parentId: string | null, parentEdgeLab
       status,
       updateCount: updates.length,
       awaitedCount: awaited.length,
-      childWfCount: childWfs.length,
-      expandable: hasChildren && !isExpanded,
       expanded: isExpanded,
+      hasWfInfo,
     },
     position: { x: 0, y: 0 },
   })
@@ -107,26 +101,37 @@ function buildSingleLevel(graphNode: any, parentId: string | null, parentEdgeLab
       animated: !status.toLowerCase().includes('completed') && !status.toLowerCase().includes('failed'),
       style: { stroke: '#8040BF', strokeWidth: 2 },
       markerEnd: { type: MarkerType.ArrowClosed, color: '#8040BF' },
-      label: parentEdgeLabel || 'awaits',
+      label: label || undefined,
       labelStyle: { fontSize: 9, fill: '#C494F4' },
       labelBgStyle: { fill: '#1B242C', fillOpacity: 0.8 },
     })
   }
 
-  // Chain updates vertically
+  // Only show updates + children if this node is expanded
+  if (!isExpanded) return { nodes, edges }
+
+  // Updates
   for (let i = 0; i < updates.length; i++) {
     const ue = updates[i]
     const ueId = `${id}__ue__${i}`
     nodes.push({
       id: ueId,
       type: 'updateNode',
-      data: { name: ue.name, status: ue.status, activityCount: ue.activities?.length || 0, duration: ue.duration },
+      data: {
+        name: ue.name,
+        status: ue.status,
+        activityCount: ue.activities?.length || 0,
+        activities: ue.activities || [],
+        input: ue.input,
+        result: ue.result,
+        failure: ue.failure,
+      },
       position: { x: 0, y: 0 },
     })
-    const sourceId = i === 0 ? id : `${id}__ue__${i - 1}`
+    const src = i === 0 ? id : `${id}__ue__${i - 1}`
     edges.push({
-      id: `${sourceId}->${ueId}`,
-      source: sourceId,
+      id: `${src}->${ueId}`,
+      source: src,
       target: ueId,
       type: 'smoothstep',
       style: { stroke: '#555F6D', strokeWidth: 1.5 },
@@ -134,43 +139,20 @@ function buildSingleLevel(graphNode: any, parentId: string | null, parentEdgeLab
     })
   }
 
-  // Child workflows
-  for (const cw of childWfs) {
-    const cwId = `${id}__cw__${cw.workflow_id}`
-    if (seen.has(cwId)) continue
-    seen.add(cwId)
-    nodes.push({
-      id: cwId,
-      type: 'childWfNode',
-      data: { workflowType: cw.workflow_type, status: cw.status, namespace: cw.namespace },
-      position: { x: 0, y: 0 },
-    })
-    edges.push({
-      id: `${id}->${cwId}`,
-      source: id,
-      target: cwId,
-      type: 'smoothstep',
-      style: { stroke: '#1e50c0', strokeWidth: 1.5 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#1e50c0' },
-      label: 'child wf',
-      labelStyle: { fontSize: 9, fill: '#6792F4' },
-      labelBgStyle: { fill: '#1B242C', fillOpacity: 0.8 },
-    })
-  }
-
-  // If expanded, recursively add children
+  // Recurse into children
   if (graphNode.children) {
     for (const child of graphNode.children) {
-      const childResult = buildSingleLevel(child, updates.length > 0 ? `${id}__ue__${updates.length - 1}` : id, child.signal?.type, seen)
-      nodes.push(...childResult.nodes)
-      edges.push(...childResult.edges)
+      const lastUpdate = updates.length > 0 ? `${id}__ue__${updates.length - 1}` : id
+      const sub = buildGraph(child, lastUpdate, child.signal?.type, expandedSet, seen)
+      nodes.push(...sub.nodes)
+      edges.push(...sub.edges)
     }
   }
 
   return { nodes, edges }
 }
 
-// -- Custom Nodes --
+// -- Node components with action buttons --
 
 const SignalNode = memo(({ data }: any) => {
   const bg = statusColor(data.status)
@@ -179,33 +161,51 @@ const SignalNode = memo(({ data }: any) => {
       <Handle type="target" position={Position.Top} style={{ background: '#555' }} />
       <div style={{
         background: bg, color: '#fff', borderRadius: '8px', padding: '10px 14px',
-        minWidth: '220px', fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+        width: `${NODE_W}px`, fontFamily: 'ui-sans-serif, system-ui, sans-serif',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-        cursor: data.expandable ? 'pointer' : 'default',
-        border: data.expandable ? '2px dashed rgba(255,255,255,0.4)' : 'none',
       }}>
         <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'ui-monospace, monospace', marginBottom: '2px' }}>
           {data.signalType}
         </div>
-        <div style={{ fontSize: '9px', opacity: 0.6, fontFamily: 'ui-monospace, monospace', marginBottom: '5px' }}>
-          {data.signalId?.slice(0, 20)}
+        <div style={{ fontSize: '9px', opacity: 0.6, fontFamily: 'ui-monospace, monospace', marginBottom: '4px' }}>
+          {data.signalId?.slice(0, 22)}
         </div>
-        <div style={{ display: 'flex', gap: '6px', fontSize: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', fontSize: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
           <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '3px', padding: '1px 5px' }}>{data.status}</span>
           {data.updateCount > 0 && <span>{data.updateCount} upd</span>}
           {data.awaitedCount > 0 && <span style={{ color: '#FFD4A8' }}>{data.awaitedCount} await</span>}
-          {data.childWfCount > 0 && <span style={{ color: '#8DB0FB' }}>{data.childWfCount} child</span>}
         </div>
-        {data.expandable && (
-          <div style={{ marginTop: '6px', fontSize: '9px', opacity: 0.7, textAlign: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', padding: '2px' }}>
-            Click to expand
-          </div>
-        )}
-        {data.expanded && (
-          <div style={{ marginTop: '6px', fontSize: '9px', opacity: 0.5, textAlign: 'center' }}>
-            ✓ expanded
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button
+            className="signal-graph-btn"
+            data-action="view-signal"
+            data-signal-id={data.signalId}
+            data-queue-id={data.queueId}
+            style={{
+              background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '3px',
+              color: '#fff', fontSize: '9px', padding: '2px 8px', cursor: 'pointer',
+            }}
+          >
+            View signal
+          </button>
+          {!data.expanded && (
+            <button
+              className="signal-graph-btn"
+              data-action="expand"
+              data-signal-id={data.signalId}
+              data-queue-id={data.queueId}
+              style={{
+                background: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.5)',
+                borderRadius: '3px', color: '#fff', fontSize: '9px', padding: '2px 8px', cursor: 'pointer',
+              }}
+            >
+              ▸ Expand
+            </button>
+          )}
+          {data.expanded && (
+            <span style={{ fontSize: '9px', opacity: 0.5, padding: '2px 4px' }}>✓ expanded</span>
+          )}
+        </div>
       </div>
       <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
     </>
@@ -215,19 +215,36 @@ SignalNode.displayName = 'SignalNode'
 
 const UpdateNode = memo(({ data }: any) => {
   const border = statusColor(data.status)
+  const acts = data.activities || []
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ background: '#555' }} />
       <div style={{
         background: '#272E35', border: `2px solid ${border}`, color: '#fff',
-        borderRadius: '6px', padding: '7px 11px', minWidth: '180px',
+        borderRadius: '6px', padding: '7px 11px', width: `${NODE_W - 30}px`,
         fontFamily: 'ui-sans-serif, system-ui, sans-serif',
       }}>
         <div style={{ fontSize: '11px', fontWeight: 600 }}>{data.name}</div>
-        <div style={{ display: 'flex', gap: '6px', fontSize: '9px', marginTop: '3px', opacity: 0.6 }}>
+        <div style={{ display: 'flex', gap: '6px', fontSize: '9px', marginTop: '3px', opacity: 0.7 }}>
           <span>{data.status}</span>
-          {data.activityCount > 0 && <span>{data.activityCount} act</span>}
+          {acts.length > 0 && <span>{acts.length} act</span>}
         </div>
+        {data.failure && (
+          <div style={{ fontSize: '9px', color: '#FCA5A5', marginTop: '4px', maxHeight: '24px', overflow: 'hidden' }}>
+            ✗ {data.failure.slice(0, 60)}{data.failure.length > 60 ? '...' : ''}
+          </div>
+        )}
+        {acts.length > 0 && (
+          <div style={{ marginTop: '5px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px' }}>
+            {acts.slice(0, 4).map((a: any, i: number) => (
+              <div key={i} style={{ fontSize: '8px', display: 'flex', gap: '4px', opacity: 0.7, marginBottom: '1px' }}>
+                <span style={{ color: a.status === 'Completed' ? '#75CC9E' : a.status === 'Failed' ? '#FCA5A5' : '#9EA8B3' }}>●</span>
+                <span style={{ fontFamily: 'ui-monospace, monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+              </div>
+            ))}
+            {acts.length > 4 && <div style={{ fontSize: '8px', opacity: 0.5 }}>+{acts.length - 4} more</div>}
+          </div>
+        )}
       </div>
       <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
     </>
@@ -235,33 +252,7 @@ const UpdateNode = memo(({ data }: any) => {
 })
 UpdateNode.displayName = 'UpdateNode'
 
-const ChildWfNode = memo(({ data }: any) => {
-  const border = statusColor(data.status)
-  return (
-    <>
-      <Handle type="target" position={Position.Top} style={{ background: '#555' }} />
-      <div style={{
-        background: '#272E35', border: `2px solid ${border}`, color: '#fff',
-        borderRadius: '6px', padding: '7px 11px', minWidth: '180px',
-        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-      }}>
-        <div style={{ fontSize: '11px', fontWeight: 600 }}>{data.workflowType}</div>
-        <div style={{ display: 'flex', gap: '6px', fontSize: '9px', marginTop: '3px', opacity: 0.6 }}>
-          <span>{data.status}</span>
-          <span>{data.namespace}</span>
-        </div>
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
-    </>
-  )
-})
-ChildWfNode.displayName = 'ChildWfNode'
-
-const nodeTypes = {
-  signalNode: SignalNode,
-  updateNode: UpdateNode,
-  childWfNode: ChildWfNode,
-}
+const nodeTypes = { signalNode: SignalNode, updateNode: UpdateNode }
 
 interface ISignalFlowGraph {
   graphData: any
@@ -272,56 +263,73 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [graphTree, setGraphTree] = useState<any>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState<string | null>(null)
 
-  // Rebuild the visual graph from the tree
-  const rebuildGraph = useCallback((tree: any) => {
+  const rebuild = useCallback((tree: any, expanded: Set<string>) => {
     if (!tree) return
     const seen = new Set<string>()
-    const { nodes: rawNodes, edges: rawEdges } = buildSingleLevel(tree, null, null, seen)
-    if (rawNodes.length > 0) {
-      const { nodes: ln, edges: le } = doLayout(rawNodes, rawEdges)
+    const { nodes: rn, edges: re } = buildGraph(tree, null, null, expanded, seen)
+    if (rn.length > 0) {
+      const { nodes: ln, edges: le } = doLayout(rn, re)
       setNodes(ln)
       setEdges(le)
     }
   }, [setNodes, setEdges])
 
-  // Initial load
+  // Initial load - auto-expand root
   useEffect(() => {
     if (graphData && !graphTree) {
-      // Mark root as expanded since it comes with workflow_info
-      const tree = { ...graphData, _expanded: true }
+      const tree = graphData
       setGraphTree(tree)
-      rebuildGraph(tree)
+      const rootId = tree.signal?.id
+      const initial = new Set<string>()
+      if (rootId) initial.add(rootId)
+      setExpandedIds(initial)
+      rebuild(tree, initial)
     }
-  }, [graphData, graphTree, rebuildGraph])
+  }, [graphData, graphTree, rebuild])
 
-  // Handle click on a signal node to expand it
-  const onNodeClick = useCallback(async (_: any, node: Node) => {
-    if (node.type !== 'signalNode' || !node.data.expandable) return
+  // Handle button clicks inside nodes via event delegation
+  useEffect(() => {
+    const handler = async (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('.signal-graph-btn') as HTMLElement | null
+      if (!btn) return
 
-    const signalId = node.data.signalId as string
-    const queueId = node.data.queueId as string
-    if (!signalId || !queueId || loading) return
+      const action = btn.dataset.action
+      const signalId = btn.dataset.signalId
+      const queueId = btn.dataset.queueId
 
-    setLoading(signalId)
-    try {
-      const result = await getSignalGraph(queueId, signalId, 1)
-      if (result?.graph) {
-        // Merge the fetched graph into the tree
-        setGraphTree((prev: any) => {
-          if (!prev) return prev
-          const updated = mergeChildGraph(prev, signalId, result.graph)
-          rebuildGraph(updated)
-          return updated
-        })
+      if (action === 'view-signal' && signalId && queueId) {
+        window.open(`/queues/${queueId}/signals/${signalId}`, '_blank')
+        return
       }
-    } catch (err) {
-      console.error('Failed to expand signal', err)
-    } finally {
-      setLoading(null)
+
+      if (action === 'expand' && signalId && queueId && !loading) {
+        setLoading(signalId)
+        try {
+          const result = await getSignalGraph(queueId, signalId, 1)
+          if (result?.graph) {
+            setGraphTree((prev: any) => {
+              const updated = mergeChild(prev, signalId, result.graph)
+              const newExpanded = new Set(expandedIds)
+              newExpanded.add(signalId)
+              setExpandedIds(newExpanded)
+              rebuild(updated, newExpanded)
+              return updated
+            })
+          }
+        } catch (err) {
+          console.error('Failed to expand signal', err)
+        } finally {
+          setLoading(null)
+        }
+      }
     }
-  }, [loading, rebuildGraph])
+
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [loading, expandedIds, rebuild])
 
   const memoTypes = useMemo(() => nodeTypes, [])
 
@@ -330,8 +338,8 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
   return (
     <div className="w-full border border-gray-200 rounded-lg overflow-hidden relative" style={{ height }}>
       {loading && (
-        <div className="absolute top-2 left-2 z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded animate-pulse">
-          Loading...
+        <div className="absolute top-2 left-2 z-10 bg-gray-900 text-white text-xs px-3 py-1.5 rounded shadow-lg animate-pulse">
+          Expanding signal...
         </div>
       )}
       <ReactFlow
@@ -340,10 +348,9 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
         nodeTypes={memoTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onNodeClick={onNodeClick}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.05}
+        minZoom={0.02}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
       >
@@ -358,27 +365,17 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
   )
 }
 
-// Recursively find a signal node in the tree and merge the expanded graph data into it
-function mergeChildGraph(tree: any, targetSignalId: string, childGraph: any): any {
+function mergeChild(tree: any, targetId: string, childGraph: any): any {
   if (!tree?.signal) return tree
-
-  if (tree.signal.id === targetSignalId) {
-    // Found it - merge the workflow info and children, mark as expanded
+  if (tree.signal.id === targetId) {
     return {
       ...tree,
       workflow_info: childGraph.workflow_info || tree.workflow_info,
-      children: childGraph.children || [],
-      _expanded: true,
+      children: childGraph.children || tree.children || [],
     }
   }
-
-  // Recurse into children
   if (tree.children) {
-    return {
-      ...tree,
-      children: tree.children.map((child: any) => mergeChildGraph(child, targetSignalId, childGraph)),
-    }
+    return { ...tree, children: tree.children.map((c: any) => mergeChild(c, targetId, childGraph)) }
   }
-
   return tree
 }
