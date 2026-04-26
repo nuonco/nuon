@@ -1,5 +1,5 @@
 ---
-title: 'Self Hosting Nuon: AWS'
+title: 'Self-Hosted Nuon: AWS'
 description: 'Deploy Nuon in your AWS account'
 icon: 'cloud-arrow-up'
 keywords: ['self-hosted Nuon', 'Install Nuon', 'AWS Deployment']
@@ -67,11 +67,9 @@ The blob storage requires the `ctl-api` to be able to read and write from an S3 
 We maintain helm charts for Nuon at [`nuonco/charts`](https://github.com/nuonco/charts). These can be deployed with helm
 into an existing EKS cluster.
 
-<!-- prettier-ignore-start --!>
-> [!NOTE]
-> Our helm configs make heavy use of annotations for nodepool selection because we use
-> Karpenter. We recommend deploying to an EKS cluster with Karpenter installed or EKS Auto Mode.
-<!-- prettier-ignore-start --!>
+<Note>
+  Our helm configs make heavy use of annotations for nodepool selection because we use Karpenter. We recommend deploying to an EKS cluster with Karpenter installed or EKS Auto Mode.
+</Note>
 
 Please refer to the charts to deploy the following two services:
 
