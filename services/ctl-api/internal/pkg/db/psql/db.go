@@ -32,6 +32,9 @@ type database struct {
 	// required for local auth
 	Password string
 
+	// pool configuration
+	MaxConnections int32
+
 	Logger zapgorm2.Logger `validate:"required"`
 
 	MetricsWriter metrics.Writer `validate:"required"`
@@ -86,16 +89,17 @@ func New(v *validator.Validate,
 	ctx, cancelFn := context.WithCancel(ctx)
 
 	database := &database{
-		Logger:        l,
-		Host:          cfg.DBHost,
-		User:          cfg.DBUser,
-		Name:          cfg.DBName,
-		Port:          cfg.DBPort,
-		SSLMode:       cfg.DBSSLMode,
-		Region:        cfg.DBRegion,
-		MetricsWriter: metricsWriter,
-		poolCtx:       ctx,
-		poolCtxCancel: cancelFn,
+		Logger:         l,
+		Host:           cfg.DBHost,
+		User:           cfg.DBUser,
+		Name:           cfg.DBName,
+		Port:           cfg.DBPort,
+		SSLMode:        cfg.DBSSLMode,
+		Region:         cfg.DBRegion,
+		MaxConnections: cfg.DBMaxConnections,
+		MetricsWriter:  metricsWriter,
+		poolCtx:        ctx,
+		poolCtxCancel:  cancelFn,
 	}
 
 	switch {

@@ -28,6 +28,7 @@ func init() {
 	config.RegisterDefault("db_port", 5432)
 	config.RegisterDefault("db_user", "ctl_api")
 	config.RegisterDefault("db_name", "ctl_api")
+	config.RegisterDefault("db_max_connections", 12)
 
 	// defaults for clickhouse database
 	config.RegisterDefault("clickhouse_db_read_timeout", "10s")
@@ -134,17 +135,18 @@ type Config struct {
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
-	DBName        string `config:"db_name" validate:"required"`
-	DBHost        string `config:"db_host" validate:"required"`
-	DBPort        string `config:"db_port" validate:"required"`
-	DBSSLMode     string `config:"db_ssl_mode" validate:"required"`
-	DBPassword    string `config:"db_password"`
-	DBUser        string `config:"db_user" validate:"required"`
-	DBZapLog      bool   `config:"db_use_zap"`
-	DBUseIAM      bool   `config:"db_use_iam"`
-	DBRegion      string `config:"db_region" validate:"required"`
-	CloudProvider string `config:"cloud_provider"`
-	DBLogQueries  bool   `config:"db_log_queries"`
+	DBName           string `config:"db_name" validate:"required"`
+	DBHost           string `config:"db_host" validate:"required"`
+	DBPort           string `config:"db_port" validate:"required"`
+	DBSSLMode        string `config:"db_ssl_mode" validate:"required"`
+	DBPassword       string `config:"db_password"`
+	DBUser           string `config:"db_user" validate:"required"`
+	DBZapLog         bool   `config:"db_use_zap"`
+	DBUseIAM         bool   `config:"db_use_iam"`
+	DBRegion         string `config:"db_region" validate:"required"`
+	CloudProvider    string `config:"cloud_provider"`
+	DBLogQueries     bool   `config:"db_log_queries"`
+	DBMaxConnections int32  `config:"db_max_connections"`
 
 	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
