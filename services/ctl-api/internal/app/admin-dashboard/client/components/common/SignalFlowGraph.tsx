@@ -73,6 +73,7 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
 
   const updates = (wfInfo?.update_executions || []).filter((ue: any) => !SKIP_NAMES.has(ue.name))
   const awaited = wfInfo?.awaited_signals || []
+  const enqueued = wfInfo?.enqueued_signals || []
   const isExpanded = expandedSet.has(id)
   const hasWfInfo = !!wfInfo
 
@@ -86,6 +87,7 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
       status,
       updateCount: updates.length,
       awaitedCount: awaited.length,
+      enqueuedCount: enqueued.length,
       expanded: isExpanded,
       hasWfInfo,
     },
@@ -174,6 +176,7 @@ const SignalNode = memo(({ data }: any) => {
           <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '3px', padding: '1px 5px' }}>{data.status}</span>
           {data.updateCount > 0 && <span>{data.updateCount} upd</span>}
           {data.awaitedCount > 0 && <span style={{ color: '#FFD4A8' }}>{data.awaitedCount} await</span>}
+          {data.enqueuedCount > 0 && <span style={{ color: '#75CC9E' }}>{data.enqueuedCount} enq</span>}
         </div>
         <div style={{ display: 'flex', gap: '4px' }}>
           <button
@@ -213,9 +216,12 @@ const SignalNode = memo(({ data }: any) => {
 })
 SignalNode.displayName = 'SignalNode'
 
-const UpdateNode = memo(({ data }: any) => {
+const UpdateNodeInner = ({ data }: any) => {
+  const [showAll, setShowAll] = useState(false)
   const border = statusColor(data.status)
-  const acts = data.activities || []
+  const acts: any[] = data.activities || []
+  const visible = showAll ? acts : acts.slice(0, 3)
+
   return (
     <>
       <Handle type="target" position={Position.Top} style={{ background: '#555' }} />
@@ -227,29 +233,42 @@ const UpdateNode = memo(({ data }: any) => {
         <div style={{ fontSize: '11px', fontWeight: 600 }}>{data.name}</div>
         <div style={{ display: 'flex', gap: '6px', fontSize: '9px', marginTop: '3px', opacity: 0.7 }}>
           <span>{data.status}</span>
-          {acts.length > 0 && <span>{acts.length} act</span>}
+          {acts.length > 0 && <span>{acts.length} activities</span>}
         </div>
         {data.failure && (
           <div style={{ fontSize: '9px', color: '#FCA5A5', marginTop: '4px', maxHeight: '24px', overflow: 'hidden' }}>
-            ✗ {data.failure.slice(0, 60)}{data.failure.length > 60 ? '...' : ''}
+            ✗ {data.failure.slice(0, 80)}{data.failure.length > 80 ? '...' : ''}
           </div>
         )}
         {acts.length > 0 && (
           <div style={{ marginTop: '5px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px' }}>
-            {acts.slice(0, 4).map((a: any, i: number) => (
-              <div key={i} style={{ fontSize: '8px', display: 'flex', gap: '4px', opacity: 0.7, marginBottom: '1px' }}>
-                <span style={{ color: a.status === 'Completed' ? '#75CC9E' : a.status === 'Failed' ? '#FCA5A5' : '#9EA8B3' }}>●</span>
-                <span style={{ fontFamily: 'ui-monospace, monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+            {visible.map((a: any, i: number) => (
+              <div key={i} style={{ fontSize: '8px', display: 'flex', gap: '4px', opacity: 0.8, marginBottom: '2px', alignItems: 'center' }}>
+                <span style={{ color: a.status === 'Completed' ? '#75CC9E' : a.status === 'Failed' ? '#FCA5A5' : a.status === 'Running' ? '#6792F4' : '#9EA8B3', flexShrink: 0 }}>●</span>
+                <span style={{ fontFamily: 'ui-monospace, monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '8px' }}>{a.name}</span>
+                <span style={{ fontSize: '7px', opacity: 0.5, flexShrink: 0 }}>{a.status}</span>
               </div>
             ))}
-            {acts.length > 4 && <div style={{ fontSize: '8px', opacity: 0.5 }}>+{acts.length - 4} more</div>}
+            {acts.length > 3 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowAll(!showAll) }}
+                style={{
+                  fontSize: '8px', color: '#AD71EA', background: 'rgba(128,64,191,0.15)',
+                  border: '1px solid rgba(128,64,191,0.3)', borderRadius: '3px',
+                  padding: '2px 6px', cursor: 'pointer', marginTop: '3px', width: '100%',
+                }}
+              >
+                {showAll ? 'Show less' : `Show all ${acts.length} activities`}
+              </button>
+            )}
           </div>
         )}
       </div>
       <Handle type="source" position={Position.Bottom} style={{ background: '#555' }} />
     </>
   )
-})
+}
+const UpdateNode = memo(UpdateNodeInner)
 UpdateNode.displayName = 'UpdateNode'
 
 const nodeTypes = { signalNode: SignalNode, updateNode: UpdateNode }

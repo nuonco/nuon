@@ -67,15 +67,35 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 			node.WorkflowInfo = wfInfo
 
 			// For each awaited signal, recursively build the graph
+			seen := map[string]bool{}
 			for _, as := range wfInfo.AwaitedSignals {
-				if as.Signal != nil {
+				if as.Signal != nil && !seen[as.Signal.ID] {
+					seen[as.Signal.ID] = true
 					child := s.buildSignalGraphNode(c, as.Signal, depth+1, maxDepth)
 					node.Children = append(node.Children, child)
-				} else if as.QueueSignalID != "" {
-					// Try to load the signal from DB
+				} else if as.QueueSignalID != "" && !seen[as.QueueSignalID] {
+					seen[as.QueueSignalID] = true
 					var childSignal app.QueueSignal
 					if err := s.db.WithContext(c.Request.Context()).
 						Where("id = ?", as.QueueSignalID).
+						First(&childSignal).Error; err == nil {
+						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)
+						node.Children = append(node.Children, child)
+					}
+				}
+			}
+
+			// For each enqueued signal, also recursively build the graph
+			for _, es := range wfInfo.EnqueuedSignals {
+				if es.Signal != nil && !seen[es.Signal.ID] {
+					seen[es.Signal.ID] = true
+					child := s.buildSignalGraphNode(c, es.Signal, depth+1, maxDepth)
+					node.Children = append(node.Children, child)
+				} else if es.QueueSignalID != "" && !seen[es.QueueSignalID] {
+					seen[es.QueueSignalID] = true
+					var childSignal app.QueueSignal
+					if err := s.db.WithContext(c.Request.Context()).
+						Where("id = ?", es.QueueSignalID).
 						First(&childSignal).Error; err == nil {
 						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)
 						node.Children = append(node.Children, child)

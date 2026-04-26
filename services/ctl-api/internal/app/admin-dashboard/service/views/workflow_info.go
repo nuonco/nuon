@@ -8,13 +8,21 @@ import (
 
 // WorkflowInfo holds Temporal workflow execution info for display.
 type WorkflowInfo struct {
-	Status           string              `json:"status"`
-	Activities       []ActivityInfo      `json:"activities"`
-	ChildWorkflows   []ChildWorkflowInfo `json:"child_workflows"`
-	AwaitedSignals   []AwaitedSignalInfo `json:"awaited_signals"`
-	UpdateHandlers   []string            `json:"update_handlers"`
-	UpdateExecutions []UpdateExecution   `json:"update_executions"`
-	OrphanActivities []ActivityInfo      `json:"orphan_activities"` // activities not in any update (main workflow body)
+	Status           string               `json:"status"`
+	Activities       []ActivityInfo       `json:"activities"`
+	ChildWorkflows   []ChildWorkflowInfo  `json:"child_workflows"`
+	AwaitedSignals   []AwaitedSignalInfo  `json:"awaited_signals"`
+	EnqueuedSignals  []EnqueuedSignalInfo `json:"enqueued_signals"`
+	UpdateHandlers   []string             `json:"update_handlers"`
+	UpdateExecutions []UpdateExecution    `json:"update_executions"`
+	OrphanActivities []ActivityInfo       `json:"orphan_activities"` // activities not in any update (main workflow body)
+}
+
+// EnqueuedSignalInfo holds info about a signal that was enqueued by this workflow.
+type EnqueuedSignalInfo struct {
+	QueueSignalID string           `json:"queue_signal_id"`
+	Signal        *app.QueueSignal `json:"signal"`
+	ActivityName  string           `json:"activity_name"`
 }
 
 // UpdateExecution groups activities that ran within a single Temporal update handler call.
