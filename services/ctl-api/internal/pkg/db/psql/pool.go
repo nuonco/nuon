@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	maxConnections  int32         = 12
+	maxConnections  int32         = 40
 	maxConnIdleTime time.Duration = time.Second * 15
 	maxConnLifetime time.Duration = time.Minute * 5
 
