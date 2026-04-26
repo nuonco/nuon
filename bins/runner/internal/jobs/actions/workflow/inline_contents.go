@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -17,8 +18,13 @@ func (h *handler) prepareInlineContentsCommand(ctx context.Context, l *zap.Logge
 		return "", errors.New("no command was defined in action step config")
 	}
 
+	contents := cfg.InlineContents
+	if !strings.HasPrefix(contents, "#!") {
+		contents = "#!/bin/sh\n" + contents
+	}
+
 	fp := h.state.workspace.AbsPath(fmt.Sprintf(".inline-contents-step-%d", cfg.Idx))
-	if err := os.WriteFile(fp, []byte(cfg.InlineContents), 0o755); err != nil {
+	if err := os.WriteFile(fp, []byte(contents), 0o755); err != nil {
 		return "", errors.Wrap(err, "unable to write inline contents")
 	}
 
