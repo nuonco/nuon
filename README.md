@@ -37,9 +37,13 @@ The docs for creating your first app are [here](https://docs.nuon.co/get-started
 
 ## Deployment options
 
-For enterprise licensed customers, Nuon can be deployed either as Nuon Cloud, our SaaS offering, or managed self-hosted, our Nuon BYOC offering, where Nuon's control plane is automatically deployed into a software vendor's AWS cloud account. If you're interested in the managed self-hosted approach, please [contact us](https://nuon.co/contact-sales) and review the Nuon BYOC docs [here](https://docs.nuon.co/guides/byoc).
+Nuon supports three deployment models:
 
-Nuon engineering is currently working on removing cloud dependencies so that Nuon open source can be deployed standalone as a third option.
+- **Nuon Cloud** — Fully managed, multi-tenant SaaS hosted by Nuon. The fastest way to get started; [sign up for a free trial](https://app.nuon.co).
+- **Nuon BYOC** — Single-tenant Nuon control plane deployed into your AWS account, managed remotely by Nuon. You own the infrastructure and data. See the [BYOC docs](https://docs.nuon.co/guides/byoc).
+- **Nuon Self-Hosted** — Deploy and operate Nuon entirely within your own infrastructure, with no dependency on Nuon Cloud. Supported on AWS. See the [self-hosted docs](https://docs.nuon.co/guides/self-hosted).
+
+See the full [deployment options guide](https://docs.nuon.co/guides/deployment-options) for a detailed comparison.
 
 ## Documentation
 
@@ -47,7 +51,7 @@ Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 
 - [Concepts](https://docs.nuon.co/concepts/overview): apps, components, actions, inputs, installs, workflows
 - [Architecture](https://docs.nuon.co/runner-architecture): control plane, runner, [CLI](https://docs.nuon.co/cli), [API](https://docs.nuon.co/nuon-api)
-- [Deployment options](https://docs.nuon.co/deployment-options): SaaS and managed self-hosted
+- [Deployment options](https://docs.nuon.co/deployment-options): Nuon Cloud, Nuon BYOC, and Nuon Self-Hosted
 - [Guides](https://docs.nuon.co/guides/app-install-life-cycle): technical info on component types, actions, variables, and more
 
 Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specific features and example app guides.
