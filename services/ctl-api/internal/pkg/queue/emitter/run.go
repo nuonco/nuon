@@ -58,6 +58,14 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
+	if resp.Skipped {
+		l.Info("signal emission skipped - emitter already has in-flight signal",
+			zap.String("emitter-id", e.emitterID),
+			zap.String("queue-id", emitter.QueueID),
+		)
+		return nil
+	}
+
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
 		zap.String("workflow-id", resp.WorkflowID),
