@@ -1,5 +1,4 @@
 import { BackLink } from '@/components/common/BackLink'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -25,36 +24,10 @@ interface IBuildHeader {
 
 export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
   return (
-    <header className="p-6 border-b flex justify-between">
-      <HeadingGroup>
-        <BackLink className="mb-6" />
-        <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-2">
-            <ComponentType type={component?.type} displayVariant="icon-only" />
-            <Text variant="base" weight="strong">
-              {component?.name} build
-            </Text>
-          </span>
-          <ID>{build?.id}</ID>
-        </div>
-        <div className="flex gap-8 items-center justify-start mt-2">
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="CalendarBlankIcon" />
-            <Time variant="subtext" time={build.created_at} />
-          </Text>
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="TimerIcon" />
-            <Duration
-              variant="subtext"
-              beginTime={build.created_at}
-              endTime={build.updated_at}
-            />
-          </Text>
-        </div>
-      </HeadingGroup>
-
-      <div className="flex flex-col gap-6">
-        <div className="flex gap-6 items-start justify-start">
+    <header className="p-6 border-b flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <BackLink />
+        <div className="flex items-center gap-6">
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -67,7 +40,7 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
                   {toSentenceCase(build?.status_v2?.status_human_description)}
                 </Text>
               ),
-              position: 'left',
+              position: 'bottom',
             }}
           />
           <LabeledValue label="App">
@@ -95,29 +68,54 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               <CommitDetails commit={build?.vcs_connection_commit} />
             </LabeledValue>
           ) : null}
+        </div>
+      </div>
 
-          {build?.runner_job ? (
-            <RunnerJobPlanButton
-              buttonText="Build plan"
-              runnerJobId={build?.runner_job?.id}
-            />
-          ) : null}
-
-          {build?.runner_job &&
-          build?.status_v2?.status !== 'active' &&
-          build?.status_v2?.status !== 'error' ? (
-            <CancelRunnerJobButton
-              jobType="build"
-              runnerJob={build?.runner_job}
-            />
-          ) : null}
-
-          {build?.queue_signal ? (
-            <AdminDashboardLink
-              path={`/queue-signals?search=${build.id}`}
-              label="View signal"
-            />
-          ) : null}
+      <div className="flex flex-col gap-1">
+        <span className="flex items-center gap-2">
+          <ComponentType type={component?.type} displayVariant="icon-only" />
+          <Text variant="base" weight="strong">
+            {component?.name} build
+          </Text>
+        </span>
+        <ID>{build?.id}</ID>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex gap-8 items-center">
+            <Text theme="info" flex className="gap-1">
+              <Icon variant="CalendarBlankIcon" />
+              <Time variant="subtext" time={build.created_at} />
+            </Text>
+            <Text theme="info" flex className="gap-1">
+              <Icon variant="TimerIcon" />
+              <Duration
+                variant="subtext"
+                beginTime={build.created_at}
+                endTime={build.updated_at}
+              />
+            </Text>
+          </div>
+          <div className="flex items-center gap-4">
+            {build?.runner_job &&
+            build?.status_v2?.status !== 'active' &&
+            build?.status_v2?.status !== 'error' ? (
+              <CancelRunnerJobButton
+                jobType="build"
+                runnerJob={build?.runner_job}
+              />
+            ) : null}
+            {build?.queue_signal ? (
+              <AdminDashboardLink
+                path={`/queue-signals?search=${build.id}`}
+                label="View signal"
+              />
+            ) : null}
+            {build?.runner_job ? (
+              <RunnerJobPlanButton
+                buttonText="Build plan"
+                runnerJobId={build?.runner_job?.id}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
     </header>

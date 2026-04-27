@@ -47,7 +47,7 @@ export const MainSidebar = ({
           </>
         )}
 
-        <div className="flex flex-auto items-end md:hidden">
+        <div className="flex flex-auto items-end lg:hidden">
           <UserDropdown
             alignment="left"
             className="!w-full"
