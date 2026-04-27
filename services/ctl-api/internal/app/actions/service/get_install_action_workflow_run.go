@@ -72,6 +72,7 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		Preload("ActionWorkflowConfig").
 		Preload("ActionWorkflowConfig.Steps").
 		Preload("ActionWorkflowConfig.Triggers").
+		Preload("CreatedBy").
 		Preload("LogStream").
 		Preload("RunnerJob").
 		Preload("RunnerJob.Plan").
