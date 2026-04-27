@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -28,7 +29,7 @@ type GroupFinishedResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 10s
+// @heartbeat-timeout 30s
 func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupFinishedRequest) (*GroupFinishedResponse, error) {
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
@@ -43,11 +44,59 @@ func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupF
 		return nil, fmt.Errorf("unable to find group queue signal for group %s: %w", req.StepGroupID, res.Error)
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
-		rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
-			UpdateName:   "group-finished",
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		})
+	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
+		startOp := a.tClient.NewWithStartWorkflowOperation(
+			tclient.StartWorkflowOptions{
+ 				ID:                       qs.Workflow.ID,
+ 				TaskQueue:                "api",
+ 				WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+ 				RetryPolicy: &temporal.RetryPolicy{
+ 					MaximumAttempts: 0,
+ 				},
+ 			},
+ 			"Handler",
+ 			handler.HandlerRequest{
+ 				QueueID:       qs.QueueID,
+ 				QueueSignalID: qs.ID,
+ 			},
+ 		)
+ 
+ 		rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
+ 			tclient.UpdateWithStartWorkflowOptions{
+ 				UpdateOptions: tclient.UpdateWorkflowOptions{
+ 					WorkflowID:   qs.Workflow.ID,
+ 					UpdateName:   "group-finished",
+ 					WaitForStage: tclient.WorkflowUpdateStageCompleted,
+ 				},
+ 				StartWorkflowOperation: startOp,
+ 			})
+
+	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
+		startOp := a.tClient.NewWithStartWorkflowOperation(
+			tclient.StartWorkflowOptions{
+				ID:                       qs.Workflow.ID,
+				TaskQueue:                "api",
+				WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+				RetryPolicy: &temporal.RetryPolicy{
+					MaximumAttempts: 0,
+				},
+			},
+			"Handler",
+			handler.HandlerRequest{
+				QueueID:       qs.QueueID,
+				QueueSignalID: qs.ID,
+			},
+		)
+
+		rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
+			tclient.UpdateWithStartWorkflowOptions{
+				UpdateOptions: tclient.UpdateWorkflowOptions{
+					WorkflowID:   qs.Workflow.ID,
+					UpdateName:   "group-finished",
+					WaitForStage: tclient.WorkflowUpdateStageCompleted,
+				},
+				StartWorkflowOperation: startOp,
+			})
 		if err != nil {
 			return nil, fmt.Errorf("unable to send group-finished update to group %s: %w", req.StepGroupID, err)
 		}
