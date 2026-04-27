@@ -112,7 +112,7 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between">
+            <div className="@container flex flex-col gap-4 w-full md:flex-row md:justify-between">
               <HeadingGroup>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Text variant="h3" weight="stronger" level={1}>
@@ -157,7 +157,7 @@ const InstallTemplate = () => {
                     </Link>
                   </Text>
                 </LabeledValue>
-                <InstallStatusesContainer />
+                <InstallStatusesContainer collapsible />
                 <InstallManagementDropdown />
               </div>
             </div>

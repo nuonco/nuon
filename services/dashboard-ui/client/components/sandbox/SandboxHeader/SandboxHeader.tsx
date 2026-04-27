@@ -1,7 +1,6 @@
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { Duration } from '@/components/common/Duration'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -33,9 +32,9 @@ export const SandboxHeader = ({
 }: ISandboxHeader) => {
   return (
     <header className="flex flex-col p-6 border-b gap-4">
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between">
         <BackLink />
-        <div className="flex items-start gap-6">
+        <div className="flex items-center gap-6">
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -50,10 +49,9 @@ export const SandboxHeader = ({
                   )}
                 </Text>
               ),
-              position: 'left',
+              position: 'bottom',
             }}
           />
-
           <LabeledValue label="Install">
             <Text variant="subtext">
               <Link href={`/${orgId}/installs/${install?.id}`}>
@@ -73,35 +71,22 @@ export const SandboxHeader = ({
               </Text>
             </SandboxConfigContextTooltip>
           </LabeledValue>
-          <SandboxRunSwitcher sandboxRunId={sandboxRun?.id} />
-          <ManageRunDropdown
-            workflow={workflow}
-            variant="primary"
-          />
         </div>
       </div>
 
-      <HeadingGroup>
-        <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-2">
-            <CloudPlatform
-              platform={install.cloud_platform as TCloudPlatform}
-              variant="subtext"
-              displayVariant="icon-only"
-            />
-            <Text
-              flex
-              className="gap-4"
-              variant="h3"
-              weight="strong"
-            >
-              Sandbox {sandboxRun?.run_type}
-            </Text>
-          </span>
-          <ID>{sandboxRun?.id}</ID>
-        </div>
-
-        <div className="flex flex-wrap gap-x-8 gap-y-1 items-center justify-start my-2">
+      <div className="flex flex-col gap-1">
+        <span className="flex items-center gap-2">
+          <CloudPlatform
+            platform={install.cloud_platform as TCloudPlatform}
+            variant="subtext"
+            displayVariant="icon-only"
+          />
+          <Text variant="base" weight="strong">
+            Sandbox {sandboxRun?.run_type}
+          </Text>
+        </span>
+        <ID>{sandboxRun?.id}</ID>
+        <div className="flex flex-wrap gap-x-8 gap-y-1 items-center mt-1">
           <Text theme="info" flex className="gap-1">
             <Icon variant="CalendarBlankIcon" />
             <Time variant="subtext" time={sandboxRun?.created_at} />
@@ -121,7 +106,9 @@ export const SandboxHeader = ({
             </Text>
           ) : null}
         </div>
+      </div>
 
+      <div className="flex items-center justify-between">
         {sandboxRun?.install_workflow_id ? (
           <Button
             href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
@@ -129,8 +116,17 @@ export const SandboxHeader = ({
             View workflow
             <Icon variant="CaretRightIcon" />
           </Button>
-        ) : null}
-      </HeadingGroup>
+        ) : (
+          <div />
+        )}
+        <div className="flex gap-4 items-center">
+          <SandboxRunSwitcher sandboxRunId={sandboxRun?.id} />
+          <ManageRunDropdown
+            workflow={workflow}
+            variant="primary"
+          />
+        </div>
+      </div>
     </header>
   )
 }

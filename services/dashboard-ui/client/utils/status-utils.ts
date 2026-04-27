@@ -153,3 +153,35 @@ export function getStatusTheme(status: string): TStatusTheme {
 export function getStatusIconVariant(status: string): TIconVariant {
   return STATUS_ICON_MAP[status] ?? 'ClockCountdown'
 }
+
+const THEME_PRIORITY: TStatusTheme[] = [
+  'error',
+  'warn',
+  'info',
+  'neutral',
+  'success',
+]
+
+export function getWorstStatusTheme(
+  statuses: (string | undefined)[]
+): { theme: TStatusTheme; worstStatus: string } {
+  const defined = statuses.filter((s): s is string => s !== undefined)
+  if (defined.length === 0) return { theme: 'neutral', worstStatus: 'unknown' }
+
+  let worstIdx = THEME_PRIORITY.length
+  let worstStatus = defined[0]
+
+  for (const status of defined) {
+    const theme = getStatusTheme(status)
+    const idx = THEME_PRIORITY.indexOf(theme)
+    if (idx < worstIdx) {
+      worstIdx = idx
+      worstStatus = status
+    }
+  }
+
+  return {
+    theme: THEME_PRIORITY[worstIdx] ?? 'neutral',
+    worstStatus,
+  }
+}
