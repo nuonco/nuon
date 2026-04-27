@@ -92,7 +92,7 @@ const navLinks: TNavItem[] = [
   {
     path: `/state`,
     iconVariant: 'CodeBlock' as const,
-    text: 'View state',
+    text: 'Inputs & state',
   },
 ]
 
