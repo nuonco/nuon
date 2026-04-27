@@ -3,14 +3,12 @@ package v2
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
@@ -113,8 +111,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 		return steps, nil
 	}
 
-	triggerName := string(triggerTyp)
-	sg.nextGroupLabeled(labels.Labels{"name": triggerName, "display_name": strings.ToUpper(triggerName[:1]) + triggerName[1:], "type": "system", "domain": "action"})
+	sg.nextGroupLabeled(StepGroupActionTrigger(string(triggerTyp)))
 
 	for _, installAction := range installActions {
 		sig := &executeactionworkflow.Signal{
@@ -168,11 +165,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
 
-		groupType := "approval"
-		if comp.Type.IsImage() {
-			groupType = "system"
-		}
-		sg.nextGroupLabeled(labels.Labels{"name": "deploy-" + comp.Name, "display_name": "Deploy " + comp.Name, "type": groupType, "domain": "component", "component_name": comp.Name})
+		sg.nextGroupLabeled(StepGroupDeployComponent(comp.Name, comp.Type.IsImage()))
 
 		// Resolve install component ID
 		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
@@ -257,7 +250,7 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroupLabeled(labels.Labels{"name": "await-runner-health", "display_name": "Await runner health", "type": "system", "domain": "system"})
+	sg.nextGroupLabeled(StepGroupAwaitRunnerHealth())
 
 	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,

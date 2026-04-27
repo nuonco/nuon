@@ -63,6 +63,9 @@ type AppWorkflow struct {
 	// install sandbox runs
 	InstallSandboxRuns []*AppInstallSandboxRun `json:"install_sandbox_runs"`
 
+	// labels
+	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
 	// links
 	Links map[string]any `json:"links,omitempty"`
 
@@ -143,6 +146,10 @@ func (m *AppWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallSandboxRuns(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLabels(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -344,6 +351,29 @@ func (m *AppWorkflow) validateInstallSandboxRuns(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *AppWorkflow) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if m.Labels != nil {
+		if err := m.Labels.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("labels")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("labels")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppWorkflow) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
@@ -507,6 +537,10 @@ func (m *AppWorkflow) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateInstallSandboxRuns(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -699,6 +733,28 @@ func (m *AppWorkflow) contextValidateInstallSandboxRuns(ctx context.Context, for
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppWorkflow) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("labels")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("labels")
+		}
+
+		return err
 	}
 
 	return nil

@@ -61,6 +61,9 @@ type AppWorkflowStep struct {
 	// DEPRECATED: this is the install workflow ID, which is now the workflow ID.
 	InstallWorkflowID string `json:"install_workflow_id,omitempty"`
 
+	// labels
+	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
 	// links
 	Links map[string]any `json:"links,omitempty"`
 
@@ -144,6 +147,10 @@ func (m *AppWorkflowStep) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateExecutionType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLabels(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -232,6 +239,29 @@ func (m *AppWorkflowStep) validateExecutionType(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppWorkflowStep) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if m.Labels != nil {
+		if err := m.Labels.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("labels")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("labels")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppWorkflowStep) validateLogStream(formats strfmt.Registry) error {
 	if swag.IsZero(m.LogStream) { // not required
 		return nil
@@ -299,6 +329,10 @@ func (m *AppWorkflowStep) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateExecutionType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -384,6 +418,28 @@ func (m *AppWorkflowStep) contextValidateExecutionType(ctx context.Context, form
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("execution_type")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (m *AppWorkflowStep) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("labels")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("labels")
 		}
 
 		return err
