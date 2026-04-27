@@ -191,6 +191,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners := api.Group("/v1/runners/:runner_id")
 	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
 	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
+	runners.POST("/processes", s.CreateRunnerProcess)
 	runners.GET("", s.GetRunner)
 	runners.GET("/jobs", s.GetRunnerJobs)
 	runners.GET("/settings", s.GetRunnerSettings)

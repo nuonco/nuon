@@ -397,3 +397,7 @@ func NewOnboardingID() string {
 func NewBlobID() string {
 	return shortid.NewNanoID("blb")
 }
+
+func NewRunnerProcessID() string {
+	return shortid.NewNanoID("rpr")
+}
