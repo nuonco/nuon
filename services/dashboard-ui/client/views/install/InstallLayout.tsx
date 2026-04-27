@@ -157,7 +157,7 @@ const InstallTemplate = () => {
                     </Link>
                   </Text>
                 </LabeledValue>
-                <InstallStatusesContainer />
+                <InstallStatusesContainer collapsible />
                 <InstallManagementDropdown />
               </div>
             </div>

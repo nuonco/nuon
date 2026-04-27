@@ -21,6 +21,7 @@ import { toSentenceCase } from '@/utils/string-utils'
 
 export interface IInstallStatuses
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
+  collapsible?: boolean
   isLabelHidden?: boolean
   tooltipPosition?: ITooltip['position']
   variant?: 'badge' | 'icon'
@@ -84,6 +85,7 @@ function getTooltip({
 
 export const InstallStatuses = ({
   className,
+  collapsible = false,
   install,
   isLabelHidden = false,
   tooltipPosition = 'bottom',
@@ -405,29 +407,36 @@ export const InstallStatuses = ({
     },
   ]
 
+  const expandedContent = (
+    <div className={cn('flex items-center flex-wrap gap-2', { 'hidden @5xl:flex': collapsible })}>
+      {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
+      {stackContent ? wrap('Stack', stackContent) : null}
+      {wrap('Runner', runnerContent)}
+      {wrap('Sandbox', sandboxContent)}
+      {wrap('Components', componentsContent)}
+    </div>
+  )
+
+  const collapsedContent = collapsible ? (
+    <div className="flex @5xl:hidden">
+      <LabeledValue label="Status">
+        <ContextTooltip
+          title="Install status"
+          items={compositeItems}
+          position={tooltipPosition}
+        >
+          <Status status={worstStatus} variant="badge">
+            {worstStatus}
+          </Status>
+        </ContextTooltip>
+      </LabeledValue>
+    </div>
+  ) : null
+
   return (
     <div className={cn(className)} {...props}>
-      <div className="hidden @5xl:flex items-center flex-wrap gap-2">
-        {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
-        {stackContent ? wrap('Stack', stackContent) : null}
-        {wrap('Runner', runnerContent)}
-        {wrap('Sandbox', sandboxContent)}
-        {wrap('Components', componentsContent)}
-      </div>
-
-      <div className="flex @5xl:hidden">
-        <LabeledValue label="Status">
-          <ContextTooltip
-            title="Install status"
-            items={compositeItems}
-            position={tooltipPosition}
-          >
-            <Status status={worstStatus} variant="badge">
-              {worstStatus}
-            </Status>
-          </ContextTooltip>
-        </LabeledValue>
-      </div>
+      {expandedContent}
+      {collapsedContent}
     </div>
   )
 }
