@@ -91,6 +91,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err := activities.AwaitEnsureInstallQueuesByInstallID(ctx, install.ID); err != nil {
 			l.Warn("unable to ensure install queues", zap.String("install_id", install.ID), zap.Error(err))
 		}
+
+		// Ensure install-level runner queues
+		installRunners, err := activities.AwaitGetInstallRunnersByInstallID(ctx, install.ID)
+		if err != nil {
+			l.Warn("unable to get install runners", zap.String("install_id", install.ID), zap.Error(err))
+			continue
+		}
+		for _, runner := range installRunners {
+			l.Info("ensuring install runner queues", zap.String("runner_id", runner.ID), zap.String("install_id", install.ID))
+			if err := activities.AwaitEnsureRunnerQueuesByRunnerID(ctx, runner.ID); err != nil {
+				l.Warn("unable to ensure install runner queues", zap.String("runner_id", runner.ID), zap.Error(err))
+			}
+		}
 	}
 
 	// 4. Ensure runner queues
