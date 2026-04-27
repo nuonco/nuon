@@ -44,8 +44,8 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type GCPAccount struct {
-	ProjectID string `mapstructure:"project_id,omitempty" toml:"project_id,omitempty" jsonschema:"required"`
-	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	ProjectID string `mapstructure:"project_id,omitempty" toml:"project_id,omitempty"`
+	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty"`
 }
 
 func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
