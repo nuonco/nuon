@@ -150,7 +150,7 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 		r.Platform = CloudPlatformAzure
 	}
 	if r.BinaryVersion == "" {
-		// TODO: implement versionFromContext(tx.Statement.Context)
+		r.BinaryVersion = r.ContainerImageTag
 		if r.BinaryVersion == "" {
 			r.BinaryVersion = "latest"
 		}
