@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
@@ -43,33 +44,6 @@ func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupF
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find group queue signal for group %s: %w", req.StepGroupID, res.Error)
 	}
-
-	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
-		startOp := a.tClient.NewWithStartWorkflowOperation(
-			tclient.StartWorkflowOptions{
- 				ID:                       qs.Workflow.ID,
- 				TaskQueue:                "api",
- 				WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
- 				RetryPolicy: &temporal.RetryPolicy{
- 					MaximumAttempts: 0,
- 				},
- 			},
- 			"Handler",
- 			handler.HandlerRequest{
- 				QueueID:       qs.QueueID,
- 				QueueSignalID: qs.ID,
- 			},
- 		)
- 
- 		rawResp, err := a.tClient.UpdateWithStartWorkflowInNamespace(ctx, qs.Workflow.Namespace,
- 			tclient.UpdateWithStartWorkflowOptions{
- 				UpdateOptions: tclient.UpdateWorkflowOptions{
- 					WorkflowID:   qs.Workflow.ID,
- 					UpdateName:   "group-finished",
- 					WaitForStage: tclient.WorkflowUpdateStageCompleted,
- 				},
- 				StartWorkflowOperation: startOp,
- 			})
 
 	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
 		startOp := a.tClient.NewWithStartWorkflowOperation(

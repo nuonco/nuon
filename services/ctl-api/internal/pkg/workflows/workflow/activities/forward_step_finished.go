@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
