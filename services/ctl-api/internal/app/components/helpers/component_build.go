@@ -73,6 +73,7 @@ func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLat
 }
 
 func (s *Helpers) findDuplicateBuild(ctx context.Context, excludeBuildID string, componentID string, commitSHA string, checksum string) (*app.ComponentBuild, error) {
+	return nil, nil
 	var build app.ComponentBuild
 	res := s.db.WithContext(ctx).
 		Joins("JOIN vcs_connection_commits ON vcs_connection_commits.id = component_builds.vcs_connection_commit_id").

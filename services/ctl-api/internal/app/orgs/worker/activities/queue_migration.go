@@ -90,6 +90,29 @@ func (a *Activities) EnsureVCSConnectionQueue(ctx context.Context, req EnsureVCS
 	return a.vcsHelpers.EnsureConnectionQueue(ctx, &vcsConn)
 }
 
+type GetInstallRunnersRequest struct {
+	InstallID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field InstallID
+func (a *Activities) GetInstallRunners(ctx context.Context, req GetInstallRunnersRequest) ([]app.Runner, error) {
+	var rg app.RunnerGroup
+	if res := a.db.WithContext(ctx).
+		Where(app.RunnerGroup{OwnerID: req.InstallID, OwnerType: "installs"}).
+		First(&rg); res.Error != nil {
+		return nil, fmt.Errorf("unable to get install runner group: %w", res.Error)
+	}
+
+	var runners []app.Runner
+	if res := a.db.WithContext(ctx).
+		Where(app.Runner{RunnerGroupID: rg.ID}).
+		Find(&runners); res.Error != nil {
+		return nil, fmt.Errorf("unable to get install runners: %w", res.Error)
+	}
+	return runners, nil
+}
+
 type GetOrgAppsRequest struct {
 	OrgID string `validate:"required"`
 }
@@ -178,8 +201,9 @@ type EnableQueuesFeatureFlagRequest struct {
 // @by-field OrgID
 func (a *Activities) EnableQueuesFeatureFlag(ctx context.Context, req EnableQueuesFeatureFlagRequest) error {
 	return a.features.Enable(ctx, req.OrgID, map[string]bool{
-		string(app.OrgFeatureQueues):      true,
-		string(app.OrgFeatureAppBranches): true,
+		string(app.OrgFeatureQueues):             true,
+		string(app.OrgFeatureAppBranches):        true,
+		string(app.OrgFeatureParallelRunnerJobs): true,
 	})
 }
 
