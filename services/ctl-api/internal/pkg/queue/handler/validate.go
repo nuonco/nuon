@@ -19,6 +19,12 @@ const validateUpdateType = handlerTypeUpdate
 type ValidateResponse struct{}
 
 func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, error) {
+	if err := workflow.Await(ctx, func() bool {
+		return h.ready
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to await for ready")
+	}
+
 	if h.sig == nil {
 		return nil, errors.New("signal was empty can not proceed")
 	}
