@@ -1,0 +1,1 @@
+export { TerraformWorkspaceLockBadge } from './TerraformWorkspaceLockBadge'
