@@ -20,7 +20,6 @@ import { ReprovisionButton } from '../Reprovision'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { RunAdhocActionButton } from '../RunAdhocAction'
 import { SyncSecretsButton } from '../SyncSecrets'
-import { ViewStateButton } from '../ViewState'
 
 const InstallManagementDropdownContent = () => {
   const { install } = useInstall()
@@ -45,7 +44,6 @@ const InstallManagementDropdownContent = () => {
         <EditLabelsButton isMenuButton />
         <ViewCurrentInputsButton isMenuButton />
         <AuditHistoryButton isMenuButton />
-        <ViewStateButton isMenuButton />
         <EnableAutoApproveButton isMenuButton />
         <EditStackOverridesButton isMenuButton />
         <EnableConfigSyncButton isMenuButton />

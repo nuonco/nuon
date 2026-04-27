@@ -5,12 +5,16 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { usePageSidebar } from '@/hooks/use-page-sidebar'
-import type { TNavLink } from '@/types'
+import type { TNavItem, TNavLink } from '@/types'
 import { SubNavLink } from './SubNavLink'
+
+function isSection(item: TNavItem): item is { type: 'section'; label: string } {
+  return 'type' in item && item.type === 'section'
+}
 
 interface ISubNav {
   basePath: string
-  links: Array<TNavLink>
+  links: Array<TNavItem>
 }
 
 export const SubNav = ({ basePath, links }: ISubNav) => {
@@ -53,7 +57,6 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
   return (
     <aside
       className={cn(
-        // Base styles (mobile)
         'border-b flex shrink-0 overflow-x-auto overflow-y-visible w-full md:w-[4.5rem]',
         'md:overflow-visible md:relative md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
         {
@@ -63,14 +66,27 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
     >
       <nav
         className={cn(
-          // Mobile nav
           'flex shrink-0 gap-8 px-4 py-3 h-16',
           'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full'
         )}
       >
-        {links.map((link) => (
-          <SubNavLink key={link.path} basePath={basePath} {...link} />
-        ))}
+        {links.map((item, i) =>
+          isSection(item) ? (
+            i === 0 ? null : (
+              <div
+                key={`section-${item.label}`}
+                className={cn('hidden md:flex items-center mt-4 mb-1', {
+                  'px-3': isPageSidebarOpen,
+                  'mx-2': !isPageSidebarOpen,
+                })}
+              >
+                <div className="h-px w-full bg-cool-grey-200 dark:bg-white/10" />
+              </div>
+            )
+          ) : (
+            <SubNavLink key={item.path} basePath={basePath} {...item} />
+          )
+        )}
       </nav>
       <div
         ref={handleRef}
