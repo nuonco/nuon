@@ -41,6 +41,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.BuildID == "" {
 		return errors.New("build_id is required")
 	}
+
 	return nil
 }
 
@@ -191,7 +192,7 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", err.Error()))
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", signal.HumanError(err)))
 		return fmt.Errorf("build job failed: %w", err)
 	}
 

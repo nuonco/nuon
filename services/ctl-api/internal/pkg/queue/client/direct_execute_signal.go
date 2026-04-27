@@ -11,7 +11,7 @@ import (
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
-func (c *Client) ForceExecuteSignal(ctx context.Context, queueSignalID string) (*queue.ForceExecuteResponse, error) {
+func (c *Client) DirectExecuteSignal(ctx context.Context, queueSignalID string) (*queue.DirectExecuteResponse, error) {
 	qs, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue signal")
@@ -19,7 +19,7 @@ func (c *Client) ForceExecuteSignal(ctx context.Context, queueSignalID string) (
 
 	// if already terminal, nothing to do
 	if isTerminalStatus(qs.Status.Status) {
-		return &queue.ForceExecuteResponse{QueueSignalID: queueSignalID}, nil
+		return &queue.DirectExecuteResponse{QueueSignalID: queueSignalID}, nil
 	}
 
 	q, err := c.getQueue(ctx, qs.QueueID)
@@ -30,10 +30,10 @@ func (c *Client) ForceExecuteSignal(ctx context.Context, queueSignalID string) (
 	rawResp, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
 		UpdateOptions: tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.ForceExecuteUpdateName,
+			UpdateName:   queue.DirectExecuteUpdateName,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			Args: []any{
-				queue.ForceExecuteRequest{
+				queue.DirectExecuteRequest{
 					QueueSignalID: queueSignalID,
 				},
 			},
@@ -41,10 +41,10 @@ func (c *Client) ForceExecuteSignal(ctx context.Context, queueSignalID string) (
 		StartWorkflowOperation: c.queueStartOperation(q),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to call force execute handler")
+		return nil, errors.Wrap(err, "unable to call direct execute handler")
 	}
 
-	var resp queue.ForceExecuteResponse
+	var resp queue.DirectExecuteResponse
 	if err := rawResp.Get(ctx, &resp); err != nil {
 		return nil, errors.Wrap(err, "unable get response")
 	}

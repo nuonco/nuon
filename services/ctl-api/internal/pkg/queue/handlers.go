@@ -55,9 +55,14 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			w.stopUpdateHandler,
 			nil,
 		},
-		ForceExecuteUpdateName: {
+		DirectExecuteUpdateName: {
 			handlerTypeUpdate,
-			w.forceExecuteHandler,
+			w.directExecuteHandler,
+			nil,
+		},
+		ForceRestartUpdateName: {
+			handlerTypeUpdate,
+			w.forceRestartHandler,
 			nil,
 		},
 	}

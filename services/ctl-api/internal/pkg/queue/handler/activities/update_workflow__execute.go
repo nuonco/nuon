@@ -42,14 +42,19 @@ func (a *Activities) updateWorkflowExecute(ctx context.Context, workflowID strin
 		if err := rawResp.Get(ctx, &resp); err != nil {
 			wrapped := errors.Wrap(err, "unable get response")
 			var appErr *temporal.ApplicationError
-			if errors.As(err, &appErr) && appErr.Type() == "AcceptedUpdateCompletedWorkflow" {
-				return nil, temporal.NewNonRetryableApplicationError(
-					appErr.Message(),
-					appErr.Type(),
-					wrapped,
-				)
+			if !errors.As(err, &appErr) {
+				return nil, wrapped
 			}
-			return nil, wrapped
+			if !appErr.NonRetryable() {
+				return nil, wrapped
+			}
+			// Preserve non-retryable errors from the handler (signal failures,
+			// AcceptedUpdateCompletedWorkflow, etc.) so Temporal stops retrying.
+			return nil, temporal.NewNonRetryableApplicationError(
+				wrapped.Error(),
+				appErr.Type(),
+				wrapped,
+			)
 		}
 
 		return &resp, nil
