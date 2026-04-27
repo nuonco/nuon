@@ -224,7 +224,7 @@ if [ "$WITH_BINARY" = true ]; then
         set -e
         curl -sSL '${BINARY_URL}' -o /tmp/runner_new
         chmod +x /tmp/runner_new
-        mv /tmp/runner_new /usr/local/bin/runner
+        mv /tmp/runner_new /opt/nuon/runner/bin/runner
         systemctl restart nuon-runner-mng.service
         echo 'runner binary updated and mng service restarted'
       " 2>&1) || true
