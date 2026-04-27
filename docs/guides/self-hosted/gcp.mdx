@@ -1,8 +1,75 @@
 ---
 title: 'Self-Hosted Nuon: GCP'
-description: 'Deploy Nuon in your GCP account'
+description: 'Deploy Nuon in your GCP project'
 icon: 'cloud-arrow-up'
 keywords: ['self-hosted Nuon', 'Install Nuon', 'GCP Deployment']
 ---
 
-GCP support is coming soon. [Contact us](https://nuon.co/contact-sales) to learn more.
+## Dependency Overview
+
+The `ctl-api` and `dashboard-ui` services depend on a handful of managed resources you'll provision in your GCP project
+before deploying Nuon.
+
+### Temporal
+
+Nuon uses Temporal to orchestrate long-running workflows: component builds, install provisioning, and deployment
+actions. The `ctl-api` connects to Temporal to schedule and drive these workflows. This guide assumes you have an
+existing temporal deployment already.
+
+We suggest using the official [temporal helm chart](https://github.com/temporalio/helm-charts/).
+
+### Clickhouse
+
+Clickhouse is the log and event store behind the Nuon dashboard: workflow logs, deployment history, and OTel traces
+stream into it from `ctl-api` and are served back to the UI for inspection. This guide is not concerned with configuring
+and operating clickhouse itself.
+
+We use the [`Altinity/clickhouse-operator`](https://github.com/Altinity/clickhouse-operator/) to deploy a 3-node CH
+Keeper cluster and a 2 node ClickHouse Cluster. The `ctl-api` expects a cluster since we leverage several features such
+as `ReplicatedMergeTree` tables.
+
+### Cloud SQL
+
+Two Postgres databases are required: one for `ctl-api`'s application state (orgs, apps, installs, builds) and one
+backing Temporal's persistence layer.
+
+Our [BYOC Nuon GCP terraform module](https://github.com/nuonco/byoc/tree/main/byoc-nuon-gcp/src/components) provides
+references for both `cloudsql_nuon` and `cloudsql_temporal`.
+
+### Artifact Registry
+
+`ctl-api` builds customer components into OCI artifacts and pushes them to a Google Artifact Registry (GAR) repository
+in the management project, where runners later pull them during install deployments.
+
+### IAM & Workload Identity
+
+The `ctl-api` and `dashboard-ui` deployments rely on GCP service accounts bound to Kubernetes service accounts via
+Workload Identity. The [BYOC Nuon GCP management
+component](https://github.com/nuonco/byoc/tree/main/byoc-nuon-gcp/src/components/management) is a useful reference for
+the required service accounts and IAM bindings.
+
+#### Artifact Registry
+
+A management service account is used by `ctl-api` to push to GAR. It is granted `roles/artifactregistry.admin` and
+bound to the `ctl-api/ctl-api` Kubernetes service account via Workload Identity.
+
+#### Cloud SQL
+
+The `ctl-api` connects to Cloud SQL using IAM database authentication via Workload Identity, as opposed to a
+`DATABASE_URI` with credentials baked in.
+
+#### Cloud Storage
+
+Blob storage requires the `ctl-api` to be able to read and write from a GCS bucket.
+
+## Deploying Nuon
+
+We maintain helm charts for Nuon at [`nuonco/charts`](https://github.com/nuonco/charts). These can be deployed with helm
+into an existing GKE cluster.
+
+Please refer to the charts to deploy the following two services:
+
+- [`ctl-api`](https://github.com/nuonco/charts/tree/main/charts/ctl-api)
+- [`dashboard-ui`](https://github.com/nuonco/charts/tree/main/charts/dashboard-ui)
+
+Note: `dashboard-ui` depends on `ctl-api`.
