@@ -17,6 +17,7 @@ node_modules/
 dist/
 bin/
 .mintlify-last/
+.superpowers/
 
 # filter out deployment and infra
 **/k8s/charts/

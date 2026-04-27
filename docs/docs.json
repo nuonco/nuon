@@ -26,127 +26,60 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
-        "icon": "book-open",
+        "tab": "Get Started",
+        "icon": "rocket",
         "groups": [
           {
-            "group": "Get Started",
-            "pages": ["get-started/introduction", "get-started/quickstart", "get-started/create-your-first-app"]
+            "group": "Welcome",
+            "pages": ["get-started/introduction"]
           },
           {
-            "group": "Resources",
+            "group": "Does it fit?",
             "pages": [
-              "cli",
               "deployment-options",
-              "dashboard",
-              "configuration-files",
-              "nuon-api",
-              "sdks",
               {
-                "group": "Config Reference",
+                "group": "Supported Clouds",
                 "pages": [
-                  "config-ref/index",
-                  {
-                    "group": "Component Types",
-                    "pages": [
-                      "config-ref/container-image",
-                      "config-ref/docker-build",
-                      "config-ref/helm",
-                      "config-ref/kubernetes-manifest",
-                      "config-ref/terraform"
-                    ]
-                  },
-                  {
-                    "group": "Configuration Types",
-                    "pages": [
-                      "config-ref/inputs",
-                      "config-ref/metadata",
-                      "config-ref/permissions",
-                      "config-ref/policies",
-                      "config-ref/secrets"
-                    ]
-                  },
-                  {
-                    "group": "Other Types",
-                    "pages": [
-                      "config-ref/action",
-                      "config-ref/break-glass",
-                      "config-ref/input",
-                      "config-ref/input-group",
-                      "config-ref/install",
-                      "config-ref/installer",
-                      "config-ref/policy",
-                      "config-ref/runner",
-                      "config-ref/sandbox",
-                      "config-ref/secret",
-                      "config-ref/stack"
-                    ]
-                  }
+                  "platform-support/introduction",
+                  "platform-support/aws",
+                  "platform-support/azure",
+                  "platform-support/gcp"
                 ]
               }
             ]
           },
           {
-            "group": "Platform Support",
+            "group": "Get hands-on",
             "pages": [
-              "platform-support/introduction",
-              "platform-support/aws",
-              "platform-support/azure",
-              "platform-support/gcp"
+              "get-started/quickstart",
+              {
+                "group": "Create your first install",
+                "pages": [
+                  "get-started/create-your-first-app",
+                  "get-started/app-aws-k8s",
+                  "get-started/app-aws-lambda"
+                ]
+              }
             ]
-          },
-          {
-            "group": "Support",
-            "pages": ["support/support"]
           }
         ]
       },
       {
-        "tab": "Changelog",
-        "icon": "clock-rotate-left",
-        "pages": [
-          "updates/updates",
-          "updates/032-extensions-and-roles",
-          "updates/031-operation-roles",
-          "updates/030-policies",
-          "updates/029-auth-inputs-better-nested-templates",
-          "updates/028-open-source",
-          "updates/027-install-config-toggle",
-          "updates/026-helm-repository-support",
-          "updates/025-temporal-stability",
-          "updates/024-install-inputs-ui-redesign",
-          "updates/023-drift-workflow-improvements",
-          "updates/022-nuon-cli-github-actions",
-          "updates/021-drift-detection",
-          "updates/020-break-glass-actions",
-          "updates/019-self-service",
-          "updates/018-management-mode",
-          "updates/017-noop-approvals-stability-updates",
-          "updates/016-enhanced-install-config-files-and-improved-plans",
-          "updates/015-azure-support",
-          "updates/014-install-config-files",
-          "updates/013-kubernetes-manifest-component",
-          "updates/012-approval-diffs-plan-only",
-          "updates/011-approval-updates",
-          "updates/010-approvals",
-          "updates/009-action-triggers-secrets-configs",
-          "updates/008-vcs-stacks-fixes",
-          "updates/007-secret-formats",
-          "updates/006-secrets-workflows",
-          "updates/005-developer-experience",
-          "updates/004-secrets",
-          "updates/003-install-deletes-cancel-improvements",
-          "updates/002-inputs-dependencies",
-          "updates/001-install-workflows-actions"
-        ]
-      },
-      {
-        "tab": "Concepts",
+        "tab": "How it Works",
         "icon": "lightbulb",
         "groups": [
           {
             "group": "Overview",
-            "pages": ["concepts/overview"]
+            "pages": ["concepts/overview", "concepts/glossary"]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/platform",
+              "architecture/byoc",
+              "architecture/runner-auth",
+              "security"
+            ]
           },
           {
             "group": "Connect Your App",
@@ -161,26 +94,10 @@
             ]
           },
           {
-            "group": "Customer Configuration and Customization",
+            "group": "Customer Infrastructure",
             "pages": [
-              {
-                "group": "Create installs",
-                "expanded": true,
-                "pages": [
-                  "concepts/cli",
-                  "concepts/dashboard",
-                  "concepts/customer-portal",
-                  "concepts/api"
-                ]
-              },
-              {
-                "group": "Customer specific components",
-                "expanded": true,
-                "pages": [
-                  "concepts/stacks",
-                  "concepts/operation-roles"
-                ]
-              }
+              "concepts/stacks",
+              "concepts/operation-roles"
             ]
           },
           {
@@ -188,80 +105,209 @@
             "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
           },
           {
-            "group": "Reference",
-            "pages": ["concepts/glossary"]
+            "group": "Customer Experience",
+            "pages": [
+              "concepts/customer-portal",
+              "concepts/cli",
+              "concepts/dashboard",
+              "concepts/api"
+            ]
           }
         ]
       },
       {
-        "tab": "Guides",
-        "icon": "map",
+        "tab": "How-tos",
+        "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Getting Started",
-            "pages": [
-              "guides/byoc",
-              "guides/self-hosting/index",
-              "guides/app-install-life-cycle",
-              "guides/ai-and-apps",
-              "guides/using-variables"
-            ]
-          },
-          {
-            "group": "Connect Your App",
+            "group": "Quick recipes — Connect Your App",
             "pages": [
               "guides/managing-apps",
               "guides/managing-components",
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
-              "guides/vcs",
               "guides/component-dependencies",
-              "guides/app-init",
+              "guides/using-variables",
+              "guides/vcs"
+            ]
+          },
+          {
+            "group": "Quick recipes — Components",
+            "pages": [
+              "guides/docker-build-components",
+              "guides/container-image-components",
+              "guides/terraform-components"
+            ]
+          },
+          {
+            "group": "Quick recipes — Operations",
+            "pages": [
+              "guides/actions",
+              "guides/runner-management-mode",
+              "guides/runner-kill-switch",
+              "guides/team-management",
+              "guides/custom-domains",
+              "guides/notifications",
+              "guides/using-readmes"
+            ]
+          },
+          {
+            "group": "Quick recipes — Customer Experience",
+            "pages": [
+              "guides/customer-portal",
+              "guides/vendor-customers"
+            ]
+          },
+          {
+            "group": "Quick recipes — Integrations",
+            "pages": [
+              "guides/github-actions",
+              "guides/ai-and-apps"
+            ]
+          },
+          {
+            "group": "End-to-end integrations",
+            "pages": [
+              "guides/byoc",
               {
-                "group": "Components",
+                "group": "Self-host the control plane",
                 "pages": [
-                  "guides/docker-build-components",
-                  "guides/container-image-components",
-                  "guides/external-image-policies",
-                  "guides/terraform-components",
-                  "guides/terraform-cli",
-                  "guides/helm-chart-components",
-                  "guides/kubernetes-manifest-components"
+                  "guides/self-hosting/index",
+                  "guides/self-hosting/aws",
+                  "guides/self-hosting/azure",
+                  "guides/self-hosting/gcp"
+                ]
+              },
+              "guides/app-init",
+              "guides/app-install-life-cycle",
+              "guides/custom-nested-stacks",
+              "guides/configuring-policies",
+              "guides/external-image-policies",
+              "guides/helm-chart-components",
+              "guides/kubernetes-manifest-components",
+              "guides/terraform-cli",
+              "guides/cli-extensions",
+              "guides/control-plane-integration",
+              "guides/operation-roles"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "icon": "book",
+        "groups": [
+          {
+            "group": "CLI",
+            "pages": ["cli"]
+          },
+          {
+            "group": "Dashboard",
+            "pages": ["dashboard"]
+          },
+          {
+            "group": "Configuration files",
+            "pages": ["configuration-files"]
+          },
+          {
+            "group": "Config Reference",
+            "pages": [
+              "config-ref/index",
+              {
+                "group": "Component Types",
+                "pages": [
+                  "config-ref/container-image",
+                  "config-ref/docker-build",
+                  "config-ref/helm",
+                  "config-ref/kubernetes-manifest",
+                  "config-ref/terraform"
+                ]
+              },
+              {
+                "group": "Configuration Types",
+                "pages": [
+                  "config-ref/inputs",
+                  "config-ref/metadata",
+                  "config-ref/permissions",
+                  "config-ref/policies",
+                  "config-ref/secrets"
+                ]
+              },
+              {
+                "group": "Other Types",
+                "pages": [
+                  "config-ref/action",
+                  "config-ref/break-glass",
+                  "config-ref/input",
+                  "config-ref/input-group",
+                  "config-ref/install",
+                  "config-ref/installer",
+                  "config-ref/policy",
+                  "config-ref/runner",
+                  "config-ref/sandbox",
+                  "config-ref/secret",
+                  "config-ref/stack"
                 ]
               }
             ]
           },
           {
-            "group": "Support Customer Infrastructure",
-            "pages": ["guides/custom-nested-stacks", "guides/runner-management-mode"]
+            "group": "API Reference",
+            "pages": ["nuon-api", "api-ref/getting-started"]
           },
           {
-            "group": "Continuous Delivery",
-            "pages": ["guides/configuring-policies", "guides/actions", "guides/operation-roles", "guides/using-readmes"]
-          },
-          {
-            "group": "Customer Experience",
-            "pages": [
-              "guides/customer-portal",
-              "guides/control-plane-integration",
-              "guides/vendor-customers",
-              "guides/runner-kill-switch"
-            ]
-          },
-          {
-            "group": "Admin",
-            "pages": ["guides/team-management", "guides/custom-domains"]
-          },
-          {
-            "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
+            "group": "SDKs",
+            "pages": ["sdks"]
           }
         ]
       },
       {
-        "tab": "Architecture",
-        "icon": "sitemap",
-        "pages": ["architecture/byoc", "architecture/platform", "architecture/runner-auth", "security"]
+        "tab": "Resources",
+        "icon": "folder-open",
+        "groups": [
+          {
+            "group": "Changelog",
+            "pages": [
+              "updates/updates",
+              "updates/032-extensions-and-roles",
+              "updates/031-operation-roles",
+              "updates/030-policies",
+              "updates/029-auth-inputs-better-nested-templates",
+              "updates/028-open-source",
+              "updates/027-install-config-toggle",
+              "updates/026-helm-repository-support",
+              "updates/025-temporal-stability",
+              "updates/024-install-inputs-ui-redesign",
+              "updates/023-drift-workflow-improvements",
+              "updates/022-nuon-cli-github-actions",
+              "updates/021-drift-detection",
+              "updates/020-break-glass-actions",
+              "updates/019-self-service",
+              "updates/018-management-mode",
+              "updates/017-noop-approvals-stability-updates",
+              "updates/016-enhanced-install-config-files-and-improved-plans",
+              "updates/015-azure-support",
+              "updates/014-install-config-files",
+              "updates/013-kubernetes-manifest-component",
+              "updates/012-approval-diffs-plan-only",
+              "updates/011-approval-updates",
+              "updates/010-approvals",
+              "updates/009-action-triggers-secrets-configs",
+              "updates/008-vcs-stacks-fixes",
+              "updates/007-secret-formats",
+              "updates/006-secrets-workflows",
+              "updates/005-developer-experience",
+              "updates/004-secrets",
+              "updates/003-install-deletes-cancel-improvements",
+              "updates/002-inputs-dependencies",
+              "updates/001-install-workflows-actions"
+            ]
+          },
+          {
+            "group": "Support",
+            "pages": ["support/support"]
+          }
+        ]
       },
       {
         "tab": "Knowledge Base",
