@@ -16,11 +16,12 @@ import type { TInstall, TInstallComponent, TInstallStack } from '@/types'
 import { cn } from '@/utils/classnames'
 import { Time } from '@/components/common/Time'
 import { getInstallStatusTitle } from '@/utils/install-utils'
-import { getStatusTheme } from '@/utils/status-utils'
+import { getStatusTheme, getWorstStatusTheme } from '@/utils/status-utils'
 import { toSentenceCase } from '@/utils/string-utils'
 
 export interface IInstallStatuses
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
+  collapsible?: boolean
   isLabelHidden?: boolean
   tooltipPosition?: ITooltip['position']
   variant?: 'badge' | 'icon'
@@ -84,6 +85,7 @@ function getTooltip({
 
 export const InstallStatuses = ({
   className,
+  collapsible = false,
   install,
   isLabelHidden = false,
   tooltipPosition = 'bottom',
@@ -305,13 +307,136 @@ export const InstallStatuses = ({
       <LabeledValue label={label}>{content}</LabeledValue>
     )
 
-  return (
-    <div className={cn('flex items-center flex-wrap gap-2', className)} {...props}>
+  const allStatuses = [
+    install?.drifted_objects?.length ? 'warn' : 'active',
+    stackStatus,
+    install?.runner_status,
+    install?.sandbox_status,
+    install?.composite_component_status,
+  ]
+  const { worstStatus } = getWorstStatusTheme(allStatuses)
+
+  const compositeItems = [
+    ...(install?.drifted_objects
+      ? [
+          {
+            id: 'drift',
+            title: 'Drift detection',
+            subtitle: install.drifted_objects.length
+              ? 'Drift detected'
+              : 'No drift',
+            href: install.drifted_objects.length
+              ? `/${install.org_id}/installs/${install.id}/workflows`
+              : undefined,
+            leftContent: (
+              <Status
+                status={install.drifted_objects.length ? 'warn' : 'active'}
+                isWithoutText
+                variant="timeline"
+                iconSize={16}
+              />
+            ),
+          },
+        ]
+      : []),
+    ...(stackStatus
+      ? [
+          {
+            id: 'stack',
+            title: 'Stack',
+            subtitle: toSentenceCase(stackStatus),
+            href: `/${install.org_id}/installs/${install.id}/stacks`,
+            leftContent: (
+              <Status
+                status={stackStatus}
+                isWithoutText
+                variant="timeline"
+                iconSize={16}
+              />
+            ),
+          },
+        ]
+      : []),
+    {
+      id: 'runner',
+      title: 'Runner',
+      subtitle: getInstallStatusTitle('runner_status', install?.runner_status),
+      href: `/${install.org_id}/installs/${install.id}/runner`,
+      leftContent: (
+        <Status
+          status={install?.runner_status}
+          isWithoutText
+          variant="timeline"
+          iconSize={16}
+        />
+      ),
+    },
+    {
+      id: 'sandbox',
+      title: 'Sandbox',
+      subtitle: getInstallStatusTitle(
+        'sandbox_status',
+        install?.sandbox_status
+      ),
+      href: `/${install.org_id}/installs/${install.id}/sandbox`,
+      leftContent: (
+        <Status
+          status={install?.sandbox_status}
+          isWithoutText
+          variant="timeline"
+          iconSize={16}
+        />
+      ),
+    },
+    {
+      id: 'components',
+      title: 'Components',
+      subtitle: getInstallStatusTitle(
+        'composite_component_status',
+        install?.composite_component_status
+      ),
+      href: `/${install.org_id}/installs/${install.id}/components`,
+      leftContent: (
+        <Status
+          status={install?.composite_component_status}
+          isWithoutText
+          variant="timeline"
+          iconSize={16}
+        />
+      ),
+    },
+  ]
+
+  const expandedContent = (
+    <div className={cn('flex items-center flex-wrap gap-2', { 'hidden @5xl:flex': collapsible })}>
       {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
       {stackContent ? wrap('Stack', stackContent) : null}
       {wrap('Runner', runnerContent)}
       {wrap('Sandbox', sandboxContent)}
       {wrap('Components', componentsContent)}
+    </div>
+  )
+
+  const collapsedContent = collapsible ? (
+    <div className="flex @5xl:hidden">
+      <LabeledValue label="Status">
+        <ContextTooltip
+          title="Install status"
+          items={compositeItems}
+          position={tooltipPosition}
+        >
+          <Status status={worstStatus} variant="badge">
+            {worstStatus}
+          </Status>
+        </ContextTooltip>
+      </LabeledValue>
+    </div>
+  ) : null
+
+  return (
+    <div className={cn(className)} {...props}>
+      {expandedContent}
+      {collapsedContent}
     </div>
   )
 }
