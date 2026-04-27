@@ -137,6 +137,39 @@ func TestRenderStandardVars(t *testing.T) {
 	}
 }
 
+func TestRenderGCPAccountInjection(t *testing.T) {
+	t.Run("with project_id and region", func(t *testing.T) {
+		out, _, err := Render(testInput())
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.Contains(t, tfvars, `gcp_project_id           = "my-gcp-project"`)
+		assert.Contains(t, tfvars, `gcp_region               = "us-central1"`)
+	})
+
+	t.Run("with empty project_id and region", func(t *testing.T) {
+		inp := testInput()
+		inp.Install.GCPAccount = &app.GCPAccount{}
+		out, _, err := Render(inp)
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.NotContains(t, tfvars, "gcp_project_id")
+		assert.NotContains(t, tfvars, "gcp_region")
+	})
+
+	t.Run("with nil GCPAccount", func(t *testing.T) {
+		inp := testInput()
+		inp.Install.GCPAccount = nil
+		out, _, err := Render(inp)
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.NotContains(t, tfvars, "gcp_project_id")
+		assert.NotContains(t, tfvars, "gcp_region")
+	})
+}
+
 func TestRenderPermissions(t *testing.T) {
 	t.Run("without break glass", func(t *testing.T) {
 		out, _, err := Render(testInput())
