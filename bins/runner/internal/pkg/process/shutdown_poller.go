@@ -122,7 +122,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				os.Exit(1)
 			}()
 
-			sp.shutdowner.Shutdown()
+			sp.shutdowner.Shutdown(fx.ExitCode(1))
 			return
 		}
 	}

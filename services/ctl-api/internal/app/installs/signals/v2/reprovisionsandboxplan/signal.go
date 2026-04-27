@@ -43,14 +43,15 @@ var (
 	_ signal.SignalWithSkipCleanup      = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
 	_ signal.SignalWithCancel           = (*Signal)(nil)
 )
 
-func (s *Signal) IsNoOpCheckable() bool          { return true }
-func (s *Signal) RequiresPolicyEvaluation() bool { return true }
-func (s *Signal) AutoRetry() bool                { return true }
-func (s *Signal) MaxRetries() int                { return 5 }
-func (s *Signal) MaxAutoRetries() int            { return 3 }
+func (s *Signal) IsNoOpCheckable() bool                 { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)
