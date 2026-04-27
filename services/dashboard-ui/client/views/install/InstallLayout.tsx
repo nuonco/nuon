@@ -75,11 +75,6 @@ const navLinks: TNavItem[] = [
   },
   { type: 'section', label: 'Day-2' },
   {
-    path: `/drift`,
-    iconVariant: 'ScanIcon' as const,
-    text: 'Drift evaluation',
-  },
-  {
     path: `/actions`,
     iconVariant: 'TerminalWindow' as const,
     text: 'Actions',
@@ -93,6 +88,11 @@ const navLinks: TNavItem[] = [
     path: `/runner`,
     iconVariant: 'SneakerMove' as const,
     text: 'Install runner',
+  },
+  {
+    path: `/state`,
+    iconVariant: 'CodeBlock' as const,
+    text: 'View state',
   },
 ]
 

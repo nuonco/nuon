@@ -18,6 +18,7 @@ import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
 import { SandboxRunDetail } from './SandboxRunDetail'
+import { ViewState } from './ViewState'
 import { WorkflowDetail } from './WorkflowDetail'
 import { RunnerJobDetail } from './RunnerJobDetail'
 
@@ -35,6 +36,7 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
       { path: ':orgId/installs/:installId/drift', element: <DriftEvaluation /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
+      { path: ':orgId/installs/:installId/state', element: <ViewState /> },
       {
         path: ':orgId/installs/:installId/runner/jobs/:jobId',
         element: <RunnerJobDetail />,

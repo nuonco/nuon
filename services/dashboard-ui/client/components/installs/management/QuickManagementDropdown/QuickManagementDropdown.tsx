@@ -13,7 +13,6 @@ import { EnableAutoApproveButton } from '../EnableAutoApprove'
 import { ReprovisionButton } from '../Reprovision'
 import { ForgetButton } from '../Forget'
 import { SyncSecretsButton } from '../SyncSecrets'
-import { ViewStateButton } from '../ViewState'
 
 interface IQuickManagementMenu {
   orgId: string
@@ -33,7 +32,10 @@ const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
       </Text>
       <EditInputsButton isMenuButton />
       <ViewCurrentInputsButton isMenuButton />
-      <ViewStateButton isMenuButton />
+      <Button href={`/${orgId}/installs/${installId}/state`} isMenuButton>
+        View state
+        <Icon variant="CodeBlock" />
+      </Button>
       <EnableAutoApproveButton isMenuButton />
       <hr />
       <Text variant="label" theme="neutral">
