@@ -90,9 +90,14 @@ const navLinks: TNavItem[] = [
     text: 'Install runner',
   },
   {
+    path: `/inputs`,
+    iconVariant: 'ListChecks' as const,
+    text: 'Current inputs',
+  },
+  {
     path: `/state`,
     iconVariant: 'CodeBlock' as const,
-    text: 'Inputs & state',
+    text: 'View state',
   },
 ]
 

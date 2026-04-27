@@ -33,7 +33,7 @@ const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
       <EditInputsButton isMenuButton />
       <ViewCurrentInputsButton isMenuButton />
       <Button href={`/${orgId}/installs/${installId}/state`} isMenuButton>
-        Inputs & state
+        View state
         <Icon variant="CodeBlock" />
       </Button>
       <EnableAutoApproveButton isMenuButton />
