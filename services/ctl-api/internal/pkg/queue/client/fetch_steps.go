@@ -21,7 +21,7 @@ type FetchStepsRequest struct {
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
-// @heartbeat-timeout 10s
+// @heartbeat-timeout 30s
 func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.GenerateStepsResult, error) {
 	q, err := c.getQueueSignal(ctx, req.QueueSignalID)
 	if err != nil {
@@ -46,7 +46,7 @@ func (c *Client) FetchSteps(ctx context.Context, req FetchStepsRequest) (*app.Ge
 		activity.RecordHeartbeat(ctx, runID)
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*app.GenerateStepsResult, error) {
+	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*app.GenerateStepsResult, error) {
 		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
 			RunID:        runID,
