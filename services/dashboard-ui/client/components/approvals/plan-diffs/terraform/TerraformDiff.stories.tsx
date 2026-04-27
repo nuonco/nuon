@@ -1335,3 +1335,142 @@ export const DriftDetected = () => (
     }
   />
 )
+export const DriftWithChangesAndOutputs = () => (
+  <TerraformDiff
+    plan={
+      {
+        resource_drift: [
+          {
+            address: 'aws_autoscaling_group.web',
+            type: 'aws_autoscaling_group',
+            name: 'web',
+            change: {
+              actions: ['update'],
+              before: {
+                name: 'web-asg',
+                desired_capacity: 3,
+                min_size: 2,
+                max_size: 10,
+              },
+              after: {
+                name: 'web-asg',
+                desired_capacity: 6,
+                min_size: 2,
+                max_size: 10,
+              },
+            },
+          },
+          {
+            address: 'aws_security_group.web',
+            type: 'aws_security_group',
+            name: 'web',
+            change: {
+              actions: ['update'],
+              before: {
+                name: 'web-sg',
+                ingress: [
+                  { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['0.0.0.0/0'] },
+                ],
+              },
+              after: {
+                name: 'web-sg',
+                ingress: [
+                  { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['0.0.0.0/0'] },
+                  { from_port: 22, to_port: 22, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
+                ],
+              },
+            },
+          },
+        ],
+        resource_changes: [
+          {
+            address: 'aws_autoscaling_group.web',
+            type: 'aws_autoscaling_group',
+            name: 'web',
+            change: {
+              actions: ['update'],
+              before: {
+                name: 'web-asg',
+                desired_capacity: 6,
+                min_size: 2,
+                max_size: 10,
+                launch_template: { id: 'lt-abc123', version: '3' },
+              },
+              after: {
+                name: 'web-asg',
+                desired_capacity: 3,
+                min_size: 2,
+                max_size: 10,
+                launch_template: { id: 'lt-abc123', version: '4' },
+              },
+            },
+          },
+          {
+            address: 'aws_security_group.web',
+            type: 'aws_security_group',
+            name: 'web',
+            change: {
+              actions: ['update'],
+              before: {
+                name: 'web-sg',
+                ingress: [
+                  { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['0.0.0.0/0'] },
+                  { from_port: 22, to_port: 22, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
+                ],
+              },
+              after: {
+                name: 'web-sg',
+                ingress: [
+                  { from_port: 443, to_port: 443, protocol: 'tcp', cidr_blocks: ['10.0.0.0/8'] },
+                ],
+              },
+            },
+          },
+          {
+            address: 'aws_launch_template.web',
+            type: 'aws_launch_template',
+            name: 'web',
+            change: {
+              actions: ['update'],
+              before: { image_id: 'ami-old123', instance_type: 't3.large' },
+              after: { image_id: 'ami-new456', instance_type: 't3.xlarge' },
+            },
+          },
+          {
+            address: 'aws_cloudwatch_metric_alarm.cpu_high',
+            type: 'aws_cloudwatch_metric_alarm',
+            name: 'cpu_high',
+            change: {
+              actions: ['create'],
+              before: null,
+              after: {
+                alarm_name: 'web-cpu-high',
+                comparison_operator: 'GreaterThanThreshold',
+                threshold: 80,
+                evaluation_periods: 2,
+              },
+            },
+          },
+        ],
+        output_changes: {
+          asg_desired_capacity: {
+            actions: ['update'],
+            before: 6,
+            after: 3,
+          },
+          launch_template_version: {
+            actions: ['update'],
+            before: '3',
+            after: '4',
+          },
+          cpu_alarm_arn: {
+            actions: ['create'],
+            before: null,
+            after: 'Known after apply',
+            after_unknown: true,
+          },
+        },
+      } as any
+    }
+  />
+)
