@@ -38,14 +38,16 @@ var (
 	_ signal.Signal                     = &Signal{}
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 	_ signal.SignalWithCancel           = (*Signal)(nil)
 )
 
-func (s *Signal) MaxRetries() int  { return 3 }
-func (s *Signal) AutoRetry() bool  { return true }
-func (s *Signal) RetryGroup() bool { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) RetryGroup() bool                      { return true }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
