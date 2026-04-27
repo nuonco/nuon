@@ -68,6 +68,12 @@ type GetInstallActionsLatestRunsParams struct {
 	*/
 	InstallID string
 
+	/* Labels.
+
+	   label filter (key:value,key:value)
+	*/
+	Labels *string
+
 	/* Limit.
 
 	   limit of results to return
@@ -181,6 +187,17 @@ func (o *GetInstallActionsLatestRunsParams) SetInstallID(installID string) {
 	o.InstallID = installID
 }
 
+// WithLabels adds the labels to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) WithLabels(labels *string) *GetInstallActionsLatestRunsParams {
+	o.SetLabels(labels)
+	return o
+}
+
+// SetLabels adds the labels to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) SetLabels(labels *string) {
+	o.Labels = labels
+}
+
 // WithLimit adds the limit to the get install actions latest runs params
 func (o *GetInstallActionsLatestRunsParams) WithLimit(limit *int64) *GetInstallActionsLatestRunsParams {
 	o.SetLimit(limit)
@@ -247,6 +264,23 @@ func (o *GetInstallActionsLatestRunsParams) WriteToRequest(r runtime.ClientReque
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
 		return err
+	}
+
+	if o.Labels != nil {
+
+		// query param labels
+		var qrLabels string
+
+		if o.Labels != nil {
+			qrLabels = *o.Labels
+		}
+		qLabels := qrLabels
+		if qLabels != "" {
+
+			if err := r.SetQueryParam("labels", qLabels); err != nil {
+				return err
+			}
+		}
 	}
 
 	if o.Limit != nil {

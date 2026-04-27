@@ -9,6 +9,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -94,6 +95,30 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Metadata: generics.ToHstore(map[string]string{
 			"managed_by": req.Metadata.ManagedBy,
 		}),
+	}
+
+	if req.AWSAccount == nil && req.AzureAccount == nil && req.GCPAccount == nil {
+		switch parentApp.AppRunnerConfigs[0].Type {
+		case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
+			req.GCPAccount = &struct {
+				ProjectID string `json:"project_id"`
+				Region    string `json:"region"`
+			}{}
+		case app.AppRunnerTypeAzure, app.AppRunnerTypeAzureAKS, app.AppRunnerTypeAzureACS:
+			req.AzureAccount = &struct {
+				Location string `json:"location"`
+			}{}
+		case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("aws_account.region is required for AWS installs"),
+				Description: "aws_account.region is required for AWS installs",
+			}
+		default:
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("unable to determine cloud platform from runner type %q", parentApp.AppRunnerConfigs[0].Type),
+				Description: "unable to determine cloud platform from app runner config",
+			}
+		}
 	}
 
 	if req.AWSAccount != nil {
