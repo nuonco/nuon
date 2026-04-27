@@ -49,10 +49,14 @@ const SandboxRunDetailContent = () => {
   const logStream = sandboxRun?.log_stream
   const stepStatus = step?.status?.status
   const isTerminal = stepStatus === 'error' || stepStatus === 'cancelled' || stepStatus === 'discarded'
+  const isAutoApprove =
+    step?.approval?.type === 'approve-all' ||
+    step?.approval?.response?.type === 'auto-approve'
   const pendingApproval =
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
   const completedApproval =
     step?.approval && (!!step?.approval?.response || responded) && !isTerminal && stepStatus !== 'auto-skipped'
+  const showPlanBelow = completedApproval || isAutoApprove
 
   return (
     <PageSection flush>
@@ -74,7 +78,7 @@ const SandboxRunDetailContent = () => {
 
       <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
-          {pendingApproval ? (
+          {pendingApproval && !isAutoApprove ? (
             <div className="flex flex-col gap-4">
               <ApprovalBanner step={step} />
               <Plan step={step} />
@@ -93,9 +97,9 @@ const SandboxRunDetailContent = () => {
             <LogsSkeleton />
           )}
 
-          {completedApproval ? (
+          {showPlanBelow && step ? (
             <div className="flex flex-col gap-4">
-              <ApprovalBanner step={step} />
+              {!isAutoApprove && <ApprovalBanner step={step} />}
               <Plan step={step} />
             </div>
           ) : null}
