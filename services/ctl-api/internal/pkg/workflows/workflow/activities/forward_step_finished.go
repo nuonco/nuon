@@ -30,7 +30,7 @@ type StepFinishedResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 10s
+// @heartbeat-timeout 30s
 func (a *Activities) ForwardStepFinished(ctx context.Context, req ForwardStepFinishedRequest) (*StepFinishedResponse, error) {
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
@@ -45,7 +45,7 @@ func (a *Activities) ForwardStepFinished(ctx context.Context, req ForwardStepFin
 		return nil, fmt.Errorf("unable to find step queue signal for step %s: %w", req.StepID, res.Error)
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*StepFinishedResponse, error) {
+	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*StepFinishedResponse, error) {
 		rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
 			UpdateName:   "step-finished",
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,

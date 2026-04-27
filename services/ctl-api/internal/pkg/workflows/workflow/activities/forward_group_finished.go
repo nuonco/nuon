@@ -28,7 +28,7 @@ type GroupFinishedResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 10s
+// @heartbeat-timeout 30s
 func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupFinishedRequest) (*GroupFinishedResponse, error) {
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
@@ -43,7 +43,7 @@ func (a *Activities) ForwardGroupFinished(ctx context.Context, req ForwardGroupF
 		return nil, fmt.Errorf("unable to find group queue signal for group %s: %w", req.StepGroupID, res.Error)
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
+	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*GroupFinishedResponse, error) {
 		rawResp, err := handler.UpdateWithStart(ctx, a.tClient, &qs, handler.UpdateWithStartOptions{
 			UpdateName:   "group-finished",
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
