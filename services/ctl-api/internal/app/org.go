@@ -173,9 +173,9 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		// Disabled by default
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
-		OrgFeatureQueues:             false,
+		OrgFeatureQueues:             true,
 		OrgFeatureSupportRole:        false,
-		OrgFeatureParallelRunnerJobs: false,
+		OrgFeatureParallelRunnerJobs: true,
 
 		// Enabled by default
 		OrgFeatureStratusLayout:           true,
