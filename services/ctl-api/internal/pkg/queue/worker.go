@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	queueReceiveTimeout     time.Duration = time.Minute * 1
+	queueReceiveTimeout     time.Duration = time.Minute * 5
 	defaultQueueIdleTimeout time.Duration = time.Minute * 10
 )
 
