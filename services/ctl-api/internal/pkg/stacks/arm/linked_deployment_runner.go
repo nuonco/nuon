@@ -12,15 +12,18 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[st
 		return t.getDefaultRunnerDeployment(inp), nil, nil
 	}
 
-	// Custom runner template - fetch, extract params, build linked deployment
+	// Custom runner template — fetch and inspect declared parameters.
+	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
+	// params. The runner template is Nuon-owned plumbing; every parameter
+	// is either baked by us or has a safe default in the template itself.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
 	}
 
-	params, hoistedParams := extractARMParameters(armTmpl, ReservedParamNames)
-
-	nuonParams := map[string]string{
+	// All values Nuon can supply. Only injected if the template declares
+	// the parameter — otherwise ARM rejects unknown params.
+	managedParams := map[string]any{
 		"nuonInstallID":       inp.Install.ID,
 		"nuonOrgID":           inp.Runner.OrgID,
 		"nuonAppID":           inp.Install.AppID,
@@ -28,18 +31,19 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[st
 		"runnerId":            inp.Runner.ID,
 		"runnerApiUrl":        t.cfg.RunnerAPIURL,
 		"runnerInitScriptUrl": inp.RunnerInitScriptURL,
+		"runnerSubnetId":      "[reference('vnetDeployment').outputs.runnerSubnetId.value]",
+		"customData":          t.buildRunnerCustomData(inp),
+		"commonTags":          "[variables('commonTags')]",
 	}
 
 	deploymentParams := map[string]any{}
-	for paramName := range params {
-		if val, ok := nuonParams[paramName]; ok {
+	for paramName := range armTmpl.Parameters {
+		if val, ok := managedParams[paramName]; ok {
 			deploymentParams[paramName] = map[string]any{"value": val}
-		} else if paramName == "runnerSubnetId" {
-			// Wire from VNet deployment output
-			deploymentParams[paramName] = map[string]any{"value": "[reference('vnetDeployment').outputs.runnerSubnetId.value]"}
-		} else {
-			deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
 		}
+		// Parameters not in managedParams are left to their template
+		// defaults. If the template declares a required param we don't
+		// know about, ARM will surface a clear deployment error.
 	}
 
 	deployment := map[string]any{
@@ -56,7 +60,8 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[st
 		},
 	}
 
-	return deployment, hoistedParams, nil
+	// Nothing hoisted — runner params are never customer-facing.
+	return deployment, nil, nil
 }
 
 func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput) map[string]any {
