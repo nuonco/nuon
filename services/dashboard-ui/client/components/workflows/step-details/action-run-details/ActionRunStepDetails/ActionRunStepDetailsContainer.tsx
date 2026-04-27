@@ -18,10 +18,7 @@ export const ActionRunStepDetailsContainer = ({ step }: IActionRunDetails) => {
     enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
 
-  const createdBy =
-    actionRun?.created_by_id === step?.created_by_id
-      ? step?.created_by
-      : undefined
+  const createdBy = actionRun?.created_by
 
   return (
     <ActionRunStepDetails
