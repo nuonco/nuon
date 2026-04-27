@@ -1,0 +1,19 @@
+-- create a view. this view will write to the table above.
+-- docs:  https://clickhouse.com/docs/sql-reference/statements/create/view#materialized-view
+CREATE MATERIALIZED VIEW IF NOT EXISTS latest_runner_heart_beats_mv_v2
+ON CLUSTER simple
+TO latest_runner_heart_beats_v2 AS (
+  SELECT
+      runner_id,
+      "process",
+      argMax(created_at, created_at) as created_at_latest,
+      argMax(alive_time, created_at) as alive_time,
+      argMax(version, created_at) as version
+  FROM
+      runner_heart_beats
+  WHERE
+      deleted_at = 0
+  GROUP BY
+      runner_id,
+      "process"
+);

@@ -7,6 +7,7 @@ import (
 func AllModels() []any {
 	return []any{
 		&app.RunnerHeartBeat{},
+		&app.RunnerHeartBeatV2{},
 		&app.RunnerHealthCheck{},
 		&app.OtelLogRecord{},
 		&app.OtelTrace{},
