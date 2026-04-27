@@ -19,7 +19,7 @@ import (
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 30s
+// @heartbeat-timeout 60s
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
@@ -36,7 +36,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		return &handler.FinishedResponse{}, nil
 	}
 
-	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
+	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
 		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 			UpdateID:     queueSignalID + "-finished",
 			WorkflowID:   q.Workflow.ID,

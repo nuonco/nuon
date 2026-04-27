@@ -17,12 +17,12 @@ import (
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 30s
+// @heartbeat-timeout 60s
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
 func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string, queueID string, runID string) (*handler.ValidateResponse, error) {
-	return heartbeat.WithHeartbeat(ctx, 10*time.Second, func(ctx context.Context) (*handler.ValidateResponse, error) {
+	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.ValidateResponse, error) {
 		info := activity.GetInfo(ctx)
 
 		rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
