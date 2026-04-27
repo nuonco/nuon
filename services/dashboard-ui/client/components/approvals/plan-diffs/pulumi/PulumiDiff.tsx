@@ -1,10 +1,13 @@
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Modal } from '@/components/surfaces/Modal'
 import { usePulumiPlanFilter } from '@/hooks/use-pulumi-plan-filter'
 import { DiffFilter } from '../DiffFilter'
 import { PulumiSummary } from './PulumiSummary'
 import { PulumiResourceChangesList } from './PulumiResourceChangesList'
+import { PulumiPlanGraph } from './PulumiPlanGraph'
 
 interface IPropertyDiff {
   kind: string
@@ -47,6 +50,28 @@ export function PulumiDiff({
 
   return (
     <div className="flex flex-col gap-6">
+      {hasResourceChanges && (
+        <Modal
+          heading={
+            <Text flex className="gap-4" variant="h3" weight="strong" theme="info">
+              <Icon variant="NetworkXIcon" size="24" /> Preview graph
+            </Text>
+          }
+          triggerButton={{
+            className: 'self-end',
+            children: (
+              <>
+                View preview graph <Icon variant="NetworkXIcon" />
+              </>
+            ),
+            variant: 'ghost',
+          }}
+          size="xl"
+        >
+          <PulumiPlanGraph resources={plan.resource_changes!} />
+        </Modal>
+      )}
+
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
         <div className="px-4 sm:px-6 py-4 border-b">
           <Text variant="base" weight="strong">
