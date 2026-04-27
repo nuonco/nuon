@@ -7,12 +7,10 @@ import {
   useEdgesState,
   Handle,
   Position,
-  MarkerType,
   type Node,
   type Edge,
   type NodeProps,
 } from '@xyflow/react'
-import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 
 import { Banner } from '@/components/common/Banner'
@@ -22,19 +20,16 @@ import type {
   TTerraformOutputChange,
   TTerraformChangeAction,
 } from '@/types'
+import {
+  ACTION_COLORS,
+  StructuralNode,
+  ActionNode,
+  getLayoutedElements,
+  createAddNode,
+  createAddEdge,
+} from '../plan-graph-utils'
 
 type Category = 'resources' | 'drift' | 'outputs'
-
-const ACTION_COLORS: Record<TTerraformChangeAction, string> = {
-  create: '#16a34a',
-  delete: '#dc2626',
-  update: '#ea580c',
-  replace: '#8040BF',
-  read: '#2563eb',
-  'no-op': '#6b7280',
-}
-
-const STRUCTURAL_COLOR = '#374151'
 
 interface ITerraformPlanGraph {
   resources: TTerraformResourceChange[]
@@ -42,37 +37,37 @@ interface ITerraformPlanGraph {
   outputs: TTerraformOutputChange[]
 }
 
-function estimateNodeWidth(label: string) {
-  return Math.max(120, label.length * 8 + 24)
-}
+const OutputNode = memo(({ data }: NodeProps) => {
+  const action = data.action as TTerraformChangeAction
+  return (
+    <>
+      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <div
+        className="flex items-center justify-center px-3 py-2"
+        style={{
+          background: ACTION_COLORS[action] || '#6b7280',
+          color: '#FAFAFA',
+          borderRadius: '6px',
+          fontFamily: 'var(--font-hack)',
+          fontSize: '11px',
+          fontWeight: 500,
+          minWidth: '120px',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+        }}
+        title={data.label as string}
+      >
+        {data.label as string}
+      </div>
+    </>
+  )
+})
+OutputNode.displayName = 'OutputNode'
 
-function getLayoutedElements(nodes: Node[], edges: Edge[]) {
-  const g = new dagre.graphlib.Graph()
-  g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 60 })
-
-  const nodeHeight = 40
-
-  nodes.forEach((node) => {
-    const w = estimateNodeWidth(node.data.label as string)
-    g.setNode(node.id, { width: w, height: nodeHeight })
-  })
-  edges.forEach((edge) => {
-    g.setEdge(edge.source, edge.target)
-  })
-
-  dagre.layout(g)
-
-  const layouted = nodes.map((node) => {
-    const w = estimateNodeWidth(node.data.label as string)
-    const pos = g.node(node.id)
-    return {
-      ...node,
-      position: { x: pos.x - w / 2, y: pos.y - nodeHeight / 2 },
-    }
-  })
-
-  return { nodes: layouted, edges }
+const nodeTypes = {
+  structural: StructuralNode,
+  action: ActionNode,
+  output: OutputNode,
 }
 
 function buildGraph(
@@ -84,25 +79,8 @@ function buildGraph(
   const nodes: Node[] = []
   const edges: Edge[] = []
   const nodeIds = new Set<string>()
-
-  const addNode = (id: string, type: string, data: Record<string, unknown>) => {
-    if (nodeIds.has(id)) return
-    nodeIds.add(id)
-    const w = estimateNodeWidth(data.label as string)
-    nodes.push({ id, type, data, position: { x: 0, y: 0 }, width: w, style: { background: 'transparent', border: 'none', padding: 0, width: w } })
-  }
-
-  const addEdge = (source: string, target: string, isDrift = false) => {
-    const color = isDrift ? '#d97706' : '#6b7280'
-    edges.push({
-      id: `${source}->${target}`,
-      source,
-      target,
-      type: 'smoothstep',
-      style: { stroke: color, strokeWidth: 1.5, strokeDasharray: isDrift ? '6 3' : undefined },
-      markerEnd: { type: MarkerType.ArrowClosed, color },
-    })
-  }
+  const addNode = createAddNode(nodes, nodeIds)
+  const addEdge = createAddEdge(edges)
 
   const hasAny =
     (enabled.has('resources') && resources.length > 0) ||
@@ -180,100 +158,8 @@ function buildGraph(
     }
   }
 
-  return getLayoutedElements(nodes, edges)
-}
-
-const DRIFT_STRUCTURAL_COLOR = '#92400e'
-
-const StructuralNode = memo(({ data }: NodeProps) => {
-  const isDrift = data.isDrift as boolean
-  return (
-    <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
-      <div
-        className="flex items-center justify-center px-3 py-2"
-        style={{
-          background: isDrift ? DRIFT_STRUCTURAL_COLOR : STRUCTURAL_COLOR,
-          color: '#FAFAFA',
-          borderRadius: '6px',
-          fontFamily: 'var(--font-hack)',
-          fontSize: '12px',
-          fontWeight: 600,
-          minWidth: '120px',
-          textAlign: 'center',
-          whiteSpace: 'nowrap',
-          border: isDrift ? '2px dashed #d97706' : 'none',
-        }}
-        title={data.label as string}
-      >
-        {data.label as string}
-      </div>
-      <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
-    </>
-  )
-})
-StructuralNode.displayName = 'StructuralNode'
-
-const ActionNode = memo(({ data }: NodeProps) => {
-  const action = data.action as TTerraformChangeAction
-  const isDrift = data.isDrift as boolean
-  return (
-    <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
-      <div
-        className="flex items-center justify-center px-3 py-2"
-        style={{
-          background: ACTION_COLORS[action] || '#6b7280',
-          color: '#FAFAFA',
-          borderRadius: '6px',
-          fontFamily: 'var(--font-hack)',
-          fontSize: '11px',
-          fontWeight: 500,
-          minWidth: '120px',
-          textAlign: 'center',
-          whiteSpace: 'nowrap',
-          border: isDrift ? '2px dashed #d97706' : 'none',
-        }}
-        title={data.label as string}
-      >
-        {data.label as string}
-      </div>
-    </>
-  )
-})
-ActionNode.displayName = 'ActionNode'
-
-const OutputNode = memo(({ data }: NodeProps) => {
-  const action = data.action as TTerraformChangeAction
-  return (
-    <>
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
-      <div
-        className="flex items-center justify-center px-3 py-2"
-        style={{
-          background: ACTION_COLORS[action] || '#6b7280',
-          color: '#FAFAFA',
-          borderRadius: '6px',
-          fontFamily: 'var(--font-hack)',
-          fontSize: '11px',
-          fontWeight: 500,
-          minWidth: '120px',
-          textAlign: 'center',
-          whiteSpace: 'nowrap',
-        }}
-        title={data.label as string}
-      >
-        {data.label as string}
-      </div>
-    </>
-  )
-})
-OutputNode.displayName = 'OutputNode'
-
-const nodeTypes = {
-  structural: StructuralNode,
-  action: ActionNode,
-  output: OutputNode,
+  const layouted = getLayoutedElements(nodes, edges)
+  return { nodes: layouted, edges }
 }
 
 export function TerraformPlanGraph({
