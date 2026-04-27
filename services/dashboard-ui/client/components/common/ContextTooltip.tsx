@@ -9,7 +9,7 @@ export type TContextTooltipItem = {
   id: string
   href?: string
   leftContent?: ReactNode
-  title: string
+  title: string | ReactNode
   subtitle?: string | ReactNode
   rightContent?: ReactNode
   onClick?: () => void
