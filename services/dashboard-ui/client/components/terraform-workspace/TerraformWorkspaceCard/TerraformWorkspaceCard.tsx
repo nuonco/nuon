@@ -8,12 +8,14 @@ import type { TComponentType, TTerraformState } from '@/types'
 export interface ITerraformWorkspaceCard {
   currentRevision?: TTerraformState | TPulumiState | null
   actions?: ReactNode
+  status?: ReactNode
   componentType?: TComponentType
 }
 
 export const TerraformWorkspaceCard = ({
   currentRevision,
   actions,
+  status,
   componentType,
 }: ITerraformWorkspaceCard) => {
   const isPulumi = componentType === 'pulumi'
@@ -21,11 +23,14 @@ export const TerraformWorkspaceCard = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <Text variant="base" weight="strong">
-          {heading}
-        </Text>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Text variant="base" weight="strong">
+            {heading}
+          </Text>
+          {actions && <div className="flex items-center gap-2">{actions}</div>}
+        </div>
+        {status}
       </div>
 
       {!currentRevision ? (

@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { TerraformBackendConfigButton } from '@/components/terraform-workspace/TerraformBackendConfig'
+import { TerraformWorkspaceLockBadge } from '@/components/terraform-workspace/TerraformWorkspaceLockBadge'
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import {
   getTerraformState,
   getTerraformStates,
+  getTerraformWorkspaceLock,
   getWorkspaceStateRaw,
 } from '@/lib'
 import type { TComponentType } from '@/types'
@@ -58,12 +60,23 @@ export const TerraformWorkspaceCardContainer = ({
     enabled: !!org?.id && !!workspaceId && !!latestStateId,
   })
 
+  const { data: lock } = useQuery({
+    queryKey: ['terraform-workspace-lock', org?.id, workspaceId],
+    queryFn: () =>
+      getTerraformWorkspaceLock({
+        orgId: org.id,
+        workspaceId: workspaceId!,
+      }),
+    enabled: !!org?.id && !!workspaceId && !isPulumi,
+  })
+
   if (!workspaceId) return null
 
   return (
     <TerraformWorkspaceCard
       currentRevision={currentRevision}
       componentType={componentType}
+      status={lock ? <TerraformWorkspaceLockBadge lock={lock} /> : undefined}
       actions={
         isPulumi ? undefined : (
           <>
