@@ -92,6 +92,13 @@ export type TNavLink = {
   isExternal?: boolean
 }
 
+export type TNavSectionHeader = {
+  type: 'section'
+  label: string
+}
+
+export type TNavItem = TNavLink | TNavSectionHeader
+
 // UI variant types
 export type TEmptyVariant =
   | '404'
