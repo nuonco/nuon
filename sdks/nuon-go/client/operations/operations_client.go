@@ -293,6 +293,8 @@ type ClientService interface {
 
 	GenerateTerraformInstallerConfig(params *GenerateTerraformInstallerConfigParams, authInfo runtime.ClientAuthInfoWriter, writer io.Writer, opts ...ClientOption) (*GenerateTerraformInstallerConfigOK, error)
 
+	GetActionLabelKeys(params *GetActionLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLabelKeysOK, error)
+
 	GetActionLatestConfig(params *GetActionLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLatestConfigOK, error)
 
 	GetActionWorkflow(params *GetActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowOK, error)
@@ -425,6 +427,8 @@ type ClientService interface {
 
 	GetComponentDependents(params *GetComponentDependentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentDependentsOK, error)
 
+	GetComponentLabelKeys(params *GetComponentLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLabelKeysOK, error)
+
 	GetComponentLatestBuild(params *GetComponentLatestBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestBuildOK, error)
 
 	GetComponentLatestConfig(params *GetComponentLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLatestConfigOK, error)
@@ -506,6 +510,8 @@ type ClientService interface {
 	GetInstallEvents(params *GetInstallEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallEventsOK, error)
 
 	GetInstallInputs(params *GetInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallInputsOK, error)
+
+	GetInstallLabelKeys(params *GetInstallLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLabelKeysOK, error)
 
 	GetInstallLatestDeploy(params *GetInstallLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLatestDeployOK, error)
 
@@ -5533,6 +5539,52 @@ func (a *Client) GenerateTerraformInstallerConfig(params *GenerateTerraformInsta
 }
 
 /*
+GetActionLabelKeys gets distinct label key value pairs across all actions for an app
+
+Returns all distinct label key:value pairs for actions in the given app.
+*/
+func (a *Client) GetActionLabelKeys(params *GetActionLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionLabelKeysOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetActionLabelKeysParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetActionLabelKeys",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/actions/label-keys",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetActionLabelKeysReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetActionLabelKeysOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetActionLabelKeys: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetActionLatestConfig gets an app action workflow s latest config
 
 Return the latest config for an action workflow.
@@ -8579,6 +8631,52 @@ func (a *Client) GetComponentDependents(params *GetComponentDependentsParams, au
 }
 
 /*
+GetComponentLabelKeys gets distinct label key value pairs across all components for an app
+
+Returns all distinct label key:value pairs for components in the given app.
+*/
+func (a *Client) GetComponentLabelKeys(params *GetComponentLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentLabelKeysOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetComponentLabelKeysParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetComponentLabelKeys",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/components/label-keys",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetComponentLabelKeysReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetComponentLabelKeysOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetComponentLabelKeys: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetComponentLatestBuild gets latest build for a component
 
 Returns the most recent build for the provided component.
@@ -10500,6 +10598,52 @@ func (a *Client) GetInstallInputs(params *GetInstallInputsParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallInputs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallLabelKeys gets distinct label key value pairs across all installs for an org
+
+Returns all distinct label key:value pairs for installs in the current org.
+*/
+func (a *Client) GetInstallLabelKeys(params *GetInstallLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLabelKeysOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallLabelKeysParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallLabelKeys",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/label-keys",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallLabelKeysReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallLabelKeysOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallLabelKeys: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
