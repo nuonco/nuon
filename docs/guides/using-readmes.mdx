@@ -277,6 +277,29 @@ Attributes:
 - `size` — `sm`, `md`, `lg`
 - `variant` — `default`, `code`
 
+### Label badge
+
+Renders a key/value label badge — useful for tagging installs with metadata like
+environment, region, or version.
+
+```markdown README.md
+<nuon-label-badge label="env:production"></nuon-label-badge>
+<nuon-label-badge key="region" value="us-east-1" theme="warn"></nuon-label-badge>
+<nuon-label-badge label="sha:a1b2c3d" variant="code" theme="success"></nuon-label-badge>
+```
+
+You can pass the label as a single colon-separated `label` attribute, or as
+separate `key` and `value` attributes.
+
+Attributes:
+- `label` — colon-separated key:value string (e.g. `env:production`)
+- `key` — label key (alternative to `label`)
+- `value` — label value (alternative to `label`)
+- `theme` — `brand`, `default`, `neutral`, `success`, `warn`, `error`, `info`
+- `key-theme` — override the theme for just the key portion
+- `size` — `sm`, `md`, `lg`
+- `variant` — `default`, `code`
+
 ### Banner
 
 Renders a callout banner for important notices.
