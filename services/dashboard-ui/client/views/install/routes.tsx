@@ -3,6 +3,7 @@ import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
 import { Actions } from './Actions'
+import { DriftEvaluation } from './DriftEvaluation'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
 import { Runner } from './Runner'
@@ -32,6 +33,7 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/actions', element: <Actions /> },
       { path: ':orgId/installs/:installId/roles', element: <Roles /> },
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
+      { path: ':orgId/installs/:installId/drift', element: <DriftEvaluation /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
       {
         path: ':orgId/installs/:installId/runner/jobs/:jobId',
