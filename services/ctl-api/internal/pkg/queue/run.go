@@ -19,6 +19,8 @@ var statusTimestampKeys = []string{
 	"finished_at",
 }
 
+var maxAliveTime time.Duration = time.Hour * 24 * 7
+
 func (q *queue) run(ctx workflow.Context) (bool, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -62,7 +64,7 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	q.ready = true
 
-	if _, err := workflow.AwaitWithTimeout(ctx, queueReceiveTimeout, func() bool {
+	if _, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
 		return (q.restarted || q.stopped || q.isIdle(ctx)) && q.activeWorkers == 0
 	}); err != nil {
 		return false, err
