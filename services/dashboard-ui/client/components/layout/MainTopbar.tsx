@@ -2,6 +2,7 @@ import React from 'react'
 import { UserDropdown } from '@/components/users/UserDropdown'
 import { SpotlightTrigger } from '@/components/spotlight/SpotlightTrigger'
 import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
@@ -43,9 +44,10 @@ export const MainTopbar = ({
         )}
         {children}
 
-        <div className="hidden md:flex items-center gap-4 ml-auto">
+        <div className="hidden lg:flex items-center gap-4 ml-auto shrink-0">
           {org?.sandbox_mode && (
             <Tooltip
+              tipContentClassName="max-w-64"
               tipContent={
                 <Text variant="subtext">
                   This organization is running in sandbox mode. Installs are simulated instead of deploying to a real cloud account.
@@ -53,8 +55,9 @@ export const MainTopbar = ({
               }
               position="bottom"
             >
-              <Badge variant="code" theme="neutral">
-                Sandbox mode
+              <Badge variant="code" theme="neutral" size="sm" className="shrink-0">
+                <Icon variant="TestTube" size={14} className="xl:hidden" />
+                <span className="hidden xl:inline whitespace-nowrap">Sandbox mode</span>
               </Badge>
             </Tooltip>
           )}
