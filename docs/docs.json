@@ -202,7 +202,8 @@
             "pages": [
               "guides/app-install-life-cycle",
               "guides/ai-and-apps",
-              "guides/using-variables"
+              "guides/using-variables",
+              "guides/using-readmes"
             ]
           },
           {
@@ -244,7 +245,15 @@
           },
           {
             "group": "Continuous Delivery",
-            "pages": ["guides/configuring-policies", "guides/actions", "guides/operation-roles", "guides/using-readmes"]
+
+
+
+            "pages": [
+              "guides/configuring-policies",
+              "guides/actions",
+              "guides/operation-roles"
+            ]
+
           },
           {
             "group": "Customer Experience",
