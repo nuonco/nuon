@@ -97,6 +97,7 @@ export const SSELogs = ({
 
         {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isStreamOpen ? (
           <EmptyState
+            variant="table"
             emptyTitle="Waiting for logs"
             emptyMessage="Logs will appear here once they start coming in."
           />
@@ -104,6 +105,7 @@ export const SSELogs = ({
 
         {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isStreamOpen ? (
           <EmptyState
+            variant="table"
             emptyTitle="No logs available"
             emptyMessage=""
           />
