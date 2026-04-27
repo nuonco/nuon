@@ -57,7 +57,7 @@ export const ActionDetail = () => {
     action?.action_workflow?.configs?.[0]?.enable_kube_config
 
   return (
-    <PageSection flush>
+    <PageSection flush className="flex-1">
       <PageTitle
         title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`}
       />
@@ -144,7 +144,7 @@ export const ActionDetail = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto divide-x">
+      <div className="grid grid-cols-1 md:grid-cols-12 flex-1 divide-x">
         <PageSection className="md:col-span-8">
           <Text variant="base" weight="strong">
             Run history
