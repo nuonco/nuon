@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -168,6 +170,22 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 			Err:         fmt.Errorf("unable to commit transaction: %w", err),
 			Description: "Failed to commit install updates",
 		}
+	}
+
+	// Enqueue app_config_updated signal for each affected install to reconcile emitters
+	for _, install := range affectedInstalls {
+		var queue app.Queue
+		if err := s.db.WithContext(ctx).
+			Where(app.Queue{OwnerID: install.ID, Name: "install-signals"}).
+			First(&queue).Error; err != nil {
+			continue
+		}
+		s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID: queue.ID,
+			Signal: signal.NewRaw("app_config_updated", map[string]any{
+				"install_id": install.ID,
+			}),
+		})
 	}
 
 	return nil

@@ -37,10 +37,8 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 		},
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
 			AwaitRestarted(ctx, req)
-			w.handleSyncActionWorkflowTriggers(ctx, req)
 			return nil
 		},
-		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
 		signals.OperationGenerateState: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitGenerateStateAdmin(ctx, input)
 		},

@@ -50,7 +50,6 @@ func (w *Workflows) All() []any {
 		w.ReprovisionSandboxApplyPlan,
 		w.ReprovisionSandboxPlan,
 		w.SandboxEventLoop,
-		w.DriftCheckSandbox,
 	}
 }
 

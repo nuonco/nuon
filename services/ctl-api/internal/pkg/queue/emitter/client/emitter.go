@@ -21,6 +21,9 @@ import (
 const (
 	cronEmitterWorkflowIDTemplate     string = "queue-emitter-%s-cron"
 	fireOnceEmitterWorkflowIDTemplate string = "queue-emitter-%s-fire-once"
+
+	// emittersNamespace is the dedicated Temporal namespace for all emitter workflows.
+	emittersNamespace string = "emitters"
 )
 
 type CreateEmitterRequest struct {
@@ -77,7 +80,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		},
 		Status: app.NewCompositeStatus(ctx, app.StatusPending),
 		Workflow: signaldb.WorkflowRef{
-			Namespace:  q.Workflow.Namespace,
+			Namespace:  emittersNamespace,
 			IDTemplate: idTemplate,
 		},
 	}
@@ -112,7 +115,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	}
 
 	wkflowRun, err := c.tClient.ExecuteWorkflowInNamespace(ctx,
-		em.Workflow.Namespace,
+		emittersNamespace,
 		opts,
 		"Emitter",
 		wkflowReq,
@@ -206,7 +209,7 @@ func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueE
 
 	// Use the Temporal update handler to gracefully stop the emitter workflow.
 	// This sets e.stopped = true which causes the emitter's run loop to exit cleanly.
-	_, err = c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+	_, err = c.tClient.UpdateWorkflowInNamespace(ctx, emittersNamespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   em.Workflow.ID,
 		UpdateName:   emitter.StopUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
@@ -240,7 +243,7 @@ func (c *Client) EnsureRunning(ctx context.Context, emitterID string) (*emitter.
 		return nil, errors.Wrap(err, "unable to get emitter")
 	}
 
-	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, em.Workflow.Namespace, tclient.UpdateWorkflowOptions{
+	rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, emittersNamespace, tclient.UpdateWorkflowOptions{
 		WorkflowID:   em.Workflow.ID,
 		UpdateName:   emitter.EnsureRunningUpdateName,
 		WaitForStage: tclient.WorkflowUpdateStageCompleted,
@@ -304,7 +307,7 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 	}
 
 	wkflowRun, err := c.tClient.ExecuteWorkflowInNamespace(ctx,
-		em.Workflow.Namespace,
+		emittersNamespace,
 		opts,
 		"Emitter",
 		wkflowReq,

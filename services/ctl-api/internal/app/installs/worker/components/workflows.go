@@ -52,7 +52,6 @@ func (w *Workflows) All() []any {
 		w.ExecuteTeardownComponentApplyPlan,
 		w.ExecuteTeardownComponentSyncAndPlan,
 		w.ComponentEventLoop,
-		w.DriftCheck,
 	}
 }
 

@@ -19,23 +19,7 @@ func (w *Workflows) startup(ctx workflow.Context, req eventloop.EventLoopRequest
 		},
 		EventLoopRequest: req,
 	}
-	w.handleSyncActionWorkflowTriggers(ctx, sreq)
 	w.startChildren(ctx, sreq)
-	return nil
-}
-
-func (w *Workflows) handleSyncActionWorkflowTriggers(ctx workflow.Context, sreq signals.RequestSignal) error {
-	workflowID := sreq.WorkflowID(sreq.ID) + "-action-workflows"
-	cwo := workflow.ChildWorkflowOptions{
-		TaskQueue:             "api",
-		WorkflowID:            workflowID,
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-		// WaitForCancellation:   true,
-		ParentClosePolicy: enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	workflow.ExecuteChildWorkflow(ctx, w.ActionWorkflowTriggers, sreq)
 	return nil
 }
 

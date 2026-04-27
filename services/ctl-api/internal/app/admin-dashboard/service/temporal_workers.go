@@ -26,6 +26,7 @@ var temporalWorkerNamespaces = []string{
 	"actions",
 	"vcs",
 	"onboardings",
+	"emitters",
 }
 
 // TemporalWorkers renders the temporal workers overview page.

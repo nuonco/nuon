@@ -33,6 +33,10 @@ import (
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 
 	// Register install queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdate"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftcheckcomponent"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftchecksandbox"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflowcron"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 

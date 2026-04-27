@@ -11,6 +11,7 @@ import (
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
 	componentsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	emittersworker "github.com/nuonco/nuon/services/ctl-api/internal/app/emitters/worker"
 	generalworker "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker"
 	generalactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 	installsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker"
@@ -95,4 +96,9 @@ var VCSWorkerModule = fx.Module("worker-vcs",
 	fx.Provide(func(h *vcshelpers.Helpers) vcsactivities.GithubClient { return h }),
 	fx.Provide(vcsactivities.New),
 	fx.Provide(worker.AsWorker(vcsworker.New)),
+)
+
+// EmittersWorkerModule provides the emitters namespace worker.
+var EmittersWorkerModule = fx.Module("worker-emitters",
+	fx.Provide(worker.AsWorker(emittersworker.New)),
 )
