@@ -53,11 +53,15 @@ var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
 var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 
-func (s *Signal) IsNoOpCheckable() bool          { return true }
-func (s *Signal) RequiresPolicyEvaluation() bool { return true }
-func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) IsNoOpCheckable() bool                 { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
