@@ -102,6 +102,27 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 		return nil, fmt.Errorf("unable to create runner heart beat: %w", res.Error)
 	}
 
+	// NOTE: for the time being, we are going to dual-write
+	runnerHeartBeatV2 := app.RunnerHeartBeatV2{
+		RunnerID:  runnerID,
+		ProcessID: req.ProcessID,
+		AliveTime: req.AliveTime,
+		Version:   req.Version,
+	}
+	// if we do not receive a value, set a default
+	if req.Process != "" {
+		runnerHeartBeat.Process = req.Process
+	} else {
+		runnerHeartBeat.Process = app.RunnerProcessTypeUnknown
+	}
+
+	resv2 := s.chDB.
+		WithContext(ctx).
+		Create(&runnerHeartBeatV2)
+	if resv2.Error != nil {
+		return nil, fmt.Errorf("unable to create runner heart beat: %w", resv2.Error)
+	}
+
 	return &runnerHeartBeat, nil
 }
 

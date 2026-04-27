@@ -63,7 +63,7 @@ func (s *service) getRunnerLatestHeartBeatFromView(ctx context.Context, runnerID
 		return nil, resp.Error
 	}
 
-	// NOTE(fd): the view de-dupes but that's eventually consistent so we're going to dedupe here as we compose the repsonse.
+	// NOTE(fd): the view de-dupes but that's eventually consistent so we're going to dedupe here as we compose the response.
 	heartbeats := LatestRunnerHeartBeats{}
 	for _, rhb := range runnerHeartBeats {
 		process := string(rhb.Process)
