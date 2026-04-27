@@ -4,19 +4,104 @@ description: "Deploy and manage BYOC apps on Google Cloud."
 icon: 'google'
 ---
 
-Nuon now supports Google Cloud to install your app into your customers' Google Cloud environments.
+Nuon offers first-class support for Google Cloud.
 
-This includes a GKE-specific sandbox [repository on GitHub](https://github.com/nuonco/gcp-gke-sandbox) to implement Google Kubernetes Engine (GKE) and necessary roles.
+## Configuration
 
-[Sandboxes](../concepts/sandboxes) are a Terraform that install your app's underlying infrastructure like GKE.
+To deploy an app to GCP, configure it to use a GCP sandbox and runner. We provide a [GKE sandbox](https://github.com/nuonco/gcp-gke-sandbox) you can use to get started, which provisions a GKE cluster and the IAM bindings the runner needs. Create inputs for the public and private domains, since those will be different for each install.
 
-We have built a sample app [gke-simple](https://github.com/nuonco/example-app-configs/tree/main/gke-simple) that uses the sandbox to deploy GKE and a simple whoami app deployed with Helm accompanied by a certificate and load balancer.
+```toml sandbox.toml
+# sandbox
 
-To try this sample app:
-- Download the [CLI](../cli)
+terraform_version = "1.11.3"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/gcp-gke-sandbox"
+branch    = "main"
+
+[vars]
+cluster_name         = "n-{{.nuon.install.id}}"
+public_root_domain   = "{{ .nuon.inputs.inputs.domain }}"
+internal_root_domain = "internal.{{ .nuon.inputs.inputs.domain }}"
+
+[[var_file]]
+contents = "./sandbox.tfvars"
+```
+
+```toml sandbox.tfvars
+additional_namespaces = ["whoami"]
+```
+
+```toml runner.toml
+# runner
+
+runner_type = "gcp"
+helm_driver = "configmap"
+```
+
+## Installation
+
+When you create a new install, Nuon will generate a Terraform install stack your customer can use to install the runner and base infrastructure. The customer applies it locally with the Google Cloud SDK and Terraform.
+
+### Create an Install
+
+Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+
+This will kick off a provision workflow. The stack will be generated and a pre-configured `install.tfvars` will be provided for it. The tfvars file already has the install ID, runner ID, API token, and IAM permissions interpolated, and can be shared with your customer.
+
+### Install the Stack
+
+Your customer must be authenticated to the GCP project they want to install your app in (typically via `gcloud auth application-default login`) and have permissions to create the IAM bindings, service accounts, and resources defined in the stack module.
+
+The dashboard provides four steps the customer can follow:
+
+1. **Clone the install stack module**
+
+   ```bash
+   git clone https://github.com/nuonco/install-stacks.git
+   cd install-stacks/gcp
+   ```
+
+2. **Configure remote state (recommended)** — create a `backend.tf` pointing at a GCS bucket so the install state is durable.
+
+   ```hcl
+   terraform {
+     backend "gcs" {
+       bucket = "<your-state-bucket>"
+       prefix = "nuon/<install-id>"
+     }
+   }
+   ```
+
+3. **Save the install configuration** — copy the `install.tfvars` content shown in the dashboard and save it next to the module.
+
+4. **Apply with Terraform**
+
+   ```bash
+   terraform init && terraform apply -var-file=install.tfvars
+   ```
+
+The customer is prompted for `gcp_project_id` and `gcp_region` at apply time unless those are pre-populated in the install config (`gcp_account.project_id` / `gcp_account.region`), in which case they're injected into the tfvars and applied automatically.
+
+## Try it with a sample app
+
+We maintain [`gke-simple`](https://github.com/nuonco/example-app-configs/tree/main/gke-simple), a sample app that uses the GKE sandbox to deploy a `whoami` workload with a certificate and load balancer.
+
+To try it:
+
+- Install the [CLI](../cli)
 - Clone the [example apps repo](https://github.com/nuonco/example-app-configs)
 - `cd` into the `gke-simple` directory
 - Run `nuon auth login`
 - Run `nuon apps create -n gke-simple`
 - Run `nuon apps sync`
-- Open the dashboard in Nuon Cloud and create an install
+- Open the Nuon dashboard and create an install
+
+## Updating
+
+If you make changes to the install stack template, the install must be reprovisioned to update the stack.
+
+1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow.
+1. A new Terraform stack version and `install.tfvars` will be generated.
+1. Send the updated `install.tfvars` to your customer to re-apply with `terraform apply -var-file=install.tfvars`.

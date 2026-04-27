@@ -29,13 +29,6 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
-		return stderr.ErrUser{
-			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
-			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
-		}
-	}
-
 	if c.AWSAccount != nil {
 		if c.AWSAccount.Region == "" {
 			return stderr.ErrUser{
@@ -172,13 +165,6 @@ type CreateInstallRequest struct {
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
-	}
-
-	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
-		return stderr.ErrUser{
-			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
-			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
-		}
 	}
 
 	if c.AWSAccount != nil {
