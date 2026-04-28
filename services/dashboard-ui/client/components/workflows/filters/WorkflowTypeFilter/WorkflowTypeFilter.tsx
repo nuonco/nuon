@@ -46,15 +46,13 @@ export const WorkflowTypeFilter = ({
   return (
     <Dropdown
       alignment="right"
-      buttonClassName="!p-2"
       buttonText={
         <>
-          <Icon variant="SlidersIcon" />
-          Type filter
+          <Icon variant="FunnelIcon" size="14" />
+          Type
         </>
       }
       id="workflow-type-filter"
-      variant="ghost"
     >
       <Menu className="!p-0 !w-68">
         <form onReset={onClearFilter}>

@@ -72,13 +72,11 @@ export const LabelFilterDropdown = ({
   return (
     <Dropdown
       alignment="right"
-      className="!p-2"
       closeOnBlur={false}
       id="labels-filter"
-      buttonClassName="!p-1"
       buttonText={
         <>
-          <Icon variant="TagIcon" size="14" />
+          <Icon variant="FunnelIcon" size="14" />
           Labels{selectedLabels.length > 0 ? ` (${selectedLabels.length})` : ''}
         </>
       }

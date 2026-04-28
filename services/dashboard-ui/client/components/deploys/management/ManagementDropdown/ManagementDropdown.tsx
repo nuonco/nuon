@@ -24,10 +24,10 @@ export const ManagementDropdown = ({
   return (
     <Dropdown
       id={`component-${component.id}-mgmt`}
-      variant="primary"
+      variant="secondary"
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> Manage
+          <Icon variant="SlidersHorizontalIcon" /> Deploy controls
         </>
       }
       alignment="right"
@@ -67,7 +67,7 @@ export const ManagementDropdown = ({
         workflow &&
         !workflow?.finished ? (
           <CancelWorkflowButton
-            className="!text-red-600 dark:!text-red-400"
+            variant="danger"
             isMenuButton
             workflow={workflow}
           />

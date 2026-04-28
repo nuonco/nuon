@@ -1,6 +1,7 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallComponentsTable } from '@/components/install-components/InstallComponentsTable'
+import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -25,14 +26,19 @@ export const Components = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install components
-        </Text>
-        <Text theme="neutral">
-          View and manage all components for this install.
-        </Text>
-      </HeadingGroup>
+      <div className="flex items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Install components
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            View and manage all components for this install.
+          </Text>
+        </HeadingGroup>
+        <div className="shrink-0">
+          <ManageAllDropdown />
+        </div>
+      </div>
 
       <InstallComponentsTable shouldPoll />
     </PageSection>
