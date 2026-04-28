@@ -33,10 +33,14 @@ func (w *Workflows) ProcessJob(ctx workflow.Context, sreq signals.RequestSignal)
 		return fmt.Errorf("unable to get runner: %w", err)
 	}
 
-	if !runner.Status.IsHealthy() {
-		l.Warn("runner is not healthy, not attempting")
-		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "runner is not in a healthy state")
-		return errors.New("runner is not healthy")
+	// Check if runner has any active process
+	resp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
+		RunnerID: sreq.ID,
+	})
+	if err != nil || !resp.HasActive {
+		l.Warn("runner has no active process, not attempting")
+		w.updateJobStatus(ctx, sreq.JobID, app.RunnerJobStatusNotAttempted, "no active runner process available")
+		return errors.New("runner has no active process")
 	}
 
 	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{

@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -91,7 +92,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 			PhoneHomeID: phoneHomeID,
 		}).
 		First(&stackVersion); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to find cloudformation stack")
+		return errors.Wrap(res.Error, "unable to find stack")
 	}
 
 	data, err := pkggenerics.ToMapstructureWithJSONTag(req)
@@ -143,6 +144,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	}
 
 	if existingRunCount > 1 {
+		ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
 		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 		if err != nil {
 			return fmt.Errorf("checking features: %w", err)

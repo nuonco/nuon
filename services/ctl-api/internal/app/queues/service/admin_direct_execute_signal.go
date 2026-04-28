@@ -10,24 +10,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type ForceExecuteSignalRequest struct{}
+type DirectExecuteSignalRequest struct{}
 
-// @ID						AdminForceExecuteQueueSignal
-// @Summary				force execute a queue signal
-// @Description.markdown	force_execute_queue_signal.md
+// @ID						AdminDirectExecuteQueueSignal
+// @Summary				direct execute a queue signal
+// @Description.markdown	direct_execute_queue_signal.md
 // @Param					queue_id	path	string						true	"queue ID"
 // @Param					signal_id	path	string						true	"signal ID"
-// @Param					req			body	ForceExecuteSignalRequest	true	"Input"
+// @Param					req			body	DirectExecuteSignalRequest	true	"Input"
 // @Tags					queues/admin
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
 // @Success				200	{boolean}	true
-// @Router					/v1/queues/{queue_id}/signals/{signal_id}/admin-force-execute [POST]
-func (s *service) ForceExecuteSignal(ctx *gin.Context) {
+// @Router					/v1/queues/{queue_id}/signals/{signal_id}/admin-direct-execute [POST]
+func (s *service) DirectExecuteSignal(ctx *gin.Context) {
 	signalID := ctx.Param("signal_id")
 
-	var req ForceExecuteSignalRequest
+	var req DirectExecuteSignalRequest
 	if err := ctx.BindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
 		return
@@ -42,9 +42,9 @@ func (s *service) ForceExecuteSignal(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := s.queueClient.ForceExecuteSignal(ctx, signalID)
+	resp, err := s.queueClient.DirectExecuteSignal(ctx, signalID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to force execute signal: %w", err))
+		ctx.Error(fmt.Errorf("unable to direct execute signal: %w", err))
 		return
 	}
 

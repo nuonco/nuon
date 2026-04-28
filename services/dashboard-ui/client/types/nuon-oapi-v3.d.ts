@@ -4228,6 +4228,7 @@ export interface components {
       owner_id?: string;
       owner_type?: string;
       queue_signal?: components["schemas"]["app.QueueSignal"][];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
