@@ -115,7 +115,7 @@ export function DiffFilter({
         buttonClassName="!p-1"
         buttonText={`Filter ${title} (${selectedActions.size})`}
         className="ml-auto"
-        icon={<Icon variant="FadersHorizontal" />}
+        icon={<Icon variant="FunnelIcon" size="14" />}
         id={`${title}-fitler`}
         alignment="right"
         variant="ghost"

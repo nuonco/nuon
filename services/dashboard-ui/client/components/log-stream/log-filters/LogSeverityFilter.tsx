@@ -49,9 +49,10 @@ export const LogSeverityFilter = ({ title, filters }: ILogSeverityFilter) => {
 
   return (
     <Dropdown
-      buttonText={`Filter ${title} (${selectedSeverities.size})`}
+      buttonText={`${title} (${selectedSeverities.size})`}
       className="ml-auto"
-      icon={<Icon variant="FadersHorizontal" />}
+      icon={<Icon variant="FunnelIcon" size="14" />}
+      iconAlignment="left"
       id={`${title}-fitler`}
       alignment="right"
       variant="ghost"

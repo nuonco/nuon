@@ -69,14 +69,14 @@ export const Sandbox = () => {
       />
 
       <div className="@container flex flex-col flex-auto gap-6">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <HeadingGroup>
             <Text variant="base" weight="strong">
               Sandbox details
             </Text>
             <ID>{install?.sandbox?.id}</ID>
           </HeadingGroup>
-          <div className="flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-2">
             <div className="@5xl:hidden">
               <Button
                 variant="secondary"
@@ -89,7 +89,7 @@ export const Sandbox = () => {
                 }
               >
                 <Icon variant="ClockCounterClockwiseIcon" size={16} />
-                Sandbox history
+                History
               </Button>
             </div>
             <ManagementDropdown />

@@ -6,7 +6,7 @@ import { LogServiceFilter } from './LogServiceFilter'
 
 export const Default = () => (
   <LogServiceFilter
-    title="service"
+    title="Service"
     filters={{
       selectedServices: new Set(['api', 'runner']),
       handleServiceInputToggle: () => {},
@@ -18,7 +18,7 @@ export const Default = () => (
 
 export const NoneSelected = () => (
   <LogServiceFilter
-    title="service"
+    title="Service"
     filters={{
       selectedServices: new Set(),
       handleServiceInputToggle: () => {},

@@ -33,10 +33,10 @@ export const ManageRunDropdown = ({
   return (
     <Dropdown
       id={`sandbox-run-${sandboxRun.id}-mgmt`}
-      variant="primary"
+      variant="secondary"
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> Manage
+          <Icon variant="SlidersHorizontalIcon" /> Run controls
         </>
       }
       alignment={alignment}
@@ -69,7 +69,7 @@ export const ManageRunDropdown = ({
 
         {shouldShowCancel ? (
           <CancelWorkflowButton
-            className="!text-red-600 dark:!text-red-400"
+            variant="danger"
             isMenuButton
             workflow={workflow}
           />

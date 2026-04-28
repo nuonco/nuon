@@ -51,7 +51,7 @@ export const AdminInstallSection = ({
         />
         <AdminDashboardLink
           path={`/installs/${installId}`}
-          label="View in admin dashboard"
+          label="Admin panel"
         />
       </div>
     </AdminMetadataPanel>

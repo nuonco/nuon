@@ -6,7 +6,7 @@ import { LogSeverityFilter } from './LogSeverityFilter'
 
 export const Default = () => (
   <LogSeverityFilter
-    title="severity"
+    title="Severity"
     filters={{
       selectedSeverities: new Set(['Info', 'Warn', 'Error']),
       handleSeverityInputToggle: () => {},
@@ -18,7 +18,7 @@ export const Default = () => (
 
 export const AllSelected = () => (
   <LogSeverityFilter
-    title="severity"
+    title="Severity"
     filters={{
       selectedSeverities: new Set(['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal']),
       handleSeverityInputToggle: () => {},
