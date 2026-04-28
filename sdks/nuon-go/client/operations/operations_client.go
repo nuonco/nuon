@@ -559,6 +559,8 @@ type ClientService interface {
 
 	GetLatestRunnerHeartBeat(params *GetLatestRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerHeartBeatOK, error)
 
+	GetLatestRunnerProcessHeartBeat(params *GetLatestRunnerProcessHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerProcessHeartBeatOK, error)
+
 	GetLogStream(params *GetLogStreamParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLogStreamOK, error)
 
 	GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error)
@@ -596,8 +598,6 @@ type ClientService interface {
 	GetPolicyReport(params *GetPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportOK, error)
 
 	GetPolicyReports(params *GetPolicyReportsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPolicyReportsOK, error)
-
-	GetProcessLatestHeartBeat(params *GetProcessLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProcessLatestHeartBeatOK, error)
 
 	GetQueue(params *GetQueueParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueOK, error)
 
@@ -11706,6 +11706,50 @@ func (a *Client) GetLatestRunnerHeartBeat(params *GetLatestRunnerHeartBeatParams
 }
 
 /*
+GetLatestRunnerProcessHeartBeat gets a runner
+*/
+func (a *Client) GetLatestRunnerProcessHeartBeat(params *GetLatestRunnerProcessHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestRunnerProcessHeartBeatOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetLatestRunnerProcessHeartBeatParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetLatestRunnerProcessHeartBeat",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetLatestRunnerProcessHeartBeatReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetLatestRunnerProcessHeartBeatOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetLatestRunnerProcessHeartBeat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetLogStream gets a log stream
 
 Return a log stream.
@@ -12576,50 +12620,6 @@ func (a *Client) GetPolicyReports(params *GetPolicyReportsParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetPolicyReports: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-GetProcessLatestHeartBeat gets the latest heartbeat for a runner process
-*/
-func (a *Client) GetProcessLatestHeartBeat(params *GetProcessLatestHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProcessLatestHeartBeatOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewGetProcessLatestHeartBeatParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "GetProcessLatestHeartBeat",
-		Method:             "GET",
-		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/heart-beats/latest",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetProcessLatestHeartBeatReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*GetProcessLatestHeartBeatOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetProcessLatestHeartBeat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
