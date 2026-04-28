@@ -17,11 +17,11 @@ export const HelmOutputs = ({
   return (
     <div className="flex flex-col gap-6">
       <Overview createdAt={createdAt} outputs={outputs} />
-      <DeploymentsDetails deployments={outputs?.deployments} />
-      <ServicesDetails services={outputs?.services} />
-      <IngressesDetails ingresses={outputs?.ingresses} />
-      <ResourcesDetails resources={outputs?.resources} />
-      <HelmManifest manifest={outputs?.manifest} />
+      <DeploymentsDetails deployments={outputs?.deployments ?? {}} />
+      <ServicesDetails services={outputs?.services ?? {}} />
+      <IngressesDetails ingresses={outputs?.ingresses ?? {}} />
+      <ResourcesDetails resources={outputs?.resources ?? {}} />
+      {outputs?.manifest ? <HelmManifest manifest={outputs.manifest} /> : null}
     </div>
   )
 }
