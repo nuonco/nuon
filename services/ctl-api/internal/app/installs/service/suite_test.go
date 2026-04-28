@@ -221,9 +221,14 @@ func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWork
 	var install app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
 
+	workflowID := ""
+	if install.WorkflowID != nil {
+		workflowID = *install.WorkflowID
+	}
+
 	return testInstallWithWorkflow{
 		Install:    &install,
-		WorkflowID: rr.Header().Get(app.HeaderInstallWorkflowID),
+		WorkflowID: workflowID,
 	}
 }
 

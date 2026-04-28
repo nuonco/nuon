@@ -144,8 +144,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
 
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
-
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
@@ -285,8 +283,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
-
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
