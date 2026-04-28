@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { EditInputsButton } from '@/components/installs/management/EditInputs'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getInstallCurrentInputs } from '@/lib'
@@ -61,19 +62,15 @@ export const CurrentInputs = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Current inputs
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            The current input values for this install.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <EditInputsButton variant="secondary" />
-        </div>
-      </div>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Current inputs"
+          subtitle="The current input values for this install."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+        <EditInputsButton variant="secondary" />
+      </PageHeader>
 
       {isLoading ? (
         <Skeleton height="200px" width="100%" />

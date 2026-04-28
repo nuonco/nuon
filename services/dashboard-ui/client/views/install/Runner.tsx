@@ -4,20 +4,21 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import {
   ProcessCard,
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
-import { PageSection } from '@/components/layout/PageSection'
-import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
-import { RunnerProvider } from '@/providers/runner-provider'
-import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
-import { getRunnerSettings, getRunnerProcesses } from '@/lib'
+import { getRunnerProcesses, getRunnerSettings } from '@/lib'
+import { RunnerProvider } from '@/providers/runner-provider'
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 
 const RunnerContent = ({
   runnerId,
@@ -153,12 +154,14 @@ export const Runner = () => {
           ]}
         />
         <PageSection>
-          <HeadingGroup>
-            <Text variant="base" weight="strong">
-              Install runner
-            </Text>
-            <ID>{install?.runner_id}</ID>
-          </HeadingGroup>
+          <PageHeader flush>
+            <HeadingGroup>
+              <Text variant="base" weight="strong">
+                Install runner
+              </Text>
+              <ID>{install?.runner_id}</ID>
+            </HeadingGroup>
+          </PageHeader>
           <RunnerContent runnerId={install.runner_id} installId={install.id} />
         </PageSection>
       </SurfacesProvider>

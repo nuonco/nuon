@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Markdown } from '@/components/common/Markdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
+import { Markdown } from '@/components/common/Markdown'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -37,11 +37,13 @@ export const Readme = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install readme
-        </Text>
-      </HeadingGroup>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Install readme"
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+      </PageHeader>
 
       {isLoading ? null : readme?.readme ? (
         <div className="flex flex-col gap-3">

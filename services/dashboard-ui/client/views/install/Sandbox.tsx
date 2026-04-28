@@ -1,21 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
-import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
-import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
+import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageSection } from '@/components/layout/PageSection'
+import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import {
   SandboxConfigCard,
   SandboxConfigCardSkeleton,
 } from '@/components/sandbox/SandboxConfigCard'
-import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
-import { PageSection } from '@/components/layout/PageSection'
-import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
+import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
+import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { Panel } from '@/components/surfaces/Panel'
+import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -69,14 +70,14 @@ export const Sandbox = () => {
       />
 
       <div className="@container flex flex-col flex-auto gap-6">
-        <div className="flex items-start justify-between gap-4">
+        <PageHeader flush>
           <HeadingGroup>
             <Text variant="base" weight="strong">
               Sandbox details
             </Text>
             <ID>{install?.sandbox?.id}</ID>
           </HeadingGroup>
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <div className="@5xl:hidden">
               <Button
                 variant="secondary"
@@ -94,7 +95,7 @@ export const Sandbox = () => {
             </div>
             <ManagementDropdown />
           </div>
-        </div>
+        </PageHeader>
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">

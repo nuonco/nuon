@@ -1,5 +1,5 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -25,15 +25,14 @@ export const Roles = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install roles
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View the IAM roles that your install uses to access customer AWS
-          resources.
-        </Text>
-      </HeadingGroup>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Install roles"
+          subtitle="View the IAM roles that your install uses to access customer AWS resources."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+      </PageHeader>
 
       <InstallRolesTable />
     </PageSection>

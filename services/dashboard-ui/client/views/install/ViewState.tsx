@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -36,22 +37,20 @@ export const ViewState = () => {
           },
         ]}
       />
-      <div className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install state
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Raw state data for this install.
-          </Text>
-        </HeadingGroup>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Install state"
+          subtitle="Raw state data for this install."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
         {state && (
           <ClickToCopyButton
             textToCopy={JSON.stringify(state, null, 2)}
             className="w-fit"
           />
         )}
-      </div>
+      </PageHeader>
 
       {error ? (
         <Banner theme="error">

@@ -1,11 +1,11 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
+import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScanContainer as ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
@@ -65,22 +65,19 @@ export const Workflows = () => {
         install={install}
       />
 
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Workflow history
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View past and active workflows for this install.
-          </Text>
-        </HeadingGroup>
-
-        <div className="shrink-0 flex items-center gap-4">
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Workflow history"
+          subtitle="View past and active workflows for this install."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+        <div className="flex items-center gap-4">
           <AutoApproveToggle />
           <ShowDriftScan />
           <WorkflowTypeFilter />
         </div>
-      </div>
+      </PageHeader>
 
       <WorkflowTimeline
         installId={install?.id}

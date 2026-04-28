@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PolicyReportsTable } from '@/components/policies/PolicyReportsTable'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { PolicyReportsTable } from '@/components/policies/PolicyReportsTable'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallPolicyReports, getAppPoliciesConfigs } from '@/lib'
-import type { TPolicyReportOwnerType, TPolicyReportStatus } from '@/lib/ctl-api/installs/get-install-policy-reports'
+import { getAppPoliciesConfigs, getInstallPolicyReports } from '@/lib'
+import type {
+  TPolicyReportOwnerType,
+  TPolicyReportStatus,
+} from '@/lib/ctl-api/installs/get-install-policy-reports'
 
 export const Policies = () => {
   const { org } = useOrg()
@@ -71,14 +74,14 @@ export const Policies = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Policy reports
-        </Text>
-        <Text theme="neutral">
-          View policy compliance reports for this install.
-        </Text>
-      </HeadingGroup>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Policy reports"
+          subtitle="View policy compliance reports for this install."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+      </PageHeader>
 
       <div className="flex flex-auto">
         {isLoading ? (

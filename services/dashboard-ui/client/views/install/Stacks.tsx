@@ -1,21 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
-import { InstallStacksTable, InstallStacksTableSkeleton } from '@/components/stacks/InstallStacksTable'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { InstallStacksTable, InstallStacksTableSkeleton } from '@/components/stacks/InstallStacksTable'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
 import { getAppConfig, getAppConfigs } from '@/lib'
 import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
 
@@ -80,19 +81,15 @@ export const Stacks = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install stacks
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View your install stack config and versions below.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <EditStackOverridesButton variant="secondary" />
-        </div>
-      </div>
+      <PageHeader flush>
+        <PageHeadingGroup
+          title="Install stacks"
+          subtitle="View your install stack config and versions below."
+          titleProps={{ variant: 'base', weight: 'strong' }}
+          headingLevel={2}
+        />
+        <EditStackOverridesButton variant="secondary" />
+      </PageHeader>
 
       {stackChanged && (
         <Banner theme="info">
