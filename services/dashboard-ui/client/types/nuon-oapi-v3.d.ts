@@ -4253,6 +4253,13 @@ export interface components {
       /** @description For scheduled mode: whether the signal has been fired */
       fired?: boolean;
       id?: string;
+      /**
+       * @description For cron mode: spread emitter ticks deterministically across this window
+       * to avoid thundering-herd when many emitters share a schedule. A hash of the
+       * emitter ID determines each emitter's static offset within the window. Zero
+       * disables jitter (default).
+       */
+      jitter_window?: number;
       last_emitted_at?: string;
       /** @description Emitter mode: "cron" for recurring, "scheduled" for one-shot */
       mode?: components["schemas"]["app.QueueEmitterMode"];
