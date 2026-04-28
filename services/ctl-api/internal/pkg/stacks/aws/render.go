@@ -55,13 +55,10 @@ type AWSTemplateInput struct {
 
 // Render emits a JSON-wrapped tfvars envelope for the install-stacks/aws module.
 //
-// v1: custom nested stacks are not supported — if the app config defines any,
-// returns an error and the install must stay on the CloudFormation path.
+// Custom nested stacks (CloudFormation customer extensions) are intentionally
+// not translated. Vendors who extend their CFN stack with custom resources are
+// expected to fork install-stacks and make equivalent Terraform changes there.
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
-	if inputs.AppCfg != nil && len(inputs.AppCfg.StackConfig.CustomNestedStacks) > 0 {
-		return nil, "", errors.New("install-stacks/aws Terraform module does not yet support custom nested stacks; keep this install on the CloudFormation path")
-	}
-
 	t, err := template.New("aws-stack").Parse(tmpl)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to parse aws template")
