@@ -12,9 +12,11 @@ export const Overview = ({
   createdAt: string
   outputs: Record<string, any>
 }) => {
-  const firstDeployment = Object.values(
-    Object.values(outputs.deployments)[0] || {}
-  )[0] as any
+  const deployments = outputs?.deployments ?? {}
+  const firstNamespace = Object.values(deployments)[0]
+  const firstDeployment = firstNamespace
+    ? (Object.values(firstNamespace)[0] as any)
+    : undefined
   const releaseName =
     firstDeployment?.metadata?.annotations?.['meta.helm.sh/release-name'] ||
     'Unknown'
@@ -32,7 +34,7 @@ export const Overview = ({
           weight="strong"
         >
           Helm outputs{' '}
-          <Status status={getHelmOutputStatus(outputs)} variant="badge" />
+          <Status status={getHelmOutputStatus(deployments)} variant="badge" />
         </Text>
         <Text className="flex items-center gap-6" theme="neutral">
           <Text variant="subtext">
@@ -50,19 +52,19 @@ export const Overview = ({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <OutputCard
-          count={Object.keys(outputs?.deployments)?.length}
+          count={Object.keys(outputs?.deployments ?? {}).length}
           title="Deployments"
         />
         <OutputCard
-          count={Object.keys(outputs?.services)?.length}
+          count={Object.keys(outputs?.services ?? {}).length}
           title="Services"
         />
         <OutputCard
-          count={Object.keys(outputs?.ingresses)?.length}
+          count={Object.keys(outputs?.ingresses ?? {}).length}
           title="Ingresses"
         />
         <OutputCard
-          count={Object.keys(outputs?.resources)?.length}
+          count={Object.keys(outputs?.resources ?? {}).length}
           title="Resources"
         />
       </div>
