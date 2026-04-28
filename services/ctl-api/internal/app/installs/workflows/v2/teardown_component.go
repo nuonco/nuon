@@ -84,6 +84,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		compIDStr := generics.FromPtrStr(componentID)
 		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          install.ID,
 			ComponentID:        compIDStr,
 			FlowID:             "",
 			SandboxMode:        false,
@@ -96,6 +97,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          install.ID,
 			ComponentID:        compIDStr,
 			FlowID:             "",
 			SandboxMode:        false,

@@ -109,6 +109,11 @@ export type TOrgStats = {
   install_count: number
 }
 
+// webhooks
+export type TWebhook = components['schemas']['service.CurrentOrgWebhookResponse']
+export type TCreateWebhookBody =
+  components['schemas']['service.CreateCurrentOrgWebhookRequest']
+
 // install
 export type TInstall = components['schemas']['app.Install'] & {
   app?: components['schemas']['app.App']

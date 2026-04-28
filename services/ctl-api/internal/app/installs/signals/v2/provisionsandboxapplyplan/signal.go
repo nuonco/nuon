@@ -26,6 +26,7 @@ const SignalType signal.SignalType = "provision-sandbox-apply-plan"
 
 type Signal struct {
 	InstallSandboxID  string
+	InstallID         string
 	FlowID            string
 	FlowStepID        string
 	InstallWorkflowID string
@@ -56,8 +57,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	sandboxID := &s.InstallSandboxID
+	if s.InstallSandboxID == "" {
+		sandboxID = nil
+	}
 	return signal.SignalLifecycleContext{
+		InstallID: installID,
+		SandboxID: sandboxID,
 		Operation: "sandbox-provision",
+		Stage:     "apply",
 	}
 }
 
@@ -83,6 +95,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &provisionsandboxplan.Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -91,6 +104,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName,
