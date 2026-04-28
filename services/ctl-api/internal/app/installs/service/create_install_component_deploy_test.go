@@ -37,7 +37,8 @@ func (s *InstallsServiceTestSuite) TestCreateComponentDeploySuccess() {
 	assert.Equal(s.T(), build.ID, deploy.ComponentBuildID)
 
 	// Workflow should have been created.
-	workflowID := rr.Header().Get(app.HeaderInstallWorkflowID)
+	require.NotNil(s.T(), deploy.WorkflowID)
+	workflowID := *deploy.WorkflowID
 	assert.NotEmpty(s.T(), workflowID)
 
 	// Verify deploy persisted in DB.

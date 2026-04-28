@@ -9,10 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
-const (
-	HeaderInstallWorkflowID = "X-Nuon-Install-Workflow-ID"
-)
-
 func createdByIDFromTemporalContext(ctx workflow.Context) string {
 	val := ctx.Value(keys.AccountIDCtxKey)
 	valStr, ok := val.(string)
