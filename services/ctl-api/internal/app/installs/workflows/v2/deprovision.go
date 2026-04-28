@@ -77,6 +77,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 		Role:             flw.Role,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
@@ -86,6 +87,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply", pgtype.Hstore{}, &deprovisionsandboxapplyplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err

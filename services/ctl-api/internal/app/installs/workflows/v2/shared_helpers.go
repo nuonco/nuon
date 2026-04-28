@@ -208,6 +208,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 			planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 				InstallComponentID: installComponentID,
+				InstallID:          installID,
 				ComponentID:        comp.ID,
 				Role:               flw.Role,
 			}, flw.PlanOnly, WithSkippable(false))
@@ -217,6 +218,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 
 			applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
 				InstallComponentID: installComponentID,
+				InstallID:          installID,
 				ComponentID:        comp.ID,
 			}, flw.PlanOnly)
 			if err != nil {

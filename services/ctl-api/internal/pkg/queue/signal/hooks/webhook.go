@@ -25,8 +25,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// userFacingOperations is the set of signal operations that should be exposed
-// via webhooks. Internal-only signals are filtered out.
+// userFacingOperations is the set of operations that should be exposed
+// via webhooks. Internal-only operations are filtered out.
 var userFacingOperations = map[string]struct{}{
 	"component-deploy":    {},
 	"component-teardown":  {},
@@ -40,6 +40,26 @@ var userFacingOperations = map[string]struct{}{
 	"install-updated":     {},
 	"install-restart":     {},
 }
+
+// Stage values surfaced to webhook consumers. Empty stage means a
+// single-phase operation.
+const (
+	stagePlan  = "plan"
+	stageApply = "apply"
+)
+
+// Status values surfaced to webhook consumers in the *.finished events.
+const (
+	statusStarted   = "started"
+	statusSucceeded = "succeeded"
+	statusFailed    = "failed"
+	statusCanceled  = "canceled"
+)
+
+// Failure reasons surfaced when an event's status is "failed".
+const (
+	failureReasonValidationFailed = "validation_failed"
+)
 
 type Params struct {
 	fx.In
@@ -88,7 +108,7 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 }
 
 func (h *WebhookSignalLifecycleHook) Name() string {
-	return "signal_lifecycle_webhook"
+	return "operation_lifecycle_webhook"
 }
 
 func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool {
@@ -97,41 +117,54 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 	}
 
 	if event.Operation == "" {
-		h.l.Debug("webhook hook skipped: empty operation",
-			zap.String("queue_signal_id", event.QueueSignalID),
-			zap.String("phase", string(event.Phase)),
-		)
 		return false
 	}
 
-	if event.Phase == signal.SignalPhaseValidate {
+	if _, ok := userFacingOperations[event.Operation]; !ok {
 		return false
 	}
 
-	_, ok := userFacingOperations[event.Operation]
-	return ok
+	// Validate phase events are only surfaced when validation FAILS.
+	// Successful validates remain silent — we only want users to see them
+	// when they translate into a terminal *.finished event.
+	// The Supports() filter is permissive here; the publish path decides
+	// whether to actually emit anything.
+	return true
 }
 
 func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event signal.SignalPhaseEvent) (signal.BeforePhaseDecision, error) {
-	if err := h.publish(ctx, event, nil, "before"); err != nil {
-		h.l.Debug("failed to publish pre-phase signal lifecycle webhook", zap.Error(err))
+	// Only emit *.started events for the execute phase. Validate/cancel
+	// before-phase callbacks are never user-facing.
+	if event.Phase != signal.SignalPhaseExecute {
+		return signal.AllowPhaseDecision(), nil
 	}
 
+	if err := h.publish(ctx, event, nil); err != nil {
+		h.l.Debug("failed to publish operation lifecycle started webhook", zap.Error(err))
+	}
 	return signal.AllowPhaseDecision(), nil
 }
 
 func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
+	// Suppress noise for successful validates — we only emit on validate failure.
+	if event.Phase == signal.SignalPhaseValidate && outcome.Status == signal.SignalStatusSuccess {
+		return nil
+	}
+
 	h.l.Debug("webhook after-phase called",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),
 		zap.String("operation", event.Operation),
+		zap.String("stage", event.Stage),
 		zap.String("status", string(outcome.Status)),
 	)
-	return h.publish(ctx, event, &outcome, "after")
+
+	return h.publish(ctx, event, &outcome)
 }
 
-// CloudEvents v1.0 envelope types.
-
+// CloudEvents v1.0 envelope. We use CloudEvent extension attributes
+// (lowercased, alphanumeric) to expose org/operation/stage/status without
+// leaking internal signal/queue/phase terminology into the wire format.
 type cloudEvent struct {
 	SpecVersion     string `json:"specversion"`
 	ID              string `json:"id"`
@@ -140,41 +173,32 @@ type cloudEvent struct {
 	Time            string `json:"time"`
 	Subject         string `json:"subject"`
 	DataContentType string `json:"datacontenttype"`
-	NuonOrgID       string `json:"nuonorgid,omitempty"`
-	NuonOperation   string `json:"nuonoperation,omitempty"`
-	NuonTransition  string `json:"nuontransition"`
-	Data            any    `json:"data"`
+
+	NuonOrgID     string `json:"nuonorgid,omitempty"`
+	NuonOperation string `json:"nuonoperation,omitempty"`
+	NuonStage     string `json:"nuonstage,omitempty"`
+	NuonStatus    string `json:"nuonstatus,omitempty"`
+
+	Data operationLifecycleEventData `json:"data"`
 }
 
-type signalLifecycleEventData struct {
-	Signal    signalIdentity `json:"signal"`
-	Phase     string         `json:"phase"`
-	Operation string         `json:"operation"`
-	Context   signalContext  `json:"context"`
-	Outcome   *signalOutcome `json:"outcome"`
+type operationLifecycleEventData struct {
+	Event         string           `json:"event"`
+	Operation     string           `json:"operation"`
+	Stage         string           `json:"stage,omitempty"`
+	Status        string           `json:"status"`
+	FailureReason string           `json:"failure_reason,omitempty"`
+	Error         string           `json:"error,omitempty"`
+	DurationMs    int64            `json:"duration_ms,omitempty"`
+	Context       operationContext `json:"context"`
+	Metadata      map[string]any   `json:"metadata,omitempty"`
 }
 
-type signalIdentity struct {
-	ID       string  `json:"id"`
-	QueueID  string  `json:"queue_id"`
-	Type     string  `json:"type"`
-	ParentID *string `json:"parent_id"`
-}
-
-type signalContext struct {
+type operationContext struct {
 	OrgID       string  `json:"org_id"`
-	AppID       *string `json:"app_id"`
-	InstallID   *string `json:"install_id"`
-	ComponentID *string `json:"component_id"`
-	SandboxID   *string `json:"sandbox_id"`
-	RunnerID    *string `json:"runner_id"`
-}
-
-type signalOutcome struct {
-	Status     string         `json:"status"`
-	Error      string         `json:"error,omitempty"`
-	DurationMs int64          `json:"duration_ms"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
+	InstallID   *string `json:"install_id,omitempty"`
+	ComponentID *string `json:"component_id,omitempty"`
+	SandboxID   *string `json:"sandbox_id,omitempty"`
 }
 
 type webhookTarget struct {
@@ -182,56 +206,43 @@ type webhookTarget struct {
 	Secret string
 }
 
-func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, transition string) error {
-	var dataOutcome *signalOutcome
-	if outcome != nil && transition == "after" {
-		dataOutcome = &signalOutcome{
-			Status:     string(outcome.Status),
-			Error:      outcome.ErrMessage,
-			DurationMs: outcome.Duration.Milliseconds(),
-			Metadata:   outcome.Metadata,
-		}
+// publish builds and emits the CloudEvent for an operation lifecycle
+// transition. When outcome is nil this is a *.started event; otherwise it is
+// a *.finished event carrying status/error/duration.
+func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) error {
+	data, ok := h.buildEventData(event, outcome)
+	if !ok {
+		return nil
 	}
+
+	subject := buildSubject(event, data.Event)
 
 	ce := cloudEvent{
 		SpecVersion:     "1.0",
 		ID:              uuid.New().String(),
-		Type:            "com.nuon.signal.lifecycle.v1",
+		Type:            "com.nuon.operation.lifecycle.v1",
 		Source:          "//nuon.co/ctl-api",
 		Time:            time.Now().UTC().Format(time.RFC3339),
-		Subject:         event.QueueSignalID,
+		Subject:         subject,
 		DataContentType: "application/json",
 		NuonOrgID:       event.OrgID,
-		NuonOperation:   event.Operation,
-		NuonTransition:  transition,
-		Data: signalLifecycleEventData{
-			Signal: signalIdentity{
-				ID:      event.QueueSignalID,
-				QueueID: event.QueueID,
-				Type:    string(event.SignalType),
-			},
-			Phase:     string(event.Phase),
-			Operation: event.Operation,
-			Context: signalContext{
-				OrgID:       event.OrgID,
-				InstallID:   event.InstallID,
-				ComponentID: event.ComponentID,
-			},
-			Outcome: dataOutcome,
-		},
+		NuonOperation:   data.Operation,
+		NuonStage:       data.Stage,
+		NuonStatus:      data.Status,
+		Data:            data,
 	}
 
 	payloadJSON, err := json.Marshal(ce)
 	if err != nil {
-		return fmt.Errorf("unable to marshal signal lifecycle webhook payload: %w", err)
+		return fmt.Errorf("unable to marshal operation lifecycle webhook payload: %w", err)
 	}
 
 	logger := h.l.With(
 		zap.String("hook", h.Name()),
-		zap.String("queue_signal_id", event.QueueSignalID),
-		zap.String("signal_type", string(event.SignalType)),
-		zap.String("phase", string(event.Phase)),
-		zap.String("transition", transition),
+		zap.String("operation", data.Operation),
+		zap.String("stage", data.Stage),
+		zap.String("status", data.Status),
+		zap.String("event", data.Event),
 	)
 
 	targets := make([]webhookTarget, 0, len(h.webhookURLs))
@@ -241,7 +252,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
 	if err != nil {
-		logger.Warn("failed to resolve org signal lifecycle webhooks", zap.Error(err))
+		logger.Warn("failed to resolve org operation lifecycle webhooks", zap.Error(err))
 	}
 
 	targets = append(targets, dynamicTargets...)
@@ -256,7 +267,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	for _, target := range targets {
 		if err := h.sendWebhook(ctx, target, payloadJSON); err != nil {
 			sendErrs = append(sendErrs, err)
-			logger.Warn("failed to deliver signal lifecycle webhook",
+			logger.Warn("failed to deliver operation lifecycle webhook",
 				zap.String("webhook_host", webhookHost(target.URL)),
 				zap.Error(err))
 		}
@@ -266,8 +277,108 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		return errors.Join(sendErrs...)
 	}
 
-	logger.Debug("delivered signal lifecycle webhook")
+	logger.Debug("delivered operation lifecycle webhook")
 	return nil
+}
+
+// buildEventData translates an internal SignalPhaseEvent + outcome into the
+// user-facing event payload. Returns ok=false when the input doesn't map to a
+// user-facing transition (e.g. a phase we deliberately suppress).
+func (h *WebhookSignalLifecycleHook) buildEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (operationLifecycleEventData, bool) {
+	data := operationLifecycleEventData{
+		Operation: event.Operation,
+		Stage:     event.Stage,
+		Context: operationContext{
+			OrgID:       event.OrgID,
+			InstallID:   event.InstallID,
+			ComponentID: event.ComponentID,
+			SandboxID:   event.SandboxID,
+		},
+	}
+
+	stagePrefix := stageEventPrefix(event.Stage)
+
+	if outcome == nil {
+		// before-phase: started transition.
+		data.Event = stagePrefix + ".started"
+		data.Status = statusStarted
+		return data, true
+	}
+
+	// after-phase: finished transition.
+	data.Event = stagePrefix + ".finished"
+	data.Status = mapStatus(outcome.Status)
+	if outcome.Status != signal.SignalStatusSuccess {
+		data.Error = outcome.ErrMessage
+	}
+	if outcome.Duration > 0 {
+		data.DurationMs = outcome.Duration.Milliseconds()
+	}
+	if len(outcome.Metadata) > 0 {
+		data.Metadata = outcome.Metadata
+	}
+
+	// Validate-phase failures translate into a *.finished event for the
+	// owning stage, with failure_reason="validation_failed". Successful
+	// validates are filtered out earlier in AfterPhase.
+	if event.Phase == signal.SignalPhaseValidate {
+		data.Status = statusFailed
+		data.FailureReason = failureReasonValidationFailed
+	}
+
+	// Cancel phase always reports canceled status regardless of outcome.
+	if event.Phase == signal.SignalPhaseCancel {
+		data.Status = statusCanceled
+	}
+
+	return data, true
+}
+
+// stageEventPrefix returns the user-facing event family ("plan", "apply", or
+// "operation") for a given stage value.
+func stageEventPrefix(stage string) string {
+	switch stage {
+	case stagePlan:
+		return "plan"
+	case stageApply:
+		return "apply"
+	default:
+		return "operation"
+	}
+}
+
+// mapStatus converts the internal SignalStatus into the user-facing status
+// string used in webhook payloads.
+func mapStatus(s signal.SignalStatus) string {
+	switch s {
+	case signal.SignalStatusSuccess:
+		return statusSucceeded
+	case signal.SignalStatusError:
+		return statusFailed
+	case signal.SignalStatusCancelled:
+		return statusCanceled
+	default:
+		return string(s)
+	}
+}
+
+// buildSubject returns a stable, non-signal-leaking identifier for the
+// CloudEvent's `subject`. It composes the org id, operation, stage, and event
+// family so consumers can correlate started/finished pairs without exposing
+// any internal signal/queue identifiers in the wire format.
+func buildSubject(event signal.SignalPhaseEvent, eventName string) string {
+	parts := []string{}
+	if event.OrgID != "" {
+		parts = append(parts, event.OrgID)
+	}
+	if event.Operation != "" {
+		parts = append(parts, event.Operation)
+	}
+	if event.Stage != "" {
+		parts = append(parts, event.Stage)
+	}
+	parts = append(parts, eventName)
+	return strings.Join(parts, "/")
 }
 
 func (h *WebhookSignalLifecycleHook) sendWebhook(ctx context.Context, target webhookTarget, payloadJSON []byte) error {
@@ -314,7 +425,7 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 	if err := h.db.WithContext(ctx).
 		Where("org_id = ?", orgID).
 		Find(&webhooks).Error; err != nil {
-		return nil, fmt.Errorf("unable to list org signal lifecycle webhooks: %w", err)
+		return nil, fmt.Errorf("unable to list org operation lifecycle webhooks: %w", err)
 	}
 
 	targets := make([]webhookTarget, 0, len(webhooks))

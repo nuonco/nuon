@@ -28,6 +28,7 @@ const SignalType signal.SignalType = "component-teardown-sync-and-plan"
 
 type Signal struct {
 	InstallComponentID string
+	InstallID          string
 	ComponentID        string
 	WorkflowStepID     string
 	FlowStepID         string
@@ -73,9 +74,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	componentID := &s.ComponentID
+	if s.ComponentID == "" {
+		componentID = nil
+	}
 	return signal.SignalLifecycleContext{
-		ComponentID: &s.ComponentID,
+		InstallID:   installID,
+		ComponentID: componentID,
 		Operation:   "component-teardown",
+		Stage:       "plan",
 	}
 }
 
