@@ -25,6 +25,6 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return nil
 	}
 
-	w.updateStatus(ctx, sreq.ID, app.RunnerStatusError, "runner install stack was run, waiting for health check to mark healthy")
+	w.updateStatus(ctx, sreq.ID, app.RunnerStatusActive, "runner install stack was run, runner is active")
 	return nil
 }

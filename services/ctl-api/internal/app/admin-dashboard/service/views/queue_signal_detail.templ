@@ -52,6 +52,15 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 									View in catalog
 								}
 							</a>
+							<form method="POST" action={ templ.URL("/queues/" + q.ID + "/signals/" + signal.ID + "/direct-execute") } onsubmit="return confirm('Are you sure you want to directly execute this signal?');" style="display:inline;">
+								@button.Button(button.Props{
+									Variant: button.VariantDestructive,
+									Size:    button.SizeSm,
+									Type:    button.TypeSubmit,
+								}) {
+									Direct Execute
+								}
+							</form>
 						</div>
 						<div class="flex items-center gap-2 mb-1">
 							<span class="text-xs text-muted-foreground uppercase">Signal ID:</span>
