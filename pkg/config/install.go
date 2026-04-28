@@ -59,6 +59,19 @@ func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("europe-west1")
 }
 
+type AzureAccount struct {
+	Location string `mapstructure:"location,omitempty" toml:"location,omitempty" jsonschema:"required"`
+}
+
+func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("location").Short("Azure location").
+		Long("Azure location/region where the infrastructure will be deployed").
+		Example("eastus").
+		Example("westus2").
+		Example("westeurope")
+}
+
 type InputGroup struct {
 	// mapstructure is able to decode map into Inputgroup because the type of InputGroup.Inputs matches that of what
 	// expected by mapstructure.
@@ -140,6 +153,7 @@ type Install struct {
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	AWSAccount     *AWSAccount           `mapstructure:"aws_account,omitempty" toml:"aws_account,omitempty"`
 	GCPAccount     *GCPAccount           `mapstructure:"gcp_account,omitempty" toml:"gcp_account,omitempty"`
+	AzureAccount   *AzureAccount         `mapstructure:"azure_account,omitempty" toml:"azure_account,omitempty"`
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
@@ -160,6 +174,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("gcp_account").Short("GCP account configuration").
 		Long("GCP-specific settings for this install, including project ID and region").
+		Field("azure_account").Short("Azure account configuration").
+		Long("Azure-specific settings for this install, including the deployment location").
 		Field("inputs").Short("input values").
 		Long("Array of input groups with key-value pairs for customer inputs provided during installation").
 		Type("array").
@@ -301,6 +317,18 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			diff.WithKey("gcp_account"), diff.WithChildren(
 				diff.NewDiff(diff.WithKey("project_id"), diff.WithStringDiff(upstreamGCP.ProjectID, i.GCPAccount.ProjectID)),
 				diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(upstreamGCP.Region, i.GCPAccount.Region)),
+			)),
+		)
+	}
+
+	if i.AzureAccount != nil {
+		upstreamAzure := &AzureAccount{}
+		if upstreamInstall.AzureAccount != nil {
+			upstreamAzure = upstreamInstall.AzureAccount
+		}
+		diffs = append(diffs, diff.NewDiff(
+			diff.WithKey("azure_account"), diff.WithChildren(
+				diff.NewDiff(diff.WithKey("location"), diff.WithStringDiff(upstreamAzure.Location, i.AzureAccount.Location)),
 			)),
 		)
 	}
