@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { type IPanel } from '@/components/surfaces/Panel'
@@ -21,6 +21,7 @@ export const AdminOrgFeaturesPanelContainer = ({
   ...props
 }: AdminOrgFeaturesPanelContainerProps) => {
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
   const { user } = useAuth()
   const adminEmail = user?.email ?? ''
   const [featuresList, setFeaturesList] = useState<string[]>([])
@@ -36,6 +37,7 @@ export const AdminOrgFeaturesPanelContainer = ({
       return adminUpdateOrgFeatures({ orgId, features, adminEmail })
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org'] })
       addToast(
         <Toast heading="Features Updated" theme="success">
           <Text>Organization features updated successfully</Text>

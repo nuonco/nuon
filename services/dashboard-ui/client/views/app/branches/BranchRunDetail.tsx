@@ -9,7 +9,7 @@ import { Card } from '@/components/common/Card'
 import { Loading } from '@/components/common/Loading'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -352,15 +352,15 @@ export const BranchRunDetail = () => {
                 )}
               </div>
 
-              {selectedStep.links?.event_loop_ui && (
+              {selectedStep.install_workflow_id && (
                 <div>
                   <Text variant="label" theme="neutral" className="mb-2">
                     Quick links
                   </Text>
                   <div className="flex flex-wrap gap-2">
-                    <TemporalLink
-                      href={selectedStep.links.event_loop_ui as string}
-                      namespace=""
+                    <AdminDashboardLink
+                      path={`/workflows/${selectedStep.install_workflow_id}`}
+                      label="View in admin panel"
                     />
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { AuditHistoryButton } from '../AuditHistory'
 import { DeprovisionButton } from '../Deprovision'
@@ -23,6 +24,8 @@ import { SyncSecretsButton } from '../SyncSecrets'
 
 const InstallManagementDropdownContent = () => {
   const { install } = useInstall()
+  const { org } = useOrg()
+  const canRenameInstall = !!org?.features?.['install-rename']
   const isMobile = !window.matchMedia('(min-width: 768px)').matches
   return (
     <Dropdown
@@ -40,7 +43,7 @@ const InstallManagementDropdownContent = () => {
         <Text variant="label" theme="neutral">
           Settings
         </Text>
-        <EditInputsButton isMenuButton />
+        <EditInputsButton isMenuButton showNameField={canRenameInstall} />
         <EditLabelsButton isMenuButton />
         <ViewCurrentInputsButton isMenuButton />
         <AuditHistoryButton isMenuButton />
