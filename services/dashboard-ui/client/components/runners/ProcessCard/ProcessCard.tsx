@@ -129,17 +129,18 @@ export const ProcessCard = ({
             ))}
           </div>
           <ID>{process.id}</ID>
-        </div>
-        <div className="flex items-center gap-2">
           {adminDashboardUrl && (
             <Button
               size="sm"
               href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
               target="_blank"
+              className="w-fit"
             >
               View in admin panel <Icon variant="ArrowSquareOutIcon" />
             </Button>
           )}
+        </div>
+        <div className="flex items-center gap-2">
           {managementDropdown}
         </div>
       </div>

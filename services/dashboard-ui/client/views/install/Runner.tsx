@@ -58,7 +58,7 @@ const RunnerContent = ({
 
       {processesLoading ? (
         <div className="@container">
-          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 @5xl:grid-cols-2 gap-6 items-start">
             <ProcessCardSkeleton />
             <ProcessCardSkeleton />
           </div>
@@ -79,7 +79,7 @@ const RunnerContent = ({
         />
       ) : (
         <div className="@container">
-          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 @5xl:grid-cols-2 gap-6 items-start">
             {processes.map((process) => (
               <ProcessCard
                 key={process.id}
