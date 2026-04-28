@@ -20,8 +20,8 @@ export const AdminDashboardLink = ({
   const href = `${config.adminDashboardUrl}${path}`
 
   return (
-    <Link className="text-xs" href={href} target="_blank">
-      {label} <Icon variant="ArrowSquareOutIcon" />
+    <Link className="text-xs inline-flex items-center gap-1" href={href} target="_blank">
+      {label} <Icon variant="ArrowSquareOutIcon" size="14" />
     </Link>
   )
 }

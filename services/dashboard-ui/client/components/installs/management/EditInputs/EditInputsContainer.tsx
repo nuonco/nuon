@@ -256,13 +256,11 @@ export const EditInputsButton = ({
 
   return (
     <Button
-      className="text-sm !font-medium !py-2 !px-3 h-[36px] flex items-center gap-3 w-full"
-      variant="ghost"
       onClick={handleClick}
       {...props}
     >
-      {showNameField ? 'Edit install' : 'Edit inputs'}
       <Icon variant="PencilSimpleLine" />
+      {showNameField ? 'Edit install' : 'Edit inputs'}
     </Button>
   )
 }

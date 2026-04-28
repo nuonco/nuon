@@ -128,7 +128,7 @@ export const ProcessCard = ({
           <ID>{process.id}</ID>
           <AdminDashboardLink
             path={`/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
-            label="View in admin panel"
+            label="Admin panel"
           />
         </div>
         <div className="flex items-center gap-2">

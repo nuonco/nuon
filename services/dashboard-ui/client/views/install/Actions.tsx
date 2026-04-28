@@ -1,6 +1,7 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { InstallActionsTable } from '@/components/actions/InstallActionsTable'
+import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -25,14 +26,19 @@ export const Actions = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Actions
-        </Text>
-        <Text theme="neutral">
-          View and manage all actions for this install.
-        </Text>
-      </HeadingGroup>
+      <div className="flex items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Actions
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            View and manage all actions for this install.
+          </Text>
+        </HeadingGroup>
+        <div className="shrink-0">
+          <RunAdhocActionButton variant="primary" />
+        </div>
+      </div>
 
       <InstallActionsTable shouldPoll />
     </PageSection>

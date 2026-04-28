@@ -61,7 +61,7 @@ export const CurrentInputs = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <HeadingGroup>
           <Text variant="base" weight="strong">
             Current inputs
@@ -70,7 +70,7 @@ export const CurrentInputs = () => {
             The current input values for this install.
           </Text>
         </HeadingGroup>
-        <div className="flex items-center gap-2">
+        <div className="shrink-0">
           <EditInputsButton variant="secondary" />
         </div>
       </div>
