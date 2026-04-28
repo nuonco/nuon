@@ -1,15 +1,29 @@
-import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
+import { useAuth } from '@/hooks/use-auth'
 
-interface ITemporalLink {
-  href: string
-  isVisible: boolean
-}
+export const TemporalLink = ({
+  namespace,
+  eventLoopId,
+  href,
+}: {
+  namespace: string
+  eventLoopId?: string
+  href?: string
+}) => {
+  const { isAdmin } = useAuth()
 
-export const TemporalLink = ({ href, isVisible }: ITemporalLink) => {
-  return isVisible ? (
-    <Button href={href} target="_blank">
+  if (!isAdmin) {
+    return null
+  }
+
+  const resolvedHref =
+    href ??
+    `/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`
+
+  return (
+    <Link className="text-xs" href={resolvedHref} target="_blank">
       View in Temporal <Icon variant="ArrowSquareOutIcon" />
-    </Button>
-  ) : null
+    </Link>
+  )
 }

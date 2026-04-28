@@ -41,7 +41,7 @@ export const Team = () => {
       </PageHeader>
       <PageContent>
         <PageSection>
-          <div>
+          <div className="flex flex-col gap-4">
             <Text variant="base" weight="strong">
               Active members
             </Text>
