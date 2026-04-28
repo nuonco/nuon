@@ -50,7 +50,7 @@ export const DeleteWebhookModal = ({
           <Text variant="base" weight="strong">
             This webhook will stop receiving operation lifecycle events.
           </Text>
-          <Code className="px-2 py-1 text-xs">{webhookUrl}</Code>
+          <Code variant="inline" className="!px-2 !py-1">{webhookUrl}</Code>
           <Text variant="body" theme="neutral">
             If a signing secret was set, it cannot be recovered. To reuse this
             URL with a new secret, delete and recreate the webhook.
