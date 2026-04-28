@@ -1,8 +1,10 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
@@ -20,14 +22,17 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, getInstallComponent } from '@/lib'
 
 export const InstallComponentDetail = () => {
   const { componentId } = useParams()
   const { org } = useOrg()
   const { install } = useInstall()
+  const { addPanel } = useSurfaces()
 
   const { data: installComponent, isLoading } = useQuery({
     queryKey: ['install-component', org?.id, install?.id, componentId],
@@ -85,86 +90,107 @@ export const InstallComponentDetail = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <BackLink className="mb-6" />
-          <span className="flex items-center gap-2">
-            <ComponentType
-              type={component?.type}
-              displayVariant="icon-only"
-              colorVariant="color"
-              iconSize="24"
-            />
-            <Text variant="base" weight="strong">
-              {component?.name}
-            </Text>
-          </span>
-          {component?.id ? <ID>{component.id}</ID> : null}
-        </HeadingGroup>
-
-        {component && (
-          <div className="flex items-center gap-4">
+      <div className="@container flex flex-col flex-auto gap-6">
+        <div className="flex items-start justify-between">
+          <HeadingGroup>
+            <BackLink className="mb-6" />
+            <span className="flex items-center gap-2">
+              <ComponentType
+                type={component?.type}
+                displayVariant="icon-only"
+                colorVariant="color"
+                iconSize="24"
+              />
+              <Text variant="base" weight="strong">
+                {component?.name}
+              </Text>
+            </span>
+            {component?.id ? <ID>{component.id}</ID> : null}
             <AdminDashboardLink
               path={`/queues?owner_id=${installComponent?.id}`}
               label="View in admin panel"
             />
-            <ManagementDropdown
-              component={component}
-              currentBuildId={latestDeploy?.build_id}
-              currentDeployStatus={latestDeploy?.status_v2?.status}
-              installComponent={installComponent}
-            />
-          </div>
-        )}
-      </div>
+          </HeadingGroup>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
-        <div className="md:col-span-8 flex flex-col gap-6">
-          {installComponent?.drifted_object ? (
-            <DriftedBanner drifted={installComponent.drifted_object} />
-          ) : null}
-
-          {config?.component_dependency_ids?.length ? (
-            <Card>
-              <Text weight="strong">Dependencies</Text>
-              <InstallComponentDependencies
-                deps={config.component_dependency_ids}
-                variant="inline"
+          {component && (
+            <div className="flex items-center gap-4">
+              <div className="@5xl:hidden">
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    addPanel(
+                      <Panel heading="Deploy history">
+                        <DeployTimeline
+                          componentId={componentId!}
+                          componentName={component.name}
+                          shouldPoll
+                        />
+                      </Panel>
+                    )
+                  }
+                >
+                  <Icon variant="ClockCounterClockwiseIcon" size={16} />
+                  Deploy history
+                </Button>
+              </div>
+              <ManagementDropdown
+                component={component}
+                currentBuildId={latestDeploy?.build_id}
+                currentDeployStatus={latestDeploy?.status_v2?.status}
+                installComponent={installComponent}
               />
-            </Card>
-          ) : null}
-
-          {isLoadingConfig ? (
-            <ComponentConfigCardSkeleton />
-          ) : config ? (
-            <ComponentConfigCard config={config} />
-          ) : (
-            <EmptyState
-              variant="table"
-              emptyTitle="No configuration"
-              emptyMessage="This component has no configuration yet."
-            />
+            </div>
           )}
-
-          {component?.type === 'terraform_module' || component?.type === 'pulumi' ? (
-            <TerraformWorkspaceCard
-              workspaceId={installComponent?.terraform_workspace?.id}
-              componentType={component?.type}
-            />
-          ) : null}
         </div>
 
-        <div className="md:col-span-4 flex flex-col gap-4">
-          <Text variant="base" weight="strong">
-            Deploy history
-          </Text>
-          {component ? (
-            <DeployTimeline
-              componentId={componentId!}
-              componentName={component.name}
-              shouldPoll
-            />
-          ) : null}
+        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
+          <div className="@5xl:col-span-8 flex flex-col gap-6">
+            {installComponent?.drifted_object ? (
+              <DriftedBanner drifted={installComponent.drifted_object} />
+            ) : null}
+
+            {config?.component_dependency_ids?.length ? (
+              <Card>
+                <Text weight="strong">Dependencies</Text>
+                <InstallComponentDependencies
+                  deps={config.component_dependency_ids}
+                  variant="inline"
+                />
+              </Card>
+            ) : null}
+
+            {isLoadingConfig ? (
+              <ComponentConfigCardSkeleton />
+            ) : config ? (
+              <ComponentConfigCard config={config} />
+            ) : (
+              <EmptyState
+                variant="table"
+                emptyTitle="No configuration"
+                emptyMessage="This component has no configuration yet."
+              />
+            )}
+
+            {component?.type === 'terraform_module' || component?.type === 'pulumi' ? (
+              <TerraformWorkspaceCard
+                workspaceId={installComponent?.terraform_workspace?.id}
+                componentType={component?.type}
+              />
+            ) : null}
+          </div>
+
+          <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
+            <Text variant="base" weight="strong">
+              Deploy history
+            </Text>
+            {component ? (
+              <DeployTimeline
+                componentId={componentId!}
+                componentName={component.name}
+                shouldPoll
+              />
+            ) : null}
+          </div>
         </div>
       </div>
 

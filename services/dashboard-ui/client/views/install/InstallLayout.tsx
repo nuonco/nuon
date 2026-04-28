@@ -206,7 +206,9 @@ const InstallTemplate = () => {
               basePath={`/${org?.id}/installs/${install?.id}`}
               links={navLinks}
             />
-            <Outlet />
+            <div className="flex flex-col flex-1 min-w-0">
+              <Outlet />
+            </div>
           </PageContent>
         </>
       )}
