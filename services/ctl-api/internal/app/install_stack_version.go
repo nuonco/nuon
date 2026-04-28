@@ -11,6 +11,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
+const (
+	InstallStackTypeCloudFormation = "cloudformation"
+	InstallStackTypeTerraform      = "terraform"
+)
+
 type InstallStackVersion struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -41,6 +46,20 @@ type InstallStackVersion struct {
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
 	QuickLinkURL  string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// On AWS, the install workflow renders BOTH a CloudFormation template and
+	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
+	// (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
+	// artifact lives below. The dashboard shows both during the await step;
+	// the user picks one to apply, and StackType is recorded post-hoc when
+	// phone-home arrives.
+	TerraformContents []byte `json:"terraform_contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"terraform_contents,omitzero,omitempty"`
+	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
+
+	// StackType records which install-stack path was actually applied. Set by
+	// the phone-home handler when the callback fires; empty until then.
+	// One of: "cloudformation", "terraform".
+	StackType string `json:"stack_type,omitzero" temporaljson:"stack_type,omitzero,omitempty"`
 }
 
 func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {
