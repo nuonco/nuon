@@ -15,10 +15,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest github com nuonco nuon services ctl api internal app runner auth service runner auth a w s request
+// ServiceRunnerAuthAWSRequest service runner auth a w s request
 //
-// swagger:model github_com_nuonco_nuon_services_ctl-api_internal_app_runner-auth_service.RunnerAuthAWSRequest
-type GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest struct {
+// swagger:model service.RunnerAuthAWSRequest
+type ServiceRunnerAuthAWSRequest struct {
 
 	// sts
 	// Required: true
@@ -29,8 +29,8 @@ type GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSR
 	Tags *AwsPresignedRequest `json:"tags"`
 }
 
-// Validate validates this github com nuonco nuon services ctl api internal app runner auth service runner auth a w s request
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) Validate(formats strfmt.Registry) error {
+// Validate validates this service runner auth a w s request
+func (m *ServiceRunnerAuthAWSRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSts(formats); err != nil {
@@ -47,7 +47,7 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 	return nil
 }
 
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) validateSts(formats strfmt.Registry) error {
+func (m *ServiceRunnerAuthAWSRequest) validateSts(formats strfmt.Registry) error {
 
 	if err := validate.Required("sts", "body", m.Sts); err != nil {
 		return err
@@ -71,7 +71,7 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 	return nil
 }
 
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) validateTags(formats strfmt.Registry) error {
+func (m *ServiceRunnerAuthAWSRequest) validateTags(formats strfmt.Registry) error {
 
 	if err := validate.Required("tags", "body", m.Tags); err != nil {
 		return err
@@ -95,8 +95,8 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 	return nil
 }
 
-// ContextValidate validate this github com nuonco nuon services ctl api internal app runner auth service runner auth a w s request based on the context it is used
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this service runner auth a w s request based on the context it is used
+func (m *ServiceRunnerAuthAWSRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateSts(ctx, formats); err != nil {
@@ -113,7 +113,7 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 	return nil
 }
 
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) contextValidateSts(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceRunnerAuthAWSRequest) contextValidateSts(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Sts != nil {
 
@@ -134,7 +134,7 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 	return nil
 }
 
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) contextValidateTags(ctx context.Context, formats strfmt.Registry) error {
+func (m *ServiceRunnerAuthAWSRequest) contextValidateTags(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Tags != nil {
 
@@ -156,7 +156,7 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 }
 
 // MarshalBinary interface implementation
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) MarshalBinary() ([]byte, error) {
+func (m *ServiceRunnerAuthAWSRequest) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -164,8 +164,8 @@ func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuth
 }
 
 // UnmarshalBinary interface implementation
-func (m *GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) UnmarshalBinary(b []byte) error {
-	var res GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest
+func (m *ServiceRunnerAuthAWSRequest) UnmarshalBinary(b []byte) error {
+	var res ServiceRunnerAuthAWSRequest
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
