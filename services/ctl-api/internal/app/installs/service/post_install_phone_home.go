@@ -100,14 +100,13 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
 
-	// Record which install-stack path the user actually applied. The
-	// CloudFormation Lambda and the Terraform local-exec both POST a
-	// "phone_home_type" field; the discriminator below distinguishes them.
-	// AWS payloads from the Terraform module include "runner_role_arn",
-	// which the CFN Lambda doesn't emit — use that as a tie-breaker so we
-	// can identify the path the user chose.
+	// Record which install-stack path the user actually applied. Both paths
+	// post the same key set (`runner_iam_role_arn`, etc.); the Terraform
+	// path additionally includes `runner_asg_name` (output of the runner
+	// child module), which the CFN Lambda doesn't emit — use that as the
+	// discriminator.
 	stackType := app.InstallStackTypeCloudFormation
-	if _, hasRoleArn := (*req)["runner_role_arn"]; hasRoleArn {
+	if _, hasASGName := (*req)["runner_asg_name"]; hasASGName {
 		stackType = app.InstallStackTypeTerraform
 	}
 
@@ -156,11 +155,12 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	}
 
 	if existingRunCount > 1 {
+		// The phone-home endpoint is unauthenticated (called from the AWS
+		// Lambda or the Terraform local-exec), so no middleware sets the org
+		// on the context. Derive it from the stack version we just looked up
+		// and seed it for the feature client.
 		ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
 		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-		if err != nil {
-			return fmt.Errorf("checking features: %w", err)
-		}
 		if err != nil {
 			return fmt.Errorf("checking features: %w", err)
 		}

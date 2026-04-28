@@ -55,10 +55,17 @@ type AWSTemplateInput struct {
 
 // Render emits a JSON-wrapped tfvars envelope for the install-stacks/aws module.
 //
+// `supportIAMRoleARN` is the Nuon control-plane IAM role ARN that the
+// operation roles (provision/maintenance/deprovision/break-glass/custom) must
+// trust. Sourced from the ctl-api `runner_default_support_iam_role_arn`
+// config — same value the CFN role-builder uses
+// (`internal/pkg/stacks/cloudformation/resource_role.go:83`). Pass empty
+// string to omit (e.g., local-runner mode).
+//
 // Custom nested stacks (CloudFormation customer extensions) are intentionally
 // not translated. Vendors who extend their CFN stack with custom resources are
 // expected to fork install-stacks and make equivalent Terraform changes there.
-func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
+func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, string, error) {
 	t, err := template.New("aws-stack").Parse(tmpl)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to parse aws template")
@@ -94,14 +101,20 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 	}
 
-	cpAccounts := "[]"
-	if b, err := json.Marshal([]string{}); err == nil {
-		cpAccounts = string(b)
+	// Trust principals for the operation roles: the Nuon control-plane support
+	// IAM role (when configured), serialized as a JSON list literal for HCL.
+	trustPrincipals := []string{}
+	if supportIAMRoleARN != "" {
+		trustPrincipals = append(trustPrincipals, supportIAMRoleARN)
+	}
+	trustPrincipalsJSON := "[]"
+	if b, err := json.Marshal(trustPrincipals); err == nil {
+		trustPrincipalsJSON = string(b)
 	}
 
 	awsInputs := &AWSTemplateInput{
 		TemplateInput:                inputs,
-		ControlPlaneAccountIDs:       cpAccounts,
+		ControlPlaneAccountIDs:       trustPrincipalsJSON,
 		ProvisionPermissions:         prov,
 		MaintenancePermissions:       maint,
 		DeprovisionPermissions:       deprov,

@@ -279,7 +279,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		// CFN stack are expected to fork install-stacks and add equivalent
 		// Terraform changes there.
 		inp.CloudFormationStackVersion = stackVersion
-		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp)
+		supportIAMRoleARN := ""
+		if s.cfg.RunnerEnableSupport {
+			supportIAMRoleARN = s.cfg.RunnerDefaultSupportIAMRole
+		}
+		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp, supportIAMRoleARN)
 		l := workflow.GetLogger(ctx)
 		if tfErr != nil {
 			l.Warn("aws terraform render skipped", "error", tfErr.Error(), "install_id", install.ID)
