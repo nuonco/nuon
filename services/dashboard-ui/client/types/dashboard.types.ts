@@ -86,6 +86,7 @@ export type TTheme =
 
 // page nav link types
 export type TNavLink = {
+  badge?: boolean
   iconVariant?: TIconVariant
   path: string
   text: string
