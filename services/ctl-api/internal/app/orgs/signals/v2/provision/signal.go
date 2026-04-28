@@ -2,7 +2,6 @@ package provision
 
 import (
 	"fmt"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -97,9 +96,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to enqueue runner provision signal: %w", err)
 	}
 
-	if _, err := client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, &workflow.ActivityOptions{
-		ScheduleToCloseTimeout: 30 * time.Minute,
-	}); err != nil {
+	if _, err := client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "organization did not provision runner")
 		return fmt.Errorf("runner did not provision correctly: %w", err)
 	}
