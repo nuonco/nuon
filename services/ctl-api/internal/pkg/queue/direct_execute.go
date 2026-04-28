@@ -12,19 +12,19 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const ForceExecuteUpdateName string = "force-execute"
+const DirectExecuteUpdateName string = "direct-execute"
 
-type ForceExecuteRequest struct {
+type DirectExecuteRequest struct {
 	QueueSignalID string `json:"queue_signal_id"`
 }
 
-type ForceExecuteResponse struct {
+type DirectExecuteResponse struct {
 	QueueSignalID string `json:"queue_signal_id"`
 }
 
 // @temporal-gen-v2 update
-// @id force-execute
-func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteRequest) (*ForceExecuteResponse, error) {
+// @id direct-execute
+func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequest) (*DirectExecuteResponse, error) {
 	if err := workflow.Await(ctx, func() bool {
 		return q.ready
 	}); err != nil {
@@ -38,7 +38,7 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 		return nil, err
 	}
 
-	l.Info("force executing queue signal", zap.String("queue-signal-id", req.QueueSignalID))
+	l.Info("direct executing queue signal", zap.String("queue-signal-id", req.QueueSignalID))
 
 	queueSignal, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, req.QueueSignalID)
 	if err != nil {
@@ -52,7 +52,7 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 
 	// if already in a terminal state, nothing to do
 	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
-		return &ForceExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
+		return &DirectExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
 	}
 
 	queueRef := QueueRef{
@@ -71,10 +71,10 @@ func (q *queue) forceExecuteHandler(ctx workflow.Context, req ForceExecuteReques
 				zap.String("queue-signal-id", queueSignal.ID),
 				zap.Error(statusErr))
 		}
-		return nil, errors.Wrap(signalErr, "force execute failed")
+		return nil, errors.Wrap(signalErr, "direct execute failed")
 	}
 
 	q.state.QueueRefs = append(q.state.QueueRefs, queueRef)
 
-	return &ForceExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
+	return &DirectExecuteResponse{QueueSignalID: req.QueueSignalID}, nil
 }

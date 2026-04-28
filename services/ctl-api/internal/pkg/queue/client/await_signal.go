@@ -28,12 +28,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 
 	// If the DB status already indicates completion, return immediately.
 	if isTerminalStatus(q.Status.Status) {
-		if q.Status.Status == app.StatusError {
-			return nil, temporal.NewNonRetryableApplicationError(
-				signalErrorMessage(q),
-				"SIGNAL_FAILED", nil)
-		}
-		return &handler.FinishedResponse{}, nil
+		return terminalResponse(q.Status.Status, q.Status.StatusHumanDescription)
 	}
 
 	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
@@ -54,30 +49,28 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 				return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
 			}
 			if isTerminalStatus(fresh.Status.Status) {
-				if fresh.Status.Status == app.StatusError {
-					return nil, temporal.NewNonRetryableApplicationError(
-						signalErrorMessage(fresh),
-						"SIGNAL_FAILED", nil)
-				}
-				return &handler.FinishedResponse{}, nil
+				return terminalResponse(fresh.Status.Status, fresh.Status.StatusHumanDescription)
 			}
 			return nil, errors.Wrap(err, "unable to call finished handler")
 		}
 
 		var resp handler.FinishedResponse
 		if err := rawResp.Get(ctx, &resp); err != nil {
+			// The update itself may have returned an error. Check DB as fallback.
+			fresh, dbErr := c.getQueueSignal(ctx, queueSignalID)
+			if dbErr != nil {
+				return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
+			}
+			if isTerminalStatus(fresh.Status.Status) {
+				return terminalResponse(fresh.Status.Status, fresh.Status.StatusHumanDescription)
+			}
 			return nil, errors.Wrap(err, "unable get response")
 		}
 
-		// Re-check DB status after workflow update completes, since the finishedHandler
-		// returns FinishedResponse{} regardless of whether signal execution succeeded or failed.
-		fresh, err := c.getQueueSignal(ctx, queueSignalID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to verify signal status after completion")
-		}
-		if fresh.Status.Status == app.StatusError {
+		// The handler returned a terminal status directly - use it.
+		if resp.Status == app.StatusError {
 			return nil, temporal.NewNonRetryableApplicationError(
-				signalErrorMessage(fresh),
+				resp.StatusDescription,
 				"SIGNAL_FAILED", nil)
 		}
 
@@ -85,11 +78,16 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	})
 }
 
-func signalErrorMessage(q *app.QueueSignal) string {
-	if q.Status.StatusHumanDescription != "" {
-		return q.Status.StatusHumanDescription
+// terminalResponse converts a terminal DB status into the appropriate return value.
+func terminalResponse(status app.Status, description string) (*handler.FinishedResponse, error) {
+	if status == app.StatusError {
+		msg := description
+		if msg == "" {
+			msg = fmt.Sprintf("signal execution failed with status: %s", status)
+		}
+		return nil, temporal.NewNonRetryableApplicationError(msg, "SIGNAL_FAILED", nil)
 	}
-	return fmt.Sprintf("signal execution failed with status: %s", q.Status.Status)
+	return &handler.FinishedResponse{Status: status, StatusDescription: description}, nil
 }
 
 func (c *Client) getQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {
