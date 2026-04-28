@@ -1,29 +1,23 @@
 package provision
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	runnerprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/provision"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "org-provision"
-
-const (
-	pollRunnerTimeout time.Duration = time.Minute * 5
-	pollRunnerPeriod  time.Duration = time.Second * 10
-)
 
 type Signal struct {
 	OrgID string `json:"org_id"`
@@ -91,7 +85,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Provision the runner via v2 queue signal
-	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   org.RunnerGroup.Runners[0].ID,
 		OwnerType: "runners",
 		Signal: &runnerprovision.Signal{
@@ -103,7 +97,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to enqueue runner provision signal: %w", err)
 	}
 
-	if err := s.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+	if _, err := client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, &workflow.ActivityOptions{
+		ScheduleToCloseTimeout: 30 * time.Minute,
+	}); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "organization did not provision runner")
 		return fmt.Errorf("runner did not provision correctly: %w", err)
 	}
@@ -133,30 +129,4 @@ func (s *Signal) updateStatus(ctx workflow.Context, status app.OrgStatus, status
 			zap.String("organization-id", s.OrgID),
 			zap.Error(err))
 	}
-}
-
-func (s *Signal) pollRunner(ctx workflow.Context, runnerID string) error {
-	timeout := workflow.Now(ctx).Add(pollRunnerTimeout)
-
-	var lastStatus app.RunnerStatus
-	for !workflow.Now(ctx).After(timeout) {
-		runner, err := activities.AwaitGetRunner(ctx, activities.GetRunnerRequest{
-			ID: runnerID,
-		})
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil
-			}
-			return fmt.Errorf("unable to get runner from database: %w", err)
-		}
-
-		if runner.Status == app.RunnerStatusActive {
-			return nil
-		}
-
-		lastStatus = runner.Status
-		workflow.Sleep(ctx, pollRunnerPeriod)
-	}
-
-	return fmt.Errorf("runner did not reach status after %s - last status %s", pollRunnerTimeout, lastStatus)
 }
