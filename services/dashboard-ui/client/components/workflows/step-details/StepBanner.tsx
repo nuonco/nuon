@@ -16,7 +16,10 @@ export const StepBanner = ({
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
   const stepStatus = step?.status?.status
-  const statusDescription = step?.status?.status_human_description
+  const statusDescription = step?.status?.status_human_description?.replace(
+    /\s*\(type:\s*\w+,\s*retryable:\s*\w+\)\s*$/,
+    ''
+  )
   const isTerminal =
     stepStatus === 'error' ||
     stepStatus === 'cancelled' ||
