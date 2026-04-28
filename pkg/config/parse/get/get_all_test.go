@@ -3,6 +3,7 @@ package get
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -233,4 +234,73 @@ func TestGetAll_UsesPolicySourceFileDirForRelativePaths(t *testing.T) {
 	err = Parse(context.Background(), &input, &Options{FieldTimeout: time.Second, RootDir: tmpDir})
 	require.NoError(t, err)
 	require.Equal(t, "apiVersion: kyverno.io/v1", input.Policies[0].Contents)
+}
+
+// TestGetAll_GitFileContents exercises the git source code path end-to-end
+// against a local git repository. It guards the bug where go-getter's
+// fetchSubmodules toggles DisableSymlinks on the shared client, causing the
+// follow-up copyDir to fail on macOS with "copying of symlinks has been
+// disabled" because /var/folders -> /private/var.
+func TestGetAll_GitFileContents(t *testing.T) {
+	gitBin, err := exec.LookPath("git")
+	if err != nil {
+		t.Skip("git binary not available; skipping git source test")
+	}
+
+	repoDir := t.TempDir()
+
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command(gitBin, args...)
+		cmd.Dir = repoDir
+		// Make sure the test does not depend on the host git config.
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=test",
+			"GIT_AUTHOR_EMAIL=test@example.com",
+			"GIT_COMMITTER_NAME=test",
+			"GIT_COMMITTER_EMAIL=test@example.com",
+			"GIT_CONFIG_GLOBAL=/dev/null",
+			"GIT_CONFIG_SYSTEM=/dev/null",
+		)
+		out, err := cmd.CombinedOutput()
+		require.NoErrorf(t, err, "git %v failed: %s", args, string(out))
+	}
+
+	runGit("init", "-q", "-b", "main")
+	require.NoError(t, os.MkdirAll(filepath.Join(repoDir, "kubernetes"), 0o755))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(repoDir, "kubernetes", "policy.rego"),
+		[]byte("package main\nallow := true\n"),
+		0o644,
+	))
+	runGit("add", "kubernetes/policy.rego")
+	runGit("commit", "-q", "-m", "add policy")
+
+	rootDir := t.TempDir()
+
+	input := subdirPoliciesTestStruct{
+		Contents: "git::file://" + repoDir + "//kubernetes/policy.rego",
+	}
+
+	err = Parse(context.Background(), &input, &Options{
+		FieldTimeout: 30 * time.Second,
+		RootDir:      rootDir,
+	})
+	require.NoError(t, err)
+	require.Equal(t, "package main\nallow := true\n", input.Contents)
+}
+
+func TestGetAll_GitSourceWithoutFileReturnsError(t *testing.T) {
+	rootDir := t.TempDir()
+
+	input := subdirPoliciesTestStruct{
+		Contents: "git::https://github.com/example/repo.git",
+	}
+
+	err := Parse(context.Background(), &input, &Options{
+		FieldTimeout: 5 * time.Second,
+		RootDir:      rootDir,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "git source must include a `//path/to/file` reference")
 }
