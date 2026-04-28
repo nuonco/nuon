@@ -55,6 +55,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	for _, app := range apps {
+		l.Info("ensuring app queues", zap.String("app_id", app.ID))
+		if err := activities.AwaitEnsureAppQueueByAppID(ctx, app.ID); err != nil {
+			l.Warn("unable to ensure app queues", zap.String("app_id", app.ID), zap.Error(err))
+		}
+
 		l.Info("ensuring app branch queues", zap.String("app_id", app.ID))
 
 		branches, err := activities.AwaitGetAppBranchesByAppID(ctx, app.ID)

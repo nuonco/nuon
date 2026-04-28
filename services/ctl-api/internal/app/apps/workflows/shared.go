@@ -60,14 +60,19 @@ func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
 	}
 }
 
-// appBranchSignalStep creates a WorkflowStep from an app branch signal
-func (s *stepGroup) appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+// signalStep creates a WorkflowStep from a signal with configurable owner type.
+func (s *stepGroup) signalStep(ctx workflow.Context, ownerID, ownerType, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	opts = append(opts, WithGroupIdx(s.idx))
-	return appBranchSignalStep(ctx, appBranchID, name, metadata, sig, opts...)
+	return newSignalStep(ctx, ownerID, ownerType, name, metadata, sig, opts...)
 }
 
-// appBranchSignalStep creates a workflow step from a signal
-func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+// appBranchSignalStep creates a WorkflowStep from an app branch signal
+func (s *stepGroup) appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+	return s.signalStep(ctx, appBranchID, "app_branches", name, metadata, sig, opts...)
+}
+
+// newSignalStep creates a workflow step from a signal with configurable owner type
+func newSignalStep(ctx workflow.Context, ownerID, ownerType, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if sig == nil {
 		step := &app.WorkflowStep{
 			Name:          name,
@@ -83,19 +88,12 @@ func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadat
 		return step, nil
 	}
 
-	// Default execution type is system
-	executionTyp := app.WorkflowStepExecutionTypeSystem
-
-	// Set target type based on signal type
-	// For now, use app_branches as the default target type for all app branch signals
-	targetType := "app_branches"
-
 	step := &app.WorkflowStep{
 		Name:           name,
-		ExecutionType:  executionTyp,
-		StepTargetType: targetType,
-		OwnerID:        appBranchID,
-		OwnerType:      "app_branches",
+		ExecutionType:  app.WorkflowStepExecutionTypeSystem,
+		StepTargetType: ownerType,
+		OwnerID:        ownerID,
+		OwnerType:      ownerType,
 		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Metadata:       metadata,
 		QueueSignal: &signaldb.SignalData{

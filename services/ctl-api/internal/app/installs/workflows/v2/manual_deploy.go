@@ -23,7 +23,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -32,7 +32,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // runner health
+	sg.nextGroupEager() // runner health
 	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)

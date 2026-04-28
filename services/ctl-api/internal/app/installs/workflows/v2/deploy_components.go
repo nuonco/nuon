@@ -34,7 +34,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -50,7 +50,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	sg.nextGroup() // runner health
+	sg.nextGroupEager() // runner health
 	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)

@@ -251,7 +251,7 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroup() // runner health
+	sg.nextGroupEager() // runner health
 
 	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
