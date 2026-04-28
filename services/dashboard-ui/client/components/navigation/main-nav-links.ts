@@ -29,6 +29,11 @@ export const SETTINGS_LINKS: TNavLink[] = [
     path: `/runner`,
     text: 'Build runner',
   },
+  {
+    iconVariant: 'WebhooksLogo',
+    path: `/webhooks`,
+    text: 'Webhooks',
+  },
 ]
 
 export const SUPPORT_LINKS: TNavLink[] = [

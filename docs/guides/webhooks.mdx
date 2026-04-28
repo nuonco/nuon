@@ -1,0 +1,149 @@
+---
+title: 'Webhooks'
+description: 'Receive operation lifecycle events from your Nuon Org as CloudEvents over HTTP.'
+icon: 'webhook'
+keywords: ['webhooks', 'CloudEvents', 'operation lifecycle', 'HMAC', 'X-Nuon-Signature', 'org events']
+---
+
+Org-scoped webhooks let you subscribe to operation lifecycle events for your Nuon [Org](/concepts/glossary). Whenever a
+user-facing operation runs (for example, an [Install](/concepts/glossary) is created or a
+[Sandbox](/concepts/sandboxes) is provisioned), Nuon `POST`s a [CloudEvents v1.0](https://cloudevents.io) envelope to
+every webhook URL registered on the Org.
+
+Webhooks are scoped to the current Org. Manage them with the [Nuon CLI](/cli) or the dashboard.
+
+## Manage webhooks
+
+```sh
+# List webhooks for the current Org
+nuon orgs webhooks list
+
+# Create a webhook (URL is required, secret is optional)
+nuon orgs webhooks create --url https://example.com/webhooks/operation/lifecycle --secret <shared-secret>
+
+# Delete a webhook
+nuon orgs webhooks delete --webhook-id <webhook_id>
+```
+
+A few constraints to be aware of:
+
+- The `--url` must be an absolute `http` or `https` URL with a host.
+- Webhook URLs are unique per Org — registering the same URL twice returns a conflict.
+- The `--secret` is write-only. The API never returns it; responses include `has_secret: true|false` so you can tell
+  whether one is configured.
+- There is no update endpoint. To rotate the URL or secret, delete the webhook and create a new one.
+
+## Supported operations
+
+Webhooks fire only for user-facing operations. The current allowlist is:
+
+- `install-created`, `install-updated`, `install-restart`
+- `component-deploy`, `component-teardown`
+- `sandbox-provision`, `sandbox-reprovision`, `sandbox-deprovision`
+- `runner-provision`, `runner-reprovision`
+- `action-workflow-run`
+
+## Event model
+
+Every operation emits a `*.started` event when it begins and a `*.finished` event when it completes (success, failure,
+or cancellation). What changes between operations is how many of those `started`/`finished` pairs you get and what
+they're called. That's controlled by whether the operation is single-phase or multi-phase.
+
+### Single-phase vs multi-phase operations
+
+A **single-phase** operation runs as one indivisible unit. Nuon picks it up, does the work, and reports the outcome.
+You get exactly one `started`/`finished` pair, and `data.stage` is omitted because there's nothing to disambiguate.
+Events use the generic `operation.*` family.
+
+A **multi-phase** operation has two distinct user-visible phases that run back-to-back:
+
+1. A `plan` phase that figures out what is about to change (for example, the Terraform plan or Helm diff). Users may
+   gate this phase with an approval before continuing.
+2. An `apply` phase that actually performs the change.
+
+Each phase emits its own `started`/`finished` pair, and every event carries `data.stage` set to either `"plan"` or
+`"apply"` so receivers can tell them apart. A typical successful multi-phase operation therefore produces four
+deliveries in order: `plan.started`, `plan.finished`, `apply.started`, `apply.finished`. If the `plan` phase fails or
+its approval is denied, the `apply` phase never runs and you will not see `apply.*` events.
+
+| Operation family                                                                                       | Event names                                              |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| Multi-phase (`component-deploy`, `component-teardown`, `sandbox-provision`/`reprovision`/`deprovision`) | `plan.started`, `plan.finished`, `apply.started`, `apply.finished` |
+| Single-phase (`install-created`, `install-updated`, `install-restart`, `runner-provision`, `runner-reprovision`, `action-workflow-run`) | `operation.started`, `operation.finished`                |
+
+`data.status` is one of `started`, `succeeded`, `failed`, or `canceled`. When a stage's pre-execution validation fails,
+Nuon surfaces it as a `*.finished` event for the owning stage with `data.status: "failed"` and
+`data.failure_reason: "validation_failed"` — there is no separate validate event.
+
+## Payload format
+
+The body is a CloudEvents v1.0 JSON envelope sent with `Content-Type: application/cloudevents+json; charset=utf-8`.
+The CloudEvent `type` is always `com.nuon.operation.lifecycle.v1`. Nuon-specific extension attributes
+(`nuonorgid`, `nuonoperation`, `nuonstage`, `nuonstatus`) are mirrored on the envelope for routing.
+
+```json
+{
+  "specversion": "1.0",
+  "id": "9f6c5b4e-…",
+  "type": "com.nuon.operation.lifecycle.v1",
+  "source": "//nuon.co/ctl-api",
+  "time": "2026-04-28T12:34:56Z",
+  "subject": "org_…/sandbox-reprovision/apply/apply.finished",
+  "datacontenttype": "application/json",
+  "nuonorgid": "org_…",
+  "nuonoperation": "sandbox-reprovision",
+  "nuonstage": "apply",
+  "nuonstatus": "succeeded",
+  "data": {
+    "event": "apply.finished",
+    "operation": "sandbox-reprovision",
+    "stage": "apply",
+    "status": "succeeded",
+    "duration_ms": 12345,
+    "context": {
+      "org_id": "org_…",
+      "install_id": "install_…",
+      "component_id": null,
+      "sandbox_id": "sbx_…"
+    }
+  }
+}
+```
+
+`data.stage` is omitted for single-phase operations. `data.error` and `data.failure_reason` are only set on failed
+events. `data.metadata` is omitted unless the operation contributed structured metadata.
+
+## Verifying signatures
+
+When a webhook is created with `--secret`, Nuon signs the raw request body with HMAC-SHA256 using your secret and sends
+the lowercase hex digest in the `X-Nuon-Signature` header. Reject any request whose signature does not match. When no
+secret is configured, no signature header is sent.
+
+## End-to-end example
+
+1. Start your receiver locally and expose it (for example with `ngrok http 8080`).
+
+2. Register the webhook with your Org:
+
+   ```sh
+   nuon orgs webhooks create \
+     --url https://<your-public-host>/webhooks/operation/lifecycle \
+     --secret $NUON_WEBHOOK_SECRET
+   ```
+
+3. Trigger a user-facing operation. The smallest reliable trigger is reprovisioning a Sandbox:
+
+   ```sh
+   nuon installs reprovision-sandbox --skip-components
+   ```
+
+4. Your receiver should record four deliveries for `sandbox-reprovision`: `plan.started`, `plan.finished`,
+   `apply.started`, `apply.finished`. A `401` response from your receiver — for example, when the secrets do not match
+   — surfaces in Nuon as a delivery failure and the event is not retried.
+
+5. When you are done, remove the webhook:
+
+   ```sh
+   nuon orgs webhooks list
+   nuon orgs webhooks delete --webhook-id <webhook_id>
+   ```

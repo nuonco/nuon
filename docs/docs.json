@@ -270,7 +270,7 @@
           },
           {
             "group": "Integrations",
-            "pages": ["guides/notifications", "guides/github-actions", "guides/cli-extensions"]
+            "pages": ["guides/notifications", "guides/webhooks", "guides/github-actions", "guides/cli-extensions"]
           }
         ]
       },

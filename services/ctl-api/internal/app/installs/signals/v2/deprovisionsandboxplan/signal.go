@@ -25,6 +25,7 @@ const SignalType signal.SignalType = "deprovision-sandbox-plan"
 
 type Signal struct {
 	InstallSandboxID string
+	InstallID        string
 	WorkflowStepID   string
 	FlowStepID       string
 	FlowID           string
@@ -91,8 +92,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	sandboxID := &s.InstallSandboxID
+	if s.InstallSandboxID == "" {
+		sandboxID = nil
+	}
 	return signal.SignalLifecycleContext{
+		InstallID: installID,
+		SandboxID: sandboxID,
 		Operation: "sandbox-deprovision",
+		Stage:     "plan",
 	}
 }
 
