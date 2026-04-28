@@ -102,7 +102,7 @@ export const DeprovisionSandboxButton = ({
         addModal(modal)
       }}
       {...props}
-      className="!text-red-600 dark:!text-red-400"
+      variant="danger"
     >
       {props?.isMenuButton ? null : <Icon variant="BoxArrowDown" />}
       Deprovision sandbox

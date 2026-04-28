@@ -25,10 +25,10 @@ export const ManagementDropdown = ({
   return (
     <Dropdown
       id={`component-${component.id}-mgmt`}
-      variant="primary"
+      variant="secondary"
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> Manage
+          <Icon variant="SlidersHorizontalIcon" /> Component controls
         </>
       }
       alignment="right"

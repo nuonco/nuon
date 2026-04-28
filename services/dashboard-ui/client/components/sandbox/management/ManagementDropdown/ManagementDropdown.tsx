@@ -19,9 +19,10 @@ export const ManagementDropdown = ({
   return (
     <Dropdown
       id="sandbox-mgmt"
+      variant="secondary"
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> Manage sandbox
+          Sandbox controls
         </>
       }
       alignment={alignment}

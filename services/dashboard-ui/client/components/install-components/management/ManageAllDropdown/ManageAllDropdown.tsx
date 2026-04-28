@@ -15,10 +15,10 @@ export const ManageAllDropdown = ({ appId, appConfigId }: IManageAllDropdown) =>
   return (
     <Dropdown
       id="install-components-mgmt"
-      variant="ghost"
+      variant="secondary"
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> Manage
+          Component controls
         </>
       }
       alignment="right"

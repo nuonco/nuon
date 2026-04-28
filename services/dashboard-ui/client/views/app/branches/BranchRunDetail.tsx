@@ -360,7 +360,7 @@ export const BranchRunDetail = () => {
                   <div className="flex flex-wrap gap-2">
                     <AdminDashboardLink
                       path={`/workflows/${selectedStep.install_workflow_id}`}
-                      label="View in admin panel"
+                      label="Admin panel"
                     />
                   </div>
                 </div>
