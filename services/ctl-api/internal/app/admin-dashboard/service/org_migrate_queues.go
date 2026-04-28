@@ -11,12 +11,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	queuemigration "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/queue_migration"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 func (s *service) MigrateOrgQueues(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
+	ctx = cctx.SetOrgIDContext(ctx, orgID)
 
 	org, err := s.getOrg(ctx, orgID)
 	if err != nil {

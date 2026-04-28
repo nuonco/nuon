@@ -16,6 +16,10 @@ export const StepBanner = ({
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
   const stepStatus = step?.status?.status
+  const statusDescription = step?.status?.status_human_description?.replace(
+    /\s*\(type:\s*\w+,\s*retryable:\s*\w+\)\s*$/,
+    ''
+  )
   const isTerminal =
     stepStatus === 'error' ||
     stepStatus === 'cancelled' ||
@@ -35,6 +39,11 @@ export const StepBanner = ({
               <Text variant="subtext" theme="neutral">
                 {bannerCfg.copy}
               </Text>
+              {stepStatus === 'error' && statusDescription ? (
+                <Text variant="subtext" theme="error">
+                  {statusDescription}
+                </Text>
+              ) : null}
             </div>
 
             <div className="flex gap-4">

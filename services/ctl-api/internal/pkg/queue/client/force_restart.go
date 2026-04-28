@@ -12,7 +12,7 @@ import (
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-func (c *Client) Restart(ctx context.Context, queueID string) error {
+func (c *Client) ForceRestart(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
@@ -25,10 +25,10 @@ func (c *Client) Restart(ctx context.Context, queueID string) error {
 	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
 		UpdateOptions: tclient.UpdateWorkflowOptions{
 			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.RestartUpdateName,
+			UpdateName:   queue.ForceRestartUpdateName,
 			WaitForStage: tclient.WorkflowUpdateStageAccepted,
 			Args: []any{
-				queue.RestartRequest{},
+				queue.ForceRestartRequest{},
 			},
 		},
 		StartWorkflowOperation: c.queueStartOperation(q),
