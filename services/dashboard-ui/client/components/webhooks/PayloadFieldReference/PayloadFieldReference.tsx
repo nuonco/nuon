@@ -1,3 +1,4 @@
+import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 
 type FieldRow = {
@@ -6,6 +7,37 @@ type FieldRow = {
   presence: string
   description: React.ReactNode
 }
+
+const FIELD_COLUMNS = [
+  {
+    key: 'field' as const,
+    header: 'Field',
+    render: (value: FieldRow['field']) => (
+      <Text variant="subtext" family="mono">{value}</Text>
+    ),
+  },
+  {
+    key: 'type' as const,
+    header: 'Type',
+    render: (value: FieldRow['type']) => (
+      <Text variant="subtext" family="mono">{value}</Text>
+    ),
+  },
+  {
+    key: 'presence' as const,
+    header: 'Presence',
+    render: (value: FieldRow['presence']) => (
+      <Text variant="subtext">{value}</Text>
+    ),
+  },
+  {
+    key: 'description' as const,
+    header: 'Description',
+    render: (_value: FieldRow['description'], item: FieldRow) => (
+      <Text variant="subtext">{item.description}</Text>
+    ),
+  },
+]
 
 const ENVELOPE_FIELDS: FieldRow[] = [
   {
@@ -246,30 +278,7 @@ const CONTEXT_FIELDS: FieldRow[] = [
   },
 ]
 
-const FieldTable = ({ rows }: { rows: FieldRow[] }) => (
-  <div className="overflow-x-auto rounded-lg border">
-    <table className="min-w-full text-sm">
-      <thead>
-        <tr className="bg-cool-grey-100 dark:bg-dark-grey-700 text-left">
-          <th className="py-2 px-4 font-normal w-1/4">Field</th>
-          <th className="py-2 px-4 font-normal w-1/6">Type</th>
-          <th className="py-2 px-4 font-normal w-1/6">Presence</th>
-          <th className="py-2 px-4 font-normal">Description</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.field} className="border-t align-top">
-            <td className="py-2 px-4 font-mono text-xs">{row.field}</td>
-            <td className="py-2 px-4 font-mono text-xs">{row.type}</td>
-            <td className="py-2 px-4 text-xs">{row.presence}</td>
-            <td className="py-2 px-4">{row.description}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)
+const GRID_TEMPLATE = 'minmax(150px, 2fr) minmax(120px, 1.5fr) minmax(100px, 1fr) minmax(200px, 3fr)'
 
 export const PayloadFieldReference = () => (
   <div className="flex flex-col gap-6">
@@ -293,7 +302,12 @@ export const PayloadFieldReference = () => (
       <Text variant="body" weight="strong">
         CloudEvents envelope
       </Text>
-      <FieldTable rows={ENVELOPE_FIELDS} />
+      <PropertyGrid
+        className="rounded-md border p-4"
+        columns={FIELD_COLUMNS}
+        values={ENVELOPE_FIELDS}
+        gridTemplate={GRID_TEMPLATE}
+      />
     </div>
 
     <div className="flex flex-col gap-2">
@@ -303,7 +317,12 @@ export const PayloadFieldReference = () => (
       <Text variant="subtext" theme="neutral">
         Describes the operation, its stage, and the outcome.
       </Text>
-      <FieldTable rows={DATA_FIELDS} />
+      <PropertyGrid
+        className="rounded-md border p-4"
+        columns={FIELD_COLUMNS}
+        values={DATA_FIELDS}
+        gridTemplate={GRID_TEMPLATE}
+      />
     </div>
 
     <div className="flex flex-col gap-2">
@@ -314,7 +333,12 @@ export const PayloadFieldReference = () => (
         Resource ids the operation applies to. Only the ids relevant to the
         operation are included; the rest are omitted.
       </Text>
-      <FieldTable rows={CONTEXT_FIELDS} />
+      <PropertyGrid
+        className="rounded-md border p-4"
+        columns={FIELD_COLUMNS}
+        values={CONTEXT_FIELDS}
+        gridTemplate={GRID_TEMPLATE}
+      />
     </div>
   </div>
 )
