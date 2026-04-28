@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 func (s *service) ClearQueue(c *gin.Context) {
@@ -23,7 +24,12 @@ func (s *service) ClearQueue(c *gin.Context) {
 		return
 	}
 
-	if err := s.queueClient.ClearQueue(c.Request.Context(), q.ID); err != nil {
+	ctx := c.Request.Context()
+	if q.OrgID != nil {
+		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
+	}
+
+	if err := s.queueClient.ClearQueue(ctx, q.ID); err != nil {
 		s.l.Error("failed to clear queue", zap.Error(err), zap.String("queue_id", queueID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear queue"})
 		return

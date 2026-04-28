@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"time"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/badge"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/components/button"
@@ -43,6 +44,15 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 									Type:    button.TypeSubmit,
 								}) {
 									Restart Queue
+								}
+							</form>
+							<form method="POST" action={ templ.URL("/queues/" + q.ID + "/force-restart") } onsubmit="return confirm('Are you sure you want to FORCE restart this queue? This skips waiting for active workers to finish.');" style="display:inline;">
+								@button.Button(button.Props{
+									Variant: button.VariantDestructive,
+									Size:    button.SizeSm,
+									Type:    button.TypeSubmit,
+								}) {
+									Force Restart
 								}
 							</form>
 							<form method="POST" action={ templ.URL("/queues/" + q.ID + "/clear") } onsubmit="return confirm('Are you sure you want to cancel all in-flight signals in this queue?');" style="display:inline;">
@@ -189,6 +199,33 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 						@queueTimestamp("Stopped At", q.Metadata, "stopped_at")
 						@queueTimestamp("Idled At", q.Metadata, "idled_at")
 						@queueTimestamp("Finished At", q.Metadata, "finished_at")
+					</div>
+				}
+			}
+
+			<div class="mt-6"></div>
+
+			<!-- StatusV2 -->
+			@card.Card() {
+				@card.Header() {
+					@card.Title() {
+						Queue Status
+					}
+					@card.Description() {
+						Current status and history
+					}
+				}
+				@card.Content() {
+					<div class="space-y-3">
+						@queueStatusEntry(q.StatusV2, true)
+						if len(q.StatusV2.History) > 0 {
+							<div class="mt-4 pt-4 border-t border-border space-y-2">
+								<div class="text-xs text-muted-foreground uppercase font-medium">Status History</div>
+								for _, h := range q.StatusV2.History {
+									@queueStatusEntry(h, false)
+								}
+							</div>
+						}
 					</div>
 				}
 			}
@@ -356,6 +393,39 @@ templ queueTimestamp(label string, metadata map[string]*string, key string) {
 				}
 			} else {
 				<span class="text-muted-foreground">—</span>
+			}
+		</div>
+	</div>
+}
+
+templ queueStatusEntry(h app.CompositeStatus, isCurrent bool) {
+	<div class="flex items-start gap-3 text-xs border-b border-border pb-2 last:border-0">
+		<div class="shrink-0">
+			@signalStatusBadge(h)
+		</div>
+		<div class="flex-1 space-y-1">
+			<div class="text-foreground">
+				{ string(h.Status) }
+				if isCurrent {
+					<span class="text-cyan font-medium ml-1">(current)</span>
+				}
+				if h.StatusHumanDescription != "" {
+					<span class="text-muted-foreground"> — { h.StatusHumanDescription }</span>
+				}
+			</div>
+			if h.CreatedAtTS > 0 {
+				<div class="text-muted-foreground">
+					{ time.Unix(h.CreatedAtTS, 0).UTC().Format("2006-01-02 15:04:05 UTC") }
+				</div>
+			}
+			if len(h.Metadata) > 0 {
+				<div class="flex flex-wrap gap-x-4 gap-y-1">
+					for k, v := range h.Metadata {
+						<span class="text-muted-foreground">
+							<span class="text-foreground/60">{ k }:</span> { fmt.Sprintf("%v", v) }
+						</span>
+					}
+				</div>
 			}
 		</div>
 	</div>

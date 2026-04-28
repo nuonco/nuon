@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-func (s *service) RestartQueue(c *gin.Context) {
+func (s *service) ForceRestartQueue(c *gin.Context) {
 	queueID := c.Param("id")
 
 	var q app.Queue
@@ -29,9 +29,9 @@ func (s *service) RestartQueue(c *gin.Context) {
 		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
 	}
 
-	if err := s.queueClient.Restart(ctx, q.ID); err != nil {
-		s.l.Error("failed to restart queue", zap.Error(err), zap.String("queue_id", queueID))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restart queue"})
+	if err := s.queueClient.ForceRestart(ctx, q.ID); err != nil {
+		s.l.Error("failed to force restart queue", zap.Error(err), zap.String("queue_id", queueID))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to force restart queue"})
 		return
 	}
 

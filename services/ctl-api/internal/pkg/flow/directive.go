@@ -29,15 +29,7 @@ const (
 func StepHumanDescription(err error) string {
 	var appErr *temporal.ApplicationError
 	if stderrors.As(err, &appErr) && appErr.NonRetryable() {
-		root := err
-		for {
-			unwrapped := stderrors.Unwrap(root)
-			if unwrapped == nil {
-				break
-			}
-			root = unwrapped
-		}
-		return root.Error()
+		return appErr.Message()
 	}
 	return "Step failed"
 }

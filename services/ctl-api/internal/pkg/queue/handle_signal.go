@@ -15,6 +15,10 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
+// ErrSignalNoop is returned when a signal has already been processed (e.g. via direct-execute)
+// and the dispatcher encounters it again. Callers should check for this error and skip gracefully.
+var ErrSignalNoop = errors.New("queue signal already in terminal state")
+
 // longRunningActivityOptions is used for activities that call workflow update handlers
 // (validate, execute) which block until the signal finishes. These can run for
 // extended periods. Heartbeating ensures Temporal can detect dead workers and retry.
@@ -37,12 +41,12 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
-	// skip signals that were already processed (e.g. via force-execute)
+	// skip signals that were already processed (e.g. via direct-execute)
 	if generics.SliceContains(queueSignal.Status.Status, []app.Status{app.StatusSuccess, app.StatusError, app.StatusCancelled}) {
 		l.Info("queue signal already in terminal state, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("status", string(queueSignal.Status.Status)))
-		return nil
+		return ErrSignalNoop
 	}
 
 	if queueSignal.ExecutionCount > 0 {
