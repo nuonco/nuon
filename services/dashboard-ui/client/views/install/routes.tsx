@@ -11,7 +11,15 @@ import { Stacks } from './Stacks'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
-import { DeployDetail } from './DeployDetail'
+import { DeployDetailGate } from './DeployDetailGate'
+import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
+import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
+import { DeployVariablesTab } from './deploy-tabs/DeployVariablesTab'
+import { DeployStateTab } from './deploy-tabs/DeployStateTab'
+import { DeployValuesTab } from './deploy-tabs/DeployValuesTab'
+import { DeployOutputsTab } from './deploy-tabs/DeployOutputsTab'
+import { DeployManifestTab } from './deploy-tabs/DeployManifestTab'
+import { DeployArtifactTab } from './deploy-tabs/DeployArtifactTab'
 import { ActionDetail } from './ActionDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
@@ -71,7 +79,17 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
-        element: <DeployDetail />,
+        element: <DeployDetailGate />,
+        children: [
+          { index: true, element: <DeployLogsTab /> },
+          { path: 'plan', element: <DeployPlanTab /> },
+          { path: 'variables', element: <DeployVariablesTab /> },
+          { path: 'state', element: <DeployStateTab /> },
+          { path: 'values', element: <DeployValuesTab /> },
+          { path: 'outputs', element: <DeployOutputsTab /> },
+          { path: 'manifest', element: <DeployManifestTab /> },
+          { path: 'artifact', element: <DeployArtifactTab /> },
+        ],
       },
       {
         path: ':orgId/installs/:installId/actions/:actionId',
