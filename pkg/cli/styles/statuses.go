@@ -15,17 +15,55 @@ var (
 	TerminalBad    = lipgloss.NewStyle().Foreground(WarningColor)
 )
 
+// StatusStyleMap colors AppStatus values consistently with the dashboard
+// buckets in services/dashboard-ui/client/utils/status-utils.ts. Anything
+// missing falls through to TextDim via GetStatusStyle.
 var StatusStyleMap = map[models.AppStatus]lipgloss.Style{
-	models.AppStatusPending:                             Pending,
-	models.AppStatusNotDashAttempted:                    TextDefault,
-	models.AppStatusApproved:                            Approved,
-	models.AppStatusApprovalDashDenied:                  ApprovalDenied,
-	models.AppStatusCancelled:                           TerminalBad,
-	models.AppStatusError:                               lipgloss.NewStyle().Foreground(ErrorColor),
-	models.AppStatusAutoDashSkipped:                     lipgloss.NewStyle().Foreground(InfoColor),
-	models.AppStatusApprovalDashAwaiting:                TerminalBad,
+	// success bucket
 	models.AppStatusSuccess:                             TextSuccess,
+	models.AppStatusApproved:                            Approved,
+	models.AppStatusActive:                              TextSuccess,
+	models.AppStatusNoDashDrift:                         TextSuccess,
 	models.AppStatus(models.AppOperationStatusFinished): TextSuccess,
+
+	// error bucket
+	models.AppStatusError: TextError,
+
+	// warn bucket
+	models.AppStatusWarning:              TerminalBad,
+	models.AppStatusApprovalDashAwaiting: TerminalBad,
+	models.AppStatusApprovalDashDenied:   ApprovalDenied,
+	models.AppStatusApprovalDashExpired:  TerminalBad,
+	models.AppStatusApprovalDashRetry:    TerminalBad,
+	models.AppStatusCancelled:            TerminalBad,
+	models.AppStatusOutdated:             TerminalBad,
+	models.AppStatusDrifted:              TerminalBad,
+	models.AppStatusExpired:              TerminalBad,
+
+	// pending / neutral bucket
+	models.AppStatusPending: Pending,
+	models.AppStatusNoop:    Pending,
+
+	// in-progress bucket
+	models.AppStatusInDashProgress:          TextInfo,
+	models.AppStatusPlanning:                TextInfo,
+	models.AppStatusApplying:                TextInfo,
+	models.AppStatusProvisioning:            TextInfo,
+	models.AppStatusBuilding:                TextInfo,
+	models.AppStatusQueued:                  TextInfo,
+	models.AppStatusGenerating:              TextInfo,
+	models.AppStatusRetrying:                TextInfo,
+	models.AppStatusCheckingDashPlan:        TextInfo,
+	models.AppStatusAwaitingDashUserDashRun: TextInfo,
+	models.AppStatusDeleting:                TextInfo,
+
+	// skipped bucket
+	models.AppStatusAutoDashSkipped: TextInfo,
+	models.AppStatusUserDashSkipped: TextInfo,
+
+	// inert / brand bucket
+	models.AppStatusNotDashAttempted: TextDefault,
+	models.AppStatusDiscarded:        TextDim,
 }
 
 func GetStatusStyle(status models.AppStatus) lipgloss.Style {
