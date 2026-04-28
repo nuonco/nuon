@@ -11,11 +11,13 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
 
 2. In the Modal component, use `({ item, ...props }: IMyAction & IModal)` — keep `...props` as a rest; never destructure `modalId`, `isVisible`, or `onClose` from it.
 
-3. Use `useMutation` for the async action — never call API functions inside a click handler directly:
+3. Use `useMutation` for the async action — never call API functions inside a click handler directly. **Always invalidate related queries in `onSuccess`** so lists/views that display the affected resource refresh immediately:
    ```typescript
+   const queryClient = useQueryClient()
    const { mutate: execute, isPending } = useMutation({
      mutationFn: () => myApiCall({ itemId: item.id, orgId: org.id }),
      onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['relevant-list', org.id] })
        addToast(<Toast heading="Done" theme="success"><Text>Done.</Text></Toast>)
        removeModal(props.modalId)
      },
@@ -24,6 +26,7 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
      },
    })
    ```
+   Find the right `queryKey` by checking the `useQuery` call in the container of the component that displays the data you're mutating.
 
 4. Pass the action via `primaryActionTrigger` prop on `<Modal>`, not as a child button:
    ```typescript
