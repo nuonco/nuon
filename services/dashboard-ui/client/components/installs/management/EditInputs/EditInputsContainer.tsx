@@ -13,7 +13,9 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, updateInstall, updateInstallInputs } from '@/lib'
 import { ConfirmUpdateModal, EditInputsFormModal } from './EditInputs'
 
-interface IEditInputs {}
+interface IEditInputs {
+  showNameField?: boolean
+}
 
 export const ConfirmUpdateModalContainer = ({
   onConfirm,
@@ -45,7 +47,7 @@ export const ConfirmUpdateModalContainer = ({
   )
 }
 
-export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IModal, 'onSubmit'>) => {
+export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditInputs & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
@@ -56,6 +58,8 @@ export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IM
   const clearDraftRef = useRef<(() => void) | null>(null)
   const [selectedRole, setSelectedRole] = useState<string>('')
   const [deployDependents, setDeployDependents] = useState(true)
+  const [installName, setInstallName] = useState(install?.name ?? '')
+  const formDirty = useRef(false)
 
   const {
     data: config,
@@ -73,11 +77,43 @@ export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IM
     enabled: !!install?.app_id && !!install?.app_config_id,
   })
 
-  const { mutateAsync, isPending: isSubmitting, error: actionError } = useMutation({
+  const { mutate: updateNameOnly, isPending: isUpdatingName } = useMutation({
+    mutationFn: async () => {
+      await updateInstall({
+        body: { name: installName },
+        installId: install.id,
+        orgId: org.id,
+      })
+    },
+    onSuccess: () => {
+      addToast(
+        <Toast heading="Install renamed" theme="success">
+          <Text>Install renamed to {installName}.</Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['install'] })
+      removeModal(props.modalId)
+    },
+    onError: () => {
+      addToast(
+        <Toast heading="Update failed" theme="error">
+          <Text>Unable to update install.</Text>
+        </Toast>
+      )
+    },
+  })
+
+  const { mutateAsync, isPending: isUpdatingInputs, error: actionError } = useMutation({
     mutationFn: async (formData: FormData) => {
-      if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
+      const nameChanged = showNameField && installName !== (install?.name ?? '')
+      const needsManagedByUpdate = install?.metadata?.managed_by === 'nuon/cli/install-config'
+
+      if (nameChanged || needsManagedByUpdate) {
         await updateInstall({
-          body: { metadata: { managed_by: 'nuon/dashboard' } },
+          body: {
+            ...(nameChanged && { name: installName }),
+            ...(needsManagedByUpdate && { metadata: { managed_by: 'nuon/dashboard' } }),
+          },
           installId: install.id,
           orgId: org.id,
         })
@@ -110,30 +146,38 @@ export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IM
     },
     onSuccess: (result) => {
       addToast(
-        <Toast heading="Inputs updated" theme="success">
-          <Text>Install inputs updated successfully!</Text>
+        <Toast heading="Install updated" theme="success">
+          <Text>{install.name} has been updated.</Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['install'] })
       removeModal(props.modalId)
-      const workflowId = result.data.workflow_id
+      const workflowId = result?.data?.workflow_id
       if (workflowId) {
         navigate(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
       } else {
         navigate(`/${org.id}/installs/${install?.id}/workflows`)
       }
     },
-    onError: (error) => {
+    onError: () => {
       addToast(
         <Toast heading="Update failed" theme="error">
-          <Text>Unable to update install inputs.</Text>
+          <Text>Unable to update install.</Text>
         </Toast>
       )
     },
   })
 
+  const isSubmitting = isUpdatingName || isUpdatingInputs
+
   const handleFormSubmit = () => {
+    const nameChanged = showNameField && installName !== (install?.name ?? '')
+    if (!formDirty.current && !selectedRole && nameChanged) {
+      updateNameOnly()
+      return
+    }
     if (formRef.current) {
       formRef.current.requestSubmit()
     }
@@ -160,12 +204,22 @@ export const EditInputsFormModalContainer = ({ ...props }: IEditInputs & Omit<IM
       deployDependents={deployDependents}
       onDeployDependentsChange={setDeployDependents}
       onMutate={(formData) => mutateAsync(formData)}
+      onInputsChange={(e) => {
+        const target = e.target as HTMLInputElement
+        if (target.name?.startsWith('inputs:') || target.name?.startsWith('form-control:')) {
+          formDirty.current = true
+        }
+      }}
+      showNameField={showNameField}
+      installName={installName}
+      onInstallNameChange={setInstallName}
       {...props}
     />
   )
 }
 
 export const EditInputsButton = ({
+  showNameField,
   ...props
 }: IEditInputs & IButtonAsButton) => {
   const { install } = useInstall()
@@ -175,7 +229,7 @@ export const EditInputsButton = ({
     const confirmModal = (
       <ConfirmUpdateModalContainer
         onConfirm={() => {
-          const editModal = <EditInputsFormModalContainer />
+          const editModal = <EditInputsFormModalContainer showNameField={showNameField} />
           addModal(editModal)
         }}
         onCancel={() => {}}
@@ -185,7 +239,7 @@ export const EditInputsButton = ({
   }
 
   const showEditModal = () => {
-    const editModal = <EditInputsFormModalContainer />
+    const editModal = <EditInputsFormModalContainer showNameField={showNameField} />
     addModal(editModal)
   }
 
@@ -207,7 +261,7 @@ export const EditInputsButton = ({
       onClick={handleClick}
       {...props}
     >
-      Edit inputs
+      {showNameField ? 'Edit install' : 'Edit inputs'}
       <Icon variant="PencilSimpleLine" />
     </Button>
   )

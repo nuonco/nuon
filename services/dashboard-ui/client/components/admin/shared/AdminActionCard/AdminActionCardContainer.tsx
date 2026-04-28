@@ -51,13 +51,11 @@ export const AdminActionCardContainer = ({
 
   const handleClick = () => {
     if (requiresConfirmation) {
-      const modalId = `admin-confirm-${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
       const confirmationModal = (
         <AdminConfirmationModal
-          modalId={modalId}
           title={`Confirm: ${title}`}
           message={confirmationText || `Are you sure you want to ${title.toLowerCase()}?`}
-          onConfirm={() => execute()}
+          action={action}
           variant={variant}
           requiresInput={requiresInput}
           inputText={inputText}

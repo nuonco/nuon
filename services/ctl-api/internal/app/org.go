@@ -62,6 +62,7 @@ const (
 	OrgFeatureSupportRole             OrgFeature = "support-role"
 	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
 	OrgFeatureStepsWorkflows          OrgFeature = "steps-workflows"
+	OrgFeatureInstallRename           OrgFeature = "install-rename"
 )
 
 type Org struct {
@@ -173,6 +174,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		// Disabled by default
 		OrgFeatureInstallBreakGlass:  false,
 		OrgFeatureTerraformInstaller: false,
+		OrgFeatureInstallRename:      false,
 		OrgFeatureQueues:             true,
 		OrgFeatureSupportRole:        false,
 		OrgFeatureParallelRunnerJobs: true,
@@ -244,6 +246,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureQueues,
 		OrgFeatureSupportRole,
 		OrgFeatureParallelRunnerJobs,
+		OrgFeatureInstallRename,
 	}
 }
 
@@ -275,6 +278,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
 		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
+		OrgFeatureInstallRename:           "Allow renaming installs from the dashboard edit install modal",
 	}
 }
 
