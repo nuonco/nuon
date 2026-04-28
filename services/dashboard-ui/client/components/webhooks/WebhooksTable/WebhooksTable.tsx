@@ -22,7 +22,7 @@ export const WebhooksTable = ({
         header: 'URL',
         accessorKey: 'webhook_url',
         cell: (props) => (
-          <Code className="px-2 py-1 text-xs">
+          <Code variant="inline" className="!px-2 !py-1">
             {props.getValue<string>()}
           </Code>
         ),
