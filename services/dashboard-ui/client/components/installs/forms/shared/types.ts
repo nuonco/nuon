@@ -26,6 +26,7 @@ export interface IUpdateInstallForm {
   onRegisterClearDraft?: (clearFn: () => void) => void
   selectedRole?: string
   onRoleChange?: (role: string) => void
+  headerContent?: React.ReactNode
 }
 
 export interface IPlatformFields {

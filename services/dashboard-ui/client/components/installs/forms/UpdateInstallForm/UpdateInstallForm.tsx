@@ -60,6 +60,7 @@ export const UpdateInstallForm = forwardRef<
       onFormSubmit,
       selectedRole,
       onRoleChange,
+      headerContent,
       draftValues,
       formKey,
       clearDraft,
@@ -122,6 +123,8 @@ export const UpdateInstallForm = forwardRef<
               Modify the configuration for this install.
             </Text>
           </div>
+
+          {headerContent}
 
           {inputConfig && (
             <InputConfigFields
