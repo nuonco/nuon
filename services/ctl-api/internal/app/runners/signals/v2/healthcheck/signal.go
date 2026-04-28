@@ -162,13 +162,12 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 			)
 		}
 
-		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		// Update legacy runner.Status for observability (not used for control flow)
+		_ = activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
 			Status:            newStatus,
 			StatusDescription: fmt.Sprintf("status change %s -> %s in health check", runner.Status, newStatus),
-		}); err != nil {
-			return app.RunnerStatusUnknown, false, errors.Wrap(err, "unable to update runner status")
-		}
+		})
 		statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 			RunnerID:          s.RunnerID,
 			Status:            newStatus,

@@ -22,10 +22,12 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 	if err := workflow.Await(ctx, func() bool {
 		return h.ready
 	}); err != nil {
+		h.setFinished(app.StatusError, err.Error())
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
 	if h.sig == nil {
+		h.setFinished(app.StatusError, "signal was empty can not proceed")
 		return nil, errors.New("signal was empty can not proceed")
 	}
 
@@ -52,6 +54,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
+		h.setFinished(app.StatusError, blockedErr.Error())
 		return nil, blockedErr
 	}
 
@@ -63,10 +66,6 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
 	if err != nil {
-		defer func() {
-			h.finished = true
-		}()
-
 		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
@@ -78,21 +77,24 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 					"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
+			h.setFinished(app.StatusError, panicErr.Error())
 			return nil, panicErr
 		}
 
 		validateErr := &signal.SignalErrValidate{Err: err}
+		humanDesc := signal.HumanError(err)
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
-			StatusDescription: validateErr.Error(),
+			StatusDescription: humanDesc,
 			Metadata: map[string]any{
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
+		h.setFinished(app.StatusError, humanDesc)
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
-			validateErr.Error(),
+			humanDesc,
 			validateErr)
 	}
 

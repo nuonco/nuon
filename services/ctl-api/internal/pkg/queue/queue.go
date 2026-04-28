@@ -81,12 +81,13 @@ type queue struct {
 
 	releaseWindow *ReleaseWindow
 
-	ready       bool
-	stopped     bool
-	restarted   bool
-	paused      bool
-	maxDepth    int
-	maxInFlight int
+	ready          bool
+	stopped        bool
+	restarted      bool
+	forceRestarted bool
+	paused         bool
+	maxDepth       int
+	maxInFlight    int
 
 	// sem limits the number of concurrently processing signals to maxInFlight.
 	sem workflow.Semaphore

@@ -7,17 +7,25 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 var statusTimestampKeys = []string{
-	"ready_at",
-	"restarted_at",
 	"stopped_at",
-	"idled_at",
 	"finished_at",
 }
+
+const (
+	QueueStatusReady          = "ready"
+	QueueStatusRestartPending = "restart-pending"
+	QueueStatusRestarted      = "restarted"
+	QueueStatusForceRestarted = "force-restarted"
+	QueueStatusIdle           = "idle"
+	QueueStatusStopped        = "stopped"
+)
 
 var maxAliveTime time.Duration = time.Hour * 24 * 7
 
@@ -58,35 +66,44 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
-	if err := q.setStatusTimestamp(ctx, l, "ready_at"); err != nil {
-		l.Warn("unable to set ready_at metadata", zap.Error(err))
-	}
-
+	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true
 
 	if _, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
+		if q.forceRestarted {
+			return true
+		}
+
+		// all graceful and wait until active workers is empty, to prevent orphaning an handler.
 		return (q.restarted || q.stopped || q.isIdle(ctx)) && q.activeWorkers == 0
 	}); err != nil {
 		return false, err
 	}
 
-	if q.restarted {
-		if err := q.setStatusTimestamp(ctx, l, "restarted_at"); err != nil {
-			l.Warn("unable to set restarted_at metadata", zap.Error(err))
-		}
+	if q.forceRestarted {
+		q.setStatus(ctx, l, QueueStatusForceRestarted)
 		return false, nil
 	}
+
+	if q.restarted {
+		q.setStatus(ctx, l, QueueStatusRestarted)
+		return false, nil
+	}
+
+	// handle regular stop
 	if q.stopped {
 		if err := q.setStatusTimestamp(ctx, l, "stopped_at"); err != nil {
 			l.Warn("unable to set stopped_at metadata", zap.Error(err))
 		}
+
+		q.setStatus(ctx, l, QueueStatusStopped)
 		return true, nil
 	}
+
+	// handle idle functionality
 	if q.isIdle(ctx) && q.activeWorkers == 0 {
 		l.Info("queue is idle, terminating workflow")
-		if err := q.setStatusTimestamp(ctx, l, "idled_at"); err != nil {
-			l.Warn("unable to set idled_at metadata", zap.Error(err))
-		}
+		q.setStatus(ctx, l, QueueStatusIdle)
 		return true, nil
 	}
 
@@ -94,6 +111,16 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		l.Warn("unable to set finished_at metadata", zap.Error(err))
 	}
 	return false, nil
+}
+
+func (q *queue) setStatus(ctx workflow.Context, l *zap.Logger, status string) {
+	l.Info("setting queue status", zap.String("status", status))
+	if err := statusactivities.AwaitUpdateQueueStatusV2(ctx, statusactivities.UpdateQueueStatusV2Request{
+		QueueID: q.queueID,
+		Status:  app.Status(status),
+	}); err != nil {
+		l.Warn("unable to set queue status", zap.String("status", status), zap.Error(err))
+	}
 }
 
 func (q *queue) setStatusTimestamp(ctx workflow.Context, l *zap.Logger, key string) error {
