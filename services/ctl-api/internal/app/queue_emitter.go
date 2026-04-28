@@ -61,6 +61,12 @@ type QueueEmitter struct {
 	// For scheduled mode: whether the signal has been fired
 	Fired bool `json:"fired,omitzero" gorm:"default:false" temporaljson:"fired,omitzero,omitempty"`
 
+	// For cron mode: spread emitter ticks deterministically across this window
+	// to avoid thundering-herd when many emitters share a schedule. A hash of the
+	// emitter ID determines each emitter's static offset within the window. Zero
+	// disables jitter (default).
+	JitterWindow time.Duration `json:"jitter_window,omitzero" gorm:"default null" swaggertype:"primitive,integer" temporaljson:"jitter_window,omitzero,omitempty"`
+
 	// Signal template - the signal to emit on each tick
 	SignalType     signal.SignalType   `json:"signal_type,omitzero" gorm:"type:text;not null" temporaljson:"signal_type,omitzero,omitempty"`
 	SignalTemplate signaldb.SignalData `json:"signal_template,omitzero" temporaljson:"-"`
