@@ -90,7 +90,12 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
-		workspace.WithControlCache(true),
+		// Auto-detect the build-time provider mirror inside the unpacked
+		// OCI artifact. When the build runner shipped one (gated by an
+		// org feature flag server-side), this swaps in a .terraformrc
+		// pointing at it; otherwise it's a no-op and terraform init
+		// fetches providers from registry.terraform.io as before.
+		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(archDir)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
@@ -174,7 +179,8 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
-		workspace.WithControlCache(true),
+		// See getWorkspace for an explanation of the filesystem mirror.
+		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(archDir)),
 		workspace.WithPlanBytes(planBytes),
 	)
 	if err != nil {

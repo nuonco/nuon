@@ -80,6 +80,9 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 		workspace.WithBinary(bin),
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
+		// Empty path = no-op; only enables the mirror if the build runner
+		// actually shipped one inside the OCI artifact.
+		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
@@ -153,6 +156,8 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
 		workspace.WithPlanBytes(planBytes),
+		// See GetWorkspace for an explanation of the filesystem mirror.
+		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)

@@ -14,8 +14,15 @@ import (
 
 const (
 	dotTerraformPrefix string = ".terraform/"
-	terraformLockFile  string = ".terraform.lock.hcl"
-	terraformStateFile string = "terraform.tfstate"
+	// terraformModulesPrefix is the subtree under .terraform/ that holds
+	// vendored remote modules. We let it pass through the
+	// IgnoreDotTerraformDir filter so build runners can ship modules
+	// inside the OCI artifact (via `terraform get`) and install runners
+	// pick them up at unpack time, avoiding a network fetch during
+	// `terraform init`.
+	terraformModulesPrefix string = ".terraform/modules/"
+	terraformLockFile      string = ".terraform.lock.hcl"
+	terraformStateFile     string = "terraform.tfstate"
 )
 
 func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
@@ -34,7 +41,9 @@ func (d *dir) Unpack(ctx context.Context, cb archive.Callback) error {
 		}
 
 		relPath := strings.TrimPrefix(path, d.Path+"/")
-		if d.IgnoreDotTerraformDir && strings.HasPrefix(relPath, dotTerraformPrefix) {
+		if d.IgnoreDotTerraformDir &&
+			strings.HasPrefix(relPath, dotTerraformPrefix) &&
+			!strings.HasPrefix(relPath, terraformModulesPrefix) {
 			return nil
 		}
 		if d.IgnoreTerraformLockFile && relPath == terraformLockFile {
