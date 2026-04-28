@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	tclient "go.temporal.io/sdk/client"
 
@@ -35,6 +37,14 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	suffix := make([]byte, 3)
 	_, _ = rand.Read(suffix)
 
+	status := app.NewCompositeStatus(ctx, app.StatusQueued)
+	if t, ok := req.Signal.(signal.SignalWithTimeout); ok {
+		if status.Metadata == nil {
+			status.Metadata = make(map[string]any)
+		}
+		status.Metadata["timeout_ns"] = t.Timeout().Nanoseconds()
+	}
+
 	queueSignal := app.QueueSignal{
 		Signal: signaldb.SignalData{
 			Signal: req.Signal,
@@ -43,7 +53,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		Type:      req.Signal.Type(),
 		OwnerID:   req.OwnerID,
 		OwnerType: req.OwnerType,
-		Status:    app.NewCompositeStatus(ctx, app.StatusQueued),
+		Status:    status,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
@@ -54,25 +64,44 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		return nil, errors.Wrap(res.Error, "unable to create queue signal")
 	}
 
-	// Send the enqueue update to the queue workflow. We only wait for the
-	// "accepted" stage so the caller gets the signal ID back immediately.
-	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
-		UpdateOptions: tclient.UpdateWorkflowOptions{
-			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.EnqueueUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args: []any{
-				queue.EnqueueHandlerInput{
-					QueueSignalID: queueSignal.ID,
-					WorkflowID:    queueSignal.Workflow.ID,
+	// Fire off the UpdateWithStart call in a background goroutine so the caller
+	// gets the signal ID back immediately without waiting for the queue workflow.
+	enqueueStartedAt := time.Now().UTC().Format(time.RFC3339)
+	startOp := c.queueStartOperation(q)
+	namespace := q.Workflow.Namespace
+	workflowID := q.Workflow.ID
+	signalID := queueSignal.ID
+	handlerWorkflowID := queueSignal.Workflow.ID
+
+	go func() {
+		bgCtx := context.Background()
+		_, err := c.tClient.UpdateWithStartWorkflowInNamespace(bgCtx, namespace, tclient.UpdateWithStartWorkflowOptions{
+			UpdateOptions: tclient.UpdateWorkflowOptions{
+				WorkflowID:   workflowID,
+				UpdateName:   queue.EnqueueUpdateName,
+				WaitForStage: tclient.WorkflowUpdateStageAccepted,
+				Args: []any{
+					queue.EnqueueHandlerInput{
+						QueueSignalID: signalID,
+						WorkflowID:    handlerWorkflowID,
+					},
 				},
 			},
-		},
-		StartWorkflowOperation: c.queueStartOperation(q),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to call enqueue handler")
-	}
+			StartWorkflowOperation: startOp,
+		})
+
+		metadata := map[string]any{
+			"enqueue_started_at":  enqueueStartedAt,
+			"enqueue_finished_at": time.Now().UTC().Format(time.RFC3339),
+		}
+		if err != nil {
+			metadata["enqueue_error"] = err.Error()
+			c.l.Warn("background enqueue failed",
+				zap.String("queue-signal-id", signalID),
+				zap.Error(err))
+		}
+		c.updateQueueSignalMetadata(signalID, metadata)
+	}()
 
 	return &queue.EnqueueResponse{
 		ID:         queueSignal.ID,

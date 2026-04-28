@@ -80,6 +80,9 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 
 			<!-- Timeline -->
 			{{ enqueuedAt := signal.CreatedAt.Format("2006-01-02 15:04:05 MST") }}
+			{{ enqueueStartedAt := getMetadataString(signal.Status, "enqueue_started_at") }}
+			{{ enqueueFinishedAt := getMetadataString(signal.Status, "enqueue_finished_at") }}
+			{{ enqueueError := getMetadataString(signal.Status, "enqueue_error") }}
 			{{ dequeuedAt := getMetadataString(signal.Status, "dequeued_at") }}
 			{{ executeStartedAt := getMetadataString(signal.Status, "execute_started_at") }}
 			{{ executeFinishedAt := getMetadataString(signal.Status, "execute_finished_at") }}
@@ -93,13 +96,24 @@ templ QueueSignalDetail(signal *app.QueueSignal, q *app.Queue, temporalUIURL str
 					@card.Content() {
 						<div class="flex items-start">
 							@timelineStep("Enqueued", enqueuedAt, true)
-							@timelineConnector(computeQueueWait(signal))
+							@timelineConnector(computeEnqueueDuration(signal))
+							if enqueueError != "" {
+								@timelineStep("Enqueue failed", enqueueError, false)
+							} else {
+								@timelineStep("Enqueue finished", enqueueFinishedAt, enqueueFinishedAt != "")
+							}
+							@timelineConnector(computeEnqueueToDequeue(signal))
 							@timelineStep("Dequeued", dequeuedAt, dequeuedAt != "")
 							@timelineConnector(computeDequeuedToExecute(signal))
 							@timelineStep("Execute started", executeStartedAt, executeStartedAt != "")
 							@timelineConnector(computeDuration(signal))
 							@timelineStep("Execute finished", executeFinishedAt, executeFinishedAt != "")
 						</div>
+						if enqueueStartedAt == "" && enqueueFinishedAt == "" {
+							<div class="mt-3 text-xs text-muted-foreground">
+								Enqueue timing metadata not available (signal created before tracking was added).
+							</div>
+						}
 					}
 				}
 			</div>
@@ -498,6 +512,40 @@ func computeDequeuedToExecute(signal *app.QueueSignal) string {
 		return ""
 	}
 	return formatDuration(start.Sub(dequeued))
+}
+
+func computeEnqueueDuration(signal *app.QueueSignal) string {
+	startStr := getMetadataString(signal.Status, "enqueue_started_at")
+	endStr := getMetadataString(signal.Status, "enqueue_finished_at")
+	if startStr == "" || endStr == "" {
+		return ""
+	}
+	start, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return ""
+	}
+	end, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		return ""
+	}
+	return formatDuration(end.Sub(start))
+}
+
+func computeEnqueueToDequeue(signal *app.QueueSignal) string {
+	enqueueFinishedStr := getMetadataString(signal.Status, "enqueue_finished_at")
+	dequeuedStr := getMetadataString(signal.Status, "dequeued_at")
+	if enqueueFinishedStr == "" || dequeuedStr == "" {
+		return ""
+	}
+	enqueueFinished, err := time.Parse(time.RFC3339, enqueueFinishedStr)
+	if err != nil {
+		return ""
+	}
+	dequeued, err := time.Parse(time.RFC3339, dequeuedStr)
+	if err != nil {
+		return ""
+	}
+	return formatDuration(dequeued.Sub(enqueueFinished))
 }
 
 func computeQueueWait(signal *app.QueueSignal) string {

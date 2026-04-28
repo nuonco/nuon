@@ -87,6 +87,9 @@ templ QueueDetail(q *app.Queue, status *queue.StatusResponse, signals []app.Queu
 					</div>
 					<!-- Status badges -->
 					<div class="flex gap-2">
+						if string(q.StatusV2.Status) != "" {
+							@signalStatusBadge(q.StatusV2)
+						}
 						if status != nil {
 							if status.Ready {
 								@badge.Badge(badge.Props{Variant: badge.VariantDefault}) {
