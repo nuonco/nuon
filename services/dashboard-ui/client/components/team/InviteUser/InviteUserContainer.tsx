@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -13,6 +13,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
 
   const hasSupportRole = !!org?.features?.['support-role']
 
@@ -23,6 +24,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
         orgId: org.id,
       }),
     onSuccess: (_data, { email }) => {
+      queryClient.invalidateQueries({ queryKey: ['org-invites', org?.id] })
       addToast(
         <Toast heading="Invitation sent" theme="success">
           <Text>An invitation has been sent to {email}.</Text>

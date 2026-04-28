@@ -1,2 +1,1 @@
-export { TemporalLinkContainer as TemporalLink } from './TemporalLinkContainer'
-export { TemporalLink as TemporalLinkComponent } from './TemporalLink'
+export { TemporalLink } from './TemporalLink'
