@@ -281,6 +281,7 @@ const { data: runner, isLoading, error } = useQuery({
 
 **Mutations (`useMutation`)**:
 ```typescript
+const queryClient = useQueryClient()
 const { mutate: cancel, isPending } = useMutation({
   mutationFn: ({ workflowId }: { workflowId: string }) =>
     cancelWorkflow({ workflowId, orgId }),
@@ -293,6 +294,8 @@ const { mutate: cancel, isPending } = useMutation({
   },
 })
 ```
+
+**Always invalidate related queries on mutation success.** When a mutation creates, updates, or deletes a resource, call `queryClient.invalidateQueries()` in `onSuccess` to refresh any lists or detail views that display that resource. Find the relevant `queryKey` by checking the `useQuery` call in the affected component's container.
 
 ### Custom Hooks
 
