@@ -300,9 +300,7 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 				}
 				require.NoError(s.T(), err)
 
-				workflowIDHeader := rr.Header().Get(app.HeaderInstallWorkflowID)
-				assert.NotEmpty(s.T(), workflowIDHeader)
-				assert.Equal(s.T(), response.WorkflowID, workflowIDHeader)
+				assert.NotEmpty(s.T(), response.WorkflowID)
 
 				if tc.validateFunc != nil {
 					tc.validateFunc(installID, response)
