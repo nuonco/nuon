@@ -86,7 +86,7 @@ export function TableBase<TData extends object>({
           ) : null}
           {filterActions ? (
             <div
-              className={`flex gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : 'w-full md:w-fit'}`}
+              className={`flex flex-wrap gap-4 md:gap-6 ${!enableSearch ? 'w-full justify-end' : 'w-full md:w-fit'}`}
             >
               {filterActions}
             </div>
@@ -96,7 +96,7 @@ export function TableBase<TData extends object>({
       <div
         className={`overflow-x-auto rounded-lg border ${className}`}
       >
-        <table className="min-w-full md:w-full md:min-w-0 text-sm">
+        <table className="w-full min-w-[800px] text-sm">
           <thead className="rounded-lg">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
