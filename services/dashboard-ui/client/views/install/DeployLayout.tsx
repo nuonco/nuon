@@ -1,40 +1,70 @@
-import { useParams } from 'react-router'
+import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
-import { Plan } from '@/components/approvals/Plan'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
-import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { TabNav } from '@/components/navigation/TabNav'
 import { DeployProvider } from '@/providers/deploy-provider'
-import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { useDeploy } from '@/hooks/use-deploy'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import { getComponent, getWorkflow } from '@/lib'
+import type { TComponentType } from '@/types'
+import type { TNavLink } from '@/types'
 
-export const DeployDetail = () => {
-  const { componentId, deployId, installId } = useParams()
+function getTabsForComponentType(type?: TComponentType): TNavLink[] {
+  const tabs: TNavLink[] = [{ path: '/', text: 'Logs' }]
 
-  return (
-    <DeployProvider deployId={deployId!} installId={installId!} shouldPoll>
-      <DeployDetailContent componentId={componentId!} />
-    </DeployProvider>
-  )
+  switch (type) {
+    case 'terraform_module':
+      tabs.push(
+        { path: '/plan', text: 'Plan' },
+        { path: '/variables', text: 'Variables' },
+        { path: '/state', text: 'State' },
+      )
+      break
+    case 'pulumi':
+      tabs.push(
+        { path: '/plan', text: 'Plan' },
+        { path: '/state', text: 'State' },
+      )
+      break
+    case 'helm_chart':
+      tabs.push(
+        { path: '/plan', text: 'Plan' },
+        { path: '/values', text: 'Values' },
+        { path: '/outputs', text: 'Outputs' },
+      )
+      break
+    case 'kubernetes_manifest':
+      tabs.push(
+        { path: '/plan', text: 'Plan' },
+        { path: '/manifest', text: 'Manifest' },
+        { path: '/outputs', text: 'Outputs' },
+      )
+      break
+    case 'docker_build':
+    case 'external_image':
+    case 'job':
+      tabs.push({ path: '/artifact', text: 'Artifact' })
+      break
+  }
+
+  return tabs
 }
 
-const DeployDetailContent = ({ componentId }: { componentId: string }) => {
+const DeployLayoutInner = () => {
+  const { componentId, deployId, installId } = useParams()
   const { deploy } = useDeploy()
   const { install } = useInstall()
   const { org } = useOrg()
 
   const { data: component } = useQuery({
     queryKey: ['component', org?.id, componentId],
-    queryFn: () => getComponent({ orgId: org.id, componentId }),
+    queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!componentId,
   })
 
@@ -54,7 +84,6 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
     )
     ?.at(-1) ?? null
   const responded = step ? hasResponded(step.id) : false
-  const logStream = deploy?.log_stream
   const stepStatus = step?.status?.status
   const isTerminal = stepStatus === 'error' || stepStatus === 'cancelled' || stepStatus === 'discarded'
   const isAutoApprove =
@@ -62,9 +91,14 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
     step?.approval?.response?.type === 'auto-approve'
   const pendingApproval =
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
-  const completedApproval =
-    step?.approval && (!!step?.approval?.response || responded) && !isTerminal && stepStatus !== 'auto-skipped'
-  const showPlanBelow = completedApproval || isAutoApprove
+
+  const basePath = `/${org?.id}/installs/${installId}/components/${componentId}/deploys/${deployId}`
+  const tabs = getTabsForComponentType(component?.type)
+
+  if (pendingApproval && !isAutoApprove) {
+    const planTab = tabs.find((t) => t.path === '/plan')
+    if (planTab) planTab.badge = true
+  }
 
   return (
     <PageSection>
@@ -80,7 +114,7 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
             text: deploy?.component_name,
           },
           {
-            path: `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${deploy?.id}`,
+            path: basePath,
             text: 'Deploy',
           },
         ]}
@@ -89,30 +123,21 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
 
       {pendingApproval && !isAutoApprove ? (
-        <div className="flex flex-col gap-4">
-          <ApprovalBanner step={step} />
-          <Plan step={step} />
-        </div>
+        <ApprovalBanner step={step} />
       ) : null}
 
-      {logStream ? (
-        <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-          <UnifiedLogsProvider>
-            <LogViewerProvider>
-              <SSELogs />
-            </LogViewerProvider>
-          </UnifiedLogsProvider>
-        </LogStreamProvider>
-      ) : (
-        <LogsSkeleton />
-      )}
-
-      {showPlanBelow && step ? (
-        <div className="flex flex-col gap-4">
-          {!isAutoApprove && <ApprovalBanner step={step} />}
-          <Plan step={step} />
-        </div>
-      ) : null}
+      <TabNav basePath={basePath} tabs={tabs} />
+      <Outlet context={{ component, workflow, step }} />
     </PageSection>
+  )
+}
+
+export const DeployLayout = () => {
+  const { deployId, installId } = useParams()
+
+  return (
+    <DeployProvider deployId={deployId!} installId={installId!} shouldPoll>
+      <DeployLayoutInner />
+    </DeployProvider>
   )
 }

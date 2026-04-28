@@ -375,6 +375,18 @@ npm run tsc            # Full type check — only run when explicitly asked (slo
 
 **Do NOT run** `build`, `build:js`, or `build:css` unless explicitly asked — a dev process handles builds automatically.
 
+## Org Feature Flags
+
+Feature flags are **already on the org object** — access via `useOrg()`. Do NOT create a separate API function or hook to fetch them.
+
+```typescript
+const { org } = useOrg()
+
+if (org?.features?.['my-feature']) {
+  // enabled
+}
+```
+
 ## Constraints
 
 - **Never modify backend code** (`services/ctl-api`). Document any needed API changes instead.
