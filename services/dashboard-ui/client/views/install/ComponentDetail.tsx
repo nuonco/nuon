@@ -108,7 +108,7 @@ export const InstallComponentDetail = () => {
             {component?.id ? <ID>{component.id}</ID> : null}
             <AdminDashboardLink
               path={`/queues?owner_id=${installComponent?.id}`}
-              label="View in admin panel"
+              label="Admin panel"
             />
           </HeadingGroup>
 

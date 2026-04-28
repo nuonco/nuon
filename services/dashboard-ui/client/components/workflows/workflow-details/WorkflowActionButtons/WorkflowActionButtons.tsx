@@ -27,7 +27,7 @@ export const WorkflowActionButtons = ({
       {workflow?.id && (
         <AdminDashboardLink
           path={`/workflows/${workflow.id}`}
-          label="View in admin panel"
+          label="Admin panel"
         />
       )}
     </div>

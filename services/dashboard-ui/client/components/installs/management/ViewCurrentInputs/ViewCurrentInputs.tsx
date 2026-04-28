@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -48,12 +48,14 @@ interface IViewCurrentInputsModal extends IModal {
   isLoading: boolean
   redactedValues: Record<string, any>
   inputGroups: TInputGroup[]
+  footerActions?: React.ReactNode
 }
 
 export const ViewCurrentInputsModal = ({
   isLoading,
   redactedValues,
   inputGroups,
+  footerActions,
   ...props
 }: IViewCurrentInputsModal) => {
   const [search, setSearch] = useState('')
@@ -194,6 +196,7 @@ export const ViewCurrentInputsModal = ({
         </Text>
       }
       size="xl"
+      footerActions={footerActions}
       actions={
         !isLoading && (hasConfig || hasInputs) ? (
           <div className="flex items-center gap-2">
@@ -205,10 +208,8 @@ export const ViewCurrentInputsModal = ({
             {hasConfig ? (
               <Dropdown
                 alignment="right"
-                className="!p-2"
                 closeOnBlur={false}
                 id="inputs-filter"
-                buttonClassName="!p-1"
                 buttonText={
                   <>
                     <Icon variant="FunnelIcon" size="14" />
