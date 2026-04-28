@@ -21,7 +21,6 @@ type ExecuteResponse struct{}
 
 func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error) {
 	defer func() {
-		h.finished = true
 		h.executingCtx = nil
 		h.executingCancel = nil
 	}()
@@ -32,6 +31,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 	})
 
 	if h.canceled {
+		h.setFinished(app.StatusCancelled, "signal was canceled")
 		return nil, errors.New("signal was canceled")
 	}
 
@@ -46,6 +46,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
 		})
+		h.setFinished(app.StatusError, blockedErr.Error())
 		return nil, blockedErr
 	}
 
@@ -81,26 +82,30 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 					"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
+			h.setFinished(app.StatusError, panicErr.Error())
 			return nil, panicErr
 		}
 
 		if h.canceled {
 			// canceled mid-execute — cancelHandler already wrote StatusCancelled
+			h.setFinished(app.StatusCancelled, "signal was canceled during execution")
 			return nil, errors.Wrap(err, "signal was canceled during execution")
 		}
 
 		execErr := &signal.SignalErrExecute{Err: err}
+		humanDesc := signal.HumanError(err)
 		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
-			StatusDescription: execErr.Error(),
+			StatusDescription: humanDesc,
 			Metadata: map[string]any{
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
+		h.setFinished(app.StatusError, humanDesc)
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
-			execErr.Error(),
+			humanDesc,
 			execErr)
 	}
 
@@ -113,6 +118,7 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 		},
 	})
 
+	h.setFinished(app.StatusSuccess, "")
 	return nil, nil
 }
 

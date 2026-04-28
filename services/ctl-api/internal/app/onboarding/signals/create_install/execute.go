@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -16,7 +17,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := s.executeCreateInstall(ctx, logger); err != nil {
 		logger.Error("create install failed", "error", err)
 
-		errMsg := err.Error()
+		errMsg := signal.HumanError(err)
 		stepStatus := string(app.OnboardingStepStatusError)
 		_, updateErr := activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
 			Req: &activities.UpdateOnboardingInput{
