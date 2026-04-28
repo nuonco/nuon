@@ -61,7 +61,7 @@ export const InstallActionsTableContainer = ({
         install?.id ?? ''
       )}
       filterActions={
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <LabelFilterDropdown
             queryKey={['action-label-keys', org.id, install?.app_id]}
             queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
