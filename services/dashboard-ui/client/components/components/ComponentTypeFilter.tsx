@@ -184,10 +184,8 @@ export const ComponentTypeFilterDropdown: React.FC<
   ) : (
     <Dropdown
       alignment="right"
-      className="!p-2"
       closeOnBlur={false}
       id="logs-filter"
-      buttonClassName="!p-1"
       buttonText={
         <>
           <Icon variant="FunnelIcon" size="14" /> Filter ({selectedTypes.length}

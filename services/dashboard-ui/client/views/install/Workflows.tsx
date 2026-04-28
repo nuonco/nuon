@@ -5,6 +5,7 @@ import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
 import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScanContainer as ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
@@ -64,17 +65,18 @@ export const Workflows = () => {
         install={install}
       />
 
-      <div className="flex items-center gap-4 justify-between">
+      <div className="flex items-start justify-between gap-4">
         <HeadingGroup>
           <Text variant="base" weight="strong">
             Workflow history
           </Text>
-          <Text theme="neutral">
+          <Text variant="subtext" theme="neutral">
             View past and active workflows for this install.
           </Text>
         </HeadingGroup>
 
-        <div className="flex items-center gap-4">
+        <div className="shrink-0 flex items-center gap-4">
+          <AutoApproveToggle />
           <ShowDriftScan />
           <WorkflowTypeFilter />
         </div>
