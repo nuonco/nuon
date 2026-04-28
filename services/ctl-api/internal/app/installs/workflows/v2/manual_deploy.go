@@ -119,6 +119,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		sg.nextGroup() // component sync + plan + apply
 		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
 			ComponentID:        comp.ID,
 			FlowID:             "",
@@ -130,6 +131,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 		applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
