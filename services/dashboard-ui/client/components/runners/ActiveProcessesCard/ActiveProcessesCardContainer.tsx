@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import { getRunnerProcesses, getProcessLatestHeartbeat } from '@/lib'
 import type { TRunnerProcess } from '@/types'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 
 interface IActiveProcessesCardContainer extends Omit<ICard, 'children'> {
   shouldPoll?: boolean
@@ -95,7 +95,7 @@ function ProcessHeartbeatInfo({
         <LabeledValue label="Heartbeat">
           <Text variant="subtext">
             {heartbeat?.created_at ? (
-              isLessThan15SecondsOld(heartbeat.created_at) ? (
+              isRecentTimestamp(heartbeat.created_at) ? (
                 <Badge theme="success">connected</Badge>
               ) : (
                 <Time variant="subtext" time={heartbeat.created_at} />

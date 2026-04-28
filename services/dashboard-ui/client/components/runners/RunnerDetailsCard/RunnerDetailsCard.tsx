@@ -6,7 +6,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TRunner, TRunnerGroup, TRunnerMngHeartbeat } from '@/types'
-import { isLessThan30SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 
 type TRunnerHeartbeatEntry = TRunnerMngHeartbeat[keyof TRunnerMngHeartbeat]
 
@@ -43,7 +43,7 @@ export const RunnerDetailsCard = ({
         <LabeledValue label="Connectivity">
           <Status
             status={
-              isLessThan30SecondsOld(heartbeat?.created_at)
+              isRecentTimestamp(heartbeat?.created_at)
                 ? 'connected'
                 : 'not-connected'
             }

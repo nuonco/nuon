@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TRunnerProcess, TRunnerHeartbeat } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 
 function getStatusTheme(status: string) {
   switch (status) {
@@ -76,7 +76,7 @@ function ProcessHeartbeatInfo({
         <LabeledValue label="Heartbeat">
           <Text variant="subtext">
             {heartbeat?.created_at ? (
-              isLessThan15SecondsOld(heartbeat.created_at) ? (
+              isRecentTimestamp(heartbeat.created_at) ? (
                 <Badge theme="success">connected</Badge>
               ) : (
                 <Time variant="subtext" time={heartbeat.created_at} />
