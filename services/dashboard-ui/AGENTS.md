@@ -281,6 +281,7 @@ const { data: runner, isLoading, error } = useQuery({
 
 **Mutations (`useMutation`)**:
 ```typescript
+const queryClient = useQueryClient()
 const { mutate: cancel, isPending } = useMutation({
   mutationFn: ({ workflowId }: { workflowId: string }) =>
     cancelWorkflow({ workflowId, orgId }),
@@ -293,6 +294,8 @@ const { mutate: cancel, isPending } = useMutation({
   },
 })
 ```
+
+**Always invalidate related queries on mutation success.** When a mutation creates, updates, or deletes a resource, call `queryClient.invalidateQueries()` in `onSuccess` to refresh any lists or detail views that display that resource. Find the relevant `queryKey` by checking the `useQuery` call in the affected component's container.
 
 ### Custom Hooks
 
@@ -376,6 +379,28 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 ```
 
 Browse Phosphor icons at https://phosphoricons.com. The variant name is the Phosphor export name (e.g., `MagnifyingGlass` → `MagnifyingGlassIcon`). Custom icons for cloud providers and tools are also available — see the `customIcons` map in `Icon.tsx`.
+
+### Admin Tool Links
+
+**Never create ad-hoc links to admin tooling (admin dashboard, Temporal UI).** Always use the dedicated components in `client/components/admin/`. These components handle auth checks and demo mode internally — they render nothing for non-admin users, so consumers don't need any conditional logic.
+
+**`AdminDashboardLink`** — links to the admin dashboard. Just pass `path` and `label`:
+```tsx
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
+
+<AdminDashboardLink path={`/queues?owner_id=${installId}`} label="View queues" />
+<AdminDashboardLink path={`/workflows/${workflowId}`} label="View in admin panel" />
+```
+
+**`TemporalLink`** — links to the Temporal UI. Pass `namespace` + `eventLoopId`, or an explicit `href`:
+```tsx
+import { TemporalLink } from '@/components/admin/TemporalLink'
+
+<TemporalLink namespace="installs" eventLoopId={installId} />
+<TemporalLink namespace="" href={step.links.event_loop_ui} />
+```
+
+Both render as small `text-xs` links with an external icon. Do not use `<Button>`, `<Link>`, or inline markup to link to admin tools — always use these components.
 
 ### `Tabs` Component — Key Casing
 

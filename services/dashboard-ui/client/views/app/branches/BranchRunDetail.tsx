@@ -5,11 +5,11 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Badge } from '@/components/common/Badge'
 import { Time } from '@/components/common/Time'
-import { Icon } from '@/components/common/Icon'
 import { Card } from '@/components/common/Card'
 import { Loading } from '@/components/common/Loading'
 import { Button } from '@/components/common/Button'
-import { Link } from '@/components/common/Link'
+import { Icon } from '@/components/common/Icon'
+import { TemporalLink } from '@/components/admin/TemporalLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -352,21 +352,16 @@ export const BranchRunDetail = () => {
                 )}
               </div>
 
-              {selectedStep.links && (
+              {selectedStep.links?.event_loop_ui && (
                 <div>
                   <Text variant="label" theme="neutral" className="mb-2">
-                    Quick Links
+                    Quick links
                   </Text>
                   <div className="flex flex-wrap gap-2">
-                    {selectedStep.links.event_loop_ui && (
-                      <Link
-                        href={selectedStep.links.event_loop_ui as string}
-                        isExternal
-                      >
-                        <Icon variant="ArrowSquareOut" size={16} />
-                        <Text variant="label">View in Temporal</Text>
-                      </Link>
-                    )}
+                    <TemporalLink
+                      href={selectedStep.links.event_loop_ui as string}
+                      namespace=""
+                    />
                   </div>
                 </div>
               )}
