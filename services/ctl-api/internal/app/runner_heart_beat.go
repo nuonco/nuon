@@ -75,5 +75,5 @@ func (r *LatestRunnerHeartBeat) AfterQuery(tx *gorm.DB) error {
 }
 
 func (*LatestRunnerHeartBeat) TableName() string {
-	return "latest_runner_heart_beats"
+	return "latest_runner_heart_beats_mv_v2"
 }
