@@ -37,7 +37,7 @@ func init() {
 
 func generateRunnerSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
+		"run", "github.com/swaggo/swag/cmd/swag",
 		"init",
 		"--instanceName", "runner",
 		"--output", "docs/runner",
@@ -67,7 +67,7 @@ func generateRunnerSchema(ctx context.Context) error {
 
 func generateAdminSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
+		"run", "github.com/swaggo/swag/cmd/swag",
 		"init",
 		"--instanceName", "admin",
 		"--output", "docs/admin",
@@ -98,7 +98,7 @@ func generateAdminSchema(ctx context.Context) error {
 
 func generatePublicSchema(ctx context.Context) error {
 	args := []string{
-		"run", "github.com/swaggo/swag/cmd/swag@latest",
+		"run", "github.com/swaggo/swag/cmd/swag",
 		"init",
 		"--parseDependency",
 		"--output", "docs/public",
