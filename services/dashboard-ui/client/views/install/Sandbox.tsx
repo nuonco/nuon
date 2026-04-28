@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
@@ -13,13 +15,16 @@ import { TerraformWorkspaceCard } from '@/components/terraform-workspace/Terrafo
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig } from '@/lib'
 
 export const Sandbox = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const { addPanel } = useSurfaces()
 
   const { data: configResult } = useQuery({
     queryKey: [
@@ -63,34 +68,53 @@ export const Sandbox = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Sandbox details
-          </Text>
-          <ID>{install?.sandbox?.id}</ID>
-        </HeadingGroup>
-        <ManagementDropdown />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
-        <div className="md:col-span-8 flex flex-col gap-6">
-          {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
-
-          {sandboxConfig ? (
-            <SandboxConfigCard config={sandboxConfig} />
-          ) : (
-            <SandboxConfigCardSkeleton />
-          )}
-
-          <TerraformWorkspaceCard />
+      <div className="@container flex flex-col flex-auto gap-6">
+        <div className="flex items-start justify-between">
+          <HeadingGroup>
+            <Text variant="base" weight="strong">
+              Sandbox details
+            </Text>
+            <ID>{install?.sandbox?.id}</ID>
+          </HeadingGroup>
+          <div className="flex items-center gap-2">
+            <div className="@5xl:hidden">
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  addPanel(
+                    <Panel heading="Sandbox history">
+                      <SandboxRunsTimeline shouldPoll />
+                    </Panel>
+                  )
+                }
+              >
+                <Icon variant="ClockCounterClockwiseIcon" size={16} />
+                Sandbox history
+              </Button>
+            </div>
+            <ManagementDropdown />
+          </div>
         </div>
 
-        <div className="flex flex-col md:col-span-4 gap-4">
-          <Text variant="base" weight="strong">
-            Sandbox history
-          </Text>
-          <SandboxRunsTimeline shouldPoll />
+        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
+          <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">
+            {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+
+            {sandboxConfig ? (
+              <SandboxConfigCard config={sandboxConfig} />
+            ) : (
+              <SandboxConfigCardSkeleton />
+            )}
+
+            <TerraformWorkspaceCard />
+          </div>
+
+          <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4 min-w-0">
+            <Text variant="base" weight="strong">
+              Sandbox history
+            </Text>
+            <SandboxRunsTimeline shouldPoll />
+          </div>
         </div>
       </div>
 

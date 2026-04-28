@@ -30,7 +30,7 @@ export const Components = () => {
           Manage the components that make up your application.
         </Text>
       </HeadingGroup>
-      <div className="flex flex-auto">
+      <div className="flex flex-auto min-w-0">
         <ComponentsTable />
       </div>
     </PageSection>
