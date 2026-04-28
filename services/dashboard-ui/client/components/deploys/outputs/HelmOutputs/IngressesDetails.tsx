@@ -1,6 +1,6 @@
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
-import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { ClickToCopy, ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Expand } from '@/components/common/Expand'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -194,40 +194,37 @@ const IngressDetails = ({ ingress }) => {
         <div className="flex flex-col gap-2">
           <Text weight="strong">Endpoints</Text>
           <div className="flex items-center gap-8">
-            <LabeledValue label="External">
-              <Text
-                className="flex items-center gap-2"
-                variant="subtext"
-                family="mono"
-              >
-                {hostname}{' '}
-                <ClickToCopyButton textToCopy={loadBalancerHostname} />
-              </Text>
-            </LabeledValue>
+            {hostname && (
+              <LabeledValue label="External">
+                <ClickToCopy>
+                  <Text variant="subtext" family="mono">
+                    {hostname}
+                  </Text>
+                </ClickToCopy>
+              </LabeledValue>
+            )}
 
-            <LabeledValue label="Load balancer">
-              <Text
-                className="flex items-center gap-2"
-                variant="subtext"
-                family="mono"
-              >
-                {loadBalancerHostname}{' '}
-                <ClickToCopyButton textToCopy={loadBalancerHostname} />
-              </Text>
-            </LabeledValue>
+            {loadBalancerHostname && (
+              <LabeledValue label="Load balancer">
+                <ClickToCopy>
+                  <Text variant="subtext" family="mono">
+                    {loadBalancerHostname}
+                  </Text>
+                </ClickToCopy>
+              </LabeledValue>
+            )}
           </div>
         </div>
       </div>
 
       {certificateArn && (
         <div className="flex flex-col gap-2">
-          <Text weight="strong">SSL Certificate</Text>
-          <div className="flex items-center gap-2">
+          <Text weight="strong">SSL certificate</Text>
+          <ClickToCopy>
             <Badge variant="code" size="lg" theme="success">
               {certificateArn}
             </Badge>
-            <ClickToCopyButton textToCopy={certificateArn} />
-          </div>
+          </ClickToCopy>
         </div>
       )}
 
