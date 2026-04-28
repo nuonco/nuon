@@ -39,8 +39,6 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 	assert.Equal(s.T(), "my-install", install.Name)
 	assert.Equal(s.T(), s.testApp.ID, install.AppID)
 
-	assert.NotEmpty(s.T(), rr.Header().Get(app.HeaderInstallWorkflowID))
-
 	captured := s.mockEvClient.GetSignals()
 	require.GreaterOrEqual(s.T(), len(captured), 4)
 

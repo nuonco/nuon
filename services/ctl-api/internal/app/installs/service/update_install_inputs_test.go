@@ -41,7 +41,8 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallInputsSuccess() {
 	assert.NotEmpty(s.T(), inputs.ID)
 
 	// Workflow should have been created for the input update.
-	workflowID := rr.Header().Get(app.HeaderInstallWorkflowID)
+	require.NotNil(s.T(), inputs.WorkflowID)
+	workflowID := *inputs.WorkflowID
 	assert.NotEmpty(s.T(), workflowID)
 
 	// Verify the new inputs record was persisted.
