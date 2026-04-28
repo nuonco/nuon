@@ -140,7 +140,7 @@ export const ActionDetail = () => {
               {action?.id ? (
                 <AdminDashboardLink
                   path={`/queues?owner_id=${action.id}`}
-                  label="View in admin panel"
+                  label="Admin panel"
                 />
               ) : null}
             </HeadingGroup>

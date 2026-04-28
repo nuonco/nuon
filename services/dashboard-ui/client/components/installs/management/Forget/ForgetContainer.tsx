@@ -60,7 +60,6 @@ export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSub
 }
 
 export const ForgetButton = ({
-  isMenuButton: _isMenuButton,
   ...props
 }: IForget & IButtonAsButton) => {
   const { addModal } = useSurfaces()
@@ -71,9 +70,9 @@ export const ForgetButton = ({
       onClick={() => {
         addModal(modal)
       }}
-      variant="ghost"
-      className="!bg-transparent !border-0 !p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10] active:!bg-red-100 dark:active:!bg-[#2E1013]"
+      isMenuButton
       {...props}
+      variant="danger"
     >
       Forget install
       <Icon variant="Trash" />

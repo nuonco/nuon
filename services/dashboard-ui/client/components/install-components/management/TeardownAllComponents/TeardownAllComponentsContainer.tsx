@@ -99,7 +99,7 @@ export const TeardownAllComponentsButton = ({ ...props }: IButtonAsButton) => {
         addModal(modal)
       }}
       {...props}
-      className="!text-red-600 dark:!text-red-400"
+      variant="danger"
     >
       Teardown components <Icon variant="CloudArrowDownIcon" />
     </Button>

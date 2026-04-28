@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -35,6 +35,7 @@ export const ConfirmOverrideModalContainer = ({ onConfirm, ...props }: { onConfi
 }
 
 export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove & Omit<IModal, 'onSubmit'>) => {
+  const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
@@ -69,6 +70,7 @@ export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
       addToast(
         <Toast heading={`Auto approve ${isApproveAll ? 'disabled' : 'enabled'}`} theme="success">
           <Text>Auto approve {isApproveAll ? 'disabled' : 'enabled'} for {install.name}.</Text>
