@@ -14,7 +14,7 @@ import {
   getRunnerLatestHeartbeat,
 } from '@/lib'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { isLessThan30SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 import { OrgStatusBar } from './OrgStatusBar'
 
 export const OrgStatusBarContainer = () => {
@@ -66,7 +66,7 @@ export const OrgStatusBarContainer = () => {
   })
   const runnerHeartbeat =
     heartbeats?.install ?? heartbeats?.org ?? heartbeats?.build ?? undefined
-  const runnerConnected = isLessThan30SecondsOld(runnerHeartbeat?.created_at)
+  const runnerConnected = isRecentTimestamp(runnerHeartbeat?.created_at)
   const runnerStatus = runnerConnected ? 'connected' : 'not-connected'
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
