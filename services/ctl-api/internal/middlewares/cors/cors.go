@@ -46,7 +46,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			"X-Nuon-Page-Offset",
 			"X-Nuon-Page-Limit",
 			"X-Nuon-Page-Number",
-			"X-Nuon-Install-Workflow-ID",
 			"X-Nuon-API-Next",
 			"X-Nuon-API-Version",
 		},

@@ -236,10 +236,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Verify response contains workflow ID header
-			workflowID := rr.Header().Get(app.HeaderInstallWorkflowID)
-			assert.NotEmpty(s.T(), workflowID)
-
 			if tc.validateFunc != nil {
 				tc.validateFunc(installID)
 			}
