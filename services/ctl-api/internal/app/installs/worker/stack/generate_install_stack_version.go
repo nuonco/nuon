@@ -224,11 +224,16 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 		// Render the Terraform tfvars envelope alongside the CloudFormation
 		// template so the dashboard can offer both during the await step.
-		// Skip silently if the app config requires features the TF module
-		// doesn't yet support (e.g., custom nested stacks); the CFN path
-		// remains usable.
+		// Log (but don't fail) if the TF module can't render the app config
+		// (e.g., custom nested stacks); the CFN path remains usable.
 		inp.CloudFormationStackVersion = stackVersion
-		if tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp); tfErr == nil {
+		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp)
+		if tfErr != nil {
+			workflow.GetLogger(ctx).Warn("aws terraform render skipped", "error", tfErr.Error(), "install_id", install.ID)
+		} else if len(tfvarsBytes) == 0 {
+			workflow.GetLogger(ctx).Warn("aws terraform render produced empty bytes", "install_id", install.ID)
+		} else {
+			workflow.GetLogger(ctx).Info("aws terraform render ok", "install_id", install.ID, "bytes", len(tfvarsBytes))
 			if err := activities.AwaitSaveInstallStackVersionTerraform(ctx, &activities.SaveInstallStackVersionTerraformRequest{
 				ID:       stackVersion.ID,
 				Template: tfvarsBytes,
