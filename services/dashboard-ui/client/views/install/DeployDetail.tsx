@@ -67,7 +67,7 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
   const showPlanBelow = completedApproval || isAutoApprove
 
   return (
-    <PageSection flush>
+    <PageSection>
       <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -88,36 +88,31 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
 
-      <PageSection className="!pb-12">
-        <div className="flex flex-col gap-6">
-          {pendingApproval && !isAutoApprove ? (
-            <div className="flex flex-col gap-4">
-              <ApprovalBanner step={step} />
-              <Plan step={step} />
-            </div>
-          ) : null}
-
-          {logStream ? (
-            <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-              <UnifiedLogsProvider>
-                <LogViewerProvider>
-                  <SSELogs />
-                </LogViewerProvider>
-              </UnifiedLogsProvider>
-            </LogStreamProvider>
-          ) : (
-            <LogsSkeleton />
-          )}
-
-          {showPlanBelow && step ? (
-            <div className="flex flex-col gap-4">
-              {!isAutoApprove && <ApprovalBanner step={step} />}
-              <Plan step={step} />
-            </div>
-          ) : null}
+      {pendingApproval && !isAutoApprove ? (
+        <div className="flex flex-col gap-4">
+          <ApprovalBanner step={step} />
+          <Plan step={step} />
         </div>
+      ) : null}
 
-      </PageSection>
+      {logStream ? (
+        <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
+          <UnifiedLogsProvider>
+            <LogViewerProvider>
+              <SSELogs />
+            </LogViewerProvider>
+          </UnifiedLogsProvider>
+        </LogStreamProvider>
+      ) : (
+        <LogsSkeleton />
+      )}
+
+      {showPlanBelow && step ? (
+        <div className="flex flex-col gap-4">
+          {!isAutoApprove && <ApprovalBanner step={step} />}
+          <Plan step={step} />
+        </div>
+      ) : null}
     </PageSection>
   )
 }

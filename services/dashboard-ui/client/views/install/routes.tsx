@@ -11,7 +11,7 @@ import { Stacks } from './Stacks'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
-import { DeployLayout } from './DeployLayout'
+import { DeployDetailGate } from './DeployDetailGate'
 import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
 import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
 import { DeployVariablesTab } from './deploy-tabs/DeployVariablesTab'
@@ -79,7 +79,7 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
-        element: <DeployLayout />,
+        element: <DeployDetailGate />,
         children: [
           { index: true, element: <DeployLogsTab /> },
           { path: 'plan', element: <DeployPlanTab /> },
