@@ -6,7 +6,7 @@ import {
   getRunnerRecentHealthChecks,
 } from '@/lib'
 import type { TRunnerProcess, TRunnerSettings } from '@/types'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 import { ProcessManagementDropdown } from '@/components/runners/ProcessManagementDropdown'
 import { ProcessCard } from './ProcessCard'
 
@@ -48,7 +48,7 @@ export const ProcessCardContainer = ({
     enabled: !!org?.id && !!runner?.id && !!process.id,
   })
 
-  const isConnected = isLessThan15SecondsOld(heartbeat?.created_at)
+  const isConnected = isRecentTimestamp(heartbeat?.created_at)
   const configuredVersion =
     (process.type === 'mng'
       ? settings?.binary_version
