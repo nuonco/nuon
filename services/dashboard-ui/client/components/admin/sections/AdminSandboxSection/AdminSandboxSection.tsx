@@ -165,9 +165,9 @@ export const AdminSandboxSection = ({
           </Text>
         ) : (
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-            {runners.map((runner) => (
+            {runners.map((runner, i) => (
               <RunnerSelectCard
-                key={runner.id}
+                key={runner.id ?? i}
                 runner={runner}
                 isSelected={runner.id === selectedRunnerId}
                 onSelect={onSelectRunner}
