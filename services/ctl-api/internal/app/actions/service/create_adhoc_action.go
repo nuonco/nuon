@@ -180,7 +180,6 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		})
 	}
 
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 	ctx.JSON(http.StatusCreated, CreateAdHocActionResponse{
 		ID:                run.ID,
 		InstallID:         install.ID,
