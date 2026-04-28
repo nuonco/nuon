@@ -1,11 +1,11 @@
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { useAuth } from '@/hooks/use-auth'
 import type { TRunnerProcess } from '@/types'
 
 function getStatusTheme(status: string) {
@@ -35,7 +35,7 @@ function formatUptime(startedAt: string | undefined): string {
   return `${minutes}m`
 }
 
-function ProcessRow({ process, adminDashboardUrl }: { process: TRunnerProcess; adminDashboardUrl?: string }) {
+function ProcessRow({ process, showAdminColumn }: { process: TRunnerProcess; showAdminColumn: boolean }) {
   return (
     <tr className="border-b border-neutral-100 last:border-0">
       <td className="px-4 py-3">
@@ -67,15 +67,12 @@ function ProcessRow({ process, adminDashboardUrl }: { process: TRunnerProcess; a
             : '-'}
         </Text>
       </td>
-      {adminDashboardUrl && (
+      {showAdminColumn && (
         <td className="px-4 py-3">
-          <Button
-            size="sm"
-            href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
-            target="_blank"
-          >
-            View in admin panel <Icon variant="ArrowSquareOutIcon" />
-          </Button>
+          <AdminDashboardLink
+            path={`/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
+            label="View in admin panel"
+          />
         </td>
       )}
     </tr>
@@ -85,14 +82,14 @@ function ProcessRow({ process, adminDashboardUrl }: { process: TRunnerProcess; a
 interface IRunnerProcessesTable {
   processes: TRunnerProcess[]
   isLoading: boolean
-  adminDashboardUrl?: string
 }
 
 export const RunnerProcessesTable = ({
   processes,
   isLoading,
-  adminDashboardUrl,
 }: IRunnerProcessesTable) => {
+  const { isAdmin } = useAuth()
+
   if (isLoading) {
     return <RunnerProcessesTableSkeleton />
   }
@@ -132,7 +129,7 @@ export const RunnerProcessesTable = ({
             <th className="px-4 py-2">
               <Text variant="subtext" weight="strong">Started</Text>
             </th>
-            {adminDashboardUrl && (
+            {isAdmin && (
               <th className="px-4 py-2">
                 <Text variant="subtext" weight="strong">Admin</Text>
               </th>
@@ -141,7 +138,7 @@ export const RunnerProcessesTable = ({
         </thead>
         <tbody>
           {processes.map((process) => (
-            <ProcessRow key={process.id} process={process} adminDashboardUrl={adminDashboardUrl} />
+            <ProcessRow key={process.id} process={process} showAdminColumn={!!isAdmin} />
           ))}
         </tbody>
       </table>
