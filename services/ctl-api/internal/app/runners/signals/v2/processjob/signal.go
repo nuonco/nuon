@@ -36,24 +36,28 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("job_id is required")
 	}
 
-	// Validate runner exists and is healthy
-	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	// Validate runner exists
+	_, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 	if err != nil {
 		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
 			JobID:             s.JobID,
 			Status:            app.RunnerJobStatusNotAttempted,
-			StatusDescription: fmt.Sprintf("runner not found: %s", err.Error()),
+			StatusDescription: fmt.Sprintf("runner not found: %s", signal.HumanError(err)),
 		})
 		return errors.Wrap(err, "runner not found")
 	}
 
-	if !runner.Status.IsHealthy() {
+	// Check if runner has any active process
+	resp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
+		RunnerID: s.RunnerID,
+	})
+	if err != nil || !resp.HasActive {
 		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
 			JobID:             s.JobID,
 			Status:            app.RunnerJobStatusNotAttempted,
-			StatusDescription: fmt.Sprintf("runner is not healthy: %s", runner.Status),
+			StatusDescription: "no active runner process available",
 		})
-		return errors.Errorf("runner is not healthy: %s", runner.Status)
+		return errors.New("runner has no active process")
 	}
 
 	// Validate job exists

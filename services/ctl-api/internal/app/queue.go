@@ -29,11 +29,12 @@ type Queue struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Name        string        `json:"name,omitzero" gorm:"default:''" temporaljson:"name,omitzero,omitempty"`
-	MaxDepth    int           `json:"max_depth,omitzero"`
-	MaxInFlight int           `json:"max_in_flight,omitzero"`
-	IdleTimeout int64         `json:"idle_timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer"`
-	Metadata    pgtype.Hstore `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	Name        string          `json:"name,omitzero" gorm:"default:''" temporaljson:"name,omitzero,omitempty"`
+	MaxDepth    int             `json:"max_depth,omitzero"`
+	MaxInFlight int             `json:"max_in_flight,omitzero"`
+	IdleTimeout int64           `json:"idle_timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer"`
+	Metadata    pgtype.Hstore   `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	StatusV2    CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 

@@ -73,7 +73,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	queues := api.Group("/v1/queues")
 	{
 		queues.POST("/:queue_id/admin-restart", s.RestartQueue)
-		queues.POST("/:queue_id/signals/:signal_id/admin-force-execute", s.ForceExecuteSignal)
+		queues.POST("/:queue_id/signals/:signal_id/admin-direct-execute", s.DirectExecuteSignal)
 	}
 	return nil
 }
