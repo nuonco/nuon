@@ -126,8 +126,8 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <div className="@container flex flex-col gap-4 w-full md:flex-row md:justify-between">
-              <HeadingGroup>
+            <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+              <HeadingGroup className="gap-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Text variant="h3" weight="stronger" level={1}>
                     {install.name}
@@ -149,7 +149,7 @@ const InstallTemplate = () => {
                   </Text>
                   <AdminDashboardLink
                     path={`/queues?owner_id=${install.id}`}
-                    label="View in admin panel"
+                    label="Admin panel"
                   />
                 </div>
               </HeadingGroup>

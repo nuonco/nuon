@@ -7,11 +7,14 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, getInstallCurrentInputs } from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
+import { EditInputsButton } from '../EditInputs'
 import { ViewCurrentInputsModal } from './ViewCurrentInputs'
 
 export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
   const { org } = useOrg()
   const { install } = useInstall()
+
+  const canRenameInstall = !!org?.features?.['install-rename']
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     queryKey: ['install-inputs', org?.id, install?.id],
@@ -46,6 +49,9 @@ export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
       isLoading={isLoading}
       redactedValues={redactedValues}
       inputGroups={inputGroups as any}
+      footerActions={
+        <EditInputsButton variant="primary" showNameField={canRenameInstall} />
+      }
       {...props}
     />
   )
