@@ -7,7 +7,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getInstallStack, getRunnerLatestHeartbeat, getWorkflow, getWorkflowSteps } from '@/lib'
-import { isLessThan30SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
 import { toSentenceCase } from '@/utils/string-utils'
@@ -285,7 +285,7 @@ function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean)
 
   return {
     version: heartbeat?.version,
-    connected: isLessThan30SecondsOld(heartbeat?.created_at),
+    connected: isRecentTimestamp(heartbeat?.created_at),
   }
 }
 
