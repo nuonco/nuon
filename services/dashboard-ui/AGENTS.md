@@ -313,6 +313,20 @@ const { addModal, removeModal } = useSurfaces()
 
 The external auth service sets a `X-Nuon-Auth` httponly cookie scoped to the app domain. The Go BFF validates the cookie on page loads and extracts the token server-side when reverse-proxying `/v1/*` API requests — the browser never sends the cookie to ctl-api directly. On the client, `AuthProvider` calls `getMe()` at startup to load the current account. On 401 API responses, `api.ts` automatically redirects to the login page.
 
+## Org Feature Flags
+
+Feature flags are **already on the org object** — accessed via `useOrg()`. Do NOT create a separate API function or hook to fetch them.
+
+```typescript
+const { org } = useOrg()
+
+if (org?.features?.['deploy-outputs']) {
+  // feature is enabled
+}
+```
+
+Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file.
+
 ## Runtime Config (`useConfig()`)
 
 The Go server injects environment variables into the HTML as `window.__NUON_CONFIG__` before serving the SPA. Access config values via `useConfig()`:
