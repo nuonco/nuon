@@ -142,6 +142,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// update aws account from stack outputs — region is optional at install
+	// creation, so backfill it once phone-home has reported the customer's
+	// chosen region. Keeps `install.AWSAccount.Region` consistent with the
+	// applied stack for all downstream readers (cloud_account in install
+	// state, OCI registry config, etc.).
+	if installStackOutputs.AWSStackOutputs != nil && installStackOutputs.AWSStackOutputs.Region != "" {
+		if err := activities.AwaitUpdateAWSAccountRegion(ctx, &activities.UpdateAWSAccountRegion{
+			InstallID: install.ID,
+			Region:    installStackOutputs.AWSStackOutputs.Region,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update aws account from stack outputs")
+		}
+	}
+
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
 	err = validateRegion(*install, installStackOutputs)
