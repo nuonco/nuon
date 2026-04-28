@@ -2,7 +2,6 @@ import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
-import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallActionsLatestRuns, getActionLabelKeys } from '@/lib'
@@ -67,7 +66,6 @@ export const InstallActionsTableContainer = ({
             queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
           <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
-          <RunAdhocActionButton />
           <TriggeredByFilter />
         </div>
       }

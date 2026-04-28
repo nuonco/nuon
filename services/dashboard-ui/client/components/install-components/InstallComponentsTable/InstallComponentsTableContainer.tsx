@@ -2,7 +2,6 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
-import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents, getAppConfig, getComponentLabelKeys } from '@/lib'
@@ -95,7 +94,6 @@ export const InstallComponentsTableContainer = ({
             queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
           <ComponentTypeFilterDropdown />
-          <ManageAllDropdown />
         </div>
       }
       pagination={pagination}

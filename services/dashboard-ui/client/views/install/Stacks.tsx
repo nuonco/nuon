@@ -7,6 +7,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
 import { InstallStacksTable, InstallStacksTableSkeleton } from '@/components/stacks/InstallStacksTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -79,14 +80,19 @@ export const Stacks = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install stacks
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View your install stack config and versions below.
-        </Text>
-      </HeadingGroup>
+      <div className="flex items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Install stacks
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            View your install stack config and versions below.
+          </Text>
+        </HeadingGroup>
+        <div className="shrink-0">
+          <EditStackOverridesButton variant="secondary" />
+        </div>
+      </div>
 
       {stackChanged && (
         <Banner theme="info">
