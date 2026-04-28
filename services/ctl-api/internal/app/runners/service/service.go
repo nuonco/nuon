@@ -192,6 +192,8 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.POST("/health-checks", s.CreateRunnerHealthCheck)
 	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
 	runners.POST("/processes", s.CreateRunnerProcess)
+	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
+	runners.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
 	runners.GET("", s.GetRunner)
 	runners.GET("/jobs", s.GetRunnerJobs)
 	runners.GET("/settings", s.GetRunnerSettings)
