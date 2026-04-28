@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	AppWorkflowsQueueName          = "app-workflows"
 	AppSignalsQueueName            = "app-signals"
 	AppWorkflowStepGroupsQueueName = "app-workflow-step-groups"
 	AppWorkflowStepsQueueName      = "app-workflow-steps"
@@ -21,18 +22,19 @@ const (
 func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	ownerType := plugins.TableName(h.db, app.App{})
 
-	// Default queue — handles executeflow.Signal
+	// app-workflows queue — orchestrates workflow execution (executeflow.Signal)
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
 		Namespace:   "apps",
+		Name:        AppWorkflowsQueueName,
 		MaxInFlight: 2,
 		MaxDepth:    50,
 	}); err != nil {
-		return fmt.Errorf("unable to ensure default queue for app %s: %w", appID, err)
+		return fmt.Errorf("unable to ensure app-workflows queue for app %s: %w", appID, err)
 	}
 
-	// app-signals queue — handles individual signal execution
+	// app-signals queue — handles individual signal execution (generate-workflow-steps, component builds)
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,

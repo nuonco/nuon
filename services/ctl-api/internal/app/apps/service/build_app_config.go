@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -81,10 +82,10 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Find the app's queue
-	queue, err := s.queueClient.GetQueueByOwner(ctx, appID, plugins.TableName(s.db, app.App{}))
+	// Find the app-workflows queue by name
+	queue, err := s.queueClient.GetQueueByOwnerAndName(ctx, appID, plugins.TableName(s.db, app.App{}), appshelpers.AppWorkflowsQueueName)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to find app queue: %w", err))
+		ctx.Error(fmt.Errorf("unable to find app-workflows queue: %w", err))
 		return
 	}
 

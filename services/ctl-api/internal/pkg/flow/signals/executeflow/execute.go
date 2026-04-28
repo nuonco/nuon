@@ -235,6 +235,9 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
 				StatusHumanDescription: "generated eager step groups, executing",
+				Metadata: map[string]any{
+					"eager_steps_loaded": true,
+				},
 			},
 		}); err != nil {
 			return err
@@ -371,6 +374,17 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				return errors.Wrap(err, "unable to complete step generation")
 			}
 			eagerQueueSignalID = "" // only complete once
+
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusInProgress,
+					StatusHumanDescription: "all steps generated",
+					Metadata: map[string]any{
+						"all_steps_loaded": true,
+					},
+				},
+			})
 
 			// Reload groups from DB now that all are persisted.
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)

@@ -77,8 +77,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	sg.nextGroupEager() // await runner
-	step, err = sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
