@@ -1,0 +1,1 @@
+export { OCIArtifactDetails } from './OCIArtifactDetails'
