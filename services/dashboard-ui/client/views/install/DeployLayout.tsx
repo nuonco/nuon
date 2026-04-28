@@ -95,8 +95,13 @@ const DeployLayoutInner = () => {
   const basePath = `/${org?.id}/installs/${installId}/components/${componentId}/deploys/${deployId}`
   const tabs = getTabsForComponentType(component?.type)
 
+  if (pendingApproval && !isAutoApprove) {
+    const planTab = tabs.find((t) => t.path === '/plan')
+    if (planTab) planTab.badge = true
+  }
+
   return (
-    <PageSection flush>
+    <PageSection>
       <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -117,18 +122,12 @@ const DeployLayoutInner = () => {
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
 
-      <PageSection className="!pb-12">
-        <div className="flex flex-col gap-6">
-          {pendingApproval && !isAutoApprove ? (
-            <div className="flex flex-col gap-4">
-              <ApprovalBanner step={step} />
-            </div>
-          ) : null}
+      {pendingApproval && !isAutoApprove ? (
+        <ApprovalBanner step={step} />
+      ) : null}
 
-          <TabNav basePath={basePath} tabs={tabs} />
-          <Outlet context={{ component, workflow, step }} />
-        </div>
-      </PageSection>
+      <TabNav basePath={basePath} tabs={tabs} />
+      <Outlet context={{ component, workflow, step }} />
     </PageSection>
   )
 }

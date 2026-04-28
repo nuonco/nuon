@@ -22,6 +22,9 @@ export const TabNav = ({ basePath, tabs }: ITabNav) => {
         return (
           <Button key={tab.path} href={href} isActive={isActive} variant="tab">
             {tab.text}
+            {tab.badge ? (
+              <span className="size-2 rounded-full bg-amber-500" />
+            ) : null}
           </Button>
         )
       })}
