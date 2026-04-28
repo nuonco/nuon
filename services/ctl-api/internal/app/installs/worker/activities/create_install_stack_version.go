@@ -41,7 +41,9 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	}
 
 	// GCP uses static Terraform modules with tfvars, no S3 upload needed.
-	// AWS/Azure still use S3-hosted templates with quick links.
+	// AWS/Azure render both a CloudFormation template (S3-hosted, with a
+	// quick link) and — for AWS — a Terraform tfvars envelope stored on the
+	// row. The user picks one to apply during the await step.
 	if req.Platform != "gcp" {
 		bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
 		obj.AWSBucketKey = bucketKey
