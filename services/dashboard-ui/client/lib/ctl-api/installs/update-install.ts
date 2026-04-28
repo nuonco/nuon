@@ -2,6 +2,7 @@ import { api } from '@/lib/api'
 import type { TInstall } from '@/types'
 
 export type TUpdateInstallBody = {
+  name?: string
   install_config?: {
     approval_option: 'prompt' | 'approve-all'
   }
