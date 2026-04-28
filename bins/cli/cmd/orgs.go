@@ -203,5 +203,61 @@ func (c *cli) orgsCmd() *cobra.Command {
 	listInvitesCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum invites to return")
 	orgsCmd.AddCommand(listInvitesCmd)
 
+	orgsCmd.AddCommand(c.orgWebhooksCmd())
+
 	return orgsCmd
+}
+
+func (c *cli) orgWebhooksCmd() *cobra.Command {
+	var (
+		webhookURL    string
+		webhookSecret string
+		webhookID     string
+	)
+
+	webhooksCmd := &cobra.Command{
+		Use:               "webhooks",
+		Short:             "Manage operation lifecycle webhooks for the current org",
+		Long:              "Manage operation lifecycle webhooks delivered to your endpoints for the current org",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List webhooks for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.ListWebhooks(cmd.Context(), PrintJSON)
+		}),
+	}
+	webhooksCmd.AddCommand(listCmd)
+
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a webhook for the current org",
+		Long:  "Create a webhook subscription for operation lifecycle events on the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVarP(&webhookURL, "url", "u", "", "Webhook URL (must be an absolute http/https URL)")
+	createCmd.MarkFlagRequired("url")
+	createCmd.Flags().StringVarP(&webhookSecret, "secret", "s", "", "Optional shared secret used to sign webhook payloads (HMAC-SHA256, X-Nuon-Signature header)")
+	webhooksCmd.AddCommand(createCmd)
+
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a webhook for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.DeleteWebhook(cmd.Context(), webhookID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVar(&webhookID, "webhook-id", "", "The ID of the webhook to delete")
+	deleteCmd.MarkFlagRequired("webhook-id")
+	webhooksCmd.AddCommand(deleteCmd)
+
+	return webhooksCmd
 }

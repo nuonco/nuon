@@ -135,6 +135,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 
 		deployStep, err := sg.installSignalStep(ctx, installID, "plan teardown "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			ComponentID:        compID,
 			FlowID:             "",
 			SandboxMode:        false,
@@ -147,6 +148,7 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 
 		deployStep, err = sg.installSignalStep(ctx, installID, "teardown "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			ComponentID:        compID,
 			FlowID:             "",
 			SandboxMode:        false,
