@@ -87,7 +87,5 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		})
 	}
 
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
-
 	ctx.JSON(http.StatusOK, app.WorkflowResponse{WorkflowID: workflow.ID})
 }
