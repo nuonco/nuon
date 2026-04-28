@@ -53,12 +53,18 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		// template is uploaded to GCS and the URL is set after upload.
 		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
 			templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
-			quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-				req.Region, req.Region, templateURL, req.StackName,
-			)
 			obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
 			obj.TemplateURL = templateURL
-			obj.QuickLinkURL = quickLinkURL
+			// Quick-launch URL embeds the region; only build it when the
+			// install carries one. When region is empty, the dashboard surfaces
+			// the template URL + AWS-CLI snippet instead and the user picks a
+			// region in the AWS console.
+			if req.Region != "" {
+				obj.QuickLinkURL = fmt.Sprintf(
+					"https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+					req.Region, req.Region, templateURL, req.StackName,
+				)
+			}
 		}
 	}
 

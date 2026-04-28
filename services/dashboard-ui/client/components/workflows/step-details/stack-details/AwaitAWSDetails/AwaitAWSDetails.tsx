@@ -133,8 +133,14 @@ const CloudFormationTab = ({
     (version as { region?: string } | undefined)?.region ||
     quickLink?.match(/region=([^&#]+)/)?.[1] ||
     installAwsRegion ||
-    'us-east-1'
-  const consoleUrl = `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
+    ''
+  // CLI commands and console links work whether the user already chose a
+  // region or hasn't yet — when unknown, render a `<YOUR_REGION>` placeholder
+  // and let the user substitute at run-time.
+  const regionForCmd = region || '<YOUR_REGION>'
+  const consoleUrl = region
+    ? `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
+    : `https://console.aws.amazon.com/cloudformation/home#/stacks?filteringText=${stackName}`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -154,7 +160,16 @@ const CloudFormationTab = ({
             <Code>{quickLink}</Code>
           </Link>
         </Card>
-      ) : null}
+      ) : (
+        <Card>
+          <Text variant="subtext" theme="neutral">
+            Open the AWS console in your preferred region, then create a
+            CloudFormation stack from the template URL below. The CLI snippets
+            further down include a <code>&lt;YOUR_REGION&gt;</code> placeholder
+            you can substitute.
+          </Text>
+        </Card>
+      )}
 
       {templateUrl ? (
         <Card>
@@ -190,15 +205,15 @@ const CloudFormationTab = ({
               className="w-fit self-end"
               textToCopy={
                 isS3Template
-                  ? `aws cloudformation create-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${region}`
-                  : `curl -sLo template.json "${templateUrl}" && aws cloudformation create-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+                  ? `aws cloudformation create-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${regionForCmd}`
+                  : `curl -sLo template.json "${templateUrl}" && aws cloudformation create-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${regionForCmd}`
               }
             />
           </span>
           <Code className="text-xs whitespace-pre-wrap break-all">
             {isS3Template
-              ? `aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
-              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`}
+              ? `aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${regionForCmd}`
+              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation create-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${regionForCmd}`}
           </Code>
         </Card>
 
@@ -209,15 +224,15 @@ const CloudFormationTab = ({
               className="w-fit self-end"
               textToCopy={
                 isS3Template
-                  ? `aws cloudformation update-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${region}`
-                  : `curl -sLo template.json "${templateUrl}" && aws cloudformation update-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${region}`
+                  ? `aws cloudformation update-stack --stack-name ${stackName} --template-url ${templateUrl} --capabilities CAPABILITY_NAMED_IAM --region ${regionForCmd}`
+                  : `curl -sLo template.json "${templateUrl}" && aws cloudformation update-stack --stack-name ${stackName} --template-body file://template.json --capabilities CAPABILITY_NAMED_IAM --region ${regionForCmd}`
               }
             />
           </span>
           <Code className="text-xs whitespace-pre-wrap break-all">
             {isS3Template
-              ? `aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`
-              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${region}`}
+              ? `aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-url ${templateUrl} \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${regionForCmd}`
+              : `curl -sLo template.json "${templateUrl}" \\\n  && aws cloudformation update-stack \\\n  --stack-name ${stackName} \\\n  --template-body file://template.json \\\n  --capabilities CAPABILITY_NAMED_IAM \\\n  --region ${regionForCmd}`}
           </Code>
         </Card>
       </div>

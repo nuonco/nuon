@@ -227,7 +227,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		// Log (but don't fail) if the TF module can't render the app config
 		// (e.g., custom nested stacks); the CFN path remains usable.
 		inp.CloudFormationStackVersion = stackVersion
-		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp)
+		supportIAMRoleARN := ""
+		if w.cfg.RunnerEnableSupport {
+			supportIAMRoleARN = w.cfg.RunnerDefaultSupportIAMRole
+		}
+		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp, supportIAMRoleARN)
 		if tfErr != nil {
 			workflow.GetLogger(ctx).Warn("aws terraform render skipped", "error", tfErr.Error(), "install_id", install.ID)
 		} else if len(tfvarsBytes) == 0 {
