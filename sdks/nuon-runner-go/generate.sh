@@ -40,7 +40,7 @@ else
 fi
 
 echo >&2 "generating mocks"
-go run github.com/golang/mock/mockgen@latest \
+go run github.com/golang/mock/mockgen \
   -destination=mock.go \
   -source=client.go \
   -package=nuonrunner
