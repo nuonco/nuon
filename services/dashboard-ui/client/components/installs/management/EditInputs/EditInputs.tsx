@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { Input } from '@/components/common/form/Input'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -94,6 +95,10 @@ interface IEditInputsFormModal extends IModal {
   deployDependents: boolean
   onDeployDependentsChange: (checked: boolean) => void
   onMutate: (formData: FormData) => Promise<any>
+  onInputsChange?: (e: React.FormEvent<HTMLDivElement>) => void
+  showNameField?: boolean
+  installName?: string
+  onInstallNameChange?: (name: string) => void
 }
 
 export const EditInputsFormModal = ({
@@ -112,6 +117,10 @@ export const EditInputsFormModal = ({
   deployDependents,
   onDeployDependentsChange,
   onMutate,
+  onInputsChange,
+  showNameField,
+  installName,
+  onInstallNameChange,
   ...props
 }: IEditInputsFormModal) => {
   const nestInputsUnderGroups = (
@@ -141,7 +150,7 @@ export const EditInputsFormModal = ({
           weight="strong"
         >
           <Icon variant="PencilSimpleLine" size="24" />
-          Edit install inputs
+          {showNameField ? 'Edit install' : 'Edit install inputs'}
         </Text>
       }
       primaryActionTrigger={
@@ -150,12 +159,12 @@ export const EditInputsFormModal = ({
               children: isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <Icon variant="Loading" />
-                  Updating inputs
+                  {showNameField ? 'Updating install' : 'Updating inputs'}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <Icon variant="Cube" />
-                  Update inputs
+                  {showNameField ? 'Update install' : 'Update inputs'}
                 </span>
               ),
               disabled: isSubmitting,
@@ -283,24 +292,33 @@ export const EditInputsFormModal = ({
           {error?.error || 'Unable to load app configuration'}
         </Banner>
       ) : (
-        <UpdateInstallForm
-          ref={formRef}
-          install={install}
-          inputConfig={{
-            ...config?.input,
-            input_groups: nestInputsUnderGroups(
-              config?.input?.input_groups,
-              config?.input?.inputs
-            ),
-          }}
-          onSubmit={(formData) => onMutate(formData)}
-          onCancel={onClose}
-          onRegisterClearDraft={(fn) => {
-            clearDraftRef.current = fn
-          }}
-          selectedRole={selectedRole}
-          onRoleChange={onRoleChange}
-        />
+        <div onChange={onInputsChange}>
+          <UpdateInstallForm
+            ref={formRef}
+            install={install}
+            inputConfig={{
+              ...config?.input,
+              input_groups: nestInputsUnderGroups(
+                config?.input?.input_groups,
+                config?.input?.inputs
+              ),
+            }}
+            onSubmit={(formData) => onMutate(formData)}
+            onCancel={onClose}
+            onRegisterClearDraft={(fn) => {
+              clearDraftRef.current = fn
+            }}
+            selectedRole={selectedRole}
+            onRoleChange={onRoleChange}
+            headerContent={showNameField ? (
+              <Input
+                labelProps={{ labelText: 'Install name' }}
+                value={installName ?? ''}
+                onChange={(e) => onInstallNameChange?.(e.target.value)}
+              />
+            ) : undefined}
+          />
+        </div>
       )}
     </Modal>
   )
