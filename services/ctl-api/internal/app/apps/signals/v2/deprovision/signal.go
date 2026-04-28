@@ -186,14 +186,14 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            "error",
-				StatusDescription: err.Error(),
+				StatusDescription: signal.HumanError(err),
 			}); updateErr != nil {
 				workflow.GetLogger(ctx).Error("failed to update app status", updateErr)
 			}
 			statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
 				AppID:             s.AppID,
 				Status:            app.AppStatusError,
-				StatusDescription: err.Error(),
+				StatusDescription: signal.HumanError(err),
 			})
 			return err
 		}

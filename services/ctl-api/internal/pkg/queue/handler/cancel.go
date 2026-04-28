@@ -69,7 +69,7 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 		Duration: dur,
 	})
 
-	h.finished = true
+	h.setFinished(app.StatusCancelled, "")
 	h.stopped = true
 
 	return &CancelResponse{}, nil

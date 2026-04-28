@@ -12,18 +12,12 @@ import (
 func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopRequest, pendingSignals []*signals.Signal) error {
 	handlers := map[eventloop.SignalType]func(workflow.Context, signals.RequestSignal) error{
 		signals.OperationRestart: func(ctx workflow.Context, req signals.RequestSignal) error {
-			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-				RunnerID: req.ID,
-			})
 			return AwaitRestart(ctx, req)
 		},
 		signals.OperationDelete: func(ctx workflow.Context, input signals.RequestSignal) error {
 			return AwaitDelete(ctx, input)
 		},
 		signals.OperationCreated: func(ctx workflow.Context, req signals.RequestSignal) error {
-			defer w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-				RunnerID: req.ID,
-			})
 			return AwaitCreated(ctx, req)
 		},
 		signals.OperationProvision: func(ctx workflow.Context, input signals.RequestSignal) error {
@@ -90,9 +84,6 @@ func (w *Workflows) EventLoop(ctx workflow.Context, req eventloop.EventLoopReque
 		Handlers:         handlers,
 		NewRequestSignal: signals.NewRequestSignal,
 		StartupHook: func(ctx workflow.Context, req eventloop.EventLoopRequest) error {
-			w.startHealthCheckWorkflow(ctx, HealthCheckRequest{
-				RunnerID: req.ID,
-			})
 			w.startCronShutdownVMWorkflow(ctx, CronShutdownVMRequest{
 				RunnerID: req.ID,
 			})
