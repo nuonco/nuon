@@ -33,7 +33,9 @@ type SignalPhaseEvent struct {
 
 	InstallID   *string `json:"install_id,omitempty"`
 	ComponentID *string `json:"component_id,omitempty"`
+	SandboxID   *string `json:"sandbox_id,omitempty"`
 	Operation   string  `json:"operation,omitempty"`
+	Stage       string  `json:"stage,omitempty"`
 }
 
 type SignalPhaseOutcome struct {
@@ -72,7 +74,9 @@ type SignalLifecycleContext struct {
 	OrgID       string  `json:"org_id"`
 	InstallID   *string `json:"install_id,omitempty"`
 	ComponentID *string `json:"component_id,omitempty"`
+	SandboxID   *string `json:"sandbox_id,omitempty"`
 	Operation   string  `json:"operation"`
+	Stage       string  `json:"stage,omitempty"`
 }
 
 func AsSignalLifecycleHook(f any) any {

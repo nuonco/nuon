@@ -122,6 +122,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	sg.nextGroup() // provision sandbox plan + apply
 	step, err = sg.installSignalStep(ctx, installID, "provision sandbox plan", pgtype.Hstore{}, &provisionsandboxplan.Signal{
 		InstallSandboxID: sandboxID,
+		InstallID:        installID,
 		Role:             flw.Role,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
@@ -133,6 +134,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	if !flw.PlanOnly {
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &provisionsandboxapplyplan.Signal{
 			InstallSandboxID: sandboxID,
+			InstallID:        installID,
 		}, flw.PlanOnly)
 		if err != nil {
 			return nil, err

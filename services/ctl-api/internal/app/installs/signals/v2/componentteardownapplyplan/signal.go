@@ -26,6 +26,7 @@ const SignalType signal.SignalType = "component-teardown-apply-plan"
 
 type Signal struct {
 	InstallComponentID    string
+	InstallID             string
 	ComponentID           string
 	FlowID                string
 	FlowStepID            string
@@ -72,6 +73,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &componentteardownsyncandplan.Signal{
 				InstallComponentID: s.InstallComponentID,
+				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
 				SandboxMode:        s.SandboxMode,
 			},
@@ -81,6 +83,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &Signal{
 				InstallComponentID: s.InstallComponentID,
+				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
 				SandboxMode:        s.SandboxMode,
 			},
@@ -100,9 +103,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	componentID := &s.ComponentID
+	if s.ComponentID == "" {
+		componentID = nil
+	}
 	return signal.SignalLifecycleContext{
-		ComponentID: &s.ComponentID,
+		InstallID:   installID,
+		ComponentID: componentID,
 		Operation:   "component-teardown",
+		Stage:       "apply",
 	}
 }
 
