@@ -33,13 +33,15 @@ export const SamplePayload = () => {
   return (
     <Expand
       id="webhook-sample-payload"
+      className="rounded-md border"
+      headerClassName="p-4"
       heading={
-        <Text variant="base" weight="strong">
+        <Text weight="strong">
           View sample payload
         </Text>
       }
     >
-      <div className="flex flex-col gap-3 p-2">
+      <div className="flex flex-col gap-3 p-4 border-t">
         <div className="flex justify-end">
           <ClickToCopyButton textToCopy={SAMPLE_PAYLOAD} title="Copy payload" />
         </div>
