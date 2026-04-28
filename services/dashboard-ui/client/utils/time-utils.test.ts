@@ -1,13 +1,12 @@
 // @ts-nocheck
 
 import { describe, expect, test, beforeAll, afterAll, vi } from 'vitest'
-import { isLessThan15SecondsOld, isLessThan30SecondsOld } from './time-utils'
+import { isRecentTimestamp } from './time-utils'
 import { DateTime } from 'luxon'
 
 describe('time-utils', () => {
-  describe('isLessThan15SecondsOld', () => {
+  describe('isRecentTimestamp', () => {
     beforeAll(() => {
-      // Mock DateTime.now() to return a fixed time for consistent testing
       vi.spyOn(DateTime, 'now').mockReturnValue(
         DateTime.fromISO('2023-01-01T10:00:00.000Z')
       )
@@ -17,79 +16,43 @@ describe('time-utils', () => {
       vi.restoreAllMocks()
     })
 
-    test('should return true for timestamp less than 15 seconds old', () => {
+    test('should return true for timestamp within default 60s window', () => {
+      const timestamp = '2023-01-01T09:59:10.000Z' // 50 seconds ago
+      expect(isRecentTimestamp(timestamp)).toBe(true)
+    })
+
+    test('should return false for timestamp older than default 60s window', () => {
+      const timestamp = '2023-01-01T09:58:50.000Z' // 70 seconds ago
+      expect(isRecentTimestamp(timestamp)).toBe(false)
+    })
+
+    test('should return false for timestamp exactly at maxAgeSeconds', () => {
+      const timestamp = '2023-01-01T09:59:00.000Z' // exactly 60 seconds ago
+      expect(isRecentTimestamp(timestamp)).toBe(false)
+    })
+
+    test('should respect custom maxAgeSeconds', () => {
       const timestamp = '2023-01-01T09:59:50.000Z' // 10 seconds ago
-      expect(isLessThan15SecondsOld(timestamp)).toBe(true)
-    })
-
-    test('should return false for timestamp exactly 15 seconds old', () => {
-      const timestamp = '2023-01-01T09:59:45.000Z' // exactly 15 seconds ago
-      expect(isLessThan15SecondsOld(timestamp)).toBe(false)
-    })
-
-    test('should return false for timestamp more than 15 seconds old', () => {
-      const timestamp = '2023-01-01T09:59:40.000Z' // 20 seconds ago
-      expect(isLessThan15SecondsOld(timestamp)).toBe(false)
+      expect(isRecentTimestamp(timestamp, 15)).toBe(true)
+      expect(isRecentTimestamp(timestamp, 5)).toBe(false)
     })
 
     test('should return false for future timestamps', () => {
       const timestamp = '2023-01-01T10:00:10.000Z' // 10 seconds in the future
-      expect(isLessThan15SecondsOld(timestamp)).toBe(false)
+      expect(isRecentTimestamp(timestamp)).toBe(false)
     })
 
     test('should return true for current timestamp', () => {
       const timestamp = '2023-01-01T10:00:00.000Z' // exactly now
-      expect(isLessThan15SecondsOld(timestamp)).toBe(true)
-    })
-
-    test('should handle invalid ISO strings gracefully', () => {
-      const result = isLessThan15SecondsOld('invalid-date')
-      expect(typeof result).toBe('boolean')
-    })
-  })
-
-  describe('isLessThan30SecondsOld', () => {
-    beforeAll(() => {
-      vi.spyOn(DateTime, 'now').mockReturnValue(
-        DateTime.fromISO('2023-01-01T10:00:00.000Z')
-      )
-    })
-
-    afterAll(() => {
-      vi.restoreAllMocks()
-    })
-
-    test('should return true for timestamp less than 30 seconds old', () => {
-      const timestamp = '2023-01-01T09:59:40.000Z' // 20 seconds ago
-      expect(isLessThan30SecondsOld(timestamp)).toBe(true)
-    })
-
-    test('should return false for timestamp exactly 30 seconds old', () => {
-      const timestamp = '2023-01-01T09:59:30.000Z'
-      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
-    })
-
-    test('should return false for timestamp more than 30 seconds old', () => {
-      const timestamp = '2023-01-01T09:59:20.000Z' // 40 seconds ago
-      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
-    })
-
-    test('should return false for future timestamps', () => {
-      const timestamp = '2023-01-01T10:00:10.000Z'
-      expect(isLessThan30SecondsOld(timestamp)).toBe(false)
-    })
-
-    test('should return true for current timestamp', () => {
-      const timestamp = '2023-01-01T10:00:00.000Z'
-      expect(isLessThan30SecondsOld(timestamp)).toBe(true)
+      expect(isRecentTimestamp(timestamp)).toBe(true)
     })
 
     test('should return false for undefined', () => {
-      expect(isLessThan30SecondsOld(undefined)).toBe(false)
+      expect(isRecentTimestamp(undefined)).toBe(false)
     })
 
     test('should handle invalid ISO strings gracefully', () => {
-      const result = isLessThan30SecondsOld('invalid-date')
+      const result = isRecentTimestamp('invalid-date')
       expect(typeof result).toBe('boolean')
     })
   })
