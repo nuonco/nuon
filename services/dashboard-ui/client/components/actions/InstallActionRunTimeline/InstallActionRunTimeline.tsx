@@ -39,12 +39,6 @@ export const InstallActionRunTimeline = ({
               >
                 {actionName} run
               </Link>
-              <ActionTriggerType
-                triggerType={run?.triggered_by_type as TActionConfigTriggerType}
-                componentName={run?.run_env_vars?.COMPONENT_NAME}
-                componentPath={`${basePath}/components/${run?.run_env_vars?.COMPONENT_ID}`}
-                size="sm"
-              />
               {run?.status_v2?.status === 'drifted' ? (
                 <Badge variant="code" size="sm">
                   drift scan
@@ -53,9 +47,17 @@ export const InstallActionRunTimeline = ({
             </span>
           }
           underline={
-            <Text variant="label" theme="neutral">
-              Run by: {run?.created_by?.email}
-            </Text>
+            <div className="flex flex-col gap-1">
+              <ActionTriggerType
+                triggerType={run?.triggered_by_type as TActionConfigTriggerType}
+                componentName={run?.run_env_vars?.COMPONENT_NAME}
+                componentPath={`${basePath}/components/${run?.run_env_vars?.COMPONENT_ID}`}
+                size="sm"
+              />
+              <Text variant="label" theme="neutral">
+                Run by: {run?.created_by?.email}
+              </Text>
+            </div>
           }
         />
       )}

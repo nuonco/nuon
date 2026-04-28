@@ -56,7 +56,7 @@ const AppTemplate = () => {
             basePath={`/${org?.id}/apps/${app?.id}`}
             links={navLinks}
           />
-          <div className="flex flex-col w-full">
+          <div className="flex flex-col flex-1 min-w-0">
             <Outlet />
           </div>
         </PageContent>
@@ -78,7 +78,9 @@ const AppTemplate = () => {
               basePath={`/${org?.id}/apps/${app?.id}`}
               links={navLinks}
             />
-            <Outlet />
+             <div className="flex flex-col flex-1 min-w-0">
+               <Outlet />
+             </div>
           </PageContent>
         </>
       )}
