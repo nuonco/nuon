@@ -23,8 +23,6 @@ func (s *InstallsServiceTestSuite) TestTeardownInstallComponentsSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	assert.NotEmpty(s.T(), rr.Header().Get(app.HeaderInstallWorkflowID))
-
 	captured := s.mockEvClient.GetSignals()
 	var found bool
 	for _, c := range captured {

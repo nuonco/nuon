@@ -195,6 +195,5 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 
 	// 6. RETURN APP BRANCH RUN (not Workflow)
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 	ctx.JSON(http.StatusCreated, run) // Changed from 'workflow' to 'run'
 }
