@@ -57,18 +57,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.2
 	github.com/awslabs/goformation/v7 v7.14.9
 	github.com/bradleyfalzon/ghinstallation/v2 v2.2.0
-	github.com/bufbuild/connect-go v1.5.2
 	github.com/charmbracelet/fang v0.4.4
 	github.com/charmbracelet/huh v0.8.0
 	github.com/cockroachdb/errors v1.11.3
 	github.com/databus23/helm-diff/v3 v3.12.5
-	github.com/dave/dst v0.27.3
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
 	github.com/dominikbraun/graph v0.23.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
-	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/facebookgo/symwalk v0.0.0-20150726040526-42004b9f3222
 	github.com/fidiego/systemctl v0.0.0-20250806220859-522199525cc8
 	github.com/getkin/kin-openapi v0.131.0
@@ -80,13 +77,11 @@ require (
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-swagger/go-swagger v0.33.0
-	github.com/go-toolsmith/astfmt v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-github/v41 v41.0.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.6.0
-	github.com/grafana/codejen v0.0.3
 	github.com/hashicorp/go-getter v1.7.9
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-version v1.7.0
@@ -97,6 +92,7 @@ require (
 	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jedib0t/go-pretty/v6 v6.7.8
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/lib/pq v1.10.9
 	github.com/matoous/go-nanoid/v2 v2.0.0
@@ -119,7 +115,6 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
-	github.com/srikrsna/protoc-gen-gotag v1.0.2
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/files v1.0.1
@@ -222,7 +217,6 @@ require (
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20240805132620-81f5be970eca // indirect
-	github.com/jedib0t/go-pretty/v6 v6.7.8 // indirect
 	github.com/knadh/koanf/providers/env/v2 v2.0.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.4 // indirect
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
@@ -503,7 +497,6 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.18.0
-	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
@@ -566,7 +559,6 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lithammer/fuzzysearch v1.1.8
-	github.com/lyft/protoc-gen-star/v2 v2.0.4-0.20230330145011-496ad1ac90a4 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
