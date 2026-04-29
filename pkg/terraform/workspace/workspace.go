@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 
@@ -33,6 +34,132 @@ const DefaultFilesystemMirrorDir = ".terraform-providers"
 // `terraform-provider-azurerm_4.34.0_linux_amd64.zip` →
 // captures "linux_amd64".
 var providerZipPlatformRE = regexp.MustCompile(`_([a-z0-9]+_[a-z0-9]+)\.zip$`)
+
+// DefaultBundledBinaryDir is the conventional directory name (relative to
+// an archive base path) that holds a terraform CLI binary vendored at
+// build time. The build runner writes per-platform binaries at
+// `<archBase>/<DefaultBundledBinaryDir>/<os>_<arch>/terraform` plus a
+// sibling `VERSION` sidecar that records the terraform version they were
+// built for. The install runner looks at the same path to decide whether
+// it can run terraform fully airgapped.
+//
+// Mirrors the shape of DefaultFilesystemMirrorDir for providers — same
+// "filesystem-driven, feature-flag-unaware" rule on the install side.
+const DefaultBundledBinaryDir = ".terraform-binaries"
+
+// BundledBinaryVersionFile is the filename of the version sidecar inside
+// DefaultBundledBinaryDir.
+const BundledBinaryVersionFile = "VERSION"
+
+// bundledBinaryName is the on-disk filename of the vendored terraform CLI.
+const bundledBinaryName = "terraform"
+
+// BundledBinaryVersion returns the trimmed contents of the VERSION sidecar
+// inside the bundled-binary directory of an unpacked archive, or "" if the
+// sidecar is missing or unreadable. Used for the version-mismatch fallback
+// branch in DetectBundledBinary and for diagnostic logging.
+func BundledBinaryVersion(archBase string) string {
+	b, err := os.ReadFile(filepath.Join(archBase, DefaultBundledBinaryDir, BundledBinaryVersionFile))
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(b))
+}
+
+// BundledBinaryPlatforms returns the sorted, de-duplicated set of
+// `<os>_<arch>` platforms that have a vendored terraform CLI binary inside
+// archBase. Returns nil when the bundled-binary directory is absent or
+// contains no platform subdirectories. Used both by DetectBundledBinary
+// (to decide whether the host platform is supported) and by callers that
+// want to surface the vendored platform set in logs.
+func BundledBinaryPlatforms(archBase string) []string {
+	binDir := filepath.Join(archBase, DefaultBundledBinaryDir)
+	entries, err := os.ReadDir(binDir)
+	if err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		// Only count entries that actually have a binary on disk —
+		// keeps an empty/half-baked subdir from polluting the platform
+		// set we report.
+		if _, err := os.Stat(filepath.Join(binDir, e.Name(), bundledBinaryName)); err != nil {
+			continue
+		}
+		out = append(out, e.Name())
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	sort.Strings(out)
+	return out
+}
+
+// DetectBundledBinary returns an absolute path to a build-vendored
+// terraform CLI binary suitable for handing to a workspace's Binary
+// implementation, or "" if the install runner should fall back to fetching
+// terraform from releases.hashicorp.com as before.
+//
+// Returns "" when:
+//   - the bundled-binary directory is absent (older artifact / feature off)
+//   - no platform subdirectory matches runtime.GOOS_runtime.GOARCH
+//   - the host platform binary exists but is not a regular file
+//   - a VERSION sidecar is present and disagrees with requestedVersion
+//
+// We intentionally do NOT gate on the executable bit: OCI artifacts
+// pulled via oras-go's file.Store do not preserve POSIX mode, so a
+// vendored binary that was 0755 at build time lands at 0644 on the
+// install runner. The localbinary consumer chmods 0755 at Install time
+// — checking exec mode here would just produce a false negative and
+// silently fall through to the remote install path.
+//
+// The version-mismatch case is the key compat lever: if a component bumps
+// `terraform_version` between builds and an old artifact is still around,
+// we never silently run the wrong CLI version against the new config —
+// we fall through to remotebinary instead. When the sidecar is absent
+// (older vendored builds, before the sidecar was introduced) we accept the
+// binary on the assumption build and install agree on the version they're
+// both reading from the same component config.
+//
+// Mirrors DetectFilesystemMirror's contract: install side stays
+// feature-flag-unaware, decision is purely from on-disk artifact
+// contents, empty return is a safe no-op.
+func DetectBundledBinary(archBase, requestedVersion string) string {
+	hostPlatform := runtime.GOOS + "_" + runtime.GOARCH
+	binPath := filepath.Join(archBase, DefaultBundledBinaryDir, hostPlatform, bundledBinaryName)
+
+	info, err := os.Stat(binPath)
+	if err != nil || info.IsDir() {
+		return ""
+	}
+
+	if v := BundledBinaryVersion(archBase); v != "" && requestedVersion != "" && v != requestedVersion {
+		return ""
+	}
+
+	return binPath
+}
+
+// isBundledTerraformBinary reports whether name (a slash-separated archive
+// path, with any leading "./" already trimmed) refers to a build-vendored
+// terraform CLI at the conventional `.terraform-binaries/<os>_<arch>/terraform`
+// location. Used by archive unpack to re-apply the exec bit lost during OCI
+// packing.
+//
+// Kept minimal on purpose: we only mark the canonical filename in a
+// platform subdirectory of DefaultBundledBinaryDir as exec, not arbitrary
+// files inside the dir, so a stray VERSION or README sidecar can't get
+// chmod 0777 by accident.
+func isBundledTerraformBinary(name string) bool {
+	parts := strings.Split(name, "/")
+	if len(parts) != 3 {
+		return false
+	}
+	return parts[0] == DefaultBundledBinaryDir && parts[2] == bundledBinaryName
+}
 
 // DetectFilesystemMirror returns the path to pass to WithFilesystemMirror
 // (relative to the workspace root), or "" if the unpacked archive at

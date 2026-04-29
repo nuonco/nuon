@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -151,7 +152,124 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 		return fmt.Errorf("terraform providers mirror failed: %w", err)
 	}
 
+	// Now that the provider mirror is in place, also vendor the terraform
+	// CLI binary itself so install runners can run fully airgapped (no
+	// fetch from releases.hashicorp.com for `terraform_<ver>_<plat>.zip`
+	// either). Reuses the host-platform binary we already installed above
+	// to avoid a redundant download in the modal single-platform case.
+	if err := vendorTerraformBinary(ctx, l, execPath, srcDir, tfVersion, platforms); err != nil {
+		return fmt.Errorf("unable to vendor terraform binary: %w", err)
+	}
+
 	return nil
+}
+
+// vendorTerraformBinary copies the terraform CLI binary itself into
+// `<srcDir>/<workspace.DefaultBundledBinaryDir>/<host>/terraform` and
+// writes a sibling `VERSION` sidecar recording tfVersion. The artifact
+// packer picks the tree up alongside everything else (mirror, modules,
+// lockfile).
+//
+// We only vendor the host platform's binary, even when `platforms`
+// includes others for the provider mirror. Reasons:
+//
+//  1. hc-install's ExactVersion does not expose OS/Arch overrides, so
+//     cross-platform binary vendoring would require a manual HTTP fetch
+//     against releases.hashicorp.com — not free, and not justified by the
+//     modal use case (homogeneous orgs).
+//  2. The install side is graceful about platform-mismatch artifacts:
+//     workspace.DetectBundledBinary returns "" when the host platform's
+//     binary is absent and the runner falls through to its existing
+//     remotebinary path. So a heterogeneous setup that vendors providers
+//     across platforms still works — just without the binary airgap on
+//     non-build platforms.
+//
+// If we ever need cross-platform binary vendoring, the natural extension
+// is a manual fetch from
+// `https://releases.hashicorp.com/terraform/<ver>/terraform_<ver>_<os>_<arch>.zip`,
+// gated by a TERRAFORM_BINARY_PLATFORMS env var.
+func vendorTerraformBinary(
+	ctx context.Context,
+	l *zap.Logger,
+	hostExecPath, srcDir, tfVersion string,
+	platforms []string,
+) error {
+	binDir := filepath.Join(srcDir, workspace.DefaultBundledBinaryDir)
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		return fmt.Errorf("unable to create bundled binary dir: %w", err)
+	}
+
+	hostPlatform := runtime.GOOS + "_" + runtime.GOARCH
+
+	skipped := make([]string, 0)
+	for _, p := range platforms {
+		if p != hostPlatform {
+			skipped = append(skipped, p)
+		}
+	}
+	if len(skipped) > 0 {
+		// Surface the limitation in the build log so heterogeneous-org
+		// operators understand why install runners on non-build
+		// platforms still hit releases.hashicorp.com for the CLI even
+		// though their providers are vendored.
+		l.Info("skipping CLI binary vendoring for non-host platforms (provider mirror still covers them)",
+			zap.String("host_platform", hostPlatform),
+			zap.Strings("skipped_platforms", skipped),
+		)
+	}
+
+	dst := filepath.Join(binDir, hostPlatform, bundledBinaryName)
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return fmt.Errorf("unable to create bundled binary platform dir: %w", err)
+	}
+	if err := copyExecutable(hostExecPath, dst); err != nil {
+		return fmt.Errorf("unable to copy terraform binary for %s: %w", hostPlatform, err)
+	}
+	l.Info("vendored terraform CLI binary",
+		zap.String("platform", hostPlatform),
+		zap.String("version", tfVersion),
+		zap.String("dst", dst),
+	)
+
+	// VERSION sidecar: install side uses this to detect terraform_version
+	// drift between the build that produced this artifact and the install
+	// plan that's about to consume it. Single line — keep it trivial to
+	// read & compare.
+	versionPath := filepath.Join(binDir, workspace.BundledBinaryVersionFile)
+	if err := os.WriteFile(versionPath, []byte(tfVersion+"\n"), 0o644); err != nil {
+		return fmt.Errorf("unable to write bundled binary VERSION sidecar: %w", err)
+	}
+
+	return nil
+}
+
+// bundledBinaryName mirrors the unexported constant of the same name in
+// pkg/terraform/workspace. Duplicated here to avoid exporting an
+// otherwise-internal filename.
+const bundledBinaryName = "terraform"
+
+// copyExecutable copies src to dst byte-for-byte and chmods dst 0755 so
+// the install runner sees an executable bit (preserved by OCI packing).
+// We intentionally chmod after copy rather than mirroring src's mode:
+// hc-install already produces 0755, but if a future src ever doesn't,
+// the bundled binary still has to be executable to be useful.
+func copyExecutable(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open src: %w", err)
+	}
+	defer in.Close()
+
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return fmt.Errorf("open dst: %w", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("copy: %w", err)
+	}
+	return os.Chmod(dst, 0o755)
 }
 
 // terraformLockFile is the conventional name of the dependency lockfile
