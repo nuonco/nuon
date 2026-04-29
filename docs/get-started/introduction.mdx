@@ -41,8 +41,11 @@ export const YoutubeEmbed = ({ src }) => (
     <p className="max-w-xl mx-auto mt-4 text-5xl text-center font-medium tracking-tight" style={{ color: 'inherit' }}>
       Continuous delivery into your customer's cloud.
     </p>
-    <p className="max-w-lg mx-auto mt-3 text-base text-center opacity-50">
-      Unlock the Bring Your Own Cloud (BYOC) deployment model for your entire customer base.
+    <p className="max-w-xl mx-auto mt-4 text-base text-center opacity-70" style={{ color: 'inherit' }}>
+      Define your app once with TOML. Ship it into AWS, Azure, or GCP customer accounts — with zero cross-account access.
+    </p>
+    <p className="max-w-xl mx-auto mt-3 text-sm text-center opacity-50" style={{ color: 'inherit' }}>
+      For software vendors selling to enterprises that need self-managed deployments.
     </p>
 
     <div className="px-0 mt-12 lg:mt-16 grid sm:grid-cols-2 gap-x-8 gap-y-2">
@@ -83,13 +86,38 @@ export const YoutubeEmbed = ({ src }) => (
         href="https://nuon.co/contact-sales"
       />
     </div>
+
+    <p className="text-center text-xs opacity-50 mt-8" style={{ color: 'inherit' }}>
+      Built in the open — view the source on <a href="https://github.com/nuonco/nuon" style={{ color: 'inherit', textDecoration: 'underline' }}>github.com/nuonco/nuon</a>.
+    </p>
   </div>
 
   <div className="relative z-10 max-w-3xl mx-auto px-4 pb-16">
-    <Note>
-      If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into customer clouds, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
-    </Note>
-    <div className="mt-6">
+
+## What a component looks like
+
+A Nuon app is a collection of components defined in TOML. A single Helm component looks like this:
+
+```toml components/whoami.toml
+type       = "helm_chart"
+name       = "whoami"
+chart_name = "whoami"
+
+[public_repo]
+repo      = "nuonco/demo"
+directory = "eks-simple/src/components/whoami"
+branch    = "main"
+```
+
+Components can also be Terraform modules, Kubernetes manifests, container images, or Docker builds. See [Configuration files](/configuration-files) for the full picture.
+
+## How it works
+
+![Runner architecture](/images/runner-architecture.png)
+
+A small **Runner** binary lives inside the customer's cloud account, polls the **Control Plane** for jobs, and executes infrastructure operations locally. The Control Plane never has credentials or network access into customer accounts. See [Platform Architecture](/architecture/platform) for the full breakdown.
+
+    <div className="mt-12">
       <YoutubeEmbed src="https://www.youtube.com/embed/LXoczC247zg?t=1" />
     </div>
   </div>
