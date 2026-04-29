@@ -13,7 +13,7 @@ title: 'Stack'
 |----------|----------|----------|----------|
 | **`name`**<br/>string | stack name Name of the CloudFormation stack when deployed in the customer account. Supports Go templating | **✅ Required** | `"myapp-{{.nuon.install.id}}"`, `"production-stack"` |
 | **`description`**<br/>string | stack description Description of the stack, displayed in the CloudFormation console. Supports templating | **✅ Required** | `"Infrastructure stack for MyApp application"` |
-| **`type`**<br/>string | stack type Type of infrastructure stack. Currently only 'aws-cloudformation' is supported | **Optional** | `"aws-cloudformation"` |
+| **`type`**<br/>string | stack type Type of infrastructure stack. Supported values: 'aws-cloudformation' (AWS — also generates a Terraform install module from the same config), 'azure-bicep' (Azure), 'gcp-terraform' (Google Cloud). | **Optional** | `"aws-cloudformation"`, `"azure-bicep"`, `"gcp-terraform"` |
 | **`vpc_nested_template_url`**<br/>string | VPC nested template URL URL to the CloudFormation nested template for VPC resources | **Optional** | `"https://s3.amazonaws.com/bucket/vpc-template.yaml"` |
 | **`runner_nested_template_url`**<br/>string | runner nested template URL URL to the CloudFormation nested template for the Nuon runner infrastructure | **Optional** | `"https://s3.amazonaws.com/bucket/runner-template.yaml"` |
 | **`custom_nested_stacks`**<br/>object | custom nested stacks Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascend... | **Optional** | - |
