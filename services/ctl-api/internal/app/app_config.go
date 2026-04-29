@@ -150,3 +150,7 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
+
+func (a *AppConfig) AfterQuery(tx *gorm.DB) error {
+	return nil
+}

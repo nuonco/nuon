@@ -11,7 +11,10 @@ import (
 
 // GetRunnerSandboxConfig returns a single sandbox config for a job type and operation.
 // Query params: job_type (required), operation (optional).
-// Fallback: if no config matches the exact operation, returns the config with no operation set.
+// Lookup order:
+//  1. Exact match on (job_type, operation)
+//  2. Wildcard match on (job_type, "all") — matches any operation
+//  3. Legacy fallback on (job_type, "") — empty operation
 func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 	jobType := ctx.Query("job_type")
 	operation := ctx.Query("operation")
@@ -32,10 +35,20 @@ func (s *service) GetRunnerSandboxConfig(ctx *gin.Context) {
 		}
 	}
 
-	// Fall back to job-type-only config (empty operation)
+	// Fall back to "all" operation config (wildcard for any operation)
 	var cfg app.SandboxModeJobConfig
 	if res := s.db.WithContext(ctx).
-		Where(app.SandboxModeJobConfig{JobType: jobType, Operation: ""}).
+		Where(app.SandboxModeJobConfig{JobType: jobType, Operation: "all"}).
+		First(&cfg); res.Error == nil {
+		ctx.JSON(http.StatusOK, convertToSandboxConfigResponse(cfg))
+		return
+	}
+
+	// Fall back to job-type-only config (empty operation).
+	// NOTE: must use map-based Where because GORM silently drops zero-value
+	// fields from struct-based Where, and "" is a zero value for string.
+	if res := s.db.WithContext(ctx).
+		Where(map[string]interface{}{"job_type": jobType, "operation": ""}).
 		First(&cfg); res.Error != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("no sandbox config for job_type=%s", jobType)})
 		return
