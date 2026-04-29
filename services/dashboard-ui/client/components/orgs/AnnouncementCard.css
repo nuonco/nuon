@@ -1,0 +1,28 @@
+.announcement-wrapper {
+  overflow: hidden;
+  transition: height 200ms var(--ease-cubic), margin 200ms var(--ease-cubic);
+}
+
+.announcement-wrapper.announcement-collapse {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.announcement-hidden {
+  visibility: hidden;
+}
+
+.announcement-slide-out {
+  animation: announcement-slide-out 150ms var(--ease-cubic) forwards;
+}
+
+@keyframes announcement-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(2rem);
+    opacity: 0;
+  }
+}
