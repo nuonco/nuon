@@ -1,0 +1,93 @@
+---
+title: '033 - Parallel Workflows, Policy Analytics, and Improved GCP/Azure'
+description: '**New**: Parallel Workflows, Retries, Policy Analytics, Labels 
+**Improved**: Azure, GCP, Plan Diffs, Runner Management'
+---
+
+_April 24, 2026_
+
+## Parallel Worflows
+
+No longer blocked on an in-flight deploy - you can run multiple workflows concurrently.
+
+![dashboard-overview](../images/changelog/033-dashboard-overview.png)
+
+[Workflows](/concepts/workflows) on an install used to queue behind each other, now you can fire off diagnostic actions *while* a deploy is in flight.
+
+## Automatic Retries
+
+Configure `auto_retry` on a [component](/concepts/components) and it re-plans + re-applies itself on transient failures; bound retries per component with `max_auto_retries` so a genuinely broken component still surfaces instead of looping forever.
+
+![automatic-retries](../images/changelog/033-automatic-retries.png)
+
+## Runner Process Management
+
+On the Install's [Runner](/concepts/runners), we now show both the management (VM) process and container process directly and let you control them.
+
+![runner-processes](../images/changelog/033-runner-processes.png)
+
+## Drift Detection - Better diffs
+
+Diff rendering is updated to be easier to navigate and approve changes. Preventing a missed critical change in the customer environment.
+
+![plan-diffs](../images/changelog/033-plan-diffs.png)
+
+## Policy Evaluation Analytics
+
+When a policy is starting to throw warnings, you need to know which install and which component, action or deploy triggered it. Every [policy evaluation](/concepts/policies) is now surfaced on a per-app Analytics page.
+
+![policy-analytics](../images/changelog/033-policy-analytics.png)
+
+## Labels
+
+You can now label installs, components, and actions. This enables you to add additional metadata to labels and correlate installs, actions and more together.
+
+![labels](../images/changelog/033-labels.png)
+
+## Azure Improvements
+
+We now support stepping customers through Azure Resource Group creation directly in the dashboard.
+
+## GCP Improvements
+
+GCP runners now authenticate with [management-mode credentials](/guides/runner-management-mode) and ship with a default runner template, so spinning up a GCP install is a one-step flow.
+
+## Other Updates
+
+**Policy Config API & Reporting**
+
+- Added a [`GET /v1/apps/{app_id}/policies-configs/{config_id}`](https://api.nuon.co/docs/index.html#/apps/GetAppPoliciesConfig) endpoint for retrieving an app's policy configuration, with corresponding dashboard-ui integration. 
+
+- "Policy Evaluations" has been renamed to "Policy Reports" across the UI and
+docs. Sandbox policies now correctly scope to the sandbox install only.
+
+**Nuon CLI - New Commands**
+
+`nuon install stacks`
+
+For listing and retrieving [install stacks](/concepts/stacks). This command is useful for scripting workflows and
+
+```bash
+nuon installs stacks
+# e.g. to get th emost recent aws quick link url
+nuon installs stacks latest --json | jq '.quick_link_url'
+```
+
+`nuon installs actions`
+
+Has been augmented with sub-commands to get action outputs:
+
+```bash
+# for use in CI
+nuon installs actions outputs --action-workflow-id --json
+```
+
+`nuon installs components`
+
+Has been augmented with sub-commands to get component outputs:
+
+```bash
+# for use in CI
+nuon installs components outputs --component-id --json
+```
+
