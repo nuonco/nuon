@@ -158,7 +158,9 @@ export const DeployHeader = ({
           {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
-                {deploy.runner_jobs.at(0).install_role_usage.role_name}
+                <Link href={`/${deploy?.org_id}/installs/${deploy?.install_id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`}>
+                  {deploy.runner_jobs.at(0).install_role_usage.role_name}
+                </Link>
               </Text>
             </LabeledValue>
           ) : null}
