@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 
-FROM golang:1.25 AS build-base
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25 AS build-base
 
 # Set GOPROXY environment variable
 ARG GOPROXY=https://proxy.golang.org,direct
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=gobase-apt \
     jq && rm -rf /var/lib/apt/lists/*
 
 # Get golangci-lint from the official image
-FROM golangci/golangci-lint:v2.5.0 AS golangci
+FROM public.ecr.aws/p7e3r5y0/mirror/golangci/golangci-lint:v2.5.0 AS golangci
 
 # Back to main build
 FROM build-base AS deps
