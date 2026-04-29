@@ -106,7 +106,8 @@
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
-              "concepts/stacks"
+              "concepts/stacks",
+              "concepts/cli"
             ]
           },
           {
@@ -118,8 +119,7 @@
             "group": "Customer Experience",
             "boost": 3,
             "pages": [
-              "concepts/customer-portal",
-              "concepts/cli"
+              "concepts/customer-portal"
             ]
           }
         ]
