@@ -58,13 +58,21 @@ func (s *Signal) AutoRetry() bool { return true }
 func (s *Signal) MaxRetries() int { return 5 }
 
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
-	ccc, err := activities.AwaitGetComponentConfigConnectionForInstallComponent(ctx, activities.GetComponentConfigConnectionForInstallComponentRequest{
-		InstallComponentID: s.InstallComponentID,
-		ComponentID:        s.ComponentID,
-	})
-	if err != nil || ccc == nil {
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
+	if err != nil {
 		return 0
 	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return 0
+	}
+
+	ccc, ok := appCfg.ComponentConfigConnectionsByComponentID[s.ComponentID]
+	if !ok {
+		return 0
+	}
+
 	return ccc.GetMaxAutoRetries()
 }
 
