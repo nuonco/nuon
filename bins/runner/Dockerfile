@@ -253,8 +253,8 @@ ENV GIT_REF=$tag
 ENTRYPOINT ["/bin/runner"]
 
 FROM scratch AS artifacts-build
-COPY --from=build-darwin-arm64 /out/ /
-COPY --from=build-darwin-amd64 /out/ /
+#COPY --from=build-darwin-arm64 /out/ /
+#COPY --from=build-darwin-amd64 /out/ /
 COPY --from=build-linux-arm /out/ /
 COPY --from=build-linux-arm64 /out/ /
 COPY --from=build-linux-386 /out/ /

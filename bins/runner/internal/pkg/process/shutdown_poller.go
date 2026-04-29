@@ -104,6 +104,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		if shutdown == nil {
 			continue
 		}
+
 		if shutdown.Status == "requested" {
 			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
 				zap.String("process_id", processID),

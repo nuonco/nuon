@@ -1,6 +1,7 @@
 package generics
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -62,6 +63,35 @@ func (jq *JSONBQuerier) WhereJSONPath(field string, path []string, operator stri
 	pathStr := "{" + join(path, ",") + "}"
 	query := fmt.Sprintf("%s#>>? %s ?", field, operator)
 	return jq.Where(query, pathStr, value)
+}
+
+// MergeJSONBMetadata reads a JSONB column's "metadata" key, merges the provided
+// key-value pairs, and writes the column back. The model must be a pointer to a
+// GORM model (e.g. &app.QueueSignal{}).
+func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadata map[string]any) error {
+	// Build a jsonb_set chain that merges each key into the metadata sub-object.
+	// Start from the existing column value, defaulting to '{}'.
+	expr := fmt.Sprintf("COALESCE(%s::jsonb, '{}'::jsonb)", field)
+
+	args := make([]any, 0, len(metadata))
+	for k, v := range metadata {
+		valJSON, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("unable to marshal metadata value for key %s: %w", k, err)
+		}
+		expr = fmt.Sprintf("jsonb_set(%s, '{metadata,%s}', ?::jsonb)", expr, k)
+		args = append(args, string(valJSON))
+	}
+
+	args = append(args, id)
+	if res := db.
+		Model(model).
+		Where("id = ?", id).
+		Update(field, gorm.Expr(expr, args...)); res.Error != nil {
+		return fmt.Errorf("unable to merge metadata: %w", res.Error)
+	}
+
+	return nil
 }
 
 // Helper function to join strings
