@@ -46,6 +46,13 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
+	// Clear any stale restart hint so this run doesn't immediately restart.
+	if err := activities.AwaitClearRestartHint(ctx, activities.ClearRestartHintRequest{
+		QueueID: q.queueID,
+	}); err != nil {
+		l.Warn("unable to clear restart hint", zap.Error(err))
+	}
+
 	l.Info("registering handlers")
 	if err := q.registerHandlers(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to register handlers")
@@ -65,6 +72,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	if err := q.startDispatcher(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
+
+	l.Info("starting hint listener")
+	q.startHintListener(ctx)
 
 	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true
