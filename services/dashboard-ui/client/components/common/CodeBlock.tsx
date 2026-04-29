@@ -71,7 +71,19 @@ export function CodeBlock({
   showLineNumbers = false,
 }: ICodeBlock) {
   const colorScheme = useSystemTheme()
-  const theme = colorScheme === 'dark' ? oneDark : oneLight
+  const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
+  const baseTheme = colorScheme === 'dark' ? oneDark : oneLight
+  const theme = {
+    ...baseTheme,
+    'pre[class*="language-"]': {
+      ...baseTheme['pre[class*="language-"]'],
+      background: bgCode,
+    },
+    'code[class*="language-"]': {
+      ...baseTheme['code[class*="language-"]'],
+      background: bgCode,
+    },
+  }
   const lines = isDiff ? children.split('\n') : []
 
   const prism = (

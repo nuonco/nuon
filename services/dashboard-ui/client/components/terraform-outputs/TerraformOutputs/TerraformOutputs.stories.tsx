@@ -1,8 +1,8 @@
 export default {
-  title: 'Sandbox/SandboxOutputs',
+  title: 'Terraform/TerraformOutputs',
 }
 
-import { SandboxOutputs } from './SandboxOutputs'
+import { TerraformOutputs } from './TerraformOutputs'
 
 const fullAwsOutputs = {
   account: {
@@ -110,112 +110,47 @@ const fullAwsOutputs = {
   },
 }
 
-export const FullAws = () => <SandboxOutputs outputs={fullAwsOutputs} />
+export const SandboxOutputs = () => (
+  <TerraformOutputs heading="Sandbox run outputs" outputs={fullAwsOutputs} />
+)
 
-export const ClusterOnly = () => (
-  <SandboxOutputs
+export const FlatComponentOutputs = () => (
+  <TerraformOutputs
+    heading="rds-cluster outputs"
     outputs={{
-      account: { id: '123456789012', region: 'us-west-2' },
-      cluster: {
-        arn: 'arn:aws:eks:us-west-2:123456789012:cluster/staging',
-        endpoint: 'https://ABC123.gr7.us-west-2.eks.amazonaws.com',
-        name: 'staging',
-        status: 'ACTIVE',
-        platform_version: 'eks.9',
-      },
+      address: 'ukEMRHhunsYMCNrOjCtOKxbQX',
+      db_instance_master_user_secret_arn: 'dDtetQhfknVbDDCUeSZEFncsF',
+      db_instance_name: 'fLDZVMXcLPuVGGbJgmFIsKCkn',
+      db_instance_port: 'xCAEkIqyGbAtCgRgjAYWFmcWC',
     }}
   />
 )
 
-export const NetworkHeavy = () => (
-  <SandboxOutputs
+export const MixedDepths = () => (
+  <TerraformOutputs
+    heading="networking outputs"
     outputs={{
-      vpc: {
-        id: 'vpc-0abc123def456',
-        cidr: '10.0.0.0/16',
-        azs: ['us-west-2a', 'us-west-2b', 'us-west-2c'],
-        private_subnet_ids: [
-          'subnet-0abc123def456',
-          'subnet-0ghi789jkl012',
-          'subnet-0mno345pqr678',
-        ],
-        public_subnet_ids: [
-          'subnet-0stu901vwx234',
-          'subnet-0yza567bcd890',
-          'subnet-0efg123hij456',
-        ],
-        private_subnet_cidr_blocks: ['10.0.1.0/24', '10.0.2.0/24', '10.0.3.0/24'],
-        public_subnet_cidr_blocks: ['10.0.4.0/24', '10.0.5.0/24', '10.0.6.0/24'],
-        default_security_group_id: 'sg-0qrs345tuv678',
-      },
-      nuon_dns: {
-        enabled: true,
-        internal_domain: {
-          name: 'internal.example.com',
-          zone_id: 'Z8G9H0I1J2K3L4',
-          nameservers: ['ns-5678.awsdns-90.org', 'ns-123.awsdns-12.com'],
-        },
-        public_domain: {
-          name: 'example.com',
-          zone_id: 'Z1A2B3C4D5E6F7',
-          nameservers: ['ns-1234.awsdns-12.org', 'ns-567.awsdns-34.com'],
-        },
-      },
+      vpc_id: 'vpc-0abc123def456',
       region: 'us-west-2',
-    }}
-  />
-)
-
-export const MinimalSandbox = () => (
-  <SandboxOutputs
-    outputs={{
-      account: { id: '987654321098', region: 'eu-west-1' },
-      region: 'eu-west-1',
-      namespaces: ['default'],
-    }}
-  />
-)
-
-export const DnsAndIngress = () => (
-  <SandboxOutputs
-    outputs={{
-      nuon_dns: {
-        enabled: true,
-        alb_ingress_controller: {
-          chart: 'aws-load-balancer-controller',
-          enabled: true,
-          id: 'alb-ingress-controller',
-          revision: '1.4.7',
-        },
-        cert_manager: {
-          chart: 'cert-manager',
-          enabled: true,
-          id: 'cert-manager',
-          revision: '1.11.0',
-        },
-        external_dns: {
-          chart: 'external-dns',
-          enabled: true,
-          id: 'external-dns',
-          revision: '1.12.1',
-        },
-        ingress_nginx: {
-          chart: 'ingress-nginx',
-          enabled: true,
-          id: 'ingress-nginx',
-          revision: '4.7.1',
-        },
-        internal_domain: {
-          name: 'internal.myapp.io',
-          zone_id: 'ZABC123',
-          nameservers: ['ns-1.awsdns.org', 'ns-2.awsdns.com'],
-        },
-        public_domain: {
-          name: 'myapp.io',
-          zone_id: 'ZDEF456',
-          nameservers: ['ns-3.awsdns.net', 'ns-4.awsdns.co.uk'],
-        },
+      subnets: {
+        private: ['subnet-abc', 'subnet-def'],
+        public: ['subnet-ghi', 'subnet-jkl'],
       },
+      security_groups: {
+        default: 'sg-0qrs345tuv678',
+        cluster: 'sg-0abc123def456',
+      },
+    }}
+  />
+)
+
+export const CustomHeading = () => (
+  <TerraformOutputs
+    heading="my-app outputs"
+    outputs={{
+      endpoint: 'https://my-app.example.com',
+      api_key: 'sk-abc123def456',
+      status: 'healthy',
     }}
   />
 )

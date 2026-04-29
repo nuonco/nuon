@@ -1,5 +1,5 @@
 import { EmptyState } from '@/components/common/EmptyState'
-import { SandboxOutputs } from '@/components/sandbox/SandboxOutputs'
+import { TerraformOutputs } from '@/components/terraform-outputs/TerraformOutputs'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 
 export const SandboxRunOutputsTab = () => {
@@ -16,5 +16,5 @@ export const SandboxRunOutputsTab = () => {
     )
   }
 
-  return <SandboxOutputs outputs={outputs} />
+  return <TerraformOutputs heading="Sandbox run outputs" outputs={outputs} />
 }

@@ -13,7 +13,7 @@ import type { TKeyValue } from '@/types'
 
 type TViewMode = 'grid' | 'json'
 
-const STORAGE_KEY = 'nuon:sandbox-outputs-view'
+const STORAGE_KEY = 'nuon:terraform-outputs-view'
 
 function getStoredViewMode(): TViewMode {
   try {
@@ -23,9 +23,11 @@ function getStoredViewMode(): TViewMode {
   return 'grid'
 }
 
-export const SandboxOutputs = ({
+export const TerraformOutputs = ({
+  heading = 'Outputs',
   outputs,
 }: {
+  heading?: string
   outputs: Record<string, unknown>
 }) => {
   const [viewMode, setViewMode] = useState<TViewMode>(getStoredViewMode)
@@ -36,14 +38,14 @@ export const SandboxOutputs = ({
       localStorage.setItem(STORAGE_KEY, mode)
     } catch {}
   }
-  const sections = Object.entries(outputs)
+
+  const entries = Object.entries(outputs)
+  const isFlat = entries.every(([, v]) => typeof v !== 'object' || v === null)
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Text weight="strong">
-          Sandbox outputs
-        </Text>
+        <Text weight="strong">{heading}</Text>
         <div className="flex items-center gap-2">
           <ToggleButton
             value={viewMode}
@@ -62,9 +64,11 @@ export const SandboxOutputs = ({
 
       {viewMode === 'json' ? (
         <JSONViewer data={outputs} expanded={2} showDataTypes={false} className="w-full" />
+      ) : isFlat ? (
+        <KeyValueList values={toKeyValues(outputs)} />
       ) : (
         <Card className="!p-0 !gap-0 divide-y w-full">
-          {sections.map(([key, value]) => (
+          {entries.map(([key, value]) => (
             <SectionExpand key={key} name={key} value={value} />
           ))}
         </Card>
@@ -105,7 +109,7 @@ const SectionContent = ({ value }: { value: unknown }) => {
     )
   }
 
-  return <KeyValueList values={toKeyValues(value)} />
+  return <KeyValueList values={toKeyValues(value as Record<string, unknown>)} />
 }
 
 const SectionExpand = ({
@@ -123,7 +127,7 @@ const SectionExpand = ({
 
   return (
     <Expand
-      id={`sandbox-output-${name}`}
+      id={`tf-output-${name}`}
       headerClassName="px-6"
       heading={
         <div className="flex items-center justify-between w-full">
@@ -134,7 +138,7 @@ const SectionExpand = ({
         </div>
       }
     >
-      <div className="border-t bg-black/2 dark:bg-white/2 px-6 py-3">
+      <div className="border-t bg-black/[0.01] dark:bg-white/[0.01] px-6 py-3">
         <SectionContent value={value} />
       </div>
     </Expand>

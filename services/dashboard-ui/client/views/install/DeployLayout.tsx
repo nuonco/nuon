@@ -24,6 +24,7 @@ function getTabsForComponentType(type?: TComponentType): TNavLink[] {
         { path: '/plan', text: 'Plan' },
         { path: '/variables', text: 'Variables' },
         { path: '/state', text: 'State' },
+        { path: '/outputs', text: 'Outputs' },
       )
       break
     case 'pulumi':
