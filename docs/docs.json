@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "aspen",
+  "theme": "sequoia",
   "name": "Nuon documentation",
   "description": "Deploy your software into customer cloud accounts without cross-account access. Nuon is the BYOC platform for software vendors.",
   "contextual": {
