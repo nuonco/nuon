@@ -22,6 +22,11 @@ func (s *stepGroup) nextGroup() {
 	s.nextGroupWithOpts("", false)
 }
 
+func (s *stepGroup) nextGroupEager() {
+	s.nextGroupWithOpts("", false)
+	s.currentGroup.EagerExecution = true
+}
+
 func (s *stepGroup) nextGroupParallel() {
 	s.nextGroupWithOpts("", true)
 }

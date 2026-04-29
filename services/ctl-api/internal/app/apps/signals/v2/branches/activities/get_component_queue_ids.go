@@ -11,9 +11,9 @@ import (
 // @start-to-close-timeout 1m
 // @as-wrapper
 // @by-field componentID
-func (a *Activities) ensureComponentQueue(ctx context.Context, componentID string) (*componenthelpers.ComponentQueueIDs, error) {
+func (a *Activities) getComponentQueueIDs(ctx context.Context, componentID string) (*componenthelpers.ComponentQueueIDs, error) {
 	if componentID == "" {
 		return nil, fmt.Errorf("componentID is required")
 	}
-	return a.componentHelpers.EnsureComponentQueues(ctx, componentID)
+	return a.componentHelpers.GetComponentQueueIDs(ctx, componentID)
 }

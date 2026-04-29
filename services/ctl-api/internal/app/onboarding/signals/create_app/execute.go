@@ -170,10 +170,6 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 		// Trigger builds for each component (fire-and-forget, same as example app path)
 		for _, componentID := range syncResp.ComponentIDs {
-			if err := activities.AwaitEnsureComponentQueueByComponentID(ctx, componentID); err != nil {
-				return fmt.Errorf("component %s: ensure queue failed: %w", componentID, err)
-			}
-
 			// Don't pass AppConfigID for custom apps — there's no AppBranchRun,
 			// and the queuebuild signal would retry GetAppBranchRunByAppConfigID forever.
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

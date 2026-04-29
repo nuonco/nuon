@@ -63,6 +63,8 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 				WorkflowStepGroupID: step.WorkflowStepGroupID,
 				StepTargetType:      step.StepTargetType,
 				RetryIndex:          newRetryIndex,
+				StepQueueID:         step.StepQueueID,
+				TargetQueueID:       step.TargetQueueID,
 			},
 		},
 	})
@@ -94,6 +96,8 @@ func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, 
 			WorkflowStepGroupID: step.WorkflowStepGroupID,
 			StepTargetType:      step.StepTargetType,
 			RetryIndex:          retryIndex,
+			StepQueueID:         step.StepQueueID,
+			TargetQueueID:       step.TargetQueueID,
 		})
 	}
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
