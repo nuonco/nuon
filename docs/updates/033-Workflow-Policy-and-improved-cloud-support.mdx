@@ -46,7 +46,31 @@ You can now label installs, components, and actions. This enables you to add add
 
 ## Azure Improvements
 
-We now support stepping customers through Azure Resource Group creation directly in the dashboard.
+### Bring your own stack
+
+Vendors and customers can layer their own infrastructure on top of the default Azure install using the new [install-stacks](https://github.com/nuonco/install-stacks) repo. This makes it easy to meet enterprise networking, compliance, or naming requirements.
+
+### Pick the right sandbox for the job
+
+- [AKS sandbox](https://github.com/nuonco/azure-aks-sandbox) now supports Karpenter via the Node Auto Provisioning add-on.
+- [Azure Min sandbox](https://github.com/nuonco/azure-min-sandbox) is a lightweight sandbox for foundation Azure infrastructure such as container registry. It can power environments such as Azure Container Apps.
+
+### Start fast with proven app templates
+
+- [aks-simple](https://github.com/nuonco/example-app-configs/tree/main/aks-simple) for Kubernetes apps
+- [aca-simple](https://github.com/nuonco/example-app-configs/tree/main/aca-simple) for serverless container apps on Azure Container Apps
+
+### Runner authentication
+
+Runners on Azure authenticate to Nuon using Azure's workload identity. This removes shared secrets and rotation, and matches the zero-trust posture already available on AWS and GCP.
+
+### First-class container registry support
+
+Builds, image syncs, and component deploys work seamlessly with Azure Container Registry, with per-organization identity and access handled automatically.
+
+### Customer-managed secrets via Key Vault
+
+App secrets sync directly into Azure Key Vault, so workloads can consume them through native Azure mechanisms, the same pattern customers already use with AWS Secrets Manager.
 
 ## GCP Improvements
 
