@@ -147,7 +147,6 @@
             "boost": 3,
             "pages": [
               "guides/app-init",
-              "guides/app-install-life-cycle",
               "guides/managing-apps",
               "guides/managing-components",
               "guides/component-dependencies",
