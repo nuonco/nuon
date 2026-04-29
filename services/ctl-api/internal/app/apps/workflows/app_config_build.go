@@ -1,7 +1,6 @@
 package workflows
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -11,7 +10,8 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
-	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	inlinebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/inlinebuild"
 )
 
 // AppConfigBuild builds the workflow steps for an app config build.
@@ -31,55 +31,59 @@ func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSteps
 		return &app.GenerateStepsResult{}, nil
 	}
 
-	// Parse component state from app config to get names
-	componentNames := parseComponentNames(appConfig.State)
+	// Look up component queue IDs for step routing.
+	componentQueues := make(map[string]*componenthelpers.ComponentQueueIDs, len(appConfig.ComponentIDs))
+	for _, componentID := range appConfig.ComponentIDs {
+		queues, err := activities.AwaitGetComponentQueueIDsByComponentID(ctx, componentID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to get queue IDs for component %s", componentID)
+		}
+		componentQueues[componentID] = queues
+	}
+
+	// Look up component names by ID (sequential, 1-by-1).
+	componentNames := make(map[string]string, len(appConfig.ComponentIDs))
+	for _, componentID := range appConfig.ComponentIDs {
+		cmp, err := activities.AwaitGetComponentByIDByComponentID(ctx, componentID)
+		if err != nil {
+			continue
+		}
+		componentNames[componentID] = cmp.Name
+	}
 
 	steps := make([]*app.WorkflowStep, 0, len(appConfig.ComponentIDs))
 	sg := newStepGroup()
 
-	for _, componentID := range appConfig.ComponentIDs {
-		sg.nextGroup()
-
-		name := fmt.Sprintf("build component %s", componentID)
-		if n, ok := componentNames[componentID]; ok {
-			name = fmt.Sprintf("build %s", n)
+	// Batch components into parallel groups of 5.
+	const batchSize = 5
+	for batchStart := 0; batchStart < len(appConfig.ComponentIDs); batchStart += batchSize {
+		batchEnd := batchStart + batchSize
+		if batchEnd > len(appConfig.ComponentIDs) {
+			batchEnd = len(appConfig.ComponentIDs)
 		}
+		batch := appConfig.ComponentIDs[batchStart:batchEnd]
 
-		step, err := sg.signalStep(ctx, flw.OwnerID, "apps", name, pgtype.Hstore{}, &queuebuild.Signal{
-			ComponentID: componentID,
-			AppConfigID: appConfigID,
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to create build step for component %s", componentID)
+		sg.nextParallelGroup(fmt.Sprintf("build components %d-%d", batchStart+1, batchEnd))
+
+		for _, componentID := range batch {
+			name := fmt.Sprintf("build component %s", componentID)
+			if n, ok := componentNames[componentID]; ok {
+				name = fmt.Sprintf("build %s", n)
+			}
+
+			queues := componentQueues[componentID]
+			step, err := sg.signalStep(ctx, componentID, "components", name, pgtype.Hstore{}, &inlinebuild.Signal{
+				ComponentID: componentID,
+			},
+				WithStepQueueID(queues.WorkflowStepsQueueID),
+				WithTargetQueueID(queues.DefaultQueueID),
+			)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to create build step for component %s", componentID)
+			}
+			steps = append(steps, step)
 		}
-		steps = append(steps, step)
 	}
 
 	return sg.Result(steps), nil
-}
-
-// componentState is a minimal representation of the component state stored in app config.
-type componentState struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
-
-// parseComponentNames extracts component names from the app config state JSON.
-func parseComponentNames(state string) map[string]string {
-	if state == "" {
-		return nil
-	}
-
-	var components []componentState
-	if err := json.Unmarshal([]byte(state), &components); err != nil {
-		return nil
-	}
-
-	names := make(map[string]string, len(components))
-	for _, c := range components {
-		if c.ID != "" && c.Name != "" {
-			names[c.ID] = c.Name
-		}
-	}
-	return names
 }

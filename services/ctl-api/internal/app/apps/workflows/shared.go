@@ -26,6 +26,20 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 	}
 }
 
+// WithStepQueueID sets the queue where the execute-workflow-step signal runs.
+func WithStepQueueID(queueID string) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.StepQueueID = queueID
+	}
+}
+
+// WithTargetQueueID sets the queue where the inner signal runs.
+func WithTargetQueueID(queueID string) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.TargetQueueID = queueID
+	}
+}
+
 // stepGroup tracks the current group index for workflow steps
 type stepGroup struct {
 	idx          int
@@ -43,6 +57,19 @@ func (s *stepGroup) nextGroup() {
 	s.idx++
 	g := &app.WorkflowStepGroup{
 		GroupIdx: s.idx,
+		Status:   app.CompositeStatus{Status: app.StatusPending},
+	}
+	s.groups = append(s.groups, g)
+	s.currentGroup = g
+}
+
+// nextParallelGroup increments the group index and creates a parallel group.
+func (s *stepGroup) nextParallelGroup(name string) {
+	s.idx++
+	g := &app.WorkflowStepGroup{
+		GroupIdx: s.idx,
+		Parallel: true,
+		Name:     name,
 		Status:   app.CompositeStatus{Status: app.StatusPending},
 	}
 	s.groups = append(s.groups, g)

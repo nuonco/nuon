@@ -237,6 +237,8 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 			Skippable:           step.Skippable,
 			GroupIdx:            step.GroupIdx,
 			WorkflowStepGroupID: step.WorkflowStepGroupID,
+			StepQueueID:         step.StepQueueID,
+			TargetQueueID:       step.TargetQueueID,
 		})
 	}
 
