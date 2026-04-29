@@ -28,7 +28,16 @@ func (w *workspace) LoadArchive(ctx context.Context) error {
 		name = strings.TrimPrefix(name, "./")
 
 		permissions := defaultFilePermissions
-		if generics.SliceContains(name, hooks.ValidHooks()) {
+		switch {
+		case generics.SliceContains(name, hooks.ValidHooks()):
+			permissions = defaultFileExecPermissions
+		case isBundledTerraformBinary(name):
+			// Build runner vendors the terraform CLI as
+			// .terraform-binaries/<os>_<arch>/terraform; OCI artifacts
+			// don't preserve mode bits, so we have to re-apply the
+			// exec bit on unpack or DetectBundledBinary will reject
+			// the binary as non-executable. The VERSION sidecar in
+			// the same dir is intentionally not exec.
 			permissions = defaultFileExecPermissions
 		}
 

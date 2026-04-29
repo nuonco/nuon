@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
 type Params struct {
@@ -26,6 +27,7 @@ type Params struct {
 	AcctClient    *account.Client
 	AuthzClient   *authz.Client
 	Cfg           *internal.Config
+	Features      *features.Features
 }
 
 type Activities struct {
@@ -38,6 +40,7 @@ type Activities struct {
 	acctClient     *account.Client
 	authzClient    *authz.Client
 	cfg            *internal.Config
+	features       *features.Features
 }
 
 func New(params Params) *Activities {
@@ -51,5 +54,6 @@ func New(params Params) *Activities {
 		vcsHelpers:     params.VCSHelpers,
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
+		features:       params.Features,
 	}
 }
