@@ -73,18 +73,17 @@ type AppConfig struct {
 
 	// Lookups on the app config
 
-	PermissionsConfig                       AppPermissionsConfig                 `json:"permissions,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"permissions_config,omitzero,omitempty"`
-	BreakGlassConfig                        AppBreakGlassConfig                  `json:"break_glass,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"break_glass_config,omitzero,omitempty"`
-	PoliciesConfig                          AppPoliciesConfig                    `json:"policies,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies_config,omitzero,omitempty"`
-	SecretsConfig                           AppSecretsConfig                     `json:"secrets,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"secrets_config,omitzero,omitempty"`
-	SandboxConfig                           AppSandboxConfig                     `json:"sandbox,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"sandbox_config,omitzero,omitempty"`
-	InputConfig                             AppInputConfig                       `json:"input,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"input_config,omitzero,omitempty"`
-	RunnerConfig                            AppRunnerConfig                      `json:"runner,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runner_config,omitzero,omitempty"`
-	StackConfig                             AppStackConfig                       `json:"stack,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
-	ComponentConfigConnections              []ComponentConfigConnection          `json:"component_config_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_config_connections,omitzero,omitempty"`
-	ComponentConfigConnectionsByComponentID map[string]ComponentConfigConnection `json:"-" gorm:"-" temporaljson:"component_config_connections_by_component_id,omitzero,omitempty"`
-	ActionWorkflowConfigs                   []ActionWorkflowConfig               `json:"action_workflow_configs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflow_configs,omitzero,omitempty"`
-	OperationRoleConfig                     AppOperationRoleConfig               `json:"operation_role_config,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operation_role_config,omitzero,omitempty"`
+	PermissionsConfig          AppPermissionsConfig        `json:"permissions,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"permissions_config,omitzero,omitempty"`
+	BreakGlassConfig           AppBreakGlassConfig         `json:"break_glass,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"break_glass_config,omitzero,omitempty"`
+	PoliciesConfig             AppPoliciesConfig           `json:"policies,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"policies_config,omitzero,omitempty"`
+	SecretsConfig              AppSecretsConfig            `json:"secrets,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"secrets_config,omitzero,omitempty"`
+	SandboxConfig              AppSandboxConfig            `json:"sandbox,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"sandbox_config,omitzero,omitempty"`
+	InputConfig                AppInputConfig              `json:"input,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"input_config,omitzero,omitempty"`
+	RunnerConfig               AppRunnerConfig             `json:"runner,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runner_config,omitzero,omitempty"`
+	StackConfig                AppStackConfig              `json:"stack,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
+	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_config_connections,omitzero,omitempty"`
+	ActionWorkflowConfigs      []ActionWorkflowConfig      `json:"action_workflow_configs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflow_configs,omitzero,omitempty"`
+	OperationRoleConfig        AppOperationRoleConfig      `json:"operation_role_config,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operation_role_config,omitzero,omitempty"`
 
 	// individual pointers
 	InstallAWSCloudFormationStackVersion []InstallStackVersion `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_aws_cloud_formation_stack_version,omitzero,omitempty"`
@@ -153,9 +152,5 @@ func (a *AppConfig) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *AppConfig) AfterQuery(tx *gorm.DB) error {
-	a.ComponentConfigConnectionsByComponentID = make(map[string]ComponentConfigConnection, len(a.ComponentConfigConnections))
-	for _, ccc := range a.ComponentConfigConnections {
-		a.ComponentConfigConnectionsByComponentID[ccc.ComponentID] = ccc
-	}
 	return nil
 }
