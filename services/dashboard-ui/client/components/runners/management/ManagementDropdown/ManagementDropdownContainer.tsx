@@ -9,13 +9,12 @@ export const ManagementDropdownContainer = ({
   isInstallRunner?: boolean
   settings: TRunnerSettings
 }) => {
-  const { runner, isManaged } = useRunner()
+  const { runner } = useRunner()
   if (!runner) return null
 
   return (
     <ManagementDropdown
       runner={runner}
-      isManaged={isManaged}
       isInstallRunner={isInstallRunner}
       settings={settings}
     />

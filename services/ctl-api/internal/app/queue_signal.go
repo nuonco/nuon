@@ -42,6 +42,8 @@ type QueueSignal struct {
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
+	Enqueued bool `json:"enqueued" gorm:"default:false;not null" temporaljson:"enqueued,omitzero,omitempty"`
+
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
 }
 
@@ -51,6 +53,13 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &QueueSignal{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "enqueued"),
+			Columns: []string{
+				"enqueued",
+				"created_at",
 			},
 		},
 	}
