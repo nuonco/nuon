@@ -2,8 +2,12 @@ package workspace
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
+	"sort"
 
 	"github.com/go-playground/validator/v10"
 
@@ -24,16 +28,32 @@ import (
 // ignores during archive packaging).
 const DefaultFilesystemMirrorDir = ".terraform-providers"
 
+// providerZipPlatformRE matches the `<os>_<arch>` suffix of a packed
+// provider zip in a terraform filesystem mirror, e.g.
+// `terraform-provider-azurerm_4.34.0_linux_amd64.zip` →
+// captures "linux_amd64".
+var providerZipPlatformRE = regexp.MustCompile(`_([a-z0-9]+_[a-z0-9]+)\.zip$`)
+
 // DetectFilesystemMirror returns the path to pass to WithFilesystemMirror
 // (relative to the workspace root), or "" if the unpacked archive at
 // archBase does not contain a non-empty provider mirror tree at
-// DefaultFilesystemMirrorDir.
+// DefaultFilesystemMirrorDir, or if the mirror does not include the current
+// runtime platform (runtime.GOOS_runtime.GOARCH).
 //
 // The install runner is intentionally feature-flag-unaware: whether or not
 // providers are vendored is decided server-side at build time, and the
-// install side only checks "did the artifact ship one?". Callers should
-// pass the result straight to WithFilesystemMirror — an empty string is a
-// no-op and terraform init falls back to direct registry resolution.
+// install side only checks "did the artifact ship one we can use?".
+// Callers should pass the result straight to WithFilesystemMirror — an
+// empty string is a no-op and terraform init falls back to direct registry
+// resolution.
+//
+// The platform check is a guard against cross-platform install runners
+// (notably local-dev macOS): if the airgap mirror only ships linux_amd64 +
+// linux_arm64 zips and the install runner is darwin_arm64, writing the
+// `direct { exclude = ["*/*"] }` .terraformrc would deadlock terraform init.
+// We'd rather fall back to direct registry resolution on the unsupported
+// platform than fail loudly — production install runners are linux and
+// will always find their platform in the mirror.
 //
 // We return a workspace-relative path because the dirarchive copies the
 // mirror into the workspace root; the workspace then resolves the absolute
@@ -51,7 +71,54 @@ func DetectFilesystemMirror(archBase string) string {
 		return ""
 	}
 
-	return DefaultFilesystemMirrorDir
+	platforms := MirrorPlatforms(archBase)
+	want := runtime.GOOS + "_" + runtime.GOARCH
+	for _, p := range platforms {
+		if p == want {
+			return DefaultFilesystemMirrorDir
+		}
+	}
+
+	// Mirror present but no zips for the current platform. Skip it and let
+	// terraform init resolve providers from the public registry. Callers
+	// that want to surface this case in logs can call MirrorPlatforms
+	// themselves.
+	return ""
+}
+
+// MirrorPlatforms returns the sorted, de-duplicated set of `<os>_<arch>`
+// platforms present in the filesystem mirror at
+// archBase/DefaultFilesystemMirrorDir, derived from packed provider zip
+// filenames. Returns nil if no mirror exists or it has no recognizable
+// provider zips.
+//
+// Used both by DetectFilesystemMirror (to decide whether the current
+// runtime platform is supported) and by callers that want to log the
+// vendored platform set for diagnostics.
+func MirrorPlatforms(archBase string) []string {
+	mirrorDir := filepath.Join(archBase, DefaultFilesystemMirrorDir)
+
+	seen := make(map[string]struct{})
+	_ = filepath.WalkDir(mirrorDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		m := providerZipPlatformRE.FindStringSubmatch(d.Name())
+		if len(m) == 2 {
+			seen[m[1]] = struct{}{}
+		}
+		return nil
+	})
+
+	if len(seen) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(seen))
+	for p := range seen {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Workspace exposes an interface for interacting with terraform and uses inputs to fetch source files, configure the

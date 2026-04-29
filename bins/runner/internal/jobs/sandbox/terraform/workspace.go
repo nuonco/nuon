@@ -2,8 +2,10 @@ package terraform
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	dirarchive "github.com/nuonco/nuon/pkg/terraform/archive/dir"
 	httpbackend "github.com/nuonco/nuon/pkg/terraform/backend/http"
@@ -15,6 +17,37 @@ import (
 	staticvars "github.com/nuonco/nuon/pkg/terraform/variables/static"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
+
+// detectAndLogMirror runs DetectFilesystemMirror and emits a single Info log
+// describing which provider-resolution path the install runner will take.
+// Returned value is suitable to pass to workspace.WithFilesystemMirror.
+func (h *handler) detectAndLogMirror(archBase string) string {
+	path := workspace.DetectFilesystemMirror(archBase)
+	platforms := workspace.MirrorPlatforms(archBase)
+	hostPlatform := runtime.GOOS + "_" + runtime.GOARCH
+
+	switch {
+	case path != "":
+		h.l.Info("terraform: build-vendored provider mirror detected, using airgap resolution",
+			zap.String("arch_base", archBase),
+			zap.String("mirror_path", path),
+			zap.String("host_platform", hostPlatform),
+			zap.Strings("mirror_platforms", platforms),
+		)
+	case len(platforms) > 0:
+		h.l.Warn("terraform: provider mirror present but does not include host platform; falling back to direct registry resolution",
+			zap.String("arch_base", archBase),
+			zap.String("host_platform", hostPlatform),
+			zap.Strings("mirror_platforms", platforms),
+		)
+	default:
+		h.l.Info("terraform: no provider mirror in artifact, using direct registry resolution",
+			zap.String("arch_base", archBase),
+			zap.String("host_platform", hostPlatform),
+		)
+	}
+	return path
+}
 
 // getWorkspace returns a valid workspace for working with this plugin
 func (h *handler) getWorkspace() (workspace.Workspace, error) {
@@ -95,7 +128,7 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 		// org feature flag server-side), this swaps in a .terraformrc
 		// pointing at it; otherwise it's a no-op and terraform init
 		// fetches providers from registry.terraform.io as before.
-		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(archDir)),
+		workspace.WithFilesystemMirror(h.detectAndLogMirror(archDir)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
@@ -180,7 +213,7 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 		workspace.WithVariables(vars),
 		workspace.WithVariables(authVars),
 		// See getWorkspace for an explanation of the filesystem mirror.
-		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(archDir)),
+		workspace.WithFilesystemMirror(h.detectAndLogMirror(archDir)),
 		workspace.WithPlanBytes(planBytes),
 	)
 	if err != nil {

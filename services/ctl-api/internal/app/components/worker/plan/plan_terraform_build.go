@@ -6,7 +6,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
+	componentsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 )
 
 func (p *Planner) createTerraformBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.TerraformBuildPlan, error) {
@@ -21,7 +21,7 @@ func (p *Planner) createTerraformBuildPlan(ctx workflow.Context, bld *app.Compon
 	// roll it out gradually. The install runner does not consult any flag
 	// — it autodetects the presence of the mirror in the OCI artifact —
 	// so flipping this on/off only affects build behaviour.
-	mirrorEnabled, err := orgsactivities.AwaitOrgHasFeature(ctx, orgsactivities.OrgHasFeatureRequest{
+	mirrorEnabled, err := componentsactivities.AwaitOrgHasFeature(ctx, componentsactivities.OrgHasFeatureRequest{
 		OrgID:   bld.OrgID,
 		Feature: string(app.OrgFeatureTerraformProviderMirror),
 	})

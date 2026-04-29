@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -29,13 +30,29 @@ const (
 	defaultMirrorTerraformVersion = "1.7.5"
 )
 
-// mirrorPlatforms are the platforms the build runner vendors providers for.
-// The install runner picks the matching subtree at runtime via
-// runtime.GOOS/runtime.GOARCH; both linux platforms are required because
-// runners ship on x86 and arm Kubernetes nodes / EC2 instances.
-var mirrorPlatforms = []string{
-	"linux_amd64",
-	"linux_arm64",
+// resolveMirrorPlatforms returns the `<os>_<arch>` platform set the build
+// runner should vendor providers for. By default it returns the runner's
+// own platform — an org's runners are homogeneous in practice (one node
+// pool / instance family), so the install runner that consumes the artifact
+// runs on the same arch as the build runner that produced it. Vendoring
+// just one platform keeps the artifact small (~50–150MB per provider, not
+// multiples) and works transparently for both production (linux_amd64 /
+// linux_arm64) and local dev (darwin_arm64 on a mac running `nctl
+// run-local`).
+//
+// The env var TERRAFORM_MIRROR_PLATFORMS overrides the default for the
+// rare case where the build runner needs to ship more platforms than its
+// own (heterogeneous orgs, cross-arch testing). Plumbed via
+// internal.Config.TerraformMirrorPlatforms.
+//
+// Heterogeneous orgs that hit the default fall through to
+// DetectFilesystemMirror's platform-mismatch branch on the install side —
+// graceful warn + direct registry resolution.
+func (h *handler) resolveMirrorPlatforms() []string {
+	if h.cfg != nil && len(h.cfg.TerraformMirrorPlatforms) > 0 {
+		return h.cfg.TerraformMirrorPlatforms
+	}
+	return []string{runtime.GOOS + "_" + runtime.GOARCH}
 }
 
 // scrubbedTFEnvVars are environment variables we strip from the build
@@ -89,10 +106,12 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 		tfVersion = h.state.cfg.TerraformVersion
 	}
 
+	platforms := h.resolveMirrorPlatforms()
+
 	l.Info("vendoring terraform providers and modules into the build artifact",
 		zap.String("terraform_version", tfVersion),
 		zap.String("src_dir", srcDir),
-		zap.Strings("platforms", mirrorPlatforms),
+		zap.Strings("platforms", platforms),
 	)
 
 	execPath, cleanup, err := installTerraform(ctx, l, tfVersion)
@@ -111,7 +130,7 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 	// Update the lockfile to carry hashes for every platform we mirror.
 	// Done before `providers mirror` so the mirror downloads honor the
 	// versions the lockfile pins.
-	if err := lockProviders(ctx, l, execPath, srcDir, mirrorPlatforms); err != nil {
+	if err := lockProviders(ctx, l, execPath, srcDir, platforms); err != nil {
 		return fmt.Errorf("unable to update terraform lockfile: %w", err)
 	}
 
@@ -121,7 +140,7 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 	}
 
 	args := []string{"providers", "mirror"}
-	for _, p := range mirrorPlatforms {
+	for _, p := range platforms {
 		args = append(args, "-platform="+p)
 	}
 	args = append(args, mirrorDir)

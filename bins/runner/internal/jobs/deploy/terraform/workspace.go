@@ -3,8 +3,10 @@ package terraform
 import (
 	"context"
 	"fmt"
+	"runtime"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/kube/config"
 	dirarchive "github.com/nuonco/nuon/pkg/terraform/archive/dir"
@@ -15,6 +17,37 @@ import (
 	staticvars "github.com/nuonco/nuon/pkg/terraform/variables/static"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
+
+// detectAndLogMirror runs DetectFilesystemMirror and emits a single Info log
+// describing which provider-resolution path the install runner will take.
+// Returned value is suitable to pass to workspace.WithFilesystemMirror.
+func (p *handler) detectAndLogMirror(archBase string) string {
+	path := workspace.DetectFilesystemMirror(archBase)
+	platforms := workspace.MirrorPlatforms(archBase)
+	hostPlatform := runtime.GOOS + "_" + runtime.GOARCH
+
+	switch {
+	case path != "":
+		p.l.Info("terraform: build-vendored provider mirror detected, using airgap resolution",
+			zap.String("arch_base", archBase),
+			zap.String("mirror_path", path),
+			zap.String("host_platform", hostPlatform),
+			zap.Strings("mirror_platforms", platforms),
+		)
+	case len(platforms) > 0:
+		p.l.Warn("terraform: provider mirror present but does not include host platform; falling back to direct registry resolution",
+			zap.String("arch_base", archBase),
+			zap.String("host_platform", hostPlatform),
+			zap.Strings("mirror_platforms", platforms),
+		)
+	default:
+		p.l.Info("terraform: no provider mirror in artifact, using direct registry resolution",
+			zap.String("arch_base", archBase),
+			zap.String("host_platform", hostPlatform),
+		)
+	}
+	return path
+}
 
 // GetWorkspace returns a valid workspace for working with this plugin
 func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error) {
@@ -82,7 +115,7 @@ func (p *handler) GetWorkspace(ctx context.Context) (workspace.Workspace, error)
 		workspace.WithVariables(authVars),
 		// Empty path = no-op; only enables the mirror if the build runner
 		// actually shipped one inside the OCI artifact.
-		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(p.state.arch.BasePath())),
+		workspace.WithFilesystemMirror(p.detectAndLogMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
@@ -157,7 +190,7 @@ func (p *handler) GetWorkspaceWithPlan(ctx context.Context, planBytes []byte) (w
 		workspace.WithVariables(authVars),
 		workspace.WithPlanBytes(planBytes),
 		// See GetWorkspace for an explanation of the filesystem mirror.
-		workspace.WithFilesystemMirror(workspace.DetectFilesystemMirror(p.state.arch.BasePath())),
+		workspace.WithFilesystemMirror(p.detectAndLogMirror(p.state.arch.BasePath())),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workspace: %w", err)
