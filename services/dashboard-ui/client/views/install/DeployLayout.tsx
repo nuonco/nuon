@@ -43,7 +43,6 @@ function getTabsForComponentType(type?: TComponentType): TNavLink[] {
       tabs.push(
         { path: '/plan', text: 'Plan' },
         { path: '/manifest', text: 'Manifest' },
-        { path: '/outputs', text: 'Outputs' },
       )
       break
     case 'docker_build':
