@@ -34,11 +34,12 @@
             "pages": ["get-started/introduction"]
           },
           {
-            "group": "Does it fit?",
+            "group": "Compatibility",
             "pages": [
               "deployment-options",
               {
                 "group": "Supported Clouds",
+                "expanded": true,
                 "pages": [
                   "platform-support/introduction",
                   "platform-support/aws",
@@ -49,7 +50,7 @@
             ]
           },
           {
-            "group": "Get hands-on",
+            "group": "Tutorials",
             "pages": [
               "get-started/quickstart",
               {
