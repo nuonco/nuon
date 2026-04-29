@@ -318,6 +318,23 @@ export const DetailedTooltips = () => (
   </div>
 )
 
+export const LongDescription = () => (
+  <div className="space-y-4">
+    <h3 className="text-lg font-semibold">Long tooltip description</h3>
+    <div className="flex items-center gap-3">
+      <StatusWithDescription
+        statusProps={{ status: 'error', variant: 'badge', statusText: 'Failed' }}
+        tooltipProps={{
+          tipContent:
+            'The deployment failed because the health check endpoint returned a 503 status code after the container started. This usually means the application crashed during initialization or a required dependency like the database connection was unavailable at startup.',
+          position: 'right',
+        }}
+      />
+      <Text>Deployment with long error description</Text>
+    </div>
+  </div>
+)
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">
