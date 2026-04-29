@@ -3871,21 +3871,13 @@ export interface components {
       phone_home_url?: string;
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
-      /**
-       * @description StackType records which install-stack path was actually applied. Set by
-       * the phone-home handler when the callback fires; empty until then.
-       * One of: "cloudformation", "terraform".
-       */
-      stack_type?: string;
       template_url?: string;
       terraform_checksum?: string;
       /**
        * @description On AWS, the install workflow renders BOTH a CloudFormation template and
        * a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
        * (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
-       * artifact lives below. The dashboard shows both during the await step;
-       * the user picks one to apply, and StackType is recorded post-hoc when
-       * phone-home arrives.
+       * artifact lives below. The dashboard shows both during the await step.
        */
       terraform_contents?: string;
       updated_at?: string;

@@ -50,13 +50,12 @@ export const AwaitAWSDetails = ({
   installAwsRegion,
 }: IAwaitAWSDetails) => {
   const version = stack?.versions?.at(0)
-  // The new TerraformContents/StackType fields aren't in the regenerated
-  // OpenAPI types yet; bridge with a local widening cast.
+  // The new TerraformContents fields aren't in the regenerated OpenAPI types
+  // yet; bridge with a local widening cast.
   const versionExt = version as
     | (typeof version & {
         terraform_contents?: unknown
         terraform_checksum?: string
-        stack_type?: string
       })
     | undefined
 
@@ -65,7 +64,6 @@ export const AwaitAWSDetails = ({
     [versionExt?.terraform_contents]
   )
   const hasTerraform = tfvarsContent.length > 0
-  const appliedStackType = versionExt?.stack_type
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,16 +73,13 @@ export const AwaitAWSDetails = ({
 
       {hasTerraform ? (
         <Tabs
-          initActiveTab={
-            appliedStackType === 'terraform' ? 'terraform' : 'cloudformation'
-          }
+          initActiveTab="cloudformation"
           tabs={{
             cloudformation: (
               <CloudFormationTab
                 version={version}
                 installId={installId}
                 installAwsRegion={installAwsRegion}
-                applied={appliedStackType === 'cloudformation'}
               />
             ),
             terraform: (
@@ -92,7 +87,6 @@ export const AwaitAWSDetails = ({
                 tfvarsContent={tfvarsContent}
                 orgId={orgId}
                 installId={installId}
-                applied={appliedStackType === 'terraform'}
               />
             ),
           }}
@@ -102,7 +96,6 @@ export const AwaitAWSDetails = ({
           version={version}
           installId={installId}
           installAwsRegion={installAwsRegion}
-          applied={appliedStackType === 'cloudformation'}
         />
       )}
     </div>
@@ -113,14 +106,12 @@ interface ICloudFormationTab {
   version: NonNullable<IStackDetails['stack']['versions']>[number] | undefined
   installId?: string
   installAwsRegion?: string
-  applied?: boolean
 }
 
 const CloudFormationTab = ({
   version,
   installId,
   installAwsRegion,
-  applied,
 }: ICloudFormationTab) => {
   const quickLink = version?.quick_link_url
   const templateUrl = version?.template_url
@@ -144,12 +135,6 @@ const CloudFormationTab = ({
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      {applied ? (
-        <Text variant="subtext" theme="neutral">
-          This install was applied via CloudFormation.
-        </Text>
-      ) : null}
-
       {quickLink ? (
         <Card>
           <span className="flex justify-between items-center">
@@ -262,14 +247,12 @@ interface ITerraformTab {
   tfvarsContent: string
   orgId: string
   installId?: string
-  applied?: boolean
 }
 
 const TerraformTab = ({
   tfvarsContent,
   orgId,
   installId,
-  applied,
 }: ITerraformTab) => {
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -311,11 +294,6 @@ cd install-stacks/aws`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      {applied ? (
-        <Text variant="subtext" theme="neutral">
-          This install was applied via Terraform.
-        </Text>
-      ) : null}
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
