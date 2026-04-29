@@ -16,12 +16,16 @@ export interface IWorkflowSteps {
   approvalPrompt?: boolean
   planOnly?: boolean
   workflowSteps: TWorkflowStep[]
+  eagerStepsLoaded?: boolean
+  allStepsLoaded?: boolean
 }
 
 export const WorkflowSteps = ({
   approvalPrompt = false,
   planOnly = false,
   workflowSteps,
+  eagerStepsLoaded = false,
+  allStepsLoaded = false,
 }: IWorkflowSteps) => {
   const [searchName, setSearchName] = useState<string>('')
 
@@ -88,6 +92,12 @@ export const WorkflowSteps = ({
             emptyTitle={workflowSteps.length ? 'No steps found' : 'Workflow steps not available'}
           />
         )}
+
+        {eagerStepsLoaded && !allStepsLoaded ? (
+          <Text variant="subtext" theme="neutral" className="text-center py-2">
+            More steps generating…
+          </Text>
+        ) : null}
       </div>
     </div>
   )

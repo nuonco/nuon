@@ -1,4 +1,4 @@
-import { createContext, useState, type ReactNode } from 'react'
+import { createContext, useState, useRef, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
@@ -27,10 +27,14 @@ interface WorkflowContextValue {
 
 export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
 
+const FAST_POLL_MS = 250
+const SLOW_POLL_MS = 4000
+const FAST_POLL_DURATION_MS = 60_000
+
 export const WorkflowProvider = ({
   children,
   workflowId,
-  pollInterval = 4000,
+  pollInterval = SLOW_POLL_MS,
   shouldPoll = false,
 }: {
   children: ReactNode
@@ -40,11 +44,30 @@ export const WorkflowProvider = ({
 }) => {
   const { org } = useOrg()
   const [pollingEnabled, setPollingEnabled] = useState(shouldPoll)
+  const [fastPoll, setFastPoll] = useState(shouldPoll)
+  const mountTime = useRef(Date.now())
+
+  useEffect(() => {
+    if (!shouldPoll) return
+    const remaining = FAST_POLL_DURATION_MS - (Date.now() - mountTime.current)
+    if (remaining <= 0) {
+      setFastPoll(false)
+      return
+    }
+    const timer = setTimeout(() => setFastPoll(false), remaining)
+    return () => clearTimeout(timer)
+  }, [shouldPoll])
+
+  const activePollInterval = pollingEnabled
+    ? fastPoll
+      ? FAST_POLL_MS
+      : pollInterval
+    : false
 
   const { data: workflow, isLoading, error } = useQuery({
     queryKey: ['workflow', org.id!, workflowId],
     queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
-    refetchInterval: pollingEnabled ? pollInterval : false,
+    refetchInterval: activePollInterval,
     enabled: !!org.id && !!workflowId,
   })
 
