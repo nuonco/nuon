@@ -28,30 +28,9 @@
       {
         "tab": "Quickstart",
         "icon": "rocket",
-        "anchors": [
-          {
-            "anchor": "CLI",
-            "href": "/cli",
-            "icon": "terminal"
-          },
-          {
-            "anchor": "API",
-            "href": "/nuon-api",
-            "icon": "code"
-          },
-          {
-            "anchor": "TUI",
-            "href": "/tui",
-            "icon": "rectangle-terminal"
-          }
-        ],
         "pages": [
           "get-started/quickstart",
-          {
-            "group": "Home",
-            "root": "get-started/introduction",
-            "pages": []
-          },
+          "get-started/introduction",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
