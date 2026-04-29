@@ -28,6 +28,23 @@
       {
         "tab": "Quickstart",
         "icon": "rocket",
+        "anchors": [
+          {
+            "anchor": "CLI",
+            "href": "/cli",
+            "icon": "terminal"
+          },
+          {
+            "anchor": "API",
+            "href": "/nuon-api",
+            "icon": "code"
+          },
+          {
+            "anchor": "TUI",
+            "href": "/tui",
+            "icon": "rectangle-terminal"
+          }
+        ],
         "pages": [
           "get-started/quickstart",
           {
@@ -69,15 +86,6 @@
             "boost": 3,
             "pages": [
               "get-started/day-2-operations"
-            ]
-          },
-          {
-            "group": "Quick Reference",
-            "boost": 2,
-            "pages": [
-              "cli",
-              "nuon-api",
-              "tui"
             ]
           }
         ]
@@ -221,6 +229,7 @@
         "icon": "book",
         "pages": [
           "cli",
+          "tui",
           "nuon-api",
           "sdks",
           {
