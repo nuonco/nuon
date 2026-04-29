@@ -16,27 +16,32 @@ runner_id                = "{{.Runner.ID}}"
 runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"
 nuon_support_iam_role_arns = {{.ControlPlaneAccountIDs}}
-provision_permissions          = {{.ProvisionPermissions}}
-maintenance_permissions        = {{.MaintenancePermissions}}
-deprovision_permissions        = {{.DeprovisionPermissions}}
-provision_managed_policy_arns   = {{.ProvisionManagedPolicyArns}}
-maintenance_managed_policy_arns = {{.MaintenanceManagedPolicyArns}}
-deprovision_managed_policy_arns = {{.DeprovisionManagedPolicyArns}}
+provision_permissions              = {{.ProvisionPermissions}}
+maintenance_permissions            = {{.MaintenancePermissions}}
+deprovision_permissions            = {{.DeprovisionPermissions}}
+provision_inline_policy_document   = {{if .ProvisionInlinePolicyDocument}}{{.ProvisionInlinePolicyDocument}}{{else}}""{{end}}
+maintenance_inline_policy_document = {{if .MaintenanceInlinePolicyDocument}}{{.MaintenanceInlinePolicyDocument}}{{else}}""{{end}}
+deprovision_inline_policy_document = {{if .DeprovisionInlinePolicyDocument}}{{.DeprovisionInlinePolicyDocument}}{{else}}""{{end}}
+provision_managed_policy_arns      = {{.ProvisionManagedPolicyArns}}
+maintenance_managed_policy_arns    = {{.MaintenanceManagedPolicyArns}}
+deprovision_managed_policy_arns    = {{.DeprovisionManagedPolicyArns}}
 break_glass_roles = {
 {{- range .BreakGlassRoles}}
   "{{.Name}}" = {
-    permissions         = {{.Permissions}}
-    managed_policy_arns = {{.ManagedPolicyArns}}
-    enabled             = false
+    permissions            = {{.Permissions}}
+    inline_policy_document = {{if .InlinePolicyDocument}}{{.InlinePolicyDocument}}{{else}}""{{end}}
+    managed_policy_arns    = {{.ManagedPolicyArns}}
+    enabled                = false
   }
 {{- end}}
 }
 custom_roles = {
 {{- range .CustomRoles}}
   "{{.Name}}" = {
-    permissions         = {{.Permissions}}
-    managed_policy_arns = {{.ManagedPolicyArns}}
-    enabled             = true
+    permissions            = {{.Permissions}}
+    inline_policy_document = {{if .InlinePolicyDocument}}{{.InlinePolicyDocument}}{{else}}""{{end}}
+    managed_policy_arns    = {{.ManagedPolicyArns}}
+    enabled                = true
   }
 {{- end}}
 }

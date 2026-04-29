@@ -1,5 +1,5 @@
 // Package aws renders the install-stacks/aws Terraform module's tfvars file
-// for an AWS install. Mirror of internal/pkg/stacks/gcp.
+// for an AWS install.
 package aws
 
 import (
@@ -18,9 +18,10 @@ import (
 
 // AWSRoleTemplateInput holds the per-role data rendered into the template.
 type AWSRoleTemplateInput struct {
-	Name              string
-	Permissions       string
-	ManagedPolicyArns string
+	Name                 string
+	Permissions          string
+	InlinePolicyDocument string
+	ManagedPolicyArns    string
 }
 
 // AWSSecretTemplateInput holds a non-auto-gen secret definition for the template.
@@ -41,6 +42,10 @@ type AWSTemplateInput struct {
 	MaintenancePermissions string
 	DeprovisionPermissions string
 
+	ProvisionInlinePolicyDocument   string
+	MaintenanceInlinePolicyDocument string
+	DeprovisionInlinePolicyDocument string
+
 	ProvisionManagedPolicyArns   string
 	MaintenanceManagedPolicyArns string
 	DeprovisionManagedPolicyArns string
@@ -59,8 +64,6 @@ type AWSTemplateInput struct {
 // operation roles (provision/maintenance/deprovision/break-glass/custom) must
 // trust. Sourced from the ctl-api `runner_default_support_iam_role_arn`
 // config — same value the CFN role-builder uses
-// (`internal/pkg/stacks/cloudformation/resource_role.go:83`). Pass empty
-// string to omit (e.g., local-runner mode).
 //
 // Custom nested stacks (CloudFormation customer extensions) are intentionally
 // not translated. Vendors who extend their CFN stack with custom resources are
@@ -72,8 +75,18 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	}
 
 	prov, maint, deprov, provMPAs, maintMPAs, deprovMPAs := extractAWSStandardPermissions(inputs.AppCfg)
-	breakGlassRoles := extractAWSRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
-	customRoles := extractAWSRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
+	provDoc, maintDoc, deprovDoc, err := extractAWSStandardInlinePolicies(inputs.AppCfg)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to extract aws inline policies")
+	}
+	breakGlassRoles, err := extractAWSRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to extract aws break-glass roles")
+	}
+	customRoles, err := extractAWSRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to extract aws custom roles")
+	}
 
 	var installInputs []string
 	if inputs.AppCfg != nil {
@@ -113,19 +126,22 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	}
 
 	awsInputs := &AWSTemplateInput{
-		TemplateInput:                inputs,
-		ControlPlaneAccountIDs:       trustPrincipalsJSON,
-		ProvisionPermissions:         prov,
-		MaintenancePermissions:       maint,
-		DeprovisionPermissions:       deprov,
-		ProvisionManagedPolicyArns:   provMPAs,
-		MaintenanceManagedPolicyArns: maintMPAs,
-		DeprovisionManagedPolicyArns: deprovMPAs,
-		BreakGlassRoles:              breakGlassRoles,
-		CustomRoles:                  customRoles,
-		InstallInputs:                installInputs,
-		AutoGenerateSecrets:          autoGenerateSecrets,
-		Secrets:                      secrets,
+		TemplateInput:                   inputs,
+		ControlPlaneAccountIDs:          trustPrincipalsJSON,
+		ProvisionPermissions:            prov,
+		MaintenancePermissions:          maint,
+		DeprovisionPermissions:          deprov,
+		ProvisionInlinePolicyDocument:   provDoc,
+		MaintenanceInlinePolicyDocument: maintDoc,
+		DeprovisionInlinePolicyDocument: deprovDoc,
+		ProvisionManagedPolicyArns:      provMPAs,
+		MaintenanceManagedPolicyArns:    maintMPAs,
+		DeprovisionManagedPolicyArns:    deprovMPAs,
+		BreakGlassRoles:                 breakGlassRoles,
+		CustomRoles:                     customRoles,
+		InstallInputs:                   installInputs,
+		AutoGenerateSecrets:             autoGenerateSecrets,
+		Secrets:                         secrets,
 	}
 
 	var buf bytes.Buffer
@@ -143,10 +159,9 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	return res, hex.EncodeToString(hash[:]), nil
 }
 
-// extractAWSStandardPermissions reads AWS IAM policy data for the standard
-// roles. Inline-policy contents are not translated — only managed-policy
-// attachments are surfaced as ARNs. Inline-permission extraction from policy
-// JSON contents is a TODO.
+// extractAWSStandardPermissions reads AWS IAM managed-policy attachments for
+// the standard runner roles. Inline policy contents are handled separately by
+// extractAWSStandardInlinePolicies.
 func extractAWSStandardPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, provMPAs, maintMPAs, deprovMPAs string) {
 	provision = "[]"
 	maintenance = "[]"
@@ -185,29 +200,73 @@ func extractAWSStandardPermissions(appCfg *app.AppConfig) (provision, maintenanc
 	return
 }
 
+// extractAWSStandardInlinePolicies merges every inline policy document
+// (`policy.Contents`) attached to each standard runner role into a single IAM
+// policy document per role and returns it as an HCL string literal ready for
+// the template (or `""` if no inline policy applies). Mirrors the CFN renderer
+// which embeds `Contents` verbatim as `PolicyDocument`.
+func extractAWSStandardInlinePolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision string, err error) {
+	if appCfg == nil {
+		return "", "", "", nil
+	}
+
+	for _, role := range appCfg.PermissionsConfig.Roles {
+		if role.CloudPlatform != "" && role.CloudPlatform != "aws" {
+			continue
+		}
+		doc, derr := mergedInlinePolicyDocument(role)
+		if derr != nil {
+			return "", "", "", fmt.Errorf("role %q: %w", role.Name, derr)
+		}
+		if doc == "" {
+			continue
+		}
+		switch role.Type {
+		case app.AWSIAMRoleTypeRunnerProvision:
+			provision = doc
+		case app.AWSIAMRoleTypeRunnerMaintenance:
+			maintenance = doc
+		case app.AWSIAMRoleTypeRunnerDeprovision:
+			deprovision = doc
+		}
+	}
+
+	return provision, maintenance, deprovision, nil
+}
+
 // extractAWSRolesFromList converts a slice of role configs into template-ready
-// inputs, filtering to AWS roles only.
-func extractAWSRolesFromList(roles []app.AppAWSIAMRoleConfig) []AWSRoleTemplateInput {
+// inputs, filtering to AWS roles only. Roles with neither managed-policy
+// attachments nor inline policy contents are skipped.
+func extractAWSRolesFromList(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleTemplateInput, error) {
 	var result []AWSRoleTemplateInput
 	for _, role := range roles {
 		if role.CloudPlatform != "" && role.CloudPlatform != "aws" {
 			continue
 		}
 		mpas := managedPolicyArnsForRole(role)
-		if len(mpas) == 0 {
+		doc, err := mergedInlinePolicyDocument(role)
+		if err != nil {
+			return nil, fmt.Errorf("role %q: %w", role.Name, err)
+		}
+		if len(mpas) == 0 && doc == "" {
 			continue
 		}
-		b, err := json.Marshal(mpas)
-		if err != nil {
-			continue
+		mpasJSON := "[]"
+		if len(mpas) > 0 {
+			b, err := json.Marshal(mpas)
+			if err != nil {
+				return nil, fmt.Errorf("role %q: marshal managed policy arns: %w", role.Name, err)
+			}
+			mpasJSON = string(b)
 		}
 		result = append(result, AWSRoleTemplateInput{
-			Name:              role.Name,
-			Permissions:       "[]",
-			ManagedPolicyArns: string(b),
+			Name:                 role.Name,
+			Permissions:          "[]",
+			InlinePolicyDocument: doc,
+			ManagedPolicyArns:    mpasJSON,
 		})
 	}
-	return result
+	return result, nil
 }
 
 func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
@@ -219,4 +278,51 @@ func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
 		out = append(out, fmt.Sprintf("arn:aws:iam::aws:policy/%s", policy.ManagedPolicyName))
 	}
 	return out
+}
+
+// mergedInlinePolicyDocument merges the Statement arrays from every inline
+// policy attached to a role into a single IAM policy document. Returns the
+// document JSON-marshaled and HCL-quoted (i.e. ready to interpolate into
+// tfvars), or `""` if the role has no inline policy contents.
+//
+// Each policy.Contents is expected to be a full IAM policy JSON document of
+// the form `{"Version": "...", "Statement": [...]}`. Non-Contents policies
+// (i.e. ManagedPolicyName-only entries) are skipped.
+func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
+	var statements []json.RawMessage
+	for _, policy := range role.Policies {
+		if len(policy.Contents) == 0 {
+			continue
+		}
+		if policy.ManagedPolicyName != "" {
+			// Mutually exclusive with Contents per existing config validation.
+			continue
+		}
+		var doc struct {
+			Statement []json.RawMessage `json:"Statement"`
+		}
+		if err := json.Unmarshal(policy.Contents, &doc); err != nil {
+			return "", fmt.Errorf("policy %q: parse inline policy JSON: %w", policy.Name, err)
+		}
+		statements = append(statements, doc.Statement...)
+	}
+	if len(statements) == 0 {
+		return "", nil
+	}
+	merged := struct {
+		Version   string            `json:"Version"`
+		Statement []json.RawMessage `json:"Statement"`
+	}{
+		Version:   "2012-10-17",
+		Statement: statements,
+	}
+	b, err := json.Marshal(merged)
+	if err != nil {
+		return "", fmt.Errorf("marshal merged policy document: %w", err)
+	}
+	q, err := json.Marshal(string(b))
+	if err != nil {
+		return "", fmt.Errorf("hcl-quote policy document: %w", err)
+	}
+	return string(q), nil
 }
