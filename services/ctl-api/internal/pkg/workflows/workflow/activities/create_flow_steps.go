@@ -29,6 +29,9 @@ type CreateFlowStep struct {
 	StepTargetID        string                        `json:"step_target_id"`
 	RetryIndex          int                           `json:"retry_index"`
 
+	StepQueueID   string `json:"step_queue_id"`
+	TargetQueueID string `json:"target_queue_id"`
+
 	// TODO(jm): this is being deprecated
 	Signal      *app.Signal          `json:"signal"`
 	QueueSignal *signaldb.SignalData `json:"queue_signal"`
@@ -64,6 +67,8 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			StepTargetType:      req.StepTargetType,
 			StepTargetID:        req.StepTargetID,
 			RetryIndex:          req.RetryIndex,
+			StepQueueID:         req.StepQueueID,
+			TargetQueueID:       req.TargetQueueID,
 			Signal:              req.Signal,
 			QueueSignal:         req.QueueSignal,
 		}

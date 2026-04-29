@@ -27,6 +27,16 @@ func (a *Activities) EnsureInstallQueues(ctx context.Context, req EnsureInstallQ
 	return a.installsHelpers.EnsureInstallQueues(ctx, req.InstallID)
 }
 
+type EnsureAppQueueRequest struct {
+	AppID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field AppID
+func (a *Activities) EnsureAppQueue(ctx context.Context, req EnsureAppQueueRequest) error {
+	return a.appsHelpers.EnsureAppQueue(ctx, req.AppID)
+}
+
 type EnsureAppBranchQueueRequest struct {
 	BranchID string `validate:"required"`
 }
@@ -44,7 +54,8 @@ type EnsureComponentQueueRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ComponentID
 func (a *Activities) EnsureComponentQueue(ctx context.Context, req EnsureComponentQueueRequest) error {
-	return a.appsHelpers.EnsureComponentQueue(ctx, req.ComponentID)
+	_, err := a.componentHelpers.EnsureComponentQueues(ctx, req.ComponentID)
+	return err
 }
 
 type EnsureRunnerQueuesRequest struct {

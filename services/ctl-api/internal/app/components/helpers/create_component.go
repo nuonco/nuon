@@ -6,8 +6,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/pkg/errors"
 )
 
@@ -33,15 +31,8 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     component.ID,
-		OwnerType:   plugins.TableName(h.db, app.Component{}),
-		Namespace:   "components",
-		MaxInFlight: 1,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create queue for component: %w", err)
+	if _, err := h.EnsureComponentQueues(ctx, component.ID); err != nil {
+		return nil, fmt.Errorf("unable to create queues for component: %w", err)
 	}
 
 	depIDs, err := h.GetComponentIDs(ctx, params.AppID, params.Dependencies)
