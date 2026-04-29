@@ -50,6 +50,18 @@ type Config struct {
 	SandboxJobDuration       time.Duration `config:"sandbox_job_duration"`
 	SandboxModeFaultsEnabled bool          `config:"sandbox_mode_faults_enabled"`
 	SandboxControlPort       int           `config:"sandbox_control_port"`
+
+	// TerraformMirrorPlatforms overrides the `<os>_<arch>` platform set
+	// the build runner vendors providers for via `terraform providers
+	// mirror`. When empty, the build runner defaults to the runner's own
+	// runtime platform (one entry, runtime.GOOS_runtime.GOARCH).
+	//
+	// Set via env var TERRAFORM_MIRROR_PLATFORMS as a comma-separated
+	// list, e.g. `linux_amd64,linux_arm64,darwin_arm64`. Useful when
+	// vendoring artifacts that need to be consumed by install runners
+	// on a different platform than the build runner (heterogeneous
+	// orgs, cross-arch dev/test).
+	TerraformMirrorPlatforms []string `config:"terraform_mirror_platforms"`
 }
 
 func NewConfig() (*Config, error) {
