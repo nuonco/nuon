@@ -148,6 +148,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 			Region:    installCfg.GCPAccount.Region,
 		}
 	}
+	if installCfg.AzureAccount != nil {
+		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{
+			Location: installCfg.AzureAccount.Location,
+		}
+	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
 		installCfg.StackOverrides.HasOverrides() {
 		icParams := &models.HelpersCreateInstallConfigParams{}
