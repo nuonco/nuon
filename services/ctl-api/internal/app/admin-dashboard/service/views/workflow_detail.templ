@@ -263,6 +263,11 @@ templ stepRow(idx int, sd StepDetailData) {
 					{ string(step.ExecutionType) }
 				}
 			}
+			if v, ok := step.Status.Metadata["max_auto_retries"]; ok {
+				@badge.Badge(badge.Props{Variant: badge.VariantOutline}) {
+					{ fmt.Sprintf("max retries: %v", v) }
+				}
+			}
 			<div class="ml-auto text-muted-foreground shrink-0">
 				<span class="group-open:hidden">▸</span>
 				<span class="hidden group-open:inline">▾</span>
