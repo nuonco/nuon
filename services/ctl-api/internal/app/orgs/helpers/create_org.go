@@ -34,6 +34,13 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
 		InternalSlackWebhookURL:  h.cfg.InternalSlackWebhookURL,
 	}
+	// Pre-populate Features so Org.BeforeCreate's defensive fallback is a
+	// no-op for orgs created via this helper. NewOrgFeatureDefaults
+	// honours h.cfg.DefaultAllFeaturesEnabled, which non-prod
+	// environments (e.g. stage) set to true so newly-provisioned orgs
+	// get every non-deny-listed feature flag turned on by default.
+	// Tenants can still flip any flag off per-org via the admin UI;
+	// the per-org stored value always wins over this default.
 	org := app.Org{
 		Name:                params.Name,
 		Status:              "queued",
@@ -42,10 +49,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		OrgType:             orgTyp,
 		NotificationsConfig: notificationsCfg,
 		Tags:                params.Tags,
-		Features: map[string]bool{
-			"queues":               true,
-			"parallel-runner-jobs": true,
-		},
+		Features:            app.NewOrgFeatureDefaults(h.cfg.DefaultAllFeaturesEnabled),
 	}
 	if h.cfg.ForceSandboxMode {
 		org.SandboxMode = true

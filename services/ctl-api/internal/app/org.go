@@ -164,42 +164,94 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
+// prodDefaultFeatures is the canonical "production" default value for each
+// known feature flag. Used both by BeforeCreate (as a defensive fallback
+// when an Org is created without going through orgs/helpers.CreateOrg —
+// e.g., test seeders) and by NewOrgFeatureDefaults below.
+//
+// To change a feature's prod default, edit this map. To enable every
+// non-deny-listed feature in a non-prod environment by default, set
+// internal.Config.DefaultAllFeaturesEnabled=true; that override is applied
+// in NewOrgFeatureDefaults.
+var prodDefaultFeatures = map[OrgFeature]bool{
+	// Disabled by default
+	OrgFeatureInstallBreakGlass:  false,
+	OrgFeatureTerraformInstaller: false,
+	OrgFeatureInstallRename:      false,
+	OrgFeatureDeployOutputs:      false,
+	OrgFeatureSupportRole:        false,
+
+	// Enabled by default
+	OrgFeatureParallelRunnerJobs:      true,
+	OrgFeatureQueues:                  true,
+	OrgFeatureStratusLayout:           true,
+	OrgFeatureStratusWorkflow:         true,
+	OrgFeatureDashboardSSE:            true,
+	OrgFeatureAPIPagination:           true,
+	OrgFeatureOrgDashboard:            true,
+	OrgFeatureOrgRunner:               true,
+	OrgFeatureOrgSettings:             true,
+	OrgFeatureOrgSupport:              true,
+	OrgFeatureInstallDeleteComponents: true,
+	OrgFeatureInstallDelete:           true,
+	OrgFeatureTerraformWorkspace:      true,
+	OrgFeatureDevCommand:              true,
+	OrgFeatureAppBranches:             true,
+}
+
+// NeverDefaultOnFeatures lists features that must remain off-by-default
+// in every environment regardless of DefaultAllFeaturesEnabled, because
+// they grant destructive or escalated capabilities. Tenants who want
+// them on must opt in explicitly via the admin UI.
+var NeverDefaultOnFeatures = map[OrgFeature]struct{}{
+	OrgFeatureInstallBreakGlass: {},
+	OrgFeatureSupportRole:       {},
+}
+
+// NewOrgFeatureDefaults returns the Features map that should be applied
+// to a freshly-constructed Org before it's persisted.
+//
+// When defaultAllEnabled is true, every known feature (except those in
+// NeverDefaultOnFeatures) is enabled. Otherwise the per-feature prod
+// defaults from prodDefaultFeatures are used.
+//
+// Callers that create Orgs (orgs/helpers.CreateOrg, etc.) should invoke
+// this and assign the result to Org.Features. The Org.BeforeCreate hook
+// remains a defensive fallback for code paths that bypass the helper
+// (e.g., test seeders) — it always uses prod defaults regardless of the
+// env knob, which is the right default for tests.
+func NewOrgFeatureDefaults(defaultAllEnabled bool) map[string]bool {
+	out := make(map[string]bool, len(GetFeatures()))
+	for _, f := range GetFeatures() {
+		switch {
+		case isNeverDefaultOn(f):
+			out[string(f)] = false
+		case defaultAllEnabled:
+			out[string(f)] = true
+		default:
+			out[string(f)] = prodDefaultFeatures[f]
+		}
+	}
+	return out
+}
+
+func isNeverDefaultOn(f OrgFeature) bool {
+	_, ok := NeverDefaultOnFeatures[f]
+	return ok
+}
+
 func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	if o.Features == nil {
 		o.Features = make(map[string]bool, 0)
 	}
 
-	// Set default feature flag values - most features enabled by default
-	// except install-break-glass and user-managed-features which remain disabled
-	defaultFeatures := map[OrgFeature]bool{
-		// Disabled by default
-		OrgFeatureInstallBreakGlass:  false,
-		OrgFeatureTerraformInstaller: false,
-		OrgFeatureInstallRename:      false,
-		OrgFeatureDeployOutputs:      false,
-		OrgFeatureSupportRole:        false,
-
-		// Enabled by default
-		OrgFeatureParallelRunnerJobs:      true,
-		OrgFeatureQueues:                  true,
-		OrgFeatureStratusLayout:           true,
-		OrgFeatureStratusWorkflow:         true,
-		OrgFeatureDashboardSSE:            true,
-		OrgFeatureAPIPagination:           true,
-		OrgFeatureOrgDashboard:            true,
-		OrgFeatureOrgRunner:               true,
-		OrgFeatureOrgSettings:             true,
-		OrgFeatureOrgSupport:              true,
-		OrgFeatureInstallDeleteComponents: true,
-		OrgFeatureInstallDelete:           true,
-		OrgFeatureTerraformWorkspace:      true,
-		OrgFeatureDevCommand:              true,
-		OrgFeatureAppBranches:             true,
-	}
-
+	// Defensive fallback for code paths that construct an Org directly
+	// without going through orgs/helpers.CreateOrg (test seeders, etc.).
+	// Production org creation pre-populates Features via
+	// NewOrgFeatureDefaults, so this loop is a no-op there.
 	for _, feature := range GetFeatures() {
 		if _, ok := o.Features[string(feature)]; !ok {
-			o.Features[string(feature)] = defaultFeatures[feature]
+			o.Features[string(feature)] = prodDefaultFeatures[feature]
 		}
 	}
 

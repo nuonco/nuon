@@ -201,6 +201,16 @@ type Config struct {
 	AdminAPIURL   string `config:"admin_api_url" validate:"required"`
 	TemporalUIURL string `config:"temporal_ui_url" validate:"required"`
 
+	// DefaultAllFeaturesEnabled, when true, causes every newly-provisioned
+	// org to have all currently-known feature flags pre-set to true at
+	// creation time (except any listed in app.NeverDefaultOnFeatures).
+	// Intended to be set in non-production environments so new
+	// functionality gets exercised by default. Existing orgs are not
+	// affected — only orgs created after the config takes effect.
+	// Tenants can still opt out per-org via the admin UI; the per-org
+	// stored value always wins over this default.
+	DefaultAllFeaturesEnabled bool `config:"default_all_features_enabled"`
+
 	// flags for controlling the background workers
 	ForceSandboxMode           bool          `config:"force_sandbox_mode"`
 	ForceOnboardingSandboxMode bool          `config:"force_onboarding_sandbox_mode"`
