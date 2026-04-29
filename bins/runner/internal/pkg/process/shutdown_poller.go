@@ -8,7 +8,10 @@ import (
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/k8s"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -21,6 +24,7 @@ type ShutdownPollerParams struct {
 	fx.In
 
 	APIClient  nuonrunner.Client
+	Cfg        *internal.Config
 	L          *zap.Logger `name:"system"`
 	LC         fx.Lifecycle
 	Registrar  *Registrar
@@ -29,6 +33,7 @@ type ShutdownPollerParams struct {
 
 type ShutdownPoller struct {
 	apiClient  nuonrunner.Client
+	cfg        *internal.Config
 	l          *zap.Logger
 	registrar  *Registrar
 	shutdowner fx.Shutdowner
@@ -43,6 +48,7 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 
 	sp := &ShutdownPoller{
 		apiClient:  params.APIClient,
+		cfg:        params.Cfg,
 		l:          params.L,
 		registrar:  params.Registrar,
 		shutdowner: params.Shutdowner,
@@ -113,6 +119,8 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				)
 			}
 
+			sp.deletePod(ctx)
+
 			// Force-kill the process if fx.Shutdown doesn't complete in time.
 			go func() {
 				time.Sleep(forceExitTimeout)
@@ -126,4 +134,33 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (sp *ShutdownPoller) deletePod(ctx context.Context) {
+	if !sp.cfg.DeletePodOnShutdown {
+		return
+	}
+
+	if sp.cfg.PodName == "" || sp.cfg.PodNamespace == "" {
+		sp.l.Warn("delete_pod_on_shutdown enabled but pod_name or pod_namespace not set, skipping pod deletion")
+		return
+	}
+
+	sp.l.Info("deleting own pod",
+		zap.String("pod_name", sp.cfg.PodName),
+		zap.String("pod_namespace", sp.cfg.PodNamespace),
+	)
+
+	clientset, _, _, err := k8s.ClientsetInCluster()
+	if err != nil {
+		sp.l.Warn("unable to create in-cluster k8s client for pod deletion", zap.Error(err))
+		return
+	}
+
+	if err := clientset.CoreV1().Pods(sp.cfg.PodNamespace).Delete(ctx, sp.cfg.PodName, metav1.DeleteOptions{}); err != nil {
+		sp.l.Warn("unable to delete own pod", zap.Error(err))
+		return
+	}
+
+	sp.l.Info("successfully deleted own pod")
 }
