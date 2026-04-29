@@ -26,10 +26,11 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Get Started",
+        "tab": "Quickstart",
         "icon": "rocket",
         "pages": [
           "get-started/introduction",
+          "get-started/quickstart",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
@@ -59,14 +60,13 @@
               "platform-support/gcp"
             ]
           },
-          "get-started/quickstart",
           {
-            "group": "Create your first install",
-            "boost": 5,
+            "group": "Quick Reference",
+            "boost": 2,
             "pages": [
-              "get-started/create-your-first-app",
-              "get-started/app-aws-k8s",
-              "get-started/app-aws-lambda"
+              "cli",
+              "nuon-api",
+              "tui"
             ]
           }
         ]
