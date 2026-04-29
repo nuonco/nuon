@@ -119,14 +119,13 @@
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
-              "concepts/stacks",
-              "concepts/operation-roles"
+              "concepts/stacks"
             ]
           },
           {
             "group": "Continuous Delivery",
             "boost": 3,
-            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies"]
+            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies", "concepts/operation-roles"]
           },
           {
             "group": "Customer Experience",
