@@ -174,8 +174,12 @@ contents = "./require-encryption.rego"
 # HTTP/HTTPS URL
 contents = "https://example.com/policies/security.rego"
 
-# Git repository
+# Git repository (the `//` separates the repo from the path to the file)
 contents = "git::https://github.com/org/policies//terraform/encryption.rego"
+
+# Git repository, pinned to a ref (branch, tag, or commit)
+contents = "git::https://github.com/org/policies//terraform/encryption.rego?ref=v1.2.3"
+```
 
 ## Sync Your App
 
