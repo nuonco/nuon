@@ -16,6 +16,7 @@ title: 'Install'
 | **`labels`**<br/>object | - | **Optional** | - |
 | **`aws_account`**<br/>[AWSAccount](#aws_account) | AWS account configuration AWS-specific settings for this install, including region and other account details | **Optional** | - |
 | **`gcp_account`**<br/>[GCPAccount](#gcp_account) | GCP account configuration GCP-specific settings for this install, including project ID and region | **Optional** | - |
+| **`azure_account`**<br/>[AzureAccount](#azure_account) | Azure account configuration Azure-specific settings for this install, including the deployment location | **Optional** | - |
 | **`inputs`**<br/>array | input values Array of input groups with key-value pairs for customer inputs provided during installation | **Optional** | - |
 | **`stack_overrides`**<br/>[InstallStackOverrides](#stack_overrides) | Stack template overrides Per-install overrides for the app-level stack template configuration. Overrides take precedence over app-level defaults. | **Optional** | - |
 
@@ -31,6 +32,12 @@ title: 'Install'
 |----------|----------|----------|----------|
 | **`project_id`**<br/>string | GCP project ID GCP project where the infrastructure will be deployed | **Optional** | `"my-gcp-project"` |
 | **`region`**<br/>string | GCP region GCP region where the infrastructure will be deployed | **Optional** | `"us-central1"`, `"europe-west1"` |
+
+### `azure_account`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`location`**<br/>string | Azure location Azure location/region where the infrastructure will be deployed | **✅ Required** | `"eastus"`, `"westus2"`, `"westeurope"` |
 
 ### `stack_overrides`
 
