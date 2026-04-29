@@ -25,6 +25,7 @@ func newPodShutdown(cfg *internal.Config, settings *settings.Settings, l *zap.Lo
 	if !cfg.DeletePodOnShutdown || cfg.PodName == "" || cfg.PodNamespace == "" {
 		return nil
 	}
+
 	return &podShutdown{cfg: cfg, settings: settings, l: l}
 }
 

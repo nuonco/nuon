@@ -12,6 +12,10 @@ interface IUpdateRunnerModal extends Omit<IModal, 'onSubmit'> {
   error: TAPIError | null
   onSubmit: (tag: string) => void
   onClose: () => void
+  modalHeading?: string
+  inputLabel?: string
+  inputPlaceholder?: string
+  submitLabel?: string
 }
 
 export const UpdateRunnerModal = ({
@@ -19,6 +23,10 @@ export const UpdateRunnerModal = ({
   error,
   onSubmit,
   onClose,
+  modalHeading = 'Update runner version',
+  inputLabel = 'Enter the runner tag you\'d like to update to.',
+  inputPlaceholder = 'runner tag',
+  submitLabel = 'Update runner version',
   ...props
 }: IUpdateRunnerModal) => {
   const formRef = useRef<HTMLFormElement>(null)
@@ -54,7 +62,7 @@ export const UpdateRunnerModal = ({
             theme="info"
           >
             <Icon variant="ArrowsCounterClockwise" size="24" />
-            Update runner version
+            {modalHeading}
           </Text>
         </div>
       }
@@ -67,7 +75,7 @@ export const UpdateRunnerModal = ({
         ) : (
           <span className="flex items-center gap-2">
             <Icon variant="ArrowsCounterClockwise" />
-            Update runner version
+            {submitLabel}
           </span>
         ),
         disabled: !canUpdate,
@@ -85,16 +93,13 @@ export const UpdateRunnerModal = ({
         ) : null}
         <form ref={formRef} onSubmit={handleSubmit}>
           <div className="flex flex-col gap-4">
-            <Text variant="base" weight="strong">
-              Update to a different runner version.
-            </Text>
             <div className="flex flex-col gap-2">
               <Text variant="base" weight="stronger">
-                Enter the runner tag you&apos;d like to update to.
+                {inputLabel}
               </Text>
               <Input
                 id="runner-tag"
-                placeholder="runner tag"
+                placeholder={inputPlaceholder}
                 type="text"
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
@@ -110,10 +115,12 @@ export const UpdateRunnerModal = ({
 
 interface IUpdateRunnerButton extends IButtonAsButton {
   onOpenModal: () => void
+  label?: string
 }
 
 export const UpdateRunnerButton = ({
   onOpenModal,
+  label = 'Update runner version',
   ...props
 }: IUpdateRunnerButton) => {
   return (
@@ -122,7 +129,7 @@ export const UpdateRunnerButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="ArrowsCounterClockwise" />}
-      Update runner version
+      {label}
       {props?.isMenuButton ? <Icon variant="ArrowsCounterClockwise" /> : null}
     </Button>
   )

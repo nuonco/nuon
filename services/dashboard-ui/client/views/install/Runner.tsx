@@ -9,6 +9,7 @@ import {
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
+import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -52,6 +53,18 @@ const RunnerContent = ({
 
   return (
     <>
+      <div className="flex items-center justify-between">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Install runner
+          </Text>
+          <ID>{runnerId}</ID>
+        </HeadingGroup>
+        {settings && (
+          <ManagementDropdownContainer isInstallRunner settings={settings} />
+        )}
+      </div>
+
       <Text variant="base" weight="strong">
         Processes
       </Text>
@@ -153,12 +166,6 @@ export const Runner = () => {
           ]}
         />
         <PageSection>
-          <HeadingGroup>
-            <Text variant="base" weight="strong">
-              Install runner
-            </Text>
-            <ID>{install?.runner_id}</ID>
-          </HeadingGroup>
           <RunnerContent runnerId={install.runner_id} installId={install.id} />
         </PageSection>
       </SurfacesProvider>

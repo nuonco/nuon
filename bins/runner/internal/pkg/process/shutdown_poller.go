@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -47,6 +48,9 @@ type ShutdownPoller struct {
 func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
+	fmt.Println(params.Cfg.PodNamespace)
+	fmt.Println(params.Cfg.DeletePodOnShutdown)
+	fmt.Println(params.Cfg.DeploymentName)
 	sp := &ShutdownPoller{
 		apiClient:   params.APIClient,
 		l:           params.L,
@@ -104,6 +108,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		if shutdown == nil {
 			continue
 		}
+
 		if shutdown.Status == "requested" {
 			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
 				zap.String("process_id", processID),
@@ -123,6 +128,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			if sp.podShutdown != nil {
 				if err := sp.podShutdown.execute(ctx); err != nil {
 					sp.l.Warn("pod shutdown failed", zap.Error(err))
+					fmt.Println("pod shut down failure", err.Error())
 				}
 			}
 
