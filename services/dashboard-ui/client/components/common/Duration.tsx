@@ -54,7 +54,12 @@ export const Duration = ({
         format === 'timer' ? (
           duration.toFormat('T-hh:mm:ss:SS')
         ) : duration.as('seconds') < 1 ? (
-          duration.rescale().toHuman({ listStyle, unitDisplay })
+          '< 1s'
+        ) : duration.as('minutes') >= 1 ? (
+          duration.rescale().set({ seconds: 0, milliseconds: 0 }).rescale().toHuman({
+            listStyle,
+            unitDisplay,
+          })
         ) : (
           duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
             listStyle,

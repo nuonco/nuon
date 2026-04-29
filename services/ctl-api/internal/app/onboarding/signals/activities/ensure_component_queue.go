@@ -13,5 +13,6 @@ func (a *Activities) ensureComponentQueue(ctx context.Context, componentID strin
 	if componentID == "" {
 		return fmt.Errorf("componentID is required")
 	}
-	return a.appsHelpers.EnsureComponentQueue(ctx, componentID)
+	_, err := a.componentHelpers.EnsureComponentQueues(ctx, componentID)
+	return err
 }
