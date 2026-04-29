@@ -106,6 +106,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
           "updates/030-policies",
