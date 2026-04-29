@@ -91,10 +91,11 @@ export const StepDetailPanelButton = ({
   step: TWorkflowStep
   planOnly?: boolean
 }) => {
-  const { addPanel, panels } = useSurfaces()
+  const { addPanel, removePanel, panels } = useSurfaces()
   const { workflow } = useWorkflow()
   const [searchParams] = useSearchParams()
   const autoOpened = useRef(false)
+  const panelIdRef = useRef<string | null>(null)
 
   const panel = (
     <StepDetailPanelContainer
@@ -108,7 +109,9 @@ export const StepDetailPanelButton = ({
     </StepDetailPanelContainer>
   )
 
-  const handleAddPanel = () => addPanel(panel, step.id)
+  const handleAddPanel = () => {
+    panelIdRef.current = addPanel(panel, step.id)
+  }
 
   const isPendingApproval =
     approvalPrompt &&
@@ -140,6 +143,13 @@ export const StepDetailPanelButton = ({
       handleAddPanel()
     }
   }, [workflow?.id, workflowBlocked, suppressAutoOpen, isPendingApproval, isPendingAwaitStack])
+
+  useEffect(() => {
+    if (autoOpened.current && panelIdRef.current && step.finished) {
+      removePanel(panelIdRef.current, step.id)
+      panelIdRef.current = null
+    }
+  }, [step.finished])
 
   return (
     <Button
