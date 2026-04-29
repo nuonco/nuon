@@ -26,6 +26,7 @@ import (
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.RunnerHeartBeat
 // @Router					/v1/runners/{runner_id}/latest-heart-beat [get]
+// @Deprecated
 func (s *service) GetRunnerLatestHeartBeat(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

@@ -16,5 +16,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "03-add-process-id-to-heartbeats",
 			Fn:   m.Migration003AddProcessIDToHeartBeats,
 		},
+		{
+			Name: "04-recreate-heartbeat-sort-keys",
+			Fn:   m.Migration004RecreateHeartbeatSortKeys,
+		},
 	}
 }
