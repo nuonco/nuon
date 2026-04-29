@@ -230,6 +230,46 @@ export const TimeRanges = () => (
   </div>
 )
 
+export const EdgeCases = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Edge cases</h3>
+    </div>
+
+    <div className="space-y-4">
+      <div className="space-y-3 p-4 border rounded">
+        <div className="flex items-center gap-3">
+          <Duration nanoseconds={0} />
+          <Text variant="subtext" theme="neutral">
+            Zero nanoseconds (cancelled before start)
+          </Text>
+        </div>
+        <div className="flex items-center gap-3">
+          <Duration nanoseconds={undefined} />
+          <Text variant="subtext" theme="neutral">
+            Undefined nanoseconds
+          </Text>
+        </div>
+        <div className="flex items-center gap-3">
+          <Duration beginTime={undefined} />
+          <Text variant="subtext" theme="neutral">
+            No beginTime or endTime
+          </Text>
+        </div>
+        <div className="flex items-center gap-3">
+          <Duration
+            beginTime="0001-01-01T00:00:00Z"
+            endTime="2026-04-29T13:39:53Z"
+          />
+          <Text variant="subtext" theme="neutral">
+            Go zero-value startedAt with real endTime (the bug: shows 317y)
+          </Text>
+        </div>
+      </div>
+    </div>
+  </div>
+)
+
 export const UsageExamples = () => (
   <div className="space-y-6">
     <div className="space-y-3">

@@ -44,8 +44,10 @@ export const Duration = ({
     duration = LuxonDuration.fromMillis(milliseconds)
   } else if (beginTime) {
     const bt = DateTime.fromISO(beginTime)
-    const et = endTime ? DateTime.fromISO(endTime) : DateTime.now()
-    duration = et.diff(bt, durationUnits)
+    if (bt.isValid && bt.year > 1) {
+      const et = endTime ? DateTime.fromISO(endTime) : DateTime.now()
+      duration = et.diff(bt, durationUnits)
+    }
   }
 
   return (
