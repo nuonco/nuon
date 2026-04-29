@@ -4,6 +4,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
@@ -16,6 +17,7 @@ type handler struct {
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
+	l           *zap.Logger
 
 	// created on initialization of the plugin struct
 	state *handlerState
@@ -30,6 +32,7 @@ type HandlerParams struct {
 	APIClient   nuonrunner.Client
 	Config      *internal.Config
 	ErrRecorder *errs.Recorder
+	L           *zap.Logger
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -38,5 +41,6 @@ func New(params HandlerParams) (*handler, error) {
 		apiClient:   params.APIClient,
 		cfg:         params.Config,
 		errRecorder: params.ErrRecorder,
+		l:           params.L,
 	}, nil
 }
