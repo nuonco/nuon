@@ -104,9 +104,10 @@
             ]
           },
           {
-            "group": "Customer Infrastructure",
+            "group": "Customer installs",
             "boost": 3,
             "pages": [
+              "guides/app-install-life-cycle",
               "concepts/stacks",
               "concepts/operation-roles"
             ]
@@ -160,7 +161,6 @@
             "group": "Install with a Customer",
             "boost": 3,
             "pages": [
-              "guides/customer-portal",
               "guides/vendor-customers",
               "guides/runner-kill-switch",
               "guides/custom-domains"
@@ -180,6 +180,14 @@
             ]
           },
           {
+            "group": "White-label BYOC installation",
+            "boost": 2,
+            "pages": [
+              "guides/customer-portal",
+              "guides/control-plane-integration"
+            ]
+          },
+          {
             "group": "Integrations",
             "boost": 2,
             "pages": [
@@ -194,7 +202,6 @@
             "pages": [
               "guides/custom-nested-stacks",
               "guides/cli-extensions",
-              "guides/control-plane-integration",
               "guides/external-image-policies",
               "guides/terraform-cli"
             ]
