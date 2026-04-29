@@ -22,7 +22,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 subjects:
   - kind: ServiceAccount
-    name: {{ include "common.fullname" . }}
+    name: {{ .Values.serviceAccount.name | default (include "common.fullname" .)}}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -34,7 +34,7 @@ metadata:
     {{- include "common.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "common.fullname" . }}
+    name: {{ .Values.serviceAccount.name | default (include "common.fullname" .)}}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole

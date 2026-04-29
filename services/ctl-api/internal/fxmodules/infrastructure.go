@@ -24,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
@@ -77,6 +78,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(analytics.NewTemporal),
 	fx.Provide(cloudformation.NewTemplates),
 	fx.Provide(arm.NewTemplates),
+	fx.Provide(enqueuer.New),
 	fx.Provide(queueclient.New),
 	fx.Provide(emitterclient.New),
 	fx.Provide(flowclient.New),

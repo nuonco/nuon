@@ -3,6 +3,7 @@ package statusactivities
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // NOTE
@@ -109,16 +111,11 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	existingStatus.History = nil
 	status.History = append(history, existingStatus)
 
-	if status.Metadata == nil {
-		status.Metadata = make(map[string]any, 0)
-	}
-	for k, v := range existingStatus.Metadata {
-		if _, ok := status.Metadata[k]; ok {
-			continue
-		}
-
-		status.Metadata[k] = v
-	}
+	// Separate out metadata for atomic merge — the status column write carries
+	// everything except metadata so that concurrent MergeJSONBMetadata calls
+	// (e.g. from the background enqueuer) are not clobbered.
+	newMetadata := status.Metadata
+	status.Metadata = nil
 
 	res := a.db.WithContext(ctx).Model(obj).Updates(
 		map[string]any{
@@ -130,7 +127,26 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	if res.RowsAffected < 1 {
 		return errors.New("no object found to update")
 	}
+
+	// Atomically merge metadata keys using jsonb_set so we never overwrite
+	// metadata written by other writers between our read and write.
+	if len(newMetadata) > 0 {
+		id := reflectID(obj)
+		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, newMetadata); err != nil {
+			return errors.Wrap(err, "unable to merge metadata")
+		}
+	}
+
 	return nil
+}
+
+// reflectID extracts the ID field from a model pointer via reflection.
+func reflectID(obj any) string {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	return v.FieldByName("ID").String()
 }
 
 // @temporal-gen-v2 activity
