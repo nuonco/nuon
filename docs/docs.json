@@ -210,25 +210,10 @@
       {
         "tab": "Reference",
         "icon": "book",
-        "groups": [
-          {
-            "group": "CLI",
-            "root": "cli",
-            "boost": 2,
-            "pages": []
-          },
-          {
-            "group": "API",
-            "root": "nuon-api",
-            "boost": 0.75,
-            "pages": []
-          },
-          {
-            "group": "SDKs",
-            "root": "sdks",
-            "boost": 2,
-            "pages": []
-          },
+        "pages": [
+          "cli",
+          "nuon-api",
+          "sdks",
           {
             "group": "Config Reference",
             "root": "config-ref/index",
@@ -274,12 +259,7 @@
               }
             ]
           },
-          {
-            "group": "Dashboard",
-            "root": "dashboard",
-            "boost": 2,
-            "pages": []
-          }
+          "dashboard"
         ]
       },
       {
