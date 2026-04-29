@@ -1,38 +1,21 @@
 ---
 title: "Create An AWS Lambda App"
-description: "Learn how to package and install an AWS Lambda app."
+description: "Package and deploy a Lambda app with DynamoDB and API Gateway into your own AWS account."
 ---
 
-This guide walks you through packaging an AWS Lambda app and installing
-it into your AWS cloud account.
+**What you'll build:**
+
+- An [App](/concepts/apps)
+- Several [Components](/concepts/components): a Lambda function, Docker image, DynamoDB table, certificate, and API Gateway
+- An [Install](/guides/app-install-life-cycle) running on the [AWS minimal sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
+
+**What you'll need:**
+
+- A Nuon org and the Nuon CLI authenticated ([Quickstart](/get-started/quickstart))
+- An AWS account ([set one up here](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html)) — this is where the app will run
 
 <Note>
-	This [app](/concepts/apps) can be found in this [GitHub
-	repository](https://github.com/nuonco/example-app-configs).
-</Note>
-
-## Prerequisites
-
-- [Signup for the self-service free trial](https://app.nuon.co). You will need a login and an org in Nuon's cloud.
-- [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html).
-  This is the account you will install the app in.
-
-## What You Will Create
-
-This tutorial will walk you through creating the following:
-
-- An [app](/concepts/apps)
-- Several [components](/concepts/components) including a Lambda function, Docker
-  image, DynamoDB table, Certificate and API Gateway
-- An [install](/concepts/installs), using our
-  [AWS minimal sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
-
-<Note>
-	We recommend you clone the [`example-app-configs`
-	repository](https://github.com/nuonco/example-app-configs) which includes the
-	`aws-lambda` app versus creating each config file manually. This guide is
-	meant to explain the concepts behind some of the config files, so you can
-	create your own apps in the future.
+	The full app config is in [`example-app-configs`](https://github.com/nuonco/example-app-configs). You can clone it instead of typing each TOML by hand. This page explains what each config does, so you can author your own apps next.
 </Note>
 
 ## Configure App
@@ -403,3 +386,7 @@ A few suggestions for where to go next:
 - Dig into our [app](/concepts/apps) guide to learn how to configure more
   complex apps.
 
+
+---
+
+**Next:** [How it Works — Overview →](/concepts/overview)
