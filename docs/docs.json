@@ -350,10 +350,6 @@
   },
   "redirects": [
     {
-      "source": "/",
-      "destination": "/get-started/introduction"
-    },
-    {
       "source": "/api-ref",
       "destination": "/nuon-api"
     },
