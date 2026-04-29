@@ -80,6 +80,9 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		"temporal_runners": func(ctx workflow.Context) error {
 			return w.temporalNamespaceMetrics(ctx, "runners")
 		},
+		"queue_signal_enqueue": func(ctx workflow.Context) error {
+			return w.writeQueueSignalEnqueueMetrics(ctx)
+		},
 	}
 
 	for name, method := range methods {
@@ -199,6 +202,25 @@ func (w *Workflows) writePSQLTableMetrics(ctx workflow.Context) error {
 			"table_name": table.TableName,
 		}, defaultTags))...)
 	}
+
+	return nil
+}
+
+func (w *Workflows) writeQueueSignalEnqueueMetrics(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true"}
+
+	m, err := activities.AwaitGetQueueSignalEnqueueMetrics(ctx, activities.GetQueueSignalEnqueueMetricsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get queue signal enqueue metrics")
+	}
+
+	w.mw.Gauge(ctx, "queue_signals.total",
+		float64(m.TotalQueued),
+		metrics.ToTags(defaultTags)...)
+
+	w.mw.Gauge(ctx, "queue_signals.missing_enqueue_finished",
+		float64(m.MissingEnqueueFinish),
+		metrics.ToTags(defaultTags)...)
 
 	return nil
 }
