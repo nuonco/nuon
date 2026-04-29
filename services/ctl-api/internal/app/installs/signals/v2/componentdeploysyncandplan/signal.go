@@ -49,19 +49,22 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.FlowID = flowID
 }
 
-var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
-var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithMaxRetries = (*Signal)(nil)
-var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
+var (
+	_ signal.SignalWithStepContext      = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithNoOpCheck        = (*Signal)(nil)
+	_ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
+)
 
-func (s *Signal) IsNoOpCheckable() bool                 { return true }
-func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
-func (s *Signal) AutoRetry() bool                       { return true }
-func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) IsNoOpCheckable() bool          { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool { return true }
+func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) MaxRetries() int                { return 5 }
+
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
