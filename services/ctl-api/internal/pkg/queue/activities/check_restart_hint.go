@@ -17,12 +17,12 @@ func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool
 		return false, generics.TemporalGormError(res.Error, "unable to get queue for restart hint check")
 	}
 
-	if queue.Metadata == nil {
+	if queue.StatusV2.Metadata == nil {
 		return false, nil
 	}
 
-	hint, ok := queue.Metadata["restart_hint"]
-	if !ok || hint == nil {
+	val, ok := queue.StatusV2.Metadata["restart_hint"]
+	if !ok || val == nil {
 		return false, nil
 	}
 
@@ -34,23 +34,10 @@ func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 func (a *Activities) clearRestartHint(ctx context.Context, queueID string) error {
-	var queue app.Queue
-	if res := a.db.WithContext(ctx).Where(app.Queue{ID: queueID}).First(&queue); res.Error != nil {
-		return generics.TemporalGormError(res.Error, "unable to get queue for restart hint clear")
-	}
-
-	if queue.Metadata == nil {
-		return nil
-	}
-
-	if _, ok := queue.Metadata["restart_hint"]; !ok {
-		return nil
-	}
-
-	delete(queue.Metadata, "restart_hint")
-
-	if res := a.db.WithContext(ctx).Model(&app.Queue{}).Where(app.Queue{ID: queueID}).Update("metadata", queue.Metadata); res.Error != nil {
-		return generics.TemporalGormError(res.Error, "unable to clear restart hint")
+	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Queue{}, queueID, "status_v2", map[string]any{
+		"restart_hint": nil,
+	}); err != nil {
+		return generics.TemporalGormError(err, "unable to clear restart hint")
 	}
 
 	return nil

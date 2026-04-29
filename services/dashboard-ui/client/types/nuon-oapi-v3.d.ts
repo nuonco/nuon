@@ -4280,6 +4280,7 @@ export interface components {
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
       emitter_id?: string;
+      enqueued?: boolean;
       execution_count?: number;
       id?: string;
       org_id?: string;
@@ -5520,6 +5521,24 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      /**
+       * @description TerraformVersion is the version of the terraform CLI the build runner
+       * should install in order to vendor providers via
+       * `terraform providers mirror`. When empty the build runner falls back
+       * to a sane default. Should mirror the version configured for the
+       * component's deploy plan so init resolves the same provider bytes the
+       * build vendored. Only consulted when VendorProviders is true.
+       */
+      terraform_version?: string;
+      /**
+       * @description VendorProviders enables build-time vendoring of terraform providers
+       * via `terraform providers mirror`. Gated by the
+       * `terraform-provider-mirror` org feature flag in ctl-api so we can
+       * roll the change out gradually without coupling install-runner
+       * behaviour to the flag (the install runner auto-detects whether a
+       * mirror is present in the OCI artifact).
+       */
+      vendor_providers?: boolean;
     };
     "plantypes.TerraformDeployHooks": {
       enabled?: boolean;
