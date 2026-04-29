@@ -9,6 +9,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -21,9 +23,11 @@ type ShutdownPollerParams struct {
 	fx.In
 
 	APIClient  nuonrunner.Client
+	Cfg        *internal.Config
 	L          *zap.Logger `name:"system"`
 	LC         fx.Lifecycle
 	Registrar  *Registrar
+	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
 }
 
@@ -32,6 +36,8 @@ type ShutdownPoller struct {
 	l          *zap.Logger
 	registrar  *Registrar
 	shutdowner fx.Shutdowner
+
+	podShutdown *podShutdown
 
 	ctx      context.Context
 	cancelFn func()
@@ -42,13 +48,14 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	sp := &ShutdownPoller{
-		apiClient:  params.APIClient,
-		l:          params.L,
-		registrar:  params.Registrar,
-		shutdowner: params.Shutdowner,
-		ctx:        ctx,
-		cancelFn:   cancelFn,
-		wg:         conc.NewWaitGroup(),
+		apiClient:   params.APIClient,
+		l:           params.L,
+		registrar:   params.Registrar,
+		shutdowner:  params.Shutdowner,
+		podShutdown: newPodShutdown(params.Cfg, params.Settings, params.L),
+		ctx:         ctx,
+		cancelFn:    cancelFn,
+		wg:          conc.NewWaitGroup(),
 	}
 
 	params.LC.Append(fx.Hook{
@@ -111,6 +118,12 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 					zap.String("process_id", processID),
 					zap.String("shutdown_id", shutdown.ID),
 				)
+			}
+
+			if sp.podShutdown != nil {
+				if err := sp.podShutdown.execute(ctx); err != nil {
+					sp.l.Warn("pod shutdown failed", zap.Error(err))
+				}
 			}
 
 			// Force-kill the process if fx.Shutdown doesn't complete in time.
