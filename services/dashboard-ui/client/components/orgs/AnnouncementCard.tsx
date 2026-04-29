@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import './AnnouncementCard.css'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 
 const DISMISSED_KEY = 'nuon:dismissed-announcements'
@@ -81,18 +82,15 @@ export const AnnouncementCard = ({
               <Icon variant="XIcon" size={14} />
             </Button>
           )}
-          <Text variant="base" weight="strong">
-            {announcement.title}
+          <Text variant="subtext" theme="neutral">
+            {announcement.date}
           </Text>
-          <div className="flex items-center justify-between gap-4">
-            <Text variant="subtext" theme="neutral">
-              {announcement.date}
-            </Text>
-            <Button variant="secondary" size="sm" href={announcement.ctaUrl}>
-              {announcement.ctaText}
-              <Icon variant="ArrowRightIcon" size={14} />
-            </Button>
-          </div>
+          <Text variant="base" weight="strong">
+            <Link href={announcement.ctaUrl} isExternal className="!text-inherit hover:!text-primary-600 dark:hover:!text-primary-400">
+              {announcement.title}
+              <Icon variant="ArrowSquareOutIcon" size={14} />
+            </Link>
+          </Text>
         </div>
       </div>
     )

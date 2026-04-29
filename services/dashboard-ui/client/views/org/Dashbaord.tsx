@@ -125,8 +125,8 @@ export const Dashboard = () => {
         </div>
       )}
       <PageContent>
-        <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
-          <PageSection className="flex-1 border-r !gap-12">
+        <PageGrid className="flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
+          <PageSection className="flex-1 !gap-12">
             <div className="flex flex-col gap-4">
               <Text variant="h3" weight="strong">
                 Overview

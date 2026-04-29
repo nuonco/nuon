@@ -13,6 +13,9 @@ export const AnnouncementsList = ({ announcements, disableDismissMemory = false 
 
   return (
     <div className="flex flex-col gap-4">
+      <Text variant="base" weight="strong">
+        Latest from our changelog
+      </Text>
       {visible.map((announcement, i) => (
         <AnnouncementCard
           key={announcement.id}
@@ -23,7 +26,7 @@ export const AnnouncementsList = ({ announcements, disableDismissMemory = false 
       ))}
       <Text variant="body">
         <Link href="https://docs.nuon.co/updates/updates" isExternal>
-          Changelog
+          View changelog
           <Icon variant="ArrowSquareOutIcon" size={14} />
         </Link>
       </Text>
