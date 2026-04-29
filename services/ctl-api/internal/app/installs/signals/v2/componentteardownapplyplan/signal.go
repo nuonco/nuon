@@ -46,26 +46,37 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.FlowID = flowID
 }
 
-var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithCloneSteps = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithMaxRetries = (*Signal)(nil)
-var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var (
+	_ signal.SignalWithStepContext      = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithCloneSteps       = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
+)
 
 func (s *Signal) AutoRetry() bool { return true }
 func (s *Signal) MaxRetries() int { return 5 }
 
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
-	ccc, err := activities.AwaitGetComponentConfigConnectionForInstallComponent(ctx, activities.GetComponentConfigConnectionForInstallComponentRequest{
-		InstallComponentID: s.InstallComponentID,
-		ComponentID:        s.ComponentID,
-	})
-	if err != nil || ccc == nil {
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
+	if err != nil {
 		return 0
 	}
-	return ccc.GetMaxAutoRetries()
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return 0
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.GetMaxAutoRetries()
+		}
+	}
+
+	return 0
 }
 
 func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
