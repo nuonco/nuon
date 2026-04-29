@@ -15,7 +15,7 @@ const mockAnnouncement: IAnnouncement = {
   dismissible: true,
 }
 
-export const Default = () => <AnnouncementCard announcement={mockAnnouncement} />
+export const Default = () => <AnnouncementCard announcement={mockAnnouncement} disableDismissMemory />
 
 export const WithImage = () => (
   <AnnouncementCard
@@ -23,11 +23,25 @@ export const WithImage = () => (
       ...mockAnnouncement,
       image: 'https://via.placeholder.com/800x400',
     }}
+    disableDismissMemory
   />
 )
 
 export const NonDismissible = () => (
   <AnnouncementCard
     announcement={{ ...mockAnnouncement, dismissible: false }}
+    disableDismissMemory
+  />
+)
+
+export const Compact = () => (
+  <AnnouncementCard announcement={mockAnnouncement} variant="compact" disableDismissMemory />
+)
+
+export const CompactNonDismissible = () => (
+  <AnnouncementCard
+    announcement={{ ...mockAnnouncement, dismissible: false }}
+    variant="compact"
+    disableDismissMemory
   />
 )
