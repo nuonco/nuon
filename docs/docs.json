@@ -28,11 +28,8 @@
       {
         "tab": "Get Started",
         "icon": "rocket",
-        "groups": [
-          {
-            "group": "Welcome",
-            "pages": ["get-started/introduction"]
-          },
+        "pages": [
+          "get-started/introduction",
           {
             "group": "Compatibility",
             "pages": [
@@ -49,18 +46,13 @@
               }
             ]
           },
+          "get-started/quickstart",
           {
-            "group": "Tutorials",
+            "group": "Create your first install",
             "pages": [
-              "get-started/quickstart",
-              {
-                "group": "Create your first install",
-                "pages": [
-                  "get-started/create-your-first-app",
-                  "get-started/app-aws-k8s",
-                  "get-started/app-aws-lambda"
-                ]
-              }
+              "get-started/create-your-first-app",
+              "get-started/app-aws-k8s",
+              "get-started/app-aws-lambda"
             ]
           }
         ]
@@ -109,9 +101,7 @@
             "group": "Customer Experience",
             "pages": [
               "concepts/customer-portal",
-              "concepts/cli",
-              "concepts/dashboard",
-              "concepts/api"
+              "concepts/cli"
             ]
           }
         ]
@@ -121,7 +111,7 @@
         "icon": "screwdriver-wrench",
         "groups": [
           {
-            "group": "Quick recipes — Connect Your App",
+            "group": "Connect Your App",
             "pages": [
               "guides/managing-apps",
               "guides/managing-components",
@@ -133,7 +123,7 @@
             ]
           },
           {
-            "group": "Quick recipes — Components",
+            "group": "Components",
             "pages": [
               "guides/docker-build-components",
               "guides/container-image-components",
@@ -141,7 +131,7 @@
             ]
           },
           {
-            "group": "Quick recipes — Operations",
+            "group": "Operations",
             "pages": [
               "guides/actions",
               "guides/runner-management-mode",
@@ -153,14 +143,14 @@
             ]
           },
           {
-            "group": "Quick recipes — Customer Experience",
+            "group": "Customer Experience",
             "pages": [
               "guides/customer-portal",
               "guides/vendor-customers"
             ]
           },
           {
-            "group": "Quick recipes — Integrations",
+            "group": "Integrations",
             "pages": [
               "guides/github-actions",
               "guides/ai-and-apps"
@@ -207,13 +197,10 @@
             "pages": ["dashboard"]
           },
           {
-            "group": "Configuration files",
-            "pages": ["configuration-files"]
-          },
-          {
             "group": "Config Reference",
             "pages": [
               "config-ref/index",
+              "configuration-files",
               {
                 "group": "Component Types",
                 "pages": [
@@ -382,6 +369,14 @@
     {
       "source": "/concepts/installs",
       "destination": "/guides/app-install-life-cycle"
+    },
+    {
+      "source": "/concepts/api",
+      "destination": "/api-ref/getting-started"
+    },
+    {
+      "source": "/concepts/dashboard",
+      "destination": "/dashboard"
     }
   ]
 }
