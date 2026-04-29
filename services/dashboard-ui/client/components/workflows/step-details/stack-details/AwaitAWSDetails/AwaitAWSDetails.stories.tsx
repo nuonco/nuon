@@ -34,15 +34,6 @@ const mockStackWithBoth = {
   ],
 } as any
 
-const mockStackTerraformApplied = {
-  versions: [
-    {
-      ...mockStackWithBoth.versions[0],
-      stack_type: 'terraform',
-    },
-  ],
-} as any
-
 const mockStep = {
   id: 'step-1',
   status: { status: 'active' },
@@ -63,17 +54,6 @@ export const WithBothOptions = () => (
   <div className="max-w-2xl p-4">
     <AwaitAWSDetails
       stack={mockStackWithBoth}
-      step={mockStep}
-      orgId="org-1"
-      installId="install-1"
-    />
-  </div>
-)
-
-export const TerraformApplied = () => (
-  <div className="max-w-2xl p-4">
-    <AwaitAWSDetails
-      stack={mockStackTerraformApplied}
       step={mockStep}
       orgId="org-1"
       installId="install-1"

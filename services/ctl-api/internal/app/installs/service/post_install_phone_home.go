@@ -100,16 +100,6 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
 
-	// Record which install-stack path the user actually applied. Both paths
-	// post the same key set (`runner_iam_role_arn`, etc.); the Terraform
-	// path additionally includes `runner_asg_name` (output of the runner
-	// child module), which the CFN Lambda doesn't emit — use that as the
-	// discriminator.
-	stackType := app.InstallStackTypeCloudFormation
-	if _, hasASGName := (*req)["runner_asg_name"]; hasASGName {
-		stackType = app.InstallStackTypeTerraform
-	}
-
 	// now make updates
 	updatedStack := app.InstallStackVersion{
 		ID: stackVersion.ID,
@@ -117,8 +107,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	res := s.db.WithContext(ctx).
 		Model(&updatedStack).
 		Updates(app.InstallStackVersion{
-			Status:    app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			StackType: stackType,
+			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
 			Runs: []app.InstallStackVersionRun{
 				{
 					Data: generics.ToHstore(pkggenerics.ToStringMap(data)),
