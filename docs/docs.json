@@ -31,6 +31,11 @@
         "pages": [
           "get-started/quickstart",
           {
+            "group": "Home",
+            "root": "get-started/introduction",
+            "pages": []
+          },
+          {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
             "boost": 5,
@@ -59,7 +64,13 @@
               "platform-support/gcp"
             ]
           },
-          "get-started/day-2-operations",
+          {
+            "group": "Continuous Delivery",
+            "boost": 3,
+            "pages": [
+              "get-started/day-2-operations"
+            ]
+          },
           {
             "group": "Quick Reference",
             "boost": 2,
@@ -314,7 +325,8 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "/get-started/introduction"
   },
   "navbar": {
     "primary": {
@@ -339,6 +351,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/",
+      "destination": "/get-started/introduction"
+    },
     {
       "source": "/api-ref",
       "destination": "/nuon-api"
