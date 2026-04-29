@@ -86,6 +86,14 @@ type WorkflowStep struct {
 	// GroupParallel indicates whether steps in this group should execute in parallel.
 	GroupParallel bool `json:"group_parallel,omitzero" gorm:"default:false" temporaljson:"group_parallel,omitzero,omitempty"`
 
+	// StepQueueID is the queue where the execute-workflow-step signal runs.
+	// When empty, the group's default step queue is used.
+	StepQueueID string `json:"step_queue_id,omitzero" gorm:"type:text" temporaljson:"step_queue_id,omitzero,omitempty"`
+
+	// TargetQueueID is the queue where the inner signal (the actual work)
+	// gets dispatched. When empty, the step signal's TargetQueueName is used.
+	TargetQueueID string `json:"target_queue_id,omitzero" gorm:"type:text" temporaljson:"target_queue_id,omitzero,omitempty"`
+
 	ExecutionType WorkflowStepExecutionType `json:"execution_type,omitzero" temporaljson:"execution_type"`
 
 	// the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.

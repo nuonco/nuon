@@ -27,7 +27,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg := newStepGroup()
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -36,7 +36,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // reprovision service account
+	sg.nextGroupEager() // reprovision service account
 	step, err = sg.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &reprovisionrunner.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
@@ -50,7 +50,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 
-	sg.nextGroup() // install stack
+	sg.nextGroupEager() // install stack
 
 	step, err = sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
 		InstallStackID: stack.ID,
@@ -77,8 +77,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // await runner
-	step, err = sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {

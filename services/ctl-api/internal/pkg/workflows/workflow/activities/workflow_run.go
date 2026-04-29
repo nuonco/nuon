@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 type CreateWorkflowRunRequest struct {
@@ -25,6 +26,17 @@ func (a *Activities) PkgWorkflowsFlowCreateWorkflowRun(ctx context.Context, req 
 		Status: app.CompositeStatus{
 			Status: app.StatusInProgress,
 		},
+	}
+
+	// If the context doesn't have an account ID (e.g. running inside a queue
+	// handler workflow), fall back to the parent workflow's CreatedByID so
+	// the NOT NULL constraint is satisfied.
+	if keys.CreatedByIDFromContext(ctx) == "" {
+		var wf app.Workflow
+		if res := a.db.WithContext(ctx).Select("created_by_id", "org_id").First(&wf, "id = ?", req.WorkflowID); res.Error == nil {
+			run.CreatedByID = wf.CreatedByID
+			run.OrgID = wf.OrgID
+		}
 	}
 
 	if res := a.db.WithContext(ctx).Create(run); res.Error != nil {

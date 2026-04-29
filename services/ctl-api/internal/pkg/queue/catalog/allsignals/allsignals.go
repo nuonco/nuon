@@ -24,6 +24,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/configcreated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/inlinebuild"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"

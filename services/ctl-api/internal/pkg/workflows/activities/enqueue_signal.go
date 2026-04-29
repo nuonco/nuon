@@ -16,6 +16,9 @@ type EnqueueSignalToOwnerRequest struct {
 	QueueName string        `json:"queue_name,omitempty"`
 	Signal    signal.Signal `json:"signal" validate:"required"`
 
+	// QueueID short-circuits the owner/name lookup when set.
+	QueueID string `json:"queue_id,omitempty"`
+
 	// SignalOwnerID and SignalOwnerType are set on the QueueSignal record to track
 	// which entity (e.g. workflow step) triggered this signal execution.
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
@@ -36,21 +39,25 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	// Find the queue by owner (and optionally by name for multi-queue owners)
-	var queue *app.Queue
-	var err error
-	if req.QueueName != "" {
-		queue, err = a.queueClient.GetQueueByOwnerAndName(ctx, req.OwnerID, req.OwnerType, req.QueueName)
-	} else {
-		queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
-	}
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to find queue for owner")
+	// Resolve queue ID — use direct ID if provided, otherwise look up by owner.
+	queueID := req.QueueID
+	if queueID == "" {
+		var queue *app.Queue
+		var err error
+		if req.QueueName != "" {
+			queue, err = a.queueClient.GetQueueByOwnerAndName(ctx, req.OwnerID, req.OwnerType, req.QueueName)
+		} else {
+			queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to find queue for owner")
+		}
+		queueID = queue.ID
 	}
 
 	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID:   queue.ID,
+		QueueID:   queueID,
 		Signal:    req.Signal,
 		OwnerID:   req.SignalOwnerID,
 		OwnerType: req.SignalOwnerType,

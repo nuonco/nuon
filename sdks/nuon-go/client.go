@@ -61,6 +61,7 @@ type Client interface {
 	GetAppLatestConfig(ctx context.Context, appID string) (*models.AppAppConfig, error)
 	GetAppConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error)
+	BuildAppConfig(ctx context.Context, appID, configID string) (*models.AppWorkflow, error)
 
 	// app input config methods
 	CreateAppInputConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInputConfigRequest) (*models.AppAppInputConfig, error)

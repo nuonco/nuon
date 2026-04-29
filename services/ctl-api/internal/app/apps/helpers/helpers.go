@@ -1,9 +1,6 @@
 package helpers
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v50/github"
 	"go.uber.org/fx"
@@ -11,9 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -54,20 +49,4 @@ func New(params Params) *Helpers {
 // VCSHelpers returns the VCS helpers for git source resolution and token creation.
 func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
-}
-
-// EnsureComponentQueue creates a Temporal queue workflow for the given component.
-// Safe to call multiple times — queueClient.Create is idempotent.
-func (h *Helpers) EnsureComponentQueue(ctx context.Context, componentID string) error {
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     componentID,
-		OwnerType:   plugins.TableName(h.db, app.Component{}),
-		Namespace:   "components",
-		MaxInFlight: 1,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return fmt.Errorf("unable to ensure queue for component %s: %w", componentID, err)
-	}
-	return nil
 }

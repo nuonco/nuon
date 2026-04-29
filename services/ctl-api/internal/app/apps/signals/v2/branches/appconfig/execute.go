@@ -143,25 +143,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"component_count", len(syncResp.ComponentIDs),
 		"action_count", len(syncResp.ActionIDs))
 
-	// Ensure each component has a Temporal queue so buildcomponents can enqueue signals
-	if len(syncResp.ComponentIDs) > 0 {
-		queueErrCh := workflow.NewChannel(ctx)
-		for _, componentID := range syncResp.ComponentIDs {
-			componentID := componentID
-			workflow.Go(ctx, func(gCtx workflow.Context) {
-				err := activities.AwaitEnsureComponentQueueByComponentID(gCtx, componentID)
-				queueErrCh.Send(gCtx, err)
-			})
-		}
-		for range syncResp.ComponentIDs {
-			var qErr error
-			queueErrCh.Receive(ctx, &qErr)
-			if qErr != nil {
-				l.Warn("unable to ensure component queue", "error", qErr)
-			}
-		}
-	}
-
 	// Update AppBranchConfig with component and action IDs
 	if err := activities.AwaitUpdateAppBranchConfigIDs(ctx, activities.UpdateAppBranchConfigIDsRequest{
 		Req: &activities.UpdateAppBranchConfigIDsInput{
