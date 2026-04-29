@@ -158,15 +158,18 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
     addPanel(panel, props.panelKey)
   }
 
+  const panelParam = searchParams?.get('panel')
   useEffect(() => {
     if (
       props.panelKey &&
-      props.panelKey === searchParams?.get('panel') &&
+      props.panelKey === panelParam &&
       !props.isVisible
     ) {
-      handleAddPanel()
+      // Defer so this runs after the pathname-change panel clear in SurfacesProvider
+      const timer = setTimeout(() => handleAddPanel(), 0)
+      return () => clearTimeout(timer)
     }
-  }, [])
+  }, [panelParam])
 
   return (
     <>
