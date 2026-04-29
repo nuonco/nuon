@@ -1,0 +1,30 @@
+import { AnnouncementCard, type IAnnouncement } from './AnnouncementCard'
+import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
+import { Text } from '@/components/common/Text'
+
+export interface IAnnouncementsList {
+  announcements: IAnnouncement[]
+}
+
+export const AnnouncementsList = ({ announcements }: IAnnouncementsList) => {
+  const visible = announcements.slice(0, 4)
+
+  return (
+    <div className="flex flex-col gap-4">
+      {visible.map((announcement, i) => (
+        <AnnouncementCard
+          key={announcement.id}
+          announcement={announcement}
+          variant={i < 2 ? 'default' : 'compact'}
+        />
+      ))}
+      <Text variant="body">
+        <Link href="https://docs.nuon.co/updates/updates" isExternal>
+          Changelog
+          <Icon variant="ArrowSquareOutIcon" size={14} />
+        </Link>
+      </Text>
+    </div>
+  )
+}

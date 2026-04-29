@@ -31,3 +31,14 @@ export const NonDismissible = () => (
     announcement={{ ...mockAnnouncement, dismissible: false }}
   />
 )
+
+export const Compact = () => (
+  <AnnouncementCard announcement={mockAnnouncement} variant="compact" />
+)
+
+export const CompactNonDismissible = () => (
+  <AnnouncementCard
+    announcement={{ ...mockAnnouncement, dismissible: false }}
+    variant="compact"
+  />
+)

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
-import { AnnouncementCard } from '@/components/orgs/AnnouncementCard'
+import { AnnouncementsList } from '@/components/orgs/AnnouncementsList'
 import { PendingApprovals } from '@/components/orgs/PendingApprovals'
 import {
   RecentActivities,
@@ -156,14 +156,7 @@ export const Dashboard = () => {
             </div>
           </PageSection>
           <PageSection className="w-full">
-            <div className="flex flex-col gap-6">
-              {announcementsData.announcements.map((announcement) => (
-                <AnnouncementCard
-                  key={announcement.id}
-                  announcement={announcement}
-                />
-              ))}
-            </div>
+            <AnnouncementsList announcements={announcementsData.announcements} />
           </PageSection>
         </PageGrid>
       </PageContent>
