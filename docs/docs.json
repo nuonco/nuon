@@ -29,7 +29,6 @@
         "tab": "Quickstart",
         "icon": "rocket",
         "pages": [
-          "get-started/introduction",
           "get-started/quickstart",
           {
             "group": "Deployment Options",
@@ -60,6 +59,7 @@
               "platform-support/gcp"
             ]
           },
+          "get-started/day-2-operations",
           {
             "group": "Quick Reference",
             "boost": 2,
