@@ -36,12 +36,14 @@ export interface IAnnouncement {
 export const AnnouncementCard = ({
   announcement,
   variant = 'default',
+  disableDismissMemory = false,
 }: {
   announcement: IAnnouncement
   variant?: 'default' | 'compact'
+  disableDismissMemory?: boolean
 }) => {
   const [phase, setPhase] = useState<'visible' | 'sliding' | 'collapsing' | 'removed'>(
-    getDismissedIds().includes(announcement.id) ? 'removed' : 'visible'
+    !disableDismissMemory && getDismissedIds().includes(announcement.id) ? 'removed' : 'visible'
   )
   const wrapperRef = useRef<HTMLDivElement>(null)
 

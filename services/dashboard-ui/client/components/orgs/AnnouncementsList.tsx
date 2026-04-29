@@ -5,9 +5,10 @@ import { Text } from '@/components/common/Text'
 
 export interface IAnnouncementsList {
   announcements: IAnnouncement[]
+  disableDismissMemory?: boolean
 }
 
-export const AnnouncementsList = ({ announcements }: IAnnouncementsList) => {
+export const AnnouncementsList = ({ announcements, disableDismissMemory = false }: IAnnouncementsList) => {
   const visible = announcements.slice(0, 4)
 
   return (
@@ -17,6 +18,7 @@ export const AnnouncementsList = ({ announcements }: IAnnouncementsList) => {
           key={announcement.id}
           announcement={announcement}
           variant={i < 2 ? 'default' : 'compact'}
+          disableDismissMemory={disableDismissMemory}
         />
       ))}
       <Text variant="body">

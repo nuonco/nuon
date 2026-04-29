@@ -58,18 +58,18 @@ const mockAnnouncements: IAnnouncement[] = [
 
 export const Default = () => (
   <div style={{ maxWidth: 400 }}>
-    <AnnouncementsList announcements={mockAnnouncements} />
+    <AnnouncementsList announcements={mockAnnouncements} disableDismissMemory />
   </div>
 )
 
 export const SingleAnnouncement = () => (
   <div style={{ maxWidth: 400 }}>
-    <AnnouncementsList announcements={[mockAnnouncements[0]]} />
+    <AnnouncementsList announcements={[mockAnnouncements[0]]} disableDismissMemory />
   </div>
 )
 
 export const TwoAnnouncements = () => (
   <div style={{ maxWidth: 400 }}>
-    <AnnouncementsList announcements={mockAnnouncements.slice(0, 2)} />
+    <AnnouncementsList announcements={mockAnnouncements.slice(0, 2)} disableDismissMemory />
   </div>
 )
