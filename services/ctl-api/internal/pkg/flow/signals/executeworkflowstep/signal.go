@@ -46,6 +46,10 @@ type Signal struct {
 	// gets enqueued for execution (e.g. "install-signals").
 	TargetQueueName string `json:"target_queue_name"`
 
+	// TargetQueueID, when set, is used directly for the inner signal dispatch,
+	// bypassing the OwnerID/TargetQueueName lookup.
+	TargetQueueID string `json:"target_queue_id,omitempty"`
+
 	// innerQueueSignalID tracks the currently executing inner signal so that
 	// Cancel() can propagate cancellation to it. Set during executeInnerSignal,
 	// read during Cancel. Safe because Temporal workflows are single-threaded.
@@ -128,8 +132,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.OwnerType == "" {
 		return errors.New("owner_type is required")
 	}
-	if s.TargetQueueName == "" {
-		return errors.New("target_queue_name is required")
-	}
+	// TargetQueueName is optional — when empty, the inner signal is dispatched
+	// to the owner's default queue (used with per-step signal queue routing).
 	return nil
 }

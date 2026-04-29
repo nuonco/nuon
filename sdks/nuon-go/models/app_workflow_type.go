@@ -80,6 +80,9 @@ const (
 
 	// AppWorkflowTypeReprovision captures enum value "reprovision"
 	AppWorkflowTypeReprovision AppWorkflowType = "reprovision"
+
+	// AppWorkflowTypeAppConfigBuild captures enum value "app_config_build"
+	AppWorkflowTypeAppConfigBuild AppWorkflowType = "app_config_build"
 )
 
 // for schema
@@ -87,7 +90,7 @@ var appWorkflowTypeEnum []any
 
 func init() {
 	var res []AppWorkflowType
-	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","reprovision"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","reprovision","app_config_build"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
