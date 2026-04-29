@@ -29,6 +29,7 @@ type RestartInstallRequest struct{}
 // @Produce				json
 // @Success				200	{boolean}	true
 // @Router					/v1/installs/{install_id}/admin-restart [POST]
+// @Deprecated
 func (s *service) RestartInstall(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 
@@ -39,7 +40,7 @@ func (s *service) RestartInstall(ctx *gin.Context) {
 	}
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
 	}
 
