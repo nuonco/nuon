@@ -58,5 +58,7 @@ spec:
               valueFrom:
                   fieldRef:
                       fieldPath: metadata.namespace
+            - name: DEPLOYMENT_NAME
+              value: {{ include "common.fullname" . }}
             - name: DELETE_POD_ON_SHUTDOWN
               value: "true"

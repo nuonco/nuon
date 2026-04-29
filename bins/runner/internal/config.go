@@ -42,6 +42,7 @@ type Config struct {
 	// kubernetes pod identity and self-deletion
 	PodName             string `config:"pod_name"`
 	PodNamespace        string `config:"pod_namespace"`
+	DeploymentName      string `config:"deployment_name"`
 	DeletePodOnShutdown bool   `config:"delete_pod_on_shutdown"`
 
 	// only for enabling local things

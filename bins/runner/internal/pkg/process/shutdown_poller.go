@@ -2,6 +2,8 @@ package process
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -9,9 +11,12 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/k8s"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -28,6 +33,7 @@ type ShutdownPollerParams struct {
 	L          *zap.Logger `name:"system"`
 	LC         fx.Lifecycle
 	Registrar  *Registrar
+	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
 }
 
@@ -36,6 +42,7 @@ type ShutdownPoller struct {
 	cfg        *internal.Config
 	l          *zap.Logger
 	registrar  *Registrar
+	settings   *settings.Settings
 	shutdowner fx.Shutdowner
 
 	ctx      context.Context
@@ -51,6 +58,7 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 		cfg:        params.Cfg,
 		l:          params.L,
 		registrar:  params.Registrar,
+		settings:   params.Settings,
 		shutdowner: params.Shutdowner,
 		ctx:        ctx,
 		cancelFn:   cancelFn,
@@ -146,16 +154,18 @@ func (sp *ShutdownPoller) deletePod(ctx context.Context) {
 		return
 	}
 
+	clientset, _, _, err := k8s.ClientsetInCluster()
+	if err != nil {
+		sp.l.Warn("unable to create in-cluster k8s client for pod self-deletion", zap.Error(err))
+		return
+	}
+
+	sp.updateDeploymentImage(ctx, clientset)
+
 	sp.l.Info("deleting own pod",
 		zap.String("pod_name", sp.cfg.PodName),
 		zap.String("pod_namespace", sp.cfg.PodNamespace),
 	)
-
-	clientset, _, _, err := k8s.ClientsetInCluster()
-	if err != nil {
-		sp.l.Warn("unable to create in-cluster k8s client for pod deletion", zap.Error(err))
-		return
-	}
 
 	if err := clientset.CoreV1().Pods(sp.cfg.PodNamespace).Delete(ctx, sp.cfg.PodName, metav1.DeleteOptions{}); err != nil {
 		sp.l.Warn("unable to delete own pod", zap.Error(err))
@@ -163,4 +173,62 @@ func (sp *ShutdownPoller) deletePod(ctx context.Context) {
 	}
 
 	sp.l.Info("successfully deleted own pod")
+}
+
+func (sp *ShutdownPoller) updateDeploymentImage(ctx context.Context, clientset *kubernetes.Clientset) {
+	if sp.cfg.DeploymentName == "" {
+		sp.l.Warn("deployment_name not set, skipping deployment image update")
+		return
+	}
+
+	imageTag := sp.settings.ContainerImageTag
+	imageURL := sp.settings.ContainerImageURL
+	if imageTag == "" || imageURL == "" {
+		sp.l.Warn("container image tag or url not set in settings, skipping deployment image update",
+			zap.String("container_image_tag", imageTag),
+			zap.String("container_image_url", imageURL),
+		)
+		return
+	}
+
+	image := fmt.Sprintf("%s:%s", imageURL, imageTag)
+	sp.l.Info("updating deployment image",
+		zap.String("deployment", sp.cfg.DeploymentName),
+		zap.String("namespace", sp.cfg.PodNamespace),
+		zap.String("image", image),
+	)
+
+	patch := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"template": map[string]interface{}{
+				"spec": map[string]interface{}{
+					"containers": []map[string]interface{}{
+						{
+							"name":  sp.cfg.DeploymentName,
+							"image": image,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	patchBytes, err := json.Marshal(patch)
+	if err != nil {
+		sp.l.Warn("unable to marshal deployment patch", zap.Error(err))
+		return
+	}
+
+	if _, err := clientset.AppsV1().Deployments(sp.cfg.PodNamespace).Patch(
+		ctx,
+		sp.cfg.DeploymentName,
+		types.StrategicMergePatchType,
+		patchBytes,
+		metav1.PatchOptions{},
+	); err != nil {
+		sp.l.Warn("unable to update deployment image", zap.Error(err))
+		return
+	}
+
+	sp.l.Info("successfully updated deployment image", zap.String("image", image))
 }
