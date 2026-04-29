@@ -1,24 +1,17 @@
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { Text } from '@/components/common/Text'
 import { UpdateRunnerButton } from '../UpdateRunner'
-import { ShutdownRunnerControl } from '../ShutdownRunnerControl'
-import { ShutdownInstanceButton } from '../ShutdownInstance'
-import { DeprovisionRunnerButtonContainer as DeprovisionRunnerButton } from '../DeprovisionRunner'
-import { PruneRunnerTokensButton } from '../PruneRunnerTokens'
 import type { TRunnerSettings, TRunner } from '@/types'
 
 interface IManagementDropdown {
   runner: TRunner
-  isManaged: boolean
   isInstallRunner?: boolean
   settings: TRunnerSettings
 }
 
 export const ManagementDropdown = ({
   runner,
-  isManaged,
   isInstallRunner = false,
   settings,
 }: IManagementDropdown) => {
@@ -34,23 +27,41 @@ export const ManagementDropdown = ({
       variant={!isInstallRunner ? 'primary' : 'secondary'}
     >
       <Menu>
-        <Text>Controls</Text>
-        {settings ? (
-          <UpdateRunnerButton settings={settings} isMenuButton />
-        ) : null}
-
-        <ShutdownRunnerControl isMenuButton isManaged={isManaged} runnerId={runner.id} />
-
-        {isInstallRunner && isManaged ? (
-          <ShutdownInstanceButton isMenuButton />
-        ) : null}
-
-        {isInstallRunner ? <PruneRunnerTokensButton isMenuButton /> : null}
-
-        {isInstallRunner && <hr />}
-
-        {isInstallRunner && <Text>Remove</Text>}
-        {isInstallRunner && <DeprovisionRunnerButton isMenuButton />}
+        {!isInstallRunner ? (
+          <UpdateRunnerButton
+            settings={settings}
+            field="container_image_tag"
+            label="Update runner tag"
+            modalHeading="Update runner tag"
+            inputLabel="Enter the runner tag you'd like to update to."
+            inputPlaceholder="runner tag"
+            submitLabel="Update runner tag"
+            isMenuButton
+          />
+        ) : (
+          <>
+            <UpdateRunnerButton
+              settings={settings}
+              field="binary_version"
+              label="Update manager version"
+              modalHeading="Update manager version"
+              inputLabel="Enter the manager version you'd like to update to."
+              inputPlaceholder="manager version"
+              submitLabel="Update manager version"
+              isMenuButton
+            />
+            <UpdateRunnerButton
+              settings={settings}
+              field="container_image_tag"
+              label="Update instance version"
+              modalHeading="Update instance version"
+              inputLabel="Enter the instance version you'd like to update to."
+              inputPlaceholder="instance version"
+              submitLabel="Update instance version"
+              isMenuButton
+            />
+          </>
+        )}
       </Menu>
     </Dropdown>
   )
