@@ -107,6 +107,10 @@ type AppWorkflowStep struct {
 	// status
 	Status *AppCompositeStatus `json:"status,omitempty"`
 
+	// StepQueueID is the queue where the execute-workflow-step signal runs.
+	// When empty, the group's default step queue is used.
+	StepQueueID string `json:"step_queue_id,omitempty"`
+
 	// the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.
 	//
 	// this is a polymorphic gorm relationship to one of the following objects:
@@ -120,6 +124,10 @@ type AppWorkflowStep struct {
 
 	// step target type
 	StepTargetType string `json:"step_target_type,omitempty"`
+
+	// TargetQueueID is the queue where the inner signal (the actual work)
+	// gets dispatched. When empty, the step signal's TargetQueueName is used.
+	TargetQueueID string `json:"target_queue_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
