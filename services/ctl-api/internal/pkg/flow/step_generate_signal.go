@@ -25,6 +25,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+// EagerStepGroupsResult holds the result of an eager step generation — the eager
+// groups are persisted and ready for execution, while remaining groups can be
+// fetched later via CompleteStepGeneration.
+type EagerStepGroupsResult struct {
+	Workflow      *app.Workflow
+	QueueSignalID string
+}
+
 // generateStepsViaSignal enqueues the workflow's GenerateStepsSignal, fetches the
 // generated steps and groups, then persists them directly — no child workflow needed.
 func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (*app.Workflow, error) {
@@ -35,7 +43,110 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		return flw, nil
 	}
 
-	// 2. Set the workflow ID on the signal so its Execute() can look up the workflow.
+	queueSignalID, err := enqueueGenerateStepsSignal(ctx, cfg, flw)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch ALL steps at once.
+	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
+		QueueSignalID: queueSignalID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch steps from generate-steps signal")
+	}
+
+	return persistGenerateResult(ctx, flw, result)
+}
+
+// generateEagerStepGroups enqueues the generate-steps signal, fetches the eager
+// step groups via the "eager-step-groups" update, and persists them.
+// The caller can start executing these groups immediately, then call
+// completeStepGeneration() to fetch and persist the remaining groups.
+func generateEagerStepGroups(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (*EagerStepGroupsResult, error) {
+	// 1. Idempotency: if steps already exist (e.g. after continue-as-new), return them.
+	existingSteps, err := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
+	if err == nil && len(existingSteps) > 0 {
+		flw.Steps = existingSteps
+		return &EagerStepGroupsResult{Workflow: flw}, nil
+	}
+
+	queueSignalID, err := enqueueGenerateStepsSignal(ctx, cfg, flw)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the eager step groups.
+	result, err := queueclient.AwaitFetchEagerStepGroups(ctx, queueclient.FetchEagerStepGroupsRequest{
+		QueueSignalID: queueSignalID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch eager step groups from generate-steps signal")
+	}
+
+	flw, err = persistGenerateResult(ctx, flw, result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EagerStepGroupsResult{
+		Workflow:      flw,
+		QueueSignalID: queueSignalID,
+	}, nil
+}
+
+// completeStepGeneration fetches ALL steps via "FetchSteps" and persists any
+// groups/steps not already in the DB. This is called after group 0 finishes
+// (or concurrently) to ensure all remaining groups are available.
+func completeStepGeneration(ctx workflow.Context, cfg StepConfig, flw *app.Workflow, queueSignalID string) (*app.Workflow, error) {
+	if queueSignalID == "" {
+		// No early start was used — steps are already complete.
+		return flw, nil
+	}
+
+	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
+		QueueSignalID: queueSignalID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch remaining steps from generate-steps signal")
+	}
+
+	// Filter out groups/steps already persisted (group 0).
+	existingSteps, _ := activities.AwaitPkgWorkflowsFlowGetFlowStepsByFlowID(ctx, flw.ID)
+	existingGroupIDs := make(map[int]bool)
+	for _, s := range existingSteps {
+		existingGroupIDs[s.GroupIdx] = true
+	}
+
+	var remainingGroups []*app.WorkflowStepGroup
+	for _, g := range result.Groups {
+		if !existingGroupIDs[g.GroupIdx] {
+			remainingGroups = append(remainingGroups, g)
+		}
+	}
+
+	var remainingSteps []*app.WorkflowStep
+	for _, s := range result.Steps {
+		if !existingGroupIDs[s.GroupIdx] {
+			remainingSteps = append(remainingSteps, s)
+		}
+	}
+
+	if len(remainingGroups) == 0 && len(remainingSteps) == 0 {
+		return flw, nil
+	}
+
+	remaining := &app.GenerateStepsResult{
+		Steps:  remainingSteps,
+		Groups: remainingGroups,
+	}
+
+	return persistGenerateResult(ctx, flw, remaining)
+}
+
+// enqueueGenerateStepsSignal sets up and enqueues the generate-steps signal,
+// returning the queue signal ID for subsequent update calls.
+func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workflow) (string, error) {
 	type workflowIDSetter interface {
 		SetWorkflowID(id string)
 	}
@@ -43,7 +154,6 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		setter.SetWorkflowID(flw.ID)
 	}
 
-	// 3. Enqueue the generate-steps signal to the target queue.
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
@@ -53,21 +163,19 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		SignalOwnerType: "install_workflows",
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to enqueue generate-steps signal")
+		return "", errors.Wrap(err, "unable to enqueue generate-steps signal")
 	}
 
-	// 4. Send "FetchSteps" update and receive the generated result.
-	result, err := queueclient.AwaitFetchSteps(ctx, queueclient.FetchStepsRequest{
-		QueueSignalID: enqueueResp.QueueSignalID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to fetch steps from generate-steps signal")
-	}
+	return enqueueResp.QueueSignalID, nil
+}
 
+// persistGenerateResult assigns IDs to groups/steps, injects step context, and
+// persists them to the DB. It appends to the workflow's existing Steps/StepGroups.
+func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.GenerateStepsResult) (*app.Workflow, error) {
 	steps := result.Steps
 	groups := result.Groups
 
-	// 5. Pre-generate group IDs and build GroupIdx→GroupID map.
+	// Pre-generate group IDs and build GroupIdx→GroupID map.
 	groupIDByIdx := make(map[int]string)
 	if len(groups) > 0 {
 		for _, g := range groups {
@@ -76,7 +184,6 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 			groupIDByIdx[g.GroupIdx] = g.ID
 		}
 
-		// Persist groups to DB.
 		groupsReq := activities.CreateFlowStepGroupsRequest{
 			Groups: make([]activities.CreateFlowStepGroup, 0, len(groups)),
 		}
@@ -95,7 +202,7 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		}
 	}
 
-	// 6. Pre-generate step IDs and inject step context into signals.
+	// Pre-generate step IDs and inject step context into signals.
 	for _, step := range steps {
 		step.ID = domains.NewWorkflowStepID()
 		if groupID, ok := groupIDByIdx[step.GroupIdx]; ok {
@@ -106,12 +213,14 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		}
 	}
 
-	// 7. Persist steps to DB.
+	// Determine starting Idx offset based on existing steps.
+	startIdx := len(flw.Steps)
+
 	stepsReq := activities.CreateFlowStepsRequest{
 		Steps: make([]activities.CreateFlowStep, 0, len(steps)),
 	}
 	for idx, step := range steps {
-		step.Idx = idx * 100
+		step.Idx = (startIdx + idx) * 100
 		stepsReq.Steps = append(stepsReq.Steps, activities.CreateFlowStep{
 			ID:                  step.ID,
 			FlowID:              flw.ID,
@@ -128,6 +237,8 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 			Skippable:           step.Skippable,
 			GroupIdx:            step.GroupIdx,
 			WorkflowStepGroupID: step.WorkflowStepGroupID,
+			StepQueueID:         step.StepQueueID,
+			TargetQueueID:       step.TargetQueueID,
 		})
 	}
 
@@ -136,14 +247,12 @@ func generateStepsViaSignal(ctx workflow.Context, cfg StepConfig, flw *app.Workf
 		return nil, errors.Wrap(err, "unable to persist workflow steps")
 	}
 
-	flw.Steps = make([]app.WorkflowStep, len(resp))
-	for i, step := range resp {
-		flw.Steps[i] = *step
+	for _, step := range resp {
+		flw.Steps = append(flw.Steps, *step)
 	}
 
-	flw.StepGroups = make([]app.WorkflowStepGroup, len(groups))
-	for i, g := range groups {
-		flw.StepGroups[i] = *g
+	for _, g := range groups {
+		flw.StepGroups = append(flw.StepGroups, *g)
 	}
 
 	return flw, nil

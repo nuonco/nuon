@@ -107,6 +107,8 @@ type ClientService interface {
 
 	BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error)
 
+	BuildAppConfig(params *BuildAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAppConfigCreated, error)
+
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
 
 	CancelRunnerJob(params *CancelRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelRunnerJobAccepted, error)
@@ -1151,6 +1153,52 @@ func (a *Client) BuildAllComponents(params *BuildAllComponentsParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for BuildAllComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+BuildAppConfig builds all components for an app config
+
+Creates a workflow that builds all components defined in the given app config.
+*/
+func (a *Client) BuildAppConfig(params *BuildAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAppConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewBuildAppConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "BuildAppConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/configs/{config_id}/build",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &BuildAppConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*BuildAppConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for BuildAppConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

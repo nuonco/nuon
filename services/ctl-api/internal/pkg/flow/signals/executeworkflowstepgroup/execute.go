@@ -153,6 +153,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (str
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		TargetQueueName: s.TargetQueueName,
+		TargetQueueID:   step.TargetQueueID,
 	}
 
 	// Mark step as queued
@@ -169,6 +170,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (str
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		QueueName:       s.QueueName,
+		QueueID:         step.StepQueueID,
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",

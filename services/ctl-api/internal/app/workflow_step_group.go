@@ -25,6 +25,12 @@ type WorkflowStepGroup struct {
 	GroupIdx int  `json:"group_idx" temporaljson:"group_idx,omitzero,omitempty"`
 	Parallel bool `json:"parallel,omitzero" gorm:"default:false" temporaljson:"parallel,omitzero,omitempty"`
 
+	// EagerExecution marks this group for early execution during step generation.
+	// When set, the group is returned via the "eager-step-groups" update handler
+	// before all groups have been generated, allowing execution to start sooner.
+	// This field is not persisted to DB — it is only used during generation.
+	EagerExecution bool `json:"eager_execution,omitzero" gorm:"-" temporaljson:"eager_execution,omitzero,omitempty"`
+
 	Status          CompositeStatus `json:"status,omitzero" temporaljson:"status,omitzero,omitempty"`
 	Name            string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	ResultDirective string          `json:"result_directive,omitzero" gorm:"type:text;default:''" temporaljson:"result_directive,omitzero,omitempty"`

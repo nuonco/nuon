@@ -26,6 +26,12 @@ type AppWorkflowStepGroup struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// EagerExecution marks this group for early execution during step generation.
+	// When set, the group is returned via the "eager-step-groups" update handler
+	// before all groups have been generated, allowing execution to start sooner.
+	// This field is not persisted to DB — it is only used during generation.
+	EagerExecution bool `json:"eager_execution,omitempty"`
+
 	// group idx
 	GroupIdx int64 `json:"group_idx,omitempty"`
 

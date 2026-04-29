@@ -181,6 +181,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		QueueName:       s.TargetQueueName,
+		QueueID:         s.TargetQueueID,
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",

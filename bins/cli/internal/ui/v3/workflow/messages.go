@@ -38,6 +38,9 @@ type stackFetchedMsg struct {
 }
 
 func (m model) fetchStackCmd() tea.Msg {
+	if m.installID == "" {
+		return stackFetchedMsg{}
+	}
 	// This runs in a goroutine automatically
 	stack, err := m.api.GetInstallStack(m.ctx, m.installID)
 	return stackFetchedMsg{stack: stack, err: err}

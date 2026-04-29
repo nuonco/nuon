@@ -26,6 +26,20 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 	}
 }
 
+// WithStepQueueID sets the queue where the execute-workflow-step signal runs.
+func WithStepQueueID(queueID string) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.StepQueueID = queueID
+	}
+}
+
+// WithTargetQueueID sets the queue where the inner signal runs.
+func WithTargetQueueID(queueID string) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.TargetQueueID = queueID
+	}
+}
+
 // stepGroup tracks the current group index for workflow steps
 type stepGroup struct {
 	idx          int
@@ -49,6 +63,19 @@ func (s *stepGroup) nextGroup() {
 	s.currentGroup = g
 }
 
+// nextParallelGroup increments the group index and creates a parallel group.
+func (s *stepGroup) nextParallelGroup(name string) {
+	s.idx++
+	g := &app.WorkflowStepGroup{
+		GroupIdx: s.idx,
+		Parallel: true,
+		Name:     name,
+		Status:   app.CompositeStatus{Status: app.StatusPending},
+	}
+	s.groups = append(s.groups, g)
+	s.currentGroup = g
+}
+
 func (s *stepGroup) Groups() []*app.WorkflowStepGroup {
 	return s.groups
 }
@@ -60,14 +87,19 @@ func (s *stepGroup) Result(steps []*app.WorkflowStep) *app.GenerateStepsResult {
 	}
 }
 
-// appBranchSignalStep creates a WorkflowStep from an app branch signal
-func (s *stepGroup) appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+// signalStep creates a WorkflowStep from a signal with configurable owner type.
+func (s *stepGroup) signalStep(ctx workflow.Context, ownerID, ownerType, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	opts = append(opts, WithGroupIdx(s.idx))
-	return appBranchSignalStep(ctx, appBranchID, name, metadata, sig, opts...)
+	return newSignalStep(ctx, ownerID, ownerType, name, metadata, sig, opts...)
 }
 
-// appBranchSignalStep creates a workflow step from a signal
-func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+// appBranchSignalStep creates a WorkflowStep from an app branch signal
+func (s *stepGroup) appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+	return s.signalStep(ctx, appBranchID, "app_branches", name, metadata, sig, opts...)
+}
+
+// newSignalStep creates a workflow step from a signal with configurable owner type
+func newSignalStep(ctx workflow.Context, ownerID, ownerType, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if sig == nil {
 		step := &app.WorkflowStep{
 			Name:          name,
@@ -83,19 +115,12 @@ func appBranchSignalStep(ctx workflow.Context, appBranchID, name string, metadat
 		return step, nil
 	}
 
-	// Default execution type is system
-	executionTyp := app.WorkflowStepExecutionTypeSystem
-
-	// Set target type based on signal type
-	// For now, use app_branches as the default target type for all app branch signals
-	targetType := "app_branches"
-
 	step := &app.WorkflowStep{
 		Name:           name,
-		ExecutionType:  executionTyp,
-		StepTargetType: targetType,
-		OwnerID:        appBranchID,
-		OwnerType:      "app_branches",
+		ExecutionType:  app.WorkflowStepExecutionTypeSystem,
+		StepTargetType: ownerType,
+		OwnerID:        ownerID,
+		OwnerType:      ownerType,
 		Status:         app.NewCompositeTemporalStatus(ctx, app.StatusPending),
 		Metadata:       metadata,
 		QueueSignal: &signaldb.SignalData{
