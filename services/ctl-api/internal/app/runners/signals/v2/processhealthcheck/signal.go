@@ -245,7 +245,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) heartbeatAge(now time.Time, heartbeat *app.RunnerHeartBeat) time.Duration {
+func (s *Signal) heartbeatAge(now time.Time, heartbeat *app.LatestRunnerHeartBeat) time.Duration {
 	if heartbeat == nil {
 		return inactiveTimeout
 	}

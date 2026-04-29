@@ -16,14 +16,14 @@ type GetMostRecentHeartBeatByProcessRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
-func (a *Activities) GetMostRecentHeartBeatByProcess(ctx context.Context, req GetMostRecentHeartBeatByProcessRequest) (*app.RunnerHeartBeat, error) {
-	var hb app.RunnerHeartBeat
+func (a *Activities) GetMostRecentHeartBeatByProcess(ctx context.Context, req GetMostRecentHeartBeatByProcessRequest) (*app.LatestRunnerHeartBeat, error) {
+	var hb app.LatestRunnerHeartBeat
 	res := a.chDB.WithContext(ctx).
-		Where(app.RunnerHeartBeat{
+		Where(app.LatestRunnerHeartBeat{
 			RunnerID:  req.RunnerID,
 			ProcessID: req.ProcessID,
 		}).
-		Order("created_at desc").
+		Order("created_at_latest desc").
 		Limit(1).
 		First(&hb)
 	if res.Error != nil {
