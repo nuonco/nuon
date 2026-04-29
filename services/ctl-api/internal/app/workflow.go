@@ -43,6 +43,9 @@ const (
 
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
+
+	// app config builds
+	WorkflowTypeAppConfigBuild WorkflowType = "app_config_build"
 )
 
 type WorkflowMetadataKey string
@@ -76,6 +79,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Synced secrets"
 	case WorkflowTypeActionWorkflowRun:
 		return "Action run"
+	case WorkflowTypeAppConfigBuild:
+		return "Built app config components"
 	default:
 	}
 
@@ -104,6 +109,8 @@ func (i WorkflowType) Name() string {
 		return "Syncing secrets"
 	case WorkflowTypeActionWorkflowRun:
 		return "Action run"
+	case WorkflowTypeAppConfigBuild:
+		return "Building app config components"
 	default:
 	}
 
@@ -130,6 +137,8 @@ func (i WorkflowType) Description() string {
 		return "Teardown components in the reverse order of their dependencies."
 	case WorkflowTypeSyncSecrets:
 		return "Syncing customer secrets into cluster."
+	case WorkflowTypeAppConfigBuild:
+		return "Builds all components defined in an app config."
 	}
 
 	return "unknown"

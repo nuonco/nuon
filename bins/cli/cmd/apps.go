@@ -184,6 +184,25 @@ func (c *cli) appsCmd() *cobra.Command {
 	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
 	appsCmd.AddCommand(syncCmd)
 
+	var (
+		buildAppID    string
+		buildConfigID string
+	)
+	buildCmd := &cobra.Command{
+		Use:               "build",
+		Short:             "Build all components for an app config",
+		Long:              "Triggers a workflow that builds all components defined in the app config. If no config ID is provided, uses the latest config.",
+		PersistentPreRunE: c.persistentPreRunE,
+		Annotations:       tuiAnnotation(TUIAltScreen),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.Build(cmd.Context(), buildAppID, buildConfigID)
+		}),
+	}
+	buildCmd.Flags().StringVarP(&buildAppID, "app-id", "a", "", "The ID or name of an app (default: current app)")
+	buildCmd.Flags().StringVar(&buildConfigID, "config-id", "", "The config ID to build (default: latest)")
+	appsCmd.AddCommand(buildCmd)
+
 	syncDirCmd := &cobra.Command{
 		Deprecated:        "use `nuon sync` instead",
 		Use:               "sync-dir",
