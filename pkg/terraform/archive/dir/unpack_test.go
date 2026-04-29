@@ -17,9 +17,10 @@ func Test_oci_unpackDir(t *testing.T) {
 	errUnpackDir := fmt.Errorf("error unpacking directory")
 
 	tests := map[string]struct {
-		dirFn       func(t *testing.T) string
-		callbackFn  func(mockCtl *gomock.Controller) archive.Callback
-		errExpected error
+		dirFn                 func(t *testing.T) string
+		ignoreDotTerraformDir bool
+		callbackFn            func(mockCtl *gomock.Controller) archive.Callback
+		errExpected           error
 	}{
 		"happy path": {
 			dirFn: func(t *testing.T) string {
@@ -82,6 +83,47 @@ func Test_oci_unpackDir(t *testing.T) {
 			},
 			errExpected: errUnpackDir,
 		},
+		"ignore .terraform but keep .terraform/modules": {
+			dirFn: func(t *testing.T) string {
+				tmpDir := t.TempDir()
+
+				// Files we expect to survive the filter:
+				//   - main.tf (root source)
+				//   - .terraform/modules/foo/main.tf (vendored module)
+				// Files we expect to be filtered out:
+				//   - .terraform/providers/registry.terraform.io/.../terraform-provider-aws
+				mustWrite := func(rel, body string) {
+					fp := filepath.Join(tmpDir, rel)
+					assert.NoError(t, os.MkdirAll(filepath.Dir(fp), 0o755))
+					assert.NoError(t, os.WriteFile(fp, []byte(body), 0o600))
+				}
+				mustWrite("main.tf", "main")
+				mustWrite(".terraform/modules/foo/main.tf", "module")
+				mustWrite(".terraform/providers/registry.terraform.io/hashicorp/aws/x", "binary")
+
+				return tmpDir
+			},
+			ignoreDotTerraformDir: true,
+			callbackFn: func(mockCtl *gomock.Controller) archive.Callback {
+				mock := archive.NewMockCallbacker(mockCtl)
+				seen := map[string]string{}
+				mock.EXPECT().Callback(gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ context.Context, path string, rc io.ReadCloser) error {
+						byts, err := io.ReadAll(rc)
+						assert.NoError(t, err)
+						seen[path] = string(byts)
+						return nil
+					}).AnyTimes()
+				// Validation runs after Unpack returns; assert via t.Cleanup.
+				t.Cleanup(func() {
+					assert.Equal(t, "main", seen["main.tf"])
+					assert.Equal(t, "module", seen[".terraform/modules/foo/main.tf"])
+					_, providerSeen := seen[".terraform/providers/registry.terraform.io/hashicorp/aws/x"]
+					assert.False(t, providerSeen, "expected .terraform/providers to be filtered")
+				})
+				return mock.Callback
+			},
+		},
 	}
 
 	for name, test := range tests {
@@ -91,7 +133,8 @@ func Test_oci_unpackDir(t *testing.T) {
 
 			tmpDir := test.dirFn(t)
 			obj := &dir{
-				Path: tmpDir,
+				Path:                  tmpDir,
+				IgnoreDotTerraformDir: test.ignoreDotTerraformDir,
 			}
 
 			cb := test.callbackFn(mockCtl)
