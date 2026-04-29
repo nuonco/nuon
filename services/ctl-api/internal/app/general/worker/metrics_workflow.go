@@ -80,6 +80,9 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		"temporal_runners": func(ctx workflow.Context) error {
 			return w.temporalNamespaceMetrics(ctx, "runners")
 		},
+		"feature_flags": func(ctx workflow.Context) error {
+			return w.writeFeatureFlagMetrics(ctx)
+		},
 	}
 
 	for name, method := range methods {
@@ -198,6 +201,24 @@ func (w *Workflows) writePSQLTableMetrics(ctx workflow.Context) error {
 			"db_type":    "psql",
 			"table_name": table.TableName,
 		}, defaultTags))...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeFeatureFlagMetrics(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true"}
+
+	rows, err := activities.AwaitGetFeatureFlagRatios(ctx, activities.GetFeatureFlagRatiosRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get feature flag ratios")
+	}
+
+	for _, r := range rows {
+		w.mw.Gauge(ctx, "feature.enabled_ratio", r.Ratio,
+			metrics.ToTags(generics.MergeMap(map[string]string{
+				"feature": r.Feature,
+			}, defaultTags))...)
 	}
 
 	return nil
