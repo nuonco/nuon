@@ -4,12 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
-
-	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
@@ -64,44 +60,9 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		return nil, errors.Wrap(res.Error, "unable to create queue signal")
 	}
 
-	// Fire off the UpdateWithStart call in a background goroutine so the caller
-	// gets the signal ID back immediately without waiting for the queue workflow.
-	enqueueStartedAt := time.Now().UTC().Format(time.RFC3339)
-	startOp := c.queueStartOperation(q)
-	namespace := q.Workflow.Namespace
-	workflowID := q.Workflow.ID
-	signalID := queueSignal.ID
-	handlerWorkflowID := queueSignal.Workflow.ID
-
-	go func() {
-		bgCtx := context.Background()
-		_, err := c.tClient.UpdateWithStartWorkflowInNamespace(bgCtx, namespace, tclient.UpdateWithStartWorkflowOptions{
-			UpdateOptions: tclient.UpdateWorkflowOptions{
-				WorkflowID:   workflowID,
-				UpdateName:   queue.EnqueueUpdateName,
-				WaitForStage: tclient.WorkflowUpdateStageAccepted,
-				Args: []any{
-					queue.EnqueueHandlerInput{
-						QueueSignalID: signalID,
-						WorkflowID:    handlerWorkflowID,
-					},
-				},
-			},
-			StartWorkflowOperation: startOp,
-		})
-
-		metadata := map[string]any{
-			"enqueue_started_at":  enqueueStartedAt,
-			"enqueue_finished_at": time.Now().UTC().Format(time.RFC3339),
-		}
-		if err != nil {
-			metadata["enqueue_error"] = err.Error()
-			c.l.Warn("background enqueue failed",
-				zap.String("queue-signal-id", signalID),
-				zap.Error(err))
-		}
-		c.updateQueueSignalMetadata(signalID, metadata)
-	}()
+	if c.enqueuer != nil {
+		c.enqueuer.Send(queueSignal.ID)
+	}
 
 	return &queue.EnqueueResponse{
 		ID:         queueSignal.ID,

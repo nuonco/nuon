@@ -1,8 +1,6 @@
 package client
 
 import (
-	"context"
-	"encoding/json"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -17,30 +15,34 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 )
 
 type Client struct {
-	db      *gorm.DB
-	cfg     *internal.Config
-	tClient temporalclient.Client
-	l       *zap.Logger
+	db       *gorm.DB
+	cfg      *internal.Config
+	tClient  temporalclient.Client
+	l        *zap.Logger
+	enqueuer *enqueuer.Enqueuer
 }
 
 type Params struct {
 	fx.In
 
-	DB      *gorm.DB `name:"psql"`
-	Cfg     *internal.Config
-	TClient temporalclient.Client
-	L       *zap.Logger
+	DB       *gorm.DB `name:"psql"`
+	Cfg      *internal.Config
+	TClient  temporalclient.Client
+	L        *zap.Logger
+	Enqueuer *enqueuer.Enqueuer
 }
 
 func New(params Params) *Client {
 	return &Client{
-		db:      params.DB,
-		cfg:     params.Cfg,
-		tClient: params.TClient,
-		l:       params.L,
+		db:       params.DB,
+		cfg:      params.Cfg,
+		tClient:  params.TClient,
+		l:        params.L,
+		enqueuer: params.Enqueuer,
 	}
 }
 
@@ -66,42 +68,4 @@ func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOper
 		},
 	}
 	return c.tClient.NewWithStartWorkflowOperation(startOpts, "Queue", wkflowReq)
-}
-
-// updateQueueSignalMetadata merges metadata keys into a queue signal's CompositeStatus.
-// This is a best-effort, fire-and-forget operation used from background goroutines.
-func (c *Client) updateQueueSignalMetadata(queueSignalID string, metadata map[string]any) {
-	ctx := context.Background()
-
-	var qs app.QueueSignal
-	if res := c.db.WithContext(ctx).Select("id", "status").First(&qs, "id = ?", queueSignalID); res.Error != nil {
-		c.l.Warn("unable to get queue signal for metadata update",
-			zap.String("queue-signal-id", queueSignalID),
-			zap.Error(res.Error))
-		return
-	}
-
-	if qs.Status.Metadata == nil {
-		qs.Status.Metadata = make(map[string]any)
-	}
-	for k, v := range metadata {
-		qs.Status.Metadata[k] = v
-	}
-
-	statusJSON, err := json.Marshal(qs.Status)
-	if err != nil {
-		c.l.Warn("unable to marshal status for metadata update",
-			zap.String("queue-signal-id", queueSignalID),
-			zap.Error(err))
-		return
-	}
-
-	if res := c.db.WithContext(ctx).
-		Model(&app.QueueSignal{}).
-		Where("id = ?", queueSignalID).
-		Update("status", gorm.Expr("?::jsonb", string(statusJSON))); res.Error != nil {
-		c.l.Warn("unable to update queue signal metadata",
-			zap.String("queue-signal-id", queueSignalID),
-			zap.Error(res.Error))
-	}
 }
