@@ -3,6 +3,7 @@ package get
 import (
 	"context"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -207,7 +208,8 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 		}
 	}
 
-	if _, err := getter.Detect(inputVal, pwd, GetDetectors()); err != nil {
+	detected, err := getter.Detect(inputVal, pwd, GetDetectors())
+	if err != nil {
 		return inputVal, nil
 	}
 
@@ -218,10 +220,20 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	}
 	defer os.RemoveAll(tmpDir)
 
-	tmpFP := filepath.Join(tmpDir, "field")
-
 	ctx, cancel := context.WithTimeout(ctx, g.opts.FieldTimeout)
 	defer cancel()
+
+	// go-getter's ClientModeFile path for git is broken for `//path/to/file`
+	// references: GitGetter.GetFile() always strips the last path segment of
+	// the URL as the "filename" and treats the rest as the repo URL, which
+	// produces clone errors against non-existent repos. For git sources we
+	// instead clone the containing directory with ClientModeDir and read the
+	// requested file ourselves.
+	if strings.HasPrefix(detected, "git::") {
+		return g.fetchGitFile(ctx, detected, tmpDir, pwd)
+	}
+
+	tmpFP := filepath.Join(tmpDir, "field")
 
 	// Configure the client
 	client := &getter.Client{
@@ -240,6 +252,55 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	content, err := os.ReadFile(tmpFP)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read file")
+	}
+
+	return string(content), nil
+}
+
+// fetchGitFile clones a git repo and reads a single file from it. detected
+// must be a `git::`-prefixed URL produced by getter.Detect with a
+// `//path/to/file` subdir reference identifying the file inside the repo.
+//
+// We deliberately do not forward the `//subdir` portion to go-getter. After
+// every git clone go-getter calls fetchSubmodules, which mutates the shared
+// Client to set DisableSymlinks=true. Its subsequent copyDir then fails on
+// macOS because EvalSymlinks rewrites /var/folders/... -> /private/var/...,
+// which copyDir flags as a symlink escape (ErrSymlinkCopy: "copying of
+// symlinks has been disabled"). Cloning the whole repo into our own temp dir
+// avoids the copyDir path entirely.
+func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (string, error) {
+	repoURL, fileSubdir := getter.SourceDirSubdir(detected)
+	if fileSubdir == "" {
+		return "", errors.New("git source must include a `//path/to/file` reference")
+	}
+
+	cleanSubdir := path.Clean(fileSubdir)
+	if path.IsAbs(cleanSubdir) || cleanSubdir == ".." || strings.HasPrefix(cleanSubdir, "../") {
+		return "", errors.New("git source path must be relative and within the repo")
+	}
+
+	// go-getter's git getter only knows how to clone into a directory that
+	// does not yet exist; if we hand it tmpDir directly it falls into its
+	// "update" path and runs `git fetch origin -- "<empty ref>"` which fails
+	// with "empty string is not a valid pathspec". Use a fresh subdirectory.
+	cloneDir := filepath.Join(tmpDir, "repo")
+
+	client := &getter.Client{
+		Ctx:       ctx,
+		Src:       repoURL,
+		Dst:       cloneDir,
+		Pwd:       pwd,
+		Mode:      getter.ClientModeDir,
+		Detectors: GetDetectors(),
+	}
+
+	if err := client.Get(); err != nil {
+		return "", errors.Wrap(err, "failed to fetch git source")
+	}
+
+	content, err := os.ReadFile(filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir)))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read file from git source")
 	}
 
 	return string(content), nil
