@@ -163,7 +163,14 @@
             "pages": [
               "guides/vendor-customers",
               "guides/runner-kill-switch",
-              "guides/custom-domains"
+              "guides/custom-domains",
+              {
+                "group": "White-label BYOC Installation",
+                "pages": [
+                  "guides/customer-portal",
+                  "guides/control-plane-integration"
+                ]
+              }
             ]
           },
           {
@@ -177,14 +184,6 @@
               "guides/runner-management-mode",
               "guides/notifications",
               "guides/team-management"
-            ]
-          },
-          {
-            "group": "White-label BYOC installation",
-            "boost": 2,
-            "pages": [
-              "guides/customer-portal",
-              "guides/control-plane-integration"
             ]
           },
           {
