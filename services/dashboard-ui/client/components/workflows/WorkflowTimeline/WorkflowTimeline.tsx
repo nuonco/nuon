@@ -123,7 +123,7 @@ export const WorkflowTimeline = ({
                     format="relative"
                   />
                 </Text>
-                {workflow?.finished ? (
+                {workflow?.finished && workflow?.execution_time ? (
                   <Text
                     flex
                     className="gap-1"
