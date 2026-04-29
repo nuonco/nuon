@@ -1,0 +1,32 @@
+---
+title: "Architecture in 60 seconds"
+icon: "stopwatch"
+description: "How the Nuon Control Plane and customer-side Runner deploy software without cross-account access."
+---
+
+![Runner architecture](/images/runner-architecture.png)
+
+## What runs where
+
+A small **Runner** binary runs *inside the customer's cloud account*. It's deployed by the customer through a [Stack](/concepts/stacks) — a CloudFormation, Bicep, or Terraform template — using the customer's own credentials. The Runner has the IAM roles it needs to provision infrastructure inside that account, and nothing else.
+
+The **Control Plane** runs in Nuon Cloud (or in your own account if you self-host it). It stores app and install metadata, queues jobs, and serves the [Dashboard](/dashboard), [CLI](/cli), and [API](/api-ref/getting-started). It has **no credentials and no network path** into customer accounts.
+
+## How a deployment flows
+
+When a vendor or customer triggers a deploy — through the CLI, the Dashboard, the [Customer Portal](/concepts/customer-portal), or the API — the Control Plane queues a job. The Runner polls the Control Plane for jobs (egress-only HTTPS), picks up the work, executes locally inside the customer account, and streams logs back. Nothing is ever pushed in.
+
+Builds work the same way for source code: a separate single-tenant **Build Runner** in the Control Plane produces OCI artifacts, then customer Runners pull and apply them. The Build Runner is the only part of Nuon that ever touches your source code; install Runners only consume the resulting artifacts.
+
+## What this means in practice
+
+- **No cross-account access.** The Control Plane never holds customer credentials.
+- **Customer-owned infrastructure.** Every resource in the customer's cloud is created by their Stack and their Runner, using their own roles. They can disable the Runner at any time.
+- **Logs of operations, not application data.** Nuon stores logs of the infrastructure jobs it runs (e.g. "applied a Helm chart"). Application logs and customer data never leave the customer's account.
+
+## Going deeper
+
+- [Platform Architecture](/architecture/platform) — Control Plane components, Install Runner vs Build Runner.
+- [App Deployment Architecture](/architecture/byoc) — what gets deployed into a customer's cloud account, layer by layer.
+- [Runner Authentication](/architecture/runner-auth) — how the Runner authenticates to the Control Plane without long-lived secrets.
+- [Security](/security) — the security guarantees that follow from this design.

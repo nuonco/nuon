@@ -68,6 +68,7 @@
           {
             "group": "Architecture",
             "pages": [
+              "architecture/in-60-seconds",
               "architecture/platform",
               "architecture/byoc",
               "architecture/runner-auth",
