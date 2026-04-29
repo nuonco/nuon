@@ -50,4 +50,3 @@ func New(params Params) *Helpers {
 func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
 }
-

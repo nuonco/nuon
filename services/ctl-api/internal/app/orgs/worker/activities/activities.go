@@ -18,40 +18,40 @@ import (
 type Params struct {
 	fx.In
 
-	Cfg             *internal.Config
-	DB              *gorm.DB `name:"psql"`
+	Cfg              *internal.Config
+	DB               *gorm.DB `name:"psql"`
 	RunnersHelpers   *runnershelpers.Helpers
 	Helpers          *helpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	ComponentHelpers *componenthelpers.Helpers
 	InstallsHelpers  *installshelpers.Helpers
-	VCSHelpers      *vcshelpers.Helpers
-	EVClient        eventloop.Client
-	Features        *features.Features
+	VCSHelpers       *vcshelpers.Helpers
+	EVClient         eventloop.Client
+	Features         *features.Features
 }
 
 type Activities struct {
-	db              *gorm.DB
-	evClient        eventloop.Client
+	db               *gorm.DB
+	evClient         eventloop.Client
 	runnersHelpers   *runnershelpers.Helpers
 	helpers          *helpers.Helpers
 	appsHelpers      *appshelpers.Helpers
 	componentHelpers *componenthelpers.Helpers
 	installsHelpers  *installshelpers.Helpers
-	vcsHelpers      *vcshelpers.Helpers
-	features        *features.Features
+	vcsHelpers       *vcshelpers.Helpers
+	features         *features.Features
 }
 
 func New(params Params) (*Activities, error) {
 	return &Activities{
-		db:              params.DB,
-		evClient:        params.EVClient,
-		runnersHelpers:  params.RunnersHelpers,
-		helpers:         params.Helpers,
+		db:               params.DB,
+		evClient:         params.EVClient,
+		runnersHelpers:   params.RunnersHelpers,
+		helpers:          params.Helpers,
 		appsHelpers:      params.AppsHelpers,
 		componentHelpers: params.ComponentHelpers,
 		installsHelpers:  params.InstallsHelpers,
-		vcsHelpers:      params.VCSHelpers,
-		features:        params.Features,
+		vcsHelpers:       params.VCSHelpers,
+		features:         params.Features,
 	}, nil
 }
