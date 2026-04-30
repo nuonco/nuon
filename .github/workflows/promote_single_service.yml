@@ -71,6 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
+        continue-on-error: true
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON_EMOJI: 🤖
@@ -136,6 +137,7 @@ jobs:
         id: check
 
       - name: Slack Notification
+        continue-on-error: true
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_ICON_EMOJI: 🤖
