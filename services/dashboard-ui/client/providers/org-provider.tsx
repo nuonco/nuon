@@ -30,7 +30,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
     }
   }, [orgId])
 
-  if (error) return <ProviderError error={error} />
+  if (error && !org) return <ProviderError error={error} />
 
   if (isLoading || !org) return <ProviderLoading />
 
