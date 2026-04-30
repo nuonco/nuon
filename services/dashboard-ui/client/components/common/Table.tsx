@@ -26,7 +26,7 @@ export interface ITable<TData extends object> {
   columns: ColumnDef<TData, any>[]
   data: TData[]
   emptyMessage?: string
-  emptyStateProps?: Omit<IEmptyState, 'variant'>
+  emptyStateProps?: IEmptyState
   enableSorting?: boolean
   enableSearch?: boolean
   filterActions?: ReactNode
