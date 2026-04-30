@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // @ID						GenerateTerraformInstallerConfig
@@ -42,6 +45,33 @@ func (s *service) genTerraformInstallerConfig(ctx context.Context, installID str
 	if err != nil {
 		return "", err
 	}
+
+	// For installs whose stack-generation workflow has already produced a
+	// tfvars file (GCP installs, and AWS installs which now always render a
+	// Terraform tfvars envelope alongside the CloudFormation template), the
+	// tfvars are stored on the latest InstallStackVersion as a JSON envelope:
+	// {"tfvars": "<hcl body>"}. AWS installs put the envelope in
+	// TerraformContents (so the CFN template can stay in Contents); GCP keeps
+	// it in Contents. Try TerraformContents first, then fall back to Contents.
+	var version app.InstallStackVersion
+	if res := s.db.WithContext(ctx).
+		Where(app.InstallStackVersion{InstallID: install.ID}).
+		Order("created_at DESC").
+		First(&version); res.Error == nil {
+		for _, body := range [][]byte{version.TerraformContents, version.Contents} {
+			if len(body) == 0 {
+				continue
+			}
+			var envelope struct {
+				TFVars string `json:"tfvars"`
+			}
+			if err := json.Unmarshal(body, &envelope); err == nil && envelope.TFVars != "" {
+				return envelope.TFVars, nil
+			}
+		}
+	}
+
+	// Legacy fallback: emit a minimal tfvars block with phone-home URL.
 	runnerGroup, err := s.getInstallRunnerGroup(ctx, installID)
 	if err != nil {
 		return "", err
@@ -55,7 +85,10 @@ func (s *service) genTerraformInstallerConfig(ctx context.Context, installID str
 		return "", err
 	}
 
-	phoneHomeID := install.AWSAccount.ID
+	phoneHomeID := ""
+	if install.AWSAccount != nil {
+		phoneHomeID = install.AWSAccount.ID
+	}
 	phoneHomeURL := fmt.Sprintf(
 		"%s/v1/installs/%s/phone-home/%s",
 		s.cfg.PublicAPIURL,

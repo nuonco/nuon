@@ -294,22 +294,21 @@ Adjust instance sizes for RDS, Temporal, and ClickHouse clusters if needed.
 
 ## Secrets
 
-When provisioning the CloudFormation stack, provide these secrets:
+When provisioning the stack, provide these secrets:
 
 | Secret               | Value                                  |
 | -------------------- | -------------------------------------- |
-| `github_app_key`     | Your base64-encoded GitHub App PEM key |
+| `github_app_key`     | Your GitHub App PEM key (base64-encoded if using CloudFormation) |
 | `auth_client_secret` | The client secret from your Auth0 SPA  |
 
 <Note>
-The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
-
-To encode your PEM key:
+If you're applying the **CloudFormation** version of the stack, the GitHub App PEM key must be base64-encoded because CloudFormation doesn't preserve newlines in text fields:
 
 ```bash
 base64 -i your-github-app-key.pem
 ```
 
+If you're applying the **Terraform** version of the stack, pass the PEM key as-is — Terraform variables preserve newlines.
 </Note>
 
 ## Provision

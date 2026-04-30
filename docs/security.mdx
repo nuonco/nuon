@@ -12,7 +12,7 @@ The Nuon [Control Plane](/architecture/platform) never has credentials or networ
 
 ## Customer-Deployed Infrastructure
 
-All infrastructure in a customer's account is created by the customer themselves. When a vendor creates an [install](/concepts/installs), Nuon generates a cloud-native [Stack](/concepts/stacks) template (CloudFormation, Azure Resource Manager (Bicep), or Terraform). The customer reviews and deploys it using their own credentials, retaining full ownership and visibility of every resource created.
+All infrastructure in a customer's account is created by the customer themselves. When a vendor creates an [install](/concepts/installs), Nuon generates a [Stack](/concepts/stacks) template — both a Terraform version and the platform's native IaC version (CloudFormation on AWS, Azure Resource Manager (Bicep) on Azure; on GCP, only Terraform is generated since Infrastructure Manager is Terraform-native). The customer reviews and deploys whichever format fits their tooling, using their own credentials, retaining full ownership and visibility of every resource created.
 
 ## Least-Privilege IAM Roles
 
