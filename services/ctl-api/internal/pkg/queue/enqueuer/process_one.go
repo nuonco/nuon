@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 )
 
 // processOne looks up the queue signal and its parent queue, performs the
@@ -36,8 +36,7 @@ func (e *Enqueuer) processOne(queueSignalID string) {
 		return
 	}
 
-	ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
-	ctx = cctx.SetAccountIDContext(ctx, q.CreatedByID)
+	ctx = queuecctx.Apply(ctx, qs.SignalContext)
 
 	startOp := e.queueStartOperation(&q)
 	_, err := e.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
