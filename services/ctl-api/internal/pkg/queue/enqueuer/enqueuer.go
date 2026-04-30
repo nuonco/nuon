@@ -98,8 +98,8 @@ func (e *Enqueuer) Send(queueSignalID string) {
 func (e *Enqueuer) run() {
 	defer close(e.doneCh)
 
-	ticker := time.NewTicker(sweepInterval)
-	defer ticker.Stop()
+	// ticker := time.NewTicker(sweepInterval)
+	// defer ticker.Stop()
 
 	for {
 		select {
@@ -108,8 +108,9 @@ func (e *Enqueuer) run() {
 			return
 		case id := <-e.ch:
 			e.processOne(id)
-		case <-ticker.C:
-			e.sweep()
+			// NOTE(jm): we no longer run the sweep in process
+			// case <-ticker.C:
+			// e.sweep()
 		}
 	}
 }
