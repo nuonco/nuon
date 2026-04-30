@@ -144,15 +144,11 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	}
 
 	if existingRunCount > 1 {
-		// The phone-home endpoint is unauthenticated (called from the AWS
-		// Lambda or the Terraform local-exec), so no middleware sets the
-		// org or account on the context. Derive both from the stack version
-		// we just looked up: the org for the feature client, the account so
-		// the queue_signals INSERT's `created_by_id` NOT NULL constraint is
-		// satisfied (the BeforeCreate hook reads from context).
 		ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
-		ctx = cctx.SetAccountIDContext(ctx, stackVersion.CreatedByID)
 		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+		if err != nil {
+			return fmt.Errorf("checking features: %w", err)
+		}
 		if err != nil {
 			return fmt.Errorf("checking features: %w", err)
 		}
