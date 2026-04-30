@@ -19,6 +19,12 @@ import {
   InstallViewStateModal,
 } from '../InstallCommandModals'
 import { AppBuildAllComponentsModal } from '../AppCommandModals'
+import {
+  SpotlightBuildComponentModal,
+  SpotlightDeployComponentModal,
+  SpotlightTeardownComponentModal,
+  SpotlightDriftScanComponentModal,
+} from '../ComponentCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
 import {
   type SpotlightResult,
@@ -351,22 +357,71 @@ export function useSpotlightResults(
       const items: SpotlightResult[] = []
       for (const { app, components } of componentResults.appComps) {
         for (const comp of components) {
-          items.push({
-            label: `${app.name} › ${comp.name}`,
-            tag: 'component',
-            path: `/apps/${app.id}/components/${comp.id}`,
-            icon: 'AppWindow',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${app.name} › ${comp.name}`,
+              tag: 'component',
+              path: `/apps/${app.id}/components/${comp.id}`,
+              icon: 'AppWindow',
+            })
+          }
+          const buildCmd: SpotlightResult = {
+            label: `${app.name} › ${comp.name} › Build`,
+            subtitle: app.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<SpotlightBuildComponentModal appId={app.id!} component={comp} />),
+          }
+          const cmdName = 'Build'
+          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+            items.push(buildCmd)
+          }
         }
       }
       for (const { install, components } of componentResults.installComps) {
         for (const comp of components) {
-          items.push({
-            label: `${install.name} › ${comp.component?.name ?? comp.id}`,
-            tag: 'component',
-            path: `/installs/${install.id}/components/${comp.component_id}`,
-            icon: 'Cube',
-          })
+          const compName = comp.component?.name ?? comp.id
+          const installId = install.id!
+          if (parsed.command === null) {
+            items.push({
+              label: `${install.name} › ${compName}`,
+              tag: 'component',
+              path: `/installs/${installId}/components/${comp.component_id}`,
+              icon: 'Cube',
+            })
+          }
+          if (comp.component) {
+            const component = comp.component
+            const commands: SpotlightResult[] = [
+              {
+                label: `${install.name} › ${compName} › Deploy`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightDeployComponentModal installId={installId} component={component} />),
+              },
+              {
+                label: `${install.name} › ${compName} › Teardown`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightTeardownComponentModal installId={installId} component={component} />),
+              },
+              {
+                label: `${install.name} › ${compName} › Drift scan`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightDriftScanComponentModal installId={installId} component={component} />),
+              },
+            ]
+            for (const cmd of commands) {
+              const cmdName = cmd.label.split(' › ').pop()!
+              if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+                items.push(cmd)
+              }
+            }
+          }
         }
       }
       return items

@@ -54,6 +54,12 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
   app: [
     'build all components',
   ],
+  component: [
+    'build',
+    'deploy',
+    'teardown',
+    'drift scan',
+  ],
   install: [
     'run adhoc action',
     'edit inputs',
