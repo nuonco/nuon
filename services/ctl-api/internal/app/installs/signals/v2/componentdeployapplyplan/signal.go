@@ -57,7 +57,7 @@ var (
 )
 
 func (s *Signal) AutoRetry() bool { return true }
-func (s *Signal) MaxRetries() int { return 5 }
+func (s *Signal) MaxRetries() int { return 15 }
 
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
