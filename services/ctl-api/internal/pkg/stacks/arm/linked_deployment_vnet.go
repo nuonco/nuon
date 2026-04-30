@@ -9,6 +9,19 @@ import (
 // defaultAzureVNetTemplateURL is the default VNet ARM template URL.
 const defaultAzureVNetTemplateURL = "https://raw.githubusercontent.com/nuonco/sandboxes/main/azure-aks/vnet-template.json"
 
+// vnetHoistAllowlist lists VNet template parameters that are intentionally
+// customer-configurable. Only these are surfaced in the parent template.
+var vnetHoistAllowlist = map[string]bool{
+	"vnetCIDR":           true,
+	"publicSubnet1CIDR":  true,
+	"publicSubnet2CIDR":  true,
+	"publicSubnet3CIDR":  true,
+	"runnerSubnetCIDR":   true,
+	"privateSubnet1CIDR": true,
+	"privateSubnet2CIDR": true,
+	"privateSubnet3CIDR": true,
+}
+
 func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.VPCNestedStackTemplateURL
 	if templateURL == "" {
@@ -16,29 +29,43 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[stri
 		return t.getDefaultVNetDeployment(inp), nil, nil
 	}
 
-	// Custom VNet template - fetch, extract params, build linked deployment
+	// Custom VNet template — fetch and inspect declared parameters.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("VNet linked deployment: %w", err)
 	}
 
-	params, hoistedParams := extractARMParameters(armTmpl, ReservedParamNames)
-
-	// Inject Nuon-managed parameters if template declares them
-	nuonParams := map[string]string{
+	// Nuon-managed parameters: always baked, never customer-facing.
+	managedParams := map[string]any{
 		"nuonInstallID": inp.Install.ID,
 		"nuonOrgID":     inp.Runner.OrgID,
 		"nuonAppID":     inp.Install.AppID,
 		"location":      "[parameters('location')]",
+		"commonTags":    "[variables('commonTags')]",
 	}
+
 	deploymentParams := map[string]any{}
-	for paramName := range params {
-		if val, ok := nuonParams[paramName]; ok {
+	hoistedParams := map[string]ARMParameter{}
+
+	for paramName, param := range armTmpl.Parameters {
+		if val, ok := managedParams[paramName]; ok {
+			// Nuon-managed — bake the value directly.
 			deploymentParams[paramName] = map[string]any{"value": val}
-		} else {
-			// Hoisted parameter - reference from parent
+		} else if vnetHoistAllowlist[paramName] {
+			// Customer-configurable — hoist to parent template and reference.
 			deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
+			hp := ARMParameter{
+				Type:         param.Type,
+				DefaultValue: param.DefaultValue,
+			}
+			if param.Metadata != nil && param.Metadata.Description != "" {
+				hp.Metadata = &ARMParameterMetadata{
+					Description: param.Metadata.Description,
+				}
+			}
+			hoistedParams[paramName] = hp
 		}
+		// Everything else is left to the template's own defaults.
 	}
 
 	deployment := map[string]any{

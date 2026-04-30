@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Modal } from '@/components/surfaces/Modal'
 import type {
   TTerraformPlan,
   TTerraformOutputChange,
@@ -14,6 +16,7 @@ import { DiffFilter } from '../DiffFilter'
 import { TerraformSummary } from './TerraformSummary'
 import { ResourceChangesList } from './ResourceChangesList'
 import { OutputChangesList } from './OutputChangesList'
+import { TerraformPlanGraph } from './TerraformPlanGraph'
 
 const EMPTY_PARSED_PLAN = {
   summary: {
@@ -75,6 +78,30 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <Modal
+        heading={
+          <Text flex className="gap-4" variant="h3" weight="strong" theme="info">
+            <Icon variant="NetworkXIcon" size="24" /> Plan graph
+          </Text>
+        }
+        triggerButton={{
+          className: 'self-end',
+          children: (
+            <>
+              View plan graph <Icon variant="NetworkXIcon" />
+            </>
+          ),
+          variant: 'ghost',
+        }}
+        size="xl"
+      >
+        <TerraformPlanGraph
+          resources={resources.changes}
+          drift={drift.changes}
+          outputs={outputs.changes}
+        />
+      </Modal>
+
       {drift?.changes?.length ? (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
           <div className="px-4 sm:px-6 py-4 border-b">

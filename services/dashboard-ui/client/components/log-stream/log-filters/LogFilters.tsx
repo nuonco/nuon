@@ -18,10 +18,10 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
       <LogSearch filters={filters} />
 
       <div className="flex items-center justify-end gap-4">
-        <LogSort filters={filters} />
         <LogJobOutputFilter filters={filters} />
-        <LogServiceFilter title="service" filters={filters} />
-        <LogSeverityFilter title="severity" filters={filters} />
+        <LogSort filters={filters} />
+        <LogServiceFilter title="Service" filters={filters} />
+        <LogSeverityFilter title="Severity" filters={filters} />
         {!isStreamOpen && <DownloadLogsButton />}
       </div>
     </div>

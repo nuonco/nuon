@@ -17,6 +17,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { InstallProvider } from '@/providers/install-provider'
@@ -39,21 +40,18 @@ export const InstallLayout = () => {
   )
 }
 
-const navLinks = [
+const navLinks: TNavItem[] = [
+  { type: 'section', label: 'Overview' },
   {
     path: `/`,
     iconVariant: 'HouseSimple' as const,
     text: 'Overview',
   },
+  { type: 'section', label: 'App' },
   {
     path: `/stacks`,
     iconVariant: 'Stack' as const,
     text: 'Stacks',
-  },
-  {
-    path: `/runner`,
-    iconVariant: 'SneakerMove' as const,
-    text: 'Install runner',
   },
   {
     path: '/sandbox',
@@ -66,11 +64,6 @@ const navLinks = [
     text: 'Components',
   },
   {
-    path: `/actions`,
-    iconVariant: 'TerminalWindow' as const,
-    text: 'Actions',
-  },
-  {
     path: `/roles`,
     iconVariant: 'FileLock' as const,
     text: 'Roles',
@@ -80,10 +73,31 @@ const navLinks = [
     iconVariant: 'ShieldCheck' as const,
     text: 'Policy reports',
   },
+  { type: 'section', label: 'Day-2' },
+  {
+    path: `/actions`,
+    iconVariant: 'TerminalWindow' as const,
+    text: 'Actions',
+  },
   {
     path: `/workflows`,
     iconVariant: 'TreeStructure' as const,
     text: 'Workflows',
+  },
+  {
+    path: `/runner`,
+    iconVariant: 'SneakerMove' as const,
+    text: 'Install runner',
+  },
+  {
+    path: `/inputs`,
+    iconVariant: 'ListChecks' as const,
+    text: 'Current inputs',
+  },
+  {
+    path: `/state`,
+    iconVariant: 'CodeBlock' as const,
+    text: 'View state',
   },
 ]
 
@@ -112,8 +126,8 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
-            <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between">
-              <HeadingGroup>
+            <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+              <HeadingGroup className="gap-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Text variant="h3" weight="stronger" level={1}>
                     {install.name}
@@ -135,7 +149,7 @@ const InstallTemplate = () => {
                   </Text>
                   <AdminDashboardLink
                     path={`/queues?owner_id=${install.id}`}
-                    label="View in admin panel"
+                    label="Admin panel"
                   />
                 </div>
               </HeadingGroup>
@@ -157,7 +171,7 @@ const InstallTemplate = () => {
                     </Link>
                   </Text>
                 </LabeledValue>
-                <InstallStatusesContainer />
+                <InstallStatusesContainer collapsible />
                 <InstallManagementDropdown />
               </div>
             </div>
@@ -192,7 +206,9 @@ const InstallTemplate = () => {
               basePath={`/${org?.id}/installs/${install?.id}`}
               links={navLinks}
             />
-            <Outlet />
+            <div className="flex flex-col flex-1 min-w-0">
+              <Outlet />
+            </div>
           </PageContent>
         </>
       )}

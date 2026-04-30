@@ -50,7 +50,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -59,8 +59,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // runner health
-	step, err = sg.installSignalStep(ctx, installID, "await runner health", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -82,6 +81,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 	sg.nextGroup() // sandbox plan + apply
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 		Role:             flw.Role,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
@@ -95,6 +95,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, installID string, flw *app
 
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply", pgtype.Hstore{}, &reprovisionsandboxapplyplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err

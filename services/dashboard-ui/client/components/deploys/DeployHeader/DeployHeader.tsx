@@ -1,8 +1,8 @@
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
+import { Card } from '@/components/common/Card'
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { Duration } from '@/components/common/Duration'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -19,6 +19,7 @@ import { OCIArtifactCard } from '@/components/deploys/OCIArtifactCard'
 import { ManagementDropdown } from '@/components/deploys/management/ManagementDropdown'
 
 interface IDeployHeader {
+  children?: React.ReactNode
   component: TComponent
   workflow: TWorkflow
   stepId: string
@@ -27,6 +28,7 @@ interface IDeployHeader {
 }
 
 export const DeployHeader = ({
+  children,
   component,
   workflow,
   stepId,
@@ -34,11 +36,11 @@ export const DeployHeader = ({
   install,
 }: IDeployHeader) => {
   return (
-    <header className="p-6 border-b flex justify-between">
-      <HeadingGroup>
-        <BackLink className="mb-6" />
+    <header className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center gap-4 justify-between w-full">
         <div className="flex flex-col gap-1">
-          <span className="flex items-cenert gap-2">
+          <BackLink className="mb-4" />
+          <span className="flex items-center gap-2">
             <ComponentType type={component?.type} displayVariant="icon-only" />
             <Text variant="base" weight="strong">
               {deploy?.component_name}{' '}
@@ -47,47 +49,47 @@ export const DeployHeader = ({
                 : 'deploy'}
             </Text>
           </span>
-          <ID>{deploy?.id}</ID>
-        </div>
-        <div className="flex gap-8 items-center justify-start my-2">
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="CalendarBlankIcon" />
-            <Time variant="subtext" time={deploy?.created_at} />
-          </Text>
-          <Text theme="info" flex className="gap-1">
-            <Icon variant="TimerIcon" />
-            <Duration
+          <span className="flex items-center gap-4">
+            <ID>{deploy?.id}</ID>
+            <Text
+              className="!flex gap-2"
               variant="subtext"
-              beginTime={deploy?.created_at}
-              endTime={deploy?.updated_at}
-            />
-          </Text>
-          {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
-            <Text theme="info" flex className="gap-1">
-              <Icon variant="FileLockIcon" />
-              <Text variant="subtext">{deploy.runner_jobs.at(0).install_role_usage.role_name}</Text>
-            </Text>
-          ) : null}
-          <ID>
-            <Link
-              href={`/${deploy?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+              theme="neutral"
+              family="mono"
             >
-              {deploy?.build_id}
-            </Link>
-          </ID>
+              Build:
+              <ID>
+                <Link
+                  href={`/${deploy?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+                >
+                  {deploy?.build_id}
+                </Link>
+              </ID>
+            </Text>
+          </span>
+          <Time
+            time={deploy?.created_at}
+            format="relative"
+            variant="subtext"
+            theme="info"
+          />
         </div>
-        {deploy?.install_workflow_id ? (
-          <Button
-            href={`/${deploy?.org_id}/installs/${deploy?.install_id}/workflows/${workflow?.id}?panel=${stepId}`}
-          >
-            View workflow
-            <Icon variant="CaretRightIcon" />
-          </Button>
-        ) : null}
-      </HeadingGroup>
 
-      <div className="flex flex-col gap-6">
-        <div className="flex gap-6 items-start justify-start">
+        <div className="flex items-center gap-4">
+          <DeploySwitcher
+            componentId={deploy?.component_id}
+            deployId={deploy?.id}
+          />
+          <ManagementDropdown
+            component={component}
+            currentBuildId={deploy?.build_id}
+            workflow={workflow}
+          />
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -103,7 +105,13 @@ export const DeployHeader = ({
               position: 'bottom',
             }}
           />
-
+          <LabeledValue label="Duration">
+            <Duration
+              variant="subtext"
+              beginTime={deploy?.created_at}
+              endTime={deploy?.updated_at}
+            />
+          </LabeledValue>
           <LabeledValue label="Install">
             <Text variant="subtext">
               <Link href={`/${deploy?.org_id}/installs/${deploy?.install_id}`}>
@@ -133,9 +141,8 @@ export const DeployHeader = ({
               />
             </LabeledValue>
           ) : null}
-
           {deploy?.oci_artifact ? (
-            <LabeledValue label="OCI Artifact">
+            <LabeledValue label="OCI artifact">
               <OCIArtifactCard ociArtifact={deploy?.oci_artifact}>
                 <Text
                   variant="subtext"
@@ -148,19 +155,28 @@ export const DeployHeader = ({
               </OCIArtifactCard>
             </LabeledValue>
           ) : null}
-
-          <DeploySwitcher
-            componentId={deploy?.component_id}
-            deployId={deploy?.id}
-          />
-
-          <ManagementDropdown
-            component={component}
-            currentBuildId={deploy?.build_id}
-            workflow={workflow}
-          />
+          {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
+            <LabeledValue label="Execution role">
+              <Text variant="subtext" family="mono" className="text-xs">
+                <Link href={`/${deploy?.org_id}/installs/${deploy?.install_id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`}>
+                  {deploy.runner_jobs.at(0).install_role_usage.role_name}
+                </Link>
+              </Text>
+            </LabeledValue>
+          ) : null}
         </div>
-      </div>
+      </Card>
+
+      {deploy?.install_workflow_id ? (
+        <Button
+          href={`/${deploy?.org_id}/installs/${deploy?.install_id}/workflows/${workflow?.id}?panel=${stepId}`}
+        >
+          View workflow
+          <Icon variant="CaretRightIcon" />
+        </Button>
+      ) : null}
+
+      {children}
     </header>
   )
 }

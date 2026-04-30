@@ -2,6 +2,7 @@ package executeflow
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appworkflows "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
 	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
@@ -9,6 +10,15 @@ import (
 
 func init() {
 	generateworkflowsteps.RegisterGenerators("installs", installGenerators)
+	generateworkflowsteps.RegisterGenerators("apps", appGenerators)
+	generateworkflowsteps.RegisterGenerators("app_branches", appGenerators)
+}
+
+func appGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
+	return map[app.WorkflowType]flow.WorkflowStepGenerator{
+		app.WorkflowTypeAppConfigBuild: appworkflows.AppConfigBuild,
+		app.WorkflowTypeAppBranchesRun: appworkflows.AppBranchRun,
+	}
 }
 
 func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {

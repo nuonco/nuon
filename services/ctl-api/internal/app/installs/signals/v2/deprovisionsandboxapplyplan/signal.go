@@ -26,6 +26,7 @@ const SignalType signal.SignalType = "deprovision-sandbox-apply-plan"
 
 type Signal struct {
 	InstallSandboxID string
+	InstallID        string
 	FlowID           string
 	FlowStepID       string
 	SandboxMode      bool
@@ -37,6 +38,13 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -48,8 +56,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	sandboxID := &s.InstallSandboxID
+	if s.InstallSandboxID == "" {
+		sandboxID = nil
+	}
 	return signal.SignalLifecycleContext{
+		InstallID: installID,
+		SandboxID: sandboxID,
 		Operation: "sandbox-deprovision",
+		Stage:     "apply",
 	}
 }
 
@@ -74,6 +93,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &deprovisionsandboxplan.Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -82,6 +102,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName,

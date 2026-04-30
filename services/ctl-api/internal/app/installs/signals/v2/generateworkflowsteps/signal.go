@@ -30,6 +30,11 @@ type Signal struct {
 	result *app.GenerateStepsResult
 	done   bool
 	err    error
+
+	// eagerStepGroups holds step groups that can be executed immediately while
+	// remaining groups are still generating. Set before done to allow early consumption.
+	eagerStepGroups      *app.GenerateStepsResult
+	eagerStepGroupsReady bool
 }
 
 var (
@@ -90,6 +95,39 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return s.err
 	}
 
+	// Extract eager step groups for early consumption before marking done.
+	// Eager groups are those marked with EagerExecution, or just the first
+	// group if none are explicitly marked.
+	if len(result.Groups) > 0 {
+		var eagerGroups []*app.WorkflowStepGroup
+		for _, g := range result.Groups {
+			if g.EagerExecution {
+				eagerGroups = append(eagerGroups, g)
+			}
+		}
+		// Default: if no groups are explicitly eager, use the first group.
+		if len(eagerGroups) == 0 {
+			eagerGroups = []*app.WorkflowStepGroup{result.Groups[0]}
+		}
+
+		eagerGroupIdxs := make(map[int]bool)
+		for _, g := range eagerGroups {
+			eagerGroupIdxs[g.GroupIdx] = true
+		}
+
+		var eagerSteps []*app.WorkflowStep
+		for _, step := range result.Steps {
+			if eagerGroupIdxs[step.GroupIdx] {
+				eagerSteps = append(eagerSteps, step)
+			}
+		}
+		s.eagerStepGroups = &app.GenerateStepsResult{
+			Steps:  eagerSteps,
+			Groups: eagerGroups,
+		}
+	}
+	s.eagerStepGroupsReady = true
+
 	s.result = result
 	s.done = true
 
@@ -99,6 +137,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "eager-step-groups",
+		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
+			// Block until eager step groups are ready.
+			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady }); err != nil {
+				return nil, err
+			}
+			if s.err != nil {
+				return nil, s.err
+			}
+			return s.eagerStepGroups, nil
+		},
+		workflow.UpdateHandlerOptions{},
+	); err != nil {
+		return err
+	}
+
 	return workflow.SetUpdateHandlerWithOptions(ctx, "FetchSteps",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			// Block until Execute has finished generating steps.

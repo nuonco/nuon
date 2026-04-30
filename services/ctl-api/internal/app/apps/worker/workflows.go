@@ -52,7 +52,6 @@ func (w *Workflows) ListWorkflowFns() []any {
 		w.BuildSandbox,
 		w.Created,
 		w.Deprovision,
-		w.ExecuteFlow,
 		w.PollDependencies,
 		w.Provision,
 		w.Reprovision,

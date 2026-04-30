@@ -31,6 +31,11 @@ type Client interface {
 	CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error)
 	GetOrgInvites(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgInvite, bool, error)
 
+	// org webhooks
+	GetCurrentOrgWebhooks(ctx context.Context) ([]*models.ServiceCurrentOrgWebhookResponse, error)
+	CreateCurrentOrgWebhook(ctx context.Context, req *models.ServiceCreateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
+	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
+
 	// app methods
 	GetApp(ctx context.Context, appID string) (*models.AppApp, error)
 	GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error)
@@ -56,6 +61,7 @@ type Client interface {
 	GetAppLatestConfig(ctx context.Context, appID string) (*models.AppAppConfig, error)
 	GetAppConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error)
+	BuildAppConfig(ctx context.Context, appID, configID string) (*models.AppWorkflow, error)
 
 	// app input config methods
 	CreateAppInputConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInputConfigRequest) (*models.AppAppInputConfig, error)

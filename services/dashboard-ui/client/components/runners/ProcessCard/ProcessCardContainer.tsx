@@ -1,6 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import {
@@ -8,7 +6,7 @@ import {
   getRunnerRecentHealthChecks,
 } from '@/lib'
 import type { TRunnerProcess, TRunnerSettings } from '@/types'
-import { isLessThan15SecondsOld } from '@/utils/time-utils'
+import { isRecentTimestamp } from '@/utils/time-utils'
 import { ProcessManagementDropdown } from '@/components/runners/ProcessManagementDropdown'
 import { ProcessCard } from './ProcessCard'
 
@@ -25,8 +23,6 @@ export const ProcessCardContainer = ({
 }) => {
   const { org } = useOrg()
   const { runner } = useRunner()
-  const { isAdmin } = useAuth()
-  const config = useConfig()
 
   const { data: heartbeat } = useQuery({
     queryKey: ['process-heartbeat', org?.id, runner?.id, process.id],
@@ -52,14 +48,12 @@ export const ProcessCardContainer = ({
     enabled: !!org?.id && !!runner?.id && !!process.id,
   })
 
-  const isConnected = isLessThan15SecondsOld(heartbeat?.created_at)
+  const isConnected = isRecentTimestamp(heartbeat?.created_at)
   const configuredVersion =
     (process.type === 'mng'
       ? settings?.binary_version
       : settings?.container_image_tag) || '-'
   const reportedVersion = heartbeat?.version || process.version || '-'
-
-  const adminDashboardUrl = isAdmin ? (config.adminDashboardUrl || undefined) : undefined
 
   return (
     <ProcessCard
@@ -73,10 +67,8 @@ export const ProcessCardContainer = ({
       managementDropdown={
         <ProcessManagementDropdown
           process={process}
-          settings={settings}
         />
       }
-      adminDashboardUrl={adminDashboardUrl}
     />
   )
 }

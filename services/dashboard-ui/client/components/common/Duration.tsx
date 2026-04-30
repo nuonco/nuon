@@ -44,8 +44,10 @@ export const Duration = ({
     duration = LuxonDuration.fromMillis(milliseconds)
   } else if (beginTime) {
     const bt = DateTime.fromISO(beginTime)
-    const et = endTime ? DateTime.fromISO(endTime) : DateTime.now()
-    duration = et.diff(bt, durationUnits)
+    if (bt.isValid && bt.year > 1) {
+      const et = endTime ? DateTime.fromISO(endTime) : DateTime.now()
+      duration = et.diff(bt, durationUnits)
+    }
   }
 
   return (
@@ -54,7 +56,12 @@ export const Duration = ({
         format === 'timer' ? (
           duration.toFormat('T-hh:mm:ss:SS')
         ) : duration.as('seconds') < 1 ? (
-          duration.rescale().toHuman({ listStyle, unitDisplay })
+          '< 1s'
+        ) : duration.as('minutes') >= 1 ? (
+          duration.rescale().set({ seconds: 0, milliseconds: 0 }).rescale().toHuman({
+            listStyle,
+            unitDisplay,
+          })
         ) : (
           duration.rescale().set({ milliseconds: 0 }).rescale().toHuman({
             listStyle,

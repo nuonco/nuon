@@ -1,8 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
-import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallActionsLatestRuns, getActionLabelKeys } from '@/lib'
@@ -61,16 +60,12 @@ export const InstallActionsTableContainer = ({
         install?.id ?? ''
       )}
       filterActions={
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <LabelFilterDropdown
             queryKey={['action-label-keys', org.id, install?.app_id]}
             queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
-          <TemporalLink
-            namespace="installs"
-            eventLoopId={`${install?.id}-action-workflows`}
-          />
-          <RunAdhocActionButton />
+          <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
           <TriggeredByFilter />
         </div>
       }

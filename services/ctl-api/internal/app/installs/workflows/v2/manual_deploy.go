@@ -23,7 +23,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -32,8 +32,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // runner health
-	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -119,6 +118,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		sg.nextGroup() // component sync + plan + apply
 		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			DeployID:           generics.FromPtrStr(installDeployID),
 			ComponentID:        comp.ID,
 			FlowID:             "",
@@ -130,6 +130,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 		applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
 			InstallComponentID: installComp.ID,
+			InstallID:          installID,
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,

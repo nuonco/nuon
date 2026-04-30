@@ -87,12 +87,8 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.OwnerType == "" {
 		return errors.New("owner_type is required")
 	}
-	if s.QueueName == "" {
-		return errors.New("queue_name is required")
-	}
-	if s.TargetQueueName == "" {
-		return errors.New("target_queue_name is required")
-	}
+	// QueueName and TargetQueueName are optional when all steps in the group
+	// specify their own SignalQueueOwnerID for per-step routing.
 	return nil
 }
 

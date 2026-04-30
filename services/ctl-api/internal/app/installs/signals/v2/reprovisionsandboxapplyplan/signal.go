@@ -26,6 +26,7 @@ const SignalType signal.SignalType = "reprovision-sandbox-apply-plan"
 
 type Signal struct {
 	InstallSandboxID string
+	InstallID        string
 	FlowID           string
 	FlowStepID       string
 	SandboxMode      bool
@@ -38,14 +39,16 @@ var (
 	_ signal.Signal                     = &Signal{}
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 	_ signal.SignalWithCancel           = (*Signal)(nil)
 )
 
-func (s *Signal) MaxRetries() int  { return 3 }
-func (s *Signal) AutoRetry() bool  { return true }
-func (s *Signal) RetryGroup() bool { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) RetryGroup() bool                      { return true }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -57,8 +60,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	sandboxID := &s.InstallSandboxID
+	if s.InstallSandboxID == "" {
+		sandboxID = nil
+	}
 	return signal.SignalLifecycleContext{
+		InstallID: installID,
+		SandboxID: sandboxID,
 		Operation: "sandbox-reprovision",
+		Stage:     "apply",
 	}
 }
 
@@ -85,6 +99,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &reprovisionsandboxplan.Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -93,6 +108,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 		{
 			Signal: &Signal{
 				InstallSandboxID: s.InstallSandboxID,
+				InstallID:        s.InstallID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName,

@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -19,7 +20,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := s.executeCreateApp(ctx, logger); err != nil {
 		logger.Error("create app failed", "error", err)
 
-		errMsg := err.Error()
+		errMsg := signal.HumanError(err)
 		stepStatus := string(app.OnboardingStepStatusError)
 		_, updateErr := activities.AwaitUpdateOnboarding(ctx, activities.UpdateOnboardingRequest{
 			Req: &activities.UpdateOnboardingInput{
@@ -169,10 +170,6 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 		// Trigger builds for each component (fire-and-forget, same as example app path)
 		for _, componentID := range syncResp.ComponentIDs {
-			if err := activities.AwaitEnsureComponentQueueByComponentID(ctx, componentID); err != nil {
-				return fmt.Errorf("component %s: ensure queue failed: %w", componentID, err)
-			}
-
 			// Don't pass AppConfigID for custom apps — there's no AppBranchRun,
 			// and the queuebuild signal would retry GetAppBranchRunByAppConfigID forever.
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

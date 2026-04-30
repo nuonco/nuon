@@ -11,12 +11,27 @@ import { Stacks } from './Stacks'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
-import { DeployDetail } from './DeployDetail'
+import { DeployDetailGate } from './DeployDetailGate'
+import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
+import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
+import { DeployVariablesTab } from './deploy-tabs/DeployVariablesTab'
+import { DeployStateTab } from './deploy-tabs/DeployStateTab'
+import { DeployValuesTab } from './deploy-tabs/DeployValuesTab'
+import { DeployOutputsTab } from './deploy-tabs/DeployOutputsTab'
+import { DeployManifestTab } from './deploy-tabs/DeployManifestTab'
+import { DeployArtifactTab } from './deploy-tabs/DeployArtifactTab'
 import { ActionDetail } from './ActionDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
-import { SandboxRunDetail } from './SandboxRunDetail'
+import { SandboxRunDetailGate } from './SandboxRunDetailGate'
+import { SandboxRunLogsTab } from './sandbox-tabs/SandboxRunLogsTab'
+import { SandboxRunPlanTab } from './sandbox-tabs/SandboxRunPlanTab'
+import { SandboxRunVariablesTab } from './sandbox-tabs/SandboxRunVariablesTab'
+import { SandboxRunStateTab } from './sandbox-tabs/SandboxRunStateTab'
+import { SandboxRunOutputsTab } from './sandbox-tabs/SandboxRunOutputsTab'
+import { CurrentInputs } from './CurrentInputs'
+import { ViewState } from './ViewState'
 import { WorkflowDetail } from './WorkflowDetail'
 import { RunnerJobDetail } from './RunnerJobDetail'
 
@@ -33,6 +48,8 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/roles', element: <Roles /> },
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
+      { path: ':orgId/installs/:installId/inputs', element: <CurrentInputs /> },
+      { path: ':orgId/installs/:installId/state', element: <ViewState /> },
       {
         path: ':orgId/installs/:installId/runner/jobs/:jobId',
         element: <RunnerJobDetail />,
@@ -45,7 +62,14 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/sandbox/runs/:runId',
-        element: <SandboxRunDetail />,
+        element: <SandboxRunDetailGate />,
+        children: [
+          { index: true, element: <SandboxRunLogsTab /> },
+          { path: 'plan', element: <SandboxRunPlanTab /> },
+          { path: 'variables', element: <SandboxRunVariablesTab /> },
+          { path: 'state', element: <SandboxRunStateTab /> },
+          { path: 'outputs', element: <SandboxRunOutputsTab /> },
+        ],
       },
       {
         path: ':orgId/installs/:installId/workflows/:workflowId',
@@ -67,7 +91,17 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
-        element: <DeployDetail />,
+        element: <DeployDetailGate />,
+        children: [
+          { index: true, element: <DeployLogsTab /> },
+          { path: 'plan', element: <DeployPlanTab /> },
+          { path: 'variables', element: <DeployVariablesTab /> },
+          { path: 'state', element: <DeployStateTab /> },
+          { path: 'values', element: <DeployValuesTab /> },
+          { path: 'outputs', element: <DeployOutputsTab /> },
+          { path: 'manifest', element: <DeployManifestTab /> },
+          { path: 'artifact', element: <DeployArtifactTab /> },
+        ],
       },
       {
         path: ':orgId/installs/:installId/actions/:actionId',

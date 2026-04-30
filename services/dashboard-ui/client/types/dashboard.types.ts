@@ -86,11 +86,19 @@ export type TTheme =
 
 // page nav link types
 export type TNavLink = {
+  badge?: boolean
   iconVariant?: TIconVariant
   path: string
   text: string
   isExternal?: boolean
 }
+
+export type TNavSectionHeader = {
+  type: 'section'
+  label: string
+}
+
+export type TNavItem = TNavLink | TNavSectionHeader
 
 // UI variant types
 export type TEmptyVariant =

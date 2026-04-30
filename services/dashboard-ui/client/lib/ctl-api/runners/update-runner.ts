@@ -2,6 +2,7 @@ import { api } from '@/lib/api'
 import type { TRunnerJob } from '@/types'
 
 export interface IUpdateRunnerBody {
+  binary_version?: string
   container_image_tag: string
   container_image_url: string
   org_awsiam_role_arn: string

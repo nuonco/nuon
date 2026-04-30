@@ -19,6 +19,28 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	steps := make([]*app.WorkflowStep, 0)
+	sg := newStepGroup()
+
+	// Eager group — returned early so execution can start immediately.
+	sg.nextGroupEager()
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
+		InstallID: installID,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+		InstallID: installID,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	// Remaining groups — fetch dependencies needed for component deploys.
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
@@ -31,33 +53,12 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	steps := make([]*app.WorkflowStep, 0)
-	sg := newStepGroup()
-
-	sg.nextGroup() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
-
-	sg.nextGroup() // runner health
-	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {

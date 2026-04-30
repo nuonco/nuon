@@ -14,6 +14,7 @@ interface IAdminConfirmationModal extends IModal {
   variant?: 'default' | 'warning' | 'danger'
   requiresInput?: boolean
   inputText?: string
+  isPending?: boolean
 }
 
 const getWarningIcon = (variant: IAdminConfirmationModal['variant']) => {
@@ -46,6 +47,7 @@ export const AdminConfirmationModal = ({
   variant = 'default',
   requiresInput = false,
   inputText = 'CONFIRM',
+  isPending = false,
   ...props
 }: IAdminConfirmationModal) => {
   const [inputValue, setInputValue] = useState('')
@@ -60,8 +62,13 @@ export const AdminConfirmationModal = ({
         </div>
       }
       primaryActionTrigger={{
-        children: 'Confirm action',
-        disabled: !isValid,
+        children: isPending ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="Loading" />
+            Executing...
+          </span>
+        ) : 'Confirm action',
+        disabled: !isValid || isPending,
         onClick: onConfirm,
         variant: variant === 'danger' ? 'danger' : 'primary'
       }}

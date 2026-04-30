@@ -31,8 +31,10 @@ type Signal struct {
 	ProcessID string `json:"process_id"`
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SleepAfter = (*Signal)(nil)
+var (
+	_ signal.Signal     = (*Signal)(nil)
+	_ signal.SleepAfter = (*Signal)(nil)
+)
 
 func (s *Signal) SleepAfter() time.Duration {
 	return 0
@@ -69,6 +71,42 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
 		// continue with health check
 	default:
+		return nil
+	}
+
+	// If a promotion requested shutdown, create the shutdown record and clear
+	// the flag. The runner's shutdown poller will pick it up. Because health
+	// check emitters run per-process on a 1-minute cron, shutdowns are
+	// staggered naturally across all runners.
+	if val, ok := process.CompositeStatus.Metadata["shutdown_requested"]; ok && val != nil {
+		l.Info("shutdown requested via metadata, creating shutdown record",
+			zap.String("runner_id", s.RunnerID),
+			zap.String("process_id", s.ProcessID),
+		)
+
+		_, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+			RunnerProcessID: s.ProcessID,
+			Type:            app.RunnerProcessShutdownTypeGraceful,
+			CompositeStatus: app.CompositeStatus{
+				Status:                 app.Status(app.RunnerProcessShutdownStatusRequested),
+				StatusHumanDescription: "shutdown requested via promotion",
+				CreatedAtTS:            workflow.Now(ctx).Unix(),
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to create shutdown for process")
+		}
+
+		// Clear the flag so we don't create duplicate shutdowns on the next health check.
+		if clearErr := activities.AwaitClearProcessShutdownRequested(ctx, activities.ClearProcessShutdownRequestedRequest{
+			ProcessID: s.ProcessID,
+		}); clearErr != nil {
+			l.Warn("unable to clear shutdown_requested metadata",
+				zap.String("process_id", s.ProcessID),
+				zap.Error(clearErr),
+			)
+		}
+
 		return nil
 	}
 

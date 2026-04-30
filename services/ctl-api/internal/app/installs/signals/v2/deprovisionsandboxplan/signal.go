@@ -25,6 +25,7 @@ const SignalType signal.SignalType = "deprovision-sandbox-plan"
 
 type Signal struct {
 	InstallSandboxID string
+	InstallID        string
 	WorkflowStepID   string
 	FlowStepID       string
 	FlowID           string
@@ -41,11 +42,15 @@ var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
 var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
 var _ signal.SignalWithSkipCleanup = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 
-func (s *Signal) IsNoOpCheckable() bool          { return true }
-func (s *Signal) RequiresPolicyEvaluation() bool { return true }
-func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) IsNoOpCheckable() bool                 { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)
@@ -87,8 +92,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	sandboxID := &s.InstallSandboxID
+	if s.InstallSandboxID == "" {
+		sandboxID = nil
+	}
 	return signal.SignalLifecycleContext{
+		InstallID: installID,
+		SandboxID: sandboxID,
 		Operation: "sandbox-deprovision",
+		Stage:     "plan",
 	}
 }
 

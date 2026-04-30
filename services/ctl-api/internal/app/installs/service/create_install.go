@@ -29,13 +29,6 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
-		return stderr.ErrUser{
-			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
-			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
-		}
-	}
-
 	if c.AWSAccount != nil {
 		if c.AWSAccount.Region == "" {
 			return stderr.ErrUser{
@@ -151,8 +144,6 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
 
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
-
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
 	if err == nil {
@@ -172,13 +163,6 @@ type CreateInstallRequest struct {
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
-	}
-
-	if c.AWSAccount == nil && c.AzureAccount == nil && c.GCPAccount == nil {
-		return stderr.ErrUser{
-			Description: "one of AWSAccount, AzureAccount, or GCPAccount must be provided",
-			Err:         fmt.Errorf("one of AWSAccount, AzureAccount, or GCPAccount must be provided"),
-		}
 	}
 
 	if c.AWSAccount != nil {
@@ -299,8 +283,6 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	s.evClient.Send(ctx, install.ID, &signals.Signal{
 		Type: signals.OperationSyncActionWorkflowTriggers,
 	})
-
-	ctx.Header(app.HeaderInstallWorkflowID, workflow.ID)
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)

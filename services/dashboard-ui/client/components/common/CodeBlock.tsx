@@ -4,6 +4,7 @@ import {
   oneLight,
 } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import createElement from 'react-syntax-highlighter/dist/cjs/create-element'
+import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 
@@ -32,6 +33,7 @@ interface ICodeBlock
     | 'md'
     | string
   isDiff?: boolean
+  showCopy?: boolean
   showLineNumbers?: boolean
 }
 
@@ -65,13 +67,26 @@ export function CodeBlock({
   children,
   language,
   isDiff = false,
+  showCopy = false,
   showLineNumbers = false,
 }: ICodeBlock) {
   const colorScheme = useSystemTheme()
-  const theme = colorScheme === 'dark' ? oneDark : oneLight
+  const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
+  const baseTheme = colorScheme === 'dark' ? oneDark : oneLight
+  const theme = {
+    ...baseTheme,
+    'pre[class*="language-"]': {
+      ...baseTheme['pre[class*="language-"]'],
+      background: bgCode,
+    },
+    'code[class*="language-"]': {
+      ...baseTheme['code[class*="language-"]'],
+      background: bgCode,
+    },
+  }
   const lines = isDiff ? children.split('\n') : []
 
-  return (
+  const prism = (
     <Prism
       className={cn(
         '!m-0 !p-4 !text-sm !rounded-md !shadow-sm min-h-[3rem] max-h-[40rem] overflow-auto',
@@ -151,5 +166,16 @@ export function CodeBlock({
     >
       {children}
     </Prism>
+  )
+
+  if (!showCopy) return prism
+
+  return (
+    <div className="relative">
+      <div className="absolute top-2 right-2 z-10">
+        <ClickToCopyButton textToCopy={children} />
+      </div>
+      {prism}
+    </div>
   )
 }

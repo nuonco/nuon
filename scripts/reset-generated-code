@@ -24,10 +24,10 @@ REPO_DIR="$(resolve_repo_dir)"
 
 ensure_codegen_tools() {
   echo >&2 "Ensuring tool binaries are installed..."
-  go run github.com/swaggo/swag/cmd/swag@latest --version >/dev/null
-  go run github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0 version >/dev/null
-  go run github.com/golang/mock/mockgen@latest -version >/dev/null
-  go run github.com/a-h/templ/cmd/templ@latest version >/dev/null
+  (cd "$REPO_DIR" && go run github.com/swaggo/swag/cmd/swag --version) >/dev/null
+  (cd "$REPO_DIR" && go run github.com/go-swagger/go-swagger/cmd/swagger version) >/dev/null
+  (cd "$REPO_DIR" && go run github.com/golang/mock/mockgen -version) >/dev/null
+  (cd "$REPO_DIR" && go run github.com/a-h/templ/cmd/templ version) >/dev/null
 }
 
 if [[ "$#" == 1 && "$1" == "--help" ]]; then

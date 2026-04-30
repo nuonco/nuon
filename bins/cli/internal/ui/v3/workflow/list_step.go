@@ -20,9 +20,19 @@ type listStep struct {
 }
 
 func (i listStep) Title() string {
-	number := fmt.Sprintf("[%02d]", i.step.Idx)
 	color := styles.GetStatusStyle(i.step.Status.Status)
-	return color.Render(number) + " " + i.step.Name
+	return color.Render(i.statusIcon()) + " " + i.step.Name
+}
+
+// statusIcon returns the leading status glyph for this step. Statuses in
+// common.InProgressStatuses reuse the active spinner frame so the row
+// animates in sync with the header; everything else falls back to a static
+// unicode icon from the shared common.GetStatusIcon mapping.
+func (i listStep) statusIcon() string {
+	if common.IsInProgressStatus(i.step.Status.Status) && i.spinnerView != "" {
+		return i.spinnerView
+	}
+	return common.GetStatusIcon(i.step.Status.Status)
 }
 
 func (i listStep) Description() string {
@@ -45,9 +55,7 @@ func (i listStep) FilterValue() string {
 }
 
 func (i listStep) Name() string {
-	number := fmt.Sprintf("[%02d]", i.step.Idx)
-	color := styles.GetStatusStyle(i.step.Status.Status)
-	return color.Render(number) + " " + i.step.Name
+	return i.Title()
 }
 
 // the niecities

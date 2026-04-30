@@ -48,6 +48,9 @@ type GithubComNuoncoNuonPkgTypesStateState struct {
 	// install stack
 	InstallStack *StateInstallStackState `json:"install_stack,omitempty"`
 
+	// labels
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

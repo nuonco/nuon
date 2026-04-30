@@ -2,8 +2,10 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { BackLink } from '@/components/common/BackLink'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
@@ -18,14 +20,17 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { Panel } from '@/components/surfaces/Panel'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, getAppConfigs, getComponent } from '@/lib'
 
 export const ComponentDetail = () => {
   const { componentId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+  const { addPanel } = useSurfaces()
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     queryKey: ['component', org?.id, app?.id, componentId],
@@ -76,73 +81,96 @@ export const ComponentDetail = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <BackLink className="mb-6" />
-          <span className="flex items-center gap-2">
-            <ComponentType
-              type={component?.type}
-              displayVariant="icon-only"
-              colorVariant="color"
-              iconSize="24"
-            />
-            <Text variant="base" weight="strong">
-              {component?.name}
-            </Text>
-          </span>
-          {component?.id ? <ID>{component.id}</ID> : null}
-          {component?.labels && Object.keys(component.labels).length > 0 ? (
-            <span className="flex flex-wrap gap-1 mt-1">
-              {Object.keys(component.labels)
-                .sort()
-                .map((k) => (
-                  <Badge key={k} variant="code" size="sm" theme="neutral">
-                    {k}: {component.labels[k]}
-                  </Badge>
-                ))}
-            </span>
-          ) : null}
-        </HeadingGroup>
-
-        {component ? (
-          <BuildComponentButton component={component} variant="primary" />
-        ) : null}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
-        <div className="md:col-span-8 flex flex-col gap-6">
-          {config?.component_dependency_ids?.length ? (
-            <Card>
-              <Text weight="strong">Dependencies</Text>
-              <ComponentDependencies
-                deps={config.component_dependency_ids}
-                variant="inline"
+      <div className="@container flex flex-col flex-auto gap-6">
+        <div className="flex items-start justify-between">
+          <HeadingGroup>
+            <BackLink className="mb-6" />
+            <span className="flex items-center gap-2">
+              <ComponentType
+                type={component?.type}
+                displayVariant="icon-only"
+                colorVariant="color"
+                iconSize="24"
               />
-            </Card>
-          ) : null}
+              <Text variant="base" weight="strong">
+                {component?.name}
+              </Text>
+            </span>
+            {component?.id ? <ID>{component.id}</ID> : null}
+            {component?.labels && Object.keys(component.labels).length > 0 ? (
+              <span className="flex flex-wrap gap-1 mt-1">
+                {Object.keys(component.labels)
+                  .sort()
+                  .map((k) => (
+                    <Badge key={k} variant="code" size="sm" theme="neutral">
+                      {k}: {component.labels[k]}
+                    </Badge>
+                  ))}
+              </span>
+            ) : null}
+          </HeadingGroup>
 
-          {isLoadingConfig ? (
-            <ComponentConfigCardSkeleton />
-          ) : config ? (
-            <ComponentConfigCard config={config} />
-          ) : (
-            <EmptyState
-              variant="table"
-              emptyTitle="No configuration"
-              emptyMessage="This component has no configuration yet."
-            />
-          )}
+          <div className="flex items-center gap-2">
+            <div className="@5xl:hidden">
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  addPanel(
+                    <Panel heading="Build history">
+                      <BuildTimeline
+                        componentId={componentId!}
+                        componentName={component?.name ?? ''}
+                        shouldPoll
+                      />
+                    </Panel>
+                  )
+                }
+              >
+                <Icon variant="ClockCounterClockwiseIcon" size={16} />
+                Build history
+              </Button>
+            </div>
+            {component ? (
+              <BuildComponentButton component={component} variant="primary" />
+            ) : null}
+          </div>
         </div>
 
-        <div className="md:col-span-4 flex flex-col gap-4">
-          <Text variant="base" weight="strong">
-            Build history
-          </Text>
-          <BuildTimeline
-            componentId={componentId!}
-            componentName={component?.name ?? ''}
-            shouldPoll
-          />
+        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
+          <div className="@5xl:col-span-8 flex flex-col gap-6">
+            {config?.component_dependency_ids?.length ? (
+              <Card>
+                <Text weight="strong">Dependencies</Text>
+                <ComponentDependencies
+                  deps={config.component_dependency_ids}
+                  variant="inline"
+                />
+              </Card>
+            ) : null}
+
+            {isLoadingConfig ? (
+              <ComponentConfigCardSkeleton />
+            ) : config ? (
+              <ComponentConfigCard config={config} />
+            ) : (
+              <EmptyState
+                variant="table"
+                emptyTitle="No configuration"
+                emptyMessage="This component has no configuration yet."
+              />
+            )}
+          </div>
+
+          <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
+            <Text variant="base" weight="strong">
+              Build history
+            </Text>
+            <BuildTimeline
+              componentId={componentId!}
+              componentName={component?.name ?? ''}
+              shouldPoll
+            />
+          </div>
         </div>
       </div>
 

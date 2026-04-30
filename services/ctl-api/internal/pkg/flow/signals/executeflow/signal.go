@@ -82,6 +82,26 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "install-signals"
 			}
+		case "apps":
+			if s.StepGroupQueueName == "" {
+				s.StepGroupQueueName = "app-workflow-step-groups"
+			}
+			if s.StepQueueName == "" {
+				s.StepQueueName = "app-workflow-steps"
+			}
+			if s.StepTargetQueueName == "" {
+				s.StepTargetQueueName = "app-signals"
+			}
+		case "app_branches":
+			if s.StepGroupQueueName == "" {
+				s.StepGroupQueueName = "app-branch-workflow-step-groups"
+			}
+			if s.StepQueueName == "" {
+				s.StepQueueName = "app-branch-workflow-steps"
+			}
+			if s.StepTargetQueueName == "" {
+				s.StepTargetQueueName = "app-branch-signals"
+			}
 		default:
 			return s.failWorkflow(ctx, errors.Errorf("unable to resolve queue names for owner type %s", s.OwnerType))
 		}

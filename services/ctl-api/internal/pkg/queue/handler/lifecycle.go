@@ -34,7 +34,9 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		}
 		event.InstallID = ctx.InstallID
 		event.ComponentID = ctx.ComponentID
+		event.SandboxID = ctx.SandboxID
 		event.Operation = ctx.Operation
+		event.Stage = ctx.Stage
 	}
 
 	return event

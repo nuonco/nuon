@@ -67,6 +67,11 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// finishedStatus and finishedErr capture the terminal outcome so the
+	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
+	finishedStatus app.Status
+	finishedErr    string
+
 	// cancelable context for execution
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
@@ -74,4 +79,11 @@ type handler struct {
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal
 	sig         signal.Signal
+}
+
+// setFinished marks the handler as finished with a terminal status and optional error description.
+func (h *handler) setFinished(status app.Status, errDesc string) {
+	h.finished = true
+	h.finishedStatus = status
+	h.finishedErr = errDesc
 }

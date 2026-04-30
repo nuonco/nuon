@@ -512,6 +512,13 @@ export interface paths {
     /** @description Update an app config, setting status and state. */
     patch: operations["UpdateAppConflgV2"];
   };
+  "/v1/apps/{app_id}/configs/{config_id}/build": {
+    /**
+     * Build all components for an app config
+     * @description Creates a workflow that builds all components defined in the given app config.
+     */
+    post: operations["BuildAppConfig"];
+  };
   "/v1/apps/{app_id}/configs/{config_id}/graph": {
     /**
      * get an app config graph
@@ -2162,6 +2169,7 @@ export interface paths {
   "/v1/runners/{runner_id}/latest-heart-beat": {
     /**
      * get the latest heartbeats for a runner
+     * @deprecated
      * @description
      */
     get: operations["GetRunnerLatestHeartBeat"];
@@ -4228,6 +4236,7 @@ export interface components {
       owner_id?: string;
       owner_type?: string;
       queue_signal?: components["schemas"]["app.QueueSignal"][];
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
@@ -4271,6 +4280,7 @@ export interface components {
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
       emitter_id?: string;
+      enqueued?: boolean;
       execution_count?: number;
       id?: string;
       org_id?: string;
@@ -4279,6 +4289,7 @@ export interface components {
       queue?: components["schemas"]["app.Queue"];
       queue_id?: string;
       signal?: components["schemas"]["signaldb.SignalData"];
+      signal_context?: components["schemas"]["cctx.SignalContext"];
       status?: components["schemas"]["app.CompositeStatus"];
       type?: string;
       updated_at?: string;
@@ -4848,6 +4859,11 @@ export interface components {
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       /**
+       * @description StepQueueID is the queue where the execute-workflow-step signal runs.
+       * When empty, the group's default step queue is used.
+       */
+      step_queue_id?: string;
+      /**
        * @description the following fields are set _once_ a step is in flight, and are orchestrated via the step's signal.
        *
        * this is a polymorphic gorm relationship to one of the following objects:
@@ -4860,6 +4876,11 @@ export interface components {
        */
       step_target_id?: string;
       step_target_type?: string;
+      /**
+       * @description TargetQueueID is the queue where the inner signal (the actual work)
+       * gets dispatched. When empty, the step signal's TargetQueueName is used.
+       */
+      target_queue_id?: string;
       updated_at?: string;
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
@@ -4894,6 +4915,13 @@ export interface components {
     "app.WorkflowStepGroup": {
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description EagerExecution marks this group for early execution during step generation.
+       * When set, the group is returned via the "eager-step-groups" update handler
+       * before all groups have been generated, allowing execution to start sooner.
+       * This field is not persisted to DB — it is only used during generation.
+       */
+      eager_execution?: boolean;
       group_idx?: number;
       id?: string;
       name?: string;
@@ -4922,8 +4950,14 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
     "blobstore.Blob": Record<string, never>;
+    "cctx.SignalContext": {
+      account_id?: string;
+      log_stream_id?: string;
+      org_id?: string;
+      trace_id?: string;
+    };
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
@@ -5494,6 +5528,24 @@ export interface components {
       labels?: {
         [key: string]: string;
       };
+      /**
+       * @description TerraformVersion is the version of the terraform CLI the build runner
+       * should install in order to vendor providers via
+       * `terraform providers mirror`. When empty the build runner falls back
+       * to a sane default. Should mirror the version configured for the
+       * component's deploy plan so init resolves the same provider bytes the
+       * build vendored. Only consulted when VendorProviders is true.
+       */
+      terraform_version?: string;
+      /**
+       * @description VendorProviders enables build-time vendoring of terraform providers
+       * via `terraform providers mirror`. Gated by the
+       * `terraform-provider-mirror` org feature flag in ctl-api so we can
+       * roll the change out gradually without coupling install-runner
+       * behaviour to the flag (the install runner auto-detects whether a
+       * mirror is present in the OCI artifact).
+       */
+      vendor_providers?: boolean;
     };
     "plantypes.TerraformDeployHooks": {
       enabled?: boolean;
@@ -10878,6 +10930,58 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Build all components for an app config
+   * @description Creates a workflow that builds all components defined in the given app config.
+   */
+  BuildAppConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Workflow"];
         };
       };
       /** @description Bad Request */
@@ -22001,6 +22105,7 @@ export interface operations {
   };
   /**
    * get the latest heartbeats for a runner
+   * @deprecated
    * @description
    */
   GetRunnerLatestHeartBeat: {

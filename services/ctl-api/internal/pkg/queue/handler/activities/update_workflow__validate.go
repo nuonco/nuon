@@ -17,12 +17,12 @@ import (
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @schedule-to-close-timeout 2h
-// @heartbeat-timeout 10s
+// @heartbeat-timeout 60s
 // @as-wrapper
 // @wrapper-prefix HandlerInternal
 // @by-field WorkflowID
 func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID string, updateID string, queueID string, runID string) (*handler.ValidateResponse, error) {
-	return heartbeat.WithHeartbeat(ctx, 3*time.Second, func(ctx context.Context) (*handler.ValidateResponse, error) {
+	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.ValidateResponse, error) {
 		info := activity.GetInfo(ctx)
 
 		rawResp, err := a.tclient.UpdateWorkflowInNamespace(ctx,
@@ -42,14 +42,19 @@ func (a *Activities) updateWorkflowValidate(ctx context.Context, workflowID stri
 		if err := rawResp.Get(ctx, &resp); err != nil {
 			wrapped := errors.Wrap(err, "unable get response")
 			var appErr *temporal.ApplicationError
-			if errors.As(err, &appErr) && appErr.Type() == "AcceptedUpdateCompletedWorkflow" {
-				return nil, temporal.NewNonRetryableApplicationError(
-					appErr.Message(),
-					appErr.Type(),
-					wrapped,
-				)
+			if !errors.As(err, &appErr) {
+				return nil, wrapped
 			}
-			return nil, wrapped
+			if !appErr.NonRetryable() {
+				return nil, wrapped
+			}
+			// Preserve non-retryable errors from the handler (signal failures,
+			// AcceptedUpdateCompletedWorkflow, etc.) so Temporal stops retrying.
+			return nil, temporal.NewNonRetryableApplicationError(
+				wrapped.Error(),
+				appErr.Type(),
+				wrapped,
+			)
 		}
 
 		return &resp, nil

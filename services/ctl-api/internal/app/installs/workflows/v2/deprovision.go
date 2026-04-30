@@ -21,7 +21,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
-	sg.nextGroup() // generate install state
+	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly, WithSkippable(false))
@@ -30,8 +30,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	sg.nextGroup() // runner health
-	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -77,6 +76,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox plan", pgtype.Hstore{}, &deprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 		Role:             flw.Role,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
@@ -86,6 +86,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply", pgtype.Hstore{}, &deprovisionsandboxapplyplan.Signal{
 		InstallSandboxID: sandbox.ID,
+		InstallID:        installID,
 	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err

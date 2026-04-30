@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	tclient "go.temporal.io/sdk/client"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
@@ -15,6 +16,10 @@ func (c *Client) Restart(ctx context.Context, queueID string) error {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue")
+	}
+
+	if q.OrgID != nil {
+		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
 	}
 
 	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{

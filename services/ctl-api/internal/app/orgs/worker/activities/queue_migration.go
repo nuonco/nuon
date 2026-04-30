@@ -27,6 +27,16 @@ func (a *Activities) EnsureInstallQueues(ctx context.Context, req EnsureInstallQ
 	return a.installsHelpers.EnsureInstallQueues(ctx, req.InstallID)
 }
 
+type EnsureAppQueueRequest struct {
+	AppID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field AppID
+func (a *Activities) EnsureAppQueue(ctx context.Context, req EnsureAppQueueRequest) error {
+	return a.appsHelpers.EnsureAppQueue(ctx, req.AppID)
+}
+
 type EnsureAppBranchQueueRequest struct {
 	BranchID string `validate:"required"`
 }
@@ -44,7 +54,8 @@ type EnsureComponentQueueRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ComponentID
 func (a *Activities) EnsureComponentQueue(ctx context.Context, req EnsureComponentQueueRequest) error {
-	return a.appsHelpers.EnsureComponentQueue(ctx, req.ComponentID)
+	_, err := a.componentHelpers.EnsureComponentQueues(ctx, req.ComponentID)
+	return err
 }
 
 type EnsureRunnerQueuesRequest struct {
@@ -88,6 +99,29 @@ func (a *Activities) EnsureVCSConnectionQueue(ctx context.Context, req EnsureVCS
 	}
 
 	return a.vcsHelpers.EnsureConnectionQueue(ctx, &vcsConn)
+}
+
+type GetInstallRunnersRequest struct {
+	InstallID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field InstallID
+func (a *Activities) GetInstallRunners(ctx context.Context, req GetInstallRunnersRequest) ([]app.Runner, error) {
+	var rg app.RunnerGroup
+	if res := a.db.WithContext(ctx).
+		Where(app.RunnerGroup{OwnerID: req.InstallID, OwnerType: "installs"}).
+		First(&rg); res.Error != nil {
+		return nil, fmt.Errorf("unable to get install runner group: %w", res.Error)
+	}
+
+	var runners []app.Runner
+	if res := a.db.WithContext(ctx).
+		Where(app.Runner{RunnerGroupID: rg.ID}).
+		Find(&runners); res.Error != nil {
+		return nil, fmt.Errorf("unable to get install runners: %w", res.Error)
+	}
+	return runners, nil
 }
 
 type GetOrgAppsRequest struct {
@@ -178,7 +212,9 @@ type EnableQueuesFeatureFlagRequest struct {
 // @by-field OrgID
 func (a *Activities) EnableQueuesFeatureFlag(ctx context.Context, req EnableQueuesFeatureFlagRequest) error {
 	return a.features.Enable(ctx, req.OrgID, map[string]bool{
-		string(app.OrgFeatureQueues): true,
+		string(app.OrgFeatureQueues):             true,
+		string(app.OrgFeatureAppBranches):        true,
+		string(app.OrgFeatureParallelRunnerJobs): true,
 	})
 }
 

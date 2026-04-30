@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type SyncCustomAppConfigOutput struct {
@@ -61,13 +62,14 @@ func (a *Activities) syncCustomAppConfig(ctx context.Context, onboardingID strin
 	// Run the DB syncer to create components, sandbox, runner, etc.
 	s := syncer.NewDBSyncer(a.db, a.componentHelpers, a.actionsHelpers, appID, cfg, appConfig.ID)
 	if err := s.Sync(ctx); err != nil {
+		humanErr := signal.HumanError(err)
 		a.db.WithContext(ctx).Model(appConfig).Updates(map[string]interface{}{
 			"status":             app.AppConfigStatusError,
-			"status_description": fmt.Sprintf("sync failed: %s", err.Error()),
+			"status_description": fmt.Sprintf("sync failed: %s", humanErr),
 		})
 		// dual-write V2 status
 		errorStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusError))
-		errorStatus.StatusHumanDescription = fmt.Sprintf("sync failed: %s", err.Error())
+		errorStatus.StatusHumanDescription = fmt.Sprintf("sync failed: %s", humanErr)
 		a.db.WithContext(ctx).Model(appConfig).Updates(map[string]any{
 			"status_v2": errorStatus,
 		})

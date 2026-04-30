@@ -17,15 +17,43 @@ import {
   UpdateRunnerButton as UpdateRunnerButtonComponent,
 } from './UpdateRunner'
 
+export type UpdateField = 'container_image_tag' | 'binary_version'
+
+interface IUpdateRunnerButtonProps extends IButtonAsButton {
+  settings: TRunnerSettings
+  field?: UpdateField
+  label?: string
+  modalHeading?: string
+  inputLabel?: string
+  inputPlaceholder?: string
+  submitLabel?: string
+}
+
 export const UpdateRunnerButton = ({
   settings,
+  field = 'container_image_tag',
+  label = 'Update runner version',
+  modalHeading,
+  inputLabel,
+  inputPlaceholder,
+  submitLabel,
   ...props
-}: IButtonAsButton & { settings: TRunnerSettings }) => {
+}: IUpdateRunnerButtonProps) => {
   const { addModal } = useSurfaces()
-  const modal = <UpdateRunnerModal settings={settings} />
+  const modal = (
+    <UpdateRunnerModal
+      settings={settings}
+      field={field}
+      modalHeading={modalHeading}
+      inputLabel={inputLabel}
+      inputPlaceholder={inputPlaceholder}
+      submitLabel={submitLabel}
+    />
+  )
   return (
     <UpdateRunnerButtonComponent
       onOpenModal={() => addModal(modal)}
+      label={label}
       {...props}
     />
   )
@@ -33,8 +61,20 @@ export const UpdateRunnerButton = ({
 
 export const UpdateRunnerModal = ({
   settings,
+  field = 'container_image_tag',
+  modalHeading,
+  inputLabel,
+  inputPlaceholder,
+  submitLabel,
   ...props
-}: Omit<IModal, 'onSubmit'> & { settings: TRunnerSettings }) => {
+}: Omit<IModal, 'onSubmit'> & {
+  settings: TRunnerSettings
+  field?: UpdateField
+  modalHeading?: string
+  inputLabel?: string
+  inputPlaceholder?: string
+  submitLabel?: string
+}) => {
   const { user } = useAuth()
   const { org } = useOrg()
   const { runner } = useRunner()
@@ -47,16 +87,17 @@ export const UpdateRunnerModal = ({
     mutate,
     isPending: isLoading,
   } = useMutation({
-    mutationFn: async (tag: string) => {
+    mutationFn: async (value: string) => {
       await updateRunner({
         runnerId: runner.id,
         orgId: org.id,
         body: {
-          container_image_tag: tag,
+          container_image_tag: field === 'container_image_tag' ? value : settings?.container_image_tag,
           container_image_url: settings?.container_image_url,
           org_awsiam_role_arn: settings?.org_aws_iam_role_arn || '',
           org_k8s_service_account_name: settings?.org_k8s_service_account_name,
           runner_api_url: settings?.runner_api_url,
+          ...(field === 'binary_version' ? { binary_version: value } : {}),
         },
       })
 
@@ -106,6 +147,10 @@ export const UpdateRunnerModal = ({
       error={error}
       onSubmit={(tag) => mutate(tag)}
       onClose={() => removeModal(props.modalId)}
+      modalHeading={modalHeading}
+      inputLabel={inputLabel}
+      inputPlaceholder={inputPlaceholder}
+      submitLabel={submitLabel}
       {...props}
     />
   )

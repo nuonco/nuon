@@ -3,20 +3,17 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { UpdateRunnerButton } from '@/components/runners/management/UpdateRunner'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
-import type { TRunnerProcess, TRunnerSettings } from '@/types'
+import type { TRunnerProcess } from '@/types'
 
 interface IProcessManagementDropdown {
   process: TRunnerProcess
-  settings?: TRunnerSettings
   runnerId: string
   onViewSystemLogs?: () => void
 }
 
 export const ProcessManagementDropdown = ({
   process,
-  settings,
   runnerId,
   onViewSystemLogs,
 }: IProcessManagementDropdown) => {
@@ -31,10 +28,6 @@ export const ProcessManagementDropdown = ({
     >
       <Menu>
         <Text>Controls</Text>
-        {process.composite_status?.status === 'active' && settings ? (
-          <UpdateRunnerButton settings={settings} isMenuButton />
-        ) : null}
-
         {process.composite_status?.status === 'active' ? (
           <ShutdownRunnerControl isMenuButton isManaged runnerId={runnerId} processId={process.id} />
         ) : null}

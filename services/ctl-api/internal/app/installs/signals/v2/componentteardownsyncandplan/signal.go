@@ -28,6 +28,7 @@ const SignalType signal.SignalType = "component-teardown-sync-and-plan"
 
 type Signal struct {
 	InstallComponentID string
+	InstallID          string
 	ComponentID        string
 	WorkflowStepID     string
 	FlowStepID         string
@@ -53,11 +54,15 @@ var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithNoOpCheck = (*Signal)(nil)
 var _ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 
-func (s *Signal) IsNoOpCheckable() bool          { return true }
-func (s *Signal) RequiresPolicyEvaluation() bool { return true }
-func (s *Signal) AutoRetry() bool                { return true }
+func (s *Signal) IsNoOpCheckable() bool                 { return true }
+func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 15 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -69,9 +74,19 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	installID := &s.InstallID
+	if s.InstallID == "" {
+		installID = nil
+	}
+	componentID := &s.ComponentID
+	if s.ComponentID == "" {
+		componentID = nil
+	}
 	return signal.SignalLifecycleContext{
-		ComponentID: &s.ComponentID,
+		InstallID:   installID,
+		ComponentID: componentID,
 		Operation:   "component-teardown",
+		Stage:       "plan",
 	}
 }
 

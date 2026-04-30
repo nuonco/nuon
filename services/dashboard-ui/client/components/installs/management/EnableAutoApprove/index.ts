@@ -7,3 +7,4 @@ export {
   ConfirmOverrideModal as ConfirmOverrideModalComponent,
   EnableAutoApproveModal as EnableAutoApproveModalComponent,
 } from './EnableAutoApprove'
+export { AutoApproveToggle } from './AutoApproveToggle'

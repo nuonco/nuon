@@ -57,13 +57,17 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
   const logStream = deploy?.log_stream
   const stepStatus = step?.status?.status
   const isTerminal = stepStatus === 'error' || stepStatus === 'cancelled' || stepStatus === 'discarded'
+  const isAutoApprove =
+    step?.approval?.type === 'approve-all' ||
+    step?.approval?.response?.type === 'auto-approve'
   const pendingApproval =
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
   const completedApproval =
     step?.approval && (!!step?.approval?.response || responded) && !isTerminal && stepStatus !== 'auto-skipped'
+  const showPlanBelow = completedApproval || isAutoApprove
 
   return (
-    <PageSection flush>
+    <PageSection>
       <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -84,36 +88,31 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
 
-      <PageSection className="!pb-12">
-        <div className="flex flex-col gap-6">
-          {pendingApproval ? (
-            <div className="flex flex-col gap-4">
-              <ApprovalBanner step={step} />
-              <Plan step={step} />
-            </div>
-          ) : null}
-
-          {logStream ? (
-            <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-              <UnifiedLogsProvider>
-                <LogViewerProvider>
-                  <SSELogs />
-                </LogViewerProvider>
-              </UnifiedLogsProvider>
-            </LogStreamProvider>
-          ) : (
-            <LogsSkeleton />
-          )}
-
-          {completedApproval ? (
-            <div className="flex flex-col gap-4">
-              <ApprovalBanner step={step} />
-              <Plan step={step} />
-            </div>
-          ) : null}
+      {pendingApproval && !isAutoApprove ? (
+        <div className="flex flex-col gap-4">
+          <ApprovalBanner step={step} />
+          <Plan step={step} />
         </div>
+      ) : null}
 
-      </PageSection>
+      {logStream ? (
+        <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
+          <UnifiedLogsProvider>
+            <LogViewerProvider>
+              <SSELogs />
+            </LogViewerProvider>
+          </UnifiedLogsProvider>
+        </LogStreamProvider>
+      ) : (
+        <LogsSkeleton />
+      )}
+
+      {showPlanBelow && step ? (
+        <div className="flex flex-col gap-4">
+          {!isAutoApprove && <ApprovalBanner step={step} />}
+          <Plan step={step} />
+        </div>
+      ) : null}
     </PageSection>
   )
 }

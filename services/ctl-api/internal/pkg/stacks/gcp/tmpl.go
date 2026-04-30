@@ -3,6 +3,14 @@ package gcp
 const tmpl = `nuon_install_id          = "{{.Install.ID}}"
 nuon_org_id              = "{{.Runner.OrgID}}"
 nuon_app_id              = "{{.Install.AppID}}"
+{{- if .Install.GCPAccount}}
+{{- if .Install.GCPAccount.ProjectID}}
+gcp_project_id           = "{{.Install.GCPAccount.ProjectID}}"
+{{- end}}
+{{- if .Install.GCPAccount.Region}}
+gcp_region               = "{{.Install.GCPAccount.Region}}"
+{{- end}}
+{{- end}}
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
 {{- if .APIToken}}
 runner_api_token         = "{{.APIToken}}"

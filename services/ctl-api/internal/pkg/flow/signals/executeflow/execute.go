@@ -183,6 +183,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 	cfg := s.stepConfig()
 
+	// eagerQueueSignalID tracks whether we used eager step group generation.
+	// If non-empty, we must call CompleteStepGeneration before executing
+	// groups beyond the eager set.
+	var eagerQueueSignalID string
+	var eagerGroupCount int
+
 	// Generate steps if the workflow doesn't already have them.
 	// Steps may be pre-created (e.g. by tests or by a previous run that was
 	// ContinueAsNew'd) — in that case, skip generation.
@@ -202,7 +208,9 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			return errors.Errorf("workflow %s has no steps and no generate-steps signal", s.WorkflowID)
 		}
 
-		flw, err = flow.GenerateSteps(ctx, cfg, flw, nil)
+		// Use eager step groups: fetch and persist the eager groups so we can
+		// begin executing them while the remaining groups may still be generating.
+		earlyResult, err := flow.GenerateEagerStepGroups(ctx, cfg, flw)
 		if err != nil {
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowID,
@@ -218,11 +226,18 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			return errors.Wrap(err, "unable to generate workflow steps")
 		}
 
+		flw = earlyResult.Workflow
+		eagerQueueSignalID = earlyResult.QueueSignalID
+		eagerGroupCount = len(flw.StepGroups)
+
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "successfully generated all steps",
+				StatusHumanDescription: "generated eager step groups, executing",
+				Metadata: map[string]any{
+					"eager_steps_loaded": true,
+				},
 			},
 		}); err != nil {
 			return err
@@ -348,6 +363,43 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case "skip-group":
 			continue
+		}
+
+		// After the last eager group finishes, complete step generation
+		// to persist all remaining groups before continuing.
+		if gi+1 == eagerGroupCount && eagerQueueSignalID != "" {
+			l.Debug("completing step generation after eager groups", zap.Int("eager_group_count", eagerGroupCount))
+			flw, err = flow.CompleteStepGeneration(ctx, cfg, flw, eagerQueueSignalID)
+			if err != nil {
+				return errors.Wrap(err, "unable to complete step generation")
+			}
+			eagerQueueSignalID = "" // only complete once
+
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusInProgress,
+					StatusHumanDescription: "all steps generated",
+					Metadata: map[string]any{
+						"all_steps_loaded": true,
+					},
+				},
+			})
+
+			// Reload groups from DB now that all are persisted.
+			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+			if len(stepGroups) > 0 {
+				groups = stepGroups
+			} else {
+				groupIdxs := collectGroupIndices(flw.Steps)
+				groups = groups[:0]
+				for _, gIdx := range groupIdxs {
+					groups = append(groups, app.WorkflowStepGroup{
+						GroupIdx: gIdx,
+						Parallel: isGroupParallel(flw.Steps, gIdx),
+					})
+				}
+			}
 		}
 
 		// ContinueAsNew every 5 groups to bound workflow history

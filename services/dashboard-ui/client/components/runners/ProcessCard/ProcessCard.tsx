@@ -1,9 +1,8 @@
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -97,7 +96,6 @@ interface IProcessCard {
   reportedVersion: string
   healthchecks: TRunnerHealthCheck[]
   managementDropdown?: React.ReactNode
-  adminDashboardUrl?: string
 }
 
 export const ProcessCard = ({
@@ -109,7 +107,6 @@ export const ProcessCard = ({
   reportedVersion,
   healthchecks,
   managementDropdown,
-  adminDashboardUrl,
 }: IProcessCard) => {
   const warnings = process.warnings ?? []
 
@@ -129,17 +126,12 @@ export const ProcessCard = ({
             ))}
           </div>
           <ID>{process.id}</ID>
+          <AdminDashboardLink
+            path={`/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
+            label="Admin panel"
+          />
         </div>
         <div className="flex items-center gap-2">
-          {adminDashboardUrl && (
-            <Button
-              size="sm"
-              href={`${adminDashboardUrl}/queues?owner_id=${process.runner_id}&search=runner-process-${process.id}&redirect=true`}
-              target="_blank"
-            >
-              View in admin panel <Icon variant="ArrowSquareOutIcon" />
-            </Button>
-          )}
           {managementDropdown}
         </div>
       </div>

@@ -19,11 +19,15 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/sandboxbuild"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/updatesandbox"
 
+	// general signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/promotion"
+
 	// components signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/configcreated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/inlinebuild"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"

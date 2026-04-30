@@ -67,7 +67,7 @@ type RunnerAuthAWSParams struct {
 
 	   Presigned AWS requests
 	*/
-	Req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest
+	Req *models.ServiceRunnerAuthAWSRequest
 
 	timeout    time.Duration
 	Context    context.Context
@@ -123,13 +123,13 @@ func (o *RunnerAuthAWSParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithReq adds the req to the runner auth a w s params
-func (o *RunnerAuthAWSParams) WithReq(req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) *RunnerAuthAWSParams {
+func (o *RunnerAuthAWSParams) WithReq(req *models.ServiceRunnerAuthAWSRequest) *RunnerAuthAWSParams {
 	o.SetReq(req)
 	return o
 }
 
 // SetReq adds the req to the runner auth a w s params
-func (o *RunnerAuthAWSParams) SetReq(req *models.GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest) {
+func (o *RunnerAuthAWSParams) SetReq(req *models.ServiceRunnerAuthAWSRequest) {
 	o.Req = req
 }
 

@@ -58,8 +58,8 @@ export const TriggeredByFilter = ({
       alignment="right"
       buttonText={
         <>
-          <Icon variant="SlidersIcon" />
-          Trigger filter
+          <Icon variant="FunnelIcon" size="14" />
+          Trigger
         </>
       }
       id="install-filter"

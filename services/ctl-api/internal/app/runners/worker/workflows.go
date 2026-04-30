@@ -40,10 +40,7 @@ func (w *Workflows) All() []any {
 		w.FlushOrphanedJobs,
 		w.ForceShutdown,
 		w.GracefulShutdown,
-		w.HealthcheckCheckRestart,
-		w.HealthcheckJobRunner,
 		w.CronShutdownVM,
-		w.HealthcheckUpdateNeeded,
 		w.InstallStackVersionRun,
 		w.MngFetchToken,
 		w.MngRestart,
@@ -59,7 +56,6 @@ func (w *Workflows) All() []any {
 		w.Restart,
 		w.UpdateVersion,
 		w.EventLoop,
-		w.HealthCheck,
 		wkflow.ProvisionRunner,
 		wkflow.DeprovisionRunner,
 	}

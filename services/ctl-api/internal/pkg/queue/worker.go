@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	queueReceiveTimeout     time.Duration = time.Minute * 1
+	queueReceiveTimeout     time.Duration = time.Minute * 5
 	defaultQueueIdleTimeout time.Duration = time.Minute * 10
 )
 
@@ -109,7 +109,11 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 			}()
 
 			if err := q.handleQueueSignal(gCtx, ref); err != nil {
-				l.Error("error handling workflow signal", zap.Error(err))
+				if errors.Is(err, ErrSignalNoop) {
+					l.Info("signal already processed, noop", zap.String("queue-ref-id", ref.ID))
+				} else {
+					l.Error("error handling workflow signal", zap.Error(err))
+				}
 			}
 		})
 	}

@@ -62,6 +62,14 @@ const (
 	OrgFeatureSupportRole             OrgFeature = "support-role"
 	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
 	OrgFeatureStepsWorkflows          OrgFeature = "steps-workflows"
+	OrgFeatureInstallRename           OrgFeature = "install-rename"
+	OrgFeatureDeployOutputs           OrgFeature = "deploy-outputs"
+	// OrgFeatureTerraformProviderMirror enables build-time vendoring of
+	// terraform providers via `terraform providers mirror` and ships the
+	// resulting filesystem mirror inside the OCI artifact. The install
+	// runner auto-detects the mirror at unpack time, so toggling this
+	// flag only affects the build runner.
+	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 )
 
 type Org struct {
@@ -171,13 +179,16 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	// except install-break-glass and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureInstallBreakGlass:  false,
-		OrgFeatureTerraformInstaller: false,
-		OrgFeatureQueues:             false,
-		OrgFeatureSupportRole:        false,
-		OrgFeatureParallelRunnerJobs: false,
+		OrgFeatureInstallBreakGlass:       false,
+		OrgFeatureTerraformInstaller:      false,
+		OrgFeatureInstallRename:           false,
+		OrgFeatureDeployOutputs:           false,
+		OrgFeatureSupportRole:             false,
+		OrgFeatureTerraformProviderMirror: false,
 
 		// Enabled by default
+		OrgFeatureParallelRunnerJobs:      true,
+		OrgFeatureQueues:                  true,
 		OrgFeatureStratusLayout:           true,
 		OrgFeatureStratusWorkflow:         true,
 		OrgFeatureDashboardSSE:            true,
@@ -244,6 +255,9 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureQueues,
 		OrgFeatureSupportRole,
 		OrgFeatureParallelRunnerJobs,
+		OrgFeatureInstallRename,
+		OrgFeatureDeployOutputs,
+		OrgFeatureTerraformProviderMirror,
 	}
 }
 
@@ -275,6 +289,9 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
 		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
+		OrgFeatureInstallRename:           "Allow renaming installs from the dashboard edit install modal",
+		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
+		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 	}
 }
 
