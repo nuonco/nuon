@@ -329,7 +329,7 @@
   },
   "integrations": {
     "plausible": {
-      "domain": "docs.nuon.co"
+      "domain": "nuon.co"
     }
   },
   "redirects": [
