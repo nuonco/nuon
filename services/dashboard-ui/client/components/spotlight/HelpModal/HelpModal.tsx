@@ -23,6 +23,8 @@ const isMac = () =>
 export const HelpModal = ({ ...props }: IModal) => {
   const mac = useMemo(isMac, [])
   const mod = mac ? '⌘' : 'Ctrl'
+  const alt = mac ? '⌥' : 'Alt'
+  const shift = mac ? '⇧' : 'Shift'
 
   const shortcuts = useMemo(
     () => [
@@ -48,7 +50,7 @@ export const HelpModal = ({ ...props }: IModal) => {
         shortcut: 'Toggle sidebar',
         keys: (
           <Keys>
-            <Kbd>Alt</Kbd>
+            <Kbd>{alt}</Kbd>
             <Kbd>S</Kbd>
           </Keys>
         ),
@@ -57,8 +59,8 @@ export const HelpModal = ({ ...props }: IModal) => {
         shortcut: 'Toggle page sidebar',
         keys: (
           <Keys>
-            <Kbd>Alt</Kbd>
-            <Kbd>Shift</Kbd>
+            <Kbd>{alt}</Kbd>
+            <Kbd>{shift}</Kbd>
             <Kbd>S</Kbd>
           </Keys>
         ),
@@ -72,7 +74,7 @@ export const HelpModal = ({ ...props }: IModal) => {
         ),
       },
     ],
-    [mod]
+    [mod, alt, shift]
   )
 
   const commandEntries = Object.entries(COMMANDS_BY_PREFIX) as [
