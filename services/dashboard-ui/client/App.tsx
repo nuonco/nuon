@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { TAPIError } from '@/types'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { APIHealthProvider } from '@/providers/api-health-provider'
@@ -19,7 +20,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      retry: 1,
+      retry: (failureCount, error) => {
+        const status = (error as TAPIError)?.status
+        if (status && status >= 400 && status < 500) return false
+        return failureCount < 3
+      },
     },
   },
 })
