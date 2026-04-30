@@ -267,7 +267,7 @@ func (c *cli) initStackCmd() *cobra.Command {
 	}
 
 	// Stack-specific flags
-	stackCmd.Flags().StringVar(&stackType, "type", "aws-cloudformation", "Type of infrastructure stack")
+	stackCmd.Flags().StringVar(&stackType, "type", "aws-cloudformation", "Type of infrastructure stack. Supported values: aws-cloudformation, azure-bicep, gcp-terraform")
 	stackCmd.Flags().StringVar(&stackName, "name", "", "Name of the CloudFormation stack (required)")
 	stackCmd.Flags().StringVar(&stackDescription, "description", "", "Description of the stack (required)")
 	stackCmd.Flags().StringVar(&vpcNestedTemplateURL, "vpc-template-url", "", "URL to the CloudFormation nested template for VPC resources")
