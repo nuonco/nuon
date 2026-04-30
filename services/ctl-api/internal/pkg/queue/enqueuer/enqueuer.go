@@ -108,8 +108,6 @@ func (e *Enqueuer) run() {
 			return
 		case id := <-e.ch:
 			e.processOne(id)
-		case <-ticker.C:
-			e.sweep()
 		}
 	}
 }
