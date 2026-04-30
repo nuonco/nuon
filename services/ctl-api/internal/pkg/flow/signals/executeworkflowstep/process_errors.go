@@ -17,6 +17,23 @@ import (
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
 	sig := stepSignal(step)
 
+	// Terminal: signals can mark an error as terminal when retrying cannot
+	// change the outcome (e.g. missing component build, invalid config).
+	// Auto-retrying just burns the budget and delays the user-visible
+	// failure, so short-circuit here. The friendly message is already in
+	// stepErr — markStepFailed handles description and reason consistently
+	// for terminal and non-terminal errors.
+	if signal.IsTerminalError(stepErr) {
+		reasonCode := signal.TerminalReasonCode(stepErr)
+		l.Warn("step failed terminally, skipping auto-retry",
+			zap.String("step_id", step.ID),
+			zap.String("reason_code", reasonCode))
+		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+			"terminal":    true,
+			"reason_code": reasonCode,
+		})
+	}
+
 	// Check auto-retry on inner signal.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {

@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type GetLatestComponentBuildRequest struct {
@@ -19,7 +19,13 @@ func (a *Activities) GetLatestComponentBuild(ctx context.Context, req GetLatestC
 		return nil, err
 	}
 	if len(builds) == 0 {
-		return nil, fmt.Errorf("no builds found for component ID %s", req.ID)
+		// Terminal: retrying will not produce a build. Step-level auto-retry
+		// short-circuits on this marker (see signal.IsTerminalError).
+		return nil, signal.NewTerminalError(
+			"no_component_build",
+			"No active build found for component (id %s). Ensure there is an active build for the component before retrying.",
+			req.ID,
+		)
 	}
 
 	// We only asked for one ID, so we should only have one build
