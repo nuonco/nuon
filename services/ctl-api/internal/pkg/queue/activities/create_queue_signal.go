@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
@@ -31,6 +32,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 	_, _ = rand.Read(suffix)
 
 	queueSignal := app.QueueSignal{
+		SignalContext: queuecctx.FromContext(ctx),
 		Signal: signaldb.SignalData{
 			Signal: req.Signal,
 		},
