@@ -77,6 +77,25 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
   ],
 }
 
+export const COMMAND_DESCRIPTIONS: Record<string, string> = {
+  'build all components': 'Trigger a build for every component in the app',
+  'run': 'Manually trigger an action workflow run',
+  'build': 'Trigger a build for the component',
+  'deploy': 'Deploy the component to the install',
+  'drift scan': 'Run a plan-only deploy to detect configuration drift',
+  'teardown': 'Tear down the component from the install',
+  'deploy all components': 'Deploy every component in the install',
+  'edit inputs': 'Update the install input values',
+  'edit stack overrides': 'Override stack-level configuration for the install',
+  'reprovision install': 'Re-run the install provisioning workflow',
+  'reprovision sandbox': 'Re-run the sandbox provisioning workflow',
+  'restart runner': 'Restart the runner process for the install',
+  'run adhoc action': 'Execute a one-off adhoc action on the install',
+  'sync secrets': 'Sync secrets to the install runner',
+  'view current inputs': 'View the current input values for the install',
+  'view state': 'View the install state object',
+}
+
 const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
   'app:': 'app',
   'apps:': 'app',
