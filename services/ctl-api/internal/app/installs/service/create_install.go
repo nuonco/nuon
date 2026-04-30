@@ -29,6 +29,15 @@ func (c *CreateInstallV2Request) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
+	if c.AWSAccount != nil {
+		if c.AWSAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "AWSAccount region is required",
+				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -154,6 +163,15 @@ type CreateInstallRequest struct {
 func (c *CreateInstallRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	if c.AWSAccount != nil {
+		if c.AWSAccount.Region == "" {
+			return stderr.ErrUser{
+				Description: "AWSAccount region is required",
+				Err:         fmt.Errorf("AWSAccount region is required"),
+			}
+		}
 	}
 
 	return nil
