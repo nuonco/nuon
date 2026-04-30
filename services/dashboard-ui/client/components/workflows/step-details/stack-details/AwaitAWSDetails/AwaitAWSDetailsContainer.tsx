@@ -14,6 +14,7 @@ export const AwaitAWSDetailsContainer = ({ stack, step }: IStackDetails) => {
       orgId={org.id}
       installId={install?.id}
       installAwsRegion={install?.aws_account?.region}
+      hasTerraformInstaller={!!org?.features?.['terraform-installer']}
     />
   )
 }
