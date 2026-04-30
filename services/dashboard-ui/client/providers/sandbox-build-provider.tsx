@@ -1,11 +1,13 @@
-import { createContext, type ReactNode } from 'react'
+import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
 import { getSandboxBuild } from '@/lib'
+import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TAppSandboxBuild } from '@/types'
+import type { TAPIError, TAppSandboxBuild } from '@/types'
 
 type SandboxBuildContextValue = {
   build: TAppSandboxBuild
@@ -28,6 +30,7 @@ export function SandboxBuildProvider({
 }) {
   const { org } = useOrg()
   const { app } = useApp()
+  const { addToast } = useToast()
 
   const {
     data: build,
@@ -40,7 +43,17 @@ export function SandboxBuildProvider({
     enabled: !!org.id && !!app.id && !!buildId,
   })
 
-  if (error) return <ProviderError error={error} />
+  useEffect(() => {
+    if (error && build) {
+      addToast(
+        <Toast heading="Failed to refresh data" theme="warn">
+          {(error as TAPIError)?.error ?? 'Connection issue'}
+        </Toast>
+      )
+    }
+  }, [error])
+
+  if (error && !build) return <ProviderError error={error} />
 
   if (isLoading || !build) return <ProviderLoading />
 
