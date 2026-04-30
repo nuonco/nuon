@@ -70,8 +70,11 @@ func (jq *JSONBQuerier) WhereJSONPath(field string, path []string, operator stri
 // GORM model (e.g. &app.QueueSignal{}).
 func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadata map[string]any) error {
 	// Build a jsonb_set chain that merges each key into the metadata sub-object.
-	// Start from the existing column value, defaulting to '{}'.
-	expr := fmt.Sprintf("COALESCE(%s::jsonb, '{}'::jsonb)", field)
+	// First ensure the metadata key exists as an object, then set each key.
+	expr := fmt.Sprintf(
+		"jsonb_set(COALESCE(%s::jsonb, '{}'::jsonb), '{metadata}', COALESCE(%s::jsonb -> 'metadata', '{}'::jsonb))",
+		field, field,
+	)
 
 	args := make([]any, 0, len(metadata))
 	for k, v := range metadata {
@@ -83,7 +86,6 @@ func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadat
 		args = append(args, string(valJSON))
 	}
 
-	args = append(args, id)
 	if res := db.
 		Model(model).
 		Where("id = ?", id).
@@ -92,6 +94,41 @@ func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadat
 	}
 
 	return nil
+}
+
+// WhereJSONBStatusIn returns a GORM scope that filters rows where the "status"
+// key inside a JSONB column matches one of the provided values.
+//
+// Example:
+//
+//	db.Model(&app.RunnerProcess{}).
+//	    Scopes(generics.WhereJSONBStatusIn("composite_status", "active", "offline")).
+//	    Find(&results)
+func WhereJSONBStatusIn(field string, statuses ...string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where(fmt.Sprintf("%s::jsonb ->> 'status' IN ?", field), statuses)
+	}
+}
+
+// SetJSONBMetadataKey returns a GORM scope that atomically sets a single key
+// inside the metadata sub-object of a JSONB column via jsonb_set. Executes the
+// update as part of the scope — chain .Where() calls before .Scopes().
+//
+// Example:
+//
+//	db.Model(&app.RunnerProcess{}).
+//	    Where("composite_status::jsonb ->> 'status' = ?", "active").
+//	    Scopes(generics.SetJSONBMetadataKey("composite_status", "shutdown_requested", true))
+func SetJSONBMetadataKey(field, key string, value any) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		valJSON, err := json.Marshal(value)
+		if err != nil {
+			_ = db.AddError(fmt.Errorf("unable to marshal value for key %s: %w", key, err))
+			return db
+		}
+		expr := fmt.Sprintf("jsonb_set(COALESCE(%s::jsonb, '{}'::jsonb), '{metadata,%s}', ?::jsonb)", field, key)
+		return db.UpdateColumn(field, gorm.Expr(expr, string(valJSON)))
+	}
 }
 
 // Helper function to join strings
