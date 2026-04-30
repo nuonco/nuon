@@ -7,9 +7,12 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceRunnerPublicSettings service runner public settings
@@ -17,12 +20,67 @@ import (
 // swagger:model service.RunnerPublicSettings
 type ServiceRunnerPublicSettings struct {
 
+	// aws auth method
+	// Enum: ["iid","sts"]
+	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
+
 	// binary version
 	BinaryVersion string `json:"binary_version,omitempty"`
 }
 
 // Validate validates this service runner public settings
 func (m *ServiceRunnerPublicSettings) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateAwsAuthMethod(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+var serviceRunnerPublicSettingsTypeAwsAuthMethodPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["iid","sts"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		serviceRunnerPublicSettingsTypeAwsAuthMethodPropEnum = append(serviceRunnerPublicSettingsTypeAwsAuthMethodPropEnum, v)
+	}
+}
+
+const (
+
+	// ServiceRunnerPublicSettingsAwsAuthMethodIid captures enum value "iid"
+	ServiceRunnerPublicSettingsAwsAuthMethodIid string = "iid"
+
+	// ServiceRunnerPublicSettingsAwsAuthMethodSts captures enum value "sts"
+	ServiceRunnerPublicSettingsAwsAuthMethodSts string = "sts"
+)
+
+// prop value enum
+func (m *ServiceRunnerPublicSettings) validateAwsAuthMethodEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceRunnerPublicSettingsTypeAwsAuthMethodPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ServiceRunnerPublicSettings) validateAwsAuthMethod(formats strfmt.Registry) error {
+	if swag.IsZero(m.AwsAuthMethod) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateAwsAuthMethodEnum("aws_auth_method", "body", m.AwsAuthMethod); err != nil {
+		return err
+	}
+
 	return nil
 }
 

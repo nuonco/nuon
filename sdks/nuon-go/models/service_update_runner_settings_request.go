@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -18,6 +19,10 @@ import (
 //
 // swagger:model service.UpdateRunnerSettingsRequest
 type ServiceUpdateRunnerSettingsRequest struct {
+
+	// aws auth method
+	// Enum: ["iid","sts"]
+	AwsAuthMethod string `json:"aws_auth_method,omitempty"`
 
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	// Maximum: 3.1536e+07
@@ -57,6 +62,10 @@ type ServiceUpdateRunnerSettingsRequest struct {
 func (m *ServiceUpdateRunnerSettingsRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAwsAuthMethod(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAwsMaxInstanceLifetime(formats); err != nil {
 		res = append(res, err)
 	}
@@ -64,6 +73,48 @@ func (m *ServiceUpdateRunnerSettingsRequest) Validate(formats strfmt.Registry) e
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+var serviceUpdateRunnerSettingsRequestTypeAwsAuthMethodPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["iid","sts"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		serviceUpdateRunnerSettingsRequestTypeAwsAuthMethodPropEnum = append(serviceUpdateRunnerSettingsRequestTypeAwsAuthMethodPropEnum, v)
+	}
+}
+
+const (
+
+	// ServiceUpdateRunnerSettingsRequestAwsAuthMethodIid captures enum value "iid"
+	ServiceUpdateRunnerSettingsRequestAwsAuthMethodIid string = "iid"
+
+	// ServiceUpdateRunnerSettingsRequestAwsAuthMethodSts captures enum value "sts"
+	ServiceUpdateRunnerSettingsRequestAwsAuthMethodSts string = "sts"
+)
+
+// prop value enum
+func (m *ServiceUpdateRunnerSettingsRequest) validateAwsAuthMethodEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceUpdateRunnerSettingsRequestTypeAwsAuthMethodPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ServiceUpdateRunnerSettingsRequest) validateAwsAuthMethod(formats strfmt.Registry) error {
+	if swag.IsZero(m.AwsAuthMethod) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateAwsAuthMethodEnum("aws_auth_method", "body", m.AwsAuthMethod); err != nil {
+		return err
+	}
+
 	return nil
 }
 
