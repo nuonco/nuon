@@ -39,6 +39,10 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		event.Stage = ctx.Stage
 	}
 
+	// stamp workflow identity resolved once at handler init
+	event.WorkflowID = h.workflowID
+	event.WorkflowType = h.workflowType
+
 	return event
 }
 

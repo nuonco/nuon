@@ -62,6 +62,16 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	h.queueSignal = queueSignal
 
+	// best-effort: resolve install workflow identity for lifecycle events.
+	// Only attempted when this signal is owned by an install_workflow_step.
+	// Failures are silent — webhook enrichment must never fail signal execution.
+	if queueSignal.OwnerType == (&app.WorkflowStep{}).TableName() && queueSignal.OwnerID != "" {
+		if wf, err := activities.AwaitResolveInstallWorkflowByStepIDByWorkflowStepID(ctx, queueSignal.OwnerID); err == nil && wf != nil {
+			h.workflowID = wf.WorkflowID
+			h.workflowType = wf.WorkflowType
+		}
+	}
+
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
 		V:             h.v,

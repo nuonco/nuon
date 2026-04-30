@@ -74,6 +74,7 @@ type WebhookSignalLifecycleHook struct {
 	httpClient  *http.Client
 	webhookURLs []string
 	db          *gorm.DB
+	appURL      string
 }
 
 var _ signal.SignalLifecycleHook = (*WebhookSignalLifecycleHook)(nil)
@@ -93,8 +94,10 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 	}
 
 	webhookURLs := []string{}
+	appURL := ""
 	if params.Cfg != nil {
 		webhookURLs = params.Cfg.WebhookURLs
+		appURL = strings.TrimSpace(params.Cfg.AppURL)
 	}
 
 	return &WebhookSignalLifecycleHook{
@@ -104,6 +107,7 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		},
 		webhookURLs: normalizeWebhookURLs(webhookURLs),
 		db:          params.DB,
+		appURL:      appURL,
 	}
 }
 
@@ -190,15 +194,29 @@ type operationLifecycleEventData struct {
 	FailureReason string           `json:"failure_reason,omitempty"`
 	Error         string           `json:"error,omitempty"`
 	DurationMs    int64            `json:"duration_ms,omitempty"`
+	WorkflowID    string           `json:"workflow_id,omitempty"`
+	WorkflowType  string           `json:"workflow_type,omitempty"`
 	Context       operationContext `json:"context"`
 	Metadata      map[string]any   `json:"metadata,omitempty"`
 }
 
 type operationContext struct {
-	OrgID       string  `json:"org_id"`
-	InstallID   *string `json:"install_id,omitempty"`
-	ComponentID *string `json:"component_id,omitempty"`
-	SandboxID   *string `json:"sandbox_id,omitempty"`
+	OrgID       string        `json:"org_id"`
+	InstallID   *string       `json:"install_id,omitempty"`
+	ComponentID *string       `json:"component_id,omitempty"`
+	SandboxID   *string       `json:"sandbox_id,omitempty"`
+	Links       *contextLinks `json:"links,omitempty"`
+}
+
+// contextLinks contains dashboard URLs for the entities referenced in the
+// event context. Any field may be empty; the whole block is omitted when no
+// links can be built (e.g. AppURL not configured).
+type contextLinks struct {
+	Org       string `json:"org,omitempty"`
+	Install   string `json:"install,omitempty"`
+	Workflow  string `json:"workflow,omitempty"`
+	Sandbox   string `json:"sandbox,omitempty"`
+	Component string `json:"component,omitempty"`
 }
 
 type webhookTarget struct {
@@ -286,13 +304,16 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 // user-facing transition (e.g. a phase we deliberately suppress).
 func (h *WebhookSignalLifecycleHook) buildEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (operationLifecycleEventData, bool) {
 	data := operationLifecycleEventData{
-		Operation: event.Operation,
-		Stage:     event.Stage,
+		Operation:    event.Operation,
+		Stage:        event.Stage,
+		WorkflowID:   event.WorkflowID,
+		WorkflowType: event.WorkflowType,
 		Context: operationContext{
 			OrgID:       event.OrgID,
 			InstallID:   event.InstallID,
 			ComponentID: event.ComponentID,
 			SandboxID:   event.SandboxID,
+			Links:       h.buildContextLinks(event),
 		},
 	}
 
@@ -463,6 +484,50 @@ func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 	}
 
 	return uniqueTargets
+}
+
+// buildContextLinks builds a contextLinks block of dashboard URLs for the
+// entities referenced in the event. Returns nil when AppURL is unconfigured
+// or no link could be produced.
+func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseEvent) *contextLinks {
+	if h.appURL == "" || event.OrgID == "" {
+		return nil
+	}
+
+	links := &contextLinks{
+		Org: h.dashboardURL(event.OrgID),
+	}
+
+	if event.InstallID != nil && *event.InstallID != "" {
+		links.Install = h.dashboardURL(event.OrgID, "installs", *event.InstallID)
+		if event.WorkflowID != "" {
+			links.Workflow = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "workflows", event.WorkflowID)
+		}
+		if event.SandboxID != nil && *event.SandboxID != "" {
+			links.Sandbox = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "sandbox")
+		}
+		if event.ComponentID != nil && *event.ComponentID != "" {
+			links.Component = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "components", *event.ComponentID)
+		}
+	}
+
+	if links.Org == "" && links.Install == "" && links.Workflow == "" && links.Sandbox == "" && links.Component == "" {
+		return nil
+	}
+	return links
+}
+
+// dashboardURL joins the configured AppURL with the given path pieces. Returns
+// an empty string if AppURL is unset or the join fails.
+func (h *WebhookSignalLifecycleHook) dashboardURL(pieces ...string) string {
+	if h.appURL == "" {
+		return ""
+	}
+	link, err := url.JoinPath(h.appURL, pieces...)
+	if err != nil {
+		return ""
+	}
+	return link
 }
 
 func normalizeWebhookURLs(webhookURLs []string) []string {

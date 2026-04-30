@@ -36,6 +36,13 @@ type SignalPhaseEvent struct {
 	SandboxID   *string `json:"sandbox_id,omitempty"`
 	Operation   string  `json:"operation,omitempty"`
 	Stage       string  `json:"stage,omitempty"`
+
+	// WorkflowID and WorkflowType identify the install workflow that owns this
+	// signal, when applicable. Resolved once at handler init from the signal's
+	// owning install_workflow_step. Empty for signals not owned by a workflow
+	// step (e.g. install-created).
+	WorkflowID   string `json:"workflow_id,omitempty"`
+	WorkflowType string `json:"workflow_type,omitempty"`
 }
 
 type SignalPhaseOutcome struct {
