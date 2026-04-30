@@ -36,7 +36,7 @@ export const Actions = () => {
           </Text>
         </HeadingGroup>
         <div className="shrink-0">
-          <RunAdhocActionButton variant="primary" />
+          <RunAdhocActionButton />
         </div>
       </div>
 

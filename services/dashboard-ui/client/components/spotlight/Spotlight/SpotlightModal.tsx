@@ -60,6 +60,9 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
         const action = result.action
         onClose()
         requestAnimationFrame(() => action())
+      } else if (result.tag === 'org') {
+        onClose()
+        onNavigate(result.path!)
       } else {
         onClose()
         onNavigate(`/${orgId}${result.path}`)
@@ -206,6 +209,12 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
                   onClick={() => setRaw(`action:${liveParsed.query} `)}
                 >
                   action:
+                </button>{' '}
+                <button
+                  className="underline cursor-pointer"
+                  onClick={() => setRaw(`org:${liveParsed.query} `)}
+                >
+                  org:
                 </button>{' '}
                 to narrow your search
               </span>
