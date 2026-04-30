@@ -11,7 +11,7 @@ export type SpotlightResult = {
 )
 
 export type ParsedQuery = {
-  prefix: 'app' | 'install' | 'component' | 'action' | null
+  prefix: 'app' | 'install' | 'component' | 'action' | 'org' | null
   query: string
   command: string | null
 }
@@ -22,6 +22,7 @@ export const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
   { label: 'Installs', path: '/installs', icon: 'Cube' },
   { label: 'Team', path: '/team', icon: 'UsersThree' },
   { label: 'Build runner', path: '/runner', icon: 'Hammer' },
+  { label: 'Webhooks', path: '/webhooks', icon: 'WebhooksLogo' },
 ]
 
 export const INSTALL_SUB_PAGES = [
@@ -30,6 +31,8 @@ export const INSTALL_SUB_PAGES = [
   'Runner',
   'Workflows',
   'Stacks',
+  'Inputs',
+  'State',
 ]
 
 export const APP_SUB_PAGES = [
@@ -45,22 +48,52 @@ export const APP_BRANCH_SUB_PAGES = [
   'Sandbox',
 ]
 
-export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
+export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:', 'org:']
 
 export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix']>, string[]>> = {
   app: [
     'build all components',
   ],
+  action: [
+    'run',
+  ],
+  component: [
+    'build',
+    'deploy',
+    'drift scan',
+    'teardown',
+  ],
   install: [
-    'run adhoc action',
+    'deploy all components',
     'edit inputs',
-    'view current inputs',
-    'sync secrets',
+    'edit stack overrides',
     'reprovision install',
     'reprovision sandbox',
-    'deploy all components',
     'restart runner',
+    'run adhoc action',
+    'sync secrets',
+    'view current inputs',
+    'view state',
   ],
+}
+
+export const COMMAND_DESCRIPTIONS: Record<string, string> = {
+  'build all components': 'Trigger a build for every component in the app',
+  'run': 'Manually trigger an action workflow run',
+  'build': 'Trigger a build for the component',
+  'deploy': 'Deploy the component to the install',
+  'drift scan': 'Run a plan-only deploy to detect configuration drift',
+  'teardown': 'Tear down the component from the install',
+  'deploy all components': 'Deploy every component in the install',
+  'edit inputs': 'Update the install input values',
+  'edit stack overrides': 'Override stack-level configuration for the install',
+  'reprovision install': 'Re-run the install provisioning workflow',
+  'reprovision sandbox': 'Re-run the sandbox provisioning workflow',
+  'restart runner': 'Restart the runner process for the install',
+  'run adhoc action': 'Execute a one-off adhoc action on the install',
+  'sync secrets': 'Sync secrets to the install runner',
+  'view current inputs': 'View the current input values for the install',
+  'view state': 'View the install state object',
 }
 
 const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
@@ -72,6 +105,8 @@ const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
   'components:': 'component',
   'action:': 'action',
   'actions:': 'action',
+  'org:': 'org',
+  'orgs:': 'org',
 }
 
 export function parseQuery(raw: string): ParsedQuery {

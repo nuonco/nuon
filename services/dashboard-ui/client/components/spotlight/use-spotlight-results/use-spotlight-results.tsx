@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TIconVariant } from '@/components/common/Icon'
+import { getOrgs } from '@/lib/ctl-api/orgs/get-orgs'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
 import { getComponents } from '@/lib/ctl-api/apps/components/get-components'
@@ -15,8 +16,17 @@ import {
   InstallReprovisionSandboxModal,
   InstallDeployAllComponentsModal,
   InstallViewCurrentInputsModal,
+  InstallViewStateModal,
+  InstallEditStackOverridesModal,
 } from '../InstallCommandModals'
 import { AppBuildAllComponentsModal } from '../AppCommandModals'
+import {
+  SpotlightBuildComponentModal,
+  SpotlightDeployComponentModal,
+  SpotlightTeardownComponentModal,
+  SpotlightDriftScanComponentModal,
+} from '../ComponentCommandModals'
+import { SpotlightRunActionModal } from '../ActionCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
 import {
   type SpotlightResult,
@@ -94,6 +104,12 @@ export function useSpotlightResults(
       return { appActions, installActions }
     },
     enabled: parsed.prefix === 'action' && !!orgId,
+  })
+
+  const { data: orgsResult, isFetching: orgsFetching } = useQuery({
+    queryKey: ['spotlight', 'orgs', parsed.query],
+    queryFn: () => getOrgs({ q: parsed.query || undefined, limit: 10 }),
+    enabled: parsed.prefix === 'org',
   })
 
   const { data: componentResults, isFetching: componentsFetching } = useQuery({
@@ -229,11 +245,11 @@ export function useSpotlightResults(
         }
         const commands: SpotlightResult[] = [
           {
-            label: `${name} › Run adhoc action`,
+            label: `${name} › Deploy all components`,
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'Lightning',
-            action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
+            action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
           },
           {
             label: `${name} › Edit inputs`,
@@ -243,18 +259,11 @@ export function useSpotlightResults(
             action: () => addModal?.(<InstallEditInputsModal installId={installId} />),
           },
           {
-            label: `${name} › View current inputs`,
+            label: `${name} › Edit stack overrides`,
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'Lightning',
-            action: () => addModal?.(<InstallViewCurrentInputsModal installId={installId} />),
-          },
-          {
-            label: `${name} › Sync secrets`,
-            subtitle: install.app?.name,
-            tag: 'command',
-            icon: 'Lightning',
-            action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
+            action: () => addModal?.(<InstallEditStackOverridesModal installId={installId} />),
           },
           {
             label: `${name} › Reprovision install`,
@@ -270,13 +279,6 @@ export function useSpotlightResults(
             icon: 'Lightning',
             action: () => addModal?.(<InstallReprovisionSandboxModal installId={installId} />),
           },
-          {
-            label: `${name} › Deploy all components`,
-            subtitle: install.app?.name,
-            tag: 'command',
-            icon: 'Lightning',
-            action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
-          },
           ...(install.runner_id ? [{
             label: `${name} › Restart runner`,
             subtitle: install.app?.name,
@@ -284,6 +286,34 @@ export function useSpotlightResults(
             icon: 'Lightning',
             action: () => addModal?.(<RestartRunnerModal runnerId={install.runner_id!} />),
           } satisfies SpotlightResult] : []),
+          {
+            label: `${name} › Run adhoc action`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
+          },
+          {
+            label: `${name} › Sync secrets`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
+          },
+          {
+            label: `${name} › View current inputs`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallViewCurrentInputsModal installId={installId} />),
+          },
+          {
+            label: `${name} › View state`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallViewStateModal installId={installId} />),
+          },
         ]
         for (const cmd of commands) {
           const cmdName = cmd.label.split(' › ')[1]
@@ -295,29 +325,70 @@ export function useSpotlightResults(
       return items
     }
 
+    if (parsed.prefix === 'org') {
+      return (orgsResult ?? []).map((org): SpotlightResult => ({
+        label: org.name ?? org.id!,
+        tag: 'org',
+        path: `/${org.id}`,
+        icon: 'Buildings',
+      }))
+    }
+
     if (parsed.prefix === 'action' && actionResults) {
       const items: SpotlightResult[] = []
+      const appActionMap = new Map<string, typeof actionResults.appActions[0]['actions'][0]>()
+      for (const { actions } of actionResults.appActions) {
+        for (const action of actions) {
+          if (action.id) appActionMap.set(action.id, action)
+        }
+      }
       for (const { app, actions } of actionResults.appActions) {
         for (const action of actions) {
-          items.push({
-            label: `${app.name} › ${action.name}`,
-            tag: 'action',
-            path: `/apps/${app.id}/actions/${action.id}`,
-            icon: 'AppWindow',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${app.name} › ${action.name}`,
+              tag: 'action',
+              path: `/apps/${app.id}/actions/${action.id}`,
+              icon: 'AppWindow',
+            })
+          }
         }
       }
       for (const { install, actions } of actionResults.installActions) {
         for (const action of actions) {
-          const name = action.action_workflow?.name ?? action.action_workflow_id ?? ''
+          const actionWorkflow = action.action_workflow
+          const name = actionWorkflow?.name ?? action.action_workflow_id ?? ''
           if (parsed.query && !tokenMatch(name, parsed.query)) continue
-          items.push({
-            label: `${install.name} › ${name}`,
-            subtitle: install.app?.name,
-            tag: 'action',
-            path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
-            icon: 'Cube',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${install.name} › ${name}`,
+              subtitle: install.app?.name,
+              tag: 'action',
+              path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
+              icon: 'Cube',
+            })
+          }
+          const fullAction = appActionMap.get(action.action_workflow_id!) ?? actionWorkflow
+          const latestConfig = fullAction?.configs?.at(-1)
+          const hasManualTrigger = latestConfig?.triggers?.some((t) => t.type === 'manual')
+          if (hasManualTrigger && fullAction && latestConfig) {
+            const runCmd: SpotlightResult = {
+              label: `${install.name} › ${name} › Run`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'Lightning',
+              action: () => addModal?.(
+                <SpotlightRunActionModal
+                  installId={install.id!}
+                  action={fullAction}
+                  actionConfigId={latestConfig.id!}
+                />
+              ),
+            }
+            if (parsed.command === null || !parsed.command || tokenMatch('Run', parsed.command)) {
+              items.push(runCmd)
+            }
+          }
         }
       }
       return items
@@ -327,31 +398,80 @@ export function useSpotlightResults(
       const items: SpotlightResult[] = []
       for (const { app, components } of componentResults.appComps) {
         for (const comp of components) {
-          items.push({
-            label: `${app.name} › ${comp.name}`,
-            tag: 'component',
-            path: `/apps/${app.id}/components/${comp.id}`,
-            icon: 'AppWindow',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${app.name} › ${comp.name}`,
+              tag: 'component',
+              path: `/apps/${app.id}/components/${comp.id}`,
+              icon: 'AppWindow',
+            })
+          }
+          const buildCmd: SpotlightResult = {
+            label: `${app.name} › ${comp.name} › Build`,
+            subtitle: app.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<SpotlightBuildComponentModal appId={app.id!} component={comp} />),
+          }
+          const cmdName = 'Build'
+          if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+            items.push(buildCmd)
+          }
         }
       }
       for (const { install, components } of componentResults.installComps) {
         for (const comp of components) {
-          items.push({
-            label: `${install.name} › ${comp.component?.name ?? comp.id}`,
-            tag: 'component',
-            path: `/installs/${install.id}/components/${comp.component_id}`,
-            icon: 'Cube',
-          })
+          const compName = comp.component?.name ?? comp.id
+          const installId = install.id!
+          if (parsed.command === null) {
+            items.push({
+              label: `${install.name} › ${compName}`,
+              tag: 'component',
+              path: `/installs/${installId}/components/${comp.component_id}`,
+              icon: 'Cube',
+            })
+          }
+          if (comp.component) {
+            const component = comp.component
+            const commands: SpotlightResult[] = [
+              {
+                label: `${install.name} › ${compName} › Deploy`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightDeployComponentModal installId={installId} component={component} />),
+              },
+              {
+                label: `${install.name} › ${compName} › Teardown`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightTeardownComponentModal installId={installId} component={component} />),
+              },
+              {
+                label: `${install.name} › ${compName} › Drift scan`,
+                subtitle: install.app?.name,
+                tag: 'command',
+                icon: 'Lightning',
+                action: () => addModal?.(<SpotlightDriftScanComponentModal installId={installId} component={component} />),
+              },
+            ]
+            for (const cmd of commands) {
+              const cmdName = cmd.label.split(' › ').pop()!
+              if (parsed.command === null || !parsed.command || tokenMatch(cmdName, parsed.command)) {
+                items.push(cmd)
+              }
+            }
+          }
         }
       }
       return items
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
+  }, [liveParsed, parsed, appsResult, installsResult, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
 
-  const isFetching = appsFetching || installsFetching || actionsFetching || componentsFetching
+  const isFetching = appsFetching || installsFetching || orgsFetching || actionsFetching || componentsFetching
 
   return { results, isFetching }
 }

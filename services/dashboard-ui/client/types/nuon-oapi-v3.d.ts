@@ -4289,6 +4289,7 @@ export interface components {
       queue?: components["schemas"]["app.Queue"];
       queue_id?: string;
       signal?: components["schemas"]["signaldb.SignalData"];
+      signal_context?: components["schemas"]["cctx.SignalContext"];
       status?: components["schemas"]["app.CompositeStatus"];
       type?: string;
       updated_at?: string;
@@ -4951,6 +4952,12 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
     "blobstore.Blob": Record<string, never>;
+    "cctx.SignalContext": {
+      account_id?: string;
+      log_stream_id?: string;
+      org_id?: string;
+      trace_id?: string;
+    };
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */
