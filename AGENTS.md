@@ -1,22 +1,28 @@
 # Nuon Monorepo Overview
 
-This is a comprehensive monorepo for Nuon, a BYOC (Bring Your Own Cloud) platform that helps software vendors deploy applications to their customers' cloud accounts.
+This is a comprehensive monorepo for Nuon, a BYOC (Bring Your Own Cloud) platform that helps software vendors deploy
+applications to their customers' cloud accounts.
 
 ## Repository Structure
 
-This monorepo is written primarily in **Go** (main module: `github.com/nuonco/nuon`) with several TypeScript/JavaScript projects for UI components.
+This monorepo is written primarily in **Go** (main module: `github.com/nuonco/nuon`) with several TypeScript/JavaScript
+projects for UI components.
 
 ### Core Directories
 
 #### `/bins/` - Command Line Tools & Executables
+
 Binaries compiled and run as executables (not deployed as Kubernetes services):
+
 - **`cli/`** - Public-facing CLI tool for developers (`nuon` command)
 - **`nuonctl/`** - Internal CLI with 80+ operational scripts and dev tooling
 - **`runner/`** - Deployment execution binary (runs in customer K8s + VMs)
 
 #### `/services/` - Web Services & Applications
+
 - **`ctl-api/`** - Control API service (Go)
-- **`dashboard-ui/`** - Main dashboard UI: the running app is a client-side SPA served by a Go server from the `client/` directory (not the `src/` Next.js app)
+- **`dashboard-ui/`** - Main dashboard UI: the running app is a client-side SPA served by a Go server from the `client/`
+  directory (not the `src/` Next.js app)
 - **`website-v2/`** - Marketing website (Astro)
 - **`website/`** - Legacy website (Astro)
 - **`wiki/`** - Internal documentation site (Astro + Starlight)
@@ -28,7 +34,9 @@ Binaries compiled and run as executables (not deployed as Kubernetes services):
   - **`workers-infra-tests/`** - Infrastructure testing service
 
 #### `/pkg/` - Shared Go Libraries
+
 Core shared packages used across Go services:
+
 - `api/` - API client libraries
 - `config/` - Configuration management
 - `helm/` - Helm chart operations
@@ -38,7 +46,9 @@ Core shared packages used across Go services:
 - `temporal/` - Temporal workflow engine integration
 
 #### `/infra/` - Infrastructure as Code
+
 Terraform modules and configurations for:
+
 - AWS infrastructure
 - Azure support
 - Kubernetes (EKS) clusters
@@ -47,34 +57,43 @@ Terraform modules and configurations for:
 - Developer environments
 
 #### `/charts/` - Helm Charts
+
 Kubernetes Helm charts for various components:
+
 - `common/` - Shared chart templates
 - `temporal/` - Temporal workflow engine
 - Application-specific charts
 
 #### `/docs/` - Documentation
+
 - API reference documentation
 - User guides and tutorials
 - Platform support documentation
 - Production readiness guides
 
 #### `/seed/` - Example Applications
+
 Template applications and configurations for different deployment scenarios:
+
 - EKS examples
 - Azure AKS examples
 - Component-based applications
 - Various infrastructure patterns
 
 #### `/exp/` - Experimental Features
+
 Development and testing area for new features and proof-of-concepts
 
 #### `/graveyard/` - Deprecated Code
+
 Archive of deprecated code and components
 
 #### `/images/` - Container Images
+
 Dockerfiles and build configurations for various container images
 
 #### `/wiki/` - Internal Company Wiki
+
 Team documentation, processes, and company information
 
 ## Key Technologies
@@ -92,11 +111,12 @@ Team documentation, processes, and company information
 Based on the repository structure, these commands are likely useful:
 
 ### Development
+
 ```bash
 # CLI development
 cd bins/cli && go run main.go
 
-# Dashboard UI development  
+# Dashboard UI development
 cd services/dashboard-ui && npm run dev
 
 # Wiki development
@@ -104,12 +124,14 @@ cd services/wiki && npm run dev
 ```
 
 ### Infrastructure
+
 ```bash
 # Terraform operations
 cd infra/[module] && terraform plan
 ```
 
 ### Testing
+
 ```bash
 # Go tests
 go test ./...
@@ -138,6 +160,7 @@ go generate ./...
 ```
 
 **When to run code generation:**
+
 - After adding/modifying Go struct types (especially in `/internal/app/`)
 - After adding `@temporal-gen` annotations to functions
 - After changing API endpoint definitions with swagger annotations
@@ -145,6 +168,7 @@ go generate ./...
 - When generated files (`.activity_gen.go`, `.workflow_gen.go`, swagger docs) are out of sync
 
 **Key `go:generate` locations:**
+
 - `services/ctl-api/main.go` - API types and swagger docs
 - `pkg/workflows/types/executors/gen.go` - Temporal activity/workflow generation
 - `sdks/nuon-go/client.go` - Go SDK client generation
@@ -206,6 +230,7 @@ docker exec -i clickhouse-01 clickhouse-client \
 When working with Go code in this repository, agents should follow these practices:
 
 ### Code Formatting
+
 - **CRITICAL: Always run formatting tools after making ANY Go code changes**
 - **Use `gofmt` and `goimports` on directories/packages, not individual files**
 - Run these commands automatically after each change to prevent import and formatting issues
@@ -213,21 +238,23 @@ When working with Go code in this repository, agents should follow these practic
 - This prevents formatting inconsistencies and maintains code quality
 
 **Recommended workflow after making Go changes:**
-  ```bash
-  # Format and fix imports for entire package/directory (PREFERRED)
-  gofmt -w ./services/ctl-api/internal/app/installs/worker/plan/
-  goimports -w ./services/ctl-api/internal/app/installs/worker/plan/
 
-  # Or format recursively from a parent directory
-  gofmt -w ./services/ctl-api/...
-  goimports -w ./services/ctl-api/...
+```bash
+# Format and fix imports for entire package/directory (PREFERRED)
+gofmt -w ./services/ctl-api/internal/app/installs/worker/plan/
+goimports -w ./services/ctl-api/internal/app/installs/worker/plan/
 
-  # For pkg/ changes
-  gofmt -w ./pkg/plans/types/
-  goimports -w ./pkg/plans/types/
-  ```
+# Or format recursively from a parent directory
+gofmt -w ./services/ctl-api/...
+goimports -w ./services/ctl-api/...
+
+# For pkg/ changes
+gofmt -w ./pkg/plans/types/
+goimports -w ./pkg/plans/types/
+```
 
 **Why this matters:**
+
 - `gofmt` ensures consistent code style across the codebase
 - `goimports` automatically adds missing imports and removes unused ones
 - Running on directories catches all changed files in one pass
@@ -235,6 +262,7 @@ When working with Go code in this repository, agents should follow these practic
 - Avoids the need to manually add/remove import statements
 
 ### Code Quality
+
 - Follow existing code patterns and conventions in each service
 - Use proper error handling with meaningful error messages
 - Add appropriate logging with structured fields
@@ -242,7 +270,8 @@ When working with Go code in this repository, agents should follow these practic
 
 ### GORM Query Conventions
 
-**Always use struct-based `Where` clauses instead of raw SQL strings.** This applies to all GORM queries throughout the codebase.
+**Always use struct-based `Where` clauses instead of raw SQL strings.** This applies to all GORM queries throughout the
+codebase.
 
 ```go
 // ✅ CORRECT - Struct-based Where clause
@@ -256,22 +285,25 @@ db.Where("owner_id = ? AND owner_type = ?", stepID, "install_workflow_steps").Fi
 ```
 
 **Why:**
+
 - Type-safe: compiler catches field name typos
 - Refactor-safe: field renames propagate automatically
 - Consistent: matches the established codebase pattern
 
-**Note:** Use `(&app.Model{}).TableName()` (pointer receiver) when the model's `TableName()` method has a pointer receiver.
+**Note:** Use `(&app.Model{}).TableName()` (pointer receiver) when the model's `TableName()` method has a pointer
+receiver.
 
 ### Logging
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
 
-| Component | Logger |
-|-----------|--------|
+| Component                 | Logger                  |
+| ------------------------- | ----------------------- |
 | `pkg/` with logger access | `*zap.Logger` passed in |
-| `pkg/` init functions | Standard `log` package |
+| `pkg/` init functions     | Standard `log` package  |
 
 ### API Development
+
 - Use proper Swagger annotations for all HTTP endpoints
 - Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints
 - Follow the established route patterns in each service
@@ -291,23 +323,27 @@ db.Where("owner_id = ? AND owner_type = ?", stepID, "install_workflow_steps").Fi
 The Nuon platform implements a comprehensive guided onboarding system:
 
 ### Architecture Overview
+
 - **Backend**: Journey tracking in `ctl-api` with JSONB-stored user journey steps
 - **Frontend**: Contextual modals in `dashboard-ui` that guide users through key actions
 - **Integration**: Real-time journey updates via AccountProvider polling
 
 ### Journey Flow
+
 1. **Account Creation** → User signs up
-2. **Organization Creation** → User creates first org  
+2. **Organization Creation** → User creates first org
 3. **App Configuration** → User runs `nuon apps sync` → Navigate to app page
 4. **Install Creation** → User creates first install → Complete onboarding
 
 ### Key Implementation Details
+
 - Journey steps store entity IDs (app_id, install_id) for navigation
-- Modal system prevents infinite reopen loops via dismissal tracking  
+- Modal system prevents infinite reopen loops via dismissal tracking
 - Cross-service journey updates via dependency injection
 - Non-blocking: Journey failures never break core functionality
 
 ### Files to Reference
+
 - **Backend**: `services/ctl-api/internal/app/accounts/helpers/update_user_journey_step.go`
 - **Frontend**: `services/dashboard-ui/src/components/Apps/*Modal.tsx`
 - **Data Structure**: `services/ctl-api/internal/app/user_journey.go`
@@ -319,6 +355,7 @@ Nuon uses a sophisticated multi-tenant RBAC (Role-Based Access Control) system f
 ### Account Types & Creation Flows
 
 **Account Types** (`internal/app/account.go`):
+
 - `AccountTypeAuth0` - Regular users (external customers)
 - `AccountTypeService` - Service accounts for automation
 - `AccountTypeCanary` - Internal testing accounts
@@ -327,6 +364,7 @@ Nuon uses a sophisticated multi-tenant RBAC (Role-Based Access Control) system f
 **Account Creation Paths** (`internal/middlewares/auth/account_token.go:71-104`):
 
 1. **Self-Signup Flow**:
+
    - No pending `OrgInvite` found for email
    - Gets `DefaultEvaluationJourneyWithAutoOrg()` with user journey tracking
    - **Automatically creates trial org** with pattern `${email}-trial`
@@ -340,13 +378,13 @@ Nuon uses a sophisticated multi-tenant RBAC (Role-Based Access Control) system f
 
 ### Permission Architecture (Three-Layer RBAC)
 
-**1. Accounts** - Individual users or service accounts
-**2. Roles** - Permission containers with specific purposes
-**3. Policies** - Actual permission sets attached to roles
+**1. Accounts** - Individual users or service accounts **2. Roles** - Permission containers with specific purposes **3.
+Policies** - Actual permission sets attached to roles
 
 ### Role System
 
 **Standard Org Roles** (`internal/pkg/authz/create_org_roles.go`):
+
 - `RoleTypeOrgAdmin` - Full organization administration
 - `RoleTypeInstaller` - Install management permissions
 - `RoleTypeRunner` - Runner execution permissions
@@ -358,11 +396,13 @@ Each role gets associated policies with permissions stored in PostgreSQL HSTORE 
 **Account → Org Access Flow**:
 
 1. **Org Role Creation** (`authzClient.CreateOrgRoles(ctx, orgID)`):
+
    - Creates standard roles for the organization
    - Each role gets policies with appropriate permissions
    - Requires account context for audit trail (`CreatedByID`)
 
 2. **Account Role Assignment** (`authzClient.AddAccountOrgRole(ctx, roleType, orgID, accountID)`):
+
    - Creates `AccountRole` junction table entries
    - Links specific accounts to specific org roles
    - Uses conflict resolution to prevent duplicates
@@ -374,8 +414,8 @@ Each role gets associated policies with permissions stored in PostgreSQL HSTORE 
 
 ### Context & Audit Requirements
 
-**CreatedByID Pattern**:
-All major entities require audit tracking:
+**CreatedByID Pattern**: All major entities require audit tracking:
+
 - Org, Role, Policy models have `CreatedByID` fields
 - `BeforeCreate` hooks automatically populate from context
 - **Critical**: Must set account context before operations:
@@ -386,12 +426,14 @@ All major entities require audit tracking:
 ### Auto-Org Creation Implementation
 
 **New Self-Signup Flow** (implemented):
+
 - `CreateAccountWithAutoOrg()` creates account + trial org atomically
 - Sets proper account context for org creation hooks
 - Creates org roles and assigns user as admin
 - User journey reflects completed org creation step
 
 **Key Files**:
+
 - `internal/pkg/account/create.go` - Account creation with auto org
 - `internal/middlewares/auth/account_token.go` - Auth flow logic
 - `internal/app/user_journey.go` - Journey step definitions
@@ -400,12 +442,14 @@ All major entities require audit tracking:
 ### User Journey Integration
 
 **Updated Journey Flow**:
+
 1. **Account Created** → Self-signup account created
 2. **Org Created** → Trial org automatically created (marked complete)
 3. **App Created** → User runs `nuon apps sync`
 4. **Install Created** → User creates first install
 
 **Journey Helpers Pattern**:
+
 - Cross-domain operations use helpers (e.g., `accountsHelpers.UpdateUserJourneyStep`)
 - Helpers injected via FX dependency injection
 - Non-blocking: Journey failures never break core operations
@@ -420,19 +464,23 @@ All major entities require audit tracking:
 
 ## CLAUDE.md Context Files
 
-This monorepo contains 14 CLAUDE.md files that provide component-specific context and instructions for AI assistants. These files contain critical domain knowledge, development patterns, and service-specific guidance.
+This monorepo contains 14 CLAUDE.md files that provide component-specific context and instructions for AI assistants.
+These files contain critical domain knowledge, development patterns, and service-specific guidance.
 
 ### CLAUDE.md File Locations
 
 **Root Level:**
+
 - `/CLAUDE.md` - Main project instructions (references this AGENTS.md file)
 
 **Binary Tools (`/bins/`):**
+
 - `/bins/cli/CLAUDE.md` - Public CLI tool (`nuon` command)
 - `/bins/nuonctl/CLAUDE.md` - Internal CLI with operational scripts
 - `/bins/runner/CLAUDE.md` - Deployment execution binary
 
 **Services (`/services/`):**
+
 - `/services/ctl-api/CLAUDE.md` - Control API service (Go)
 - `/services/dashboard-ui/CLAUDE.md` - Main dashboard UI (Next.js/React)
 - `/services/e2e/CLAUDE.md` - End-to-end testing service
@@ -451,18 +499,21 @@ This monorepo contains 14 CLAUDE.md files that provide component-specific contex
 When starting any new session to work on this monorepo, AI assistants should:
 
 1. **Always load the root context files first:**
+
    ```
    Read /CLAUDE.md (main project instructions)
    Read /AGENTS.md (this comprehensive overview)
    ```
 
 2. **Load component-specific context based on the task:**
+
    - If working on the CLI: Read `/bins/cli/CLAUDE.md`
    - If working on the API: Read `/services/ctl-api/CLAUDE.md`
    - If working on the dashboard: Read `/services/dashboard-ui/CLAUDE.md`
    - If working across multiple services: Read all relevant CLAUDE.md files
 
 3. **Use globbing to discover all context files:**
+
    ```bash
    # Find all CLAUDE.md files in the monorepo
    glob pattern: **/CLAUDE.md
@@ -489,21 +540,24 @@ When starting any new session to work on this monorepo, AI assistants should:
 
 ## Verifying OCI Artifacts from Local Development
 
-When running locally, build artifacts (OCI images) are pushed to the **orgs-stage** AWS account ECR registry. This section documents how to verify artifacts without running the install runner.
+When running locally, build artifacts (OCI images) are pushed to the **orgs-stage** AWS account ECR registry. This
+section documents how to verify artifacts without running the install runner.
 
 ### ECR Configuration for Local Development
 
-- **AWS Account**: `766121324316` (orgs-stage) - *loaded from config, not hardcoded*
+- **AWS Account**: `766121324316` (orgs-stage) - _loaded from config, not hardcoded_
 - **Region**: `us-west-2`
 - **Repository Pattern**: `<org_id>/<app_id>`
 - **Tag**: Build ID (e.g., `bldq7fplr1up5atx5zpxotbabm`)
 
 The configuration is loaded from the Kubernetes ConfigMap `ctl-api-stage` in the stage cluster. To check current values:
+
 ```bash
 kubectl get configmap ctl-api-stage -n ctl-api -o jsonpath='{.data}' | jq -r 'to_entries[] | select(.key | contains("MANAGEMENT")) | "\(.key): \(.value)"'
 ```
 
 Key config values:
+
 - `MANAGEMENT_ACCOUNT_ID`: AWS account ID for ECR (currently `766121324316`)
 - `MANAGEMENT_ECR_REGISTRY_ID`: ECR registry ID (currently `766121324316`)
 - `MANAGEMENT_IAM_ROLE_ARN`: Role to assume for ECR access
@@ -511,6 +565,7 @@ Key config values:
 ### Verifying Build Artifacts
 
 **1. Login to orgs-stage ECR:**
+
 ```bash
 # Using orgs-stage.NuonAdmin profile directly
 aws ecr get-login-password --region us-west-2 --profile orgs-stage.NuonAdmin | \
@@ -518,12 +573,14 @@ aws ecr get-login-password --region us-west-2 --profile orgs-stage.NuonAdmin | \
 ```
 
 **2. List images in a repository:**
+
 ```bash
 aws ecr list-images --region us-west-2 --profile orgs-stage.NuonAdmin \
   --repository-name "<org_id>/<app_id>"
 ```
 
 **3. Pull and inspect artifact with ORAS:**
+
 ```bash
 # Pull the artifact
 oras pull 766121324316.dkr.ecr.us-west-2.amazonaws.com/<org_id>/<app_id>:<build_id> \
@@ -536,12 +593,12 @@ cat /tmp/artifact-verify/manifest.yaml  # For Kubernetes manifest builds
 
 ### Artifact Contents by Component Type
 
-| Component Type | Artifact Contents |
-|----------------|-------------------|
+| Component Type      | Artifact Contents                                                     |
+| ------------------- | --------------------------------------------------------------------- |
 | Kubernetes Manifest | `manifest.yaml` - Rendered YAML (kustomize output or inline manifest) |
-| Terraform Module | `*.tf` files - Terraform configuration files |
-| Helm Chart | Chart archive with templates |
-| Docker Build | Container image layers |
+| Terraform Module    | `*.tf` files - Terraform configuration files                          |
+| Helm Chart          | Chart archive with templates                                          |
+| Docker Build        | Container image layers                                                |
 
 ### Example: Verifying a Kubernetes Manifest Build
 
@@ -561,18 +618,20 @@ cat /tmp/verify/manifest.yaml
 ### Troubleshooting
 
 **Repository not found:**
+
 - Ensure you're in the correct AWS account (766121324316, not the stage account 676549690856)
 - Check that the app creation workflow completed successfully (ECR repo is created during app provisioning)
 
 **Authentication errors:**
+
 - Refresh your AWS SSO session: `aws sso login --profile stage.NuonAdmin`
 - Re-assume the support role
 
 **Empty repository:**
+
 - Build workflow may have failed - check Temporal UI for workflow status
 - Check runner logs for build errors
 
 ## Project Status
 
-Main branch: `main`
-Repository is clean with recent commits related to CLI improvements and authentication.
+Main branch: `main` Repository is clean with recent commits related to CLI improvements and authentication.
