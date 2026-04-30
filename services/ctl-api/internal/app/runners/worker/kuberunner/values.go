@@ -76,15 +76,12 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			Name:  "default",
 		}
 	default:
-		roleARN := req.RunnerIAMRole
-		if roleARN == "" {
-			orgID := strings.TrimPrefix(req.RunnerServiceAccountName, "runner-")
-			if orgID != "" && a.config.ManagementAccountID != "" {
-				roleARN = fmt.Sprintf("arn:aws:iam::%s:role/orgs/%s/runner-%s", a.config.ManagementAccountID, orgID, orgID)
-			}
-		}
-		if roleARN != "" {
-			annotations["eks.amazonaws.com/role-arn"] = roleARN
+		orgID := strings.TrimPrefix(req.RunnerServiceAccountName, "runner-")
+		if orgID != "" && a.config.ManagementAccountID != "" {
+			annotations["eks.amazonaws.com/role-arn"] = fmt.Sprintf(
+				"arn:aws:iam::%s:role/orgs/%s/runner-%s",
+				a.config.ManagementAccountID, orgID, orgID,
+			)
 		}
 	}
 
