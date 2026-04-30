@@ -76,6 +76,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	l.Info("starting hint listener")
 	q.startHintListener(ctx)
 
+	l.Info("starting continue-as-new listener")
+	q.startCANListener(ctx)
+
 	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true
 

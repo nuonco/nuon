@@ -1,16 +1,15 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	generalsig "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
-	installsig "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/promotion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type AdminPromotionRequest struct {
@@ -34,53 +33,19 @@ func (s *service) AdminPromotion(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, "general", &generalsig.Signal{
-		Type: generalsig.OperationRestart,
-		Tag:  req.Tag,
-	})
-	s.evClient.Send(ctx, "general", &generalsig.Signal{
-		Type: generalsig.OperationPromotion,
-		Tag:  req.Tag,
-	})
-
-	// TODO: remove this when the install state initialization has already ran in the promotion workflow
-	s.initializeInstallStates(ctx)
-	ctx.JSON(http.StatusOK, app.EmptyResponse{})
-}
-
-func (s *service) initializeInstallStates(ctx *gin.Context) {
-	batchSize := 20
-	offset := 0
-	hasMore := true
-
-	for hasMore {
-		var installs []app.Install
-
-		res := s.db.
-			Scopes(scopes.WithDisableViews).
-			Model(&app.Install{}).
-			Select("installs.id").
-			Joins("LEFT JOIN install_states ON installs.id = install_states.install_id").
-			Where("install_states.install_id IS NULL").
-			Limit(batchSize).
-			Offset(offset).
-			Find(&installs)
-
-		if res.Error != nil {
-			ctx.Error(errors.Wrap(res.Error, "unable to get installs without state"))
-			return
-		}
-
-		if len(installs) < batchSize {
-			hasMore = false
-		}
-
-		for _, install := range installs {
-			s.evClient.Send(ctx, install.ID, &installsig.Signal{
-				Type: installsig.OperationGenerateState,
-			})
-		}
-		offset += batchSize
-
+	q, err := s.generalHelpers.EnsureGeneralQueue(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to ensure general queue: %w", err))
+		return
 	}
+
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal:  &promotion.Signal{Tag: req.Tag},
+	}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue promotion signal: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

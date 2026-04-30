@@ -111,11 +111,18 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	existingStatus.History = nil
 	status.History = append(history, existingStatus)
 
-	// Separate out metadata for atomic merge — the status column write carries
-	// everything except metadata so that concurrent MergeJSONBMetadata calls
-	// (e.g. from the background enqueuer) are not clobbered.
+	// Carry forward existing metadata into the new status so it's not lost.
 	newMetadata := status.Metadata
-	status.Metadata = nil
+	if newMetadata == nil {
+		newMetadata = make(map[string]any, 0)
+	}
+	for k, v := range existingStatus.Metadata {
+		if _, ok := newMetadata[k]; ok {
+			continue
+		}
+		newMetadata[k] = v
+	}
+	status.Metadata = newMetadata
 
 	res := a.db.WithContext(ctx).Model(obj).Updates(
 		map[string]any{
@@ -128,11 +135,12 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 		return errors.New("no object found to update")
 	}
 
-	// Atomically merge metadata keys using jsonb_set so we never overwrite
-	// metadata written by other writers between our read and write.
-	if len(newMetadata) > 0 {
+	// Also atomically merge new metadata keys via jsonb_set so that any
+	// metadata written concurrently (e.g. by the background enqueuer)
+	// between our read and this write is not lost.
+	if len(status.Metadata) > 0 {
 		id := reflectID(obj)
-		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, newMetadata); err != nil {
+		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, status.Metadata); err != nil {
 			return errors.Wrap(err, "unable to merge metadata")
 		}
 	}
