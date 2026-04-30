@@ -1,6 +1,6 @@
 import { Select } from '@/components/common/form/Select'
 import { Text } from '@/components/common/Text'
-import { AWS_REGIONS, AZURE_REGIONS } from '@/configs/cloud-regions'
+import { AZURE_REGIONS } from '@/configs/cloud-regions'
 import { getFlagEmoji } from '@/utils/string-utils'
 import type { IPlatformFields } from './types'
 
@@ -30,41 +30,6 @@ const FieldWrapper = ({
       </span>
       {children}
     </label>
-  )
-}
-
-const AWSFields = ({
-  draftValues,
-}: {
-  draftValues?: Record<string, string> | null
-}) => {
-  const options = AWS_REGIONS.map((region) => ({
-    value: region.value,
-    label: region?.iconVariant
-      ? `${getFlagEmoji(region.iconVariant.substring(5))} ${region.text} [${region.value}]`
-      : region.text,
-  }))
-
-  return (
-    <fieldset className="flex flex-col gap-6 border-t pt-6">
-      <legend className="text-lg font-semibold mb-3 pr-6">
-        Set AWS settings{' '}
-        <Text className="ml-1" variant="subtext" theme="error">
-          (required)
-        </Text>
-      </legend>
-
-      <FieldWrapper labelText="Select AWS region">
-        <Select
-          name="region"
-          options={options}
-          placeholder="Choose AWS region"
-          required
-          searchable
-          defaultValue={draftValues?.region || ''}
-        />
-      </FieldWrapper>
-    </fieldset>
   )
 }
 
@@ -107,10 +72,6 @@ export const PlatformFields = ({
   platform,
   draftValues,
 }: IPlatformFields) => {
-  if (platform === 'aws') {
-    return <AWSFields draftValues={draftValues} />
-  }
-
   if (platform === 'azure') {
     return <AzureFields draftValues={draftValues} />
   }
