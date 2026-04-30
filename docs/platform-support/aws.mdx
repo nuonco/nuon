@@ -56,27 +56,45 @@ helm_driver = "configmap"
 
 ## Installation
 
-When you create a new install, Nuon will generate a Cloudformation stack your customer can use to install the runner and base infrastructure. AWS supports installing Cloudformation stacks via their CLI, and also provides a GUI installation flow using Cloudformation Quick-Create links.
+When you create a new install, Nuon generates the install stack your customer uses to provision the runner and base infrastructure in their AWS account. Two stack formats are produced for every AWS install, and your customer can use whichever fits their tooling:
+
+- **CloudFormation** — a generated Cloudformation template, installable via a Quick-Create URL or the AWS CLI.
+- **Terraform** — a generated `install.tfvars` for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) Terraform module, applied with the standard `terraform` CLI.
+
+Both formats describe the same set of resources (IAM operation roles, secrets, and trust to the Nuon control plane), so installs end up in the same state regardless of which one your customer runs.
 
 ### Create an Install
 
-Navigate to the Installs tab in the Nuon dashboard, and click on the "Create Install" button, and select the app you want to install.
+Navigate to the Installs tab in the Nuon dashboard, click "Create Install", and select the app you want to install.
 
-This will kick off a provision workflow. The stack will be generated, and a Quick-Create URL and CLI commands will be provided for it. These will have the install ID and other settings already interpolated, and can be shared with your customer.
+This kicks off a provision workflow. Both the CloudFormation stack and the Terraform tfvars are generated with the install ID, region, and other settings already interpolated. The provision workflow's "await install stack" step exposes both via tabs ("CloudFormation" and "Terraform"), which can be shared with your customer.
 
 ### Install the Stack
 
-Your customer must log into the AWS account they want to install your app in, and ensure they have the required permissions to provision the stack.
+Your customer must log into the AWS account they want to install your app in, and ensure they have the required permissions.
 
-If they are using the Quick-Create URL, they can simply open  that in a browser and go through the web flow.
+#### Option 1: CloudFormation
 
-If they are using the CLI command, they must [install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and log in. Then they can run the command.
+Either:
+
+- Open the **Quick-Create URL** in a browser and complete the web flow, or
+- Run the provided **AWS CLI** `create-stack` snippet ([install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) first).
+
+#### Option 2: Terraform
+
+From the Terraform tab in the dashboard:
+
+1. Download the generated `install.tfvars`.
+2. Create a `backend.tf` to store Terraform state (an S3 snippet is provided in the dashboard).
+3. Run `terraform init && terraform apply -var-file=install.tfvars` against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
+
+Custom resources from CloudFormation nested stacks are not translated automatically. If you extend the install stack with custom Cloudformation resources, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and make the equivalent Terraform changes there.
 
 ## Updating
 
-If you make changes to the install stack template, the install must be reprovisioned to update the stack.
+If you make changes to the install stack, the install must be reprovisioned.
 
-1. From the install's Overview page, click on "Reprovision install" in the "Manage" drop-down menu. This will trigger a reprovision workflow.
-1. A new Cloudformation stack will be generated.
-1. An updated Quick-Create URL and CLI command will be generated.
-1. Send the Quick-Create URL or CLI commands to your customer for them to run.
+1. From the install's Overview page, click "Reprovision install" in the "Manage" drop-down. This triggers a reprovision workflow.
+1. A new CloudFormation template and Terraform tfvars are generated.
+1. Send the updated Quick-Create URL / CLI command, or the new `install.tfvars`, to your customer.
+1. Customers using Terraform re-run `terraform apply -var-file=install.tfvars` against the same backend.
