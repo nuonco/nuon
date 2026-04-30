@@ -30,6 +30,8 @@ type UpdateRunnerSettingsRequest struct {
 	K8sServiceAccountName string `json:"org_k8s_service_account_name"`
 	AWSIAMRoleARN         string `json:"org_awsiam_role_arn"`
 
+	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method,omitempty" validate:"omitempty,oneof=iid sts" swaggertype:"string" enums:"iid,sts"`
+
 	// Deprecated: no longer used. Instance refresh is handled by a backend cron.
 	AWSMaxInstanceLifetime *int `json:"aws_max_instance_lifetime,omitempty" validate:"omitempty,min=86400,max=31536000"`
 
@@ -110,6 +112,7 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 		VMMaxUptime:              req.VMMaxUptime,
 		OrgK8sServiceAccountName: req.K8sServiceAccountName,
 		OrgAWSIAMRoleARN:         req.AWSIAMRoleARN,
+		AWSAuthMethod:            req.AWSAuthMethod,
 	}
 	if req.AWSMaxInstanceLifetime != nil {
 		updates.AWSMaxInstanceLifetime = *req.AWSMaxInstanceLifetime

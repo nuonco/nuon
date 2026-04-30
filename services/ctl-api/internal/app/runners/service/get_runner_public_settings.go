@@ -4,10 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type RunnerPublicSettings struct {
-	BinaryVersion string `json:"binary_version"`
+	BinaryVersion string                  `json:"binary_version"`
+	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts"`
 }
 
 // @ID						GetRunnerPublicSettings
@@ -37,6 +40,7 @@ func (s *service) GetRunnerPublicSettings(ctx *gin.Context) {
 
 	settings := RunnerPublicSettings{
 		BinaryVersion: runner.RunnerGroup.Settings.BinaryVersion,
+		AWSAuthMethod: runner.RunnerGroup.Settings.AWSAuthMethod,
 	}
 
 	ctx.JSON(http.StatusOK, settings)

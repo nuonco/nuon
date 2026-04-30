@@ -22,6 +22,13 @@ const (
 	DefaultAWSInstanceType = "t3a.medium"
 )
 
+type RunnerAWSAuthMethod string
+
+const (
+	RunnerAWSAuthMethodIID RunnerAWSAuthMethod = "iid"
+	RunnerAWSAuthMethodSTS RunnerAWSAuthMethod = "sts"
+)
+
 // TODO(fd): use the consts
 var (
 	CommonRunnerGroupSettingsGroups         = [...]string{"operations", "sync"}
@@ -80,11 +87,12 @@ type RunnerGroupSettings struct {
 	OrgK8sServiceAccountName string `json:"org_k8s_service_account_name,omitzero" temporaljson:"org_k_8_s_service_account_name,omitzero,omitempty"`
 
 	// aws runner specifics runner-v2
-	AWSInstanceType            string        `json:"aws_instance_type,omitzero" temporaljson:"aws_instance_type,omitzero,omitempty"`
-	AWSMaxInstanceLifetime     int           `json:"aws_max_instance_lifetime" gorm:"not null;default:604800;check:aws_max_instance_lifetime >= 86400 AND aws_max_instance_lifetime <= 31536000" swaggertype:"primitive,integer" temporaljson:"aws_max_instance_lifetime"` // Deprecated: instance refresh is now handled by a backend cron, not ASG MaxInstanceLifetime.
-	AWSCloudformationStackType string        `json:"aws_cloudformation_stack_type,omitzero" temporaljson:"aws_cloudformation_stack_type,omitzero,omitempty"`
-	AWSTags                    pgtype.Hstore `json:"aws_tags,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"aws_tags,omitzero,omitempty"`
-	LocalAWSIAMRoleARN         string        `json:"local_aws_iam_role_arn,omitzero" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
+	AWSInstanceType            string              `json:"aws_instance_type,omitzero" temporaljson:"aws_instance_type,omitzero,omitempty"`
+	AWSMaxInstanceLifetime     int                 `json:"aws_max_instance_lifetime" gorm:"not null;default:604800;check:aws_max_instance_lifetime >= 86400 AND aws_max_instance_lifetime <= 31536000" swaggertype:"primitive,integer" temporaljson:"aws_max_instance_lifetime"` // Deprecated: instance refresh is now handled by a backend cron, not ASG MaxInstanceLifetime.
+	AWSCloudformationStackType string              `json:"aws_cloudformation_stack_type,omitzero" temporaljson:"aws_cloudformation_stack_type,omitzero,omitempty"`
+	AWSTags                    pgtype.Hstore       `json:"aws_tags,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"aws_tags,omitzero,omitempty"`
+	AWSAuthMethod              RunnerAWSAuthMethod `json:"aws_auth_method" temporaljson:"aws_auth_method,omitzero,omitempty" gorm:"not null;default:sts;" swaggertype:"string" enums:"iid,sts"`
+	LocalAWSIAMRoleARN         string              `json:"local_aws_iam_role_arn,omitzero" temporaljson:"local_awsiam_role_arn,omitzero,omitempty"`
 
 	// azure runner specifics
 
