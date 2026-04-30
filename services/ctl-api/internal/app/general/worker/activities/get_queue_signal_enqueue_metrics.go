@@ -29,15 +29,11 @@ func (a *Activities) getQueueSignalEnqueueMetrics(ctx context.Context, db *gorm.
 		return nil, fmt.Errorf("unable to count total queue signals: %w", res.Error)
 	}
 
-	// Count queue signals missing enqueue_finished_at in their status metadata.
-	// These are signals where the background enqueue goroutine either hasn't
-	// completed yet or failed silently.
+	// Count queue signals that have not been enqueued yet.
 	if res := db.WithContext(ctx).
-		Raw(`SELECT count(*) FROM queue_signals
-WHERE deleted_at = 0
-AND NOT (status::jsonb -> 'metadata' ? 'enqueue_finished_at')`).
+		Raw(`SELECT count(*) FROM queue_signals WHERE deleted_at = 0 AND enqueued = false`).
 		Scan(&m.MissingEnqueueFinish); res.Error != nil {
-		return nil, fmt.Errorf("unable to count signals missing enqueue_finished_at: %w", res.Error)
+		return nil, fmt.Errorf("unable to count signals not yet enqueued: %w", res.Error)
 	}
 
 	return &m, nil
