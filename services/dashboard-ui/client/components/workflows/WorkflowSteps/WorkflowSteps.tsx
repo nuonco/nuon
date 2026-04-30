@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Loading } from '@/components/common/Loading'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -94,9 +95,17 @@ export const WorkflowSteps = ({
         )}
 
         {eagerStepsLoaded && !allStepsLoaded ? (
-          <Text variant="subtext" theme="neutral" className="text-center py-2">
-            More steps generating…
-          </Text>
+          <div className="flex flex-col gap-4">
+            {Array.from({ length: 2 }).map((_, idx) => (
+              <Skeleton key={idx} height="44px" width="100%" className="rounded-md" />
+            ))}
+            <div className="flex items-center justify-center gap-2 py-1">
+              <Loading />
+              <Text variant="body" theme="neutral">
+                More steps generating…
+              </Text>
+            </div>
+          </div>
         ) : null}
       </div>
     </div>
