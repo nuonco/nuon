@@ -61,7 +61,7 @@ var _ signal.SignalWithCancel = (*Signal)(nil)
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
 func (s *Signal) AutoRetry() bool                       { return true }
-func (s *Signal) MaxRetries() int                       { return 5 }
+func (s *Signal) MaxRetries() int                       { return 15 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
