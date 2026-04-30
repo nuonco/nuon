@@ -20,5 +20,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "04-recreate-heartbeat-sort-keys",
 			Fn:   m.Migration004RecreateHeartbeatSortKeys,
 		},
+		{
+			Name: "05-recreate-runner-health-check-sort-key",
+			Fn:   m.Migration005RecreateRunnerHealthCheckSortKey,
+		},
 	}
 }
