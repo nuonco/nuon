@@ -1,5 +1,6 @@
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { Badge } from '@/components/common/Badge'
+import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Timeline } from '@/components/common/Timeline'
@@ -22,6 +23,18 @@ export const InstallActionRunTimeline = ({
   basePath,
   pagination,
 }: IInstallActionRunTimeline) => {
+  if (runs.length === 0 && pagination.offset === 0) {
+    return (
+      <EmptyState
+        className="mt-12"
+        variant="history"
+        size="sm"
+        emptyTitle="No runs yet"
+        emptyMessage="This action has not been run yet. Trigger a run to see history here."
+      />
+    )
+  }
+
   return (
     <Timeline<TInstallActionRun>
       events={runs}
