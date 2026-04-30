@@ -109,9 +109,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Location string `json:"location"`
 			}{}
 		case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
-			req.AWSAccount = &struct {
-				Region string `json:"region"`
-			}{}
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("aws_account.region is required for AWS installs"),
+				Description: "aws_account.region is required for AWS installs",
+			}
 		default:
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("unable to determine cloud platform from runner type %q", parentApp.AppRunnerConfigs[0].Type),

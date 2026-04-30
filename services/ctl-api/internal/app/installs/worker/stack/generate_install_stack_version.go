@@ -14,7 +14,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
-	awsstack "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -198,12 +197,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 	switch cfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
-		if cfg.RunnerConfig.InitScriptURL != "" {
-			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
-		} else {
-			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
-		}
-
 		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
 		if err != nil {
 			return errors.Wrap(err, "unable to get phone home script")
@@ -211,6 +204,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		inp.PhonehomeScript = string(phoneHomeScript)
 		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+
+		if cfg.RunnerConfig.InitScriptURL != "" {
+			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
+		} else {
+			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
+		}
 
 		renderedTemplate, err := activities.AwaitRenderAWSStackTemplate(ctx, &activities.RenderAWSStackTemplateRequest{
 			Input: *inp,
@@ -221,31 +220,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
-
-		// Render the Terraform tfvars envelope alongside the CloudFormation
-		// template so the dashboard can offer both during the await step.
-		// Log (but don't fail) if the TF module can't render the app config
-		// (e.g., custom nested stacks); the CFN path remains usable.
-		inp.CloudFormationStackVersion = stackVersion
-		supportIAMRoleARN := ""
-		if w.cfg.RunnerEnableSupport {
-			supportIAMRoleARN = w.cfg.RunnerDefaultSupportIAMRole
-		}
-		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp, supportIAMRoleARN)
-		if tfErr != nil {
-			workflow.GetLogger(ctx).Warn("aws terraform render skipped", "error", tfErr.Error(), "install_id", install.ID)
-		} else if len(tfvarsBytes) == 0 {
-			workflow.GetLogger(ctx).Warn("aws terraform render produced empty bytes", "install_id", install.ID)
-		} else {
-			workflow.GetLogger(ctx).Info("aws terraform render ok", "install_id", install.ID, "bytes", len(tfvarsBytes))
-			if err := activities.AwaitSaveInstallStackVersionTerraform(ctx, &activities.SaveInstallStackVersionTerraformRequest{
-				ID:       stackVersion.ID,
-				Template: tfvarsBytes,
-				Checksum: tfvarsChecksum,
-			}); err != nil {
-				return errors.Wrap(err, "unable to save aws tfvars")
-			}
-		}
 
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
