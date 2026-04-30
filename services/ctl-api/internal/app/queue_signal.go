@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	queuecctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
@@ -43,6 +44,8 @@ type QueueSignal struct {
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
 	Enqueued bool `json:"enqueued" gorm:"default:false;not null" temporaljson:"enqueued,omitzero,omitempty"`
+
+	SignalContext queuecctx.SignalContext `json:"signal_context" gorm:"type:jsonb;default:null" temporaljson:"signal_context,omitzero,omitempty"`
 
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
 }
