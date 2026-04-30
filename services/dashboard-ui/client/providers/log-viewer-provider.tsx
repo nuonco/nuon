@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'
@@ -74,8 +74,14 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
     },
   })
 
+  const activeLogIdRef = useRef<string | undefined>()
+
   useEffect(() => {
-    if (activeLog) {
+    if (activeLog && activeLog.id !== activeLogIdRef.current) {
+      if (activeLogIdRef.current) {
+        removePanel(activeLogIdRef.current)
+      }
+      activeLogIdRef.current = activeLog.id
       addPanel(
         <LogPanel
           log={activeLog}
@@ -88,13 +94,16 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
         activeLog.id
       )
       setLogParam(activeLog.id)
+    } else if (!activeLog && activeLogIdRef.current) {
+      removePanel(activeLogIdRef.current)
+      activeLogIdRef.current = undefined
     }
   }, [activeLog])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const logId = params.get('log')
-    if (logId && filters.filteredLogs?.length) {
+    if (logId && !activeLogIdRef.current && filters.filteredLogs?.length) {
       handleActiveLog(logId)
     }
   }, [filters.filteredLogs?.length])
