@@ -16,6 +16,7 @@ import {
   InstallReprovisionSandboxModal,
   InstallDeployAllComponentsModal,
   InstallViewCurrentInputsModal,
+  InstallViewStateModal,
 } from '../InstallCommandModals'
 import { AppBuildAllComponentsModal } from '../AppCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
@@ -283,6 +284,13 @@ export function useSpotlightResults(
             tag: 'command',
             icon: 'Lightning',
             action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
+          },
+          {
+            label: `${name} › View state`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallViewStateModal installId={installId} />),
           },
           ...(install.runner_id ? [{
             label: `${name} › Restart runner`,

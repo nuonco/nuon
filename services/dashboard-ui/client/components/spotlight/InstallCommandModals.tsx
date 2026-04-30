@@ -6,6 +6,7 @@ import { SyncSecretsModal } from '@/components/installs/management/SyncSecrets'
 import { ReprovisionModal } from '@/components/installs/management/Reprovision'
 import { ReprovisionSandboxModal } from '@/components/sandbox/management/ReprovisionSandbox'
 import { ViewCurrentInputsModal } from '@/components/installs/management/ViewCurrentInputs'
+import { ViewStateModal } from '@/components/installs/management/ViewState'
 import { DeployAllComponentsModal } from '@/components/install-components/management/DeployAllComponents'
 
 type IInstallCommandModal = { installId: string } & IModal
@@ -27,3 +28,4 @@ export const InstallReprovisionModal = withInstallProvider(ReprovisionModal)
 export const InstallReprovisionSandboxModal = withInstallProvider(ReprovisionSandboxModal)
 export const InstallDeployAllComponentsModal = withInstallProvider(DeployAllComponentsModal)
 export const InstallViewCurrentInputsModal = withInstallProvider(ViewCurrentInputsModal)
+export const InstallViewStateModal = withInstallProvider(ViewStateModal)

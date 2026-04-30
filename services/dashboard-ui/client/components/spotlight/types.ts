@@ -22,6 +22,7 @@ export const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
   { label: 'Installs', path: '/installs', icon: 'Cube' },
   { label: 'Team', path: '/team', icon: 'UsersThree' },
   { label: 'Build runner', path: '/runner', icon: 'Hammer' },
+  { label: 'Webhooks', path: '/webhooks', icon: 'WebhooksLogo' },
 ]
 
 export const INSTALL_SUB_PAGES = [
@@ -30,6 +31,8 @@ export const INSTALL_SUB_PAGES = [
   'Runner',
   'Workflows',
   'Stacks',
+  'Inputs',
+  'State',
 ]
 
 export const APP_SUB_PAGES = [
@@ -60,6 +63,7 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
     'reprovision sandbox',
     'deploy all components',
     'restart runner',
+    'view state',
   ],
 }
 
