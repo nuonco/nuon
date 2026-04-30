@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type GetComponentLatestBuildRequest struct {
@@ -29,14 +28,7 @@ func (a *Activities) GetComponentLatestBuild(ctx context.Context, req GetCompone
 		First(&build)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			// Terminal: retrying will not produce a build. Step-level
-			// auto-retry short-circuits on this marker (see
-			// signal.IsTerminalError).
-			return nil, signal.NewTerminalError(
-				"no_component_build",
-				"No active build found for component (id %s). Ensure there is an active build for the component before retrying.",
-				req.ComponentID,
-			)
+			return nil, app.ErrNoComponentBuild(req.ComponentID)
 		}
 
 		return nil, fmt.Errorf("unable to load component build: %w", res.Error)

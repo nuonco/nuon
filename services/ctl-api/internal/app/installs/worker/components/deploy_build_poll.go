@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 func (w *Workflows) isBuildDeployable(bld *app.ComponentBuild) bool {
@@ -59,14 +58,7 @@ func (w *Workflows) pollForDeployableBuild(ctx workflow.Context, installDeployId
 
 		if bld.Status == app.ComponentBuildStatusError {
 			l.Error("component build is in an error state")
-			// Terminal: retrying with the same broken build will never
-			// succeed. Step-level auto-retry short-circuits on this marker
-			// (see signal.IsTerminalError).
-			return signal.NewTerminalError(
-				"component_build_errored",
-				"Component build (id %s) is in an error state. Ensure there is an active build for the component before retrying.",
-				bld.ID,
-			)
+			return app.ErrComponentBuildErrored(bld.ID)
 		}
 
 		workflow.Sleep(ctx, sleepTimer)
