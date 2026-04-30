@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { getQueueDetail, getQueueEmitters, getQueueInFlightSignals, restartQueue, clearQueue } from '@/lib/admin-api'
+import { getQueueDetail, getQueueEmitters, getQueueInFlightSignals, restartQueue, forceRestartQueue, clearQueue } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
+import { StatusHistory } from '@/components/common/StatusHistory'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, formatRelativeDate, truncateId } from '@/utils/format'
@@ -60,6 +61,11 @@ export const QueueDetail = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
   })
 
+  const forceRestartMutation = useMutation({
+    mutationFn: () => forceRestartQueue(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
+  })
+
   const clearMutation = useMutation({
     mutationFn: () => clearQueue(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
@@ -83,8 +89,13 @@ export const QueueDetail = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-bold text-gray-900">{queue.name}</h1>
+            {queue.status_v2?.status && (
+              <Badge variant="status" status={getStatus(queue.status_v2)}>
+                {getStatus(queue.status_v2)}
+              </Badge>
+            )}
             <Badge variant="status" status={queueStatusBadgeStatus(status)}>
               {queueStatusLabel(status)}
             </Badge>
@@ -161,13 +172,39 @@ export const QueueDetail = () => {
           {restartMutation.isPending ? 'Restarting...' : 'Restart Queue'}
         </button>
         <button
-          onClick={() => clearMutation.mutate()}
+          onClick={() => {
+            if (confirm('Are you sure you want to FORCE restart this queue? This skips waiting for active workers to finish.')) {
+              forceRestartMutation.mutate()
+            }
+          }}
+          disabled={forceRestartMutation.isPending}
+          className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+        >
+          {forceRestartMutation.isPending ? 'Force restarting...' : 'Force Restart'}
+        </button>
+        <button
+          onClick={() => {
+            if (confirm('Are you sure you want to cancel all in-flight signals in this queue?')) {
+              clearMutation.mutate()
+            }
+          }}
           disabled={clearMutation.isPending}
           className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
         >
           {clearMutation.isPending ? 'Clearing...' : 'Clear Queue'}
         </button>
       </div>
+
+      {/* Queue Status (StatusV2) */}
+      {queue.status_v2?.status && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">Queue Status</h2>
+          <p className="mt-0.5 text-xs text-gray-500">Current status and history</p>
+          <div className="mt-3">
+            <StatusHistory status={queue.status_v2} defaultExpanded maxCollapsed={5} />
+          </div>
+        </div>
+      )}
 
       {/* Emitters */}
       <div className="table-card rounded-lg border border-gray-200 bg-white p-4">

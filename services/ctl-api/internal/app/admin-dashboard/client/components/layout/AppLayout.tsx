@@ -34,6 +34,7 @@ const navGroups = [
       { path: '/sandbox-mode', label: 'Sandbox mode' },
       { path: '/temporal-workers', label: 'Temporal workers' },
       { path: '/temporal-workflows', label: 'Temporal workflows' },
+      { path: '/api/livez', label: 'Health', external: true },
     ],
   },
 ]
@@ -65,20 +66,26 @@ export const AppLayout = () => {
                   </p>
                 )}
                 <div className="space-y-0.5">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={cn(
-                        'block rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors duration-100',
-                        isActive(item)
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  {group.items.map((item: { path: string; label: string; exact?: boolean; external?: boolean }) => {
+                    const className = cn(
+                      'block rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors duration-100',
+                      isActive(item)
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                    )
+                    if (item.external) {
+                      return (
+                        <a key={item.path} href={item.path} target="_blank" rel="noopener noreferrer" className={className}>
+                          {item.label}
+                        </a>
+                      )
+                    }
+                    return (
+                      <Link key={item.path} to={item.path} className={className}>
+                        {item.label}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             ))}

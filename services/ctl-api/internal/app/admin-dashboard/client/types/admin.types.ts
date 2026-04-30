@@ -118,6 +118,7 @@ export type TQueue = {
   idle_timeout: number
   metadata: Record<string, string> | null
   workflow: any
+  status_v2?: any
   created_at: string
   updated_at: string
   emitters?: TQueueEmitter[]
@@ -504,8 +505,12 @@ export type TWorkflowDetailResponse = {
 export type TSandboxModeResponse = {
   runner_job_configs: TSandboxModeJobConfig[]
   signal_configs: TSandboxModeSignalConfig[]
-  stacks: any[]
+  stacks?: any[]
+  stack_config?: any
   templates: any[]
+  flow_templates?: any[]
+  all_signal_types?: string[]
+  all_runner_job_types?: string[]
 }
 
 export type TTemporalWorkersResponse = {

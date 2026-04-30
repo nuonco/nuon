@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -19,12 +18,6 @@ type adminClientConfig struct {
 }
 
 func (s *service) registerSPARoutes(api *gin.Engine) {
-	if s.cfg.AdminDashboardDev {
-		s.l.Info("admin dashboard dev mode: SPA requests will be proxied to dev server")
-		s.registerDevProxy(api)
-		return
-	}
-
 	s.registerStaticSPA(api)
 }
 
@@ -104,40 +97,3 @@ func (s *service) registerStaticSPA(e *gin.Engine) {
 	})
 }
 
-func (s *service) registerDevProxy(e *gin.Engine) {
-	e.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-			return
-		}
-
-		proxy := &http.Transport{}
-		target := "http://localhost:5173" + c.Request.URL.Path
-		if c.Request.URL.RawQuery != "" {
-			target += "?" + c.Request.URL.RawQuery
-		}
-
-		req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, target, c.Request.Body)
-		if err != nil {
-			c.Status(http.StatusBadGateway)
-			return
-		}
-		req.Header = c.Request.Header
-
-		resp, err := proxy.RoundTrip(req)
-		if err != nil {
-			s.l.Warn("admin dashboard dev server proxy error", zap.Error(err))
-			c.Status(http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-
-		for k, vs := range resp.Header {
-			for _, v := range vs {
-				c.Writer.Header().Add(k, v)
-			}
-		}
-		c.Status(resp.StatusCode)
-		io.Copy(c.Writer, resp.Body)
-	})
-}

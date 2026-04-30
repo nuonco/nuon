@@ -17,7 +17,19 @@ export const getQueueInFlightSignals = (id: string) =>
   api<{ signals: TQueueSignal[] }>({ path: `queues/${id}/in-flight-signals` })
 
 export const getQueueSignalDetail = (queueId: string, signalId: string) =>
-  api<{ signal: TQueueSignal; workflow_info: any }>({ path: `queues/${queueId}/signals/${signalId}` })
+  api<{
+    signal: TQueueSignal & {
+      workflow?: { id: string; namespace: string }
+      execution_count?: number
+      emitter_id?: string
+      signal?: any
+    }
+    queue: TQueue
+    temporal_ui_url: string
+    workflow_info: any
+    signal_attrs: any
+    signals_ahead: TQueueSignal[]
+  }>({ path: `queues/${queueId}/signals/${signalId}` })
 
 export const getQueueEmitterDetail = (queueId: string, emitterId: string) =>
   api<{ emitter: TQueueEmitter; queue: TQueue; signals: TQueueSignal[]; temporal_ui_url: string }>({ path: `queues/${queueId}/emitters/${emitterId}` })
@@ -28,5 +40,14 @@ export const getSignalGraph = (queueId: string, signalId: string, depth = 1) =>
 export const restartQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/restart`, method: 'POST' })
 
+export const forceRestartQueue = (id: string) =>
+  api<{ status: string }>({ path: `queues/${id}/force-restart`, method: 'POST' })
+
 export const clearQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/clear`, method: 'POST' })
+
+export const directExecuteSignal = (queueId: string, signalId: string) =>
+  api<{ status: string; queue_signal_id: string }>({
+    path: `queues/${queueId}/signals/${signalId}/direct-execute`,
+    method: 'POST',
+  })

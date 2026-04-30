@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { useState } from 'react'
-import { getQueueSignalDetail, getSignalGraph } from '@/lib/admin-api'
+import { getQueueSignalDetail, getSignalGraph, directExecuteSignal } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
@@ -39,6 +39,7 @@ function timeBetween(a: string, b: string): string {
 
 export const QueueSignalDetail = () => {
   const { id: queueId, signalId } = useParams<{ id: string; signalId: string }>()
+  const queryClient = useQueryClient()
   const [hideReady, setHideReady] = useState(true)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showGraph, setShowGraph] = useState(false)
@@ -55,6 +56,11 @@ export const QueueSignalDetail = () => {
     enabled: !!queueId && !!signalId && showGraph,
   })
 
+  const directExecuteMutation = useMutation({
+    mutationFn: () => directExecuteSignal(queueId!, signalId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-signal', queueId, signalId] }),
+  })
+
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load signal'} />
   if (!data) return null
@@ -63,9 +69,13 @@ export const QueueSignalDetail = () => {
   const status = getStatus(signal?.status)
   const statusHistory = signal?.status?.history || []
   const enqueuedAt = signal?.created_at
+  const enqueueStartedAt = getMeta(signal?.status, 'enqueue_started_at')
+  const enqueueFinishedAt = getMeta(signal?.status, 'enqueue_finished_at')
+  const enqueueError = getMeta(signal?.status, 'enqueue_error')
   const dequeuedAt = getMeta(signal?.status, 'dequeued_at')
   const executeStartedAt = getMeta(signal?.status, 'execute_started_at')
   const executeFinishedAt = getMeta(signal?.status, 'execute_finished_at')
+  const enqueueTimingMissing = !enqueueStartedAt && !enqueueFinishedAt
 
   return (
     <div className="space-y-6">
@@ -93,6 +103,17 @@ export const QueueSignalDetail = () => {
             View as graph
           </Link>
           <Link to="/signal-catalog" className="text-xs text-primary-600 hover:text-primary-700">View catalog &rarr;</Link>
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to directly execute this signal?')) {
+                directExecuteMutation.mutate()
+              }
+            }}
+            disabled={directExecuteMutation.isPending}
+            className="ml-auto rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {directExecuteMutation.isPending ? 'Executing...' : 'Direct Execute'}
+          </button>
         </div>
         <div className="space-y-1 text-xs">
           <div><span className="text-gray-500 uppercase">Signal ID:</span> <span className="font-mono">{signal?.id}</span></div>
@@ -127,13 +148,24 @@ export const QueueSignalDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Timeline</h2>
         <div className="flex items-start justify-between">
           <TimelineStep label="Enqueued" value={enqueuedAt} active />
-          <TimelineConnector duration={timeBetween(enqueuedAt, dequeuedAt)} />
+          <TimelineConnector duration={timeBetween(enqueueStartedAt, enqueueFinishedAt)} />
+          {enqueueError ? (
+            <TimelineStep label="Enqueue failed" value={enqueueError} active={false} />
+          ) : (
+            <TimelineStep label="Enqueue finished" value={enqueueFinishedAt} active={!!enqueueFinishedAt} />
+          )}
+          <TimelineConnector duration={timeBetween(enqueueFinishedAt, dequeuedAt)} />
           <TimelineStep label="Dequeued" value={dequeuedAt} active={!!dequeuedAt} />
           <TimelineConnector duration={timeBetween(dequeuedAt, executeStartedAt)} />
           <TimelineStep label="Execute started" value={executeStartedAt} active={!!executeStartedAt} />
           <TimelineConnector duration={timeBetween(executeStartedAt, executeFinishedAt)} />
           <TimelineStep label="Execute finished" value={executeFinishedAt} active={!!executeFinishedAt} />
         </div>
+        {enqueueTimingMissing && (
+          <div className="mt-3 text-xs text-gray-500">
+            Enqueue timing metadata not available (signal created before tracking was added).
+          </div>
+        )}
       </div>
 
       {/* Signals ahead */}

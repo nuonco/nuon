@@ -39,13 +39,19 @@ function StepRow({ stepData }: { stepData: any }) {
   const status = getStatus(step?.status)
   const statusHistory = getStatusHistory(step?.status)
 
+  const maxAutoRetries = step?.status?.metadata?.max_auto_retries
   return (
     <>
       <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <td className="text-xs text-gray-500">{step?.idx}</td>
         <td className="text-xs text-gray-900 max-w-[200px] truncate" title={step?.name}>{step?.name || '-'}</td>
         <td><Badge variant="status" status={status}>{status || '-'}</Badge></td>
-        <td className="text-xs text-gray-500 font-mono">{step?.execution_type || '-'}</td>
+        <td className="text-xs text-gray-500 font-mono">
+          <span>{step?.execution_type || '-'}</span>
+          {maxAutoRetries !== undefined && maxAutoRetries !== null && (
+            <Badge className="ml-1">max retries: {String(maxAutoRetries)}</Badge>
+          )}
+        </td>
         <td className="text-xs text-gray-500">{formatTime(step?.started_at)}</td>
         <td className="text-xs text-gray-500">{formatDur(step?.execution_time)}</td>
         <td className="text-xs space-x-1">

@@ -170,19 +170,20 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/log-streams/:log_stream_id", s.LogStreamDetail)
 		api.GET("/log-streams/:log_stream_id/logs", s.LogStreamLogsTable)
 
-	// Queue routes
-	api.GET("/queues", s.Queues)
-	api.GET("/queues/table", s.QueuesTable)
-	api.GET("/queues/:id", s.QueueDetail)
-	api.GET("/queues/:id/emitters/table", s.QueueEmittersTable)
-	api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
-	api.GET("/queues/:id/in-flight-signals/table", s.QueueInFlightSignalsTable)
-	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)api.GET("/queues/:id/signals/:signal_id/graph", s.SignalGraph)
-	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
-	api.POST("/queues/:id/restart", s.RestartQueue)
-	api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
-	api.POST("/queues/:id/clear", s.ClearQueue)
-	api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
+		// Queue routes
+		api.GET("/queues", s.Queues)
+		api.GET("/queues/table", s.QueuesTable)
+		api.GET("/queues/:id", s.QueueDetail)
+		api.GET("/queues/:id/emitters/table", s.QueueEmittersTable)
+		api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
+		api.GET("/queues/:id/in-flight-signals/table", s.QueueInFlightSignalsTable)
+		api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
+		api.GET("/queues/:id/signals/:signal_id/graph", s.SignalGraph)
+		api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
+		api.POST("/queues/:id/restart", s.RestartQueue)
+		api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
+		api.POST("/queues/:id/clear", s.ClearQueue)
+		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
 
 		// Temporal workflow viewer
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
