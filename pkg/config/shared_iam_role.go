@@ -48,6 +48,6 @@ func (a AppAWSIAMRole) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("[AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) URLs (https://example.com/boundary.json), git repositories (git::https://github.com/org/repo//boundary.json), file paths (file:///path/to/boundary.json), and relative paths (./boundary.json)").
 		Example("./provision_boundary.json").
 		Example("./maintenance_boundary.json").
-		Field("enabled_in_stack").Short("whether the role is enabled by default in the install stack").
-		Long("Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, depending on which format the customer applies). When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)")
+		Field("enabled_in_stack").Short("whether the role is enabled by default in the CloudFormation stack").
+		Long("Controls the default value of the Enable parameter for this role in the CloudFormation stack. When true, the role is created by default. When false, the role is not created unless the installer explicitly enables it. If omitted, the platform default is used (true for standard roles, false for break-glass roles)")
 }
