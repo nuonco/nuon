@@ -73,6 +73,7 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
     'deploy all components',
     'restart runner',
     'view state',
+    'edit stack overrides',
   ],
 }
 

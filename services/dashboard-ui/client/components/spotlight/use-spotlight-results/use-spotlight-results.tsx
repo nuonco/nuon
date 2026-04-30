@@ -17,6 +17,7 @@ import {
   InstallDeployAllComponentsModal,
   InstallViewCurrentInputsModal,
   InstallViewStateModal,
+  InstallEditStackOverridesModal,
 } from '../InstallCommandModals'
 import { AppBuildAllComponentsModal } from '../AppCommandModals'
 import {
@@ -298,6 +299,13 @@ export function useSpotlightResults(
             tag: 'command',
             icon: 'Lightning',
             action: () => addModal?.(<InstallViewStateModal installId={installId} />),
+          },
+          {
+            label: `${name} › Edit stack overrides`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallEditStackOverridesModal installId={installId} />),
           },
           ...(install.runner_id ? [{
             label: `${name} › Restart runner`,

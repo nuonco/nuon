@@ -7,6 +7,7 @@ import { ReprovisionModal } from '@/components/installs/management/Reprovision'
 import { ReprovisionSandboxModal } from '@/components/sandbox/management/ReprovisionSandbox'
 import { ViewCurrentInputsModal } from '@/components/installs/management/ViewCurrentInputs'
 import { ViewStateModal } from '@/components/installs/management/ViewState'
+import { EditStackOverrides } from '@/components/installs/management/EditStackOverrides'
 import { DeployAllComponentsModal } from '@/components/install-components/management/DeployAllComponents'
 
 type IInstallCommandModal = { installId: string } & IModal
@@ -29,3 +30,4 @@ export const InstallReprovisionSandboxModal = withInstallProvider(ReprovisionSan
 export const InstallDeployAllComponentsModal = withInstallProvider(DeployAllComponentsModal)
 export const InstallViewCurrentInputsModal = withInstallProvider(ViewCurrentInputsModal)
 export const InstallViewStateModal = withInstallProvider(ViewStateModal)
+export const InstallEditStackOverridesModal = withInstallProvider(EditStackOverrides)
