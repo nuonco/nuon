@@ -15,10 +15,12 @@ import { SidebarProvider } from '@/providers/sidebar-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { useSpotlight } from '@/hooks/use-spotlight'
+import { useHelp } from '@/hooks/use-help'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
 
 const SpotlightListener = () => {
   useSpotlight()
+  useHelp()
   return null
 }
 
