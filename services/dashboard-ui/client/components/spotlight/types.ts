@@ -11,7 +11,7 @@ export type SpotlightResult = {
 )
 
 export type ParsedQuery = {
-  prefix: 'app' | 'install' | 'component' | 'action' | null
+  prefix: 'app' | 'install' | 'component' | 'action' | 'org' | null
   query: string
   command: string | null
 }
@@ -45,7 +45,7 @@ export const APP_BRANCH_SUB_PAGES = [
   'Sandbox',
 ]
 
-export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:']
+export const FILTER_PREFIXES = ['app:', 'install:', 'component:', 'action:', 'org:']
 
 export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix']>, string[]>> = {
   app: [
@@ -72,6 +72,8 @@ const PREFIX_MAP: Record<string, ParsedQuery['prefix']> = {
   'components:': 'component',
   'action:': 'action',
   'actions:': 'action',
+  'org:': 'org',
+  'orgs:': 'org',
 }
 
 export function parseQuery(raw: string): ParsedQuery {

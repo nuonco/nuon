@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { TIconVariant } from '@/components/common/Icon'
+import { getOrgs } from '@/lib/ctl-api/orgs/get-orgs'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
 import { getInstalls } from '@/lib/ctl-api/installs/get-installs'
 import { getComponents } from '@/lib/ctl-api/apps/components/get-components'
@@ -94,6 +95,12 @@ export function useSpotlightResults(
       return { appActions, installActions }
     },
     enabled: parsed.prefix === 'action' && !!orgId,
+  })
+
+  const { data: orgsResult, isFetching: orgsFetching } = useQuery({
+    queryKey: ['spotlight', 'orgs', parsed.query],
+    queryFn: () => getOrgs({ q: parsed.query || undefined, limit: 10 }),
+    enabled: parsed.prefix === 'org',
   })
 
   const { data: componentResults, isFetching: componentsFetching } = useQuery({
@@ -295,6 +302,15 @@ export function useSpotlightResults(
       return items
     }
 
+    if (parsed.prefix === 'org') {
+      return (orgsResult ?? []).map((org): SpotlightResult => ({
+        label: org.name ?? org.id!,
+        tag: 'org',
+        path: `/${org.id}`,
+        icon: 'Buildings',
+      }))
+    }
+
     if (parsed.prefix === 'action' && actionResults) {
       const items: SpotlightResult[] = []
       for (const { app, actions } of actionResults.appActions) {
@@ -349,9 +365,9 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
+  }, [liveParsed, parsed, appsResult, installsResult, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
 
-  const isFetching = appsFetching || installsFetching || actionsFetching || componentsFetching
+  const isFetching = appsFetching || installsFetching || orgsFetching || actionsFetching || componentsFetching
 
   return { results, isFetching }
 }
