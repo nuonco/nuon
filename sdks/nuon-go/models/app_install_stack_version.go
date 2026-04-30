@@ -71,15 +71,6 @@ type AppInstallStackVersion struct {
 	// template url
 	TemplateURL string `json:"template_url,omitempty"`
 
-	// terraform checksum
-	TerraformChecksum string `json:"terraform_checksum,omitempty"`
-
-	// On AWS, the install workflow renders BOTH a CloudFormation template and
-	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
-	// (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
-	// artifact lives below. The dashboard shows both during the await step.
-	TerraformContents string `json:"terraform_contents,omitempty"`
-
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }

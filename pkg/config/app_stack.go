@@ -49,10 +49,8 @@ type StackConfig struct {
 func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("stack type").
-		Long("Type of infrastructure stack. Supported values: 'aws-cloudformation', 'azure-bicep' (Azure), 'gcp-terraform' (Google Cloud).").
+		Long("Type of infrastructure stack. Currently only 'aws-cloudformation' is supported").
 		Example("aws-cloudformation").
-		Example("azure-bicep").
-		Example("gcp-terraform").
 		Field("name").Short("stack name").Required().
 		Long("Name of the CloudFormation stack when deployed in the customer account. Supports Go templating").
 		Example("myapp-{{.nuon.install.id}}").
