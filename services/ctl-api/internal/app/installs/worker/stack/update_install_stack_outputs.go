@@ -130,18 +130,6 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		}
 	}
 
-	// update aws account from stack outputs (region optional at creation;
-	// backfill from phone-home so install.AWSAccount.Region stays consistent
-	// for downstream readers)
-	if installStackOutputs.AWSStackOutputs != nil && installStackOutputs.AWSStackOutputs.Region != "" {
-		if err := activities.AwaitUpdateAWSAccountRegion(ctx, &activities.UpdateAWSAccountRegion{
-			InstallID: install.ID,
-			Region:    installStackOutputs.AWSStackOutputs.Region,
-		}); err != nil {
-			return errors.Wrap(err, "unable to update aws account from stack outputs")
-		}
-	}
-
 	// NOTE(jm): this is probably not the _best_ place to do this validation, but for now it works
 	// make sure the region matches the outputs
 	err = validateRegion(*install, installStackOutputs)
@@ -180,18 +168,13 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 }
 
 func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
-	// Region is recorded on the install only when the user committed to one
-	// at install creation. AWS/Azure/GCP all allow creating an install with no
-	// region, in which case the user picks one at apply time and the stack
-	// outputs are the source of truth. Only enforce a match when the install
-	// already carries a region.
 	switch {
 	case install.AWSAccount != nil:
-		if install.AWSAccount.Region != "" && install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
+		if install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.AzureAccount != nil:
-		if install.AzureAccount.Location != "" && install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
+		if install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.GCPAccount != nil:
