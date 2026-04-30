@@ -67,7 +67,6 @@ export const ProcessCardContainer = ({
       managementDropdown={
         <ProcessManagementDropdown
           process={process}
-          settings={settings}
         />
       }
     />

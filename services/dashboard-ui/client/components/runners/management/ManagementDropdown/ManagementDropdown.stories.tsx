@@ -11,13 +11,14 @@ const mockRunner = {
 
 const mockSettings = {
   id: 'settings-1',
+  container_image_tag: 'v1.2.3',
+  binary_version: 'v0.5.0',
 } as any
 
 export const BuildRunner = () => (
   <div className="p-4">
     <ManagementDropdown
       runner={mockRunner}
-      isManaged={false}
       isInstallRunner={false}
       settings={mockSettings}
     />
@@ -28,7 +29,6 @@ export const InstallRunner = () => (
   <div className="p-4">
     <ManagementDropdown
       runner={mockRunner}
-      isManaged
       isInstallRunner
       settings={mockSettings}
     />

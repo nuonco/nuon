@@ -143,6 +143,7 @@ export const ActionsTable = ({
       columns={columns}
       data={data}
       emptyStateProps={{
+        variant: 'actions',
         emptyMessage:
           'Save time by configuring your actions. Check out our resources.',
         emptyTitle: 'No actions yet',

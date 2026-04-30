@@ -1,6 +1,10 @@
 package signal
 
-import "go.temporal.io/sdk/workflow"
+import (
+	"time"
+
+	"go.temporal.io/sdk/workflow"
+)
 
 // This file defines all optional extension interfaces that signals can implement
 // to declare capabilities and attributes. The conductor and step workflow check
@@ -156,6 +160,17 @@ type SignalWithSkipGroup interface {
 type SignalWithFetchSteps interface {
 	Signal
 	SignalWithUpdateHandlers
+}
+
+// ---------------------------------------------------------------------------
+// Timeouts
+// ---------------------------------------------------------------------------
+
+// SignalWithTimeout is implemented by signals that need a custom execution timeout.
+// The returned duration is used as the ScheduleToCloseTimeout for the execute
+// activity in the queue dispatcher. If not implemented, the default (2 hours) is used.
+type SignalWithTimeout interface {
+	Timeout() time.Duration
 }
 
 // ---------------------------------------------------------------------------

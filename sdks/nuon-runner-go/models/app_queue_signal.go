@@ -28,6 +28,9 @@ type AppQueueSignal struct {
 	// Optional: if this signal was emitted by an emitter
 	EmitterID string `json:"emitter_id,omitempty"`
 
+	// enqueued
+	Enqueued bool `json:"enqueued,omitempty"`
+
 	// execution count
 	ExecutionCount int64 `json:"execution_count,omitempty"`
 
@@ -52,6 +55,9 @@ type AppQueueSignal struct {
 	// signal
 	Signal *SignaldbSignalData `json:"signal,omitempty"`
 
+	// signal context
+	SignalContext *CctxSignalContext `json:"signal_context,omitempty"`
+
 	// status
 	Status *AppCompositeStatus `json:"status,omitempty"`
 
@@ -74,6 +80,10 @@ func (m *AppQueueSignal) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateSignal(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSignalContext(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -128,6 +138,29 @@ func (m *AppQueueSignal) validateSignal(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signal")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppQueueSignal) validateSignalContext(formats strfmt.Registry) error {
+	if swag.IsZero(m.SignalContext) { // not required
+		return nil
+	}
+
+	if m.SignalContext != nil {
+		if err := m.SignalContext.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("signal_context")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("signal_context")
 			}
 
 			return err
@@ -195,6 +228,10 @@ func (m *AppQueueSignal) ContextValidate(ctx context.Context, formats strfmt.Reg
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateSignalContext(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -250,6 +287,31 @@ func (m *AppQueueSignal) contextValidateSignal(ctx context.Context, formats strf
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("signal")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppQueueSignal) contextValidateSignalContext(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.SignalContext != nil {
+
+		if swag.IsZero(m.SignalContext) { // not required
+			return nil
+		}
+
+		if err := m.SignalContext.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("signal_context")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("signal_context")
 			}
 
 			return err

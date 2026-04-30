@@ -1,5 +1,10 @@
 package runner
 
+import (
+	"fmt"
+	"strings"
+)
+
 // NOTE(jm): this struct must match the yaml expected in the helm chart to install the runner.
 type helmValuesImage struct {
 	Tag        string `mapstructure:"tag"`
@@ -71,8 +76,12 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 			Name:  "default",
 		}
 	default:
-		if req.RunnerIAMRole != "" {
-			annotations["eks.amazonaws.com/role-arn"] = req.RunnerIAMRole
+		orgID := strings.TrimPrefix(req.RunnerServiceAccountName, "runner-")
+		if orgID != "" && a.config.ManagementAccountID != "" {
+			annotations["eks.amazonaws.com/role-arn"] = fmt.Sprintf(
+				"arn:aws:iam::%s:role/orgs/%s/runner-%s",
+				a.config.ManagementAccountID, orgID, orgID,
+			)
 		}
 	}
 

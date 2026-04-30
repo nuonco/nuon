@@ -3,6 +3,7 @@ package statusactivities
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // NOTE
@@ -109,16 +111,18 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	existingStatus.History = nil
 	status.History = append(history, existingStatus)
 
-	if status.Metadata == nil {
-		status.Metadata = make(map[string]any, 0)
+	// Carry forward existing metadata into the new status so it's not lost.
+	newMetadata := status.Metadata
+	if newMetadata == nil {
+		newMetadata = make(map[string]any, 0)
 	}
 	for k, v := range existingStatus.Metadata {
-		if _, ok := status.Metadata[k]; ok {
+		if _, ok := newMetadata[k]; ok {
 			continue
 		}
-
-		status.Metadata[k] = v
+		newMetadata[k] = v
 	}
+	status.Metadata = newMetadata
 
 	res := a.db.WithContext(ctx).Model(obj).Updates(
 		map[string]any{
@@ -130,7 +134,27 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	if res.RowsAffected < 1 {
 		return errors.New("no object found to update")
 	}
+
+	// Also atomically merge new metadata keys via jsonb_set so that any
+	// metadata written concurrently (e.g. by the background enqueuer)
+	// between our read and this write is not lost.
+	if len(status.Metadata) > 0 {
+		id := reflectID(obj)
+		if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), obj, id, statusField, status.Metadata); err != nil {
+			return errors.Wrap(err, "unable to merge metadata")
+		}
+	}
+
 	return nil
+}
+
+// reflectID extracts the ID field from a model pointer via reflection.
+func reflectID(obj any) string {
+	v := reflect.ValueOf(obj)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	return v.FieldByName("ID").String()
 }
 
 // @temporal-gen-v2 activity

@@ -32,7 +32,7 @@ export const BuildComponentButtonContainer = ({
   )
 }
 
-const BuildComponentModalContainer = ({
+export const BuildComponentModalContainer = ({
   component,
   ...props
 }: IModal & {

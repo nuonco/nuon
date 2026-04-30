@@ -16,31 +16,38 @@ import {
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
+import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
+import type { TRunnerSettings } from '@/types'
 
 const RunnerHeading = ({
   runnerId,
+  settings,
 }: {
   runnerId?: string
+  settings?: TRunnerSettings
 }) => (
   <PageHeader>
-    <HeadingGroup>
-      <div className="flex items-center gap-3">
-        <Text variant="h3" weight="strong" level={1}>
-          Build runner
-        </Text>
-        {runnerId ? <ID>{runnerId}</ID> : null}
-      </div>
-      {runnerId && (
-        <AdminDashboardLink
-          path={`/queues?owner_id=${runnerId}`}
-          label="View queues in admin panel"
-        />
-      )}
-    </HeadingGroup>
+    <div className="flex items-center justify-between w-full">
+      <HeadingGroup>
+        <div className="flex items-center gap-3">
+          <Text variant="h3" weight="strong" level={1}>
+            Build runner
+          </Text>
+          {runnerId ? <ID>{runnerId}</ID> : null}
+        </div>
+        {runnerId && (
+          <AdminDashboardLink
+            path={`/queues?owner_id=${runnerId}`}
+            label="View queues in admin panel"
+          />
+        )}
+      </HeadingGroup>
+      {settings && <ManagementDropdownContainer settings={settings} />}
+    </div>
   </PageHeader>
 )
 
@@ -104,7 +111,7 @@ export const BuildRunner = () => {
       <SurfacesProvider>
         <PageLayout className="pb-6">
           {breadcrumbs}
-          <RunnerHeading runnerId={runnerId} />
+          <RunnerHeading runnerId={runnerId} settings={settings} />
 
           <PageContent>
             <PageSection>

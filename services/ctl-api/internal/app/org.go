@@ -64,6 +64,12 @@ const (
 	OrgFeatureStepsWorkflows          OrgFeature = "steps-workflows"
 	OrgFeatureInstallRename           OrgFeature = "install-rename"
 	OrgFeatureDeployOutputs           OrgFeature = "deploy-outputs"
+	// OrgFeatureTerraformProviderMirror enables build-time vendoring of
+	// terraform providers via `terraform providers mirror` and ships the
+	// resulting filesystem mirror inside the OCI artifact. The install
+	// runner auto-detects the mirror at unpack time, so toggling this
+	// flag only affects the build runner.
+	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 )
 
 type Org struct {
@@ -173,11 +179,12 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	// except install-break-glass and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureInstallBreakGlass:  false,
-		OrgFeatureTerraformInstaller: false,
-		OrgFeatureInstallRename:      false,
-		OrgFeatureDeployOutputs:      false,
-		OrgFeatureSupportRole:        false,
+		OrgFeatureInstallBreakGlass:       false,
+		OrgFeatureTerraformInstaller:      false,
+		OrgFeatureInstallRename:           false,
+		OrgFeatureDeployOutputs:           false,
+		OrgFeatureSupportRole:             false,
+		OrgFeatureTerraformProviderMirror: false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -250,6 +257,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureParallelRunnerJobs,
 		OrgFeatureInstallRename,
 		OrgFeatureDeployOutputs,
+		OrgFeatureTerraformProviderMirror,
 	}
 }
 
@@ -283,6 +291,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
 		OrgFeatureInstallRename:           "Allow renaming installs from the dashboard edit install modal",
 		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
+		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 	}
 }
 

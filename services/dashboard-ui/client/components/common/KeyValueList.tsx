@@ -64,7 +64,7 @@ export const KeyValueList = ({
                     const parsed = JSON.parse(value)
                     if (!parsed) return <Text variant="subtext" theme="neutral">—</Text>
                     return (
-                      <CodeBlock language="json">
+                      <CodeBlock language="json" showCopy>
                         {JSON.stringify(parsed, null, 2)}
                       </CodeBlock>
                     )

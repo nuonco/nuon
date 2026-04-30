@@ -17,7 +17,6 @@ type UpdateRunnerProcessStatusRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ProcessID
 func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRunnerProcessStatusRequest) (*app.RunnerProcess, error) {
-	// get current process for composite status
 	var current app.RunnerProcess
 	if res := a.db.WithContext(ctx).First(&current, "id = ?", req.ProcessID); res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner process: %w", res.Error)
@@ -25,7 +24,6 @@ func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRu
 
 	newComposite := app.NewCompositeStatus(ctx, app.Status(req.Status))
 	newComposite.StatusHumanDescription = req.StatusDescription
-	// Carry forward metadata from the previous status, then overlay any new metadata
 	for k, v := range current.CompositeStatus.Metadata {
 		newComposite.Metadata[k] = v
 	}

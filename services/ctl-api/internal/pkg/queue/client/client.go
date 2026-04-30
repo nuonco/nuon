@@ -15,30 +15,34 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 )
 
 type Client struct {
-	db      *gorm.DB
-	cfg     *internal.Config
-	tClient temporalclient.Client
-	l       *zap.Logger
+	db       *gorm.DB
+	cfg      *internal.Config
+	tClient  temporalclient.Client
+	l        *zap.Logger
+	enqueuer *enqueuer.Enqueuer
 }
 
 type Params struct {
 	fx.In
 
-	DB      *gorm.DB `name:"psql"`
-	Cfg     *internal.Config
-	TClient temporalclient.Client
-	L       *zap.Logger
+	DB       *gorm.DB `name:"psql"`
+	Cfg      *internal.Config
+	TClient  temporalclient.Client
+	L        *zap.Logger
+	Enqueuer *enqueuer.Enqueuer
 }
 
 func New(params Params) *Client {
 	return &Client{
-		db:      params.DB,
-		cfg:     params.Cfg,
-		tClient: params.TClient,
-		l:       params.L,
+		db:       params.DB,
+		cfg:      params.Cfg,
+		tClient:  params.TClient,
+		l:        params.L,
+		enqueuer: params.Enqueuer,
 	}
 }
 

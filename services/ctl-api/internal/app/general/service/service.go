@@ -11,10 +11,12 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type service struct {
@@ -28,6 +30,8 @@ type service struct {
 	authzClient    *authz.Client
 	acctClient     *account.Client
 	evClient       eventloop.Client
+	queueClient    *queueclient.Client
+	generalHelpers *generalhelpers.Helpers
 	codecs         []converter.PayloadCodec
 }
 
@@ -115,6 +119,8 @@ type Params struct {
 	AuthzClient    *authz.Client
 	AcctClient     *account.Client
 	EvClient       eventloop.Client
+	QueueClient    *queueclient.Client
+	GeneralHelpers *generalhelpers.Helpers
 	DB             *gorm.DB `name:"psql"`
 	MW             metrics.Writer
 
@@ -137,6 +143,8 @@ func New(params Params) *service {
 		authzClient:    params.AuthzClient,
 		acctClient:     params.AcctClient,
 		evClient:       params.EvClient,
+		queueClient:    params.QueueClient,
+		generalHelpers: params.GeneralHelpers,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

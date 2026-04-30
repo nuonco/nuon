@@ -103,12 +103,21 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to validate")
 	}
 
+	executeOpts := longRunningActivityOptions
+	if timeoutNs, ok := queueSignal.Status.Metadata["timeout_ns"]; ok {
+		if ns, ok := timeoutNs.(float64); ok {
+			custom := *longRunningActivityOptions
+			custom.ScheduleToCloseTimeout = time.Duration(int64(ns))
+			executeOpts = &custom
+		}
+	}
+
 	if _, err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 		RunID:      readyResp.RunID,
-	}, longRunningActivityOptions); err != nil {
+	}, executeOpts); err != nil {
 		return errors.Wrap(err, "unable to execute")
 	}
 
