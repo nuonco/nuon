@@ -69,9 +69,7 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       }
 
       const platform = app?.runner_config?.app_runner_type
-      if (platform === 'aws' && formDataObj.region) {
-        body.aws_account = { iam_role_arn: '', region: formDataObj.region as string }
-      } else if (platform === 'azure' && formDataObj.location) {
+      if (platform === 'azure' && formDataObj.location) {
         body.azure_account = {
           location: formDataObj.location as string,
           service_principal_app_id: '',

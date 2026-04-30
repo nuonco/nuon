@@ -11,7 +11,7 @@ When you deploy your app through Nuon, it runs inside your customer's cloud acco
 When an install is created, the layers build on each other from the bottom up:
 
 1. **Cloud Account** - the customer's AWS account or Azure subscription. Everything Nuon deploys lives inside it. No cross-account access is required.
-2. **[Stack](/concepts/stacks)** - a CloudFormation, Azure Resource Manager (Bicep), or Terraform template that provisions networking and the Runner. The customer deploys it using their own credentials.
+2. **[Stack](/concepts/stacks)** - an infrastructure template that provisions networking and the Runner. Nuon generates both a Terraform version and the platform's native IaC version (CloudFormation on AWS, Azure Resource Manager (Bicep) on Azure; on GCP, only Terraform is generated since Infrastructure Manager is Terraform-native). The customer deploys whichever format fits their tooling, using their own credentials.
 3. **[Runner](/concepts/runners)** - picks up jobs from the Control Plane and executes all infrastructure operations locally inside the customer's environment.
 4. **[Sandbox](/concepts/sandboxes)** - the base compute infrastructure (Kubernetes, VMs, serverless) provisioned by the Runner.
 5. **[Components](/concepts/components)** - your application (Helm charts, Terraform modules, manifests, container images) deployed on top of the Sandbox.
