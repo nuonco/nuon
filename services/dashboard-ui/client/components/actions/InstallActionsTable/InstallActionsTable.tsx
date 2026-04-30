@@ -172,6 +172,7 @@ export const InstallActionsTable = ({
       data={data}
       filterActions={filterActions}
       emptyStateProps={{
+        variant: 'actions',
         emptyMessage:
           'Save time by configuring your actions. Check out our resources.',
         emptyTitle: 'No actions yet',
