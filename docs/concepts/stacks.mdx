@@ -4,13 +4,11 @@ icon: "layer-group"
 description: "Stacks are cloud-native templates that bootstrap an install in a customer's cloud account."
 ---
 
-A Stack is the first thing deployed in a customer's cloud account when an install is created. It is an infrastructure template that provisions the foundational resources needed to deploy and operate the app.
+A Stack is the first thing deployed into a customer's cloud account when an install is created. It is a cloud-native infrastructure template that provisions the foundational resources needed to run the install.
 
-For each install, Nuon generates a Stack template in both Terraform and the platform's native IaC language. Both formats produce the same resources, so you or your customer can use whichever one fits into your tooling and processes the best.
-
-- On **AWS**, the native format is a CloudFormation stack.
-- On **Azure**, the native format is an Azure Resource Manager (Bicep) deployment.
-- On **GCP**, only Terraform is generated — Google Cloud's Infrastructure Manager runs Terraform natively.
+- On **AWS**, this is a CloudFormation stack.
+- On **Azure**, we use Azure Resource Manager (Bicep).
+- For **GCP**, we use Terraform.
 
 ## What does a Stack create?
 
@@ -24,7 +22,7 @@ Stacks also support customers bringing their own Kubernetes clusters or other ex
 
 ## How is a Stack deployed?
 
-When a vendor creates an install, Nuon generates Stack templates (Terraform and the platform's native IaC, where applicable) along with links and CLI snippets the vendor can share with the customer. The customer deploys whichever format fits their tooling using their own credentials. This is how access is granted: the customer creates the resources themselves.
+When a vendor creates an install, Nuon generates a Stack template link. The vendor shares this link with the customer, who deploys it in their cloud console or CLI using their own credentials. This is how access is granted: the customer creates the resources themselves.
 
 No cross-account access is required. The customer retains full ownership and visibility of all infrastructure created by the Stack.
 
@@ -42,4 +40,4 @@ This means the customer always has a killswitch. See [Customer-Controlled Runner
 
 ## Stack Inputs
 
-Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-secrets) are entered by the customer when deploying the stack template (as CloudFormation parameters, Terraform variables, etc.) and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.
+Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-secrets) are entered by the customer when deploying the stack template, and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.

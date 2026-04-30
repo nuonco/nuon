@@ -18,7 +18,7 @@ nuon apps init
 This generates a complete app configuration structure with all core configuration files:
 - `inputs.toml` - Define customer-facing configuration options
 - `sandbox.toml` - Configure the infrastructure sandbox
-- `stack.toml` - Define the stack
+- `stack.toml` - Define the infrastructure stack (EKS/ECS/CloudFormation)
 - `runner.toml` - Configure the deployment runner
 - `secrets.toml` - Manage secrets configuration
 - `break_glass.toml` - Configure emergency access policies
@@ -137,7 +137,7 @@ Key flags:
 
 ### Stack Configuration
 
-Generate the stack configuration.
+Generate the infrastructure stack configuration:
 
 ```bash
 nuon apps init stack \
@@ -149,10 +149,8 @@ nuon apps init stack \
 ```
 
 Required flags:
-- `--name` - Name of the stack
+- `--name` - Name of the CloudFormation stack
 - `--description` - Description of the stack
-
-Supported `--type` values: `aws-cloudformation`, `azure-bicep` (Azure), `gcp-terraform` (Google Cloud).
 
 ### Runner Configuration
 

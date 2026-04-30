@@ -41,9 +41,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	}
 
 	// GCP uses static Terraform modules with tfvars, no S3 upload needed.
-	// AWS/Azure render both a CloudFormation template (S3-hosted, with a
-	// quick link) and — for AWS — a Terraform tfvars envelope stored on the
-	// row. The user picks one to apply during the await step.
+	// AWS/Azure still use S3-hosted templates with quick links.
 	if req.Platform != "gcp" {
 		bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
 		obj.AWSBucketKey = bucketKey
@@ -53,18 +51,12 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		// template is uploaded to GCS and the URL is set after upload.
 		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
 			templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
+			quickLinkURL := fmt.Sprintf("https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+				req.Region, req.Region, templateURL, req.StackName,
+			)
 			obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
 			obj.TemplateURL = templateURL
-			// Quick-launch URL embeds the region; only build it when the
-			// install carries one. When region is empty, the dashboard surfaces
-			// the template URL + AWS-CLI snippet instead and the user picks a
-			// region in the AWS console.
-			if req.Region != "" {
-				obj.QuickLinkURL = fmt.Sprintf(
-					"https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-					req.Region, req.Region, templateURL, req.StackName,
-				)
-			}
+			obj.QuickLinkURL = quickLinkURL
 		}
 	}
 
