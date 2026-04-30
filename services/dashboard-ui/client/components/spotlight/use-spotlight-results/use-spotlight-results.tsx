@@ -25,6 +25,7 @@ import {
   SpotlightTeardownComponentModal,
   SpotlightDriftScanComponentModal,
 } from '../ComponentCommandModals'
+import { SpotlightRunActionModal } from '../ActionCommandModals'
 import { RestartRunnerModalContainer as RestartRunnerModal } from '../RestartRunnerModal'
 import {
   type SpotlightResult,
@@ -327,27 +328,59 @@ export function useSpotlightResults(
 
     if (parsed.prefix === 'action' && actionResults) {
       const items: SpotlightResult[] = []
+      const appActionMap = new Map<string, typeof actionResults.appActions[0]['actions'][0]>()
+      for (const { actions } of actionResults.appActions) {
+        for (const action of actions) {
+          if (action.id) appActionMap.set(action.id, action)
+        }
+      }
       for (const { app, actions } of actionResults.appActions) {
         for (const action of actions) {
-          items.push({
-            label: `${app.name} › ${action.name}`,
-            tag: 'action',
-            path: `/apps/${app.id}/actions/${action.id}`,
-            icon: 'AppWindow',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${app.name} › ${action.name}`,
+              tag: 'action',
+              path: `/apps/${app.id}/actions/${action.id}`,
+              icon: 'AppWindow',
+            })
+          }
         }
       }
       for (const { install, actions } of actionResults.installActions) {
         for (const action of actions) {
-          const name = action.action_workflow?.name ?? action.action_workflow_id ?? ''
+          const actionWorkflow = action.action_workflow
+          const name = actionWorkflow?.name ?? action.action_workflow_id ?? ''
           if (parsed.query && !tokenMatch(name, parsed.query)) continue
-          items.push({
-            label: `${install.name} › ${name}`,
-            subtitle: install.app?.name,
-            tag: 'action',
-            path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
-            icon: 'Cube',
-          })
+          if (parsed.command === null) {
+            items.push({
+              label: `${install.name} › ${name}`,
+              subtitle: install.app?.name,
+              tag: 'action',
+              path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
+              icon: 'Cube',
+            })
+          }
+          const fullAction = appActionMap.get(action.action_workflow_id!) ?? actionWorkflow
+          const latestConfig = fullAction?.configs?.at(-1)
+          const hasManualTrigger = latestConfig?.triggers?.some((t) => t.type === 'manual')
+          if (hasManualTrigger && fullAction && latestConfig) {
+            const runCmd: SpotlightResult = {
+              label: `${install.name} › ${name} › Run`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'Lightning',
+              action: () => addModal?.(
+                <SpotlightRunActionModal
+                  installId={install.id!}
+                  action={fullAction}
+                  actionConfigId={latestConfig.id!}
+                />
+              ),
+            }
+            if (parsed.command === null || !parsed.command || tokenMatch('Run', parsed.command)) {
+              items.push(runCmd)
+            }
+          }
         }
       }
       return items
