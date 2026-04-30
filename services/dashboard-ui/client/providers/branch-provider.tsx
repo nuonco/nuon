@@ -1,11 +1,13 @@
-import { createContext, type ReactNode } from 'react'
+import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
+import { useToast } from '@/hooks/use-toast'
 import { getAppBranch } from '@/lib'
+import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TAppBranch } from '@/types'
+import type { TAPIError, TAppBranch } from '@/types'
 
 type BranchContextValue = {
   branch: TAppBranch
@@ -27,6 +29,7 @@ export function BranchProvider({
 }) {
   const { org } = useOrg()
   const { app } = useApp()
+  const { addToast } = useToast()
   const { data: branch, isLoading, error, refetch } = useQuery({
     queryKey: ['app-branch', org.id!, app.id!, branchId, 'with-config'],
     queryFn: () => getAppBranch({ orgId: org.id!, appId: app.id!, branchId, latestConfig: true }),
@@ -34,7 +37,17 @@ export function BranchProvider({
     enabled: !!org.id && !!app.id && !!branchId,
   })
 
-  if (error) return <ProviderError error={error} />
+  useEffect(() => {
+    if (error && branch) {
+      addToast(
+        <Toast heading="Failed to refresh data" theme="warn">
+          {(error as TAPIError)?.error ?? 'Connection issue'}
+        </Toast>
+      )
+    }
+  }, [error])
+
+  if (error && !branch) return <ProviderError error={error} />
 
   if (isLoading || !branch) return <ProviderLoading />
 

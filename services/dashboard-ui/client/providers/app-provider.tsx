@@ -1,10 +1,12 @@
-import { createContext, type ReactNode } from 'react'
+import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
 import { getApp } from '@/lib'
+import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TApp } from '@/types'
+import type { TAPIError, TApp } from '@/types'
 
 type AppContextValue = {
   app: TApp
@@ -25,6 +27,7 @@ export function AppProvider({
   shouldPoll?: boolean
 }) {
   const { org } = useOrg()
+  const { addToast } = useToast()
   const { data: app, isLoading, error, refetch } = useQuery({
     queryKey: ['app', org.id!, appId],
     queryFn: () => getApp({ orgId: org.id!, appId }),
@@ -32,7 +35,17 @@ export function AppProvider({
     enabled: !!org.id && !!appId,
   })
 
-  if (error) return <ProviderError error={error} />
+  useEffect(() => {
+    if (error && app) {
+      addToast(
+        <Toast heading="Failed to refresh data" theme="warn">
+          {(error as TAPIError)?.error ?? 'Connection issue'}
+        </Toast>
+      )
+    }
+  }, [error])
+
+  if (error && !app) return <ProviderError error={error} />
 
   if (isLoading || !app) return <ProviderLoading />
 
