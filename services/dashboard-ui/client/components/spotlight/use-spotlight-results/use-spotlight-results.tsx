@@ -245,11 +245,11 @@ export function useSpotlightResults(
         }
         const commands: SpotlightResult[] = [
           {
-            label: `${name} › Run adhoc action`,
+            label: `${name} › Deploy all components`,
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'Lightning',
-            action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
+            action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
           },
           {
             label: `${name} › Edit inputs`,
@@ -259,18 +259,11 @@ export function useSpotlightResults(
             action: () => addModal?.(<InstallEditInputsModal installId={installId} />),
           },
           {
-            label: `${name} › View current inputs`,
+            label: `${name} › Edit stack overrides`,
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'Lightning',
-            action: () => addModal?.(<InstallViewCurrentInputsModal installId={installId} />),
-          },
-          {
-            label: `${name} › Sync secrets`,
-            subtitle: install.app?.name,
-            tag: 'command',
-            icon: 'Lightning',
-            action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
+            action: () => addModal?.(<InstallEditStackOverridesModal installId={installId} />),
           },
           {
             label: `${name} › Reprovision install`,
@@ -286,12 +279,33 @@ export function useSpotlightResults(
             icon: 'Lightning',
             action: () => addModal?.(<InstallReprovisionSandboxModal installId={installId} />),
           },
-          {
-            label: `${name} › Deploy all components`,
+          ...(install.runner_id ? [{
+            label: `${name} › Restart runner`,
             subtitle: install.app?.name,
             tag: 'command',
             icon: 'Lightning',
-            action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
+            action: () => addModal?.(<RestartRunnerModal runnerId={install.runner_id!} />),
+          } satisfies SpotlightResult] : []),
+          {
+            label: `${name} › Run adhoc action`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
+          },
+          {
+            label: `${name} › Sync secrets`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
+          },
+          {
+            label: `${name} › View current inputs`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'Lightning',
+            action: () => addModal?.(<InstallViewCurrentInputsModal installId={installId} />),
           },
           {
             label: `${name} › View state`,
@@ -300,20 +314,6 @@ export function useSpotlightResults(
             icon: 'Lightning',
             action: () => addModal?.(<InstallViewStateModal installId={installId} />),
           },
-          {
-            label: `${name} › Edit stack overrides`,
-            subtitle: install.app?.name,
-            tag: 'command',
-            icon: 'Lightning',
-            action: () => addModal?.(<InstallEditStackOverridesModal installId={installId} />),
-          },
-          ...(install.runner_id ? [{
-            label: `${name} › Restart runner`,
-            subtitle: install.app?.name,
-            tag: 'command',
-            icon: 'Lightning',
-            action: () => addModal?.(<RestartRunnerModal runnerId={install.runner_id!} />),
-          } satisfies SpotlightResult] : []),
         ]
         for (const cmd of commands) {
           const cmdName = cmd.label.split(' › ')[1]

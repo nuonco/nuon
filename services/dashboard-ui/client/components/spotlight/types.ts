@@ -60,20 +60,20 @@ export const COMMANDS_BY_PREFIX: Partial<Record<NonNullable<ParsedQuery['prefix'
   component: [
     'build',
     'deploy',
-    'teardown',
     'drift scan',
+    'teardown',
   ],
   install: [
-    'run adhoc action',
+    'deploy all components',
     'edit inputs',
-    'view current inputs',
-    'sync secrets',
+    'edit stack overrides',
     'reprovision install',
     'reprovision sandbox',
-    'deploy all components',
     'restart runner',
+    'run adhoc action',
+    'sync secrets',
+    'view current inputs',
     'view state',
-    'edit stack overrides',
   ],
 }
 
