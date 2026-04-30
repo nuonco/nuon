@@ -224,7 +224,7 @@ func generateIndexPage(schemaNames []string, outputDir, format string) error {
 	if format == "mintlify" {
 		doc.AddRaw("<CardGroup cols={2}>\n")
 		for _, name := range schemaNames {
-			doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"file\" href=\"%s\"></Card>\n",
+			doc.AddRaw(fmt.Sprintf("  <Card title=\"%s\" icon=\"file\" href=\"/config-ref/%s\"></Card>\n",
 				formatTitle(name), name))
 		}
 		doc.AddRaw("</CardGroup>\n\n")
