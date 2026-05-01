@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -23,8 +22,9 @@ func (s *service) Runners(c *gin.Context) {
 		return
 	}
 
-	component := views.Runners(runners)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"runners": runners,
+	})
 }
 
 func (s *service) getSandboxRunnerViews(ctx context.Context) ([]views.SandboxRunnerView, error) {

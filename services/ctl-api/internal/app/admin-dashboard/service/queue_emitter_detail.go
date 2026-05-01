@@ -3,12 +3,10 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) QueueEmitterDetail(c *gin.Context) {
@@ -40,6 +38,10 @@ func (s *service) QueueEmitterDetail(c *gin.Context) {
 		Limit(50).
 		Find(&signals)
 
-	component := views.QueueEmitterDetail(&emitter, &q, signals, s.cfg.TemporalUIURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"emitter":         &emitter,
+		"queue":           &q,
+		"signals":         signals,
+		"temporal_ui_url": s.cfg.TemporalUIURL,
+	})
 }

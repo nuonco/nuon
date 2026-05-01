@@ -103,7 +103,7 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 			OrgID:    org.ID,
 			InviteID: invite.ID,
 			LoginURL: fmt.Sprintf("%s/api/auth/login", s.cfg.AppURL),
-		}); err != nil {
+		}, org.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
