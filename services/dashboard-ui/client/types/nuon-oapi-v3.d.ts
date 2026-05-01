@@ -6596,6 +6596,7 @@ export interface components {
     "signaldb.WorkflowRef": {
       id?: string;
       namespace?: string;
+      run_id?: string;
     };
     "sql.NullBool": {
       bool?: boolean;

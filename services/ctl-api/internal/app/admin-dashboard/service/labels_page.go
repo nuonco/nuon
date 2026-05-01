@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -19,7 +18,7 @@ import (
 
 const labelsPerPage = 20
 
-// LabelsPage renders the full labels browse page.
+// LabelsPage returns the labels browse data.
 func (s *service) LabelsPage(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
@@ -34,13 +33,28 @@ func (s *service) LabelsPage(c *gin.Context) {
 		return
 	}
 
-	orgs := s.getOrgOptions(ctx)
+	if results == nil {
+		results = []views.LabelSearchResult{}
+	}
+	if allKeys == nil {
+		allKeys = []string{}
+	}
 
-	component := views.LabelsPage(results, allKeys, orgs, search, entityType, orgID, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	orgs := s.getOrgOptions(ctx)
+	if orgs == nil {
+		orgs = []views.OrgOption{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"results":     results,
+		"all_keys":    allKeys,
+		"orgs":        orgs,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
-// LabelsTable renders just the labels table fragment for HTMX swaps.
+// LabelsTable returns just the labels table data.
 func (s *service) LabelsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
@@ -55,8 +69,11 @@ func (s *service) LabelsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.LabelsTableFragment(results, search, entityType, orgID, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"results":     results,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 // LabelSearchResult represents a single entity with labels for the browse page.

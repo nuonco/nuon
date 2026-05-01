@@ -150,7 +150,9 @@ func (s *service) createNewOrg(ctx *gin.Context, account *app.Account, onboardin
 	}
 
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: queue.ID,
+		QueueID:   queue.ID,
+		OwnerID:   onboarding.ID,
+		OwnerType: plugins.TableName(s.db, app.Onboarding{}),
 		Signal: &createorg.Signal{
 			OnboardingID: onboarding.ID,
 			AccountID:    account.ID,
