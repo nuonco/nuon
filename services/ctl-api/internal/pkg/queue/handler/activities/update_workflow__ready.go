@@ -25,6 +25,7 @@ func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string,
 		info.WorkflowNamespace,
 		tclient.UpdateWithStartWorkflowOptions{
 			UpdateOptions: tclient.UpdateWorkflowOptions{
+				UpdateID:     updateID + "-ready",
 				WorkflowID:   workflowID,
 				UpdateName:   handler.ReadyHandlerName,
 				WaitForStage: tclient.WorkflowUpdateStageCompleted,
