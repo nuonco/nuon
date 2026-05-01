@@ -6,14 +6,14 @@ boost: 5
 keywords: ["what is Nuon", "BYOC platform", "bring your own cloud", "deploy to customer cloud", "SaaS to BYOC", "getting started"]
 ---
 
-export const FeatureTile = ({ image, eyebrow, title, description, href, reverse }) => (
+export const FeatureTile = ({ src, eyebrow, title, description, href, reverse }) => (
   <a
     href={href}
     className={`group flex flex-col ${reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-6 lg:gap-10 items-center p-6 lg:p-8 rounded-xl no-underline transition-all hover:scale-[1.005]`}
     style={{ border: '1px solid #256A7F', color: 'inherit' }}
   >
     <img
-      src={`/images/introduction/${image}.svg`}
+      src={src}
       alt={title}
       className="w-full lg:w-2/5 rounded-lg"
     />
@@ -21,7 +21,7 @@ export const FeatureTile = ({ image, eyebrow, title, description, href, reverse 
       <p className="text-xs font-semibold tracking-widest uppercase opacity-60" style={{ color: '#256A7F' }}>{eyebrow}</p>
       <h3 className="mt-1 text-xl lg:text-2xl font-medium" style={{ color: 'inherit', marginTop: '0.25rem' }}>{title}</h3>
       <p className="mt-2 text-sm opacity-70">{description}</p>
-      <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium" style={{ color: '#256A7F' }}>
+      <span className="text-sm font-medium" style={{ display: 'block', marginTop: '0.75rem', color: '#256A7F' }}>
         Learn more <span className="transition-transform group-hover:translate-x-0.5">→</span>
       </span>
     </div>
@@ -74,14 +74,14 @@ export const WistiaEmbed = ({ mediaId, title }) => (
 
       <div className="mt-8 lg:mt-10 flex flex-col gap-4 lg:gap-6">
         <FeatureTile
-          image="guides"
+          src="/images/introduction/guides.svg"
           eyebrow="Step 1"
           title="Connect your app"
           description="Wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app. Define inputs, secrets, and a sandbox once — customers configure the rest."
           href="/concepts/apps"
         />
         <FeatureTile
-          image="getstarted"
+          src="/images/introduction/getstarted.svg"
           eyebrow="Step 2"
           title="Deploying to a Customer"
           description="Install into AWS, Azure, or GCP accounts you don't own — no cross-account access required. Customers self-serve through the dashboard, CLI, customer portal, or API."
@@ -89,7 +89,7 @@ export const WistiaEmbed = ({ mediaId, title }) => (
           reverse
         />
         <FeatureTile
-          image="concepts"
+          src="/images/introduction/concepts.svg"
           eyebrow="Step 3"
           title="Continuous Delivery"
           description="Run workflows, detect drift, enforce policies, and ship releases across every customer install — operated centrally from one control plane."
