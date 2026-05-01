@@ -1,15 +1,13 @@
 package service
 
 import (
-	"errors"
-	"io"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminMngVMShutDownRequest struct{}
@@ -17,7 +15,7 @@ type AdminMngVMShutDownRequest struct{}
 // @ID						AdminMngVMShutDownRunner
 // @Summary				shut down an install runner VM (admin)
 // @Param					runner_id	path	string						true	"runner ID"
-// @Param					req			body	AdminMngVMShutDownRequest	true	"Input"
+// @Param					req			body	AdminMngVMShutDownRequest	false	"Input"
 // @Tags					runners/admin
 // @Security				AdminEmail
 // @Accept					json
@@ -27,13 +25,13 @@ type AdminMngVMShutDownRequest struct{}
 func (s *service) AdminMngVMShutDown(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	var req AdminMngVMShutDownRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.NewInvalidRequest(err))
+	runner, err := s.getRunner(ctx, runnerID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get runner %s: %w", runnerID, err))
 		return
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
+	s.evClient.Send(ctx, runner.ID, &signals.Signal{
 		Type: signals.OperationMngVMShutDown,
 	})
 
