@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -88,7 +89,9 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 
 	// Enqueue the process_init signal to transition process from pending to active
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
+		QueueID:   q.ID,
+		OwnerID:   process.ID,
+		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
 		Signal: queuesignal.NewRaw("process_init", map[string]any{
 			"runner_id":  runnerID,
 			"process_id": process.ID,

@@ -11,7 +11,7 @@ API surfaces:
 - **Public API** (port 8081) - For external users and CLI tools
 - **Admin API** (port 8082) - For internal administrative operations (JSON)
 - **Runner API** (port 8083) - For Nuon runners executing deployments
-- **Admin Dashboard** (port 8087) - Internal HTMX web UI for ops (see [admin-dashboard AGENTS.md](internal/app/admin-dashboard/AGENTS.md))
+- **Admin Dashboard** (port 8087) - Internal React SPA + JSON BFF for ops (see [admin-dashboard AGENTS.md](internal/app/admin-dashboard/AGENTS.md))
 
 ## Architecture
 
@@ -972,7 +972,7 @@ model supports it (e.g., `ComponentBuild → ComponentConfigConnection.AppConfig
 instead of fetching the build then separately fetching policies config). Also prefer pinned foreign keys (e.g.,
 `ComponentConfigConnection.AppConfigID`) over re-deriving associations via `ORDER BY created_at DESC LIMIT 1`.
 
-## Admin Dashboard (HTMX)
+## Admin Dashboard (React + BFF)
 
 The ctl-api runs **five HTTP servers**, each on its own port:
 
@@ -982,11 +982,11 @@ The ctl-api runs **five HTTP servers**, each on its own port:
 | Internal/Admin API | 8082 | Internal auth | Admin operations (JSON API) |
 | Runner API | 8083 | Runner token | Runner-to-API communication |
 | Auth API | 8084 | Various | Authentication endpoints |
-| **Admin Dashboard** | **8087** | `X-Nuon-Admin-Email` header | **HTMX web UI for internal ops** |
+| **Admin Dashboard** | **8087** | `X-Nuon-Admin-Email` header (proxy) + `X-Nuon-Auth` cookie | **React SPA + JSON BFF for internal ops** |
 
-The admin dashboard is a server-rendered Go + templ + HTMX web app at `internal/app/admin-dashboard/`. It is completely separate from the React `dashboard-ui` SPA — it runs on its own port and uses server-side rendering instead of a JavaScript framework.
+The admin dashboard is a React 18 SPA backed by a JSON BFF at `internal/app/admin-dashboard/`. The BFF lives under `/api/*` and serves the SPA's static `dist/` assets for everything else.
 
-**Full documentation**: See [`internal/app/admin-dashboard/AGENTS.md`](internal/app/admin-dashboard/AGENTS.md) for tech stack, handler patterns, HTMX conventions, and step-by-step recipes for adding pages/tables/actions.
+**Full documentation**: See [`internal/app/admin-dashboard/AGENTS.md`](internal/app/admin-dashboard/AGENTS.md) for tech stack, handler patterns, and step-by-step recipes for adding pages.
 
 ## Logging Conventions
 

@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
@@ -55,8 +53,13 @@ func (s *service) QueueDetail(c *gin.Context) {
 		Limit(50).
 		Find(&inFlightSignals)
 
-	component := views.QueueDetail(&q, status, signals, inFlightSignals, s.cfg.TemporalUIURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"queue":             &q,
+		"status":            status,
+		"signals":           signals,
+		"in_flight_signals": inFlightSignals,
+		"temporal_ui_url":   s.cfg.TemporalUIURL,
+	})
 }
 
 func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
@@ -70,8 +73,10 @@ func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
 		Limit(50).
 		Find(&signals)
 
-	component := views.QueueInFlightSignalsTable(signals, queueID)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":  signals,
+		"queue_id": queueID,
+	})
 }
 
 func (s *service) getQueueStatusFromTemporal(ctx context.Context, workflowID string) (*queue.StatusResponse, error) {

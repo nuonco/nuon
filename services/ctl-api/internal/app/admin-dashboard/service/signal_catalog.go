@@ -7,12 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -20,7 +18,7 @@ import (
 func (s *service) SignalCatalog(c *gin.Context) {
 	defer func() {
 		if r := recover(); r != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("panic: %v", r))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("panic: %v", r)})
 		}
 	}()
 
@@ -56,14 +54,16 @@ func (s *service) SignalCatalog(c *gin.Context) {
 	}
 	sort.Strings(namespaces)
 
-	component := views.SignalCatalogView(grouped, namespaces, search)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"grouped":    grouped,
+		"namespaces": namespaces,
+	})
 }
 
 func (s *service) SignalCatalogDetail(c *gin.Context) {
 	defer func() {
 		if r := recover(); r != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("panic: %v", r))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("panic: %v", r)})
 		}
 	}()
 
@@ -76,7 +76,7 @@ func (s *service) SignalCatalogDetail(c *gin.Context) {
 
 	info, err := catalog.InspectType(signal.SignalType(signalType))
 	if err != nil {
-		c.String(http.StatusNotFound, "Signal type not found: %s", signalType)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Signal type not found: " + signalType})
 		return
 	}
 
@@ -92,8 +92,10 @@ func (s *service) SignalCatalogDetail(c *gin.Context) {
 		s.l.Error("failed to fetch recent signals", zap.String("type", signalType), zap.Error(res.Error))
 	}
 
-	component := views.SignalCatalogDetailView(info, recentSignals)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"info":           info,
+		"recent_signals": recentSignals,
+	})
 }
 
 func signalAttributesForType(signalType signal.SignalType) *catalog.SignalTypeInfo {
