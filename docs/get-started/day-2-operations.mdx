@@ -1,0 +1,40 @@
+---
+title: "Day-2 Operations Overview"
+sidebarTitle: "Day-2 Overview"
+description: "BYOC primitives for scaling your deployments"
+icon: "wrench"
+boost: 3
+keywords: ["day 2 operations", "operate install", "post-deploy", "operations", "workflows actions policies"]
+---
+
+## Workflows
+
+A workflow is the lifecycle of an install or a component. It plans the change, surfaces a diff, runs through any approvals you've configured.
+
+Each workflow run's logs and step state are visible in the dashboard, CLI, and TUI.
+
+[How it works → Workflows](/concepts/workflows)
+
+## Actions
+
+An action is a custom script you run on a live install. Define it in TOML, point it at a repo, set environment variables. It runs inside the customer's account — on a cron, on a lifecycle event (`post-deploy-component`, `pre-reprovision`, etc.), on a manual trigger, or as a one-off from the dashboard.
+
+Typical uses: healthchecks, database migrations, runbooks, debugging stuck installs.
+
+[How it works → Actions](/concepts/actions)
+
+## Policies
+
+A policy is an OPA or Kyverno rule that gates what can be deployed. Policies validate Terraform plans, Helm charts, Kubernetes manifests, container images, and sandbox configurations before they apply. Every evaluation is logged on a per-app analytics page, scoped to the install, component, action, or deploy that triggered it.
+
+Use policies to enforce compliance, security baselines, or organization conventions across every customer install at once, instead of relying on review discipline per install.
+
+[How it works → Policies](/concepts/policies)
+
+## Operation Roles
+
+An operation role is a specific IAM role the runner assumes for one class of work — provisioning, deploys, individual actions, or break-glass access. Each role is defined by the vendor and approved by the customer through the Stack, so the runner never holds more permissions than the task at hand requires.
+
+Roles can be scoped per component or per action; every workflow run records which role was used.
+
+[How it works → Operation Roles](/concepts/operation-roles)
