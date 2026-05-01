@@ -39,6 +39,7 @@
               "cli",
               "deployment-options",
               "dashboard",
+              "tui",
               "configuration-files",
               "nuon-api",
               "sdks",
