@@ -7,12 +7,37 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
 
+const SANDBOX_JOB_TYPES = [
+  'terraform-deploy',
+  'helm-chart-deploy',
+  'kubernetes-manifest-deploy',
+  'job-deploy',
+  'noop-deploy',
+  'docker-build',
+  'container-image-build',
+  'terraform-module-build',
+  'helm-chart-build',
+  'kubernetes-manifest-build',
+  'noop-build',
+  'oci-sync',
+  'noop-sync',
+  'fetch-image-metadata',
+  'actions-workflow',
+  'sandbox-terraform',
+  'sandbox-terraform-plan',
+  'sandbox-sync-secrets',
+  'runner-helm',
+  'runner-terraform',
+]
+
+const NS_PER_MS = 1_000_000
+
 export const RunnerDetail = () => {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
   const [configForm, setConfigForm] = useState({
     job_type: '',
-    duration: 0,
+    duration_ms: 0,
     should_error: false,
     panic: false,
     trigger_shutdown: false,
@@ -25,10 +50,17 @@ export const RunnerDetail = () => {
   })
 
   const upsertMutation = useMutation({
-    mutationFn: () => upsertRunnerConfig(id!, configForm),
+    mutationFn: () =>
+      upsertRunnerConfig(id!, {
+        job_type: configForm.job_type,
+        duration: configForm.duration_ms * NS_PER_MS,
+        should_error: configForm.should_error,
+        panic: configForm.panic,
+        trigger_shutdown: configForm.trigger_shutdown,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['runner', id] })
-      setConfigForm({ job_type: '', duration: 0, should_error: false, panic: false, trigger_shutdown: false })
+      setConfigForm({ job_type: '', duration_ms: 0, should_error: false, panic: false, trigger_shutdown: false })
     },
   })
 
@@ -115,7 +147,7 @@ export const RunnerDetail = () => {
               {Object.entries(configs || {}).map(([jobType, config]) => (
                 <tr key={jobType}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{jobType}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{config.duration}ms</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{Math.round((config.duration ?? 0) / NS_PER_MS)}ms</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <Badge variant="status" status={config.should_error ? 'error' : 'healthy'}>
                       {config.should_error ? 'Yes' : 'No'}
@@ -157,15 +189,21 @@ export const RunnerDetail = () => {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:flex-wrap">
             <input
               type="text"
+              list="sandbox-job-types"
               value={configForm.job_type}
               onChange={(e) => setConfigForm((f) => ({ ...f, job_type: e.target.value }))}
               placeholder="Job type"
-              className="block w-40 rounded-md border-0 py-1 px-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
+              className="block w-56 rounded-md border-0 py-1 px-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 font-mono"
             />
+            <datalist id="sandbox-job-types">
+              {SANDBOX_JOB_TYPES.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
             <input
               type="number"
-              value={configForm.duration}
-              onChange={(e) => setConfigForm((f) => ({ ...f, duration: Number(e.target.value) }))}
+              value={configForm.duration_ms}
+              onChange={(e) => setConfigForm((f) => ({ ...f, duration_ms: Number(e.target.value) }))}
               placeholder="Duration (ms)"
               className="block w-32 rounded-md border-0 py-1 px-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
             />

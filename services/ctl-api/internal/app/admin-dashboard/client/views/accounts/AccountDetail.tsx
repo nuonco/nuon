@@ -92,6 +92,71 @@ export const AccountDetail = () => {
         </div>
       </div>
 
+      {/* User Journey */}
+      {Array.isArray(account.user_journeys) && account.user_journeys.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-gray-900">User Journey</h2>
+          <p className="mt-0.5 text-xs text-gray-500">Onboarding progress and completion tracking</p>
+          <div className="mt-3 space-y-4">
+            {account.user_journeys.map((journey: any, ji: number) => {
+              const steps: any[] = journey.steps || []
+              const completed = steps.filter((s) => s.complete).length
+              const total = steps.length
+              const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+              return (
+                <div key={ji} className={ji > 0 ? 'border-t border-gray-100 pt-3' : ''}>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-xs font-semibold text-gray-700">{journey.title || journey.name}</h3>
+                    <span className="text-xs text-gray-500 font-mono">{completed} / {total}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full rounded bg-gray-100">
+                    <div
+                      className="h-1.5 rounded bg-primary-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <ul className="mt-3 space-y-1.5">
+                    {steps.map((step: any) => (
+                      <li key={step.name} className="flex items-start gap-2 text-xs">
+                        <span
+                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${
+                            step.complete
+                              ? 'bg-primary-500 text-white'
+                              : 'bg-gray-100 text-gray-400'
+                          }`}
+                        >
+                          {step.complete ? '✓' : '○'}
+                        </span>
+                        <div className="flex-1">
+                          <div className={step.complete ? 'text-gray-900' : 'text-gray-500'}>
+                            {step.title || step.name}
+                          </div>
+                          {step.complete && step.completed_at && (
+                            <div className="text-[11px] text-gray-400">
+                              Completed {formatDate(step.completed_at)}
+                              {step.completion_method && <> · via {step.completion_method}</>}
+                            </div>
+                          )}
+                          {step.metadata && Object.keys(step.metadata).length > 0 && (
+                            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                              {Object.entries(step.metadata).map(([k, v]) => (
+                                <span key={k} className="font-mono">
+                                  <span className="text-gray-400">{k}:</span> {String(v)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Organizations */}
       <div className="table-card p-4">
         <h2 className="text-sm font-semibold text-gray-900">Organizations</h2>

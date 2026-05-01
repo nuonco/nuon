@@ -14,6 +14,22 @@ export type TOrg = {
   status_description?: string
 }
 
+export type TUserJourneyStep = {
+  name: string
+  title: string
+  complete: boolean
+  completed_at?: string
+  completion_method?: string
+  completion_source?: string
+  metadata?: Record<string, unknown>
+}
+
+export type TUserJourney = {
+  name: string
+  title: string
+  steps: TUserJourneyStep[]
+}
+
 export type TAccount = {
   id: string
   email: string
@@ -23,6 +39,7 @@ export type TAccount = {
   updated_at: string
   roles?: TRole[]
   org_ids?: string[]
+  user_journeys?: TUserJourney[]
 }
 
 export type TRole = {
