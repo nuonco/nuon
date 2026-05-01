@@ -29,8 +29,8 @@
         "tab": "Quickstart",
         "icon": "rocket",
         "pages": [
-          "get-started/introduction",
           "get-started/quickstart",
+          "get-started/introduction",
           "get-started/create-your-first-app",
           {
             "group": "Deployment Options",
@@ -313,6 +313,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/",
+      "destination": "/get-started/introduction"
+    },
     {
       "source": "/api-ref",
       "destination": "/nuon-api"
