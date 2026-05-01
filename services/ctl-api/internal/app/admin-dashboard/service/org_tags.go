@@ -3,14 +3,15 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// UpdateOrgTags handles the form submission from the selectbox component
+type updateOrgTagsRequest struct {
+	Tags []string `json:"tags"`
+}
+
+// UpdateOrgTags handles updating tags for an organization
 func (s *service) UpdateOrgTags(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
@@ -21,16 +22,14 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 		return
 	}
 
-	// Parse form data - checkboxes send multiple values with the same name
-	if err := c.Request.ParseForm(); err != nil {
-		s.l.Error("failed to parse form", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form"})
+	var req updateOrgTagsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		s.l.Error("failed to parse request", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	// Get all tags from the form (checkboxes send multiple values with name="tags")
-	newTags := c.Request.Form["tags"]
-	s.l.Info("Parsed form tags", zap.Strings("new_tags", newTags), zap.Any("form", c.Request.Form))
+	s.l.Info("Parsed tags", zap.Strings("new_tags", req.Tags))
 
 	// Get current org to compare tags
 	org, err := s.getOrg(ctx, orgID)
@@ -41,7 +40,7 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 	}
 
 	// Update tags directly in database
-	org.Tags = newTags
+	org.Tags = req.Tags
 
 	// Update only the tags field (using Select to only update tags)
 	if err := s.db.WithContext(ctx).Model(org).Select("tags").Updates(org).Error; err != nil {
@@ -58,9 +57,11 @@ func (s *service) UpdateOrgTags(c *gin.Context) {
 		return
 	}
 
-	// Render the updated org header with popover
-	component := views.OrgHeaderWithPopover(updatedOrg, s.cfg.AppURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, updatedOrg)
+}
+
+type removeSingleTagRequest struct {
+	Tag string `json:"tag"`
 }
 
 // RemoveSingleTag handles removing a single tag from an organization
@@ -110,7 +111,5 @@ func (s *service) RemoveSingleTag(c *gin.Context) {
 		return
 	}
 
-	// Render the updated org header with popover
-	component := views.OrgHeaderWithPopover(updatedOrg, s.cfg.AppURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, updatedOrg)
 }

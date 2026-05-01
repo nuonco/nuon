@@ -1,16 +1,14 @@
 package service
 
 import (
-	"github.com/a-h/templ"
-	"github.com/gin-gonic/gin"
+	"net/http"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
+	"github.com/gin-gonic/gin"
 )
 
 func (s *service) Index(c *gin.Context) {
-	// Render the templ component
-	component := views.Index("Nuon Admin Dashboard", "Welcome to the Nuon admin dashboard service")
-
-	// Use templ's Handler to render to the response
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"title":       "Nuon Admin Dashboard",
+		"description": "Welcome to the Nuon admin dashboard service",
+	})
 }
