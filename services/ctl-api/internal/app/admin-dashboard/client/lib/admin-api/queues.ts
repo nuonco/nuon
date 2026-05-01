@@ -1,8 +1,10 @@
 import { api } from '@/lib/api'
 import type { TQueuesResponse, TQueueDetailResponse, TQueue, TQueueSignal, TQueueEmitter } from '@/types/admin.types'
 
-export const getQueues = (params: { search?: string; name?: string; namespace?: string; page?: number }) =>
-  api<TQueuesResponse>({ path: 'queues', params })
+export const getQueues = (params: { search?: string; name?: string; namespace?: string; owner_id?: string; owner_type?: string; page?: number }) => {
+  const { name, ...rest } = params
+  return api<TQueuesResponse>({ path: 'queues', params: { ...rest, queue_name: name } })
+}
 
 export const getQueueDetail = (id: string) =>
   api<TQueueDetailResponse>({ path: `queues/${id}` })

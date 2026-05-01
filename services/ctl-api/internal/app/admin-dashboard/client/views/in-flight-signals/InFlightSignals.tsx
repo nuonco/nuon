@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { getInFlightSignals } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
@@ -22,9 +23,10 @@ function getElapsed(dateStr: string | undefined): string {
 }
 
 export const InFlightSignals = () => {
+  const [namespace, setNamespace] = useState('')
   const { data, isLoading, error } = useQuery({
-    queryKey: ['in-flight-signals'],
-    queryFn: () => getInFlightSignals(),
+    queryKey: ['in-flight-signals', namespace],
+    queryFn: () => getInFlightSignals({ namespace: namespace || undefined }),
     refetchInterval: 5000,
   })
 
@@ -32,11 +34,25 @@ export const InFlightSignals = () => {
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load in-flight signals'} />
 
   const signals = data?.signals || []
+  const namespaces = data?.namespaces || []
 
   return (
     <div>
       <h1 className="page-heading">In-flight signals</h1>
       <p className="mt-1 text-sm text-gray-500">{signals.length} active signals (auto-refreshing)</p>
+
+      <div className="mt-3">
+        <select
+          value={namespace}
+          onChange={(e) => setNamespace(e.target.value)}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+        >
+          <option value="">All namespaces</option>
+          {namespaces.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="mt-4 table-card">
         <table>

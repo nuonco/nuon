@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { getQueues } from '@/lib/admin-api'
 import { Pagination } from '@/components/common/Pagination'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -9,14 +9,24 @@ import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const QueuesList = () => {
+  const [searchParams] = useSearchParams()
+  const ownerID = searchParams.get('owner_id') || undefined
+  const ownerType = searchParams.get('owner_type') || undefined
   const [search, setSearch] = useState('')
   const [name, setName] = useState('')
   const [namespace, setNamespace] = useState('')
   const [page, setPage] = useState(1)
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queues', search, name, namespace, page],
-    queryFn: () => getQueues({ search, name: name || undefined, namespace: namespace || undefined, page }),
+    queryKey: ['queues', search, name, namespace, ownerID, ownerType, page],
+    queryFn: () => getQueues({
+      search,
+      name: name || undefined,
+      namespace: namespace || undefined,
+      owner_id: ownerID,
+      owner_type: ownerType,
+      page,
+    }),
   })
 
   if (isLoading) return <LoadingSpinner />

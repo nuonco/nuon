@@ -2,15 +2,25 @@ import { api } from '@/lib/api'
 import type { TQueueSignal } from '@/types/admin.types'
 
 // Queue signals (global view)
-export const getQueueSignalsGlobal = (params: { search?: string; signal_type?: string; page?: number }) =>
-  api<{ signals: TQueueSignal[]; page: number; total_pages: number }>({ path: 'queue-signals/table', params })
+export const getQueueSignalsGlobal = (params: {
+  search?: string
+  signal_type?: string
+  owner_id?: string
+  namespace?: string
+  status?: string
+  page?: number
+}) =>
+  api<{ signals: TQueueSignal[]; page: number; total_pages: number; namespaces?: string[] }>({
+    path: 'queue-signals/table',
+    params,
+  })
 
-export const getQueueSignalTypeOptions = () =>
-  api<{ signal_types: string[] }>({ path: 'queue-signals/signal-type-options' })
+export const getQueueSignalTypeOptions = (namespace?: string) =>
+  api<{ signal_types: string[] }>({ path: 'queue-signals/signal-type-options', params: { namespace } })
 
 // In-flight signals
-export const getInFlightSignals = () =>
-  api<{ signals: TQueueSignal[] }>({ path: 'in-flight-signals/table' })
+export const getInFlightSignals = (params?: { namespace?: string }) =>
+  api<{ signals: TQueueSignal[]; namespaces?: string[] }>({ path: 'in-flight-signals/table', params })
 
 // Signal catalog - Go returns { grouped: Record<string, SignalTypeInfo[]>, namespaces: string[] }
 export const getSignalCatalog = () =>

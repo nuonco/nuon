@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { getQueueSignalsGlobal, getQueueSignalTypeOptions } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { SignalLink } from '@/components/common/SignalLink'
@@ -11,18 +11,27 @@ import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const QueueSignals = () => {
+  const [searchParams] = useSearchParams()
+  const ownerID = searchParams.get('owner_id') || undefined
   const [search, setSearch] = useState('')
   const [signalType, setSignalType] = useState('')
+  const [namespace, setNamespace] = useState('')
   const [page, setPage] = useState(1)
 
   const { data: typeOptions } = useQuery({
-    queryKey: ['queue-signal-type-options'],
-    queryFn: () => getQueueSignalTypeOptions(),
+    queryKey: ['queue-signal-type-options', namespace],
+    queryFn: () => getQueueSignalTypeOptions(namespace || undefined),
   })
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, page],
-    queryFn: () => getQueueSignalsGlobal({ search, signal_type: signalType || undefined, page }),
+    queryKey: ['queue-signals-global', search, signalType, namespace, ownerID, page],
+    queryFn: () => getQueueSignalsGlobal({
+      search,
+      signal_type: signalType || undefined,
+      namespace: namespace || undefined,
+      owner_id: ownerID,
+      page,
+    }),
   })
 
   if (isLoading) return <LoadingSpinner />
