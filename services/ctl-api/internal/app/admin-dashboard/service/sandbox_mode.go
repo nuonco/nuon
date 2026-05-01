@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
 	sbtemplates "github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode/templates"
@@ -21,61 +18,63 @@ import (
 
 func (s *service) SandboxMode(c *gin.Context) {
 	ctx := c.Request.Context()
-	tab := c.Query("tab")
-	if tab == "" {
-		tab = "runner-jobs"
+
+	runnerJobConfigs, err := s.getSandboxRunnerJobConfigs(ctx)
+	if err != nil {
+		s.l.Warn("failed to get runner job configs", zap.Error(err))
+	}
+	if runnerJobConfigs == nil {
+		runnerJobConfigs = []app.SandboxModeJobConfig{}
 	}
 
-	var runnerJobConfigs []app.SandboxModeJobConfig
-	var signalConfigs []app.SandboxModeSignalConfig
-	var stackConfig *app.SandboxModeJobConfig
-
-	switch tab {
-	case "runner-jobs", "templates":
-		runnerJobConfigs, _ = s.getSandboxRunnerJobConfigs(ctx)
-	case "signals":
-		signalConfigs, _ = s.getSandboxSignalConfigs(ctx)
-	case "stacks":
-		stackConfig, _ = s.getSandboxStackConfig(ctx)
+	signalConfigs, err := s.getSandboxSignalConfigs(ctx)
+	if err != nil {
+		s.l.Warn("failed to get signal configs", zap.Error(err))
+	}
+	if signalConfigs == nil {
+		signalConfigs = []app.SandboxModeSignalConfig{}
 	}
 
-	component := views.SandboxMode(views.SandboxModeData{
-		ActiveTab:         tab,
-		RunnerJobConfigs:  runnerJobConfigs,
-		SignalConfigs:     signalConfigs,
-		StackConfig:       stackConfig,
-		AllSignalTypes:    signals.AllSignalTypes(),
-		AllRunnerJobTypes: sandboxmode.AllRunnerJobTypes(),
-		Templates:         sbtemplates.AllTemplates(),
-		FlowTemplates:     sbtemplates.FlowTemplates(),
+	stackConfig, _ := s.getSandboxStackConfig(ctx)
+
+	c.JSON(http.StatusOK, gin.H{
+		"runner_job_configs":   runnerJobConfigs,
+		"signal_configs":       signalConfigs,
+		"stack_config":         stackConfig,
+		"all_signal_types":     signals.AllSignalTypes(),
+		"all_runner_job_types": sandboxmode.AllRunnerJobTypes(),
+		"templates":            sbtemplates.AllTemplates(),
+		"flow_templates":       sbtemplates.FlowTemplates(),
 	})
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
 }
 
 func (s *service) SandboxModeRunnerJobsTable(c *gin.Context) {
 	ctx := c.Request.Context()
-	search := c.Query("search")
 	configs, err := s.getSandboxRunnerJobConfigs(ctx)
 	if err != nil {
 		s.l.Error("failed to get runner job configs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	component := views.SandboxModeRunnerJobsTable(configs, sandboxmode.AllRunnerJobTypes(), search, sbtemplates.AllTemplates())
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"configs":              configs,
+		"all_runner_job_types": sandboxmode.AllRunnerJobTypes(),
+		"templates":            sbtemplates.AllTemplates(),
+	})
 }
 
 func (s *service) SandboxModeRunnerJobsRows(c *gin.Context) {
 	ctx := c.Request.Context()
-	search := c.Query("search")
 	configs, err := s.getSandboxRunnerJobConfigs(ctx)
 	if err != nil {
 		s.l.Error("failed to get runner job configs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	component := views.SandboxModeRunnerJobsRows(configs, sandboxmode.AllRunnerJobTypes(), search)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"configs":              configs,
+		"all_runner_job_types": sandboxmode.AllRunnerJobTypes(),
+	})
 }
 
 func (s *service) SandboxModeBuilder(c *gin.Context) {
@@ -91,34 +90,40 @@ func (s *service) SandboxModeBuilder(c *gin.Context) {
 		}
 	}
 
-	component := views.SandboxModeBuilder(jobType, cfg, sbtemplates.AllTemplates(), sandboxmode.AllRunnerJobTypes())
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"job_type":             jobType,
+		"config":               cfg,
+		"templates":            sbtemplates.AllTemplates(),
+		"all_runner_job_types": sandboxmode.AllRunnerJobTypes(),
+	})
 }
 
 func (s *service) SandboxModeSignalsTable(c *gin.Context) {
 	ctx := c.Request.Context()
-	search := c.Query("search")
 	configs, err := s.getSandboxSignalConfigs(ctx)
 	if err != nil {
 		s.l.Error("failed to get signal configs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	component := views.SandboxModeSignalsTable(configs, signals.AllSignalTypes(), search)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"configs":          configs,
+		"all_signal_types": signals.AllSignalTypes(),
+	})
 }
 
 func (s *service) SandboxModeSignalRows(c *gin.Context) {
 	ctx := c.Request.Context()
-	search := c.Query("search")
 	configs, err := s.getSandboxSignalConfigs(ctx)
 	if err != nil {
 		s.l.Error("failed to get signal configs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	component := views.SandboxModeSignalRows(configs, signals.AllSignalTypes(), search)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"configs":          configs,
+		"all_signal_types": signals.AllSignalTypes(),
+	})
 }
 
 func (s *service) SandboxModeStacksTable(c *gin.Context) {
@@ -129,35 +134,39 @@ func (s *service) SandboxModeStacksTable(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	component := views.SandboxModeStacksTable(cfg, sbtemplates.AllTemplates())
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"config":    cfg,
+		"templates": sbtemplates.AllTemplates(),
+	})
+}
+
+type upsertSignalConfigRequest struct {
+	Enabled              bool    `json:"enabled"`
+	DeadlockSleepSeconds float64 `json:"deadlock_sleep_seconds"`
+	WorkflowSleepSeconds float64 `json:"workflow_sleep_seconds"`
+	Panic                bool    `json:"panic"`
+	Error                string  `json:"error"`
+	ValidateError        string  `json:"validate_error"`
 }
 
 func (s *service) SandboxModeUpsertSignalConfig(c *gin.Context) {
 	signalType := c.Param("signal_type")
 
-	s.l.Info("upsert signal config",
-		zap.String("signal_type", signalType),
-		zap.String("content_type", c.ContentType()),
-		zap.String("enabled", c.PostForm("enabled")),
-		zap.String("deadlock", c.PostForm("deadlock_sleep_seconds")),
-		zap.String("workflow", c.PostForm("workflow_sleep_seconds")),
-		zap.String("panic", c.PostForm("panic")),
-		zap.String("error_val", c.PostForm("error")),
-	)
-
-	deadlockSec, _ := strconv.ParseFloat(c.PostForm("deadlock_sleep_seconds"), 64)
-	workflowSec, _ := strconv.ParseFloat(c.PostForm("workflow_sleep_seconds"), 64)
+	var req upsertSignalConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	config := app.SandboxModeSignalConfig{
 		CreatedByID:   createdByIDFromGinContext(c),
 		SignalType:    signalType,
-		Enabled:       c.PostForm("enabled") == "on" || c.PostForm("enabled") == "true",
-		DeadlockSleep: time.Duration(deadlockSec * float64(time.Second)),
-		WorkflowSleep: time.Duration(workflowSec * float64(time.Second)),
-		Panic:         c.PostForm("panic") == "on" || c.PostForm("panic") == "true",
-		Error:         c.PostForm("error"),
-		ValidateError: c.PostForm("validate_error"),
+		Enabled:       req.Enabled,
+		DeadlockSleep: time.Duration(req.DeadlockSleepSeconds * float64(time.Second)),
+		WorkflowSleep: time.Duration(req.WorkflowSleepSeconds * float64(time.Second)),
+		Panic:         req.Panic,
+		Error:         req.Error,
+		ValidateError: req.ValidateError,
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
@@ -179,39 +188,51 @@ func (s *service) SandboxModeUpsertSignalConfig(c *gin.Context) {
 		Where(app.SandboxModeSignalConfig{SignalType: signalType}).
 		First(&saved)
 
-	// Return re-rendered HTML row (open state so user sees feedback)
-	component := views.SignalRowSaved(signalType, &saved)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"config":      &saved,
+		"signal_type": signalType,
+	})
+}
+
+type upsertRunnerJobConfigRequest struct {
+	Operation           string `json:"operation"`
+	Enabled             bool   `json:"enabled"`
+	DurationMs          int64  `json:"duration_ms"`
+	SleepDurationMs     int64  `json:"sleep_duration_ms"`
+	ShouldError         bool   `json:"should_error"`
+	Panic               bool   `json:"panic"`
+	TriggerShutdown     bool   `json:"trigger_shutdown"`
+	LogTemplate         string `json:"log_template"`
+	PlanTemplate        string `json:"plan_template"`
+	PlanDisplayTemplate string `json:"plan_display_template"`
+	StateTemplate       string `json:"state_template"`
+	OutputTemplate      string `json:"output_template"`
 }
 
 func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	jobType := c.Param("job_type")
 
-	s.l.Info("upsert runner job config",
-		zap.String("job_type", jobType),
-		zap.String("content_type", c.ContentType()),
-		zap.String("enabled", c.PostForm("enabled")),
-		zap.String("duration_ms", c.PostForm("duration_ms")),
-	)
-
-	durationMs, _ := strconv.ParseInt(c.PostForm("duration_ms"), 10, 64)
-	sleepMs, _ := strconv.ParseInt(c.PostForm("sleep_duration_ms"), 10, 64)
+	var req upsertRunnerJobConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	config := app.SandboxModeJobConfig{
 		CreatedByID:         createdByIDFromGinContext(c),
 		JobType:             jobType,
-		Operation:           c.PostForm("operation"),
-		Enabled:             c.PostForm("enabled") == "on",
-		Duration:            time.Duration(durationMs) * time.Millisecond,
-		SleepDuration:       time.Duration(sleepMs) * time.Millisecond,
-		ShouldError:         c.PostForm("should_error") == "on",
-		Panic:               c.PostForm("panic") == "on",
-		TriggerShutdown:     c.PostForm("trigger_shutdown") == "on",
-		LogTemplate:         c.PostForm("log_template"),
-		PlanTemplate:        c.PostForm("plan_template"),
-		PlanDisplayTemplate: c.PostForm("plan_display_template"),
-		StateTemplate:       c.PostForm("state_template"),
-		OutputTemplate:      c.PostForm("output_template"),
+		Operation:           req.Operation,
+		Enabled:             req.Enabled,
+		Duration:            time.Duration(req.DurationMs) * time.Millisecond,
+		SleepDuration:       time.Duration(req.SleepDurationMs) * time.Millisecond,
+		ShouldError:         req.ShouldError,
+		Panic:               req.Panic,
+		TriggerShutdown:     req.TriggerShutdown,
+		LogTemplate:         req.LogTemplate,
+		PlanTemplate:        req.PlanTemplate,
+		PlanDisplayTemplate: req.PlanDisplayTemplate,
+		StateTemplate:       req.StateTemplate,
+		OutputTemplate:      req.OutputTemplate,
 	}
 
 	if res := s.db.WithContext(c.Request.Context()).
@@ -231,9 +252,10 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 		Where(app.SandboxModeJobConfig{JobType: jobType}).
 		First(&saved)
 
-	// Return re-rendered row (open state so user sees feedback)
-	component := views.RunnerJobRowSaved(jobType, &saved, sbtemplates.AllTemplates())
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"config":   &saved,
+		"job_type": jobType,
+	})
 }
 
 func (s *service) SandboxModeDisableAllSignals(c *gin.Context) {
@@ -244,8 +266,7 @@ func (s *service) SandboxModeDisableAllSignals(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
 		return
 	}
-	c.Header("HX-Trigger", "signalConfigUpdated")
-	c.JSON(http.StatusOK, app.EmptyResponse{})
+	c.JSON(http.StatusOK, gin.H{"status": "disabled"})
 }
 
 func (s *service) SandboxModeDisableAllRunnerJobs(c *gin.Context) {
@@ -256,8 +277,7 @@ func (s *service) SandboxModeDisableAllRunnerJobs(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
 		return
 	}
-	c.Header("HX-Trigger", "runnerJobConfigUpdated")
-	c.JSON(http.StatusOK, app.EmptyResponse{})
+	c.JSON(http.StatusOK, gin.H{"status": "disabled"})
 }
 
 func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
@@ -296,9 +316,7 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 		}
 	}
 
-	// Redirect to runner-jobs tab so the user can see the applied configs
-	c.Header("HX-Redirect", "/sandbox-mode?tab=runner-jobs")
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"status": "applied", "template": templateKey})
 }
 
 func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeJobConfig, error) {

@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const queueSignalsPerPage = 100
@@ -43,8 +41,13 @@ func (s *service) QueueSignals(c *gin.Context) {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
 
-	component := views.QueueSignals(signals, search, ownerID, signalType, status, namespace, namespaces, signalTypes, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":      signals,
+		"namespaces":   namespaces,
+		"signal_types": signalTypes,
+		"page":         page,
+		"total_pages":  totalPages,
+	})
 }
 
 func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
@@ -63,24 +66,26 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 		return
 	}
 
-	component := views.QueueSignalsGlobalTable(signals, search, ownerID, signalType, status, namespace, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":     signals,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
-// QueueSignalTypeOptions returns the signal type selectbox options filtered by namespace.
-// Used by HTMX to update the signal type dropdown when namespace changes.
+// QueueSignalTypeOptions returns the signal type options filtered by namespace.
 func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Query("namespace")
-	signalType := c.Query("signal_type")
 
 	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
 
-	component := views.SignalTypeOptions(signalTypes, signalType)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signal_types": signalTypes,
+	})
 }
 
 func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace string, page int) ([]app.QueueSignal, int, error) {

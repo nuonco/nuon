@@ -8,13 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const installActivityPerPage = 10
@@ -78,12 +76,20 @@ func (s *service) InstallDetail(c *gin.Context) {
 	)
 	if err != nil {
 		s.l.Warn("failed to get activity logs", zap.Error(err))
-		activityLogs = []*views.AuditLogEntry{}
+		activityLogs = []*AuditLogEntry{}
 		activityTotalPages = 1
 	}
 
-	component := views.InstallDetail(install, activeDeployments, activityLogs, startDate, endDate, s.cfg.AppURL, page, activityTotalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"install":              install,
+		"active_deployments":   activeDeployments,
+		"activity_logs":        activityLogs,
+		"start_date":           startDate,
+		"end_date":             endDate,
+		"app_url":              s.cfg.AppURL,
+		"page":                 page,
+		"activity_total_pages": activityTotalPages,
+	})
 }
 
 // InstallActiveDeploymentsTable handles the polling endpoint for active deployments
@@ -101,8 +107,10 @@ func (s *service) InstallActiveDeploymentsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.InstallActiveDeploymentsTable(installID, deployments)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"install_id":  installID,
+		"deployments": deployments,
+	})
 }
 
 // InstallActivityTable handles the polling endpoint for install activity
@@ -156,13 +164,19 @@ func (s *service) InstallActivityTable(c *gin.Context) {
 		return
 	}
 
-	component := views.InstallActivityTable(installID, activityLogs, startDate, endDate, page, activityTotalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"install_id":    installID,
+		"activity_logs": activityLogs,
+		"start_date":    startDate,
+		"end_date":      endDate,
+		"page":          page,
+		"total_pages":   activityTotalPages,
+	})
 }
 
 const installWorkflowsPerPage = 10
 
-// InstallWorkflowsTable handles the HTMX endpoint for install workflows
+// InstallWorkflowsTable handles the endpoint for install workflows
 func (s *service) InstallWorkflowsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	installID := c.Param("id")
@@ -180,8 +194,12 @@ func (s *service) InstallWorkflowsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.InstallWorkflowsTable(installID, workflows, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"install_id":  installID,
+		"workflows":   workflows,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getWorkflowsForInstall(ctx context.Context, installID string, page int) ([]*app.Workflow, int, error) {
@@ -281,8 +299,8 @@ func (s *service) getActivityForInstall(
 	startDate, endDate time.Time,
 	page int,
 	entityTypes []string,
-) ([]*views.AuditLogEntry, int, error) {
-	var entries []*views.AuditLogEntry
+) ([]*AuditLogEntry, int, error) {
+	var entries []*AuditLogEntry
 
 	// Default to runner_job and workflow if no types specified
 	// Also handle case where empty string is passed
@@ -358,7 +376,7 @@ func (s *service) getActivityForInstall(
 	}
 
 	if len(queries) == 0 {
-		return []*views.AuditLogEntry{}, 1, nil
+		return []*AuditLogEntry{}, 1, nil
 	}
 
 	// Join queries with UNION ALL
