@@ -88,13 +88,6 @@
             "group": "Continuous Delivery",
             "boost": 3,
             "pages": ["get-started/day-2-operations", "concepts/workflows", "concepts/actions", "concepts/policies", "concepts/operation-roles"]
-          },
-          {
-            "group": "Customer Experience",
-            "boost": 3,
-            "pages": [
-              "concepts/customer-portal"
-            ]
           }
         ]
       },
@@ -133,14 +126,7 @@
             "pages": [
               "guides/vendor-customers",
               "guides/runner-kill-switch",
-              "guides/custom-domains",
-              {
-                "group": "White-label BYOC Installation",
-                "pages": [
-                  "guides/customer-portal",
-                  "guides/control-plane-integration"
-                ]
-              }
+              "guides/custom-domains"
             ]
           },
           {
