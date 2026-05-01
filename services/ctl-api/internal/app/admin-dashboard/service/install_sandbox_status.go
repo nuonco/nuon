@@ -3,12 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) InstallSandboxStatus(c *gin.Context) {
@@ -23,6 +20,8 @@ func (s *service) InstallSandboxStatus(c *gin.Context) {
 		return
 	}
 
-	component := views.InstallSandboxStatusBadge(install)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"install_id":   install.ID,
+		"sandbox_mode": install.SandboxMode,
+	})
 }

@@ -8,23 +8,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const logStreamLogsPerPage = 100
 
-// LogStreamViewer renders the log stream search page
+// LogStreamViewer returns the log stream search endpoint
 func (s *service) LogStreamViewer(c *gin.Context) {
-	component := views.LogStreamSearch()
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{"message": "Use GET /log-streams/:log_stream_id to view a log stream"})
 }
 
-// LogStreamDetail renders the log stream detail page with logs
+// LogStreamDetail returns the log stream detail with logs
 func (s *service) LogStreamDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	logStreamID := c.Param("log_stream_id")
@@ -46,11 +43,15 @@ func (s *service) LogStreamDetail(c *gin.Context) {
 		totalPages = 1
 	}
 
-	component := views.LogStreamDetail(ls, logs, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"log_stream":  ls,
+		"logs":        logs,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
-// LogStreamLogsTable handles the HTMX endpoint for log pagination
+// LogStreamLogsTable handles the endpoint for log pagination
 func (s *service) LogStreamLogsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	logStreamID := c.Param("log_stream_id")
@@ -70,8 +71,12 @@ func (s *service) LogStreamLogsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.LogStreamLogsTable(ls.ID, logs, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"log_stream_id": ls.ID,
+		"logs":          logs,
+		"page":          page,
+		"total_pages":   totalPages,
+	})
 }
 
 func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.LogStream, error) {

@@ -1,365 +1,128 @@
-# Admin Dashboard (HTMX)
+# Admin Dashboard (React + BFF)
 
-Internal admin dashboard for Nuon operations. This is a server-rendered Go + templ + HTMX web app, completely separate from the React `dashboard-ui` SPA.
+Internal admin dashboard for Nuon operations. A React SPA backed by a JSON BFF served by ctl-api. Completely separate from the customer-facing `dashboard-ui` SPA.
 
 - **Port**: 8087 (configured via `admin_dashboard_http_port` in `internal/config.go`)
 - **URL**: `http://localhost:8087` when running locally
-- **Auth**: Admin middleware using `X-Nuon-Admin-Email` header (see `internal/middlewares/admin/`)
+- **Auth**: `X-Nuon-Auth` cookie resolves to an account; falls back to a synthetic `admin-dashboard` account ID for hook attribution. The route group is gated by whatever middlewares the deploy mounts via `admin_dashboard_middlewares` (typically the `admin` middleware checking `X-Nuon-Admin-Email` from the reverse proxy).
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Server | Go (Gin) |
-| Templates | [templ](https://templ.guide) — type-safe Go HTML templates |
-| Interactivity | [HTMX 2.0](https://htmx.org) — server-rendered HTML fragments |
-| Styling | Tailwind CSS v4 with OKLCH color theme |
-| Components | [templui](https://templui.com) — templ component library |
-| Fonts | Inter + JetBrains Mono (Google Fonts) |
+| Frontend | React 18 + react-router 7 |
+| Data | TanStack Query |
+| Styling | Tailwind CSS v4 (PostCSS) |
+| Bundler | esbuild + browser-sync (live-reload) |
+| Type-check | `tsc --noEmit` |
+
+There is no templ, no HTMX, and no Vite. Old `views/*.templ` and `components/*.templ` were replaced by `client/views/**/*.tsx` and `client/components/**/*.tsx`.
 
 ## Directory Structure
 
 ```
 admin-dashboard/
-├── service/              ← Go handlers (Gin)
-│   ├── service.go        ← FX params, constructor, route registration
-│   ├── views/            ← templ templates (pages + fragments)
-│   │   ├── layout.templ  ← shared HTML shell, nav, ActivePage enum
-│   │   ├── gen.go        ← package declaration (templ generate target)
-│   │   └── *.templ       ← one per page/table/badge
-│   └── *.go              ← one file per handler (+ private query methods)
-├── components/           ← reusable templui primitives
-│   ├── table/            ├── badge/
-│   ├── pagination/       ├── copybutton/
-│   ├── button/           ├── card/
-│   ├── input/            ├── search/
-│   ├── selectbox/        ├── tagsinput/
-│   ├── dropdown/         ├── popover/
-│   ├── tooltip/          ├── datepicker/
-│   ├── calendar/         ├── graphviewer/
-│   ├── status/           ├── progress/
-│   ├── toast/            ├── icon/
-│   ├── journey-progress/ └── aspectratio/
-├── assets/               ← static files served at /assets
-│   ├── css/
-│   │   ├── input.css     ← Tailwind source with Nuon OKLCH theme
-│   │   └── output.css    ← generated (do not edit directly)
-│   ├── js/               ← component JS (minified)
-│   └── favicon.svg
-├── utils/                ← shared templ utilities (TwMerge)
-└── .templui.json         ← templui config (component paths, module name)
+├── service/                    ← Go BFF (Gin handlers returning JSON)
+│   ├── service.go              ← FX params, constructor, route registration
+│   ├── spa.go                  ← static file serving + SPA fallback
+│   ├── views/                  ← shared Go types used by handlers (NOT views)
+│   │   ├── types.go
+│   │   ├── workflow_info.go
+│   │   ├── workflow_detail_types.go
+│   │   └── temporal_workers_types.go
+│   └── *.go                    ← one file per handler
+├── client/                     ← React SPA
+│   ├── index.html              ← shell (favicon, fonts, /styles.css, /app.js, /app.css)
+│   ├── index.tsx               ← React mount
+│   ├── App.tsx                 ← router + providers
+│   ├── styles.css              ← Tailwind v4 entry
+│   ├── tsconfig.json
+│   ├── components/             ← shared UI (Badge, JsonViewer, StatusHistory, ...)
+│   ├── views/                  ← page components, one folder per domain
+│   ├── lib/
+│   │   ├── api.ts              ← fetch wrapper (prefixes /api, sends credentials)
+│   │   └── admin-api/          ← typed client per domain (orgs, queues, signals, ...)
+│   ├── providers/config-provider.tsx
+│   ├── types/admin.types.ts    ← shared response types
+│   └── utils/format.ts
+├── package.json                ← npm scripts (dev, build, tsc)
+├── postcss.config.js
+└── scripts/hash-assets.js      ← prod step: content-hashed asset filenames
 ```
 
-## Handler Pattern
+## Backend handler pattern
 
-Every handler follows the same shape. Example from `orgs_table.go`:
+Handlers return JSON. No `templ.Handler(...)`, no redirects.
 
 ```go
-func (s *service) OrgsTable(c *gin.Context) {
-    ctx := c.Request.Context()
-    search := c.Query("search")
-    page := getPageFromQuery(c)
-
-    orgs, totalPages, err := s.getOrgs(ctx, search, nil, page)
+func (s *service) OrgDetail(c *gin.Context) {
+    org, err := s.fetchOrg(c.Request.Context(), c.Param("id"))
     if err != nil {
-        s.l.Error("failed to get orgs for table", zap.Error(err))
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
+        s.l.Error("failed to fetch org", zap.Error(err))
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch org"})
         return
     }
-
-    component := views.OrgsTable(orgs, page, totalPages, search, filteredTags)
-    templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+    c.JSON(http.StatusOK, gin.H{"org": org, /* ... */})
 }
 ```
 
-Private query methods (e.g. `getOrgs`) live in the same handler file.
+Mutations return `{"status": "..."}` rather than redirecting — the React caller invalidates the relevant query key.
 
-## Page vs Fragment Pattern
+## Frontend pattern
 
-**Full pages** wrap content in `views.Layout()` which provides the HTML shell, nav bar, and assets:
+Each page component uses `useQuery` for reads and `useMutation` for writes:
 
-```templ
-templ Orgs(...) {
-    @Layout("Organizations", ActivePageOrgs) {
-        <div class="max-w-7xl mx-auto px-6 py-8">
-            // page content with embedded table div
-        </div>
-    }
-}
+```tsx
+const { data, isLoading } = useQuery({
+    queryKey: ['org', id],
+    queryFn: () => getOrgDetail(id!),
+})
+
+const restartMutation = useMutation({
+    mutationFn: () => restartQueue(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
+})
 ```
 
-**HTMX fragments** return bare HTML (no `Layout` wrapper) for `hx-swap`:
+Polling replaces HTMX `hx-trigger="every Ns"`:
 
-```go
-func (s *service) OrgsTable(c *gin.Context) {
-    // ... fetch data ...
-    component := views.OrgsTable(orgs, page, totalPages, search, filteredTags)
-    templ.Handler(component).ServeHTTP(c.Writer, c.Request)
-}
+```tsx
+useQuery({ queryKey: [...], queryFn: ..., refetchInterval: 5000 })
 ```
 
-The fragment template has no `@Layout` call — it returns just the table HTML that HTMX swaps in.
+The `lib/admin-api/` modules are the only place that knows BFF URL shape. Pages never call `fetch` directly.
 
-## HTMX Patterns Used
+## Route registration
 
-| Pattern | Example | Notes |
-|---------|---------|-------|
-| Polling | `hx-trigger="every 20s"` | Status badges auto-refresh |
-| Swap | `hx-swap="outerHTML"` | Replace the triggering element |
-| Include | `hx-include="[name='search'],[name='tag']"` | Send form values with request |
-| Target | `hx-target="#table-container"` | Swap into a specific element |
-| Trigger on change | `hx-trigger="change from:[name='tag']"` | React to filter changes |
-| Redirect after POST | `c.Redirect(http.StatusSeeOther, "/orgs/"+orgID)` | PRG pattern for mutations |
+All routes live under `/api/*` and are registered in `service.go` → `RegisterAdminDashboardRoutes()`. Anything not under `/api/` falls through to `spa.go`'s SPA fallback (serves `dist/index.html`).
 
-The two-handler pattern is central: every list page has a **page handler** (full layout) and a **table handler** (bare fragment for HTMX polling/filtering). Both call the same private query method.
+The other four `Register*Routes` methods return `nil` — admin-dashboard only uses the dashboard route context.
 
-## Route Registration
+## Local dev
 
-All routes are registered in `service.go` → `RegisterAdminDashboardRoutes()`. The other four `Register*Routes` methods return nil — admin-dashboard only uses the dashboard route context.
-
-## Available Service Dependencies
-
-The service struct has access to these (injected via FX):
-
-| Field | Type | Use |
-|-------|------|-----|
-| `db` | `*gorm.DB` (Postgres) | Primary data queries |
-| `chDB` | `*gorm.DB` (ClickHouse) | Log stream queries |
-| `temporalClient` | `temporalclient.Client` | Temporal workflow inspection |
-| `queueClient` | `*queueclient.Client` | Queue operations |
-| `appsHelpers` | `*appshelpers.Helpers` | App domain logic |
-| `orgsHelpers` | `*orgshelpers.Helpers` | Org domain logic |
-| `acctClient` | `*account.Client` | Account operations |
-| `authzClient` | `*authz.Client` | RBAC operations |
-| `codecs` | `[]converter.PayloadCodec` | Temporal payload decoding (gzip, large, s3) |
-| `cfg` | `*internal.Config` | App config (e.g. `cfg.AppURL`) |
-| `l` | `*zap.Logger` | Structured logging |
-| `v` | `*validator.Validate` | Input validation |
-| `mw` | `metrics.Writer` | Metrics |
-
-## Recipes
-
-### Adding a New Page
-
-1. **Create the handler** in `service/<page_name>.go`:
-
-   ```go
-   func (s *service) MyPage(c *gin.Context) {
-       ctx := c.Request.Context()
-       data, err := s.getMyData(ctx)
-       if err != nil {
-           s.l.Error("failed to get data", zap.Error(err))
-           c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch data"})
-           return
-       }
-       component := views.MyPage(data)
-       templ.Handler(component).ServeHTTP(c.Writer, c.Request)
-   }
-   ```
-
-2. **Create the templ template** in `service/views/<page_name>.templ`:
-
-   ```templ
-   package views
-
-   templ MyPage(data *app.SomeType) {
-       @Layout("Page Title", ActivePageMyPage) {
-           <div class="max-w-7xl mx-auto px-6 py-8">
-               // page content
-           </div>
-       }
-   }
-   ```
-
-3. **Add the ActivePage constant** in `service/views/layout.templ` if needed, and add a nav link in the `<nav>` section.
-
-4. **Register the route** in `service.go` → `RegisterAdminDashboardRoutes()`:
-
-   ```go
-   api.GET("/my-page", s.MyPage)
-   ```
-
-### Adding a New Table Fragment
-
-1. **Create the handler** in `service/<table_name>_table.go`:
-
-   ```go
-   func (s *service) MyTable(c *gin.Context) {
-       ctx := c.Request.Context()
-       page := getPageFromQuery(c)
-       items, totalPages, err := s.getMyItems(ctx, page)
-       if err != nil {
-           s.l.Error("failed to get items", zap.Error(err))
-           c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch items"})
-           return
-       }
-       component := views.MyTable(items, page, totalPages)
-       templ.Handler(component).ServeHTTP(c.Writer, c.Request)
-   }
-   ```
-
-2. **Create the templ template** in `service/views/<table_name>_table.templ` — no `Layout()` wrapper:
-
-   ```templ
-   package views
-
-   templ MyTable(items []*app.MyItem, page int, totalPages int) {
-       <div id="my-table" hx-get="/my-page/table" hx-trigger="every 20s" hx-swap="outerHTML">
-           @table.Table(...) {
-               // table rows
-           }
-           @pagination.Pagination(...)
-       </div>
-   }
-   ```
-
-3. **Register the route**: `api.GET("/my-page/table", s.MyTable)`
-
-4. **Reference from the page** templ: use `hx-get="/my-page/table"` to load the fragment.
-
-### Adding a New POST Action
-
-```go
-func (s *service) DoAction(c *gin.Context) {
-    ctx := c.Request.Context()
-    id := c.Param("id")
-
-    if err := c.Request.ParseForm(); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form"})
-        return
-    }
-
-    // Perform mutation via GORM...
-
-    // Option A: Redirect (PRG pattern)
-    c.Redirect(http.StatusSeeOther, "/my-page/"+id)
-
-    // Option B: Return updated fragment for hx-swap
-    component := views.UpdatedFragment(updatedData)
-    templ.Handler(component).ServeHTTP(c.Writer, c.Request)
-}
+```bash
+cd services/ctl-api/internal/app/admin-dashboard
+npm install
+npm run dev   # esbuild --watch + postcss --watch + browser-sync
 ```
 
-Register: `api.POST("/my-page/:id/action", s.DoAction)`
+In a second terminal, run ctl-api so the BFF listens on `:8087`. Open `http://localhost:8088` (browser-sync proxy) for live-reload, or `http://localhost:8087` to hit the Go server directly.
 
-## Build & Code Generation
+`npm run dev` writes to `dist/`. `spa.go`'s `registerStaticSPA` serves that directory and falls back to `dist/index.html` for client-side routes.
 
-**Do not run `templ generate`, `tailwindcss`, or `go build` manually.** The `nuonctl` tooling handles all code generation and asset compilation. Just edit `.templ` and `.css` source files and let the build pipeline take care of the rest.
+## Production build
 
-- `*_templ.go` files are generated from `.templ` files — never edit them directly.
-- `assets/css/output.css` is generated from `assets/css/input.css` — never edit it directly.
-
-## Key Rules
-
-- **Always use GORM directly** — never make HTTP API calls from handlers. The dashboard shares a process with ctl-api and has direct DB access. HTTP calls to localhost work locally but fail in production.
-- **Never edit `_templ.go` files** — they are generated from `.templ` files.
-- **Use templui components** from `components/` rather than building custom UI primitives.
-- **Follow the two-method handler pattern**: public handler for HTTP concerns, private method for DB queries.
-
-## Current Pages
-
-| Route | Handler | Description |
-|-------|---------|-------------|
-| `/` | `Index` | Dashboard home |
-| `/orgs` | `Orgs` | Organization list with search + tag filters |
-| `/orgs/table` | `OrgsTable` | HTMX fragment: org table |
-| `/orgs/:id` | `OrgDetail` | Org detail with installs, tags, support users |
-| `/orgs/:id/status` | `OrgStatus` | HTMX fragment: org status badge |
-| `/orgs/:id/installs/table` | `InstallsTable` | HTMX fragment: org installs |
-| `/accounts` | `Accounts` | Account list |
-| `/accounts/table` | `AccountsTable` | HTMX fragment: account table |
-| `/accounts/:id` | `AccountDetail` | Account detail with installs + audit logs |
-| `/accounts/:id/installs/table` | `AccountInstallsTable` | HTMX fragment |
-| `/accounts/:id/audit-logs/table` | `AccountAuditLogsTable` | HTMX fragment |
-| `/installs` | `Installs` | Global install list |
-| `/installs/table` | `InstallsTableGlobal` | HTMX fragment: global installs |
-| `/installs/:id` | `InstallDetail` | Install detail with status, deployments, workflows |
-| `/installs/:id/status/runner` | `InstallRunnerStatus` | HTMX fragment: runner status badge |
-| `/installs/:id/status/sandbox` | `InstallSandboxStatus` | HTMX fragment |
-| `/installs/:id/status/component` | `InstallComponentStatus` | HTMX fragment |
-| `/installs/:id/status/drift` | `InstallDriftStatus` | HTMX fragment |
-| `/installs/:id/active-deployments/table` | `InstallActiveDeploymentsTable` | HTMX fragment |
-| `/installs/:id/activity/table` | `InstallActivityTable` | HTMX fragment |
-| `/installs/:id/workflows/table` | `InstallWorkflowsTable` | HTMX fragment |
-| `/workflows` | `Workflows` | Workflow list |
-| `/workflows/table` | `WorkflowsTable` | HTMX fragment |
-| `/workflows/:workflow_id` | `WorkflowDetail` | Workflow detail |
-| `/queues` | `Queues` | Queue list |
-| `/queues/table` | `QueuesTable` | HTMX fragment |
-| `/queues/:id` | `QueueDetail` | Queue detail with emitters + signals |
-| `/queues/:id/emitters/table` | `QueueEmittersTable` | HTMX fragment |
-| `/queues/:id/signals/table` | `QueueSignalsTable` | HTMX fragment |
-| `/queues/:id/signals/:signal_id` | `QueueSignalDetail` | Signal detail |
-| `/queues/:id/emitters/:emitter_id` | `QueueEmitterDetail` | Emitter detail |
-| `/queue-signals` | `QueueSignals` | Global signal list |
-| `/queue-signals/table` | `QueueSignalsGlobalTable` | HTMX fragment |
-| `/signal-catalog` | `SignalCatalog` | Signal type catalog |
-| `/signal-catalog/:signal_type` | `SignalCatalogDetail` | Signal type detail |
-| `/log-streams` | `LogStreamViewer` | Log stream viewer (ClickHouse) |
-| `/log-streams/:log_stream_id` | `LogStreamDetail` | Log stream detail |
-| `/log-streams/:log_stream_id/logs/table` | `LogStreamLogsTable` | HTMX fragment |
-| `/temporal-workflows` | `TemporalWorkflowViewer` | Temporal workflow inspector |
-
-### POST Routes (Mutations)
-
-| Route | Handler | Description |
-|-------|---------|-------------|
-| `POST /orgs/:id/tags` | `UpdateOrgTags` | Update org tags (returns updated header fragment) |
-| `POST /orgs/:id/tags/remove/:tag` | `RemoveSingleTag` | Remove single tag |
-| `POST /orgs/:id/support-users/add` | `AddSupportUsers` | Add support users to org |
-| `POST /queues/:id/restart` | `RestartQueue` | Restart a queue |
-
-## Common Query Patterns
-
-### Pagination
-
-```go
-const perPage = 8
-
-func (s *service) getItems(ctx context.Context, page int) ([]*app.Item, int, error) {
-    var totalCount int64
-    query := s.db.WithContext(ctx).Model(&app.Item{})
-    query.Count(&totalCount)
-
-    totalPages := int(math.Ceil(float64(totalCount) / float64(perPage)))
-    if totalPages == 0 {
-        totalPages = 1
-    }
-
-    offset := (page - 1) * perPage
-    var items []*app.Item
-    query.Order("created_at desc").Limit(perPage).Offset(offset).Find(&items)
-    return items, totalPages, nil
-}
+```bash
+npm run build
 ```
 
-### Aggregation with Count Subqueries
+Produces content-hashed `dist/assets/*` and rewrites `index.html` link/script tags via `scripts/hash-assets.js`. The Go server serves `/assets/*` with long cache headers and `index.html` with `no-cache`.
 
-```go
-type OrgWithCounts struct {
-    app.Org
-    AppCount     int `gorm:"column:app_count"`
-    InstallCount int `gorm:"column:install_count"`
-}
+## Adding a new page
 
-var results []OrgWithCounts
-s.db.Select("orgs.*, "+
-    "(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at = 0) as app_count, "+
-    "(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id AND installs.deleted_at = 0) as install_count").
-    Find(&results)
-
-orgs := make([]*app.Org, len(results))
-for i := range results {
-    results[i].Org.AppCount = results[i].AppCount
-    orgs[i] = &results[i].Org
-}
-```
-
-### Parallel Fetching (Detail Pages)
-
-```go
-g, gCtx := errgroup.WithContext(c.Request.Context())
-g.Go(func() error { var err error; org, err = s.getOrg(gCtx, orgID); return err })
-g.Go(func() error { var err error; installs, _, err = s.getInstallsForOrg(gCtx, orgID, 1); return err })
-if err := g.Wait(); err != nil { ... }
-```
+1. Add the BFF handler under `service/<feature>.go` returning JSON, register it in `service.go` under the `/api` group.
+2. Add a typed client function in `client/lib/admin-api/<domain>.ts`.
+3. Add the response type to `client/types/admin.types.ts` if it's shared.
+4. Build the React view under `client/views/<domain>/<Page>.tsx` using `useQuery` / `useMutation`.
+5. Wire the route in `client/App.tsx` and add a sidebar entry in `client/components/layout/AppLayout.tsx`.
