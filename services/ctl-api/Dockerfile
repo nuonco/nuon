@@ -1,6 +1,26 @@
 ARG BUILD_IMAGE=buildimage
 ARG RUNTIME_IMAGE=runtimeimage
 
+# --- Admin dashboard React SPA build ---
+
+FROM node:20-alpine AS admin-dashboard-build
+
+WORKDIR /src
+
+COPY --link internal/app/admin-dashboard/package.json \
+     internal/app/admin-dashboard/package-lock.json \
+     ./
+
+RUN --mount=type=cache,target=/root/.npm,id=npm-admin-dashboard npm ci
+
+COPY --link internal/app/admin-dashboard/client ./client
+COPY --link internal/app/admin-dashboard/scripts ./scripts
+COPY --link internal/app/admin-dashboard/postcss.config.js ./
+
+RUN npm run build
+
+# --- Go service build ---
+
 FROM ${BUILD_IMAGE} AS code
 
 # Service specific arguments
@@ -82,6 +102,6 @@ ENV GIT_REF=$GIT_REF
 
 COPY bundle /bundle
 COPY --from=build /bin/service /bin/service
-COPY --from=code /src/services/ctl-api/internal/app/admin-dashboard/assets ./internal/app/admin-dashboard/assets
+COPY --from=admin-dashboard-build /src/dist ./internal/app/admin-dashboard/dist
 
 ENTRYPOINT ["/bin/service"]

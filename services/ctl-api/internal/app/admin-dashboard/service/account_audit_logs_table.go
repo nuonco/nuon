@@ -5,11 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) AccountAuditLogsTable(c *gin.Context) {
@@ -53,8 +50,12 @@ func (s *service) AccountAuditLogsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.AccountAuditLogsTable(
-		accountID, auditLogs, startDate, endDate, page, auditLogsTotalPages,
-	)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"account_id":  accountID,
+		"audit_logs":  auditLogs,
+		"start_date":  startDate,
+		"end_date":    endDate,
+		"page":        page,
+		"total_pages": auditLogsTotalPages,
+	})
 }

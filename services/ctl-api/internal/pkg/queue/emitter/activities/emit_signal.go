@@ -61,10 +61,18 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		return &EmitSignalResponse{Skipped: true}, nil
 	}
 
+	// Look up the queue so we can propagate its owner to the signal.
+	var queue app.Queue
+	if res := a.db.WithContext(ctx).First(&queue, "id = ?", req.QueueID); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to get queue")
+	}
+
 	// Enqueue the signal to the queue using the queue client
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID: req.QueueID,
-		Signal:  emitter.SignalTemplate.Signal,
+		QueueID:   req.QueueID,
+		Signal:    emitter.SignalTemplate.Signal,
+		OwnerID:   queue.OwnerID,
+		OwnerType: queue.OwnerType,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal to queue")

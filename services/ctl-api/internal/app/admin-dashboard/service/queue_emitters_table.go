@@ -3,12 +3,10 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) QueueEmittersTable(c *gin.Context) {
@@ -27,6 +25,8 @@ func (s *service) QueueEmittersTable(c *gin.Context) {
 		return
 	}
 
-	component := views.QueueEmittersTable(emitters, queueID)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"emitters": emitters,
+		"queue_id": queueID,
+	})
 }

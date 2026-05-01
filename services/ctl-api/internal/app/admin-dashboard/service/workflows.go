@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const workflowsPerPage = 20
@@ -31,8 +29,11 @@ func (s *service) Workflows(c *gin.Context) {
 		return
 	}
 
-	component := views.Workflows(workflows, page, totalPages, search, sort, typeFilter)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"workflows":   workflows,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) WorkflowsTable(c *gin.Context) {
@@ -49,8 +50,11 @@ func (s *service) WorkflowsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.WorkflowsTable(workflows, page, totalPages, search, sort, typeFilter)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"workflows":   workflows,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getWorkflows(ctx context.Context, search, sort, typeFilter string, page int) ([]*app.Workflow, int, error) {

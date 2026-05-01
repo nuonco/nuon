@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	commonpb "go.temporal.io/api/common/v1"
 	enumspb "go.temporal.io/api/enums/v1"
@@ -58,8 +57,14 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 
 	attrs := signalAttributesForType(signal.Type)
 
-	component := views.QueueSignalDetail(&signal, &q, s.cfg.TemporalUIURL, wfInfo, attrs, signalsAhead)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signal":          &signal,
+		"queue":           &q,
+		"temporal_ui_url": s.cfg.TemporalUIURL,
+		"workflow_info":   wfInfo,
+		"signal_attrs":    attrs,
+		"signals_ahead":   signalsAhead,
+	})
 }
 
 type scheduledActivity struct {
@@ -389,6 +394,9 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	// Extract awaited signals from AwaitSignal activities
 	info.AwaitedSignals = s.extractAwaitedSignals(c, activities)
 
+	// Extract enqueued signals from EnqueueSignal activities
+	info.EnqueuedSignals = s.extractEnqueuedSignals(c, activities)
+
 	// Build update executions by associating activities with updates based on event ID ranges
 	if len(updates) > 0 {
 		info.UpdateExecutions, info.OrphanActivities = s.buildUpdateExecutions(updates, activities)
@@ -436,6 +444,71 @@ func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.Activ
 	}
 
 	return awaited
+}
+
+// extractEnqueuedSignals looks for EnqueueSignal activities and extracts the created signal IDs.
+func (s *service) extractEnqueuedSignals(c *gin.Context, activities []views.ActivityInfo) []views.EnqueuedSignalInfo {
+	ctx := c.Request.Context()
+	var enqueued []views.EnqueuedSignalInfo
+
+	for _, act := range activities {
+		if !strings.Contains(act.Name, "EnqueueSignal") {
+			continue
+		}
+
+		// The result of EnqueueSignal contains the created signal ID
+		qsID := extractQueueSignalIDFromResult(act.Result)
+		if qsID == "" {
+			// Also try the input (some variants pass the signal ID as input)
+			qsID = extractQueueSignalIDFromInput(act.Input)
+		}
+		if qsID == "" {
+			continue
+		}
+
+		esi := views.EnqueuedSignalInfo{
+			QueueSignalID: qsID,
+			ActivityName:  act.Name,
+		}
+
+		var signal app.QueueSignal
+		if err := s.db.WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
+			esi.Signal = &signal
+		}
+
+		enqueued = append(enqueued, esi)
+	}
+
+	return enqueued
+}
+
+// extractQueueSignalIDFromResult parses activity result JSON for a queue signal ID.
+func extractQueueSignalIDFromResult(result string) string {
+	result = strings.TrimSpace(result)
+	if result == "" {
+		return ""
+	}
+
+	// Try as plain JSON string
+	var id string
+	if err := json.Unmarshal([]byte(result), &id); err == nil {
+		if strings.HasPrefix(id, "qsi") {
+			return id
+		}
+	}
+
+	// Try as JSON object with an "id" field
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(result), &obj); err == nil {
+		if id, ok := obj["id"].(string); ok && strings.HasPrefix(id, "qsi") {
+			return id
+		}
+		if id, ok := obj["ID"].(string); ok && strings.HasPrefix(id, "qsi") {
+			return id
+		}
+	}
+
+	return ""
 }
 
 // extractQueueSignalIDFromInput parses the activity input JSON to find a queue signal ID.

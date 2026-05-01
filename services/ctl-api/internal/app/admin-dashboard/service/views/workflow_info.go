@@ -8,63 +8,71 @@ import (
 
 // WorkflowInfo holds Temporal workflow execution info for display.
 type WorkflowInfo struct {
-	Status           string
-	Activities       []ActivityInfo
-	ChildWorkflows   []ChildWorkflowInfo
-	AwaitedSignals   []AwaitedSignalInfo
-	UpdateHandlers   []string
-	UpdateExecutions []UpdateExecution
-	OrphanActivities []ActivityInfo // activities not in any update (main workflow body)
+	Status           string               `json:"status"`
+	Activities       []ActivityInfo       `json:"activities"`
+	ChildWorkflows   []ChildWorkflowInfo  `json:"child_workflows"`
+	AwaitedSignals   []AwaitedSignalInfo  `json:"awaited_signals"`
+	EnqueuedSignals  []EnqueuedSignalInfo `json:"enqueued_signals"`
+	UpdateHandlers   []string             `json:"update_handlers"`
+	UpdateExecutions []UpdateExecution    `json:"update_executions"`
+	OrphanActivities []ActivityInfo       `json:"orphan_activities"` // activities not in any update (main workflow body)
+}
+
+// EnqueuedSignalInfo holds info about a signal that was enqueued by this workflow.
+type EnqueuedSignalInfo struct {
+	QueueSignalID string           `json:"queue_signal_id"`
+	Signal        *app.QueueSignal `json:"signal"`
+	ActivityName  string           `json:"activity_name"`
 }
 
 // UpdateExecution groups activities that ran within a single Temporal update handler call.
 type UpdateExecution struct {
-	Name       string // update handler name (e.g. "execute", "retry-step")
-	UpdateID   string
-	Status     string // Accepted, Completed, Failed, Rejected, Running
-	StartedAt  time.Time
-	FinishedAt time.Time
-	Duration   time.Duration
-	Input      string // JSON-formatted update input args
-	Result     string // JSON-formatted update result
-	Failure    string
-	Activities []ActivityInfo
+	Name       string         `json:"name"` // update handler name (e.g. "execute", "retry-step")
+	UpdateID   string         `json:"update_id"`
+	Status     string         `json:"status"` // Accepted, Completed, Failed, Rejected, Running
+	StartedAt  time.Time      `json:"started_at"`
+	FinishedAt time.Time      `json:"finished_at"`
+	Duration   time.Duration  `json:"duration"`
+	Input      string         `json:"input"`  // JSON-formatted update input args
+	Result     string         `json:"result"` // JSON-formatted update result
+	Failure    string         `json:"failure"`
+	Activities []ActivityInfo `json:"activities"`
 }
 
 // ActivityInfo holds Temporal activity execution info for display.
 type ActivityInfo struct {
-	Name             string
-	Status           string
-	StartedAt        time.Time
-	FinishedAt       time.Time
-	Duration         time.Duration
-	Attempt          int32
-	Failure          string
-	Input            string // JSON-formatted activity input
-	Result           string // JSON-formatted activity result
-	ScheduledEventID int64  // Temporal event ID for correlating with updates
+	Name             string        `json:"name"`
+	Status           string        `json:"status"`
+	StartedAt        time.Time     `json:"started_at"`
+	FinishedAt       time.Time     `json:"finished_at"`
+	Duration         time.Duration `json:"duration"`
+	Attempt          int32         `json:"attempt"`
+	Failure          string        `json:"failure"`
+	Input            string        `json:"input"`              // JSON-formatted activity input
+	Result           string        `json:"result"`             // JSON-formatted activity result
+	ScheduledEventID int64         `json:"scheduled_event_id"` // Temporal event ID for correlating with updates
 }
 
 // ChildWorkflowInfo holds info about a child workflow execution.
 type ChildWorkflowInfo struct {
-	WorkflowType string
-	WorkflowID   string
-	RunID        string
-	Namespace    string
-	Status       string
-	StartedAt    time.Time
-	FinishedAt   time.Time
-	Duration     time.Duration
-	Failure      string
+	WorkflowType string        `json:"workflow_type"`
+	WorkflowID   string        `json:"workflow_id"`
+	RunID        string        `json:"run_id"`
+	Namespace    string        `json:"namespace"`
+	Status       string        `json:"status"`
+	StartedAt    time.Time     `json:"started_at"`
+	FinishedAt   time.Time     `json:"finished_at"`
+	Duration     time.Duration `json:"duration"`
+	Failure      string        `json:"failure"`
 }
 
 // AwaitedSignalInfo holds info about a queue signal that was awaited.
 type AwaitedSignalInfo struct {
-	QueueSignalID string
-	Signal        *app.QueueSignal // loaded from DB if available
-	Status        string           // activity status: Completed, Failed, Running
-	StartedAt     time.Time
-	FinishedAt    time.Time
-	Duration      time.Duration
-	Failure       string
+	QueueSignalID string           `json:"queue_signal_id"`
+	Signal        *app.QueueSignal `json:"signal"` // loaded from DB if available
+	Status        string           `json:"status"` // activity status: Completed, Failed, Running
+	StartedAt     time.Time        `json:"started_at"`
+	FinishedAt    time.Time        `json:"finished_at"`
+	Duration      time.Duration    `json:"duration"`
+	Failure       string           `json:"failure"`
 }
