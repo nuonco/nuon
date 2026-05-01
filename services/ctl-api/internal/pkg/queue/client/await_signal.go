@@ -35,6 +35,7 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 			UpdateID:     queueSignalID + "-finished",
 			WorkflowID:   q.Workflow.ID,
+			RunID:        q.Workflow.RunID, // empty for old rows = latest run
 			UpdateName:   handler.FinishedHandlerName,
 			WaitForStage: tclient.WorkflowUpdateStageCompleted,
 			Args: []any{
