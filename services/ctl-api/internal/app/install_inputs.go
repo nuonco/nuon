@@ -44,6 +44,14 @@ func (i *InstallInputs) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallInputs{}, "install_id_deleted_at"),
+			Columns: []string{
+				"install_id",
+				"deleted_at",
+				"created_at",
+			},
+		},
 	}
 }
 
