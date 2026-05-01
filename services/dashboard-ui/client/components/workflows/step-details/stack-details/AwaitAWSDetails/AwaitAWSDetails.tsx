@@ -113,18 +113,27 @@ const CloudFormationTab = ({
   installId,
   installAwsRegion,
 }: ICloudFormationTab) => {
-  const quickLink = version?.quick_link_url
   const templateUrl = version?.template_url
   const isS3Template =
     templateUrl?.includes('s3.amazonaws.com') || templateUrl?.includes('.s3.')
-  const stackName =
-    quickLink?.match(/stackName=([^&]+)/)?.[1] ||
-    `nuon-${installId || 'install'}`
   const region =
     (version as { region?: string } | undefined)?.region ||
-    quickLink?.match(/region=([^&#]+)/)?.[1] ||
+    version?.quick_link_url?.match(/region=([^&#]+)/)?.[1] ||
     installAwsRegion ||
     ''
+  const stackName =
+    version?.quick_link_url?.match(/stackName=([^&]+)/)?.[1] ||
+    `nuon-${installId || 'install'}`
+  // Prefer the server-supplied quick link; otherwise derive one from the
+  // template URL so older stack versions (created before the backend change)
+  // still surface the one-click launch.
+  const quickLink =
+    version?.quick_link_url ||
+    (templateUrl
+      ? region
+        ? `https://${region}.console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/quickcreate?templateUrl=${encodeURIComponent(templateUrl)}&stackName=${stackName}`
+        : `https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=${encodeURIComponent(templateUrl)}&stackName=${stackName}`
+      : '')
   // CLI commands and console links work whether the user already chose a
   // region or hasn't yet — when unknown, render a `<YOUR_REGION>` placeholder
   // and let the user substitute at run-time.
