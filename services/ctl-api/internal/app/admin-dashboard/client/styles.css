@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', monospace;
+
+  --color-primary-50: #FCFAFF;
+  --color-primary-100: #F6F0FF;
+  --color-primary-200: #F2E5FF;
+  --color-primary-300: #E5D0FB;
+  --color-primary-400: #C494F4;
+  --color-primary-500: #AD71EA;
+  --color-primary-600: #8040BF;
+  --color-primary-700: #7339AC;
+  --color-primary-800: #662F9D;
+  --color-primary-900: #4C2277;
+  --color-primary-950: #2E0E4E;
+
+  --color-blue-50: #FAFBFF;
+  --color-blue-100: #EDF2FF;
+  --color-blue-200: #E5EEFF;
+  --color-blue-300: #CDDDFF;
+  --color-blue-400: #8DB0FB;
+  --color-blue-500: #6792F4;
+  --color-blue-600: #3062D4;
+  --color-blue-700: #2759CD;
+  --color-blue-800: #1E50C0;
+  --color-blue-900: #113997;
+
+  --color-green-50: #F4FBF7;
+  --color-green-100: #E6F9EF;
+  --color-green-200: #D8F8E7;
+  --color-green-300: #C6F1DA;
+  --color-green-400: #75CC9E;
+  --color-green-500: #4AA578;
+  --color-green-600: #1D7C4D;
+  --color-green-700: #1E714A;
+  --color-green-800: #196742;
+  --color-green-900: #0E4E30;
+
+  --color-orange-50: #FFF5EB;
+  --color-orange-100: #FFF0E0;
+  --color-orange-200: #FFE8D1;
+  --color-orange-300: #FFD4A8;
+  --color-orange-400: #FEB872;
+  --color-orange-500: #F6A351;
+  --color-orange-600: #F59638;
+  --color-orange-700: #B4610E;
+  --color-orange-800: #A05C1C;
+  --color-orange-900: #7A4510;
+
+  --color-red-50: #FEF2F2;
+  --color-red-100: #FEE2E2;
+  --color-red-200: #FECACA;
+  --color-red-300: #FCA5A5;
+  --color-red-400: #F87171;
+  --color-red-500: #EF4444;
+  --color-red-600: #DC2626;
+  --color-red-700: #B91C1C;
+  --color-red-800: #991B1B;
+  --color-red-900: #7F1D1D;
+
+  --ease-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+body {
+  min-height: 100vh;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #FAFAFA;
+  color: #272E35;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card-style tables */
+.table-card {
+  @apply overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm;
+}
+
+.table-card table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.table-card thead {
+  @apply bg-gray-50/80;
+}
+
+.table-card th {
+  @apply px-4 py-2.5 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table-card td {
+  @apply px-4 py-2.5 text-sm;
+}
+
+.table-card tbody tr {
+  @apply transition-colors duration-100 hover:bg-gray-50/50;
+}
+
+/* Better focus rings */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px white, 0 0 0 3px rgba(128, 64, 191, 0.4);
+}
+
+/* Link styles */
+a.link {
+  @apply text-primary-600 hover:text-primary-700 transition-colors duration-100;
+}
+
+/* Subtle page heading */
+.page-heading {
+  @apply text-xl font-semibold tracking-tight text-gray-900;
+}
+
+.page-subheading {
+  @apply mt-1 text-sm text-gray-500;
+}

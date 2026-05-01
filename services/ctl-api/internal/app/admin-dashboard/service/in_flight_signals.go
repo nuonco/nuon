@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) InFlightSignals(c *gin.Context) {
@@ -29,8 +27,10 @@ func (s *service) InFlightSignals(c *gin.Context) {
 		s.l.Error("failed to get namespaces", zap.Error(err))
 	}
 
-	component := views.InFlightSignals(signals, namespace, namespaces)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":    signals,
+		"namespaces": namespaces,
+	})
 }
 
 func (s *service) InFlightSignalsTable(c *gin.Context) {
@@ -44,8 +44,9 @@ func (s *service) InFlightSignalsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.InFlightSignalsTable(signals, namespace)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals": signals,
+	})
 }
 
 func (s *service) getInFlightSignals(ctx context.Context, namespace string) ([]app.QueueSignal, error) {
