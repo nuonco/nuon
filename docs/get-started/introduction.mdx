@@ -1,34 +1,31 @@
 ---
-title: Introduction
+title: Home
 description: "Continuous delivery into your customer's cloud."
 mode: "frame"
+boost: 5
 keywords: ["what is Nuon", "BYOC platform", "bring your own cloud", "deploy to customer cloud", "SaaS to BYOC", "getting started"]
 ---
 
-export const HeroCard = ({ name, title, description, href }) => (
-  <a className="group cursor-pointer flex flex-col pb-6 no-underline" href={href} style={{ color: 'inherit' }}>
+export const FeatureTile = ({ src, eyebrow, title, description, href, reverse }) => (
+  <a
+    href={href}
+    className={`group flex flex-col ${reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-4 lg:gap-6 items-center p-4 lg:p-5 rounded-xl no-underline transition-all hover:scale-[1.005]`}
+    style={{ border: '1px solid #256A7F', color: 'inherit' }}
+  >
     <img
-      src={`/images/introduction/${name}.svg`}
-      className="pointer-events-none group-hover:scale-[1.02] transition-all duration-150 rounded-xl w-full"
-      style={{ border: '1px solid #256A7F' }}
-      alt={title}
-    />
-    <h3 style={{ marginTop: '1rem', fontWeight: 500, fontSize: '0.9375rem', color: 'inherit' }}>{title}</h3>
-    <span style={{ marginTop: '0.25rem', fontSize: '0.875rem', opacity: 0.6, lineHeight: '1.5', color: 'inherit' }}>{description}</span>
-  </a>
-);
-
-export const YoutubeEmbed = ({ src }) => (
-  <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-    <iframe
       src={src}
-      frameBorder={0}
-      webkitallowfullscreen=""
-      mozallowfullscreen=""
-      allowFullScreen=""
-      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+      alt={title}
+      className="w-full lg:w-1/3 rounded-lg"
     />
-  </div>
+    <div className="flex-1">
+      <p className="text-xs font-semibold tracking-widest uppercase opacity-60" style={{ color: '#256A7F' }}>{eyebrow}</p>
+      <h3 className="text-base lg:text-lg font-medium" style={{ color: 'inherit', marginTop: '0.125rem' }}>{title}</h3>
+      <p className="mt-1 text-sm opacity-70" style={{ marginTop: '0.375rem' }}>{description}</p>
+      <span className="text-sm font-medium" style={{ display: 'block', marginTop: '0.5rem', color: '#256A7F' }}>
+        Learn more <span className="transition-transform group-hover:translate-x-0.5">→</span>
+      </span>
+    </div>
+  </a>
 );
 
 <div className="relative text-gray-900 dark:text-white">
@@ -37,60 +34,52 @@ export const YoutubeEmbed = ({ src }) => (
     <img src="/images/introduction/hero-bg.svg" className="w-full h-auto" alt="" />
   </div>
 
-  <div className="relative z-10 px-4 pt-16 pb-8 lg:pt-32 lg:pb-12 max-w-3xl mx-auto">
-    <p className="max-w-xl mx-auto mt-4 text-5xl text-center font-medium tracking-tight" style={{ color: 'inherit' }}>
-      Continuous delivery into your customer's cloud.
-    </p>
-    <p className="max-w-lg mx-auto mt-3 text-base text-center opacity-50">
-      Unlock the Bring Your Own Cloud (BYOC) deployment model for your entire customer base.
-    </p>
+  <div className="relative z-10 px-4 pt-8 pb-8 lg:pt-12 lg:pb-12 max-w-4xl mx-auto">
+    <div id="nuon-in-3-parts" className="scroll-mt-24">
+      <h2 className="text-center text-2xl lg:text-3xl font-medium tracking-tight" style={{ color: 'inherit' }}>
+        Get started with your app, or <a href="https://github.com/nuonco/example-app-configs#example-apps-on-nuon" style={{ color: '#256A7F' }}>deploy an example app today</a>
+      </h2>
 
-    <div className="px-0 mt-12 lg:mt-16 grid sm:grid-cols-2 gap-x-8 gap-y-2">
-      <HeroCard
-        name="getstarted"
-        title="Get Started"
-        description="Learn how to create BYOC applications and deploy to customer clouds."
-        href="/get-started/quickstart"
-      />
-      <HeroCard
-        name="concepts"
-        title="Concepts"
-        description="Understand the building blocks: apps, sandboxes, components, and installs."
-        href="/concepts/overview"
-      />
-      <HeroCard
-        name="guides"
-        title="Guides"
-        description="Configure applications, integrate your existing tooling, and extend Nuon."
-        href="/guides/app-install-life-cycle"
-      />
-      <HeroCard
-        name="architecture"
-        title="Architecture"
-        description="Learn how Nuon's egress-only runner works inside customer cloud accounts."
-        href="/runner-architecture"
-      />
-      <HeroCard
-        name="knowledge-base"
-        title="Knowledge Base"
-        description="Browse frequently asked questions and troubleshooting guides."
-        href="https://support.nuon.co"
-      />
-      <HeroCard
-        name="support"
-        title="Talk to us"
-        description="Speak with our team about your use case or get help getting started."
-        href="https://nuon.co/contact-sales"
-      />
-    </div>
-  </div>
+      <div className="mt-6 flex justify-center gap-3">
+        <a
+          href="https://app.nuon.co/"
+          className="text-center px-5 py-2.5 rounded-lg font-medium text-white no-underline transition-transform hover:scale-[1.02]"
+          style={{ width: '30%', backgroundColor: '#256A7F' }}
+        >
+          Sign up <span aria-hidden="true">→</span>
+        </a>
+        <div
+          style={{ width: '30%' }}
+          dangerouslySetInnerHTML={{
+            __html: `<wistia-player media-id="91y66l4t5r" popover-content="link" wistia-popover="true" aspect="1.7454545454545454" style="display: block;"><a href="#" style="display: block; text-align: center; padding: 0.625rem 1.25rem; border: 1px solid #256A7F; color: #256A7F; border-radius: 0.5rem; font-weight: 500; text-decoration: none;">See video overview</a></wistia-player>`,
+          }}
+        />
+      </div>
 
-  <div className="relative z-10 max-w-3xl mx-auto px-4 pb-16">
-    <Note>
-      If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into customer clouds, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
-    </Note>
-    <div className="mt-6">
-      <YoutubeEmbed src="https://www.youtube.com/embed/LXoczC247zg?t=1" />
+      <div className="mt-6 lg:mt-8 flex flex-col gap-3 lg:gap-4">
+        <FeatureTile
+          src="/images/introduction/guides.svg"
+          eyebrow="Step 1"
+          title="Connect your app"
+          description="Wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app. Define inputs, secrets, and a sandbox once."
+          href="/concepts/apps"
+        />
+        <FeatureTile
+          src="/images/introduction/getstarted.svg"
+          eyebrow="Step 2"
+          title="Deploying to a Customer"
+          description="Install into AWS, Azure, or GCP accounts you don't own — no cross-account access required."
+          href="/guides/app-install-life-cycle"
+          reverse
+        />
+        <FeatureTile
+          src="/images/introduction/concepts.svg"
+          eyebrow="Step 3"
+          title="Continuous Delivery"
+          description="Run workflows, detect drift, enforce policies, and ship releases across every customer install — operated centrally from one control plane."
+          href="/get-started/day-2-operations"
+        />
+      </div>
     </div>
   </div>
 
