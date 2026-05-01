@@ -29,12 +29,14 @@
         "tab": "Quickstart",
         "icon": "rocket",
         "pages": [
-          "get-started/quickstart",
           "get-started/introduction",
+          "get-started/quickstart",
+          "get-started/create-your-first-app",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
             "boost": 5,
+            "expanded": true,
             "pages": [
               "guides/nuon-cloud",
               "guides/byoc",
@@ -48,24 +50,6 @@
                 ]
               }
             ]
-          },
-          {
-            "group": "Supported Clouds",
-            "boost": 1,
-            "expanded": true,
-            "pages": [
-              "platform-support/introduction",
-              "platform-support/aws",
-              "platform-support/azure",
-              "platform-support/gcp"
-            ]
-          },
-          {
-            "group": "Continuous Delivery",
-            "boost": 3,
-            "pages": [
-              "get-started/day-2-operations"
-            ]
           }
         ]
       },
@@ -77,16 +61,6 @@
             "group": "Overview",
             "boost": 3,
             "pages": ["concepts/overview", "concepts/glossary"]
-          },
-          {
-            "group": "Architecture",
-            "boost": 1.5,
-            "pages": [
-              "architecture/platform",
-              "architecture/byoc",
-              "architecture/runner-auth",
-              "security"
-            ]
           },
           {
             "group": "Connect Your App",
@@ -207,10 +181,25 @@
         "tab": "Reference",
         "icon": "book",
         "pages": [
-          "cli",
-          "tui",
-          "nuon-api",
-          "sdks",
+          {
+            "group": "Cloud Reference",
+            "boost": 1,
+            "pages": [
+              "platform-support/introduction",
+              "platform-support/aws",
+              "platform-support/azure",
+              "platform-support/gcp"
+            ]
+          },
+          {
+            "group": "Interface Reference",
+            "pages": [
+              "cli",
+              "tui",
+              "nuon-api",
+              "sdks"
+            ]
+          },
           {
             "group": "Config Reference",
             "root": "config-ref/index",
@@ -231,32 +220,32 @@
               {
                 "group": "Configuration Types",
                 "pages": [
+                  "config-ref/action",
+                  "config-ref/break-glass",
                   "config-ref/inputs",
+                  "config-ref/install",
+                  "config-ref/installer",
                   "config-ref/metadata",
                   "config-ref/permissions",
                   "config-ref/policies",
-                  "config-ref/secrets"
-                ]
-              },
-              {
-                "group": "Other Types",
-                "pages": [
-                  "config-ref/action",
-                  "config-ref/break-glass",
-                  "config-ref/input",
-                  "config-ref/input-group",
-                  "config-ref/install",
-                  "config-ref/installer",
-                  "config-ref/policy",
                   "config-ref/runner",
                   "config-ref/sandbox",
-                  "config-ref/secret",
+                  "config-ref/secrets",
                   "config-ref/stack"
                 ]
               }
             ]
           },
-          "dashboard"
+          {
+            "group": "Architecture Reference",
+            "boost": 1.5,
+            "pages": [
+              "architecture/platform",
+              "architecture/byoc",
+              "architecture/runner-auth",
+              "security"
+            ]
+          }
         ]
       },
       {
