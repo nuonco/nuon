@@ -25,40 +25,42 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// userFacingOperations is the set of operations that should be exposed
-// via webhooks. Internal-only operations are filtered out.
-var userFacingOperations = map[string]struct{}{
-	"component-deploy":    {},
-	"component-teardown":  {},
-	"sandbox-provision":   {},
-	"sandbox-deprovision": {},
-	"sandbox-reprovision": {},
-	"runner-provision":    {},
-	"runner-reprovision":  {},
-	"action-workflow-run": {},
-	"install-created":     {},
-	"install-updated":     {},
-	"install-restart":     {},
-}
-
-// Stage values surfaced to webhook consumers. Empty stage means a
-// single-phase operation.
+// Public webhook primitives. Consumers reason about exactly two things:
+// the workflow lifecycle and the workflow step lifecycle. Operation taxonomy
+// (component-deploy, sandbox-provision, etc.), multi-phase concepts (plan/apply),
+// and inner signal type names are deliberately NOT exposed.
 const (
-	stagePlan  = "plan"
-	stageApply = "apply"
+	cloudEventTypeWorkflow     = "com.nuon.workflow.lifecycle.v1"
+	cloudEventTypeWorkflowStep = "com.nuon.workflow_step.lifecycle.v1"
+
+	kindWorkflow     = "workflow"
+	kindWorkflowStep = "workflow_step"
 )
 
-// Status values surfaced to webhook consumers in the *.finished events.
+// Status values surfaced to webhook consumers in the *.lifecycle events.
 const (
 	statusStarted   = "started"
 	statusSucceeded = "succeeded"
 	statusFailed    = "failed"
-	statusCanceled  = "canceled"
+	statusCanceled  = "cancelled"
 )
 
-// Failure reasons surfaced when an event's status is "failed".
+// Transition values surfaced in `data.transition`. Mirrors statuses with the
+// same name; the dedicated field exists so consumers can switch on transitions
+// without reading the (potentially redundant) `status` field.
 const (
-	failureReasonValidationFailed = "validation_failed"
+	transitionStarted   = "started"
+	transitionSucceeded = "succeeded"
+	transitionFailed    = "failed"
+	transitionCanceled  = "cancelled"
+)
+
+// signalTypeExecuteWorkflow matches the SignalType produced by
+// services/ctl-api/internal/pkg/flow/signals/executeflow. Duplicated as a string
+// constant to avoid importing the flow package and producing an import cycle.
+const (
+	signalTypeExecuteWorkflow     signal.SignalType = "execute-workflow"
+	signalTypeExecuteWorkflowStep signal.SignalType = "execute-workflow-step"
 )
 
 type Params struct {
@@ -112,63 +114,57 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 }
 
 func (h *WebhookSignalLifecycleHook) Name() string {
-	return "operation_lifecycle_webhook"
+	return "workflow_lifecycle_webhook"
 }
 
+// Supports limits this hook to the two public lifecycle primitives:
+// execute-workflow (workflow lifecycle) and execute-workflow-step (step
+// lifecycle). Inner-signal events (plan/apply, component-deploy, etc.) are
+// deliberately ignored — consumers should reason in terms of workflow + step.
 func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool {
 	if len(h.webhookURLs) == 0 && h.db == nil {
 		return false
 	}
 
-	if event.Operation == "" {
+	switch event.SignalType {
+	case signalTypeExecuteWorkflow, signalTypeExecuteWorkflowStep:
+		return true
+	default:
 		return false
 	}
-
-	if _, ok := userFacingOperations[event.Operation]; !ok {
-		return false
-	}
-
-	// Validate phase events are only surfaced when validation FAILS.
-	// Successful validates remain silent — we only want users to see them
-	// when they translate into a terminal *.finished event.
-	// The Supports() filter is permissive here; the publish path decides
-	// whether to actually emit anything.
-	return true
 }
 
 func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event signal.SignalPhaseEvent) (signal.BeforePhaseDecision, error) {
-	// Only emit *.started events for the execute phase. Validate/cancel
-	// before-phase callbacks are never user-facing.
+	// Only emit *.started events for the execute phase.
 	if event.Phase != signal.SignalPhaseExecute {
 		return signal.AllowPhaseDecision(), nil
 	}
 
 	if err := h.publish(ctx, event, nil); err != nil {
-		h.l.Debug("failed to publish operation lifecycle started webhook", zap.Error(err))
+		h.l.Debug("failed to publish workflow lifecycle started webhook", zap.Error(err))
 	}
 	return signal.AllowPhaseDecision(), nil
 }
 
 func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
-	// Suppress noise for successful validates — we only emit on validate failure.
-	if event.Phase == signal.SignalPhaseValidate && outcome.Status == signal.SignalStatusSuccess {
+	// Validation phases never produce a public event for these primitives —
+	// validation failures of the workflow / step wrappers surface as a failed
+	// execute outcome immediately afterward.
+	if event.Phase == signal.SignalPhaseValidate {
 		return nil
 	}
 
-	h.l.Debug("webhook after-phase called",
+	h.l.Debug("workflow lifecycle webhook after-phase",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),
-		zap.String("operation", event.Operation),
-		zap.String("stage", event.Stage),
+		zap.String("signal_type", string(event.SignalType)),
 		zap.String("status", string(outcome.Status)),
 	)
 
 	return h.publish(ctx, event, &outcome)
 }
 
-// CloudEvents v1.0 envelope. We use CloudEvent extension attributes
-// (lowercased, alphanumeric) to expose org/operation/stage/status without
-// leaking internal signal/queue/phase terminology into the wire format.
+// CloudEvents v1.0 envelope.
 type cloudEvent struct {
 	SpecVersion     string `json:"specversion"`
 	ID              string `json:"id"`
@@ -178,39 +174,67 @@ type cloudEvent struct {
 	Subject         string `json:"subject"`
 	DataContentType string `json:"datacontenttype"`
 
-	NuonOrgID     string `json:"nuonorgid,omitempty"`
-	NuonOperation string `json:"nuonoperation,omitempty"`
-	NuonStage     string `json:"nuonstage,omitempty"`
-	NuonStatus    string `json:"nuonstatus,omitempty"`
+	NuonOrgID      string `json:"nuonorgid,omitempty"`
+	NuonKind       string `json:"nuonkind,omitempty"`
+	NuonTransition string `json:"nuontransition,omitempty"`
 
-	Data operationLifecycleEventData `json:"data"`
+	Data lifecycleEventData `json:"data"`
 }
 
-type operationLifecycleEventData struct {
-	Event         string           `json:"event"`
-	Operation     string           `json:"operation"`
-	Stage         string           `json:"stage,omitempty"`
-	Status        string           `json:"status"`
-	FailureReason string           `json:"failure_reason,omitempty"`
-	Error         string           `json:"error,omitempty"`
-	DurationMs    int64            `json:"duration_ms,omitempty"`
-	WorkflowID    string           `json:"workflow_id,omitempty"`
-	WorkflowType  string           `json:"workflow_type,omitempty"`
-	Context       operationContext `json:"context"`
-	Metadata      map[string]any   `json:"metadata,omitempty"`
+// lifecycleEventData is the public webhook payload. It exposes only two
+// primitives — workflow and (optionally) step — alongside the transition,
+// outcome, and dashboard links.
+type lifecycleEventData struct {
+	Kind       string `json:"kind"`
+	Transition string `json:"transition"`
+	OrgID      string `json:"org_id,omitempty"`
+
+	Workflow workflowRef       `json:"workflow"`
+	Step     *workflowStepRef  `json:"step,omitempty"`
+	Parent   *parentRef        `json:"parent,omitempty"`
+	Outcome  *lifecycleOutcome `json:"outcome,omitempty"`
+	Links    *contextLinks     `json:"links,omitempty"`
 }
 
-type operationContext struct {
-	OrgID       string        `json:"org_id"`
-	InstallID   *string       `json:"install_id,omitempty"`
-	ComponentID *string       `json:"component_id,omitempty"`
-	SandboxID   *string       `json:"sandbox_id,omitempty"`
-	Links       *contextLinks `json:"links,omitempty"`
+type workflowRef struct {
+	ID        string `json:"id"`
+	Type      string `json:"type,omitempty"`
+	OwnerID   string `json:"owner_id,omitempty"`
+	OwnerType string `json:"owner_type,omitempty"`
+	// OwnerName is the human-readable name of the workflow owner (e.g. the
+	// install name when OwnerType == "installs"). Populated opportunistically
+	// when the data is available from existing enrichment JOINs without an
+	// extra round-trip; may be empty in other cases.
+	OwnerName string `json:"owner_name,omitempty"`
 }
 
-// contextLinks contains dashboard URLs for the entities referenced in the
-// event context. Any field may be empty; the whole block is omitted when no
-// links can be built (e.g. AppURL not configured).
+type workflowStepRef struct {
+	ID            string `json:"id"`
+	Name          string `json:"name,omitempty"`
+	Idx           int    `json:"idx"`
+	TargetType    string `json:"target_type,omitempty"`
+	TargetID      string `json:"target_id,omitempty"`
+	ComponentID   string `json:"component_id,omitempty"`
+	ComponentName string `json:"component_name,omitempty"`
+	SandboxID     string `json:"sandbox_id,omitempty"`
+	ExecutionType string `json:"execution_type,omitempty"`
+}
+
+type parentRef struct {
+	WorkflowID string `json:"workflow_id,omitempty"`
+	StepID     string `json:"step_id,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	// ActionName is the human-readable name of the action workflow when the
+	// parent step targets an install_action_workflow_run. Empty otherwise.
+	ActionName string `json:"action_name,omitempty"`
+}
+
+type lifecycleOutcome struct {
+	Status     string `json:"status"`
+	Error      string `json:"error,omitempty"`
+	DurationMs int64  `json:"duration_ms,omitempty"`
+}
+
 type contextLinks struct {
 	Org       string `json:"org,omitempty"`
 	Install   string `json:"install,omitempty"`
@@ -224,43 +248,43 @@ type webhookTarget struct {
 	Secret string
 }
 
-// publish builds and emits the CloudEvent for an operation lifecycle
-// transition. When outcome is nil this is a *.started event; otherwise it is
-// a *.finished event carrying status/error/duration.
 func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) error {
-	data, ok := h.buildEventData(event, outcome)
+	data, ok := h.buildEventData(ctx, event, outcome)
 	if !ok {
 		return nil
 	}
 
-	subject := buildSubject(event, data.Event)
+	ceType := cloudEventTypeWorkflow
+	if data.Kind == kindWorkflowStep {
+		ceType = cloudEventTypeWorkflowStep
+	}
+
+	subject := buildSubject(event, data)
 
 	ce := cloudEvent{
 		SpecVersion:     "1.0",
 		ID:              uuid.New().String(),
-		Type:            "com.nuon.operation.lifecycle.v1",
+		Type:            ceType,
 		Source:          "//nuon.co/ctl-api",
 		Time:            time.Now().UTC().Format(time.RFC3339),
 		Subject:         subject,
 		DataContentType: "application/json",
 		NuonOrgID:       event.OrgID,
-		NuonOperation:   data.Operation,
-		NuonStage:       data.Stage,
-		NuonStatus:      data.Status,
+		NuonKind:        data.Kind,
+		NuonTransition:  data.Transition,
 		Data:            data,
 	}
 
 	payloadJSON, err := json.Marshal(ce)
 	if err != nil {
-		return fmt.Errorf("unable to marshal operation lifecycle webhook payload: %w", err)
+		return fmt.Errorf("unable to marshal workflow lifecycle webhook payload: %w", err)
 	}
 
 	logger := h.l.With(
 		zap.String("hook", h.Name()),
-		zap.String("operation", data.Operation),
-		zap.String("stage", data.Stage),
-		zap.String("status", data.Status),
-		zap.String("event", data.Event),
+		zap.String("kind", data.Kind),
+		zap.String("transition", data.Transition),
+		zap.String("workflow_id", data.Workflow.ID),
 	)
 
 	targets := make([]webhookTarget, 0, len(h.webhookURLs))
@@ -270,7 +294,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
 	if err != nil {
-		logger.Warn("failed to resolve org operation lifecycle webhooks", zap.Error(err))
+		logger.Warn("failed to resolve org workflow lifecycle webhooks", zap.Error(err))
 	}
 
 	targets = append(targets, dynamicTargets...)
@@ -285,7 +309,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	for _, target := range targets {
 		if err := h.sendWebhook(ctx, target, payloadJSON); err != nil {
 			sendErrs = append(sendErrs, err)
-			logger.Warn("failed to deliver operation lifecycle webhook",
+			logger.Warn("failed to deliver workflow lifecycle webhook",
 				zap.String("webhook_host", webhookHost(target.URL)),
 				zap.Error(err))
 		}
@@ -295,76 +319,264 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		return errors.Join(sendErrs...)
 	}
 
-	logger.Debug("delivered operation lifecycle webhook")
+	logger.Debug("delivered workflow lifecycle webhook")
 	return nil
 }
 
-// buildEventData translates an internal SignalPhaseEvent + outcome into the
-// user-facing event payload. Returns ok=false when the input doesn't map to a
-// user-facing transition (e.g. a phase we deliberately suppress).
-func (h *WebhookSignalLifecycleHook) buildEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (operationLifecycleEventData, bool) {
-	data := operationLifecycleEventData{
-		Operation:    event.Operation,
-		Stage:        event.Stage,
-		WorkflowID:   event.WorkflowID,
-		WorkflowType: event.WorkflowType,
-		Context: operationContext{
-			OrgID:       event.OrgID,
-			InstallID:   event.InstallID,
-			ComponentID: event.ComponentID,
-			SandboxID:   event.SandboxID,
-			Links:       h.buildContextLinks(event),
+// buildEventData translates an internal SignalPhaseEvent into the public
+// workflow / workflow_step payload. Returns ok=false when there is nothing
+// to emit (e.g. missing identifiers).
+func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if event.WorkflowID == "" {
+		return lifecycleEventData{}, false
+	}
+
+	kind := kindWorkflow
+	if event.SignalType == signalTypeExecuteWorkflowStep {
+		kind = kindWorkflowStep
+	}
+
+	transition := mapTransition(event, outcome)
+
+	data := lifecycleEventData{
+		Kind:       kind,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		Workflow: workflowRef{
+			ID:        event.WorkflowID,
+			Type:      event.WorkflowType,
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
 		},
 	}
 
-	stagePrefix := stageEventPrefix(event.Stage)
-
-	if outcome == nil {
-		// before-phase: started transition.
-		data.Event = stagePrefix + ".started"
-		data.Status = statusStarted
-		return data, true
+	if outcome != nil {
+		data.Outcome = h.buildOutcome(event, outcome)
 	}
 
-	// after-phase: finished transition.
-	data.Event = stagePrefix + ".finished"
-	data.Status = mapStatus(outcome.Status)
-	if outcome.Status != signal.SignalStatusSuccess {
-		data.Error = outcome.ErrMessage
-	}
-	if outcome.Duration > 0 {
-		data.DurationMs = outcome.Duration.Milliseconds()
-	}
-	if len(outcome.Metadata) > 0 {
-		data.Metadata = outcome.Metadata
-	}
-
-	// Validate-phase failures translate into a *.finished event for the
-	// owning stage, with failure_reason="validation_failed". Successful
-	// validates are filtered out earlier in AfterPhase.
-	if event.Phase == signal.SignalPhaseValidate {
-		data.Status = statusFailed
-		data.FailureReason = failureReasonValidationFailed
+	if kind == kindWorkflowStep && event.StepID != "" {
+		stepRef, installName := h.enrichStep(ctx, event.StepID)
+		data.Step = stepRef
+		// Surface install name on the workflow's owner block when it was
+		// available cheaply via the step JOIN. We avoid a separate query for
+		// owner_name; this best-effort fill catches the common case where
+		// the workflow owns an install and the step targets a deploy/sandbox.
+		if installName != "" && data.Workflow.OwnerType == "installs" && data.Workflow.OwnerName == "" {
+			data.Workflow.OwnerName = installName
+		}
 	}
 
-	// Cancel phase always reports canceled status regardless of outcome.
-	if event.Phase == signal.SignalPhaseCancel {
-		data.Status = statusCanceled
-	}
+	data.Parent = h.lookupParent(ctx, event.WorkflowID)
+
+	data.Links = h.buildContextLinks(event, data.Step)
 
 	return data, true
 }
 
-// stageEventPrefix returns the user-facing event family ("plan", "apply", or
-// "operation") for a given stage value.
-func stageEventPrefix(stage string) string {
-	switch stage {
-	case stagePlan:
-		return "plan"
-	case stageApply:
-		return "apply"
+func (h *WebhookSignalLifecycleHook) buildOutcome(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) *lifecycleOutcome {
+	out := &lifecycleOutcome{
+		Status: mapStatus(outcome.Status),
+	}
+	if outcome.Status != signal.SignalStatusSuccess {
+		out.Error = outcome.ErrMessage
+	}
+	if outcome.Duration > 0 {
+		out.DurationMs = outcome.Duration.Milliseconds()
+	}
+	if event.Phase == signal.SignalPhaseCancel {
+		out.Status = statusCanceled
+	}
+	return out
+}
+
+// enrichStep loads the workflow step by id and projects the user-facing step
+// fields. This is server-side and runs in an activity context, so DB access
+// is safe and replay-deterministic.
+//
+// Returns the step ref plus the resolved install name (when the step's target
+// allows it to be discovered cheaply via the same JOIN). The install name is
+// returned out-of-band so the caller can place it on workflow.owner_name.
+func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID string) (*workflowStepRef, string) {
+	ref := &workflowStepRef{ID: stepID}
+	if h.db == nil {
+		return ref, ""
+	}
+
+	var step app.WorkflowStep
+	if err := h.db.WithContext(ctx).
+		Where("id = ?", stepID).
+		First(&step).Error; err != nil {
+		h.l.Debug("failed to load workflow step for webhook enrichment",
+			zap.String("step_id", stepID),
+			zap.Error(err))
+		return ref, ""
+	}
+
+	ref.Name = step.Name
+	ref.Idx = step.Idx
+	ref.TargetType = step.StepTargetType
+	ref.TargetID = step.StepTargetID
+	ref.ExecutionType = string(step.ExecutionType)
+
+	var installName string
+	switch step.StepTargetType {
+	case string(app.WorkflowStepTargetTypeInstallDeploy):
+		meta := h.lookupDeployTargetMeta(ctx, step.StepTargetID)
+		ref.ComponentID = meta.ComponentID
+		ref.ComponentName = meta.ComponentName
+		installName = meta.InstallName
+	case string(app.WorkflowStepTargetTypeInstallSandboxRun):
+		meta := h.lookupSandboxRunTargetMeta(ctx, step.StepTargetID)
+		ref.SandboxID = meta.SandboxID
+		installName = meta.InstallName
+	}
+
+	return ref, installName
+}
+
+// deployTargetMeta carries the install/component identity & names resolved for
+// an install_deploys step target via a single JOIN.
+type deployTargetMeta struct {
+	ComponentID   string
+	ComponentName string
+	InstallName   string
+}
+
+// lookupDeployTargetMeta resolves component id/name and install name for an
+// install deploy target. Best-effort: returns a zero struct on any DB error.
+func (h *WebhookSignalLifecycleHook) lookupDeployTargetMeta(ctx context.Context, deployID string) deployTargetMeta {
+	if h.db == nil || deployID == "" {
+		return deployTargetMeta{}
+	}
+	var row struct {
+		ComponentID   string
+		ComponentName string
+		InstallName   string
+	}
+	if err := h.db.WithContext(ctx).
+		Table("install_deploys").
+		Select(`install_components.component_id AS component_id,
+			components.name AS component_name,
+			installs.name AS install_name`).
+		Joins("JOIN install_components ON install_components.id = install_deploys.install_component_id").
+		Joins("LEFT JOIN components ON components.id = install_components.component_id").
+		Joins("LEFT JOIN installs ON installs.id = install_components.install_id").
+		Where("install_deploys.id = ?", deployID).
+		Scan(&row).Error; err != nil {
+		return deployTargetMeta{}
+	}
+	return deployTargetMeta{
+		ComponentID:   row.ComponentID,
+		ComponentName: row.ComponentName,
+		InstallName:   row.InstallName,
+	}
+}
+
+// sandboxRunTargetMeta carries the sandbox id & install name resolved for an
+// install_sandbox_runs step target.
+type sandboxRunTargetMeta struct {
+	SandboxID   string
+	InstallName string
+}
+
+// lookupSandboxRunTargetMeta resolves sandbox id and install name for an
+// install sandbox run target.
+func (h *WebhookSignalLifecycleHook) lookupSandboxRunTargetMeta(ctx context.Context, sandboxRunID string) sandboxRunTargetMeta {
+	if h.db == nil || sandboxRunID == "" {
+		return sandboxRunTargetMeta{}
+	}
+	var row struct {
+		SandboxID   string
+		InstallName string
+	}
+	if err := h.db.WithContext(ctx).
+		Table("install_sandbox_runs").
+		Select(`install_sandbox_runs.install_sandbox_id AS sandbox_id,
+			installs.name AS install_name`).
+		Joins("LEFT JOIN installs ON installs.id = install_sandbox_runs.install_id").
+		Where("install_sandbox_runs.id = ?", sandboxRunID).
+		Scan(&row).Error; err != nil {
+		return sandboxRunTargetMeta{}
+	}
+	return sandboxRunTargetMeta{
+		SandboxID:   row.SandboxID,
+		InstallName: row.InstallName,
+	}
+}
+
+// lookupParent resolves a parent {workflow_id, step_id, kind} block when this
+// workflow is nested inside another workflow's step (e.g. an action workflow
+// run launched from a deploy step). Returns nil when no parent is detected.
+func (h *WebhookSignalLifecycleHook) lookupParent(ctx context.Context, workflowID string) *parentRef {
+	if h.db == nil || workflowID == "" {
+		return nil
+	}
+
+	// Action workflow runs link back to their parent workflow via
+	// install_action_workflow_runs.install_workflow_id. The parent step is the
+	// step in that parent workflow whose target points at the run.
+	//
+	// We also LEFT JOIN through install_action_workflows → action_workflows to
+	// pick up the human-readable action name. The joins are LEFT because the
+	// run's install_action_workflow_id is nullable (manual triggers may not
+	// reference a stored action workflow).
+	var row struct {
+		ParentWorkflowID string
+		ParentStepID     string
+		ActionName       string
+	}
+	err := h.db.WithContext(ctx).
+		Raw(`
+			SELECT
+				iws.install_workflow_id AS parent_workflow_id,
+				iws.id AS parent_step_id,
+				aw.name AS action_name
+			FROM install_action_workflow_runs iawr
+			JOIN install_workflow_steps iws
+			  ON iws.step_target_type = ?
+			 AND iws.step_target_id = iawr.id
+			LEFT JOIN install_action_workflows iaw
+			  ON iaw.id = iawr.install_action_workflow_id
+			LEFT JOIN action_workflows aw
+			  ON aw.id = iaw.action_workflow_id
+			WHERE iawr.install_workflow_id = ?
+			LIMIT 1`,
+			string(app.WorkflowStepTargetTypeInstallActionWorkflowRun),
+			workflowID,
+		).Scan(&row).Error
+
+	if err != nil || row.ParentWorkflowID == "" {
+		return nil
+	}
+
+	return &parentRef{
+		WorkflowID: row.ParentWorkflowID,
+		StepID:     row.ParentStepID,
+		Kind:       kindWorkflowStep,
+		ActionName: row.ActionName,
+	}
+}
+
+// mapTransition derives the public transition string from the phase + outcome.
+// Workflow / step events emit:
+//   - started   on BeforePhase(execute)
+//   - succeeded on AfterPhase(execute) success
+//   - failed    on AfterPhase(execute) error
+//   - cancelled on AfterPhase(cancel)
+func mapTransition(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) string {
+	if outcome == nil {
+		return transitionStarted
+	}
+	if event.Phase == signal.SignalPhaseCancel {
+		return transitionCanceled
+	}
+	switch outcome.Status {
+	case signal.SignalStatusSuccess:
+		return transitionSucceeded
+	case signal.SignalStatusCancelled:
+		return transitionCanceled
 	default:
-		return "operation"
+		return transitionFailed
 	}
 }
 
@@ -383,22 +595,22 @@ func mapStatus(s signal.SignalStatus) string {
 	}
 }
 
-// buildSubject returns a stable, non-signal-leaking identifier for the
-// CloudEvent's `subject`. It composes the org id, operation, stage, and event
-// family so consumers can correlate started/finished pairs without exposing
-// any internal signal/queue identifiers in the wire format.
-func buildSubject(event signal.SignalPhaseEvent, eventName string) string {
+// buildSubject returns a stable identifier used as the CloudEvent `subject`.
+// Composed from org id, kind, workflow id, and (when applicable) step id so
+// consumers can correlate started/finished pairs without parsing payloads.
+func buildSubject(event signal.SignalPhaseEvent, data lifecycleEventData) string {
 	parts := []string{}
 	if event.OrgID != "" {
 		parts = append(parts, event.OrgID)
 	}
-	if event.Operation != "" {
-		parts = append(parts, event.Operation)
+	parts = append(parts, data.Kind)
+	if data.Workflow.ID != "" {
+		parts = append(parts, data.Workflow.ID)
 	}
-	if event.Stage != "" {
-		parts = append(parts, event.Stage)
+	if data.Step != nil && data.Step.ID != "" {
+		parts = append(parts, data.Step.ID)
 	}
-	parts = append(parts, eventName)
+	parts = append(parts, data.Transition)
 	return strings.Join(parts, "/")
 }
 
@@ -446,7 +658,7 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 	if err := h.db.WithContext(ctx).
 		Where("org_id = ?", orgID).
 		Find(&webhooks).Error; err != nil {
-		return nil, fmt.Errorf("unable to list org operation lifecycle webhooks: %w", err)
+		return nil, fmt.Errorf("unable to list org workflow lifecycle webhooks: %w", err)
 	}
 
 	targets := make([]webhookTarget, 0, len(webhooks))
@@ -486,10 +698,9 @@ func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 	return uniqueTargets
 }
 
-// buildContextLinks builds a contextLinks block of dashboard URLs for the
-// entities referenced in the event. Returns nil when AppURL is unconfigured
-// or no link could be produced.
-func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseEvent) *contextLinks {
+// buildContextLinks builds dashboard URLs for the entities referenced in the
+// event. Returns nil when AppURL is unconfigured or no link could be produced.
+func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseEvent, step *workflowStepRef) *contextLinks {
 	if h.appURL == "" || event.OrgID == "" {
 		return nil
 	}
@@ -498,16 +709,27 @@ func (h *WebhookSignalLifecycleHook) buildContextLinks(event signal.SignalPhaseE
 		Org: h.dashboardURL(event.OrgID),
 	}
 
-	if event.InstallID != nil && *event.InstallID != "" {
-		links.Install = h.dashboardURL(event.OrgID, "installs", *event.InstallID)
+	// Owners of install workflows are installs; resolve install id from the
+	// owner block when applicable.
+	var installID string
+	if event.OwnerType == "installs" && event.OwnerID != "" {
+		installID = event.OwnerID
+	} else if event.InstallID != nil && *event.InstallID != "" {
+		installID = *event.InstallID
+	}
+
+	if installID != "" {
+		links.Install = h.dashboardURL(event.OrgID, "installs", installID)
 		if event.WorkflowID != "" {
-			links.Workflow = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "workflows", event.WorkflowID)
+			links.Workflow = h.dashboardURL(event.OrgID, "installs", installID, "workflows", event.WorkflowID)
 		}
-		if event.SandboxID != nil && *event.SandboxID != "" {
-			links.Sandbox = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "sandbox")
-		}
-		if event.ComponentID != nil && *event.ComponentID != "" {
-			links.Component = h.dashboardURL(event.OrgID, "installs", *event.InstallID, "components", *event.ComponentID)
+		if step != nil {
+			if step.SandboxID != "" {
+				links.Sandbox = h.dashboardURL(event.OrgID, "installs", installID, "sandbox")
+			}
+			if step.ComponentID != "" {
+				links.Component = h.dashboardURL(event.OrgID, "installs", installID, "components", step.ComponentID)
+			}
 		}
 	}
 

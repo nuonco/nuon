@@ -43,6 +43,15 @@ type SignalPhaseEvent struct {
 	// for signals not owned by a workflow step (e.g. install-created).
 	WorkflowID   string `json:"workflow_id,omitempty"`
 	WorkflowType string `json:"workflow_type,omitempty"`
+
+	// StepID, OwnerID, OwnerType identify the workflow step (when applicable)
+	// and the entity that owns the queue (e.g. install). Populated by signals
+	// that implement SignalWithLifecycleContext. Used by lifecycle hooks to
+	// reason about workflow/step lifecycle without having to know the inner
+	// signal taxonomy.
+	StepID    string `json:"step_id,omitempty"`
+	OwnerID   string `json:"owner_id,omitempty"`
+	OwnerType string `json:"owner_type,omitempty"`
 }
 
 type SignalPhaseOutcome struct {
@@ -91,6 +100,15 @@ type SignalLifecycleContext struct {
 	// not owned by a workflow step.
 	WorkflowID   string `json:"workflow_id,omitempty"`
 	WorkflowType string `json:"workflow_type,omitempty"`
+
+	// StepID, OwnerID, OwnerType identify the workflow step (when applicable)
+	// and the entity owning the queue. Populated for the workflow-level
+	// (execute-workflow) and step-level (execute-workflow-step) primitives so
+	// hooks can emit workflow/workflow_step lifecycle events without leaking
+	// inner signal taxonomy.
+	StepID    string `json:"step_id,omitempty"`
+	OwnerID   string `json:"owner_id,omitempty"`
+	OwnerType string `json:"owner_type,omitempty"`
 }
 
 // SignalWithMutableLifecycleContext is an optional interface signals can

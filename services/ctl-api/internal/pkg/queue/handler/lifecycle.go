@@ -43,6 +43,9 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		event.Stage = ctx.Stage
 		event.WorkflowID = ctx.WorkflowID
 		event.WorkflowType = ctx.WorkflowType
+		event.StepID = ctx.StepID
+		event.OwnerID = ctx.OwnerID
+		event.OwnerType = ctx.OwnerType
 	}
 
 	return event

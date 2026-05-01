@@ -38,6 +38,11 @@ type Signal struct {
 	StepID     string `json:"step_id"`
 	WorkflowID string `json:"workflow_id"`
 
+	// WorkflowType identifies the kind of workflow that owns this step. Set at
+	// dispatch time from the in-scope *app.Workflow so the lifecycle hook can
+	// emit workflow_step.lifecycle events without a DB lookup.
+	WorkflowType string `json:"workflow_type,omitempty"`
+
 	// OwnerID is the entity that owns the queues (e.g. install ID).
 	OwnerID   string `json:"owner_id"`
 	OwnerType string `json:"owner_type"`
@@ -78,10 +83,24 @@ type Signal struct {
 }
 
 var (
-	_ signal.Signal                   = (*Signal)(nil)
-	_ signal.SignalWithCancel         = (*Signal)(nil)
-	_ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+	_ signal.Signal                     = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithUpdateHandlers   = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 )
+
+// LifecycleContext exposes the step + workflow identity to lifecycle hooks so
+// they can emit workflow_step.lifecycle.* webhook events without leaking the
+// inner signal's operation taxonomy.
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		StepID:       s.StepID,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+	}
+}
 
 // RegisterUpdateHandlers registers step-level update handlers on the handler workflow.
 // Called by the handler framework after initializeState(), before Execute().
