@@ -74,7 +74,7 @@ require (
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/gin-contrib/size v1.0.1
 	github.com/gin-gonic/gin v1.11.0
-	github.com/go-faker/faker/v4 v4.5.0
+	github.com/go-faker/faker/v4 v4.7.0
 	github.com/go-git/go-git/v5 v5.18.0
 	github.com/go-pdf/fpdf v0.6.0
 	github.com/go-playground/validator/v10 v10.27.0
