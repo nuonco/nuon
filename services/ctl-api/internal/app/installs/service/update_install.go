@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reconcileemitters"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -91,7 +91,7 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &reconcileemitters.Signal{
+		if err := s.enqueueInstallSignal(ctx, queueID, &appconfigupdated.Signal{
 			InstallID: install.ID,
 		}, "", ""); err != nil {
 			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))

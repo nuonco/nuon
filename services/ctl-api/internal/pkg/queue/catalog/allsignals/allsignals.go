@@ -36,6 +36,7 @@ import (
 
 	// installs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/actionworkflowrun"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentdeployapplyplan"
@@ -59,7 +60,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionrunner"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reconcileemitters"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionrunner"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"

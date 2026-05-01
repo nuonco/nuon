@@ -12,7 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reconcileemitters"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -194,7 +194,7 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 
 			if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 				QueueID: queue.ID,
-				Signal: &reconcileemitters.Signal{
+				Signal: &appconfigupdated.Signal{
 					InstallID: install.ID,
 				},
 			}); err != nil {
