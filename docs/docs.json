@@ -87,7 +87,7 @@
           {
             "group": "Continuous Delivery",
             "boost": 3,
-            "pages": ["concepts/workflows", "concepts/actions", "concepts/policies", "concepts/operation-roles"]
+            "pages": ["get-started/day-2-operations", "concepts/workflows", "concepts/actions", "concepts/policies", "concepts/operation-roles"]
           },
           {
             "group": "Customer Experience",
