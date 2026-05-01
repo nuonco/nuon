@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
+// AdminMngVMShutDownRequest represents the request body for shutting down an install runner VM (admin).
 type AdminMngVMShutDownRequest struct{}
 
 // @ID						AdminMngVMShutDownRunner
