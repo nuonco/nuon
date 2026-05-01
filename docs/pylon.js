@@ -4,6 +4,14 @@
 (function () {
   var PYLON_APP_ID = '174f6ad2-124e-4a3b-bf7f-e80bbb2cb232'
 
+  // Pylon's loader polls for `window.pylon.chat_settings.app_id` and won't
+  // mount the iframe without it. Anonymous (no email/name) is fine.
+  window.pylon = {
+    chat_settings: {
+      app_id: PYLON_APP_ID,
+    },
+  }
+
   var e = window
   var t = document
   var n = function () {
