@@ -79,11 +79,6 @@ type handler struct {
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal
 	sig         signal.Signal
-
-	// install workflow identity resolved once at handler init from the signal's
-	// owning install_workflow_step. Empty when the signal is not owned by a step.
-	workflowID   string
-	workflowType string
 }
 
 // setFinished marks the handler as finished with a terminal status and optional error description.

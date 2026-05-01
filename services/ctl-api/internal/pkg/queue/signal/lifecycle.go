@@ -38,9 +38,9 @@ type SignalPhaseEvent struct {
 	Stage       string  `json:"stage,omitempty"`
 
 	// WorkflowID and WorkflowType identify the install workflow that owns this
-	// signal, when applicable. Resolved once at handler init from the signal's
-	// owning install_workflow_step. Empty for signals not owned by a workflow
-	// step (e.g. install-created).
+	// signal, when applicable. Sourced from the signal's lifecycle context
+	// (set at construction time via SignalWithMutableLifecycleContext). Empty
+	// for signals not owned by a workflow step (e.g. install-created).
 	WorkflowID   string `json:"workflow_id,omitempty"`
 	WorkflowType string `json:"workflow_type,omitempty"`
 }
@@ -84,6 +84,35 @@ type SignalLifecycleContext struct {
 	SandboxID   *string `json:"sandbox_id,omitempty"`
 	Operation   string  `json:"operation"`
 	Stage       string  `json:"stage,omitempty"`
+
+	// WorkflowID and WorkflowType identify the install workflow that owns this
+	// signal, when applicable. Populated at signal-construction time via
+	// SignalWithMutableLifecycleContext (see LifecycleBase). Empty for signals
+	// not owned by a workflow step.
+	WorkflowID   string `json:"workflow_id,omitempty"`
+	WorkflowType string `json:"workflow_type,omitempty"`
+}
+
+// SignalWithMutableLifecycleContext is an optional interface signals can
+// implement to receive workflow identity at construction time. The simplest way
+// to implement it is to embed LifecycleBase.
+type SignalWithMutableLifecycleContext interface {
+	SetLifecycleWorkflow(workflowID, workflowType string)
+}
+
+// LifecycleBase can be embedded in signal structs to satisfy
+// SignalWithMutableLifecycleContext. The fields are exported with distinctive
+// names (prefixed `Lifecycle*`) to avoid colliding with existing signal fields
+// and so they round-trip cleanly through JSON serialization into the
+// QueueSignal row.
+type LifecycleBase struct {
+	LifecycleWorkflowID   string `json:"lifecycle_workflow_id,omitempty"`
+	LifecycleWorkflowType string `json:"lifecycle_workflow_type,omitempty"`
+}
+
+func (b *LifecycleBase) SetLifecycleWorkflow(workflowID, workflowType string) {
+	b.LifecycleWorkflowID = workflowID
+	b.LifecycleWorkflowType = workflowType
 }
 
 func AsSignalLifecycleHook(f any) any {

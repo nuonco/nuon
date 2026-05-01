@@ -35,7 +35,7 @@ func createActionWorkflowStep(ctx workflow.Context, installID string, iaw *app.I
 }
 
 func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	installID := flw.OwnerID
 	if flw.OwnerType != "installs" {

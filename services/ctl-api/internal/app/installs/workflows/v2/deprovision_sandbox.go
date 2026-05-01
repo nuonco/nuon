@@ -17,7 +17,7 @@ import (
 func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
