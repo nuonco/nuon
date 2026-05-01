@@ -164,6 +164,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			// trigger specific jobs
 			runner.POST("/graceful-shutdown", s.AdminGracefulShutDown)
 			runner.POST("/force-shutdown", s.AdminForceShutDown)
+			runner.POST("/mng/shutdown-vm", s.AdminMngVMShutDown)
 			runner.POST("/noop-job", s.AdminCreateNoopJob)
 			runner.POST("/health-check-job", s.AdminCreateHealthCheck)
 
