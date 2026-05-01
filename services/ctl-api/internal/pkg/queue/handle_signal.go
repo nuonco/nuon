@@ -93,6 +93,13 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to update")
 	}
 
+	// Persist the handler's RunID so client activities (FetchSteps, AwaitSignal)
+	// can recover it on retry without re-calling Ready.
+	_ = activities.AwaitUpdateQueueSignalRunID(ctx, &activities.UpdateQueueSignalRunIDRequest{
+		QueueSignalID: queueSignal.ID,
+		RunID:         readyResp.RunID,
+	})
+
 	l.Info("making sure queue signal workflow is valid")
 	if _, err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
 		UpdateID:   queueSignal.ID,

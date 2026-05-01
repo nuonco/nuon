@@ -2,10 +2,12 @@ import { createContext, useState, useRef, useEffect, type ReactNode } from 'reac
 import { useQuery } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
 import { getWorkflow } from '@/lib'
+import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TWorkflow } from '@/types'
+import type { TAPIError, TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
   workflow: TWorkflow
@@ -64,6 +66,8 @@ export const WorkflowProvider = ({
       : pollInterval
     : false
 
+  const { addToast } = useToast()
+
   const { data: workflow, isLoading, error } = useQuery({
     queryKey: ['workflow', org.id!, workflowId],
     queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
@@ -73,7 +77,17 @@ export const WorkflowProvider = ({
 
   const metrics = useWorkflowMetrics(workflow)
 
-  if (error) return <ProviderError error={error} />
+  useEffect(() => {
+    if (error && workflow) {
+      addToast(
+        <Toast heading="Failed to refresh data" theme="warn">
+          {(error as TAPIError)?.error ?? 'Connection issue'}
+        </Toast>
+      )
+    }
+  }, [error])
+
+  if (error && !workflow) return <ProviderError error={error} />
 
   if (isLoading || !workflow) return <ProviderLoading />
 

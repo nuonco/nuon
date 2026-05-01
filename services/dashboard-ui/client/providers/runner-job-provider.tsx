@@ -1,10 +1,12 @@
-import { createContext, type ReactNode } from 'react'
+import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
 import { getRunnerJob } from '@/lib'
+import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TRunnerJob } from '@/types'
+import type { TAPIError, TRunnerJob } from '@/types'
 
 type RunnerJobContextValue = {
   job: TRunnerJob
@@ -22,6 +24,7 @@ export function RunnerJobProvider({
   runnerJobId: string
 }) {
   const { org } = useOrg()
+  const { addToast } = useToast()
 
   const { data: job, isLoading, error } = useQuery({
     queryKey: ['runner-job', org.id, runnerJobId],
@@ -33,7 +36,17 @@ export function RunnerJobProvider({
     enabled: !!org.id && !!runnerJobId,
   })
 
-  if (error) return <ProviderError error={error} />
+  useEffect(() => {
+    if (error && job) {
+      addToast(
+        <Toast heading="Failed to refresh data" theme="warn">
+          {(error as TAPIError)?.error ?? 'Connection issue'}
+        </Toast>
+      )
+    }
+  }, [error])
+
+  if (error && !job) return <ProviderError error={error} />
   if (isLoading || !job) return <ProviderLoading />
 
   return (
