@@ -12,6 +12,7 @@ type WorkflowRef struct {
 
 	Namespace string `json:"namespace"`
 	ID        string `json:"id"`
+	RunID     string `json:"run_id,omitempty"`
 }
 
 func (s WorkflowRef) Value() (driver.Value, error) {
