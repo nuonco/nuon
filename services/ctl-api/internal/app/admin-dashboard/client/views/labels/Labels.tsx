@@ -30,6 +30,7 @@ export const Labels = () => {
       org_id: orgId || undefined,
       page,
     }),
+    refetchInterval: 30000,
   })
 
   if (isLoading) return <LoadingSpinner />

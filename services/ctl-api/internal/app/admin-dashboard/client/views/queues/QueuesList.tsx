@@ -27,6 +27,7 @@ export const QueuesList = () => {
       owner_type: ownerType,
       page,
     }),
+    refetchInterval: 20000,
   })
 
   if (isLoading) return <LoadingSpinner />

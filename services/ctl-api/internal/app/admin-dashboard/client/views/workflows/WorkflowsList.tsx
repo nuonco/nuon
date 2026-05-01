@@ -16,13 +16,28 @@ function getStatus(status: any): string {
   return String(status)
 }
 
+const WORKFLOW_TYPES = [
+  'provision',
+  'deprovision',
+  'manual_deploy',
+  'deploy_components',
+  'input_update',
+  'reprovision_sandbox',
+  'teardown_components',
+  'action_workflow_run',
+  'sync_secrets',
+  'drift_run',
+]
+
 export const WorkflowsList = () => {
   const [search, setSearch] = useState('')
+  const [type, setType] = useState('')
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest')
   const [page, setPage] = useState(1)
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['workflows', search, page],
-    queryFn: () => getWorkflows({ search, page }),
+    queryKey: ['workflows', search, type, sort, page],
+    queryFn: () => getWorkflows({ search, type: type || undefined, sort, page }),
   })
 
   if (isLoading) return <LoadingSpinner />
@@ -35,8 +50,28 @@ export const WorkflowsList = () => {
     <div>
       <h1 className="page-heading">Workflows</h1>
 
-      <div className="mt-4 w-full sm:w-64">
-        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by ID or owner ID..." />
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="w-full sm:w-64">
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by ID or owner ID..." />
+        </div>
+        <select
+          value={type}
+          onChange={(e) => { setType(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+        >
+          <option value="">All types</option>
+          {WORKFLOW_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => { setSort(e.target.value as 'newest' | 'oldest'); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
       </div>
 
       <div className="mt-4 table-card">

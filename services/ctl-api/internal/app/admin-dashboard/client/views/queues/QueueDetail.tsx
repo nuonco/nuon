@@ -47,6 +47,7 @@ export const QueueDetail = () => {
     queryKey: ['queue-emitters', id, emittersPage],
     queryFn: () => getQueueEmitters(id!, { page: emittersPage }),
     enabled: !!id,
+    refetchInterval: 30000,
   })
 
   const { data: inFlightData } = useQuery({
@@ -215,6 +216,12 @@ export const QueueDetail = () => {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emit count</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last emitted</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
               </tr>
@@ -228,6 +235,14 @@ export const QueueDetail = () => {
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{emitter.name}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.mode || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{emitter.cron_schedule || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.signal_type || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    {emitter.status?.status ? <Badge variant="status" status={getStatus(emitter.status)}>{getStatus(emitter.status)}</Badge> : <span className="text-gray-400">-</span>}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-mono">{emitter.emit_count ?? 0}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.last_emitted_at ? formatRelativeDate(emitter.last_emitted_at) : '-'}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     <span className="font-mono text-xs">{truncateId(emitter.owner_id)}</span>
                     <span className="ml-1 text-xs text-gray-400">({emitter.owner_type})</span>
@@ -237,7 +252,7 @@ export const QueueDetail = () => {
               ))}
               {(!(queue.emitters || emittersData?.emitters) || (queue.emitters || emittersData?.emitters || []).length === 0) && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">No emitters</td>
+                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-500">No emitters</td>
                 </tr>
               )}
             </tbody>

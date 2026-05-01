@@ -32,6 +32,7 @@ export const QueueSignals = () => {
       owner_id: ownerID,
       page,
     }),
+    refetchInterval: 10000,
   })
 
   if (isLoading) return <LoadingSpinner />

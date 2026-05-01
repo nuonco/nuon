@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router'
 import {
   getSandboxMode,
   upsertSandboxRunnerJobConfig,
@@ -40,7 +41,15 @@ const defaultSignalForm = {
 
 export const SandboxMode = () => {
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState<Tab>('runner-jobs')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab') as Tab | null
+  const validTabs: Tab[] = ['runner-jobs', 'signals', 'stacks', 'templates']
+  const activeTab: Tab = tabParam && validTabs.includes(tabParam) ? tabParam : 'runner-jobs'
+  const setActiveTab = (t: Tab) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('tab', t)
+    setSearchParams(next, { replace: true })
+  }
 
   // Runner jobs state - editingJobType is the job_type being edited (or '__new__' for new)
   const [editingJobType, setEditingJobType] = useState<string | null>(null)
