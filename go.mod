@@ -92,7 +92,7 @@ require (
 	github.com/hashicorp/terraform-exec v0.23.0
 	github.com/hashicorp/terraform-json v0.24.0
 	github.com/hashicorp/waypoint-plugin-sdk v0.0.0-20230412210808-dcdb2a03f714
-	github.com/invopop/jsonschema v0.13.0
+	github.com/invopop/jsonschema v0.14.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jedib0t/go-pretty/v6 v6.7.8
 	github.com/kyokomi/emoji v2.2.4+incompatible
@@ -264,6 +264,7 @@ require (
 	github.com/opentracing/basictracer-go v1.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
+	github.com/pb33f/ordered-map/v2 v2.3.1 // indirect
 	github.com/petermattis/goid v0.0.0-20250813065127-a731cc31b4fe // indirect
 	github.com/pgavlin/fx v0.1.6 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
@@ -313,6 +314,7 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v4 v4.0.0-rc.2 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
 	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
@@ -347,7 +349,7 @@ require (
 	github.com/bodgit/sevenzip v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.0 // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.0.0 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/charmbracelet/bubbletea v1.3.6 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
