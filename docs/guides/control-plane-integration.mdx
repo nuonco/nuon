@@ -1,17 +1,11 @@
 ---
-title: 'Integrate into your Product'
+title: 'Add BYOC installation to your app'
 description: 'Enable customers to manage their installs through your UI'
 icon: "plug"
-keywords: ["embed Nuon", "white label", "API integration", "product integration", "SDK integration", "custom UI"]
+keywords: ["embed Nuon", "white label", "API integration", "product integration", "SDK integration", "custom UI", "BYOC installation"]
 ---
 
-The Customer Portal will have you up and running in minutes. But, as your BYOC offering matures, you may want to integrate install management more seamlessly into your own application.
-
-All the features of the Nuon platform are exposed via a REST API, allowing for fully programmatic operation. We also maintain a Golang SDK, which we use ourselves for the Dashboard and CLI. This guide will walk through how to implement a complete install lifecycle using the API.
-
-<Note>
-If you would like a working example, our [Customer Portal](https://customers.nuon.co/admin/login/) integrates with the Nuon Cloud API, using the API calls documented here.
-</Note>
+All the features of the Nuon platform are exposed via a REST API, allowing for fully programmatic operation. We also maintain a Golang SDK, which we use ourselves for the Dashboard and CLI. This guide walks through how to implement a complete install lifecycle using the API so your customers can manage their installs directly from your own product.
 
 ## Provision an Install
 
@@ -74,19 +68,15 @@ func main() {
 ```
 </CodeGroup>
 
-![customer accept install link](../images/guides/customer-portal/customer-accept-install-link.png)
-
 ### Install the Runner
 
 Installing the runner happens out of band, entirely on the customer's side. You just need to provide them with directions. We provide these for each install as part of the provision workflow. It will either be a link to a Cloudformation stack (for AWS app,) or the Azure CLI command to deploy a resource stack (for Azure apps.)
-
-![customer install stack](../images/guides/customer-portal/customer-install-stack.png)
 
 Once the runner is installed, it will phone home automatically.
 
 ### Approve the Provision
 
-Once the runner is installed, it will be ready to provision the sandbox and app components. In the Dashboard, we allow you to approve all steps, or one step at a time. Typically, the customer will want to approve resources being created in their account, so we recommend exposing this to them. In the Customer Portal, the "Approve" button we show to the customer maps to "Approve All" to keep the experience simple.
+Once the runner is installed, it will be ready to provision the sandbox and app components. The platform supports approving each step individually or approving all steps at once. Typically, the customer will want to approve resources being created in their account, so we recommend exposing this to them — mapping a single "Approve" button in your UI to "Approve All" keeps the experience simple.
 
 <Note>
 The `workflowID` is returned when creating the install. You will need to store this to approve the provision workflow.
@@ -112,8 +102,6 @@ workflow, err := client.UpdateWorkflow(
 )
 ```
 </CodeGroup>
-
-![customer approval](../images/guides/customer-portal/customer-approval.png)
 
 ## Maintain an Install
 
@@ -184,7 +172,7 @@ Uninstalling an app requires performing the same operations as a provision, but 
 
 ### Deprovision the App
 
-To deprovision the app resources and sandbox, you will need to run an install deprovision workflow. Just like the provision workflow, ths will require approvals. In the Customer Portal, we keep this experience simple by showing the customer a single "Approval" and mapping that to "Approve All".
+To deprovision the app resources and sandbox, you will need to run an install deprovision workflow. Just like the provision workflow, this will require approvals — typically mapped to a single "Approve" button in your UI for simplicity.
 
 <CodeGroup>
 ```bash curl
