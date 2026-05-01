@@ -4,11 +4,30 @@
 (function () {
   var PYLON_APP_ID = '174f6ad2-124e-4a3b-bf7f-e80bbb2cb232'
 
-  // Pylon's loader polls for `window.pylon.chat_settings.app_id` and won't
-  // mount the iframe without it. Anonymous (no email/name) is fine.
+  // Pylon's bundle silently refuses to mount unless both email and name are
+  // set on chat_settings (validation errors are swallowed by their internal
+  // telemetry sink — no console signal). For unauthenticated docs visitors
+  // we generate a stable per-browser identity so a returning reader resumes
+  // their thread instead of opening a fresh contact each visit.
+  var VISITOR_KEY = 'nuon-docs-pylon-visitor-id'
+  var visitorId
+  try {
+    visitorId = localStorage.getItem(VISITOR_KEY)
+    if (!visitorId) {
+      visitorId =
+        (window.crypto && crypto.randomUUID && crypto.randomUUID()) ||
+        Date.now().toString(36) + Math.random().toString(36).slice(2)
+      localStorage.setItem(VISITOR_KEY, visitorId)
+    }
+  } catch (_) {
+    visitorId = Date.now().toString(36) + Math.random().toString(36).slice(2)
+  }
+
   window.pylon = {
     chat_settings: {
       app_id: PYLON_APP_ID,
+      email: 'docs-visitor-' + visitorId + '@docs.nuon.co',
+      name: 'Docs Visitor',
     },
   }
 
