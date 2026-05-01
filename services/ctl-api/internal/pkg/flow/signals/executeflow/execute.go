@@ -189,6 +189,13 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	var eagerQueueSignalID string
 	var eagerGroupCount int
 
+	// completeDone, completedFlw, and completeErr are used to run
+	// CompleteStepGeneration in a background goroutine so remaining step
+	// groups are persisted to the DB while eager groups execute.
+	var completeDone workflow.Channel
+	var completedFlw *app.Workflow
+	var completeErr error
+
 	// Generate steps if the workflow doesn't already have them.
 	// Steps may be pre-created (e.g. by tests or by a previous run that was
 	// ContinueAsNew'd) — in that case, skip generation.
@@ -241,6 +248,17 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			},
 		}); err != nil {
 			return err
+		}
+
+		// Start completing step generation in the background so remaining
+		// groups are persisted to the DB (and visible in the UI) while
+		// the eager groups execute.
+		if eagerQueueSignalID != "" {
+			completeDone = workflow.NewChannel(ctx)
+			workflow.Go(ctx, func(gCtx workflow.Context) {
+				completedFlw, completeErr = flow.CompleteStepGeneration(gCtx, cfg, flw, eagerQueueSignalID)
+				completeDone.Send(gCtx, true)
+			})
 		}
 	} else {
 		l.Debug("steps already exist, skipping generation", zap.Int("step_count", len(flw.Steps)))
@@ -365,15 +383,17 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			continue
 		}
 
-		// After the last eager group finishes, complete step generation
-		// to persist all remaining groups before continuing.
-		if gi+1 == eagerGroupCount && eagerQueueSignalID != "" {
-			l.Debug("completing step generation after eager groups", zap.Int("eager_group_count", eagerGroupCount))
-			flw, err = flow.CompleteStepGeneration(ctx, cfg, flw, eagerQueueSignalID)
-			if err != nil {
-				return errors.Wrap(err, "unable to complete step generation")
+		// After the last eager group finishes, wait for the background
+		// CompleteStepGeneration goroutine and reload groups.
+		if gi+1 == eagerGroupCount && completeDone != nil {
+			l.Debug("waiting for parallel step generation to complete", zap.Int("eager_group_count", eagerGroupCount))
+			completeDone.Receive(ctx, nil)
+			completeDone = nil // only complete once
+
+			if completeErr != nil {
+				return errors.Wrap(completeErr, "unable to complete step generation")
 			}
-			eagerQueueSignalID = "" // only complete once
+			flw = completedFlw
 
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowID,
