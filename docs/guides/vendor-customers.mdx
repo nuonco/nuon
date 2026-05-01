@@ -1,5 +1,5 @@
 ---
-title: "Nuon Security & Trust"
+title: "Positioning Safety of BYOC"
 description: "Learn how to position Nuon's security and user experience to customers."
 icon: "shield-check"
 ---
@@ -21,8 +21,6 @@ The vendor by default cannot access the secrets unless the customer happened to 
 By default, Nuon only stores logs of the infrastructure changing in the customer account, e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform. Application logs are not accessible or sent to the Nuon control plane.
 
 One of Nuon's concepts is an [action](/concepts/actions), which are vendor-defined scripts to deploy infrastructure but are also useful in troubleshooting and debugging. Outputs of actions are stored in the Nuon control plane. Actions are defined by IAM roles and permissions that vendor's customers would approve beforehand. If those roles were elevated enough to execute commands that can access sensitive data like a database table with `psql` or view a Kubernetes secret with `kubectl`, the outputs would be stored in the Nuon control plane.
-
-If vendors implement the [Customer Portal](/concepts/customer-portal), audit logs can be exposed to the customer to view what infrastructure was changed. The vendor can also export those install logs as a CSV file and share directly with the customer.
 
 ### Customer Inputs
 
