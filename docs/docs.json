@@ -146,6 +146,7 @@
             "group": "Integrations",
             "boost": 2,
             "pages": [
+              "guides/control-plane-integration",
               "guides/github-actions",
               "guides/webhooks",
               "guides/ai-and-apps"
