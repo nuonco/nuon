@@ -126,7 +126,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		if err != nil {
 			l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
 		}
-		l.Info("saved pulumi update plan", zap.Int("bundle_bytes", len(bundle)))
+		l.Info("saved update plan from preview, ready for apply job", zap.Int("bundle_bytes", len(bundle)))
 
 		if err := h.writePlanResult(ctx, result, bundle); err != nil {
 			h.errRecorder.Record("write job execution result", err)
@@ -173,10 +173,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))
 				} else {
 					upOpts.PlanInPath = planPath
-					l.Info("applying saved pulumi update plan", zap.String("plan_path", planPath))
+					l.Info("applying update plan saved by preview job", zap.String("plan_path", planPath))
 				}
 			} else {
-				l.Info("no saved pulumi update plan provided, computing fresh diff")
+				l.Info("no update plan from preview job, computing fresh diff at apply time")
 			}
 
 			l.Info("executing pulumi up")
@@ -366,18 +366,18 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		l.Info("unable to fetch state, starting fresh", zap.Error(err))
+		l.Info("unable to fetch prior pulumi state — first-time deploy", zap.Error(err))
 		return false, nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
-		l.Info("no existing state found, starting fresh")
+		l.Info("no prior pulumi state in control plane — first-time deploy")
 		return false, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		l.Info("non-OK response fetching state, starting fresh", zap.Int("status", resp.StatusCode))
+		l.Info("non-OK response fetching prior pulumi state — first-time deploy", zap.Int("status", resp.StatusCode))
 		return false, nil
 	}
 
@@ -387,11 +387,11 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 	}
 
 	if len(body) == 0 {
-		l.Info("state is empty, starting fresh")
+		l.Info("prior pulumi state is empty — first-time deploy")
 		return false, nil
 	}
 
-	l.Info("importing existing state into local backend", zap.Int("state_bytes", len(body)))
+	l.Info("importing prior pulumi state into local backend", zap.Int("state_bytes", len(body)))
 	if err := ws.ImportState(ctx, body); err != nil {
 		return false, fmt.Errorf("unable to import state: %w", err)
 	}
