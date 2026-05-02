@@ -41,6 +41,14 @@ type Signal struct {
 	TargetQueueName string `json:"target_queue_name"`
 	Parallel        bool   `json:"parallel"`
 
+	// OrgID / OrgName / OwnerName are pass-through fields stamped by the
+	// parent execute-workflow signal. They are forwarded to the step signal
+	// at dispatch time so workflow_step lifecycle webhook payloads carry
+	// human-readable names without a per-event DB lookup.
+	OrgID     string `json:"org_id,omitempty"`
+	OrgName   string `json:"org_name,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
+
 	// finished is set when Execute() completes (success or error). The
 	// group-finished update handler blocks until this is true, then returns
 	// the group's final directive.

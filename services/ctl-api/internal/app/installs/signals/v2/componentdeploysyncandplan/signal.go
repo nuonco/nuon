@@ -26,6 +26,8 @@ import (
 const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallComponentID string
 	InstallID          string
 	DeployID           string
@@ -86,10 +88,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		componentID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID:   installID,
-		ComponentID: componentID,
-		Operation:   "component-deploy",
-		Stage:       "plan",
+		InstallID:    installID,
+		ComponentID:  componentID,
+		Operation:    "component-deploy",
+		Stage:        "plan",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 
