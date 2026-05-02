@@ -553,6 +553,22 @@ export type TRunnersResponse = {
   runners: TSandboxRunnerView[]
 }
 
+export type TAllRunnerView = {
+  runner: TRunner
+  org_name: string
+  group_type: string
+  process_online: boolean
+  version: string
+  process_type: string
+  install_id: string
+  install_name: string
+}
+
+export type TAllRunnersResponse = {
+  runners: TAllRunnerView[]
+  orgs: TOrgOption[]
+}
+
 export type TInstallActivityResponse = {
   activity_logs: TAuditLogEntry[]
   audit_logs: TAuditLogEntry[]

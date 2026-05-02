@@ -4324,6 +4324,7 @@ export interface components {
       org_id?: string;
       /** @description Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled. */
       queues?: components["schemas"]["app.Queue"][];
+      restart_requested?: boolean;
       runner_group?: components["schemas"]["app.RunnerGroup"];
       runner_group_id?: string;
       runner_job?: components["schemas"]["app.RunnerJob"];
@@ -4566,6 +4567,7 @@ export interface components {
       labels?: string[];
       log_stream_id?: string;
       org_id?: string;
+      restart_requested?: boolean;
       runner_id?: string;
       shutdowns?: components["schemas"]["app.RunnerProcessShutdown"][];
       started_at?: string;
