@@ -68,6 +68,21 @@ type UpResult struct {
 	Outputs map[string]any `json:"outputs"`
 }
 
+// PreviewOpts are optional knobs for Preview.
+type PreviewOpts struct {
+	// PlanOutPath, if set, makes Pulumi save an update plan to this path so
+	// a subsequent Up can replay it deterministically.
+	PlanOutPath string
+}
+
+// UpOpts are optional knobs for Up.
+type UpOpts struct {
+	// PlanInPath, if set, makes Pulumi apply this previously-saved update
+	// plan instead of computing a new diff. Up will fail if reality has
+	// drifted from what the plan expected.
+	PlanInPath string
+}
+
 // Workspace wraps the Pulumi Automation API for programmatic Pulumi operations.
 type Workspace struct {
 	stack   auto.Stack
@@ -90,6 +105,8 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	hash := sha256.Sum256([]byte("nuon-pulumi:" + opts.StackName))
 	envVars["PULUMI_CONFIG_PASSPHRASE"] = hex.EncodeToString(hash[:])
 	envVars["PULUMI_SKIP_UPDATE_CHECK"] = "true"
+	// Required by the Pulumi CLI to accept --save-plan / --plan in this version.
+	envVars["PULUMI_EXPERIMENTAL"] = "true"
 	// Isolate Go build cache per workspace to prevent stale cache entries
 	// from referencing cleaned-up temp directories of previous jobs.
 	envVars["GOCACHE"] = filepath.Join(opts.WorkDir, ".go-cache")
@@ -149,7 +166,10 @@ func extractResourceName(urn string) string {
 
 // Preview runs `pulumi preview` with event streaming to capture structured
 // per-resource changes, producing output comparable to terraform plan JSON.
-func (w *Workspace) Preview(ctx context.Context) (*PreviewResult, error) {
+// When opts.PlanOutPath is set, a Pulumi update plan is also written to that
+// path; pass it back via UpOpts.PlanInPath on a subsequent Up to skip the
+// implicit re-preview and guard against drift between plan and apply.
+func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewResult, error) {
 	eventCh := make(chan events.EngineEvent, 100)
 
 	// Drain events concurrently to prevent deadlock — Preview() writes
@@ -195,10 +215,14 @@ func (w *Workspace) Preview(ctx context.Context) (*PreviewResult, error) {
 		}
 	}()
 
-	result, err := w.stack.Preview(ctx,
+	previewOpts := []optpreview.Option{
 		optpreview.Message("Nuon preview"),
 		optpreview.EventStreams(eventCh),
-	)
+	}
+	if opts != nil && opts.PlanOutPath != "" {
+		previewOpts = append(previewOpts, optpreview.Plan(opts.PlanOutPath))
+	}
+	result, err := w.stack.Preview(ctx, previewOpts...)
 
 	// Wait for all events to be processed
 	<-done
@@ -223,11 +247,17 @@ func (w *Workspace) Preview(ctx context.Context) (*PreviewResult, error) {
 	}, nil
 }
 
-// Up runs `pulumi up` and returns the result.
-func (w *Workspace) Up(ctx context.Context) (*UpResult, error) {
-	result, err := w.stack.Up(ctx,
+// Up runs `pulumi up` and returns the result. When opts.PlanInPath is set,
+// Pulumi applies that previously-saved update plan instead of computing a
+// fresh diff — faster, and refuses to apply if reality has drifted.
+func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
+	upOpts := []optup.Option{
 		optup.Message("Nuon deploy"),
-	)
+	}
+	if opts != nil && opts.PlanInPath != "" {
+		upOpts = append(upOpts, optup.Plan(opts.PlanInPath))
+	}
+	result, err := w.stack.Up(ctx, upOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("pulumi up failed: %w", err)
 	}
