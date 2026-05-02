@@ -176,6 +176,12 @@ type Workflow struct {
 
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+	// OwnerName is a derived, non-persisted convenience field. It is
+	// populated by activities that need a human-readable owner label
+	// (e.g. workflow lifecycle webhooks) via a small switch on OwnerType
+	// — see PkgWorkflowsFlowGetFlow. Empty unless the loading path
+	// explicitly fills it.
+	OwnerName string `json:"owner_name,omitzero" gorm:"-" temporaljson:"owner_name,omitzero,omitempty"`
 
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
