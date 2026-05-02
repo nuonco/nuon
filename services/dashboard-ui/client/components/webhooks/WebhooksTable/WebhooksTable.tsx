@@ -80,7 +80,7 @@ export const WebhooksTable = ({
       emptyStateProps={{
         emptyTitle: 'No webhooks configured',
         emptyMessage:
-          'Create a webhook to receive operation lifecycle events from this org.',
+          'Create a webhook to receive workflow lifecycle events from this org.',
       }}
     />
   )

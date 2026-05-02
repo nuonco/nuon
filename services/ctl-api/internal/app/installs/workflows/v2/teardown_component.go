@@ -33,7 +33,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager()

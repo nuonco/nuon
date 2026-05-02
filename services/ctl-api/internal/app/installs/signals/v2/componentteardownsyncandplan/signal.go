@@ -27,6 +27,8 @@ import (
 const SignalType signal.SignalType = "component-teardown-sync-and-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallComponentID string
 	InstallID          string
 	ComponentID        string
@@ -83,10 +85,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		componentID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID:   installID,
-		ComponentID: componentID,
-		Operation:   "component-teardown",
-		Stage:       "plan",
+		InstallID:    installID,
+		ComponentID:  componentID,
+		Operation:    "component-teardown",
+		Stage:        "plan",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 

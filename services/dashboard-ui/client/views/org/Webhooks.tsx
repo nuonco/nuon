@@ -33,8 +33,8 @@ export const Webhooks = () => {
             Webhooks
           </Text>
           <Text theme="neutral">
-            Receive operation lifecycle events for this org as CloudEvents v1.0
-            payloads.
+            Receive workflow and workflow step lifecycle events for this org
+            as CloudEvents v1.0 payloads.
           </Text>
         </HeadingGroup>
         <CreateWebhookButton />
@@ -54,7 +54,9 @@ export const Webhooks = () => {
             </Text>
             <Text variant="body" theme="neutral">
               Webhooks deliver CloudEvents v1.0 JSON payloads of type{' '}
-              <span className="font-mono">com.nuon.operation.lifecycle.v1</span>.
+              <span className="font-mono">com.nuon.workflow.lifecycle.v1</span>{' '}
+              and{' '}
+              <span className="font-mono">com.nuon.workflow_step.lifecycle.v1</span>.
               When a signing secret is set, requests are signed with HMAC-SHA256
               and the hex-encoded signature is sent in the{' '}
               <span className="font-mono">X-Nuon-Signature</span> header.{' '}

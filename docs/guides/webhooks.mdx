@@ -1,14 +1,14 @@
 ---
 title: 'Webhooks'
-description: 'Receive operation lifecycle events from your Nuon Org as CloudEvents over HTTP.'
+description: 'Receive workflow lifecycle events from your Nuon Org as CloudEvents over HTTP.'
 icon: 'webhook'
-keywords: ['webhooks', 'CloudEvents', 'operation lifecycle', 'HMAC', 'X-Nuon-Signature', 'org events']
+keywords: ['webhooks', 'CloudEvents', 'workflow lifecycle', 'workflow_step lifecycle', 'HMAC', 'X-Nuon-Signature', 'org events']
 ---
 
-Org-scoped webhooks let you subscribe to operation lifecycle events for your Nuon [Org](/concepts/glossary). Whenever a
-user-facing operation runs (for example, an [Install](/concepts/glossary) is created or a
-[Sandbox](/concepts/sandboxes) is provisioned), Nuon `POST`s a [CloudEvents v1.0](https://cloudevents.io) envelope to
-every webhook URL registered on the Org.
+Org-scoped webhooks let you subscribe to **workflow** and **workflow step** lifecycle events for your Nuon
+[Org](/concepts/glossary). Whenever a workflow runs (for example, an [Install](/concepts/glossary) provision, a
+[Sandbox](/concepts/sandboxes) reprovision, or a component deploy), Nuon `POST`s a
+[CloudEvents v1.0](https://cloudevents.io) envelope to every webhook URL registered on the Org.
 
 Webhooks are scoped to the current Org. Manage them with the [Nuon CLI](/cli) or the dashboard.
 
@@ -19,7 +19,7 @@ Webhooks are scoped to the current Org. Manage them with the [Nuon CLI](/cli) or
 nuon orgs webhooks list
 
 # Create a webhook (URL is required, secret is optional)
-nuon orgs webhooks create --url https://example.com/webhooks/operation/lifecycle --secret <shared-secret>
+nuon orgs webhooks create --url https://example.com/webhooks/workflow/lifecycle --secret <shared-secret>
 
 # Delete a webhook
 nuon orgs webhooks delete --webhook-id <webhook_id>
@@ -33,85 +33,169 @@ A few constraints to be aware of:
   whether one is configured.
 - There is no update endpoint. To rotate the URL or secret, delete the webhook and create a new one.
 
-## Supported operations
+## Two primitives: workflows and workflow steps
 
-Webhooks fire only for user-facing operations. The current allowlist is:
+The webhook surface exposes exactly two primitives:
 
-- `install-created`, `install-updated`, `install-restart`
-- `component-deploy`, `component-teardown`
-- `sandbox-provision`, `sandbox-reprovision`, `sandbox-deprovision`
-- `runner-provision`, `runner-reprovision`
-- `action-workflow-run`
+1. **Workflow lifecycle** (`com.nuon.workflow.lifecycle.v1`) — fires for the workflow as a whole. Carries the
+   workflow's `type` (e.g. `provision`, `reprovision`, `manual_deploy`, `action_workflow_run`) and its owner
+   (`installs`, `apps`, `app_branches`).
+2. **Workflow step lifecycle** (`com.nuon.workflow_step.lifecycle.v1`) — fires for each step within a workflow.
+   Carries the step's `name`, `idx`, and `target_type` (e.g. `install_deploys`, `install_sandbox_runs`,
+   `install_action_workflow_runs`) along with denormalized `component_id` / `sandbox_id` when applicable.
 
-## Event model
+You do not need to memorize an operation taxonomy. To know "did the sandbox finish provisioning?", look at workflow
+events with `data.workflow.type == "provision"` and a step whose `target_type == "install_sandbox_runs"` succeeded.
+To know "did this component deploy?", look at a step whose `target_type == "install_deploys"` and inspect
+`data.step.component_id`.
 
-Every operation emits a `*.started` event when it begins and a `*.finished` event when it completes (success, failure,
-or cancellation). What changes between operations is how many of those `started`/`finished` pairs you get and what
-they're called. That's controlled by whether the operation is single-phase or multi-phase.
+## Transitions
 
-### Single-phase vs multi-phase operations
+Both primitives use the same transition vocabulary:
 
-A **single-phase** operation runs as one indivisible unit. Nuon picks it up, does the work, and reports the outcome.
-You get exactly one `started`/`finished` pair, and `data.stage` is omitted because there's nothing to disambiguate.
-Events use the generic `operation.*` family.
+| Transition  | When it fires                                       |
+| ----------- | --------------------------------------------------- |
+| `started`   | The workflow / step begins execution                |
+| `succeeded` | Execution completed successfully                    |
+| `failed`    | Execution errored or validation rejected the input  |
+| `cancelled` | Execution was cancelled                             |
 
-A **multi-phase** operation has two distinct user-visible phases that run back-to-back:
+`data.transition` is the transition name. `data.outcome.status` mirrors it on `*.succeeded`, `*.failed`, and
+`*.cancelled` events. Validation failures of the workflow / step wrappers surface as a `failed` outcome on the
+following execute event — there is no separate validate event.
 
-1. A `plan` phase that figures out what is about to change (for example, the Terraform plan or Helm diff). Users may
-   gate this phase with an approval before continuing.
-2. An `apply` phase that actually performs the change.
+A typical Install provision produces, in order:
 
-Each phase emits its own `started`/`finished` pair, and every event carries `data.stage` set to either `"plan"` or
-`"apply"` so receivers can tell them apart. A typical successful multi-phase operation therefore produces four
-deliveries in order: `plan.started`, `plan.finished`, `apply.started`, `apply.finished`. If the `plan` phase fails or
-its approval is denied, the `apply` phase never runs and you will not see `apply.*` events.
-
-| Operation family                                                                                       | Event names                                              |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Multi-phase (`component-deploy`, `component-teardown`, `sandbox-provision`/`reprovision`/`deprovision`) | `plan.started`, `plan.finished`, `apply.started`, `apply.finished` |
-| Single-phase (`install-created`, `install-updated`, `install-restart`, `runner-provision`, `runner-reprovision`, `action-workflow-run`) | `operation.started`, `operation.finished`                |
-
-`data.status` is one of `started`, `succeeded`, `failed`, or `canceled`. When a stage's pre-execution validation fails,
-Nuon surfaces it as a `*.finished` event for the owning stage with `data.status: "failed"` and
-`data.failure_reason: "validation_failed"` — there is no separate validate event.
+1. `workflow.lifecycle started` for the provision workflow.
+2. For each step in the workflow: `workflow_step.lifecycle started` → `workflow_step.lifecycle succeeded` (or
+   `failed` / `cancelled`).
+3. `workflow.lifecycle succeeded` for the provision workflow once every step terminates.
 
 ## Payload format
 
 The body is a CloudEvents v1.0 JSON envelope sent with `Content-Type: application/cloudevents+json; charset=utf-8`.
-The CloudEvent `type` is always `com.nuon.operation.lifecycle.v1`. Nuon-specific extension attributes
-(`nuonorgid`, `nuonoperation`, `nuonstage`, `nuonstatus`) are mirrored on the envelope for routing.
+Nuon-specific extension attributes (`nuonorgid`, `nuonkind`, `nuontransition`) are mirrored on the envelope for
+routing.
+
+### Workflow lifecycle event
 
 ```json
 {
   "specversion": "1.0",
   "id": "9f6c5b4e-…",
-  "type": "com.nuon.operation.lifecycle.v1",
+  "type": "com.nuon.workflow.lifecycle.v1",
   "source": "//nuon.co/ctl-api",
   "time": "2026-04-28T12:34:56Z",
-  "subject": "org_…/sandbox-reprovision/apply/apply.finished",
+  "subject": "org_…/workflow/inwYY…/started",
   "datacontenttype": "application/json",
   "nuonorgid": "org_…",
-  "nuonoperation": "sandbox-reprovision",
-  "nuonstage": "apply",
-  "nuonstatus": "succeeded",
+  "nuonkind": "workflow",
+  "nuontransition": "started",
   "data": {
-    "event": "apply.finished",
-    "operation": "sandbox-reprovision",
-    "stage": "apply",
-    "status": "succeeded",
-    "duration_ms": 12345,
-    "context": {
-      "org_id": "org_…",
-      "install_id": "install_…",
-      "component_id": null,
-      "sandbox_id": "sbx_…"
+    "kind": "workflow",
+    "transition": "started",
+    "org_id": "org_…",
+    "workflow": {
+      "id": "inwYY…",
+      "type": "provision",
+      "owner_id": "ins_…",
+      "owner_type": "installs"
+    },
+    "links": {
+      "org": "https://app.nuon.co/org_…",
+      "install": "https://app.nuon.co/org_…/installs/ins_…",
+      "workflow": "https://app.nuon.co/org_…/installs/ins_…/workflows/inwYY…"
     }
   }
 }
 ```
 
-`data.stage` is omitted for single-phase operations. `data.error` and `data.failure_reason` are only set on failed
-events. `data.metadata` is omitted unless the operation contributed structured metadata.
+### Workflow step lifecycle event
+
+```json
+{
+  "specversion": "1.0",
+  "id": "3487f2f5-…",
+  "type": "com.nuon.workflow_step.lifecycle.v1",
+  "source": "//nuon.co/ctl-api",
+  "time": "2026-04-28T12:35:42Z",
+  "subject": "org_…/workflow_step/inwYY…/iws_…/succeeded",
+  "datacontenttype": "application/json",
+  "nuonorgid": "org_…",
+  "nuonkind": "workflow_step",
+  "nuontransition": "succeeded",
+  "data": {
+    "kind": "workflow_step",
+    "transition": "succeeded",
+    "org_id": "org_…",
+    "workflow": {
+      "id": "inwYY…",
+      "type": "provision",
+      "owner_id": "ins_…",
+      "owner_type": "installs"
+    },
+    "step": {
+      "id": "iws_…",
+      "name": "deploy api (apply)",
+      "idx": 7,
+      "target_type": "install_deploys",
+      "target_id": "ind_…",
+      "component_id": "cmp_…",
+      "execution_type": "system"
+    },
+    "outcome": {
+      "status": "succeeded",
+      "duration_ms": 12345
+    },
+    "links": {
+      "org": "https://app.nuon.co/org_…",
+      "install": "https://app.nuon.co/org_…/installs/ins_…",
+      "workflow": "https://app.nuon.co/org_…/installs/ins_…/workflows/inwYY…",
+      "component": "https://app.nuon.co/org_…/installs/ins_…/components/cmp_…"
+    }
+  }
+}
+```
+
+### Nested workflows: `parent`
+
+When a workflow is launched from another workflow's step (for example, an action workflow run launched from a
+deploy step), the child workflow's events include a `data.parent` block:
+
+```json
+"parent": {
+  "workflow_id": "inwParent…",
+  "step_id": "iwsParentStep…",
+  "kind": "workflow_step"
+}
+```
+
+`parent` is omitted for top-level workflows.
+
+## Field reference
+
+| Field                          | Description                                                                                  |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `data.kind`                    | `workflow` or `workflow_step`.                                                               |
+| `data.transition`              | `started`, `succeeded`, `failed`, or `cancelled`.                                            |
+| `data.org_id`                  | Org id.                                                                                      |
+| `data.workflow.id`             | Workflow id. Stable across all events for the workflow.                                      |
+| `data.workflow.type`           | Workflow kind (`provision`, `reprovision`, `manual_deploy`, `action_workflow_run`, etc.).    |
+| `data.workflow.owner_id`       | Id of the entity that owns the workflow (an install, app, or app branch).                    |
+| `data.workflow.owner_type`     | One of `installs`, `apps`, `app_branches`.                                                   |
+| `data.step.id`                 | Workflow step id (workflow_step events only).                                                |
+| `data.step.name`               | Human-readable step name (for example, `"deploy api (apply)"`).                              |
+| `data.step.idx`                | Step index within the workflow.                                                              |
+| `data.step.target_type`        | The kind of resource the step manipulates: `install_deploys`, `install_sandbox_runs`, etc.   |
+| `data.step.target_id`          | Id of the manipulated resource.                                                              |
+| `data.step.component_id`       | Component id when `target_type == "install_deploys"`.                                        |
+| `data.step.sandbox_id`         | Sandbox id when `target_type == "install_sandbox_runs"`.                                     |
+| `data.step.execution_type`     | `system`, `user`, `approval`, `skipped`, or `hidden`.                                        |
+| `data.parent`                  | Present when this workflow was launched from another workflow's step. See above.              |
+| `data.outcome.status`          | Mirrors `data.transition` on terminal events. Omitted on `started`.                          |
+| `data.outcome.error`           | Human-readable error message. Set only on `failed` events.                                   |
+| `data.outcome.duration_ms`     | How long the workflow / step took to run, in milliseconds.                                   |
+| `data.links`                   | Dashboard URLs for the org, install, workflow, sandbox, and component (when applicable).    |
 
 ## Verifying signatures
 
@@ -127,19 +211,20 @@ secret is configured, no signature header is sent.
 
    ```sh
    nuon orgs webhooks create \
-     --url https://<your-public-host>/webhooks/operation/lifecycle \
+     --url https://<your-public-host>/webhooks/workflow/lifecycle \
      --secret $NUON_WEBHOOK_SECRET
    ```
 
-3. Trigger a user-facing operation. The smallest reliable trigger is reprovisioning a Sandbox:
+3. Trigger a workflow. The smallest reliable trigger is reprovisioning a Sandbox:
 
    ```sh
    nuon installs reprovision-sandbox --skip-components
    ```
 
-4. Your receiver should record four deliveries for `sandbox-reprovision`: `plan.started`, `plan.finished`,
-   `apply.started`, `apply.finished`. A `401` response from your receiver — for example, when the secrets do not match
-   — surfaces in Nuon as a delivery failure and the event is not retried.
+4. Your receiver should record one `workflow.lifecycle.started`, a sequence of `workflow_step.lifecycle.*` deliveries
+   (one started + one terminal per step), and finally a `workflow.lifecycle.succeeded` (or `failed` / `cancelled`).
+   A `401` response from your receiver — for example, when the secrets do not match — surfaces in Nuon as a
+   delivery failure and the event is not retried.
 
 5. When you are done, remove the webhook:
 

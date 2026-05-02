@@ -30,9 +30,17 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
 		WorkflowID:      flw.ID,
+		WorkflowType:    string(flw.Type),
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
 		TargetQueueName: cfg.TargetQueueName,
+		// Forward stamped names so workflow_step lifecycle webhook events
+		// carry human-readable identifiers without a per-event DB lookup.
+		// These come from GetFlow's preload (Org) + polymorphic owner-name
+		// lookup (installs/apps/app_branches).
+		OrgID:     flw.OrgID,
+		OrgName:   flw.Org.Name,
+		OwnerName: flw.OwnerName,
 	}
 
 	logger.Info("enqueuing execute-workflow-step signal to step queue",
