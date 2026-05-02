@@ -127,35 +127,21 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 		runtime = "go"
 	}
 
+	// Pin the secrets provider to b64 at workspace construction so `pulumi
+	// stack init` runs with `--secrets-provider b64` and never touches the
+	// passphrase manager. Secret values land plaintext-base64 in state under
+	// storage-layer encryption (same model as terraform), and saved update
+	// plans replay cleanly across jobs because there's no per-stack salt.
 	stack, err := auto.UpsertStackLocalSource(ctx, opts.StackName, opts.WorkDir,
 		auto.Project(workspace.Project{
 			Name:    tokens.PackageName(projectName),
 			Runtime: workspace.NewProjectRuntimeInfo(runtime, nil),
 		}),
 		auto.EnvVars(envVars),
+		auto.SecretsProvider(b64SecretsProvider),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create/select stack: %w", err)
-	}
-
-	// Pin the secrets provider to b64 so secret values are stored plaintext
-	// (under storage-layer encryption) — this avoids the per-stack passphrase
-	// salt that would otherwise prevent saved update plans from replaying
-	// across jobs.
-	settings, err := stack.Workspace().StackSettings(ctx, opts.StackName)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read stack settings: %w", err)
-	}
-	if settings == nil {
-		settings = &workspace.ProjectStack{}
-	}
-	if settings.SecretsProvider != b64SecretsProvider {
-		settings.SecretsProvider = b64SecretsProvider
-		settings.EncryptionSalt = ""
-		settings.EncryptedKey = ""
-		if err := stack.Workspace().SaveStackSettings(ctx, opts.StackName, settings); err != nil {
-			return nil, fmt.Errorf("unable to pin secrets provider to %s: %w", b64SecretsProvider, err)
-		}
 	}
 
 	for k, v := range opts.Config {
