@@ -5,30 +5,30 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) HintRestart(ctx context.Context, queueIDs []string) error {
-	if len(queueIDs) == 0 {
-		return nil
-	}
+	for _, queueID := range queueIDs {
+		var queue app.Queue
+		if res := c.db.WithContext(ctx).
+			Where(app.Queue{ID: queueID}).
+			First(&queue); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to find queue for restart hint")
+		}
 
-	now := time.Now().UTC().Format(time.RFC3339)
-	if res := c.db.WithContext(ctx).Exec(`
-		UPDATE queues
-		SET status_v2 = jsonb_set(
-			jsonb_set(
-				COALESCE(status_v2::jsonb, '{}'::jsonb),
-				'{metadata}',
-				COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb)
-			),
-			'{metadata,restart_hint}',
-			to_jsonb(?::text)
-		)
-		WHERE id IN ? AND deleted_at = 0
-	`, now, queueIDs); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to set restart hints")
+		if queue.OwnerType != "runners" || queue.OwnerID == "" {
+			continue
+		}
+
+		if res := c.db.WithContext(ctx).
+			Model(&app.Runner{ID: queue.OwnerID}).
+			Update("restart_requested", true); res.Error != nil {
+			return errors.Wrap(res.Error, "unable to set restart_requested on runner")
+		}
 	}
 
 	return nil
@@ -37,21 +37,12 @@ func (c *Client) HintRestart(ctx context.Context, queueIDs []string) error {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) HintRestartByOrg(ctx context.Context, orgID string) error {
-	now := time.Now().UTC().Format(time.RFC3339)
-	if res := c.db.WithContext(ctx).Exec(`
-		UPDATE queues
-		SET status_v2 = jsonb_set(
-			jsonb_set(
-				COALESCE(status_v2::jsonb, '{}'::jsonb),
-				'{metadata}',
-				COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb)
-			),
-			'{metadata,restart_hint}',
-			to_jsonb(?::text)
-		)
-		WHERE org_id = ? AND deleted_at = 0
-	`, now, orgID); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to set restart hints for org")
+	// Set restart_requested on all runners in the org.
+	if res := c.db.WithContext(ctx).
+		Model(&app.Runner{}).
+		Where(app.Runner{OrgID: orgID}).
+		Update("restart_requested", true); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to set restart_requested for org runners")
 	}
 
 	return nil
