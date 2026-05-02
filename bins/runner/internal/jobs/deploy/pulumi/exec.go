@@ -225,7 +225,13 @@ func (h *handler) writePlanResult(ctx context.Context, result *pulumiworkspace.P
 		return fmt.Errorf("unable to gzip preview result: %w", err)
 	}
 
-	var contentsB64 string
+	// ContentsCompressed must be non-empty: the orchestrator rejects any
+	// non-NOOP plan job whose result has no Contents/ContentsGzip
+	// ("no plan returned from job"). For teardowns we don't have a real
+	// Pulumi update plan (DestroyPreview is synthetic and Pulumi has no
+	// destroy-plan flag), so we fall back to shipping the display payload
+	// — apply for destroys short-circuits to ws.Destroy and never parses it.
+	contentsB64 := displayB64
 	if len(planFileBytes) > 0 {
 		contentsB64, err = gzipBase64URL(planFileBytes)
 		if err != nil {
