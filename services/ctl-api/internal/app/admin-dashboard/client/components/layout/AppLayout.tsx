@@ -14,6 +14,7 @@ const navGroups = [
       { path: '/accounts', label: 'Accounts' },
       { path: '/installs', label: 'Installs' },
       { path: '/runners', label: 'Runners' },
+      { path: '/runners/all', label: 'All runners' },
     ],
   },
   {

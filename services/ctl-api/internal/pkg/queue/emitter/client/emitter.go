@@ -40,6 +40,8 @@ type CreateEmitterRequest struct {
 	SignalTemplate signal.Signal
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 2m
 func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (*app.QueueEmitter, error) {
 	switch req.Mode {
 	case app.QueueEmitterModeCron:
@@ -193,6 +195,8 @@ func (c *Client) ResumeEmitter(ctx context.Context, emitterID string) (*app.Queu
 	return em, nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 2m
 func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {
@@ -220,6 +224,8 @@ func (c *Client) StopEmitter(ctx context.Context, emitterID string) (*app.QueueE
 	return em, nil
 }
 
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
 func (c *Client) DeleteEmitter(ctx context.Context, emitterID string) error {
 	em, err := c.getEmitter(ctx, emitterID)
 	if err != nil {
