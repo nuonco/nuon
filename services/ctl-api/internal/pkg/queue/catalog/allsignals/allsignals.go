@@ -69,6 +69,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowapproveall"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalresponse"
 
 	// onboarding signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"

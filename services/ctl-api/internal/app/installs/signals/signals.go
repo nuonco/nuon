@@ -36,6 +36,7 @@ const (
 	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
 	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
 	OperationWorkflowApproveAll          eventloop.SignalType = "workflow-approve-all"
+	OperationWorkflowStepApprovalResp    eventloop.SignalType = "workflow-step-approval-response"
 	OperationGenerateState               eventloop.SignalType = "generate-state"
 
 	// the following will be sent to a different namespace
