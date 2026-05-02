@@ -321,6 +321,15 @@ func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace
 		return "", fmt.Errorf("unable to parse plan bundle: %w", err)
 	}
 
+	// Reject payloads that aren't bundle-shaped — most likely a raw plan from
+	// an older runner (the merged-to-main wire format). Pulumi plan JSON has
+	// no plan_b64 field so json.Unmarshal silently produces a zero bundle;
+	// applying that would write an empty plan file and fail on `pulumi up`.
+	// Caller falls back to a fresh diff instead.
+	if bundle.PlanB64 == "" {
+		return "", fmt.Errorf("plan payload missing bundle wrapper (older runner format?)")
+	}
+
 	if err := ws.SetEncryptionSalt(ctx, bundle.Salt); err != nil {
 		return "", fmt.Errorf("unable to restore encryption salt: %w", err)
 	}

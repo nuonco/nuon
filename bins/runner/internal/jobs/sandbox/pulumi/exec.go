@@ -301,6 +301,10 @@ func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace
 		return "", fmt.Errorf("unable to parse plan bundle: %w", err)
 	}
 
+	if bundle.PlanB64 == "" {
+		return "", fmt.Errorf("plan payload missing bundle wrapper (older runner format?)")
+	}
+
 	if err := ws.SetEncryptionSalt(ctx, bundle.Salt); err != nil {
 		return "", fmt.Errorf("unable to restore encryption salt: %w", err)
 	}
