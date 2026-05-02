@@ -117,13 +117,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			return fmt.Errorf("unable to execute pulumi preview: %w", err)
 		}
 
-		planFileBytes, readErr := os.ReadFile(planOutPath)
-		if readErr != nil && !os.IsNotExist(readErr) {
-			l.Warn("unable to read saved pulumi plan", zap.Error(readErr))
+		bundle, err := h.bundleUpdatePlan(ctx, ws, planOutPath)
+		if err != nil {
+			l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
 		}
-		l.Info("saved pulumi update plan", zap.Int("plan_bytes", len(planFileBytes)))
+		l.Info("saved pulumi update plan", zap.Int("bundle_bytes", len(bundle)))
 
-		if err := h.writePlanResult(ctx, result, planFileBytes); err != nil {
+		if err := h.writePlanResult(ctx, result, bundle); err != nil {
 			h.errRecorder.Record("write job execution result", err)
 		}
 
@@ -160,7 +160,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		} else {
 			upOpts := &pulumiworkspace.UpOpts{}
 			if h.state.plan.ApplyPlanContents != "" {
-				planPath, err := h.materializeUpdatePlan(h.state.plan.ApplyPlanContents)
+				planPath, err := h.materializeUpdatePlan(ctx, ws, h.state.plan.ApplyPlanContents)
 				if err != nil {
 					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))
 				} else {
@@ -243,23 +243,71 @@ func gzipBase64URL(raw []byte) (string, error) {
 	return base64.URLEncoding.EncodeToString(gzBuf.Bytes()), nil
 }
 
-// materializeUpdatePlan reverses the gzip+b64 round-trip the API server
-// performs and writes the plan JSON to a file Pulumi can consume via --plan.
-func (h *handler) materializeUpdatePlan(b64Contents string) (string, error) {
+// updatePlanBundle pairs the plan job's stack encryption salt with the saved
+// plan, so the apply job can decrypt secret values in the plan even on a
+// fresh stack with no prior state.
+type updatePlanBundle struct {
+	Version int    `json:"v"`
+	Salt    string `json:"salt,omitempty"`
+	PlanB64 string `json:"plan_b64"`
+}
+
+func (h *handler) bundleUpdatePlan(ctx context.Context, ws *pulumiworkspace.Workspace, planPath string) ([]byte, error) {
+	planJSON, err := os.ReadFile(planPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("read plan file: %w", err)
+	}
+	if len(planJSON) == 0 {
+		return nil, nil
+	}
+
+	salt, err := ws.EncryptionSalt(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read stack encryption salt: %w", err)
+	}
+
+	return json.Marshal(updatePlanBundle{
+		Version: 1,
+		Salt:    salt,
+		PlanB64: base64.StdEncoding.EncodeToString(planJSON),
+	})
+}
+
+// materializeUpdatePlan reverses bundleUpdatePlan + the gzip+b64 round-trip
+// the API server performs: decode, decompress, restore the plan job's salt
+// onto this stack, and write the plan JSON for Pulumi to consume via --plan.
+func (h *handler) materializeUpdatePlan(ctx context.Context, ws *pulumiworkspace.Workspace, b64Contents string) (string, error) {
 	gzBytes, err := base64.StdEncoding.DecodeString(b64Contents)
 	if err != nil {
-		return "", fmt.Errorf("unable to base64-decode plan: %w", err)
+		return "", fmt.Errorf("unable to base64-decode plan bundle: %w", err)
 	}
 
 	gzReader, err := gzip.NewReader(bytes.NewReader(gzBytes))
 	if err != nil {
-		return "", fmt.Errorf("unable to open gzip reader for plan: %w", err)
+		return "", fmt.Errorf("unable to open gzip reader for plan bundle: %w", err)
 	}
 	defer gzReader.Close()
 
-	planJSON, err := io.ReadAll(gzReader)
+	bundleJSON, err := io.ReadAll(gzReader)
 	if err != nil {
-		return "", fmt.Errorf("unable to read decompressed plan: %w", err)
+		return "", fmt.Errorf("unable to read decompressed plan bundle: %w", err)
+	}
+
+	var bundle updatePlanBundle
+	if err := json.Unmarshal(bundleJSON, &bundle); err != nil {
+		return "", fmt.Errorf("unable to parse plan bundle: %w", err)
+	}
+
+	if err := ws.SetEncryptionSalt(ctx, bundle.Salt); err != nil {
+		return "", fmt.Errorf("unable to restore encryption salt: %w", err)
+	}
+
+	planJSON, err := base64.StdEncoding.DecodeString(bundle.PlanB64)
+	if err != nil {
+		return "", fmt.Errorf("unable to base64-decode plan: %w", err)
 	}
 
 	planPath := filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
