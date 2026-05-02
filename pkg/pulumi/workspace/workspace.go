@@ -357,6 +357,45 @@ func (w *Workspace) ImportState(ctx context.Context, stateJSON []byte) error {
 	return nil
 }
 
+// EncryptionSalt returns the stack's per-stack encryption salt. Pulumi
+// generates this lazily the first time it encrypts a value with the
+// passphrase secrets manager, and persists it in the stack config file.
+// Returns "" if no salt has been generated yet.
+func (w *Workspace) EncryptionSalt(ctx context.Context) (string, error) {
+	settings, err := w.stack.Workspace().StackSettings(ctx, w.opts.StackName)
+	if err != nil {
+		return "", fmt.Errorf("unable to read stack settings: %w", err)
+	}
+	if settings == nil {
+		return "", nil
+	}
+	return settings.EncryptionSalt, nil
+}
+
+// SetEncryptionSalt writes salt onto the stack's config file so that secret
+// values encrypted under that salt elsewhere (e.g. an update plan saved by a
+// previous job) can be decrypted here. No-op when salt is empty.
+func (w *Workspace) SetEncryptionSalt(ctx context.Context, salt string) error {
+	if salt == "" {
+		return nil
+	}
+	settings, err := w.stack.Workspace().StackSettings(ctx, w.opts.StackName)
+	if err != nil {
+		return fmt.Errorf("unable to read stack settings: %w", err)
+	}
+	if settings == nil {
+		settings = &workspace.ProjectStack{}
+	}
+	if settings.EncryptionSalt == salt {
+		return nil
+	}
+	settings.EncryptionSalt = salt
+	if err := w.stack.Workspace().SaveStackSettings(ctx, w.opts.StackName, settings); err != nil {
+		return fmt.Errorf("unable to save stack settings: %w", err)
+	}
+	return nil
+}
+
 // Outputs returns the current stack outputs.
 func (w *Workspace) Outputs(ctx context.Context) (map[string]any, error) {
 	outs, err := w.stack.Outputs(ctx)
