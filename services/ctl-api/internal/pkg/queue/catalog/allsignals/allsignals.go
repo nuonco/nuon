@@ -36,6 +36,7 @@ import (
 
 	// installs signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/actionworkflowrun"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentdeployapplyplan"
@@ -48,6 +49,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisiondns"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"

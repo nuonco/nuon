@@ -88,6 +88,9 @@ func init() {
 	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_idle_timeout", "10m")
 
+	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
+	config.RegisterDefault("queue_continue_as_new_hint_period", "10m")
+
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
 	config.RegisterDefault("process_install_uptime_threshold", "8h")
@@ -308,6 +311,9 @@ type Config struct {
 
 	// Queue idle timeout: how long before an idle queue workflow terminates
 	QueueIdleTimeout time.Duration `config:"queue_idle_timeout"`
+
+	// Queue continue-as-new hint period: how often the CAN listener checks for restart hints
+	QueueContinueAsNewHintPeriod time.Duration `config:"queue_continue_as_new_hint_period"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
