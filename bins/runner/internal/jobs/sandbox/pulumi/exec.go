@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"go.uber.org/zap"
@@ -23,6 +24,8 @@ import (
 	"github.com/nuonco/nuon/pkg/kube/config"
 	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
 )
+
+const updatePlanFilename = ".pulumi-update-plan.json"
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
@@ -105,15 +108,22 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
-		l.Info("executing pulumi preview")
-		result, err := ws.Preview(ctx)
+		planOutPath := filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
+		l.Info("executing pulumi preview", zap.String("plan_out", planOutPath))
+		result, err := ws.Preview(ctx, &pulumiworkspace.PreviewOpts{PlanOutPath: planOutPath})
 		if err != nil {
 			l.Error("pulumi preview errored", zap.Error(err))
 			h.writeErrorResult(ctx, "pulumi preview", err)
 			return fmt.Errorf("unable to execute pulumi preview: %w", err)
 		}
 
-		if err := h.writePlanResult(ctx, result); err != nil {
+		planFileBytes, readErr := os.ReadFile(planOutPath)
+		if readErr != nil && !os.IsNotExist(readErr) {
+			l.Warn("unable to read saved pulumi plan", zap.Error(readErr))
+		}
+		l.Info("saved pulumi update plan", zap.Int("plan_bytes", len(planFileBytes)))
+
+		if err := h.writePlanResult(ctx, result, planFileBytes); err != nil {
 			h.errRecorder.Record("write job execution result", err)
 		}
 
@@ -126,7 +136,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			return fmt.Errorf("unable to execute pulumi destroy preview: %w", err)
 		}
 
-		if err := h.writePlanResult(ctx, result); err != nil {
+		if err := h.writePlanResult(ctx, result, nil); err != nil {
 			h.errRecorder.Record("write job execution result", err)
 		}
 
@@ -148,8 +158,21 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 			l.Info("pulumi destroy completed")
 		} else {
+			upOpts := &pulumiworkspace.UpOpts{}
+			if h.state.plan.ApplyPlanContents != "" {
+				planPath, err := h.materializeUpdatePlan(h.state.plan.ApplyPlanContents)
+				if err != nil {
+					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))
+				} else {
+					upOpts.PlanInPath = planPath
+					l.Info("applying saved pulumi update plan", zap.String("plan_path", planPath))
+				}
+			} else {
+				l.Info("no saved pulumi update plan provided, computing fresh diff")
+			}
+
 			l.Info("executing pulumi up")
-			result, err := ws.Up(ctx)
+			result, err := ws.Up(ctx, upOpts)
 			if err != nil {
 				l.Error("pulumi up errored", zap.Error(err))
 				h.writeErrorResult(ctx, "pulumi up", err)
@@ -174,32 +197,77 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	return nil
 }
 
-func (h *handler) writePlanResult(ctx context.Context, result *pulumiworkspace.PreviewResult) error {
-	resultJSON, err := json.Marshal(result)
+// writePlanResult uploads two payloads on the job execution result:
+//   - ContentsCompressed: the Pulumi update plan file (gzip+b64), used by the
+//     subsequent apply job to skip its own preview and enforce drift safety.
+//   - ContentsDisplayCompressed: the structured PreviewResult JSON (gzip+b64),
+//     used by the dashboard to render the per-resource diff.
+func (h *handler) writePlanResult(ctx context.Context, result *pulumiworkspace.PreviewResult, planFileBytes []byte) error {
+	displayJSON, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("unable to marshal preview result: %w", err)
 	}
-	resultB64 := base64.URLEncoding.EncodeToString(resultJSON)
-
-	var gzBuf bytes.Buffer
-	gzw := gzip.NewWriter(&gzBuf)
-	if _, err := gzw.Write(resultJSON); err != nil {
+	displayB64, err := gzipBase64URL(displayJSON)
+	if err != nil {
 		return fmt.Errorf("unable to gzip preview result: %w", err)
 	}
-	if err := gzw.Close(); err != nil {
-		return fmt.Errorf("unable to close gzip writer: %w", err)
+
+	var contentsB64 string
+	if len(planFileBytes) > 0 {
+		contentsB64, err = gzipBase64URL(planFileBytes)
+		if err != nil {
+			return fmt.Errorf("unable to gzip update plan: %w", err)
+		}
 	}
-	displayB64 := base64.URLEncoding.EncodeToString(gzBuf.Bytes())
 
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, h.state.jobID, h.state.jobExecutionID, &models.ServiceCreateRunnerJobExecutionResultRequest{
 		Success:                   true,
-		ContentsCompressed:        resultB64,
+		ContentsCompressed:        contentsB64,
 		ContentsDisplayCompressed: displayB64,
 	}); err != nil {
 		return fmt.Errorf("unable to create job execution result: %w", err)
 	}
 
 	return nil
+}
+
+func gzipBase64URL(raw []byte) (string, error) {
+	var gzBuf bytes.Buffer
+	gzw := gzip.NewWriter(&gzBuf)
+	if _, err := gzw.Write(raw); err != nil {
+		return "", err
+	}
+	if err := gzw.Close(); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(gzBuf.Bytes()), nil
+}
+
+// materializeUpdatePlan reverses the gzip+base64 round-trip the plan job and
+// API server perform: ApplyPlanContents arrives StdEncoded around gzipped JSON;
+// we decode, decompress, and write the JSON to a file Pulumi can consume.
+func (h *handler) materializeUpdatePlan(b64Contents string) (string, error) {
+	gzBytes, err := base64.StdEncoding.DecodeString(b64Contents)
+	if err != nil {
+		return "", fmt.Errorf("unable to base64-decode plan: %w", err)
+	}
+
+	gzReader, err := gzip.NewReader(bytes.NewReader(gzBytes))
+	if err != nil {
+		return "", fmt.Errorf("unable to open gzip reader for plan: %w", err)
+	}
+	defer gzReader.Close()
+
+	planJSON, err := io.ReadAll(gzReader)
+	if err != nil {
+		return "", fmt.Errorf("unable to read decompressed plan: %w", err)
+	}
+
+	planPath := filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
+	if err := os.WriteFile(planPath, planJSON, 0o600); err != nil {
+		return "", fmt.Errorf("unable to write plan file: %w", err)
+	}
+	return planPath, nil
 }
 
 func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiworkspace.Workspace, workspaceID string) error {
