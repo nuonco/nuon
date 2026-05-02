@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/lib/pq"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -176,10 +177,11 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 	}
 
 	// Compute and update warnings
-	warnings := s.computeWarnings(runner, heartbeat)
+	warnings, isAliasTag := s.computeWarnings(runner, heartbeat)
 	if err := activities.AwaitUpdateWarnings(ctx, activities.UpdateWarningsRequest{
-		RunnerID: s.RunnerID,
-		Warnings: warnings,
+		RunnerID:   s.RunnerID,
+		Warnings:   warnings,
+		IsAliasTag: isAliasTag,
 	}); err != nil {
 		l.Warn("unable to update runner warnings", zap.Error(err))
 	}
@@ -187,18 +189,29 @@ func (s *Signal) executeHealthCheck(ctx workflow.Context) (app.RunnerStatus, boo
 	return newStatus, isChanged, nil
 }
 
-func (s *Signal) computeWarnings(runner *app.Runner, heartbeat *app.RunnerHeartBeat) pq.StringArray {
+func (s *Signal) computeWarnings(runner *app.Runner, heartbeat *app.RunnerHeartBeat) (pq.StringArray, bool) {
 	var warnings pq.StringArray
 
 	if heartbeat == nil {
-		return warnings
+		return warnings, false
 	}
 
 	expectedVersion := runner.RunnerGroup.Settings.ContainerImageTag
 	reportedVersion := heartbeat.Version
+
+	// If the configured tag is not a semver (e.g. "latest", "stable"), it's an alias.
+	// Don't show a version mismatch warning for alias tags since the runner reports
+	// the resolved version, not the alias name.
+	if expectedVersion != "" {
+		if _, err := semver.NewVersion(expectedVersion); err != nil {
+			// Not a semver — this is an alias tag.
+			return warnings, true
+		}
+	}
+
 	if expectedVersion != "" && reportedVersion != "" && expectedVersion != reportedVersion {
 		warnings = append(warnings, fmt.Sprintf("Reported version (%s) does not match configured version (%s).", reportedVersion, expectedVersion))
 	}
 
-	return warnings
+	return warnings, false
 }
