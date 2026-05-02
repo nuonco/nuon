@@ -135,6 +135,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 
 		// Runners
 		api.GET("/runners", s.Runners)
+		api.GET("/runners/all", s.AllRunners)
 		api.GET("/runners/:id", s.RunnerDetail)
 		api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
 		api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
