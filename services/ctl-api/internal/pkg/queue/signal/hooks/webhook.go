@@ -188,6 +188,7 @@ type lifecycleEventData struct {
 	Kind       string `json:"kind"`
 	Transition string `json:"transition"`
 	OrgID      string `json:"org_id,omitempty"`
+	OrgName    string `json:"org_name,omitempty"`
 
 	Workflow workflowRef       `json:"workflow"`
 	Step     *workflowStepRef  `json:"step,omitempty"`
@@ -342,11 +343,16 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		Kind:       kind,
 		Transition: transition,
 		OrgID:      event.OrgID,
+		// OrgName / Workflow.OwnerName are stamped onto the event by the
+		// originating signal at Validate() time (see executeflow.Signal.
+		// LifecycleContext) and propagated here without a DB lookup.
+		OrgName: event.OrgName,
 		Workflow: workflowRef{
 			ID:        event.WorkflowID,
 			Type:      event.WorkflowType,
 			OwnerID:   event.OwnerID,
 			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
 		},
 	}
 
@@ -355,12 +361,18 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 	}
 
 	if kind == kindWorkflowStep && event.StepID != "" {
-		stepRef, installName := h.enrichStep(ctx, event.StepID)
+		stepRef, installName, emit := h.enrichStep(ctx, event.StepID)
+		// Drop the entire step.lifecycle event for hidden / internal steps
+		// (e.g. "generate install state"). Webhook consumers should only see
+		// user-facing steps; system bookkeeping steps are filtered here.
+		if !emit {
+			return lifecycleEventData{}, false
+		}
 		data.Step = stepRef
-		// Surface install name on the workflow's owner block when it was
-		// available cheaply via the step JOIN. We avoid a separate query for
-		// owner_name; this best-effort fill catches the common case where
-		// the workflow owns an install and the step targets a deploy/sandbox.
+		// Fallback: if the step JOIN surfaced an install name and the event
+		// itself didn't carry one (older signals enqueued before owner_name
+		// stamping shipped), use it. New workflow runs will already have
+		// data.Workflow.OwnerName populated from the event.
 		if installName != "" && data.Workflow.OwnerType == "installs" && data.Workflow.OwnerName == "" {
 			data.Workflow.OwnerName = installName
 		}
@@ -396,10 +408,16 @@ func (h *WebhookSignalLifecycleHook) buildOutcome(event signal.SignalPhaseEvent,
 // Returns the step ref plus the resolved install name (when the step's target
 // allows it to be discovered cheaply via the same JOIN). The install name is
 // returned out-of-band so the caller can place it on workflow.owner_name.
-func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID string) (*workflowStepRef, string) {
+//
+// The third return value (emit) is false when the step is internal /
+// system-only (ExecutionType == "hidden", e.g. "generate install state") and
+// the entire step.lifecycle event should be suppressed. On DB errors we
+// fail open (emit=true) so transient infra issues don't silently drop user
+// events.
+func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID string) (*workflowStepRef, string, bool) {
 	ref := &workflowStepRef{ID: stepID}
 	if h.db == nil {
-		return ref, ""
+		return ref, "", true
 	}
 
 	var step app.WorkflowStep
@@ -409,7 +427,11 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 		h.l.Debug("failed to load workflow step for webhook enrichment",
 			zap.String("step_id", stepID),
 			zap.Error(err))
-		return ref, ""
+		return ref, "", true
+	}
+
+	if step.ExecutionType == app.WorkflowStepExecutionTypeHidden {
+		return ref, "", false
 	}
 
 	ref.Name = step.Name
@@ -431,7 +453,7 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 		installName = meta.InstallName
 	}
 
-	return ref, installName
+	return ref, installName, true
 }
 
 // deployTargetMeta carries the install/component identity & names resolved for

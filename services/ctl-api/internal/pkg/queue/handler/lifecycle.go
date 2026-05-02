@@ -36,6 +36,9 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		if ctx.OrgID != "" {
 			event.OrgID = ctx.OrgID
 		}
+		if ctx.OrgName != "" {
+			event.OrgName = ctx.OrgName
+		}
 		event.InstallID = ctx.InstallID
 		event.ComponentID = ctx.ComponentID
 		event.SandboxID = ctx.SandboxID
@@ -46,6 +49,9 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		event.StepID = ctx.StepID
 		event.OwnerID = ctx.OwnerID
 		event.OwnerType = ctx.OwnerType
+		if ctx.OwnerName != "" {
+			event.OwnerName = ctx.OwnerName
+		}
 	}
 
 	return event

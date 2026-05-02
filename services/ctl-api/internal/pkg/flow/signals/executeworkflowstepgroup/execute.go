@@ -154,6 +154,11 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (str
 		OwnerType:       s.OwnerType,
 		TargetQueueName: s.TargetQueueName,
 		TargetQueueID:   step.TargetQueueID,
+		// Forward stamped names so workflow_step lifecycle webhook events
+		// carry human-readable identifiers without a per-event DB lookup.
+		OrgID:     s.OrgID,
+		OrgName:   s.OrgName,
+		OwnerName: s.OwnerName,
 	}
 
 	// Mark step as queued

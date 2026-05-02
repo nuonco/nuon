@@ -47,6 +47,15 @@ type Signal struct {
 	OwnerID   string `json:"owner_id"`
 	OwnerType string `json:"owner_type"`
 
+	// OrgID / OrgName / OwnerName are pass-through fields stamped by the
+	// parent execute-workflow signal and forwarded by the step group at
+	// dispatch time. Exposed via LifecycleContext so workflow_step lifecycle
+	// webhook payloads carry human-readable names without a per-event DB
+	// lookup.
+	OrgID     string `json:"org_id,omitempty"`
+	OrgName   string `json:"org_name,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
+
 	// TargetQueueName is the queue where the inner signal (the actual step signal)
 	// gets enqueued for execution (e.g. "install-signals").
 	TargetQueueName string `json:"target_queue_name"`
@@ -94,11 +103,14 @@ var (
 // inner signal's operation taxonomy.
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
 		StepID:       s.StepID,
 		WorkflowID:   s.WorkflowID,
 		WorkflowType: s.WorkflowType,
 		OwnerID:      s.OwnerID,
 		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
 	}
 }
 

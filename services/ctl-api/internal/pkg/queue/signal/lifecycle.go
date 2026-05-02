@@ -29,6 +29,7 @@ type SignalPhaseEvent struct {
 	QueueID       string      `json:"queue_id"`
 	SignalType    SignalType  `json:"signal_type"`
 	OrgID         string      `json:"org_id"`
+	OrgName       string      `json:"org_name,omitempty"`
 	Phase         SignalPhase `json:"phase"`
 
 	InstallID   *string `json:"install_id,omitempty"`
@@ -52,6 +53,7 @@ type SignalPhaseEvent struct {
 	StepID    string `json:"step_id,omitempty"`
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerType string `json:"owner_type,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
 }
 
 type SignalPhaseOutcome struct {
@@ -88,6 +90,7 @@ type SignalWithLifecycleContext interface {
 
 type SignalLifecycleContext struct {
 	OrgID       string  `json:"org_id"`
+	OrgName     string  `json:"org_name,omitempty"`
 	InstallID   *string `json:"install_id,omitempty"`
 	ComponentID *string `json:"component_id,omitempty"`
 	SandboxID   *string `json:"sandbox_id,omitempty"`
@@ -109,6 +112,11 @@ type SignalLifecycleContext struct {
 	StepID    string `json:"step_id,omitempty"`
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerType string `json:"owner_type,omitempty"`
+	// OwnerName is the human-readable owner label resolved by the signal at
+	// Validate() time. Stamped onto SignalPhaseEvent by the queue handler so
+	// lifecycle hooks (e.g. webhook) can emit owner_name without a per-event
+	// DB lookup.
+	OwnerName string `json:"owner_name,omitempty"`
 }
 
 // SignalWithMutableLifecycleContext is an optional interface signals can
