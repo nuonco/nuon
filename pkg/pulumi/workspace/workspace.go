@@ -2,8 +2,6 @@ package workspace
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,6 +16,12 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
 )
+
+// b64SecretsProvider stores Pulumi-declared secrets as plaintext base64 in
+// state — the same security model as terraform: storage-layer encryption
+// (RDS at rest) is the actual safeguard. Avoids the salt-management dance
+// that update plans require under the passphrase provider.
+const b64SecretsProvider = "b64"
 
 // StateBackend configures the state backend for Pulumi.
 type StateBackend struct {
@@ -102,8 +106,6 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 		envVars[k] = v
 	}
 	envVars["PULUMI_BACKEND_URL"] = fmt.Sprintf("file://%s", stateDir)
-	hash := sha256.Sum256([]byte("nuon-pulumi:" + opts.StackName))
-	envVars["PULUMI_CONFIG_PASSPHRASE"] = hex.EncodeToString(hash[:])
 	envVars["PULUMI_SKIP_UPDATE_CHECK"] = "true"
 	// Required by the Pulumi CLI to accept --save-plan / --plan in this version.
 	envVars["PULUMI_EXPERIMENTAL"] = "true"
@@ -134,6 +136,26 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create/select stack: %w", err)
+	}
+
+	// Pin the secrets provider to b64 so secret values are stored plaintext
+	// (under storage-layer encryption) — this avoids the per-stack passphrase
+	// salt that would otherwise prevent saved update plans from replaying
+	// across jobs.
+	settings, err := stack.Workspace().StackSettings(ctx, opts.StackName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read stack settings: %w", err)
+	}
+	if settings == nil {
+		settings = &workspace.ProjectStack{}
+	}
+	if settings.SecretsProvider != b64SecretsProvider {
+		settings.SecretsProvider = b64SecretsProvider
+		settings.EncryptionSalt = ""
+		settings.EncryptedKey = ""
+		if err := stack.Workspace().SaveStackSettings(ctx, opts.StackName, settings); err != nil {
+			return nil, fmt.Errorf("unable to pin secrets provider to %s: %w", b64SecretsProvider, err)
+		}
 	}
 
 	for k, v := range opts.Config {
@@ -353,45 +375,6 @@ func (w *Workspace) ImportState(ctx context.Context, stateJSON []byte) error {
 	}
 	if err := w.stack.Import(ctx, deployment); err != nil {
 		return fmt.Errorf("unable to import stack state: %w", err)
-	}
-	return nil
-}
-
-// EncryptionSalt returns the stack's per-stack encryption salt. Pulumi
-// generates this lazily the first time it encrypts a value with the
-// passphrase secrets manager, and persists it in the stack config file.
-// Returns "" if no salt has been generated yet.
-func (w *Workspace) EncryptionSalt(ctx context.Context) (string, error) {
-	settings, err := w.stack.Workspace().StackSettings(ctx, w.opts.StackName)
-	if err != nil {
-		return "", fmt.Errorf("unable to read stack settings: %w", err)
-	}
-	if settings == nil {
-		return "", nil
-	}
-	return settings.EncryptionSalt, nil
-}
-
-// SetEncryptionSalt writes salt onto the stack's config file so that secret
-// values encrypted under that salt elsewhere (e.g. an update plan saved by a
-// previous job) can be decrypted here. No-op when salt is empty.
-func (w *Workspace) SetEncryptionSalt(ctx context.Context, salt string) error {
-	if salt == "" {
-		return nil
-	}
-	settings, err := w.stack.Workspace().StackSettings(ctx, w.opts.StackName)
-	if err != nil {
-		return fmt.Errorf("unable to read stack settings: %w", err)
-	}
-	if settings == nil {
-		settings = &workspace.ProjectStack{}
-	}
-	if settings.EncryptionSalt == salt {
-		return nil
-	}
-	settings.EncryptionSalt = salt
-	if err := w.stack.Workspace().SaveStackSettings(ctx, w.opts.StackName, settings); err != nil {
-		return fmt.Errorf("unable to save stack settings: %w", err)
 	}
 	return nil
 }
