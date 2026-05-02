@@ -34,6 +34,18 @@ type LabelSearchResult struct {
 	DetailURL  string        `json:"detail_url"`
 }
 
+// AllRunnerView is the view data for the all-runners list page.
+type AllRunnerView struct {
+	Runner        app.Runner `json:"runner"`
+	OrgName       string     `json:"org_name"`
+	GroupType     string     `json:"group_type"`
+	ProcessOnline bool       `json:"process_online"`
+	Version       string     `json:"version"`
+	ProcessType   string     `json:"process_type"`
+	InstallID     string     `json:"install_id"`
+	InstallName   string     `json:"install_name"`
+}
+
 // OrgOption is used to populate the org selector dropdown.
 type OrgOption struct {
 	ID   string `json:"id"`

@@ -52,3 +52,8 @@ func (s *service) ProxyMigrateQueues(c *gin.Context) {
 	path := fmt.Sprintf("/v1/orgs/%s/admin-migrate-queues", orgID)
 	s.proxyToInternalAPI(c, "POST", path, c.Request.Body)
 }
+
+// ProxySeed proxies the seed request to the internal admin API.
+func (s *service) ProxySeed(c *gin.Context) {
+	s.proxyToInternalAPI(c, "POST", "/v1/general/seed", c.Request.Body)
+}

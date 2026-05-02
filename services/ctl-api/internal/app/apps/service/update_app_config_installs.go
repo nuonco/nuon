@@ -8,8 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -167,6 +172,36 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		return stderr.ErrSystem{
 			Err:         fmt.Errorf("unable to commit transaction: %w", err),
 			Description: "Failed to commit install updates",
+		}
+	}
+
+	// Enqueue reconcile-emitters signal for each affected install
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err == nil && useQueues {
+		for _, install := range affectedInstalls {
+			var queue app.Queue
+			if res := s.db.WithContext(ctx).
+				Where(app.Queue{
+					OwnerID: install.ID,
+					Name:    helpers.InstallSignalsQueueName,
+				}).
+				First(&queue); res.Error != nil {
+				s.l.Warn("unable to get install signals queue for reconcile-emitters",
+					zap.String("install_id", install.ID),
+					zap.Error(res.Error))
+				continue
+			}
+
+			if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+				QueueID: queue.ID,
+				Signal: &appconfigupdated.Signal{
+					InstallID: install.ID,
+				},
+			}); err != nil {
+				s.l.Warn("unable to enqueue reconcile-emitters signal",
+					zap.String("install_id", install.ID),
+					zap.Error(err))
+			}
 		}
 	}
 
