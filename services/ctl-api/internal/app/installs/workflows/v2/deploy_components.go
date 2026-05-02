@@ -20,7 +20,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	}
 
 	steps := make([]*app.WorkflowStep, 0)
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	// Eager group — returned early so execution can start immediately.
 	sg.nextGroupEager()

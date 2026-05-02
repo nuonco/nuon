@@ -24,6 +24,8 @@ import (
 const SignalType signal.SignalType = "install-action-workflow-run"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallID               string
 	InstallWorkflowID       string
 	WorkflowStepID          string
@@ -54,8 +56,10 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "action-workflow-run",
+		InstallID:    &s.InstallID,
+		Operation:    "action-workflow-run",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 

@@ -4781,6 +4781,14 @@ export interface components {
       };
       name?: string;
       owner_id?: string;
+      /**
+       * @description OwnerName is a derived, non-persisted convenience field. It is
+       * populated by activities that need a human-readable owner label
+       * (e.g. workflow lifecycle webhooks) via a small switch on OwnerType
+       * — see PkgWorkflowsFlowGetFlow. Empty unless the loading path
+       * explicitly fills it.
+       */
+      owner_name?: string;
       owner_type?: string;
       plan_only?: boolean;
       /**
