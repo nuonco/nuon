@@ -220,6 +220,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
+
+		// General actions
+		api.POST("/promote", s.Promote)
+		api.POST("/seed", s.ProxySeed)
 	}
 
 	// SPA serving (must be AFTER api routes)
