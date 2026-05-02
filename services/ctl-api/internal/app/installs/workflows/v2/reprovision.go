@@ -25,7 +25,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	sg.nextGroupEager() // generate install state
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{

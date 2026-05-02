@@ -19,7 +19,7 @@ import (
 
 func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	steps := make([]*app.WorkflowStep, 0)
 
