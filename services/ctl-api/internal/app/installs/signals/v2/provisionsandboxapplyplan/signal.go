@@ -25,6 +25,8 @@ import (
 const SignalType signal.SignalType = "provision-sandbox-apply-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallSandboxID  string
 	InstallID         string
 	FlowID            string
@@ -66,10 +68,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		sandboxID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID: installID,
-		SandboxID: sandboxID,
-		Operation: "sandbox-provision",
-		Stage:     "apply",
+		InstallID:    installID,
+		SandboxID:    sandboxID,
+		Operation:    "sandbox-provision",
+		Stage:        "apply",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 

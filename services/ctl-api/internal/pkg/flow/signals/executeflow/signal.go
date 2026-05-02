@@ -19,12 +19,24 @@ type Signal struct {
 	// WorkflowID is the ID of the workflow to execute.
 	WorkflowID string `json:"workflow_id"`
 
+	// WorkflowType / OrgID / OrgName are resolved during Validate() from the
+	// in-scope workflow record so the lifecycle hook can emit workflow.lifecycle
+	// events without a fresh DB lookup. Empty until Validate runs.
+	WorkflowType string `json:"workflow_type,omitempty"`
+	OrgID        string `json:"org_id,omitempty"`
+	OrgName      string `json:"org_name,omitempty"`
+
 	// Conductor configuration — set by the creator when enqueuing.
 	StepGroupQueueName  string `json:"step_group_queue_name"`
 	StepQueueName       string `json:"step_queue_name"`
 	StepTargetQueueName string `json:"step_target_queue_name"`
 	OwnerID             string `json:"owner_id"`
 	OwnerType           string `json:"owner_type"`
+	// OwnerName is the human-readable owner label resolved during Validate()
+	// (e.g. install/app/app_branch name). Stamped onto SignalLifecycleContext
+	// so workflow lifecycle webhook payloads carry owner_name without a
+	// per-event DB lookup.
+	OwnerName string `json:"owner_name,omitempty"`
 
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
@@ -48,9 +60,26 @@ type Signal struct {
 
 var _ qsignal.Signal = (*Signal)(nil)
 var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
+var _ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 
 func (s *Signal) Type() qsignal.SignalType  { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }
+
+// LifecycleContext exposes the workflow identity + owner so lifecycle hooks
+// can emit workflow.lifecycle.* webhook events without leaking inner-signal
+// taxonomy. Workflow type and org id are stamped during Validate from the
+// in-scope workflow record.
+func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
+	return qsignal.SignalLifecycleContext{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
+	}
+}
 
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.WorkflowID == "" {
@@ -67,6 +96,23 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 	if s.OwnerType == "" {
 		s.OwnerType = flw.OwnerType
+	}
+	if s.WorkflowType == "" {
+		s.WorkflowType = string(flw.Type)
+	}
+	if s.OrgID == "" {
+		s.OrgID = flw.OrgID
+	}
+	// OrgName is preloaded by GetFlow (id + name only) so this stamping is
+	// free — no extra query at validate time, no query at webhook emit time.
+	if s.OrgName == "" {
+		s.OrgName = flw.Org.Name
+	}
+	// OwnerName is resolved by GetFlow via a single PK lookup against the
+	// matching polymorphic owner table (installs/apps/app_branches). Stamping
+	// it here removes the per-event lookupInstallName query in the webhook hook.
+	if s.OwnerName == "" {
+		s.OwnerName = flw.OwnerName
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
