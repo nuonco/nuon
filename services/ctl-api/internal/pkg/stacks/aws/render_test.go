@@ -95,12 +95,10 @@ func TestRenderStandardVars(t *testing.T) {
 		"nuon_install_id":        `"instabcdefghijklmnopqrstuv"`,
 		"nuon_org_id":            `"orgabcdefghijklmnopqrstuvw"`,
 		"nuon_app_id":            `"appabcdefghijklmnopqrstuvw"`,
-		"runner_api_url":         `"https://runner.nuon.co"`,
-		"runner_api_token":       `"test-token"`,
-		"runner_id":              `"runnerabcdefghijklmnopqrstu"`,
-		"runner_init_script_url": `"https://example.com/init.sh"`,
-		"phone_home_url":         `"https://example.com/phone-home"`,
-		"aws_region":             `"us-east-1"`,
+		"runner_api_url":  `"https://runner.nuon.co"`,
+		"runner_id":       `"runnerabcdefghijklmnopqrstu"`,
+		"phone_home_url":  `"https://example.com/phone-home"`,
+		"aws_region":      `"us-east-1"`,
 	} {
 		assert.Equal(t, val, findVarValue(t, tfvars, key), "key %s", key)
 	}
