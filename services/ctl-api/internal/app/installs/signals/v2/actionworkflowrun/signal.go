@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -319,20 +320,35 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   installID,
-		OwnerType: "installs",
-		QueueName: installshelpers.InstallStateManagerQueueName,
-		Signal: &stateregenerate.Signal{
-			InstallID:        installID,
-			Targets:          statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
-			ForceAll:         true,
-			TriggeredByID:    actionWorkflowRunID,
-			TriggeredByType:  "install_action_workflow_runs",
-			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
-		},
-	}); err != nil {
-		l.Warn("unable to hint state manager", zap.Error(err))
+	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	if stateGenV2 {
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   installID,
+			OwnerType: "installs",
+			QueueName: installshelpers.InstallStateManagerQueueName,
+			Signal: &stateregenerate.Signal{
+				InstallID:        installID,
+				Targets:          statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+				ForceAll:         true,
+				TriggeredByID:    actionWorkflowRunID,
+				TriggeredByType:  "install_action_workflow_runs",
+				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+			},
+		}); err != nil {
+			l.Warn("unable to hint state manager", zap.Error(err))
+		}
+
+	} else {
+		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
+			InstallID:       installID,
+			TriggeredByID:   actionWorkflowRunID,
+			TriggeredByType: "install_action_workflow_runs",
+		}); err != nil {
+			l.Warn("unable to generate state", zap.Error(err))
+		}
 	}
 
 	return nil

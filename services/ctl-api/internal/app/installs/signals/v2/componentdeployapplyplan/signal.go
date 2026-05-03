@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -185,20 +186,35 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
-	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   install.ID,
-		OwnerType: "installs",
-		QueueName: installshelpers.InstallStateManagerQueueName,
-		Signal: &stateregenerate.Signal{
-			InstallID:        install.ID,
-			Targets:          statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
-			ForceAll:         true,
-			TriggeredByID:    installDeploy.ID,
-			TriggeredByType:  "install_deploys",
-			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
-		},
-	}); err != nil {
-		l.Warn("unable to hint state manager", zap.Error(err))
+	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	if stateGenV2 {
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			QueueName: installshelpers.InstallStateManagerQueueName,
+			Signal: &stateregenerate.Signal{
+				InstallID:        install.ID,
+				Targets:          statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
+				ForceAll:         true,
+				TriggeredByID:    installDeploy.ID,
+				TriggeredByType:  "install_deploys",
+				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+			},
+		}); err != nil {
+			l.Warn("unable to hint state manager", zap.Error(err))
+		}
+
+	} else {
+		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
+			InstallID:       install.ID,
+			TriggeredByID:   installDeploy.ID,
+			TriggeredByType: "install_deploys",
+		}); err != nil {
+			l.Warn("unable to generate state", zap.Error(err))
+		}
 	}
 	return nil
 }

@@ -15,10 +15,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -29,13 +31,23 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	sg := newStepGroup(flw)
 
 	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &stateregenerate.Signal{
-		InstallID:        installID,
-		Targets:          statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-		TriggeredByID:    installID,
-		TriggeredByType:  "installs",
-		StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
-	}, flw.PlanOnly, WithSkippable(false))
+	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	var stateSignal signal.Signal
+	if stateGenV2 {
+		stateSignal = &stateregenerate.Signal{
+			InstallID:        installID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+			TriggeredByID:    installID,
+			TriggeredByType:  "installs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		}
+	} else {
+		stateSignal = &generatestate.Signal{InstallID: installID}
+	}
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err
 	}

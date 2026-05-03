@@ -84,5 +84,5 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "unable to generate state")
 	}
 
-	return err
+	return nil
 }
