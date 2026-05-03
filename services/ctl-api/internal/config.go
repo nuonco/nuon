@@ -45,8 +45,10 @@ func init() {
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
 
-	// runner defaults
+	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
+	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
+	config.RegisterDefault("runner_container_image_url_azure", "")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
@@ -224,9 +226,11 @@ type Config struct {
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
 	// configuration for runners
-	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
-	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
-	UseLocalRunners         bool   `config:"use_local_runners"`
+	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
+	RunnerContainerImageURLGCP   string `config:"runner_container_image_url_gcp"`
+	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
+	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
+	UseLocalRunners              bool   `config:"use_local_runners"`
 
 	// AWS IID auth
 	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`
