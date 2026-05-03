@@ -20,6 +20,20 @@ const (
 	defaultRunnerGroupSettingsRefreshTimeout time.Duration = time.Minute * 5
 )
 
+func (h *Helpers) runnerImageURLForPlatform(platform app.CloudPlatform) string {
+	switch platform {
+	case app.CloudPlatformGCP:
+		if h.cfg.RunnerContainerImageURLGCP != "" {
+			return h.cfg.RunnerContainerImageURLGCP
+		}
+	case app.CloudPlatformAzure:
+		if h.cfg.RunnerContainerImageURLAzure != "" {
+			return h.cfg.RunnerContainerImageURLAzure
+		}
+	}
+	return h.cfg.RunnerContainerImageURL
+}
+
 func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Install) (*app.RunnerGroup, error) {
 	ctx = cctx.SetOrgIDContext(ctx, install.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, install.CreatedByID)
@@ -52,7 +66,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		},
 		Settings: app.RunnerGroupSettings{
 			SandboxMode:       sandboxMode,
-			ContainerImageURL: h.cfg.RunnerContainerImageURL,
+			ContainerImageURL: h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
@@ -105,11 +119,14 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	ctx = cctx.SetAccountIDContext(ctx, org.CreatedByID)
 
 	platform := app.AppRunnerTypeAWSEKS
+	controlPlaneCloud := app.CloudPlatformAWS
 	if h.cfg.IsGCP() {
 		platform = app.AppRunnerTypeGCPGKE
+		controlPlaneCloud = app.CloudPlatformGCP
 	}
 	if h.cfg.IsAzure() {
 		platform = app.AppRunnerTypeAzureAKS
+		controlPlaneCloud = app.CloudPlatformAzure
 	}
 	if org.OrgType != app.OrgTypeDefault || h.cfg.UseLocalRunners {
 		platform = app.AppRunnerTypeLocal
@@ -146,7 +163,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		},
 		Settings: app.RunnerGroupSettings{
 			SandboxMode:       org.SandboxMode,
-			ContainerImageURL: h.cfg.RunnerContainerImageURL,
+			ContainerImageURL: h.runnerImageURLForPlatform(controlPlaneCloud),
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
