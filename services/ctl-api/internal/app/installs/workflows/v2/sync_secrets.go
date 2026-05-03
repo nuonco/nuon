@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -36,13 +35,6 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg, awData)
 	if err != nil {
@@ -51,7 +43,7 @@ func SyncSecrets(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps = append(steps, lifecycleSteps...)
 
 	sg.nextGroup() // sync secrets
-	step, err = sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "sync secrets", pgtype.Hstore{}, &syncsecrets.Signal{
 		InstallID:      installID,
 		WorkflowStepID: "",
 		SandboxMode:    false,

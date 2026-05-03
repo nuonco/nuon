@@ -11,14 +11,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
+	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {

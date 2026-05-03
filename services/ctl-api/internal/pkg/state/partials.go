@@ -32,7 +32,15 @@ var AllPartials = []PartialName{
 	PartialSecrets,
 }
 
-// HintType describes what changed, allowing the workflow to determine which partials to regenerate.
+// PartialTarget identifies a specific partial and optionally a single entity within it.
+// EntityID scopes the update to one entity (e.g. an install_component_id for PartialComponents,
+// or an install_action_workflow_id for PartialActions). Empty EntityID means refresh the whole partial.
+type PartialTarget struct {
+	Name     PartialName
+	EntityID string
+}
+
+// HintType describes what changed, allowing callers to build a []PartialTarget via TargetsForHint.
 type HintType string
 
 const (
@@ -48,9 +56,10 @@ const (
 	HintSecretsUpdated       HintType = "secrets-updated"
 	HintRunnerUpdated        HintType = "runner-updated"
 	HintAppConfigUpdated     HintType = "app-config-updated"
+	HintInstallCreated       HintType = "install-created"
 )
 
-// HintToPartials maps a hint type to the set of partials that should be regenerated.
+// HintToPartials maps a hint type to the partials it affects.
 var HintToPartials = map[HintType][]PartialName{
 	HintDeployCompleted:      {PartialComponents},
 	HintComponentTeardown:    {PartialComponents},
@@ -64,12 +73,24 @@ var HintToPartials = map[HintType][]PartialName{
 	HintSecretsUpdated:       {PartialSecrets},
 	HintRunnerUpdated:        {PartialRunner},
 	HintAppConfigUpdated:     {PartialApp, PartialInputs},
+	HintInstallCreated:       {PartialOrg, PartialApp, PartialRunner, PartialCloud, PartialInputs},
 }
 
-func allPartialsSet() map[PartialName]bool {
-	m := make(map[PartialName]bool, len(AllPartials))
-	for _, p := range AllPartials {
-		m[p] = true
+// TargetsForHint converts a HintType + optional entityID into a []PartialTarget.
+// Use this when callers know the specific entity that changed (e.g. a component ID after deploy).
+func TargetsForHint(hintType HintType, entityID string) []PartialTarget {
+	partials := HintToPartials[hintType]
+	targets := make([]PartialTarget, len(partials))
+	for i, p := range partials {
+		targets[i] = PartialTarget{Name: p, EntityID: entityID}
 	}
-	return m
+	return targets
+}
+
+func AllPartialTargets() []PartialTarget {
+	targets := make([]PartialTarget, len(AllPartials))
+	for i, p := range AllPartials {
+		targets[i] = PartialTarget{Name: p}
+	}
+	return targets
 }

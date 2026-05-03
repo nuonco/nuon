@@ -4,35 +4,8 @@ import (
 	"context"
 	"time"
 
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
-
-type Params struct {
-	fx.In
-
-	DB *gorm.DB `name:"psql"`
-	L  *zap.Logger
-}
-
-type Activities struct {
-	db *gorm.DB
-	l  *zap.Logger
-}
-
-func New(params Params) *Activities {
-	return &Activities{
-		db: params.DB,
-		l:  params.L,
-	}
-}
-
-func (a *Activities) All() []any {
-	return []any{
-		a.CheckModified,
-	}
-}
 
 type CheckModifiedRequest struct {
 	InstallID   string
@@ -74,8 +47,7 @@ func (a *Activities) CheckModified(ctx context.Context, req *CheckModifiedReques
 		err = a.db.WithContext(ctx).
 			Raw(`SELECT r.updated_at FROM runners r
 				JOIN runner_groups rg ON r.runner_group_id = rg.id
-				JOIN installs i ON i.runner_group_id = rg.id
-				WHERE i.id = ? AND i.deleted_at IS NULL
+				WHERE rg.owner_id = ? AND rg.owner_type = 'installs'
 				ORDER BY r.created_at DESC LIMIT 1`, req.InstallID).
 			Scan(&latestAt).Error
 	case "cloud":
@@ -121,9 +93,8 @@ func (a *Activities) CheckModified(ctx context.Context, req *CheckModifiedReques
 		return nil, err
 	}
 
-	changed := latestAt.After(req.LastKnownAt)
 	return &CheckModifiedResponse{
-		Changed:          changed,
+		Changed:          latestAt.After(req.LastKnownAt),
 		LatestModifiedAt: latestAt,
 	}, nil
 }

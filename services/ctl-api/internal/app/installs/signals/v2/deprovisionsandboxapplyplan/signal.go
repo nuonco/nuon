@@ -14,9 +14,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -166,12 +167,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 
-	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
 		InstallID:       install.ID,
+		HintType:        statemanager.HintSandboxDeprovisioned,
 		TriggeredByID:   installRun.ID,
-		TriggeredByType: "install_sandbox_runs",
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
 	}); err != nil {
-		l.Warn("unable to generate state", zap.Error(err))
+		l.Warn("unable to hint state manager", zap.Error(err))
 	}
 
 	return nil

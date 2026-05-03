@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -43,15 +42,6 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	steps := make([]*app.WorkflowStep, 0)
-	sg.nextGroup()
-	step, err := sg.installSignalStep(ctx, flw.OwnerID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: flw.OwnerID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-
-	steps = append(steps, step)
 
 	adhocActionRunID, isAdhoc := flw.Metadata["adhoc_action_run_id"]
 	if isAdhoc {
@@ -85,7 +75,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
+	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
 	if err != nil {
 		return nil, err
 	}

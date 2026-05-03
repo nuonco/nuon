@@ -11,14 +11,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
+	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -27,9 +28,12 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	sg := newStepGroup(flw)
 
-	sg.nextGroupEager() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
+	sg.nextGroupEager()
+	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &stateregenerate.Signal{
+		InstallID:       installID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+		TriggeredByID:   installID,
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

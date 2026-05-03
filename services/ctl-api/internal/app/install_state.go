@@ -16,6 +16,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
+type InstallStateGenerateSource string
+
+const (
+	InstallStateGenerateSourceLegacy       InstallStateGenerateSource = "legacy"
+	InstallStateGenerateSourceStateManager InstallStateGenerateSource = "state-manager"
+)
+
 type InstallState struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -36,6 +43,8 @@ type InstallState struct {
 
 	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
 	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;"`
+
+	GeneratedBy InstallStateGenerateSource `json:"generated_by" gorm:"type:text;"`
 
 	Archived bool `json:"archived" gorm:"default:false;not null" temporaljson:"archived,omitzero,omitempty"`
 

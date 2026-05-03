@@ -12,10 +12,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -315,12 +316,14 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
 		InstallID:       installID,
+		HintType:        statemanager.HintActionRan,
+		EntityID:        s.InstallActionWorkflowID,
 		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: "install_action_workflow_runs", // plugins.TableName would require db instance
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
 	}); err != nil {
-		l.Warn("unable to generate state", zap.Error(err))
+		l.Warn("unable to hint state manager", zap.Error(err))
 	}
 
 	return nil

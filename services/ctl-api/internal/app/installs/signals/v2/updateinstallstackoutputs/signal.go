@@ -11,9 +11,10 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 const SignalType signal.SignalType = "update-install-stack-outputs"
@@ -184,13 +185,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
 		InstallID:       install.ID,
+		HintType:        statemanager.HintStackOutputsUpdated,
 		TriggeredByID:   run.ID,
-		TriggeredByType: "install_stack_outputs",
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
 	}); err != nil {
 		l := workflow.GetLogger(ctx)
-		l.Warn("unable to generate state", zap.Error(err))
+		l.Warn("unable to hint state manager", zap.Error(err))
 	}
 
 	return nil

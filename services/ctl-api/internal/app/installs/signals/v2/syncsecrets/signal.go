@@ -13,8 +13,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
@@ -173,6 +175,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
 		return fmt.Errorf("unable to sync secrets: %w", err)
+	}
+
+	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
+		InstallID:       s.InstallID,
+		HintType:        statemanager.HintSecretsUpdated,
+		TriggeredByID:   runnerJob.ID,
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	}); err != nil {
+		l.Warn("unable to hint state manager", zap.Error(err))
 	}
 
 	return nil

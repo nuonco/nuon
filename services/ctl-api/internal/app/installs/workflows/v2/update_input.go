@@ -10,8 +10,9 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -19,15 +20,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg := newStepGroup(flw)
 
-	sg.nextGroup()
 	steps := make([]*app.WorkflowStep, 0)
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
@@ -112,6 +105,18 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
+
+	sg.nextGroup() // refresh inputs partial in state
+	step, err := sg.installSignalStep(ctx, installID, "update install state inputs", pgtype.Hstore{}, &stateregenerate.Signal{
+		InstallID:       installID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+		TriggeredByID:   installID,
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
 
 	return sg.Result(steps), nil
 }

@@ -5,9 +5,12 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovisionserviceaccount"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -70,6 +73,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to enqueue reprovision service account signal to runner")
+	}
+
+	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
+		InstallID:       s.InstallID,
+		HintType:        statemanager.HintRunnerUpdated,
+		TriggeredByID:   install.RunnerID,
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	}); err != nil {
+		_ = err
 	}
 
 	return nil

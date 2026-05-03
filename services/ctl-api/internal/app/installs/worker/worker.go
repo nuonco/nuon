@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
+	installsstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -35,6 +36,7 @@ type WorkerParams struct {
 	Tclient      temporalclient.Client
 	Wkflows      *Workflows
 	Acts         *activities.Activities
+	StateActs    *installsstate.Activities
 	L            *zap.Logger
 	Lc           fx.Lifecycle
 	Interceptors []interceptor.WorkerInterceptor `group:"interceptors"`
@@ -67,6 +69,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	// register activities
 	wkr.RegisterActivity(params.Acts)
+	wkr.RegisterActivity(params.StateActs)
 	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)

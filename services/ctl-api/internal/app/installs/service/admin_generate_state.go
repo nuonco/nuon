@@ -7,17 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	generatestate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-type AdminInstallGenerateInstallStateRequest struct{}
-
 // @ID						AdminInstallGenerateInstallState
-// @Summary				generate state for an install
+// @Summary				generate state for an install via the state manager
 // @Description.markdown	admin_install_generate_state.md
-// @Param					install_id	path	string						true	"install ID" // @Param					req			body	AdminInstallGenerateInstallStateRequest	false	"Input"
-// @Param	req			body	AdminInstallGenerateInstallStateRequest true	"Input"
+// @Param					install_id	path	string	true	"install ID"
 // @Tags					installs/admin
 // @Security				AdminEmail
 // @Accept					json
@@ -36,27 +33,27 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	queueID, err := s.getInstallStateManagerQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get state-manager queue: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationGenerateState,
-		})
+
+	triggeredByID := ctx.GetHeader("X-Nuon-Admin-Email")
+	if triggeredByID == "" {
+		triggeredByID = install.ID
 	}
+
+	if err := s.enqueueInstallSignal(ctx, queueID, &stateregenerate.Signal{
+		InstallID:       install.ID,
+		Targets:         state.AllPartialTargets(),
+		ForceAll:        true,
+		TriggeredByID:   triggeredByID,
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	}, install.ID, "installs"); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue force-regenerate: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }

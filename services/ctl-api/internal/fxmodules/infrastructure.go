@@ -29,7 +29,6 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
-	stateclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
@@ -92,5 +91,4 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(queueclient.New),
 	fx.Provide(emitterclient.New),
 	fx.Provide(flowclient.New),
-	fx.Provide(stateclient.New),
 )

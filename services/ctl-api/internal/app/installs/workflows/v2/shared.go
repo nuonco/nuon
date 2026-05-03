@@ -20,11 +20,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
+	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 )
 
@@ -79,7 +80,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
 	case executeactionworkflow.SignalType, actionworkflowrun.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
-	case generatestate.SignalType:
+	case generatestate.SignalType, stateregenerate.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 
@@ -104,8 +105,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		}
 	}
 
-	// Generate state is always hidden
-	if sigType == generatestate.SignalType {
+	if sigType == generatestate.SignalType || sigType == stateregenerate.SignalType {
 		meta.executionType = app.WorkflowStepExecutionTypeHidden
 	}
 

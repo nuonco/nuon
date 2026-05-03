@@ -10,10 +10,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // @temporal-gen-v2 workflow
@@ -48,10 +48,12 @@ func (w *Workflows) ExecuteDeployComponentApplyPlan(ctx workflow.Context, sreq s
 	}
 
 	w.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
 		InstallID:       install.ID,
+		HintType:        statemanager.HintDeployCompleted,
+		EntityID:        sreq.ID,
 		TriggeredByID:   installDeploy.ID,
-		TriggeredByType: plugins.TableName(w.db, installDeploy),
+		TriggeredByType: app.InstallStateGenerateSourceStateManager,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

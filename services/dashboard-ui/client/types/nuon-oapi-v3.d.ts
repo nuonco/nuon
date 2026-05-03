@@ -3922,6 +3922,7 @@ export interface components {
       contents?: string;
       created_at?: string;
       created_by_id?: string;
+      generated_by?: components["schemas"]["app.InstallStateGenerateSource"];
       id?: string;
       install_id?: string;
       stale_at?: components["schemas"]["generics.NullTime"];
@@ -3930,6 +3931,8 @@ export interface components {
       updated_at?: string;
       version?: number;
     };
+    /** @enum {string} */
+    "app.InstallStateGenerateSource": "legacy" | "state-manager";
     "app.JSONMap": {
       [key: string]: string;
     };
