@@ -45,11 +45,12 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 	}
 
 	if err := s.enqueueInstallSignal(ctx, queueID, &stateregenerate.Signal{
-		InstallID:       install.ID,
-		Targets:         state.AllPartialTargets(),
-		ForceAll:        true,
-		TriggeredByID:   triggeredByID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		InstallID:        install.ID,
+		Targets:          state.AllPartialTargets(),
+		ForceAll:         true,
+		TriggeredByID:    triggeredByID,
+		TriggeredByType:  "installs",
+		StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
 	}, install.ID, "installs"); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue force-regenerate: %w", err))
 		return

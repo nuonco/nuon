@@ -14,11 +14,12 @@ import (
 const SignalType signal.SignalType = "state-regenerate"
 
 type Signal struct {
-	InstallID       string
-	Targets         []state.PartialTarget
-	ForceAll        bool
-	TriggeredByID   string
-	TriggeredByType app.InstallStateGenerateSource
+	InstallID        string
+	Targets          []state.PartialTarget
+	ForceAll         bool
+	TriggeredByID    string
+	TriggeredByType  string
+	StateGeneratedBy app.InstallStateGenerateSource
 }
 
 var (
@@ -42,11 +43,12 @@ func (s *Signal) Validate(_ workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err := statesignals.Regenerate(ctx, &state.ExecuteRegenerationRequest{
-		InstallID:       s.InstallID,
-		Targets:         s.Targets,
-		ForceAll:        s.ForceAll,
-		TriggeredByID:   s.TriggeredByID,
-		TriggeredByType: s.TriggeredByType,
+		InstallID:        s.InstallID,
+		Targets:          s.Targets,
+		ForceAll:         s.ForceAll,
+		TriggeredByID:    s.TriggeredByID,
+		TriggeredByType:  s.TriggeredByType,
+		StateGeneratedBy: s.StateGeneratedBy,
 	})
 	return err
 }

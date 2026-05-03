@@ -12,8 +12,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	runnersignalsv2 "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/installstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -208,11 +210,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to update status")
 	}
 
-	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
-		InstallID:       install.ID,
-		HintType:        statemanager.HintStackRunCompleted,
-		TriggeredByID:   run.ID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   install.ID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &stateregenerate.Signal{
+			InstallID:        install.ID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintStackRunCompleted, ""),
+			ForceAll:         true,
+			TriggeredByID:    run.ID,
+			TriggeredByType:  "install_stack_version_runs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		},
 	}); err != nil {
 		l.Warn("unable to hint state manager", zap.Error(err))
 	}

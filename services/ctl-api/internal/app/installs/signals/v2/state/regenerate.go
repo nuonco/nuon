@@ -1,6 +1,7 @@
 package state
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -108,8 +109,8 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 			State:           is,
 			InstallID:       req.InstallID,
 			TriggeredByID:   req.TriggeredByID,
-			TriggeredByType: string(req.TriggeredByType),
-			GeneratedBy:     app.InstallStateGenerateSourceStateManager,
+			TriggeredByType: req.TriggeredByType,
+			GeneratedBy:     req.StateGeneratedBy,
 		}); err != nil {
 			return nil, errors.Wrap(err, "save state")
 		}
@@ -240,6 +241,7 @@ func fetchCloudPartial(ctx workflow.Context, installID string, is *pkgstate.Stat
 			Region:    install.GCPAccount.Region,
 		}
 	}
+	fmt.Println("smk cloud account state gen", is.Cloud)
 	is.Cloud = st
 	return nil
 }

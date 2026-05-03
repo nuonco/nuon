@@ -11,9 +11,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // @temporal-gen-v2 workflow
@@ -49,11 +50,10 @@ func (w *Workflows) DeprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	}
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 
-	workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
-		HintType:        statemanager.HintSandboxDeprovisioned,
 		TriggeredByID:   installRun.ID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		TriggeredByType: plugins.TableName(w.db, installRun),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

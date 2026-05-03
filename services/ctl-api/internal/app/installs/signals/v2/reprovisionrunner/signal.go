@@ -6,8 +6,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/reprovisionserviceaccount"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -75,11 +77,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to enqueue reprovision service account signal to runner")
 	}
 
-	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
-		InstallID:       s.InstallID,
-		HintType:        statemanager.HintRunnerUpdated,
-		TriggeredByID:   install.RunnerID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   s.InstallID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &stateregenerate.Signal{
+			InstallID:        s.InstallID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
+			ForceAll:         true,
+			TriggeredByID:    install.RunnerID,
+			TriggeredByType:  "runners",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		},
 	}); err != nil {
 		_ = err
 	}

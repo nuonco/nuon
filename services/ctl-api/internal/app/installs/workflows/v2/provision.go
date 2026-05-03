@@ -30,10 +30,11 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &stateregenerate.Signal{
-		InstallID:       installID,
-		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-		TriggeredByID:   installID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		InstallID:        installID,
+		Targets:          statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+		TriggeredByID:    installID,
+		TriggeredByType:  "installs",
+		StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

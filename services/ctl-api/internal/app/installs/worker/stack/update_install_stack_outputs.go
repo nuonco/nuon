@@ -12,8 +12,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 // @temporal-gen-v2 workflow
@@ -170,11 +171,10 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		}
 	}
 
-	workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
-		HintType:        statemanager.HintStackOutputsUpdated,
 		TriggeredByID:   run.ID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		TriggeredByType: plugins.TableName(w.db, installStackOutputs),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

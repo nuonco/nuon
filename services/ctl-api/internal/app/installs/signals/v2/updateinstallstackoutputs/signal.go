@@ -10,11 +10,14 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "update-install-stack-outputs"
@@ -185,11 +188,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
-		InstallID:       install.ID,
-		HintType:        statemanager.HintStackOutputsUpdated,
-		TriggeredByID:   run.ID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   install.ID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &stateregenerate.Signal{
+			InstallID:        install.ID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintStackOutputsUpdated, ""),
+			ForceAll:         true,
+			TriggeredByID:    run.ID,
+			TriggeredByType:  "install_stack_version_runs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		},
 	}); err != nil {
 		l := workflow.GetLogger(ctx)
 		l.Warn("unable to hint state manager", zap.Error(err))

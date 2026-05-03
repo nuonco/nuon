@@ -8,24 +8,27 @@ import (
 )
 
 type ForceRegenerateRequest struct {
-	TriggeredByID   string
-	TriggeredByType app.InstallStateGenerateSource
+	TriggeredByID    string
+	TriggeredByType  string
+	StateGeneratedBy app.InstallStateGenerateSource
 }
 
 type ForceRegenerateResponse struct{}
 
 type HintRequest struct {
-	Targets         []PartialTarget
-	TriggeredByID   string
-	TriggeredByType app.InstallStateGenerateSource
+	Targets          []PartialTarget
+	TriggeredByID    string
+	TriggeredByType  string
+	StateGeneratedBy app.InstallStateGenerateSource
 }
 
 type HintResponse struct{}
 
 type ExecuteRegenerationRequest struct {
-	InstallID       string
-	TriggeredByID   string
-	TriggeredByType app.InstallStateGenerateSource
+	InstallID        string
+	TriggeredByID    string
+	TriggeredByType  string
+	StateGeneratedBy app.InstallStateGenerateSource
 
 	Targets        []PartialTarget
 	ForceAll       bool

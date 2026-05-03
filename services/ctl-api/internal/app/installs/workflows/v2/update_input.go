@@ -108,10 +108,11 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg.nextGroup() // refresh inputs partial in state
 	step, err := sg.installSignalStep(ctx, installID, "update install state inputs", pgtype.Hstore{}, &stateregenerate.Signal{
-		InstallID:       installID,
-		Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
-		TriggeredByID:   installID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		InstallID:        installID,
+		Targets:          statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+		TriggeredByID:    installID,
+		TriggeredByType:  "installs",
+		StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

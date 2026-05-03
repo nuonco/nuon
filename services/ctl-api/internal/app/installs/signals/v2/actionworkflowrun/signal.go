@@ -10,13 +10,16 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -316,12 +319,18 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	if err := workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
-		InstallID:       installID,
-		HintType:        statemanager.HintActionRan,
-		EntityID:        s.InstallActionWorkflowID,
-		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   installID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &stateregenerate.Signal{
+			InstallID:        installID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+			ForceAll:         true,
+			TriggeredByID:    actionWorkflowRunID,
+			TriggeredByType:  "install_action_workflow_runs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		},
 	}); err != nil {
 		l.Warn("unable to hint state manager", zap.Error(err))
 	}

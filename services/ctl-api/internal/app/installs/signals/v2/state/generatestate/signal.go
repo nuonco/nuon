@@ -7,9 +7,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "generate-state"
@@ -43,10 +47,18 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	if err := workerstate.AwaitForceRegenerateStateManager(ctx, &workerstate.ForceRegenerateStateManagerRequest{
-		InstallID:       s.InstallID,
-		TriggeredByID:   s.InstallID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   s.InstallID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &stateregenerate.Signal{
+			InstallID:        s.InstallID,
+			Targets:          pkgstate.AllPartialTargets(),
+			ForceAll:         true,
+			TriggeredByID:    s.InstallID,
+			TriggeredByType:  "installs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		},
 	}); err != nil {
 		return errors.Wrap(err, "unable to force-regenerate state")
 	}

@@ -12,9 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // @temporal-gen-v2 workflow
@@ -57,11 +58,10 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 
 	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
-	workerstate.AwaitHintStateManager(ctx, &workerstate.HintStateManagerRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
-		HintType:        statemanager.HintSandboxReprovisioned,
 		TriggeredByID:   sandboxRun.ID,
-		TriggeredByType: app.InstallStateGenerateSourceStateManager,
+		TriggeredByType: plugins.TableName(w.db, sandboxRun),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

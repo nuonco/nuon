@@ -20,11 +20,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 )

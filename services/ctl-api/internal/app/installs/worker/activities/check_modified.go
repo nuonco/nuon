@@ -30,13 +30,13 @@ func (a *Activities) CheckModified(ctx context.Context, req *CheckModifiedReques
 	switch req.PartialName {
 	case "org":
 		err = a.db.WithContext(ctx).
-			Raw("SELECT o.updated_at FROM orgs o JOIN installs i ON i.org_id = o.id WHERE i.id = ? AND i.deleted_at IS NULL", req.InstallID).
+			Raw("SELECT o.updated_at FROM orgs o JOIN installs i ON i.org_id = o.id WHERE i.id = ? AND i.deleted_at = 0", req.InstallID).
 			Scan(&latestAt).Error
 	case "app":
 		err = a.db.WithContext(ctx).
 			Raw(`SELECT GREATEST(
-				(SELECT a.updated_at FROM apps a JOIN installs i ON i.app_id = a.id WHERE i.id = ? AND i.deleted_at IS NULL),
-				COALESCE((SELECT MAX(s.updated_at) FROM app_secrets s JOIN installs i ON i.app_id = s.app_id WHERE i.id = ? AND i.deleted_at IS NULL), '1970-01-01'::timestamptz)
+				(SELECT a.updated_at FROM apps a JOIN installs i ON i.app_id = a.id WHERE i.id = ? AND i.deleted_at = 0),
+				COALESCE((SELECT MAX(s.updated_at) FROM app_secrets s JOIN installs i ON i.app_id = s.app_id WHERE i.id = ? AND i.deleted_at = 0), '1970-01-01'::timestamptz)
 			)`, req.InstallID, req.InstallID).
 			Scan(&latestAt).Error
 	case "domain", "sandbox":
@@ -52,7 +52,7 @@ func (a *Activities) CheckModified(ctx context.Context, req *CheckModifiedReques
 			Scan(&latestAt).Error
 	case "cloud":
 		err = a.db.WithContext(ctx).
-			Raw("SELECT updated_at FROM installs WHERE id = ? AND deleted_at IS NULL", req.InstallID).
+			Raw("SELECT updated_at FROM installs WHERE id = ? AND deleted_at = 0", req.InstallID).
 			Scan(&latestAt).Error
 	case "actions":
 		err = a.db.WithContext(ctx).
