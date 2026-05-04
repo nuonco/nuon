@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -24,6 +25,7 @@ export const RemoveConnectionModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const { org, refresh: refreshOrg } = useOrg()
+  const [deleteGithubApp, setDeleteGithubApp] = useState(false)
 
   const connectionName =
     vcs_connection?.github_account_name ||
@@ -56,7 +58,15 @@ export const RemoveConnectionModalContainer = ({
       connectionName={connectionName}
       isPending={isPending}
       error={error}
-      onSubmit={() => mutate({ connectionId: vcs_connection.id, orgId: org.id })}
+      deleteGithubApp={deleteGithubApp}
+      onDeleteGithubAppChange={setDeleteGithubApp}
+      onSubmit={() =>
+        mutate({
+          connectionId: vcs_connection.id,
+          orgId: org.id,
+          deleteGithubApp,
+        })
+      }
       {...props}
     />
   )
