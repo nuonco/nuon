@@ -14,16 +14,31 @@ const mockBranch = {
   workflows: [],
 } as any
 
+const defaultVcsProps = {
+  repos: [],
+  branches: [],
+  loadingRepos: false,
+  loadingBranches: false,
+  reposError: null,
+  branchesError: null,
+  selectedVcsConnectionId: '',
+  onVcsConnectionChange: noop,
+  selectedRepo: null,
+  onRepoChange: noop,
+  selectedBranch: 'main',
+  onBranchChange: noop,
+}
+
 export const Default = () => (
   <ModalStory>
     <EditBranchNameModal
       branch={mockBranch}
-      orgId="org-1"
       vcsConnections={[]}
       isSubmitting={false}
       validationError={null}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )
@@ -40,7 +55,6 @@ export const WithExistingConfig = () => (
           directory: '.',
         },
       } as any}
-      orgId="org-1"
       vcsConnections={[
         {
           id: 'conn-1',
@@ -52,6 +66,8 @@ export const WithExistingConfig = () => (
       validationError={null}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
+      selectedVcsConnectionId="conn-1"
     />
   </ModalStory>
 )
@@ -60,12 +76,12 @@ export const Submitting = () => (
   <ModalStory>
     <EditBranchNameModal
       branch={mockBranch}
-      orgId="org-1"
       vcsConnections={[]}
       isSubmitting={true}
       validationError={null}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )
@@ -74,12 +90,12 @@ export const WithValidationError = () => (
   <ModalStory>
     <EditBranchNameModal
       branch={mockBranch}
-      orgId="org-1"
       vcsConnections={[]}
       isSubmitting={false}
       validationError="Branch name already exists"
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )
