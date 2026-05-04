@@ -10,6 +10,7 @@ export const Variants = () => (
   <div className="flex gap-4 items-center">
     <EmptyGraphic variant="404" />
     <EmptyGraphic variant="actions" />
+    <EmptyGraphic variant="app" />
     <EmptyGraphic variant="diagram" />
     <EmptyGraphic variant="history" />
     <EmptyGraphic variant="policy" />
@@ -22,6 +23,7 @@ export const Small = () => (
   <div className="flex gap-4 items-center">
     <EmptyGraphic variant="404" size="sm" />
     <EmptyGraphic variant="actions" size="sm" />
+    <EmptyGraphic variant="app" size="sm" />
     <EmptyGraphic variant="diagram" size="sm" />
     <EmptyGraphic variant="history" size="sm" />
     <EmptyGraphic variant="policy" size="sm" />
