@@ -30,6 +30,8 @@ import { SandboxMode } from '@/views/sandbox-mode/SandboxMode'
 import { TemporalWorkers } from '@/views/temporal-workers/TemporalWorkers'
 import { TemporalWorkerDetail } from '@/views/temporal-workers/TemporalWorkerDetail'
 import { TemporalWorkflows } from '@/views/temporal-workflows/TemporalWorkflows'
+import { SlowQueries } from '@/views/slow-queries/SlowQueries'
+import { QueryCatalog } from '@/views/query-catalog/QueryCatalog'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +74,8 @@ const router = createBrowserRouter([
       { path: 'temporal-workers', element: <TemporalWorkers /> },
       { path: 'temporal-workers/:namespace', element: <TemporalWorkerDetail /> },
       { path: 'temporal-workflows', element: <TemporalWorkflows /> },
+      { path: 'queries', element: <SlowQueries /> },
+      { path: 'query-catalog', element: <QueryCatalog /> },
     ],
   },
 ])

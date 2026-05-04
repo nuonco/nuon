@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/afterquery"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
@@ -21,6 +22,12 @@ func (d *database) registerPlugins(db *gorm.DB) error {
 
 	if err := db.Use(views.NewViewsPlugin(AllModels())); err != nil {
 		return errors.Wrap(err, "unable to register views plugin")
+	}
+
+	if d.QueryCollector != nil {
+		if err := db.Use(querycollector.NewPlugin(d.QueryCollector, "ch")); err != nil {
+			return errors.Wrap(err, "unable to register query collector plugin")
+		}
 	}
 
 	return nil
