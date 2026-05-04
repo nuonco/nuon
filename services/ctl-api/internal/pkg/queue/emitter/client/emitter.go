@@ -33,6 +33,9 @@ type CreateEmitterRequest struct {
 
 	// For cron mode: the cron schedule expression (e.g., "0 * * * *")
 	CronSchedule string
+	// For cron mode: spread ticks deterministically across this window
+	// (per-emitter offset = hash(emitter ID) % JitterWindow). Zero disables.
+	JitterWindow time.Duration
 	// For scheduled mode: when to fire the signal
 	ScheduledAt *time.Time
 
@@ -72,6 +75,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		Description:  req.Description,
 		Mode:         req.Mode,
 		CronSchedule: req.CronSchedule,
+		JitterWindow: req.JitterWindow,
 		ScheduledAt:  req.ScheduledAt,
 		SignalType:   req.SignalType,
 		SignalTemplate: signaldb.SignalData{

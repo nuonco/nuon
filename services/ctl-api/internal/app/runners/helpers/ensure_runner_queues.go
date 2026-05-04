@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
@@ -72,6 +73,7 @@ func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Ru
 		Description:    "Periodic runner health check",
 		Mode:           app.QueueEmitterModeCron,
 		CronSchedule:   "* * * * *",
+		JitterWindow:   time.Minute,
 		SignalType:     healthcheckSignalType,
 		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
