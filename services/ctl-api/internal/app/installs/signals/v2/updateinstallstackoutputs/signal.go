@@ -20,11 +20,14 @@ const SignalType signal.SignalType = "update-install-stack-outputs"
 
 type Signal struct {
 	InstallStackID          string
+	InstallStackVersionID   string
 	SkipInputUpdateWorkflow bool
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var (
+	_ signal.Signal              = &Signal{}
+	_ signal.SignalWithAutoRetry = (*Signal)(nil)
+)
 
 func (s *Signal) AutoRetry() bool { return true }
 
@@ -47,14 +50,30 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
+	var err error
+	var install *app.Install
+	var version *app.InstallStackVersion
 
-	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install version")
+	if s.InstallStackVersionID != "" {
+		version, err = activities.AwaitGetInstallStackVersionByID(ctx, activities.GetInstallStackVersionByIDRequest{
+			VersionID: s.InstallStackVersionID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to get install stack version")
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, version.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+	} else {
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+		version, err = activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install version")
+		}
 	}
 
 	run, err := activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)

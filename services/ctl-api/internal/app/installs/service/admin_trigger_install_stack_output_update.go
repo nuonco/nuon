@@ -8,6 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // @ID						AdminTriggerInstallStackOutputUpdate
@@ -34,9 +36,34 @@ func (s *service) AdminTriggerInstallStackOutputUpdate(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, run.InstallStackVersion.InstallID, &signals.Signal{
-		Type:                  signals.OperationUpdateInstallStackOutputs,
-		InstallStackVersionID: run.InstallStackVersionID,
-	})
+	stackVersion := run.InstallStackVersion
+	ctx2 := cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
+
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx2, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking features: %w", err))
+		return
+	}
+
+	if useQueues {
+		queueID, err := s.getInstallSignalsQueueID(ctx2, stackVersion.InstallID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx2, queueID, &updateinstallstackoutputs.Signal{
+			InstallStackID:        stackVersion.InstallStackID,
+			InstallStackVersionID: run.InstallStackVersionID,
+		}, "", ""); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, stackVersion.InstallID, &signals.Signal{
+			Type:                  signals.OperationUpdateInstallStackOutputs,
+			InstallStackVersionID: run.InstallStackVersionID,
+		})
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }
