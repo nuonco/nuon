@@ -81,6 +81,9 @@ type Signal struct {
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+var _ signal.SignalWithTimeout = (*Signal)(nil)
+
+func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
 
 func (s *Signal) Type() signal.SignalType   { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }

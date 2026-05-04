@@ -61,6 +61,9 @@ type Signal struct {
 var _ qsignal.Signal = (*Signal)(nil)
 var _ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
 var _ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
+var _ qsignal.SignalWithTimeout = (*Signal)(nil)
+
+func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
 
 func (s *Signal) Type() qsignal.SignalType  { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }
