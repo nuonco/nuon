@@ -43,6 +43,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		Description:  "Periodic process health check",
 		Mode:         app.QueueEmitterModeCron,
 		CronSchedule: "* * * * *",
+		JitterWindow: time.Minute,
 		SignalType:   "process_healthcheck",
 		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
 			"runner_id":  runnerID,

@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -74,6 +75,7 @@ func (h *Helpers) CreateRunnerQueues(ctx context.Context, runner *app.Runner, se
 		Description:    "Periodic runner health check",
 		Mode:           app.QueueEmitterModeCron,
 		CronSchedule:   "* * * * *",
+		JitterWindow:   time.Minute,
 		SignalType:     healthcheckSignalType,
 		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
