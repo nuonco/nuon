@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -111,10 +112,15 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 	}
 
 	executeOpts := longRunningActivityOptions
-	if timeoutNs, ok := queueSignal.Status.Metadata["timeout_ns"]; ok {
-		if ns, ok := timeoutNs.(float64); ok {
+
+	// Fetch the deserialized signal to check for a custom timeout.
+	// The queueSignal from the DB activity has Signal excluded (temporaljson:"-"),
+	// so we fetch it separately via the signal-specific activity.
+	sig, sigErr := activities.AwaitGetQueueSignalSignalByQueueSignalID(ctx, queueSignal.ID)
+	if sigErr == nil {
+		if t, ok := sig.(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
 			custom := *longRunningActivityOptions
-			custom.ScheduleToCloseTimeout = time.Duration(int64(ns))
+			custom.ScheduleToCloseTimeout = t.Timeout()
 			executeOpts = &custom
 		}
 	}

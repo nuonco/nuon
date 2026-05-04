@@ -1,12 +1,13 @@
 import { Button } from '@/components/common/Button'
 import { Card, type ICard } from '@/components/common/Card'
-import { Cron } from '@/components/common/Cron'
 import { GitRepo } from '@/components/common/GitRepo'
+import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TSandboxConfig } from '@/types'
+import { objectToKeyValueArray } from '@/utils/data-utils'
 
 interface ISandboxConfigCard extends Omit<ICard, 'children'> {
   config: TSandboxConfig
@@ -23,6 +24,7 @@ export const SandboxConfigCard = ({
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
   const hasVariablesFiles =
     config.variables_files && config.variables_files.length > 0
+  const sandboxVariables = objectToKeyValueArray(config.variables)
 
   const vcsConfig =
     config.connected_github_vcs_config || config.public_git_vcs_config
@@ -56,41 +58,33 @@ export const SandboxConfigCard = ({
           )}
         </div>
 
-        <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="flex gap-6 items-start justify-start">
+          {vcsConfig && <GitRepo vcsConfig={vcsConfig} />}
           {config.terraform_version && (
-            <LabeledValue label="Terraform version">
+            <LabeledValue label="Terraform">
               {config.terraform_version}
-            </LabeledValue>
-          )}
-          {config.aws_region_type && (
-            <LabeledValue label="AWS region type">
-              {config.aws_region_type}
-            </LabeledValue>
-          )}
-          {config.drift_schedule && (
-            <LabeledValue label="Drift schedule">
-              <Cron cron={config.drift_schedule} variant="subtext" />
             </LabeledValue>
           )}
         </div>
 
+        {sandboxVariables?.length ? (
+          <div>
+            <Text variant="subtext" weight="strong">
+              Variables
+            </Text>
+            <KeyValueList values={sandboxVariables} />
+          </div>
+        ) : null}
+
         {config.operation_roles &&
           Object.keys(config.operation_roles).length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Text variant="body" weight="strong" level={5}>
+            <div>
+              <Text variant="subtext" weight="strong">
                 Operation roles
               </Text>
               <OperationRolesList operationRoles={config.operation_roles} />
             </div>
           )}
-
-        {vcsConfig && (
-          <div className="pt-6 border-t">
-            <div className="w-fit">
-              <GitRepo vcsConfig={vcsConfig} isAutoGrid />
-            </div>
-          </div>
-        )}
       </div>
     </Card>
   )
