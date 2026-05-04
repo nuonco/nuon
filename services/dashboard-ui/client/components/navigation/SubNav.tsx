@@ -57,7 +57,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
   return (
     <aside
       className={cn(
-        'border-b flex shrink-0 overflow-x-auto overflow-y-visible w-full md:w-[4.5rem]',
+        'group/sidebar border-b flex shrink-0 overflow-x-auto overflow-y-visible w-full md:w-[4.5rem]',
         'md:overflow-visible md:relative md:transition-[width] md:duration-fastest md:ease-cubic md:border-b-0 md:border-r md:flex-none',
         {
           'md:w-[17.5rem]': isPageSidebarOpen,
@@ -91,7 +91,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
       <div
         ref={handleRef}
         className={cn(
-          'hidden group', // hide by default
+          'hidden',
           'md:flex md:absolute md:right-[-1rem] md:w-4 md:h-full md:cursor-pointer md:border-l md:border-transparent',
           'md:transition-[border-color] md:duration-fastest md:ease-cubic',
           'page-nav-handle', // for event handling
@@ -112,9 +112,8 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             'border rounded-lg shadow-md p-1 bg-white dark:bg-dark-grey-300',
             'transition-opacity duration-fastest ease-cubic',
             '-translate-x-1/2 -translate-y-1/2',
-            // Show on parent hover
-            'group-hover:opacity-100' // If you wrap handle in a group, or use peer
-            // Show on hover (simulate with parent hover via CSS, or just always show for demo)
+            // Show when hovering anywhere on the sidebar
+            'group-hover/sidebar:opacity-100'
           )}
           onClick={() => {
             togglePageSidebar()
