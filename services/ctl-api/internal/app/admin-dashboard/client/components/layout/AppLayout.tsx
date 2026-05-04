@@ -35,6 +35,8 @@ const navGroups = [
       { path: '/sandbox-mode', label: 'Sandbox mode' },
       { path: '/temporal-workers', label: 'Temporal workers' },
       { path: '/temporal-workflows', label: 'Temporal workflows' },
+      { path: '/queries', label: 'Queries' },
+      { path: '/query-catalog', label: 'Query catalog' },
       { path: '/api/livez', label: 'Health', external: true },
     ],
   },
