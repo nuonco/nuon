@@ -39,10 +39,20 @@
             "expanded": true,
             "pages": [
               "guides/nuon-cloud",
-              "guides/byoc",
+              {
+                "group": "Install Nuon BYOC",
+                "root": "guides/byoc",
+                "expanded": false,
+                "pages": [
+                  "guides/byoc/aws",
+                  "guides/byoc/azure",
+                  "guides/byoc/gcp"
+                ]
+              },
               {
                 "group": "Self-Hosted Nuon",
                 "root": "guides/self-hosted",
+                "expanded": false,
                 "pages": [
                   "guides/self-hosted/aws",
                   "guides/self-hosted/azure",
