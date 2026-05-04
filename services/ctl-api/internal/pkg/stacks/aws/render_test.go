@@ -92,9 +92,9 @@ func TestRenderStandardVars(t *testing.T) {
 	tfvars := extractTfvars(t, out)
 
 	for key, val := range map[string]string{
-		"nuon_install_id":        `"instabcdefghijklmnopqrstuv"`,
-		"nuon_org_id":            `"orgabcdefghijklmnopqrstuvw"`,
-		"nuon_app_id":            `"appabcdefghijklmnopqrstuvw"`,
+		"nuon_install_id": `"instabcdefghijklmnopqrstuv"`,
+		"nuon_org_id":     `"orgabcdefghijklmnopqrstuvw"`,
+		"nuon_app_id":     `"appabcdefghijklmnopqrstuvw"`,
 		"runner_api_url":  `"https://runner.nuon.co"`,
 		"runner_id":       `"runnerabcdefghijklmnopqrstu"`,
 		"phone_home_url":  `"https://example.com/phone-home"`,
