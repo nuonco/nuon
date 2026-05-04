@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/cmd"
@@ -26,7 +27,7 @@ func cleanupGenFiles(t *testing.T, dirs ...string) {
 				if err != nil {
 					return nil
 				}
-				if !info.IsDir() && len(path) > 7 && path[len(path)-7:] == "_gen.go" {
+				if !info.IsDir() && strings.HasSuffix(path, "_gen.go") {
 					os.Remove(path)
 				}
 				return nil
@@ -41,10 +42,9 @@ func cleanupGenFiles(t *testing.T, dirs ...string) {
 func TestGenerateExamples(t *testing.T) {
 	root := repoRoot(t)
 	examplesDir := filepath.Join(root, "examples")
-	cleanupGenFiles(t, examplesDir)
 
 	rootCmd := cmd.NewRootCmd()
-	rootCmd.SetArgs([]string{"generate", "--validate", "--recursive", examplesDir})
+	rootCmd.SetArgs([]string{"generate", "--validate", "--imports", "--recursive", examplesDir})
 	require.NoError(t, rootCmd.Execute())
 
 	// Verify activity_gen.go
@@ -98,29 +98,27 @@ func TestGenerateWithDependencies(t *testing.T) {
 func TestParallelMatchesSequential(t *testing.T) {
 	root := repoRoot(t)
 	examplesDir := filepath.Join(root, "examples")
-	cleanupGenFiles(t, examplesDir)
 
 	// Run with parallelism=1 (sequential)
 	rootCmd := cmd.NewRootCmd()
-	rootCmd.SetArgs([]string{"generate", "--validate", "--recursive", "--parallelism", "1", examplesDir})
+	rootCmd.SetArgs([]string{"generate", "--validate", "--imports", "--recursive", "--parallelism", "1", examplesDir})
 	require.NoError(t, rootCmd.Execute())
 
 	// Collect sequential output
 	seqFiles := map[string][]byte{}
 	filepath.Walk(examplesDir, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && len(path) > 7 && path[len(path)-7:] == "_gen.go" {
+		if err == nil && !info.IsDir() && strings.HasSuffix(path, "_gen.go") {
 			data, readErr := os.ReadFile(path)
 			if readErr == nil {
 				seqFiles[path] = data
 			}
-			os.Remove(path)
 		}
 		return nil
 	})
 
 	// Run with parallelism=4
 	rootCmd = cmd.NewRootCmd()
-	rootCmd.SetArgs([]string{"generate", "--validate", "--recursive", "--parallelism", "4", examplesDir})
+	rootCmd.SetArgs([]string{"generate", "--validate", "--imports", "--recursive", "--parallelism", "4", examplesDir})
 	require.NoError(t, rootCmd.Execute())
 
 	// Compare outputs
