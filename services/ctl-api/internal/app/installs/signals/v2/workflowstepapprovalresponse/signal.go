@@ -45,9 +45,18 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	if s.InstallID == "" {
 		installID = nil
 	}
+	// Expose workflow + step identity so lifecycle hooks (e.g. webhook) can
+	// emit workflow_step.approval.v1 events without needing to dig into the
+	// approval-specific signal payload. OwnerID/OwnerType point at the
+	// install (the queue's owner), matching the convention used by
+	// execute-workflow / execute-workflow-step lifecycle events.
 	return signal.SignalLifecycleContext{
-		InstallID: installID,
-		Operation: "workflow-step-approval-response",
+		InstallID:  installID,
+		Operation:  "workflow-step-approval-response",
+		WorkflowID: s.InstallWorkflowID,
+		StepID:     s.WorkflowStepID,
+		OwnerID:    s.InstallID,
+		OwnerType:  "installs",
 	}
 }
 
