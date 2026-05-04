@@ -1,5 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { useOrg } from '@/hooks/use-org'
 import { getApps } from '@/lib'
 import { AppsTable, parseAppsToTableData } from './AppsTable'
@@ -33,6 +35,12 @@ export const AppsTableContainer = ({
     <AppsTable
       data={parseAppsToTableData(result?.data ?? [], org.id)}
       isLoading={isLoading}
+      emptyStateAction={
+        <Button href="/onboarding">
+          <Icon size="14" variant="AppWindow" />
+          Create app
+        </Button>
+      }
       pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
     />
   )
