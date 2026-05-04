@@ -77,7 +77,15 @@
             "boost": 3,
             "pages": [
               "concepts/apps",
-              "concepts/components",
+              {
+                "group": "Components",
+                "root": "concepts/components",
+                "icon": "object-group",
+                "boost": 3,
+                "pages": [
+                  "concepts/components/auto-retries"
+                ]
+              },
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",
