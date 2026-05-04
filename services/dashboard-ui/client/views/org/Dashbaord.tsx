@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
@@ -30,6 +30,36 @@ import {
 } from '@/utils/runner-utils'
 import announcementsData from '@/content/dashboard-announcements.json'
 
+const SANDBOX_BANNER_DISMISSED_KEY = 'nuon:dismissed-sandbox-banner'
+
+function isSandboxBannerDismissed(orgId?: string): boolean {
+  if (!orgId) return false
+  try {
+    const ids: string[] = JSON.parse(
+      localStorage.getItem(SANDBOX_BANNER_DISMISSED_KEY) || '[]'
+    )
+    return ids.includes(orgId)
+  } catch {
+    return false
+  }
+}
+
+function persistSandboxBannerDismiss(orgId: string) {
+  try {
+    const ids: string[] = JSON.parse(
+      localStorage.getItem(SANDBOX_BANNER_DISMISSED_KEY) || '[]'
+    )
+    if (!ids.includes(orgId)) {
+      localStorage.setItem(
+        SANDBOX_BANNER_DISMISSED_KEY,
+        JSON.stringify([...ids, orgId])
+      )
+    }
+  } catch {
+    // ignore storage failures
+  }
+}
+
 function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
   if (seconds < 60) return `${seconds}s`
@@ -55,6 +85,14 @@ export const Dashboard = () => {
       )
     }
   }, [org])
+
+  const [sandboxBannerDismissed, setSandboxBannerDismissed] = useState(() =>
+    isSandboxBannerDismissed(org?.id)
+  )
+
+  useEffect(() => {
+    setSandboxBannerDismissed(isSandboxBannerDismissed(org?.id))
+  }, [org?.id])
 
   const runnerId = org?.runner_group?.runners?.at(0)?.id
 
@@ -100,7 +138,7 @@ export const Dashboard = () => {
     <PageLayout>
       <PageTitle title={`Dashboard | ${org?.name}`} />
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
-      <PageHeader>
+      <PageHeader className="border-b">
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1} className="mb-4">
             Welcome to {org?.name}!
@@ -110,9 +148,16 @@ export const Dashboard = () => {
           </Text>
         </HeadingGroup>
       </PageHeader>
-      {org?.sandbox_mode && (
+      {org?.sandbox_mode && !sandboxBannerDismissed && (
         <div className="px-6 pt-6">
-          <Banner theme="warn">
+          <Banner
+            theme="warn"
+            onDismiss={() => {
+              if (!org?.id) return
+              persistSandboxBannerDismiss(org.id)
+              setSandboxBannerDismissed(true)
+            }}
+          >
             <div className="flex flex-col gap-1">
               <Text weight="strong">Sandbox mode</Text>
               <Text variant="subtext" theme="neutral">
@@ -125,8 +170,8 @@ export const Dashboard = () => {
         </div>
       )}
       <PageContent>
-        <PageGrid className="flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
-          <PageSection className="flex-1 !gap-12">
+        <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
+          <PageSection className="flex-1 border-r !gap-12">
             <div className="flex flex-col gap-4">
               <Text variant="h3" weight="strong">
                 Overview
