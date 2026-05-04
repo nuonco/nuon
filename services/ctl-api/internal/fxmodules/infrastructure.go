@@ -47,9 +47,9 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(log.New),
 	fx.Provide(dblog.New),
 
-	// Query collector (dev-only, enabled by db_log_queries config)
+	// Query collector (enabled by debug_enable_query_collector config)
 	fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
-		if cfg.DBLogQueries {
+		if cfg.DebugEnableQueryCollector {
 			return querycollector.NewCollector(5000)
 		}
 		return nil

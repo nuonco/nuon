@@ -62,7 +62,7 @@ export const SlowQueries = () => {
       <div>
         <h1 className="page-heading">Queries</h1>
         <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-          Query collector is disabled. Set <code className="rounded bg-yellow-100 px-1 font-mono text-xs">db_log_queries=true</code> in your config to enable.
+          Query collector is disabled. Set <code className="rounded bg-yellow-100 px-1 font-mono text-xs">debug_enable_query_collector=true</code> in your config to enable.
         </div>
       </div>
     )

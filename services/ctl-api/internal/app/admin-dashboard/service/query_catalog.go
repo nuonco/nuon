@@ -152,7 +152,7 @@ func (s *service) QueryCatalogRun(c *gin.Context) {
 
 func (s *service) QueryCollectorToggle(c *gin.Context) {
 	if s.queryCollector == nil {
-		c.JSON(http.StatusOK, gin.H{"enabled": false, "message": "collector not initialized (requires db_log_queries=true at startup)"})
+		c.JSON(http.StatusOK, gin.H{"enabled": false, "message": "collector not initialized (requires debug_enable_query_collector=true at startup)"})
 		return
 	}
 
