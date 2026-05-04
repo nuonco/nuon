@@ -13,15 +13,17 @@ import (
 	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 )
 
 type Params struct {
 	fx.In
 
-	V             *validator.Validate
-	L             zapgorm2.Logger
-	Cfg           *internal.Config
-	MetricsWriter metrics.Writer
+	V              *validator.Validate
+	L              zapgorm2.Logger
+	Cfg            *internal.Config
+	MetricsWriter  metrics.Writer
+	QueryCollector *querycollector.Collector
 }
 
 // database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
@@ -41,7 +43,8 @@ type database struct {
 	Logger        zapgorm2.Logger `validate:"required"`
 	MetricsWriter metrics.Writer  `validate:"required"`
 
-	Debug bool
+	QueryCollector *querycollector.Collector
+	Debug          bool
 }
 
 func (d *database) Validate(v *validator.Validate) error {
@@ -54,17 +57,18 @@ func (d *database) Validate(v *validator.Validate) error {
 
 func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
 	database := &database{
-		Logger:        params.L,
-		Host:          params.Cfg.ClickhouseDBHost,
-		Name:          params.Cfg.ClickhouseDBName,
-		User:          params.Cfg.ClickhouseDBUser,
-		Password:      params.Cfg.ClickhouseDBPassword,
-		Port:          params.Cfg.ClickhouseDBPort,
-		MetricsWriter: params.MetricsWriter,
-		Debug:         params.Cfg.LogLevel == "DEBUG",
-		ReadTimeout:   params.Cfg.ClickhouseDBReadTimeout,
-		WriteTimeout:  params.Cfg.ClickhouseDBWriteTimeout,
-		DialTimeout:   params.Cfg.ClickhouseDBDialTimeout,
+		Logger:         params.L,
+		Host:           params.Cfg.ClickhouseDBHost,
+		Name:           params.Cfg.ClickhouseDBName,
+		User:           params.Cfg.ClickhouseDBUser,
+		Password:       params.Cfg.ClickhouseDBPassword,
+		Port:           params.Cfg.ClickhouseDBPort,
+		MetricsWriter:  params.MetricsWriter,
+		QueryCollector: params.QueryCollector,
+		Debug:          params.Cfg.LogLevel == "DEBUG",
+		ReadTimeout:    params.Cfg.ClickhouseDBReadTimeout,
+		WriteTimeout:   params.Cfg.ClickhouseDBWriteTimeout,
+		DialTimeout:    params.Cfg.ClickhouseDBDialTimeout,
 	}
 	if err := database.Validate(params.V); err != nil {
 		return nil, err
