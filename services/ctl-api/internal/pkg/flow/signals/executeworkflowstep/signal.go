@@ -96,7 +96,10 @@ var (
 	_ signal.SignalWithCancel           = (*Signal)(nil)
 	_ signal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithTimeout          = (*Signal)(nil)
 )
+
+func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
 
 // LifecycleContext exposes the step + workflow identity to lifecycle hooks so
 // they can emit workflow_step.lifecycle.* webhook events without leaking the
